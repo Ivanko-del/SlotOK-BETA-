@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK | Admin Ultimate</title>
+  <title>SlotOK | Grand v30</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -11,83 +11,70 @@
 
   <style>
     /* --- ОСНОВА --- */
-    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #2a2a2a; --nav: #090909; --accent: #d4af37; --input: #1a1a1a; --modal: #000; }
+    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #2a2a2a; --nav: #080808; --accent: #d4af37; --input: #1a1a1a; --modal: #000; }
     body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; user-select: none; -webkit-tap-highlight-color: transparent; }
     
-    .header { padding: 15px; text-align: center; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; display:flex; justify-content:space-between; align-items:center; }
-    .header h1 { margin: 0; font-size: 24px; color: var(--accent); letter-spacing: 2px; font-weight: 900; font-style:italic; }
+    .header { padding: 15px; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; display:flex; justify-content:space-between; align-items:center; }
+    .header h1 { margin: 0; font-size: 24px; color: var(--accent); letter-spacing: 1px; font-weight: 900; font-style: italic; }
     .header-bal { font-size: 14px; background: #222; padding: 5px 12px; border-radius: 20px; border: 1px solid #444; font-weight:bold; }
 
     .container { padding: 15px; padding-top: 10px; } .hidden { display: none !important; }
+    .box { background: var(--box); border-radius: 12px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; position: relative; }
     
-    /* БЛОКИ */
-    .box { background: var(--box); border-radius: 12px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-    
-    /* КНОПКИ */
     button { padding: 14px; width: 100%; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; background: #333; color: #fff; margin-bottom: 8px; }
     button:active { transform: scale(0.96); }
     .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; } 
-    .btn-red { background: #ff3b30; color: #fff; } 
-    .btn-green { background: #4cd964; color: #000; } 
+    .btn-red { background: #ff3b30; color: #fff; } .btn-green { background: #4cd964; color: #000; } .btn-blue { background: #007aff; color: #fff; }
     .btn-outline { background: transparent; border: 1px solid #555; color: #ccc; }
     
     input, textarea { width: 100%; padding: 14px; margin-bottom: 12px; background: var(--input); border: 1px solid var(--border); color: #fff; border-radius: 10px; font-size: 16px; outline: none; box-sizing: border-box; } 
     input:focus { border-color: var(--accent); }
 
-    /* ГОЛОВНА */
-    .hero-banner { width: 100%; height: 160px; background: linear-gradient(135deg, #1e1e1e, #000); border-radius: 12px; margin-bottom: 20px; position: relative; overflow: hidden; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-    .hero-title { font-size: 26px; font-weight: 900; color: var(--accent); text-transform:uppercase; margin-bottom:5px; }
-    .section-title { font-size: 16px; color: #fff; margin: 20px 0 10px 0; border-left: 3px solid var(--accent); padding-left: 10px; font-weight:bold; }
-    .games-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
-    .game-thumb { min-width: 110px; height: 110px; background: var(--box); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-    .game-thumb span { font-size: 35px; margin-bottom: 5px; }
+    /* ІГРИ */
+    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 10px; text-align: center; cursor: pointer; display:flex; align-items:center; gap:15px; }
+    .game-icon { font-size: 35px; } .game-info { text-align:left; } .game-title { font-size: 16px; font-weight: bold; color: #fff; } .game-desc { font-size: 12px; color: #777; }
+    
+    /* PREMIUM GAME */
+    .premium-screen { background: linear-gradient(135deg, #2b1d00, #000); border: 2px solid #ffd700; text-align: center; padding: 20px; border-radius: 16px; }
+    .premium-reels { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+    .p-reel { font-size: 60px; width: 80px; height: 100px; background: #000; border: 1px solid #ffd700; border-radius: 8px; line-height: 100px; }
 
-    /* ЛОБІ ТА МАГАЗИН */
-    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 10px; text-align: center; cursor: pointer; position: relative; overflow: hidden; display:flex; align-items:center; gap:15px; }
-    .game-icon { font-size: 35px; } 
-    .game-info { text-align:left; }
-    .game-title { font-size: 16px; font-weight: bold; color: #fff; } 
-    .game-desc { font-size: 12px; color: #777; }
-    .premium-badge { background:gold; color:black; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px; }
+    /* ТОП ТАБИ */
+    .top-filter { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; }
+    .filter-btn { white-space: nowrap; padding: 8px 15px; font-size: 12px; border-radius: 20px; background: #222; border: 1px solid #333; color: #777; width: auto; }
+    .filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-    /* ІГРОВІ ЕЛЕМЕНТИ */
+    /* АДМІНКА */
+    .admin-user-card { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; border: 1px solid #333; }
+    .ticket-item { background: #222; padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; border-left: 3px solid var(--accent); }
+    .ticket-item.new { border-left-color: #ff3b30; }
+
+    /* ЧАТ */
+    .chat-window { height: 350px; overflow-y: auto; background: #111; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; }
+    .msg { padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; max-width: 80%; font-size: 14px; word-wrap: break-word; }
+    .msg.me { background: #005c4b; align-self: flex-end; color: #fff; }
+    .msg.other { background: #333; align-self: flex-start; color: #ddd; }
+    .msg-date { font-size: 9px; opacity: 0.5; display: block; text-align: right; margin-top: 3px; }
+
+    /* ПРОФІЛЬ */
+    .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; } 
+    .avatar-large { width: 70px; height: 70px; background: #222; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; } .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; margin-bottom: 5px; border-bottom: 1px solid #222; padding-bottom: 5px; }
+    .admin-badge { background: #ff3b30; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+
+    /* СТАНДАРТНІ ГЕЙМ ЕЛЕМЕНТИ */
     .reels-container { background: #000; border: 1px solid var(--accent); border-radius: 10px; padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; } .reel { font-size: 45px; width: 70px; height: 90px; line-height: 90px; background: #fff; color: #000; border-radius: 5px; text-align: center; }
     .roulette-wheel { width: 220px; height: 220px; border-radius: 50%; border: 6px solid #222; margin: 0 auto 15px; background: conic-gradient(#4cd964 0deg 18deg, #222 18deg 189deg, #b71c1c 189deg 360deg); transition: 4s cubic-bezier(0.1, 0.8, 0.1, 1); transform: rotate(0deg); }
     .bet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } .bet-btn { padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 1px solid #333; background: #222; color: #888; font-size: 11px; } .bet-btn.selected { border-color: var(--accent); color: #fff; background: #333; }
-    .chests-grid { display: grid; gap: 8px; margin-bottom: 15px; justify-content: center; grid-template-columns: repeat(3, 1fr); } .chest-item { background: #222; border-radius: 8px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; border:1px solid #333; } .chest-item.opened { background: #333; border-color: #fff; }
     
-    /* КАСА */
-    .payment-methods { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } .pay-btn { background: var(--input); border: 1px solid var(--border); padding: 10px 2px; border-radius: 8px; text-align: center; font-size: 10px; color: #aaa; cursor: pointer; } .pay-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(212, 175, 55, 0.1); }
-    .amount-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; } .amount-grid button { font-size: 12px; padding: 12px; margin: 0; }
-
-    /* ПРОФІЛЬ ТА ЗНАЙОМІ */
-    .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; } 
-    .avatar-large { width: 70px; height: 70px; background: #222; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; } .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
-    .admin-badge { background: #ff0000; color: #fff; font-size: 10px; font-weight: bold; padding: 3px 6px; border-radius: 4px; vertical-align: middle; margin-left: 5px; letter-spacing: 0.5px; }
-    .user-tag { color: #888; font-size: 12px; margin-top: 2px; font-style: italic; }
-    
-    .contact-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
-    .contact-info { display: flex; align-items: center; gap: 10px; }
-    .contact-avatar { width: 35px; height: 35px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 16px; border:1px solid #444; } .contact-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* SUPPORT CHAT */
-    .chat-window { height: 300px; overflow-y: auto; background: #111; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-    .msg { padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; max-width: 80%; font-size: 13px; }
-    .msg.user { background: #222; border: 1px solid var(--accent); align-self: flex-end; margin-left: auto; color:#fff; }
-    .msg.support { background: #333; align-self: flex-start; margin-right: auto; color:#ccc; }
-
-    /* НАВІГАЦІЯ */
-    .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #0a0a0a; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); } 
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 10px; width: 14%; height: 100%; transition: 0.2s; cursor: pointer; } 
-    .nav-item span.icon { font-size: 22px; margin-bottom: 4px; display: block; } 
-    .nav-item.active { color: var(--accent); } .nav-item.active span.icon { transform: scale(1.1); }
-
-    /* МОДАЛКИ */
+    /* NAV & MODAL */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav); border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); } 
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 10px; width: 16%; height: 100%; transition: 0.2s; cursor: pointer; } 
+    .nav-item span.icon { font-size: 22px; margin-bottom: 4px; display: block; } .nav-item.active { color: var(--accent); }
     #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index:9999; display:flex; justify-content:center; align-items:center; color:var(--accent); font-size:24px; flex-direction: column; }
-    #auth-screen, #modal-overlay, #transfer-modal, #promo-modal, #history-modal, #visa-form-modal, #support-modal, #view-user-modal, #tab-admin { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+    #auth-screen, #modal-overlay, #transfer-modal, #promo-modal, #history-modal, #visa-form-modal, #view-user-modal, #tab-admin, #admin-user-manage, #admin-chat-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
     #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 6000; width: 90%; max-width: 400px; pointer-events: none; } 
     .toast { background: #222; color: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; border-left: 4px solid var(--accent); box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-size: 14px; }
-    
     table { width: 100%; border-collapse: collapse; } td { padding: 12px 5px; border-bottom: 1px solid #333; color: #ccc; font-size: 14px; } 
   </style>
 </head>
@@ -95,7 +82,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v29.0</div>
+    <div>SlotOK v30.0 Grand</div>
   </div>
   <div id="toast-container"></div>
   
@@ -107,79 +94,94 @@
   <div class="container">
     
     <div id="tab-home" class="screen">
-        <div class="hero-banner"><div class="hero-title">WELCOME BONUS</div><div style="color:#aaa;">+250% на перший депозит</div></div>
-        <div class="section-title">🔥 Популярні</div>
-        <div class="games-scroll">
-            <div class="game-thumb" onclick="openGame('slots')"><span>🎰</span></div>
-            <div class="game-thumb" onclick="openGame('roulette')"><span>🎡</span></div>
-            <div class="game-thumb" onclick="openGame('crash')"><span>🚀</span></div>
+        <div class="box" style="background: linear-gradient(135deg, #d4af37, #b8860b); color: #000; text-align: center;">
+            <h2 style="margin:0;">PREMIUM GAME</h2>
+            <p style="font-size:12px;">Тільки для еліти. Вхід 50,000 ₴</p>
+            <button class="btn-outline" style="border-color:#000; color:#000; margin-top:10px;" onclick="openGame('premium')">ВІДКРИТИ</button>
         </div>
-        <div class="section-title">Магазин</div>
-        <div class="game-card" onclick="buyGame('premium_slot')">
-            <span class="game-icon">💎</span>
-            <div class="game-info">
-                <div class="game-title">Premium Slot</div>
-                <div class="game-desc">Ціна: 50,000 ₴</div>
-            </div>
-        </div>
+        <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Легендарні слоти</div></div></div>
+        <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div><div class="game-desc">Європейська рулетка</div></div></div>
+        <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Встигни забрати</div></div></div>
+        <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Три скрині</div></div></div>
     </div>
 
     <div id="tab-lobby" class="screen hidden">
-      <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Слоти</div></div></div>
-      <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div><div class="game-desc">Рулетка</div></div></div>
-      <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Краш</div></div></div>
-      <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки</div></div></div>
-      <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
-      <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Плінко</div></div></div>
+      <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div></div></div>
+      <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div></div></div>
+      <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div></div></div>
+      <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div></div></div>
+      <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div></div></div>
+      <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div></div></div>
     </div>
 
-    <div id="tab-slots" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div><div class="box"><input id="betAmountSlots" type="number" value="100"><button class="btn-gold" onclick="spinSlots()">КРУТИТИ</button></div></div>
-    <div id="tab-roulette" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="roulette-wrapper"><div class="roulette-pointer"></div><div class="roulette-wheel" id="wheel"></div></div><div class="box"><div class="bet-grid"><div class="bet-btn" data-color="red" onclick="selectRouletteBet('red', this)">RED</div><div class="bet-btn" data-color="green" onclick="selectRouletteBet('green', this)">ZERO</div><div class="bet-btn" data-color="black" onclick="selectRouletteBet('black', this)">BLACK</div></div><input id="betAmountRoulette" value="100"><button class="btn-gold" onclick="spinRoulette()">СТАРТ</button></div></div>
-    <div id="tab-crash" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="crash-screen"><div class="crash-rocket" id="crashRocket">🚀</div><div class="crash-multiplier" id="crashDisplay">1.00x</div></div><div class="box"><input id="betAmountCrash" value="100"><button class="btn-gold" id="crashBtn" onclick="startCrash()">СТАРТ</button><button class="btn-green hidden" id="crashCashoutBtn" onclick="cashoutCrash()">ЗАБРАТИ</button></div></div>
-    <div id="tab-chests" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="chests-grid" id="chestsGrid"></div></div><div class="box"><input id="betAmountChests" value="100"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ</button><p id="chestMsg" style="text-align:center;"></p></div></div>
-    <div id="tab-mines" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="mines-grid" id="minesGrid"></div></div><div class="box"><input id="betAmountMines" value="100"><button class="btn-gold" id="minesBtn" onclick="startMines()">СТАРТ</button><button class="btn-green hidden" id="minesCashoutBtn" onclick="cashoutMines()">ЗАБРАТИ</button></div></div>
-    <div id="tab-plinko" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div><div class="plinko-buckets"><div class="bucket">x5</div><div class="bucket">x2</div><div class="bucket">x0.5</div><div class="bucket">x0.2</div><div class="bucket">x0.5</div><div class="bucket">x2</div><div class="bucket">x5</div></div></div><div class="box"><input id="betAmountPlinko" value="100"><button class="btn-gold" onclick="dropPlinko()">КИНУТИ</button></div></div>
+    <div id="tab-premium" class="screen hidden">
+        <button class="btn-outline" onclick="switchTab('home')">⬅ Вихід</button>
+        <div class="premium-screen">
+            <h2 style="color:#ffd700; text-shadow:0 0 10px #ffd700;">ROYAL SLOTS</h2>
+            <div class="premium-reels">
+                <div class="p-reel" id="pr1">👑</div>
+                <div class="p-reel" id="pr2">👑</div>
+                <div class="p-reel" id="pr3">👑</div>
+            </div>
+            <p style="color:#fff;">Ставка: 50,000 ₴</p>
+            <button class="btn-gold" style="box-shadow: 0 0 20px #ffd700;" onclick="spinPremium()">SPIN (x100)</button>
+        </div>
+    </div>
+
+    <div id="tab-slots" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div><div class="box"><input id="betSlots" type="number" value="100"><button class="btn-gold" onclick="spinSlots()">КРУТИТИ</button></div></div>
+    <div id="tab-roulette" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="roulette-wheel" id="wheel"></div><div class="box"><div class="bet-grid"><div class="bet-btn" data-color="red" onclick="selectRouletteBet('red', this)">RED</div><div class="bet-btn" data-color="green" onclick="selectRouletteBet('green', this)">ZERO</div><div class="bet-btn" data-color="black" onclick="selectRouletteBet('black', this)">BLACK</div></div><input id="betRoulette" value="100"><button class="btn-gold" onclick="spinRoulette()">СТАРТ</button></div></div>
+    <div id="tab-chests" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="chests-grid" id="chestsGrid"></div></div><div class="box"><input id="betChests" value="100"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ</button></div></div>
+    <div id="tab-crash" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><h2 id="crashDisplay" style="text-align:center; font-size:40px;">1.00x</h2><button class="btn-gold" id="crashBtn" onclick="startCrash()">СТАРТ</button><button class="btn-green hidden" id="crashCashoutBtn" onclick="cashoutCrash()">ЗАБРАТИ</button></div></div>
+    <div id="tab-mines" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><h3>MINES</h3><input id="betMines" value="100"><button class="btn-gold" onclick="simpleGame('mines')">ГРАТИ</button></div></div>
+    <div id="tab-plinko" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><h3>PLINKO</h3><input id="betPlinko" value="100"><button class="btn-gold" onclick="simpleGame('plinko')">ГРАТИ</button></div></div>
 
     <div id="tab-cashier" class="screen hidden">
       <h3 style="color:#777; font-size:14px; margin-bottom:15px;">ПОПОВНЕННЯ</h3>
       <div class="payment-methods">
-          <div class="pay-btn selected" onclick="selectPay(this, 'Privat24')">🟢 Privat</div>
-          <div class="pay-btn" onclick="selectPay(this, 'Mono')">🐈 Mono</div>
-          <div class="pay-btn" onclick="selectPay(this, 'Visa')">💳 Visa</div>
-          <div class="pay-btn" onclick="selectPay(this, 'GPay')">🔵 G-Pay</div>
-          <div class="pay-btn" onclick="selectPay(this, 'Apple')">🍎 Pay</div>
-          <div class="pay-btn" onclick="selectPay(this, 'USDT')">₮ USDT</div>
-          <div class="pay-btn" onclick="selectPay(this, 'BTC')">₿ BTC</div>
-          <div class="pay-btn" onclick="selectPay(this, 'PayPal')">🅿️ PayPal</div>
+          <div class="pay-btn selected">🟢 Privat</div><div class="pay-btn">🐈 Mono</div><div class="pay-btn">💳 Visa</div><div class="pay-btn">🔵 G-Pay</div>
+          <div class="pay-btn">🍎 Pay</div><div class="pay-btn">₮ USDT</div><div class="pay-btn">₿ BTC</div><div class="pay-btn">🅿️ PayPal</div>
       </div>
       <div class="box"><div class="amount-grid"><button class="btn-outline" onclick="initDeposit(100)">100</button><button class="btn-outline" onclick="initDeposit(500)">500</button><button class="btn-outline" onclick="initDeposit(1000)">1k</button><button class="btn-outline" onclick="initDeposit(5000)">5k</button><button class="btn-outline" onclick="initDeposit(10000)">10k</button><button class="btn-outline" onclick="initDeposit(25000)">25k</button></div></div>
       <button class="btn-outline" style="border-color:var(--accent); color:var(--accent); margin-top:20px;" onclick="openTransferModal()">💸 Переказ Другу</button>
       <button class="btn-outline" onclick="openPromoModal()">🎁 Промокод</button>
     </div>
 
-    <div id="tab-contacts" class="screen hidden">
-        <h2 style="color:var(--accent); margin-bottom:15px;">Знайомі</h2>
-        <div class="box"><div style="display:flex; gap:10px;"><input id="addContactInput" placeholder="Нік або ID" style="margin:0;"><button class="btn-gold" style="width:auto; margin:0;" onclick="addContact()">+</button></div></div>
-        <div id="contactsList" style="margin-top:20px;"></div>
+    <div id="tab-top" class="screen hidden">
+        <div class="top-filter">
+            <button class="filter-btn active" onclick="setTopTab('all', this)">Загальний</button>
+            <button class="filter-btn" onclick="setTopTab('slots', this)">Слоти</button>
+            <button class="filter-btn" onclick="setTopTab('roulette', this)">Рулетка</button>
+            <button class="filter-btn" onclick="setTopTab('crash', this)">Краш</button>
+        </div>
+        <div class="box"><table id="topTable"></table></div>
     </div>
-
-    <div id="tab-top" class="screen hidden"><div class="box"><h3 style="text-align:center; color:#777;">ТОП ГРАВЦІВ</h3><table id="topTable"></table></div></div>
     
     <div id="tab-profile" class="screen hidden">
       <div class="box">
-        <div class="profile-header"><div class="avatar-large" id="currentAvatar">👤</div><div><div style="font-size:24px; font-weight:bold;"><span id="profileName">...</span> <span id="adminBadge" class="admin-badge hidden">АДМІНІСТРАЦІЯ</span></div><div class="user-tag" id="profileTag">Гравець</div></div></div>
+        <div class="profile-header"><div class="avatar-large" id="currentAvatar">👤</div><div><div style="font-size:24px; font-weight:bold;"><span id="profileName">...</span> <span id="adminBadge" class="admin-badge hidden">АДМІНІСТРАЦІЯ</span></div><div style="font-size:12px; color:#777; margin-top:5px;" id="profileTag">...</div></div></div>
         <input id="bioInput" placeholder="Змінити статус..." onchange="updateBio(this.value)">
+        <div class="stat-row"><span>ID:</span> <span id="profileId">...</span></div>
+        <div class="stat-row"><span>Email:</span> <span id="profileEmail">...</span></div>
+        <div class="stat-row"><span>Ігор зіграно:</span> <span id="statGames">0</span></div>
+        <div class="stat-row"><span>Макс. виграш:</span> <span id="statMaxWin" style="color:var(--accent)">0</span></div>
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-outline" onclick="document.getElementById('avatarInput').click()">📷 Фото</button>
+            <button class="btn-outline" onclick="openHistoryModal()">📜 Історія</button>
+        </div>
         <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(this)">
-        <button class="btn-outline" onclick="document.getElementById('avatarInput').click()">📷 Змінити фото</button>
-        <button class="btn-outline" onclick="openHistoryModal()">📜 Історія</button>
-        <div style="margin-top:15px; color:#777; font-size:14px;">ID: <span id="profileId">...</span></div>
       </div>
-      <div class="box hidden" id="adminPanelBtnBox" style="border-color: #ff3b30;"><h3 style="color:#ff3b30; text-align:center; margin-top:0;">ADMIN ZONE</h3><button class="btn-red" onclick="switchTab('admin')">ВХІД В ПАНЕЛЬ</button></div>
+      <div class="box hidden" id="adminPanelBtnBox" style="border-color: #ff3b30; text-align:center;"><button class="btn-red" onclick="switchTab('admin')">ПАНЕЛЬ АДМІНІСТРАТОРА</button></div>
+    </div>
+
+    <div id="tab-contacts" class="screen hidden">
+        <div class="box"><div style="display:flex; gap:10px;"><input id="addContactInput" placeholder="Нікнейм або ID" style="margin:0;"><button class="btn-gold" style="width:auto; margin:0;" onclick="addContact()">+</button></div></div>
+        <div id="contactsList" style="margin-top:20px;"></div>
     </div>
 
     <div id="tab-more" class="screen hidden">
       <div class="box">
-        <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки</button>
+        <button class="btn-outline" onclick="openSupportModal()">💬 Підтримка</button>
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
       </div>
@@ -189,54 +191,55 @@
     <div id="tab-admin" class="screen hidden">
        <button class="btn-outline" onclick="switchTab('profile')">⬅ Вихід</button>
        <h2 style="color:var(--accent);">Admin Panel</h2>
-       <div class="box"><button class="btn-red" onclick="wipeEconomy()" style="font-size:18px;">💀 WIPE ECONOMY (1000 ₴)</button></div>
-       <div class="box"><div id="userList" style="margin-top:10px;"></div><button class="btn-outline" onclick="loadUserList()">🔄 Оновити</button></div>
+       <div class="box">
+           <button class="btn-outline" onclick="loadAdminTickets()">📩 Підтримка (Тікети)</button>
+           <button class="btn-red" onclick="wipeEconomy()">💀 WIPE ALL (1000 ₴)</button>
+       </div>
+       <h3 style="color:#fff;">Гравці:</h3>
+       <input id="adminSearch" placeholder="Пошук гравця..." oninput="filterUserList(this.value)">
+       <div id="userList" style="margin-top:10px;"></div>
     </div>
   </div>
 
   <div id="auth-screen">
       <div style="text-align:center; margin-bottom:30px;"><h1 style="color:var(--accent); font-size:50px;">SlotOK</h1></div>
-      
       <div id="loginForm">
-          <h3 style="color:#fff;">Вхід</h3>
-          <input id="loginName" placeholder="Нікнейм">
-          <input id="loginPass" type="password" placeholder="Пароль">
-          <button class="btn-gold" onclick="authLogin()">УВІЙТИ</button>
-          <div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(true)">Немає акаунту? Реєстрація</div>
+          <h3 style="color:#fff;">Вхід</h3><input id="loginName" placeholder="Нікнейм"><input id="loginPass" type="password" placeholder="Пароль"><button class="btn-gold" onclick="authLogin()">УВІЙТИ</button><div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(true)">Реєстрація</div>
       </div>
-
       <div id="regForm" class="hidden">
-          <h3 style="color:#fff;">Реєстрація</h3>
-          <input id="regEmail" placeholder="Email (user@mail.com)">
-          <input id="regName" placeholder="Нікнейм">
-          <input id="regPass" type="password" placeholder="Пароль (мін. 8 симв)">
-          <button class="btn-green" onclick="authRegister()">СТВОРИТИ АКАУНТ</button>
-          <div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(false)">Вже є акаунт? Вхід</div>
+          <h3 style="color:#fff;">Реєстрація</h3><input id="regEmail" placeholder="Email (обов'язково)"><input id="regName" placeholder="Нікнейм"><input id="regPass" type="password" placeholder="Пароль (мін 8 симв, без пробілів)"><button class="btn-green" onclick="authRegister()">СТВОРИТИ</button><div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(false)">Вхід</div>
       </div>
   </div>
 
-  <div id="transfer-modal" class="hidden"><button class="btn-outline" onclick="document.getElementById('transfer-modal').classList.add('hidden')" style="width:50px;">⬅</button><h2>Переказ</h2><input id="transferTo" placeholder="Нік"><input id="transferAmount" type="number" placeholder="Сума"><button class="btn-gold" onclick="sendMoney()">НАДІСЛАТИ</button></div>
-  <div id="promo-modal" class="hidden"><button class="btn-outline" onclick="document.getElementById('promo-modal').classList.add('hidden')" style="width:50px;">⬅</button><h2>Промокод</h2><input id="promoInput"><button class="btn-gold" onclick="activatePromo()">АКТИВУВАТИ</button></div>
-  <div id="history-modal" class="hidden"><button class="btn-outline" onclick="document.getElementById('history-modal').classList.add('hidden')" style="width:50px;">⬅</button><h2>Історія</h2><div id="historyList"></div></div>
-  <div id="visa-form-modal" class="hidden"><button class="btn-outline" onclick="document.getElementById('visa-form-modal').classList.add('hidden')" style="width:50px;">⬅</button><h2>Visa</h2><input id="visaNum" placeholder="Номер"><div style="display:flex; gap:10px"><input placeholder="MM/YY"><input placeholder="CVV"></div><button class="btn-gold" onclick="processVisaPayment()">ОПЛАТИТИ</button></div>
-  
-  <div id="support-modal" class="hidden" style="height:100%;">
-      <button class="btn-outline" onclick="document.getElementById('support-modal').classList.add('hidden')" style="width:50px;">⬅</button>
-      <h2>Чат Підтримки</h2>
-      <div id="supportChatBox" class="chat-window"></div>
-      <div style="display:flex; gap:10px;"><input id="supportMsg" placeholder="Повідомлення"><button class="btn-gold" style="width:auto;" onclick="sendSupportMsg()">➤</button></div>
-  </div>
-
-  <div id="view-user-modal" class="hidden" onclick="this.classList.add('hidden')">
-      <div class="user-card" onclick="event.stopPropagation()">
-          <div class="avatar-large" id="viewUserAvatar" style="margin:0 auto 15px auto;">👤</div>
-          <h2 style="margin:0; color:var(--accent)" id="viewUserName">Name</h2>
-          <div class="user-tag" id="viewUserTag" style="margin-bottom:10px;">Гравець</div>
-          <p style="color:#777; margin:5px 0 20px 0;">ID: <span id="viewUserId">000</span></p>
-          <div style="font-size:28px; font-weight:bold; margin-bottom:20px;"><span id="viewUserBal">0</span> ₴</div>
-          <button class="btn-outline" onclick="document.getElementById('view-user-modal').classList.add('hidden')">Закрити</button>
+  <div id="admin-user-manage" class="hidden">
+      <button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button>
+      <h2 id="admManageName" style="color:var(--accent)">User</h2>
+      <p id="admManageInfo" style="color:#777;">...</p>
+      <div class="box">
+          <input id="admAmount" type="number" placeholder="Сума (+ або -)">
+          <button class="btn-green" onclick="admGiveMoney()">Змінити баланс</button>
+          <input id="admTag" placeholder="Новий статус (тег)">
+          <button class="btn-outline" onclick="admSetTag()">Змінити статус</button>
+      </div>
+      <div class="box" style="border-color:red;">
+          <button class="btn-red" onclick="admBanUser()">🚫 БАН / РОЗБАН</button>
+          <button class="btn-red" onclick="admDeleteUser()">❌ ВИДАЛИТИ АКАУНТ</button>
       </div>
   </div>
+
+  <div id="admin-chat-view" class="hidden">
+      <button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button>
+      <h2 id="admChatUser">Chat</h2>
+      <div id="admChatBox" class="chat-window"></div>
+      <div style="display:flex; gap:10px;"><input id="admChatMsg" placeholder="Відповідь"><button class="btn-gold" style="width:auto;" onclick="admSendReply()">➤</button></div>
+  </div>
+
+  <div id="support-modal" class="hidden"><button class="btn-outline" onclick="document.getElementById('support-modal').classList.add('hidden')" style="width:50px;">⬅</button><h2>Чат Підтримки</h2><div id="supportChatBox" class="chat-window"></div><div style="display:flex; gap:10px;"><input id="supportMsg" placeholder="Повідомлення"><button class="btn-gold" style="width:auto;" onclick="sendSupportMsg()">➤</button></div></div>
+  <div id="view-user-modal" class="hidden" onclick="this.classList.add('hidden')"><div class="user-card" onclick="event.stopPropagation()"><div class="box"><div class="avatar-large" id="viewUserAvatar" style="margin:0 auto 15px auto;">👤</div><h2 style="margin:0; color:var(--accent)" id="viewUserName">Name</h2><div id="viewUserTag" style="color:#777; margin-bottom:5px;"></div><p style="color:#555;">ID: <span id="viewUserId">000</span></p><div style="font-size:28px; font-weight:bold; margin-bottom:20px;"><span id="viewUserBal">0</span> ₴</div><button class="btn-outline" onclick="document.getElementById('view-user-modal').classList.add('hidden')">Закрити</button></div></div></div>
+  <div id="transfer-modal" class="hidden"><button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button><h2>Переказ</h2><input id="transferTo" placeholder="Нік"><input id="transferAmount" type="number" placeholder="Сума"><button class="btn-gold" onclick="sendMoney()">НАДІСЛАТИ</button></div>
+  <div id="promo-modal" class="hidden"><button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button><h2>Промокод</h2><input id="promoInput"><button class="btn-gold" onclick="activatePromo()">АКТИВУВАТИ</button></div>
+  <div id="history-modal" class="hidden"><button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button><h2>Історія</h2><div id="historyList"></div></div>
+  <div id="visa-form-modal" class="hidden"><button class="btn-outline" onclick="this.parentElement.classList.add('hidden')" style="width:50px;">⬅</button><h2>Visa/Mastercard</h2><input id="visaNum" placeholder="Номер картки"><div style="display:flex; gap:10px"><input placeholder="MM/YY"><input placeholder="CVV"></div><button class="btn-gold" onclick="processVisaPayment()">ОПЛАТИТИ</button></div>
 
   <nav class="bottom-nav">
     <div class="nav-item active" onclick="switchTab('home', this)"><span class="icon">🏠</span><span>Головна</span></div>
@@ -252,10 +255,9 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let currentUser = null; let userData = {}; let currentRouletteBet = null;
-    let selectedPayment = 'Privat24'; const MAX_BET = 100000; // Increased
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+    let currentUser = null; let userData = {}; let isRegMode = false; let currentRouletteBet = null;
+    const MAX_BET = 100000; const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
     setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); }, 2000);
     const savedUser = localStorage.getItem("royal_online_user");
     if(savedUser) { currentUser = savedUser; startDataSync(); }
@@ -267,11 +269,11 @@
             const data = snapshot.val();
             if(!data) { logout(); return; }
             userData = data; 
-            if(userData.bannedUntil && userData.bannedUntil > Date.now()) { alert("БАН!"); logout(); return; }
+            if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!"); logout(); return; }
             document.getElementById('auth-screen').classList.add('hidden');
-            updateUI(); loadContacts(); checkAdmin();
+            updateUI(); loadContacts(); checkAdmin(); loadSupportChat();
         });
-        db.ref('users').orderByChild('balance').limitToLast(10).on('value', snap => renderTop(snap.val()));
+        db.ref('users').orderByChild('balance').limitToLast(20).on('value', snap => renderTop(snap.val(), 'all'));
     }
 
     function updateUI() {
@@ -281,21 +283,20 @@
         document.getElementById('profileId').textContent = userData.id || '---';
         document.getElementById('profileEmail').textContent = userData.email || "-";
         document.getElementById('profileTag').textContent = userData.tag || "Гравець";
+        document.getElementById('statGames').textContent = userData.gamesPlayed || 0;
+        document.getElementById('statMaxWin').textContent = formatNumber(userData.maxWin || 0);
         const avDiv = document.getElementById('currentAvatar');
         avDiv.innerHTML = (userData.avatar && userData.avatar.length > 20) ? `<img src="${userData.avatar}">` : '👤';
     }
 
     function checkAdmin() {
-        // Force admin button for 'theivankoo' specifically
-        if (currentUser.toLowerCase() === 'theivankoo') {
+        const name = currentUser.toLowerCase();
+        if (name === 'theivankoo' || name === 'admin' || userData.isAdmin === true) {
             document.getElementById('adminPanelBtnBox').classList.remove('hidden');
             document.getElementById('adminBadge').classList.remove('hidden');
-        } else if (userData.isAdmin === true) {
-             document.getElementById('adminPanelBtnBox').classList.remove('hidden');
-             document.getElementById('adminBadge').classList.remove('hidden');
         } else {
-             document.getElementById('adminPanelBtnBox').classList.add('hidden');
-             document.getElementById('adminBadge').classList.add('hidden');
+            document.getElementById('adminPanelBtnBox').classList.add('hidden');
+            document.getElementById('adminBadge').classList.add('hidden');
         }
     }
 
@@ -303,192 +304,187 @@
         if(num >= 1000000000) return (num/1000000000).toFixed(1) + 'B';
         if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
         if(num >= 1000) return (num/1000).toFixed(1) + 'k';
-        return num;
+        return num.toLocaleString();
     }
 
     function notify(msg, type='info') { const c = document.getElementById('toast-container'); const d = document.createElement('div'); d.className = `toast ${type}`; d.innerHTML = `<span>${msg}</span>`; c.appendChild(d); setTimeout(() => d.remove(), 3000); }
-    function playSound(type) { if(audioCtx.state === 'suspended') audioCtx.resume(); const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); const t=audioCtx.currentTime; if(type==='click'){o.frequency.value=600;g.gain.exponentialRampToValueAtTime(0.01,t+0.1);o.start(t);o.stop(t+0.1);} else if(type==='win'){o.type='triangle';o.frequency.setValueAtTime(500,t);o.frequency.linearRampToValueAtTime(1000,t+0.5);g.gain.linearRampToValueAtTime(0,t+0.5);o.start(t);o.stop(t+0.5);} }
-    function addToHistory(msg, type='neutral') { const item = { text: msg, type: type, date: Date.now() }; db.ref('users/' + currentUser + '/history').push(item); }
+    function playSound(type) { if(audioCtx.state==='suspended') audioCtx.resume(); const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); const t=audioCtx.currentTime; if(type==='click'){o.frequency.value=600;g.gain.exponentialRampToValueAtTime(0.01,t+0.1);o.start(t);o.stop(t+0.1);} else if(type==='win'){o.type='triangle';o.frequency.setValueAtTime(500,t);o.frequency.linearRampToValueAtTime(1000,t+0.5);g.gain.linearRampToValueAtTime(0,t+0.5);o.start(t);o.stop(t+0.5);} }
     function validateBet(amount) { const bet = Math.abs(parseInt(amount)); if(isNaN(bet) || bet <= 0 || bet > MAX_BET || userData.balance < bet) { notify("Помилка ставки", "error"); return false; } return bet; }
-
-    // --- AUTH LOGIC (Updated) ---
-    function toggleAuthMode(reg) {
-        document.getElementById('loginForm').classList.toggle('hidden', reg);
-        document.getElementById('regForm').classList.toggle('hidden', !reg);
-    }
-
-    function authLogin() {
-        const name = document.getElementById('loginName').value.trim();
-        const pass = document.getElementById('loginPass').value;
-        if(!name || !pass) return notify("Заповніть поля", "error");
-        
-        db.ref('users/'+name).once('value').then(s => {
-            if(s.exists() && s.val().pass == pass) {
-                currentUser = name;
-                localStorage.setItem("royal_online_user", name);
-                startDataSync();
-            } else {
-                notify("Невірний нік або пароль", "error");
-            }
-        });
-    }
-
-    function authRegister() {
-        const email = document.getElementById('regEmail').value.trim();
-        const name = document.getElementById('regName').value.trim();
-        const pass = document.getElementById('regPass').value;
-        
-        if(!email || !name || !pass) return notify("Заповніть всі поля", "error");
-        if(pass.length < 8 || pass.includes(' ') || pass.includes('.')) return notify("Пароль: мін 8 симв, без пробілів/точок", "error");
-
-        db.ref('users/'+name).once('value').then(s => {
-            if(s.exists()) {
-                notify("Цей нікнейм зайнятий", "error");
-            } else {
-                const newId = Math.floor(Math.random() * 900000) + 100000;
-                db.ref('users/'+name).set({
-                    pass: pass,
-                    email: email,
-                    balance: 1000,
-                    id: newId,
-                    tag: "Новачок"
-                }).then(() => {
-                    notify("Акаунт створено!", "success");
-                    toggleAuthMode(false); // Switch to login
-                });
-            }
-        });
-    }
-
-    function logout() { localStorage.removeItem("royal_online_user"); location.reload(); }
-
-    // --- GAMES ---
-    // Roulette Fixed
-    function selectRouletteBet(color, el) { document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); currentRouletteBet = color; playSound('click'); }
-    function spinRoulette() {
-        const bet = validateBet(document.getElementById('betAmountRoulette').value); if(!bet || !currentRouletteBet) return;
-        db.ref('users/' + currentUser).update({balance: userData.balance - bet}); playSound('spin_start');
-        const randDeg = Math.random() * 360; let resultColor = 'black'; 
-        if(randDeg <= 18) resultColor = 'green'; else if(randDeg <= 189) resultColor = 'red'; else resultColor = 'black';
-        const wheel = document.getElementById('wheel'); const totalRot = 1800 + (360 - randDeg);
-        wheel.style.transform = `rotate(${totalRot}deg)`;
-        setTimeout(() => {
-            playSound('reel_stop'); let win = 0;
-            if(currentRouletteBet === resultColor) { win = (resultColor === 'green') ? bet * 14 : bet * 2; db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win)); playSound('win'); notify(`WIN: ${resultColor.toUpperCase()}`, "success"); addToHistory(`Roulette: +${win}`, 'log-win'); } 
-            else { notify("LOSS", "error"); addToHistory(`Roulette: -${bet}`, 'log-loss'); }
-        }, 4000);
-    }
-    // Slots
-    function spinSlots() { const bet = validateBet(document.getElementById('betAmountSlots').value); if(!bet) return; db.ref('users/' + currentUser).update({balance: userData.balance - bet}); playSound('spin_start'); const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')]; const sym = ["🍒", "🍋", "7", "💎", "🔔"]; let count = 0; let int = setInterval(() => { reels.forEach(r => r.textContent = sym[Math.floor(Math.random()*sym.length)]); count++; if(count > 10) { clearInterval(int); finishSlots(bet); } }, 100); }
-    function finishSlots(bet) { playSound('reel_stop'); const r = Math.random(); let win = 0; let res = ["🍒","🍋","🔔"]; if(r < 0.01) { res = ["7","7","7"]; win = bet*50; } else if(r < 0.05) { res = ["💎","💎","💎"]; win = bet*20; } else if(r < 0.15) { res = ["🍒","🍒","🍒"]; win = bet*3; } document.getElementById('r1').textContent = res[0]; document.getElementById('r2').textContent = res[1]; document.getElementById('r3').textContent = res[2]; if(win > 0) { db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win)); playSound('win'); notify(`WIN: ${win}`, "success"); addToHistory(`Slots: +${win}`, 'log-win'); } else { addToHistory(`Slots: -${bet}`, 'log-loss'); } }
-    // Chests, Mines, Plinko, Crash - keeping them concise
-    function startChests(){ const bet = validateBet(document.getElementById('betAmountChests').value); if(!bet) return; db.ref('users/'+currentUser).update({balance:userData.balance-bet}); const grid=document.getElementById('chestsGrid'); grid.innerHTML=""; for(let i=0;i<3;i++){ const d=document.createElement('div'); d.className="chest-item"; d.textContent="📦"; d.onclick=()=>{ const w=Math.random()>0.5?bet*2.5:0; d.textContent=w?"💰":"💨"; if(w){ db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w)); playSound('win'); notify(`+${w}`); } else playSound('error'); }; grid.appendChild(d); }}
-    function startMines(){ notify("Mines - незабаром повна версія"); } 
-    function dropPlinko(){ notify("Plinko - незабаром повна версія"); }
-    function startCrash(){ notify("Crash - незабаром повна версія"); }
-    function buyGame(type) {
-        if(type === 'premium_slot') {
-            if(userData.balance < 50000) return notify("Мало грошей (50k)", "error");
-            db.ref('users/'+currentUser).update({balance: userData.balance - 50000});
-            notify("Куплено! (Demo)", "success");
+    
+    function recordStats(winAmount, gameName) {
+        const updates = {};
+        updates[`users/${currentUser}/gamesPlayed`] = (userData.gamesPlayed || 0) + 1;
+        if(winAmount > (userData.maxWin || 0)) updates[`users/${currentUser}/maxWin`] = winAmount;
+        if(winAmount > 0) updates[`users/${currentUser}/stats/${gameName}`] = (userData.stats?.[gameName] || 0) + winAmount;
+        db.ref().update(updates);
+        if(winAmount > 0) {
+            db.ref(`users/${currentUser}/history`).push({text: `${gameName}: +${winAmount}`, type: 'win', date: Date.now()});
         }
     }
 
-    // --- SOCIAL & PROFILE ---
-    function updateBio(val) { db.ref('users/'+currentUser).update({tag: val}); notify("Статус оновлено"); }
+    // --- GAMES ---
+    // Premium
+    function spinPremium() {
+        if(userData.balance < 50000) return notify("Вхід: 50,000 ₴", "error");
+        db.ref('users/'+currentUser).update({balance: userData.balance - 50000});
+        playSound('spin_start');
+        
+        // Visual spin
+        const reels = document.querySelectorAll('.p-reel');
+        let count = 0;
+        const sym = ["👑", "💎", "⚜️", "🍒"];
+        let int = setInterval(() => {
+            reels.forEach(r => r.textContent = sym[Math.floor(Math.random()*sym.length)]);
+            count++; if(count > 15) { clearInterval(int); finishPremium(); }
+        }, 80);
+    }
+    function finishPremium() {
+        const rand = Math.random();
+        let win = 0; let res = ["🍒","⚜️","💎"];
+        if(rand < 0.05) { res = ["👑","👑","👑"]; win = 50000 * 100; } // 5M Jackpot
+        else if(rand < 0.15) { res = ["💎","💎","💎"]; win = 50000 * 10; }
+        else if(rand < 0.30) { res = ["⚜️","⚜️","⚜️"]; win = 50000 * 2; }
+        
+        document.getElementById('pr1').textContent = res[0];
+        document.getElementById('pr2').textContent = res[1];
+        document.getElementById('pr3').textContent = res[2];
+        
+        if(win > 0) {
+            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+            notify(`JACKPOT: ${formatNumber(win)}`, "success");
+            playSound('win');
+            recordStats(win, 'premium');
+        } else { notify("Try again", "error"); }
+    }
+
+    // Standard Games
+    function spinSlots() { const b=validateBet(document.getElementById('betAmountSlots').value); if(!b) return; db.ref('users/'+currentUser).update({balance:userData.balance-b}); playSound('spin_start'); setTimeout(()=>{ const w=Math.random()<0.3?b*2:0; if(w){ db.ref('users/'+currentUser+'/balance').set(userData.balance+w); notify(`+${w}`); playSound('win'); recordStats(w, 'slots'); } },1000); }
+    function selectRouletteBet(c,e){ document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('selected')); e.classList.add('selected'); currentRouletteBet=c; playSound('click'); }
+    function spinRoulette(){ const b=validateBet(document.getElementById('betAmountRoulette').value); if(!b||!currentRouletteBet) return; db.ref('users/'+currentUser).update({balance:userData.balance-b}); playSound('spin_start'); 
+    const wheel=document.getElementById('wheel'); const rot=1800+Math.random()*360; wheel.style.transform=`rotate(${rot}deg)`;
+    setTimeout(()=>{ const r=Math.random(); let w=0; let c='black'; if(r<0.05) c='green'; else if(r<0.5) c='red'; 
+    if(c===currentRouletteBet){ w=c==='green'?b*14:b*2; db.ref('users/'+currentUser+'/balance').set(userData.balance+w); notify(`+${w}`); playSound('win'); recordStats(w, 'roulette'); } else notify("Loss","error"); },4000); }
+    function startChests(){ const b=validateBet(document.getElementById('betAmountChests').value); if(!b)return; db.ref('users/'+currentUser).update({balance:userData.balance-b}); const g=document.getElementById('chestsGrid'); g.innerHTML=""; for(let i=0;i<3;i++){ const d=document.createElement('div'); d.className="chest-item"; d.textContent="📦"; d.onclick=()=>{ const w=Math.random()>0.5?b*2.5:0; d.textContent=w?"💰":"💨"; if(w){ db.ref('users/'+currentUser+'/balance').set(userData.balance+w); notify(`+${w}`); playSound('win'); recordStats(w,'chests'); } setTimeout(()=>startChests(),2000); }; g.appendChild(d); }}
+    function startCrash() { const b=validateBet(document.getElementById('betAmountCrash').value); if(!b) return; db.ref('users/'+currentUser).update({balance:userData.balance-b}); document.getElementById('crashBtn').classList.add('hidden'); document.getElementById('crashCashoutBtn').classList.remove('hidden'); let m=1.00; let crash=1+Math.random()*5; let int=setInterval(()=>{ m+=0.05; document.getElementById('crashDisplay').textContent=m.toFixed(2)+'x'; if(m>=crash){ clearInterval(int); notify("Boom!","error"); document.getElementById('crashBtn').classList.remove('hidden'); document.getElementById('crashCashoutBtn').classList.add('hidden'); } },100); document.getElementById('crashCashoutBtn').onclick=()=>{ clearInterval(int); const w=Math.floor(b*m); db.ref('users/'+currentUser+'/balance').set(userData.balance+w); notify(`+${w}`); recordStats(w,'crash'); document.getElementById('crashBtn').classList.remove('hidden'); document.getElementById('crashCashoutBtn').classList.add('hidden'); }; }
+    function simpleGame(n){ notify(n+" - скоро"); }
+
+    // --- AUTH ---
+    function toggleAuthMode(reg) { document.getElementById('loginForm').classList.toggle('hidden', reg); document.getElementById('regForm').classList.toggle('hidden', !reg); }
+    function authLogin() { const n=document.getElementById('loginName').value.trim(); const p=document.getElementById('loginPass').value; if(!n||!p)return notify("Error","error"); db.ref('users/'+n).once('value',s=>{ if(s.exists()&&s.val().pass==p){ currentUser=n; localStorage.setItem("royal_online_user",n); startDataSync(); } else notify("Невірно","error"); }); }
+    function authRegister() { const e=document.getElementById('regEmail').value.trim(); const n=document.getElementById('regName').value.trim(); const p=document.getElementById('regPass').value; 
+    if(!e||!n||!p)return notify("Заповніть все","error"); if(p.length<8||p.includes(' ')||p.includes('.'))return notify("Пароль: мін 8, без пробілів/точок","error");
+    db.ref('users/'+n).once('value',s=>{ if(s.exists()) notify("Зайнято","error"); else { const id=Math.floor(Math.random()*900000)+100000; db.ref('users/'+n).set({pass:p,email:e,balance:1000,id,tag:"Новачок"}).then(()=>{ notify("OK"); toggleAuthMode(false); }); } }); }
+    function logout(){ localStorage.removeItem("royal_online_user"); location.reload(); }
+
+    // --- ADMIN (FULL) ---
+    let admSelectedUser = null;
+    function loadUserList() { const d=document.getElementById('userList'); d.innerHTML="Loading..."; db.ref('users').once('value',s=>{ d.innerHTML=""; const v=s.val(); for(let n in v){ if(n===currentUser)continue; d.innerHTML+=`<div class="admin-user-card" onclick="openAdminManage('${n}')"><b>${n}</b> <span>${formatNumber(v[n].balance)}</span></div>`; } }); }
+    function openAdminManage(n) { admSelectedUser=n; document.getElementById('admin-user-manage').classList.remove('hidden'); document.getElementById('admManageName').textContent=n; }
+    function admGiveMoney() { const a=parseInt(document.getElementById('admAmount').value); if(!a)return; db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a)); notify("Done"); }
+    function admSetTag() { const t=document.getElementById('admTag').value; if(t) db.ref('users/'+admSelectedUser).update({tag:t}); notify("Tag set"); }
+    function admBanUser() { db.ref('users/'+admSelectedUser).update({banned: true}); notify("BANNED"); }
+    function admDeleteUser() { if(confirm("DELETE?")) db.ref('users/'+admSelectedUser).remove().then(()=>{ notify("Deleted"); document.getElementById('admin-user-manage').classList.add('hidden'); loadUserList(); }); }
+    
+    // Admin Support
+    function loadAdminTickets() {
+        const d = document.getElementById('userList'); d.innerHTML="Loading tickets...";
+        db.ref('support_chats').once('value', s => {
+            d.innerHTML = "";
+            const v = s.val();
+            if(!v) { d.innerHTML="No tickets"; return; }
+            for(let uid in v) {
+                d.innerHTML += `<div class="ticket-item" onclick="openAdminChat('${uid}')">User: ${uid}</div>`;
+            }
+        });
+    }
+    function openAdminChat(uid) {
+        admSelectedUser = uid; // reusing var for chat target
+        document.getElementById('admin-chat-view').classList.remove('hidden');
+        document.getElementById('admChatUser').textContent = uid;
+        const box = document.getElementById('admChatBox');
+        db.ref('support_chats/'+uid).limitToLast(20).on('child_added', s => {
+            const m = s.val();
+            box.innerHTML += `<div class="msg ${m.sender==='admin'?'me':'other'}">${m.text}</div>`;
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+    function admSendReply() {
+        const t = document.getElementById('admChatMsg').value;
+        if(t) { db.ref('support_chats/'+admSelectedUser).push({text:t, sender:'admin', time:Date.now()}); document.getElementById('admChatMsg').value=""; }
+    }
+
+    // --- USER SUPPORT ---
+    function loadSupportChat() {
+        const box = document.getElementById('supportChatBox');
+        db.ref('support_chats/'+currentUser).limitToLast(20).on('child_added', s => {
+            const m = s.val();
+            // User sees their msg as 'me', admin as 'other'
+            const cls = m.sender === 'user' ? 'me' : 'other';
+            box.innerHTML += `<div class="msg ${cls}">${m.text}</div>`;
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+    function sendSupportMsg() {
+        const t = document.getElementById('supportMsg').value;
+        if(t) { db.ref('support_chats/'+currentUser).push({text:t, sender:'user', time:Date.now()}); document.getElementById('supportMsg').value=""; }
+    }
+
+    // --- LEADERBOARD & PROFILE VIEW ---
+    let currentTopFilter = 'all';
+    function setTopTab(type, el) { currentTopFilter=type; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); db.ref('users').once('value', s=>renderTop(s.val(), type)); }
+    function renderTop(d, type) {
+        if(!d) return;
+        let arr = [];
+        for(let k in d) arr.push({n:k, ...d[k]});
+        
+        if(type === 'all') arr.sort((a,b)=>b.balance-a.balance);
+        else if(type === 'slots') arr.sort((a,b)=>(b.stats?.slots||0)-(a.stats?.slots||0));
+        else if(type === 'roulette') arr.sort((a,b)=>(b.stats?.roulette||0)-(a.stats?.roulette||0));
+        else if(type === 'crash') arr.sort((a,b)=>(b.stats?.crash||0)-(a.stats?.crash||0));
+
+        let h = "";
+        arr.slice(0,50).forEach((u,i) => {
+            let val = type==='all' ? u.balance : (u.stats?.[type]||0);
+            const av = u.avatar && u.avatar.length > 20 ? `<img src="${u.avatar}" style="width:20px;height:20px;border-radius:50%">` : '👤';
+            h += `<tr onclick="openUserProfile('${u.n}')"><td>${i+1}</td><td>${av} ${u.n}</td><td>${formatNumber(val)}</td></tr>`;
+        });
+        document.getElementById('topTable').innerHTML = h;
+    }
     window.openUserProfile = function(name) {
-        if(name === currentUser) return switchTab('profile');
-        db.ref('users/' + name).once('value').then(s => {
-            const d = s.val();
+        if(name===currentUser) return switchTab('profile');
+        db.ref('users/'+name).once('value', s=>{
+            const d=s.val();
             if(d) {
-                document.getElementById('viewUserName').textContent = name;
-                document.getElementById('viewUserId').textContent = d.id;
-                document.getElementById('viewUserBal').textContent = formatNumber(d.balance);
-                document.getElementById('viewUserTag').textContent = d.tag || "Гравець";
-                const avDiv = document.getElementById('viewUserAvatar');
-                avDiv.innerHTML = (d.avatar && d.avatar.length > 20) ? `<img src="${d.avatar}">` : '👤';
+                document.getElementById('viewUserName').textContent=name;
+                document.getElementById('viewUserId').textContent=d.id;
+                document.getElementById('viewUserBal').textContent=formatNumber(d.balance);
+                document.getElementById('viewUserTag').textContent=d.tag||"Гравець";
+                const av = document.getElementById('viewUserAvatar');
+                av.innerHTML = (d.avatar&&d.avatar.length>20) ? `<img src="${d.avatar}">` : '👤';
                 document.getElementById('view-user-modal').classList.remove('hidden');
             }
         });
     }
 
-    function addContact() {
-        const input = document.getElementById('addContactInput').value.trim();
-        if(!input) return;
-        // Search by Nick OR ID
-        db.ref('users').once('value').then(all => {
-            let found = null;
-            all.forEach(s => {
-                if (s.key === input || s.val().id == input) found = s.key;
-            });
-            if(found) {
-                 if (found === currentUser) return notify("Це ви", "error");
-                 db.ref('users/'+currentUser+'/contacts/'+found).set({avatar: '👤'});
-                 notify("Додано!"); loadContacts();
-            } else notify("Не знайдено", "error");
-        });
-    }
-    
-    function loadContacts() {
-        const list = document.getElementById('contactsList');
-        if(!userData.contacts) { list.innerHTML = "<div style='text-align:center; color:#777;'>Пусто</div>"; return; }
-        list.innerHTML = "";
-        for(let name in userData.contacts) {
-            list.innerHTML += `<div class="contact-row"><div class="contact-info"><b>${name}</b></div><div class="contact-actions"><button class="btn-green btn-icon" onclick="quickSend('${name}')">💸</button><button class="btn-outline btn-icon" onclick="openUserProfile('${name}')">👤</button></div></div>`;
-        }
-    }
-
-    function quickSend(name) {
-        const amount = prompt("Сума:");
-        if(amount) { document.getElementById('transferTo').value=name; document.getElementById('transferAmount').value=amount; sendMoney(); }
-    }
-
-    // --- SUPPORT ---
-    function openSupportModal() { document.getElementById('support-modal').classList.remove('hidden'); loadChat(); }
-    function loadChat() {
-        const box = document.getElementById('supportChatBox');
-        box.innerHTML = `<div class="msg support">Вітаємо в підтримці SlotOK!</div>`; // Demo text
-        // In real app, load from DB
-    }
-    function sendSupportMsg() {
-        const t = document.getElementById('supportMsg').value;
-        if(t) {
-             const box = document.getElementById('supportChatBox');
-             box.innerHTML += `<div class="msg user">${t}</div>`;
-             document.getElementById('supportMsg').value = "";
-             // Simulating admin reply
-             setTimeout(() => {
-                 box.innerHTML += `<div class="msg support">Дякуємо, передали адміністратору.</div>`;
-                 box.scrollTop = box.scrollHeight;
-             }, 1000);
-        }
-    }
-
-    // --- SYSTEM ---
-    function switchTab(id, el) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(el) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); } }
+    // --- MISC ---
+    function switchTab(id,el) { document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); document.getElementById('tab-'+id).classList.remove('hidden'); if(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); } }
     function openGame(g) { switchTab(g); }
+    function forceAdminLogin() { const p=prompt("CODE:"); if(p==="2026"){ document.getElementById('adminPanelBtnBox').classList.remove('hidden'); switchTab('admin'); loadUserList(); } }
+    function wipeEconomy() { if(confirm("WIPE ALL?")) db.ref('users').once('value',s=>{ for(let k in s.val()) db.ref('users/'+k+'/balance').set(1000); notify("Wiped"); }); }
+    function updateBio(v) { db.ref('users/'+currentUser).update({tag:v}); notify("Updated"); }
+    function handleAvatarUpload(i) { if(i.files[0]){ const r=new FileReader(); r.onload=e=>db.ref('users/'+currentUser).update({avatar:e.target.result}); r.readAsDataURL(i.files[0]); } }
+    function openHistoryModal() { document.getElementById('history-modal').classList.remove('hidden'); const c=document.getElementById('historyList'); db.ref('users/'+currentUser+'/history').limitToLast(20).once('value',s=>{ c.innerHTML=""; if(s.val()) Object.values(s.val()).reverse().forEach(i=>c.innerHTML+=`<div class="user-row">${i.text}</div>`); }); }
     function openTransferModal() { document.getElementById('transfer-modal').classList.remove('hidden'); }
     function openPromoModal() { document.getElementById('promo-modal').classList.remove('hidden'); }
-    function openHistoryModal() { 
-        const c = document.getElementById('historyList'); c.innerHTML = "Завантаження..."; document.getElementById('history-modal').classList.remove('hidden'); 
-        db.ref('users/' + currentUser + '/history').limitToLast(20).once('value').then(snap => { 
-            const data = snap.val(); c.innerHTML = ""; if(!data) { c.innerHTML="Пусто"; return; }
-            const keys = Object.keys(data).reverse(); keys.forEach(k => { const item = data[k]; c.innerHTML += `<div class="user-row" style="margin-bottom:5px;">${item.text}</div>`; }); 
-        }); 
-    }
-    function selectPay(el, n) { selectedPayment = n; document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
-    function initDeposit(amt) { notify("Обробка...", "info"); setTimeout(() => { db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(amt)); notify("OK", "success"); addToHistory(`Dep: +${amt}`, 'log-win'); }, 2000); }
-    function handleAvatarUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = (e) => db.ref('users/'+currentUser).update({avatar: e.target.result}); r.readAsDataURL(i.files[0]); } }
-    function deleteAccount() { if(confirm("DEL?")) db.ref('users/'+currentUser).remove().then(logout); }
-    function renderTop(d) { let h = ""; const arr = []; for(let k in d) arr.push({n:k, ...d[k]}); arr.sort((a,b)=>b.balance-a.balance); arr.forEach((u,i) => { const av = u.avatar && u.avatar.length > 20 ? `<img src="${u.avatar}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:10px;">` : ''; h += `<tr onclick="openUserProfile('${u.n}')"><td>${i+1}</td><td>${av}${u.n}</td><td>${formatNumber(u.balance)}</td></tr>`; }); document.getElementById('topTable').innerHTML = h; }
-    function sendMoney() { const to = document.getElementById('transferTo').value; const amt = parseInt(document.getElementById('transferAmount').value); if(userData.balance < amt) return notify("Err"); db.ref('users/'+to).once('value').then(s => { if(s.exists()) { const u = {}; u['users/'+currentUser+'/balance'] = userData.balance - amt; u['users/'+to+'/balance'] = s.val().balance + amt; db.ref().update(u).then(() => { notify("OK"); document.getElementById('transfer-modal').classList.add('hidden'); }); } }); }
-    function activatePromo() { const code = document.getElementById('promoInput').value.trim(); db.ref('promos/'+code).once('value').then(s=>{ if(s.exists()){ db.ref('users/'+currentUser+'/balance').set(userData.balance+s.val().value); notify("OK"); } }); }
-    function forceAdminLogin() { const pin = prompt("CODE:"); if(pin === "2026") { document.getElementById('adminPanelBtnBox').classList.remove('hidden'); switchTab('admin'); loadUserList(); } }
-    function loadUserList() { const list = document.getElementById('userList'); list.innerHTML = "Loading..."; db.ref('users').once('value').then(s => { list.innerHTML = ""; const d = s.val(); for(let n in d) { if(n === currentUser) continue; const div = document.createElement('div'); div.className = 'user-row'; div.innerHTML = `<b>${n}</b> (${formatNumber(d[n].balance)}) <div class="user-actions"><button class="btn-green btn-xs" onclick="db.ref('users/${n}/balance').set(firebase.database.ServerValue.increment(10000))">+10k</button><button class="btn-red btn-xs" onclick="db.ref('users/${n}/balance').set(1000)">RESET</button><button class="btn-red btn-xs" onclick="db.ref('users/${n}').remove().then(loadUserList)">DEL</button></div>`; list.appendChild(div); } }); }
-    function wipeEconomy() { if(confirm("WIPE ALL?")) { db.ref('users').once('value').then(s => { const d = s.val(); const u = {}; for(let k in d) u['users/'+k+'/balance'] = 1000; db.ref().update(u).then(() => notify("WIPED", "success")); }); } }
-    function createPromoCode() { const name = prompt("Назва:"); if(!name) return; const val = prompt("Сума:"); if(!val) return; db.ref('promos/' + name).set({ value: parseInt(val), users: {} }); notify("Створено"); }
-    function openVisaForm() { document.getElementById('visa-form-modal').classList.remove('hidden'); }
-    function processVisaPayment() { document.getElementById('visa-form-modal').classList.add('hidden'); initDeposit(100); }
+    function openSupportModal() { document.getElementById('support-modal').classList.remove('hidden'); loadSupportChat(); }
+    function sendMoney() { const t=document.getElementById('transferTo').value; const a=parseInt(document.getElementById('transferAmount').value); if(userData.balance<a)return notify("Error"); db.ref('users/'+t).once('value',s=>{ if(s.exists()){ db.ref('users/'+currentUser+'/balance').set(userData.balance-a); db.ref('users/'+t+'/balance').set(s.val().balance+Math.floor(a*0.975)); notify("Sent"); document.getElementById('transfer-modal').classList.add('hidden'); } }); }
+    function activatePromo() { const c=document.getElementById('promoInput').value; db.ref('promos/'+c).once('value',s=>{ if(s.exists()){ db.ref('users/'+currentUser+'/balance').set(userData.balance+s.val().value); notify("OK"); } }); }
+    function initDeposit(a) { notify("Processing..."); setTimeout(()=>{ db.ref('users/'+currentUser+'/balance').set(userData.balance+a); notify("Added"); },1000); }
+    function addContact() { const i=document.getElementById('addContactInput').value; db.ref('users/'+i).once('value',s=>{ if(s.exists()){ db.ref('users/'+currentUser+'/contacts/'+i).set({avatar:s.val().avatar||'👤'}); notify("Added"); loadContacts(); } }); }
+    function loadContacts() { const l=document.getElementById('contactsList'); if(!userData.contacts){l.innerHTML="Empty";return;} l.innerHTML=""; for(let n in userData.contacts){ l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green btn-icon" onclick="quickSend('${n}')">💸</button></div>`; } }
+    function quickSend(n) { const a=prompt("Amount:"); if(a){ document.getElementById('transferTo').value=n; document.getElementById('transferAmount').value=a; sendMoney(); } }
+    function deleteAccount() { if(confirm("Delete?")) db.ref('users/'+currentUser).remove().then(logout); }
+    function selectPay(el) { document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); }
   </script>
 </body>
 </html>
