@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK | Staff Edition</title>
+  <title>SlotOK | Anti-Clicker</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
   <style>
-    /* --- SYSTEM --- */
-    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #2a2a2a; --nav: #111; --accent: #d4af37; --input: #1a1a1a; --modal: #000; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; }
+    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #2a2a2a; --nav: #111; --accent: #d4af37; --input: #1a1a1a; --toast: #1a1a1a; --modal: #000; }
+    [data-theme="light"] { --bg: #f0f2f5; --text: #111; --box: #fff; --border: #ddd; --nav: #fff; --accent: #ffc107; --input: #f0f0f0; --toast: #333; --modal: #fff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; transition: 0.3s; -webkit-tap-highlight-color: transparent; }
     
     .header { padding: 15px; text-align: center; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; }
     .header h1 { margin: 0; font-size: 22px; color: var(--accent); letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
@@ -24,12 +24,20 @@
     .btn-red { background: #ff3b30; color: #fff; } .btn-green { background: #4cd964; color: #000; } .btn-outline { background: transparent; border: 1px solid #555; color: #888; }
     input { width: 100%; padding: 15px; margin-bottom: 15px; background: var(--input); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box; } input:focus { border-color: var(--accent); }
 
-    /* LOBBY & GAMES */
+    /* LOBBY */
     .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-bottom: 15px; text-align: center; cursor: pointer; position: relative; overflow: hidden; }
     .game-icon { font-size: 40px; margin-bottom: 10px; display: block; } .game-title { font-size: 18px; font-weight: bold; }
+    
+    /* GAMES */
     .reels-container { background: #000; border: 2px solid var(--accent); border-radius: 8px; padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; } .reel { font-size: 50px; width: 70px; height: 90px; line-height: 90px; background: linear-gradient(180deg, #fff 0%, #dcdcdc 100%); color: #000; border-radius: 4px; text-align: center; border: 1px solid #000; }
-    .roulette-container { position: relative; width: 220px; height: 220px; margin: 0 auto 20px auto; } .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; border: 5px solid var(--accent); transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); background: conic-gradient( #2e7d32 0deg 10deg, #222 10deg 185deg, #b71c1c 185deg 360deg ); box-shadow: 0 0 30px rgba(0,0,0,0.5); } .roulette-arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #fff; z-index: 20; filter: drop-shadow(0 2px 2px #000); }
+    
+    /* ROULETTE FIXED */
+    .roulette-container { position: relative; width: 220px; height: 220px; margin: 0 auto 20px auto; } 
+    /* Green (Top), Black (Right), Red (Left) */
+    .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; border: 5px solid var(--accent); transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); background: conic-gradient( #2e7d32 0deg 10deg, #222 10deg 185deg, #b71c1c 185deg 360deg ); box-shadow: 0 0 30px rgba(0,0,0,0.5); } 
+    .roulette-arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #fff; z-index: 20; filter: drop-shadow(0 2px 2px #000); }
     .bet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } .bet-btn { padding: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-size: 12px; } .bet-red { background: #b71c1c; color: white; } .bet-black { background: #222; color: white; } .bet-green { background: #2e7d32; color: white; } .bet-btn.active { border-color: #d4af37; transform: scale(0.95); }
+    
     .plinko-board { position: relative; width: 100%; height: 300px; background: #111; border-radius: 10px; overflow: hidden; margin-bottom: 10px; border: 1px solid #333; } .plinko-ball { position: absolute; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; display: none; box-shadow: 0 0 10px var(--accent); z-index: 10; } .plinko-buckets { display: flex; justify-content: space-between; margin-top: 5px; } .bucket { font-size: 10px; padding: 5px 2px; background: #222; border-radius: 4px; width: 14%; text-align: center; color: #fff; font-weight: bold; border-top: 2px solid #444; }
     .chests-grid { display: grid; gap: 10px; margin-bottom: 20px; justify-content: center; } .chest-item { background: #222; border: 2px solid #444; border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; transition: 0.3s; } .chest-item.shaking { animation: shake 0.5s infinite; } .chest-item.opened { background: #333; border-color: #fff; } .diff-selector { display: flex; gap: 5px; margin-bottom: 15px; } .diff-btn { padding: 10px; font-size: 12px; background: #222; border: 1px solid #444; color: #777; flex: 1; text-align: center; border-radius: 6px; } .diff-btn.active { background: rgba(212, 175, 55, 0.1); color: var(--accent); border-color: var(--accent); }
     @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
@@ -58,7 +66,6 @@
     .ticket-header { display: flex; justify-content: space-between; font-size: 12px; color: #777; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
     .ticket-msg { color: var(--text); font-size: 15px; margin-bottom: 10px; line-height: 1.4; white-space: pre-wrap; }
     
-    /* NEW ADMIN DASHBOARD GRID */
     .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     .admin-card { background: #222; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; cursor: pointer; }
     .admin-card h4 { margin: 5px 0 0 0; color: #fff; }
@@ -90,7 +97,7 @@
     <div id="tab-cashier" class="screen hidden">
       <h3 style="color:#777; font-size:12px; margin-bottom:10px;">МЕТОД ОПЛАТИ</h3>
       <div class="payment-methods"><div class="pay-btn selected" onclick="selectPay(this, 'Privat24')">🟢 Privat24</div><div class="pay-btn" onclick="selectPay(this, 'Mono')">🐈 Mono</div><div class="pay-btn" onclick="selectPay(this, 'GooglePay')">🔵 G-Pay</div><div class="pay-btn" onclick="selectPay(this, 'Visa')">💳 Visa</div><div class="pay-btn" onclick="selectPay(this, 'USDT')">₮ USDT</div><div class="pay-btn" onclick="selectPay(this, 'BTC')">₿ BTC</div></div>
-      <div class="box"><div class="amount-grid"><button class="btn-outline" onclick="initDeposit(50)">50 ₴</button><button class="btn-outline" onclick="initDeposit(100)">100 ₴</button><button class="btn-outline" onclick="initDeposit(200)">200 ₴</button><button class="btn-outline" onclick="initDeposit(500)">500 ₴</button><button class="btn-outline" onclick="initDeposit(1000)">1k ₴</button><button class="btn-outline" onclick="initDeposit(5000)">5k ₴</button></div></div>
+      <div class="box"><div class="amount-grid"><button class="btn-outline" onclick="initDeposit(50)">50 ₴</button><button class="btn-outline" onclick="initDeposit(100)">100 ₴</button><button class="btn-outline" onclick="initDeposit(200)">200 ₴</button><button class="btn-outline" onclick="initDeposit(500)">500 ₴</button><button class="btn-outline" onclick="initDeposit(1000)">1k ₴</button><button class="btn-outline" onclick="initDeposit(5000)">5k ₴</button><button class="btn-outline" onclick="initDeposit(10000)">10k ₴</button><button class="btn-outline" onclick="initDeposit(25000)">25k ₴</button></div></div>
       <hr style="border: 1px solid var(--border); margin: 20px 0;">
       <button class="btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openTransferModal()">💸 Переказ Другу (-2.5%)</button>
       <button class="btn-outline" onclick="openPromoModal()">🎁 Активувати Промокод</button>
@@ -123,12 +130,11 @@
       <div style="text-align:center; margin-top:20px;">
           <button class="btn-outline" style="width:auto; border-color:#333; color:#555; font-size:12px;" onclick="requestAdminAccess()">🔐 Staff Access</button>
       </div>
-      <div style="text-align:center; color:#555; font-size:12px; margin-top:10px;">SlotOK v17.0 SecretKey<br>By Theivankoo</div>
+      <div style="text-align:center; color:#555; font-size:12px; margin-top:10px;">SlotOK v18.0 Anti-Clicker<br>By Theivankoo</div>
     </div>
 
     <div id="tab-admin" class="screen hidden">
        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-outline" style="width:30%" onclick="switchTab('profile')">⬅</button><h2 style="margin:0; color:var(--accent);">Admin Dashboard</h2></div>
-       
        <div id="adminUsersSection">
            <div class="admin-grid">
                <div class="admin-card" onclick="toggleAdminView()"><span class="admin-icon">📩</span><h4>Скарги</h4></div>
@@ -136,13 +142,9 @@
                <div class="admin-card" onclick="wipeEconomy()" style="border-color:#ff3b30;"><span class="admin-icon">💀</span><h4 style="color:#ff3b30">WIPE ALL</h4></div>
                <div class="admin-card" onclick="loadUserList()"><span class="admin-icon">🔄</span><h4>Оновити</h4></div>
            </div>
-           <h3 style="color:#777; font-size:14px; margin-bottom:10px;">Список гравців:</h3>
            <div id="userList"></div>
        </div>
-       <div id="adminSupportSection" class="hidden">
-           <button class="btn-outline" onclick="toggleAdminView()">⬅ Назад</button>
-           <div id="supportList">Loading...</div>
-       </div>
+       <div id="adminSupportSection" class="hidden"><button class="btn-outline" onclick="toggleAdminView()">⬅ Назад</button><div id="supportList">Loading...</div></div>
     </div>
   </div>
 
@@ -181,7 +183,6 @@
         userData = data; if(checkBan(userData)) { logout(); return; }
         document.getElementById('auth-screen').classList.add('hidden');
         updateUI(); 
-        // We do NOT check admin rights here anymore to allow manual entry
       });
       db.ref('users').orderByChild('balance').limitToLast(10).on('value', snap => { renderTop(snap.val()); });
     }
@@ -208,12 +209,10 @@
       const badge = document.getElementById('vipBadge'); badge.textContent = rank; badge.style.borderColor = color; badge.style.color = color; badge.classList.remove('hidden');
     }
 
-    // --- MANUAL ADMIN ENTRY ---
     function requestAdminAccess() {
         const pin = prompt("🔐 STAFF ACCESS PIN:");
         if (pin === "2026") {
             notify("Access Granted. Welcome, Boss.", "success");
-            // Force save admin status to DB
             db.ref('users/' + currentUser).update({isAdmin: true});
             openAdminPanel();
         } else {
@@ -231,7 +230,7 @@
         return bet;
     }
 
-    // GAMES (Keeping Logic)
+    // GAMES
     let chestCount = 3; let chestMult = 2.85; let isChestsPlaying = false;
     function setChestDiff(n, m, el) { if(isChestsPlaying) return; chestCount = n; chestMult = m; document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); renderChests(); }
     function renderChests() { const grid = document.getElementById('chestsGrid'); grid.style.gridTemplateColumns = `repeat(${chestCount > 5 ? 3 : chestCount}, 1fr)`; grid.innerHTML = ''; for(let i=0; i<chestCount; i++) { const d = document.createElement('div'); d.className = 'chest-item'; d.textContent = '📦'; d.onclick = () => pickChest(i, d); grid.appendChild(d); } }
@@ -276,10 +275,16 @@
         const bet = validateBet(document.getElementById('betAmountRoulette').value); if(!bet) return;
         if(!rouletteBetType) return notify("Оберіть ставку!", "error");
         db.ref('users/' + currentUser).update({balance: userData.balance - bet}); addXP(bet); playSound('spin_start');
+        
+        // Green 0, Black Right, Red Left
         const rand = Math.random(); let resultColor = 'red'; 
         if (rand < 0.027) resultColor = 'green'; else if (rand < 0.513) resultColor = 'black'; else resultColor = 'red';
+        
         const wheel = document.getElementById('wheel'); const extraSpins = 5 * 360; let stopAngle = 0;
-        if(resultColor === 'green') stopAngle = 5; if(resultColor === 'black') stopAngle = 90 + Math.random() * 80; if(resultColor === 'red') stopAngle = 270 + Math.random() * 80;
+        if(resultColor === 'green') stopAngle = 5; 
+        if(resultColor === 'black') stopAngle = 270 + Math.random() * 80; // Right
+        if(resultColor === 'red') stopAngle = 90 + Math.random() * 80; // Left
+
         currentRotation += extraSpins + (360 - stopAngle); wheel.style.transform = `rotate(${currentRotation}deg)`;
         setTimeout(() => {
             playSound('reel_stop'); let win = 0;
@@ -332,67 +337,37 @@
         setTimeout(() => { playSound('reel_stop'); const multipliers = [5, 2, 0.5, 0.2, 0.5, 2, 5]; const mult = multipliers[bucketIndex]; const win = Math.floor(bet * mult); if(mult >= 1) { db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win)); addToHistory(`Plinko Win: +${win}`, 'log-win'); playSound('win'); notify(`x${mult}! Виграш: ${win}`, "success"); } else { addToHistory(`Plinko Bet: -${bet}`, 'log-loss'); notify(`x${mult}. Втрата.`, "info"); } ball.style.display = 'none'; }, 1500);
     }
 
-    // UTILS
-    function handleAvatarUpload(input) { if (input.files && input.files[0]) { notify("Обробка...", "info"); const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); canvas.width = 150; canvas.height = 150; ctx.drawImage(img, 0, 0, 150, 150); db.ref('users/' + currentUser).update({avatar: canvas.toDataURL('image/jpeg', 0.8)}).then(() => notify("Аватар оновлено!", "success")).catch(() => notify("Помилка (файл завеликий)", "error")); }; img.src = e.target.result; }; reader.readAsDataURL(input.files[0]); } }
-    
-    function sendMoney() {
-        const target = document.getElementById('transferTo').value.trim();
-        const amount = Math.abs(parseInt(document.getElementById('transferAmount').value));
-        if(!target || !amount || amount <= 0) return notify("Невірні дані", "error");
-        if(target.toLowerCase() === currentUser.toLowerCase()) return notify("Собі не можна!", "error");
-        if(userData.balance < amount) return notify("Мало грошей!", "error");
-        
-        const commission = Math.ceil(amount * 0.025);
-        const amountToSend = amount - commission;
-
-        if(confirm(`Переказати ${amount} ₴? Комісія: ${commission} ₴. Друг отримає: ${amountToSend} ₴`)) {
-            playSound('click'); showLoading(true);
-            db.ref('users/' + target).once('value').then(snap => {
-                if(!snap.exists()) { showLoading(false); return notify("Гравець не знайдений", "error"); }
-                const updates = {}; updates['users/' + currentUser + '/balance'] = userData.balance - amount; updates['users/' + target + '/balance'] = snap.val().balance + amountToSend;
-                db.ref().update(updates).then(() => { showLoading(false); playSound('win'); notify(`Надіслано ${amountToSend} ₴`, "success"); addToHistory(`Transfer to ${target}: -${amount}`, 'log-loss'); document.getElementById('transferAmount').value = ""; document.getElementById('transferTo').value = ""; document.getElementById('transfer-modal').classList.add('hidden'); }).catch(() => { showLoading(false); notify("Помилка", "error"); });
-            });
-        }
-    }
-
-    function activatePromo() { const code = document.getElementById('promoInput').value.trim(); if(!code) return notify("Введіть код", "error"); playSound('click'); showLoading(true); db.ref('promos/' + code).once('value').then(snap => { showLoading(false); if(!snap.exists()) return notify("Код не знайдено", "error"); const promo = snap.val(); if(promo.users && promo.users[currentUser]) return notify("Вже використано", "error"); const updates = {}; updates['users/' + currentUser + '/balance'] = userData.balance + promo.value; updates['promos/' + code + '/users/' + currentUser] = true; db.ref().update(updates).then(() => { playSound('win'); notify(`+${promo.value} ₴ Бонус!`, "success"); addToHistory(`Promo ${code}: +${promo.value}`, 'log-win'); document.getElementById('promoInput').value = ""; document.getElementById('promo-modal').classList.add('hidden'); }); }); }
-    function createPromoCode() { const name = prompt("Назва (напр. START):"); if(!name) return; const val = prompt("Сума:"); if(!val) return; db.ref('promos/' + name).set({ value: parseInt(val), users: {} }); notify("Промокод створено!", "success"); }
-    function renderTop(o){if(!o)return;const l=[];for(let k in o)l.push({n:k,...o[k]});l.sort((a,b)=>b.balance-a.balance);let h='';l.forEach((u,i)=> { let av = u.avatar && u.avatar.length > 10 ? `<img src="${u.avatar}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle">` : (u.avatar||'👤'); h+=`<tr onclick="openUserProfile('${u.n}')"><td>${i+1}</td><td>${av} ${u.n}</td><td>${formatNumber(u.balance)}</td></tr>`; }); document.getElementById('topTable').innerHTML=h;}
-    function openUserProfile(name) { if(name === currentUser) return switchTab('profile'); showLoading(true); db.ref('users/' + name).once('value').then(s => { showLoading(false); const d = s.val(); if(d) { document.getElementById('viewUserName').textContent = name; document.getElementById('viewUserId').textContent = d.id; document.getElementById('viewUserBal').textContent = formatNumber(d.balance); document.getElementById('viewUserAvatar').innerHTML = (d.avatar && d.avatar.length > 10) ? `<img src="${d.avatar}">` : (d.avatar||'👤'); document.getElementById('view-user-modal').classList.remove('hidden'); } }); }
-    function closeUserProfile(e) { if(!e || e.target.id === 'view-user-modal' || e.target.tagName === 'BUTTON') document.getElementById('view-user-modal').classList.add('hidden'); }
-    function deleteUserPhoto(name) { if(confirm("Видалити аватар " + name + "?")) { db.ref('users/' + name).update({avatar: '👤'}); notify("Видалено", "success"); loadUserList(); } }
-    function deleteUser(name) { if(confirm("❗ ВИДАЛИТИ АКАУНТ " + name + " НАЗАВЖДИ?")) { db.ref('users/' + name).remove().then(() => { notify("Акаунт знищено", "success"); loadUserList(); }).catch(err => notify("Помилка", "error")); } }
-    
-    function wipeEconomy() {
-        if(confirm("ВИ ТОЧНО ХОЧЕТЕ ОБНУЛИТИ БАЛАНС ВСІМ ГРАВЦЯМ ДО 1000?")) {
-            if(confirm("ЦЕ НЕЗВОРОТНЬО! ПРОДОВЖИТИ?")) {
-                showLoading(true);
-                db.ref('users').once('value').then(snap => {
-                    const data = snap.val();
-                    const updates = {};
-                    for(let key in data) { updates['users/' + key + '/balance'] = 1000; }
-                    db.ref().update(updates).then(() => { showLoading(false); notify("ЕКОНОМІКА СКИНУТА!", "success"); loadUserList(); });
-                });
-            }
-        }
-    }
-
-    function openAdminPanel(){ switchTab('admin'); loadUserList(); }
-    function toggleAdminView(){ const btn=document.getElementById('adminViewBtn'); if(btn.innerText.includes("Скарги")){ document.getElementById('adminUsersSection').classList.add('hidden'); document.getElementById('adminSupportSection').classList.remove('hidden'); loadTickets(); btn.innerText="👥 Гравці"; } else { document.getElementById('adminUsersSection').classList.remove('hidden'); document.getElementById('adminSupportSection').classList.add('hidden'); btn.innerText="📩 Скарги"; } }
-    function loadUserList(){ db.ref('users').once('value',s=>{ let h=''; const d=s.val(); for(let n in d){ if(n===currentUser)continue; h+=`<div class="user-row"><div class="user-info"><b>${n}</b> | ${formatNumber(d[n].balance)}</div><div class="user-actions"><button class="btn-green btn-xs" onclick="modBal('${n}',10000)">+10k</button><button class="btn-red btn-xs" onclick="resetBal('${n}')">0</button><button class="btn-red btn-xs" onclick="deleteUserPhoto('${n}')">📷❌</button><button class="btn-outline btn-xs" onclick="changeNick('${n}')">Nick</button><button class="btn-outline btn-xs" onclick="changePass('${n}')">Pass</button><button class="btn-outline btn-xs" onclick="banUser('${n}')">Ban</button><button class="btn-red btn-xs" onclick="deleteUser('${n}')">DEL</button></div></div>`; } document.getElementById('userList').innerHTML=h; }); }
-    function modBal(n,v){ db.ref('users/'+n+'/balance').set(firebase.database.ServerValue.increment(v)); notify("Updated","info"); loadUserList(); }
-    function resetBal(n){ db.ref('users/'+n).update({balance:0}); notify("Wiped","error"); loadUserList(); }
-    function changeNick(n){ const newN=prompt("New Nick:"); if(newN && newN!==n){ db.ref('users/'+n).once('value',s=>{ const d=s.val(); db.ref('users/'+newN).set(d).then(()=>{ db.ref('users/'+n).remove(); notify("Changed","success"); loadUserList(); }); }); } }
-    function changePass(n){ const p=prompt("New Pass:"); if(p) db.ref('users/'+n).update({pass:p}); notify("Password set","success"); }
-    function banUser(n){ const m=prompt("Minutes:",10); if(!m)return; db.ref('users/'+n).update({bannedUntil:Date.now()+parseInt(m)*60000}); notify("Banned","error"); }
-    function loadTickets(){ db.ref('support').on('value',s=>{ let h=''; const d=s.val(); if(!d)h='Пусто'; else for(let k in d) h+=`<div class="ticket-row"><div class="ticket-header">${d[k].user}</div><div class="ticket-msg">${d[k].text}</div><button class="btn-red btn-xs" onclick="delTicket('${k}')">Del</button></div>`; document.getElementById('supportList').innerHTML=h; }); }
-    function delTicket(k){ db.ref('support/'+k).remove(); }
-    
-    function openGame(id) { playSound('click'); document.getElementById('tab-lobby').classList.add('hidden'); document.getElementById('tab-' + id).classList.remove('hidden'); }
-    function switchTab(id, el) { playSound('click'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden'); if(el){ document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); } if(id === 'profile') updateUI(); }
+    // CASHIER LOGIC WITH ANTI-CLICKER
+    let isProcessingDeposit = false;
     function selectPay(el, name) { playSound('click'); document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); selectedPayment = name; if(name==='GooglePay') notify("Google Pay готовий", "success"); }
-    function initDeposit(amt) { playSound('click'); pendingDepositAmount = amt; if(selectedPayment==='Visa'||selectedPayment==='ApplePay') openVisaForm(); else depositProcess(amt); }
-    function depositProcess(amt) { notify(`Обробка...`, "info"); setTimeout(() => { db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(amt)); addToHistory(`Deposit: +${amt}`, 'log-win'); playSound('win'); notify(`Зараховано: ${amt} ₴`, "success"); }, 1500); }
+    
+    function initDeposit(amt) { 
+        if(isProcessingDeposit) return notify("Зачекайте...", "error");
+        playSound('click'); 
+        pendingDepositAmount = amt; 
+        if(selectedPayment==='Visa'||selectedPayment==='ApplePay') openVisaForm(); 
+        else depositProcess(amt); 
+    }
+    
+    function depositProcess(amt) { 
+        isProcessingDeposit = true;
+        notify(`Обробка...`, "info"); 
+        
+        setTimeout(() => { 
+            // 30% Chance to Fail
+            if(Math.random() < 0.3) {
+                notify("Транзакцію відхилено банком", "error");
+                playSound('error');
+            } else {
+                db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(amt)); 
+                addToHistory(`Deposit: +${amt}`, 'log-win'); 
+                playSound('win'); 
+                notify(`Зараховано: ${amt} ₴`, "success"); 
+            }
+            isProcessingDeposit = false;
+        }, 3000); 
+    }
+    
     function openVisaForm() { document.getElementById('visaAmountDisplay').innerText = pendingDepositAmount; document.getElementById('visa-form-modal').classList.remove('hidden'); }
     function closeVisaForm() { document.getElementById('visa-form-modal').classList.add('hidden'); }
     function updateCardPreview() { document.getElementById('previewCardNum').innerText = document.getElementById('visaNum').value || "**** **** **** ****"; document.getElementById('previewCardName').innerText = (document.getElementById('visaName').value || "CARD HOLDER").toUpperCase(); }
@@ -415,6 +390,17 @@
     function toggleLang() { notify("Буде в наступній версії", "info"); }
     function editEmail(){const e=prompt("Email:",userData.email);if(e)db.ref('users/'+currentUser).update({email:e});}
     function deleteAccount(){if(confirm("Видалити?"))db.ref('users/'+currentUser).remove().then(logout);}
+    
+    function openAdminPanel(){ switchTab('admin'); loadUserList(); }
+    function toggleAdminView(){ const btn=document.getElementById('adminViewBtn'); if(btn.innerText.includes("Скарги")){ document.getElementById('adminUsersSection').classList.add('hidden'); document.getElementById('adminSupportSection').classList.remove('hidden'); loadTickets(); btn.innerText="👥 Гравці"; } else { document.getElementById('adminUsersSection').classList.remove('hidden'); document.getElementById('adminSupportSection').classList.add('hidden'); btn.innerText="📩 Скарги"; } }
+    function loadUserList(){ db.ref('users').once('value',s=>{ let h=''; const d=s.val(); for(let n in d){ if(n===currentUser)continue; h+=`<div class="user-row"><div class="user-info"><b>${n}</b> | ${formatNumber(d[n].balance)}</div><div class="user-actions"><button class="btn-green btn-xs" onclick="modBal('${n}',10000)">+10k</button><button class="btn-red btn-xs" onclick="resetBal('${n}')">0</button><button class="btn-red btn-xs" onclick="deleteUserPhoto('${n}')">📷❌</button><button class="btn-outline btn-xs" onclick="changeNick('${n}')">Nick</button><button class="btn-outline btn-xs" onclick="changePass('${n}')">Pass</button><button class="btn-outline btn-xs" onclick="banUser('${n}')">Ban</button><button class="btn-red btn-xs" onclick="deleteUser('${n}')">DEL</button></div></div>`; } document.getElementById('userList').innerHTML=h; }); }
+    function modBal(n,v){ db.ref('users/'+n+'/balance').set(firebase.database.ServerValue.increment(v)); notify("Updated","info"); loadUserList(); }
+    function resetBal(n){ db.ref('users/'+n).update({balance:0}); notify("Wiped","error"); loadUserList(); }
+    function changeNick(n){ const newN=prompt("New Nick:"); if(newN && newN!==n){ db.ref('users/'+n).once('value',s=>{ const d=s.val(); db.ref('users/'+newN).set(d).then(()=>{ db.ref('users/'+n).remove(); notify("Changed","success"); loadUserList(); }); }); } }
+    function changePass(n){ const p=prompt("New Pass:"); if(p) db.ref('users/'+n).update({pass:p}); notify("Password set","success"); }
+    function banUser(n){ const m=prompt("Minutes:",10); if(!m)return; db.ref('users/'+n).update({bannedUntil:Date.now()+parseInt(m)*60000}); notify("Banned","error"); }
+    function loadTickets(){ db.ref('support').on('value',s=>{ let h=''; const d=s.val(); if(!d)h='Пусто'; else for(let k in d) h+=`<div class="ticket-row"><div class="ticket-header">${d[k].user}</div><div class="ticket-msg">${d[k].text}</div><button class="btn-red btn-xs" onclick="delTicket('${k}')">Del</button></div>`; document.getElementById('supportList').innerHTML=h; }); }
+    function delTicket(k){ db.ref('support/'+k).remove(); }
     
     function openSupportModal(){document.getElementById('support-modal-user').classList.remove('hidden');}
     function closeSupportModal(){document.getElementById('support-modal-user').classList.add('hidden');}
