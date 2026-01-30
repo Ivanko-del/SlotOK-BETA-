@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK | Admin Force</title>
+  <title>SlotOK | Staff Edition</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
   <style>
-    /* --- CSS SYSTEM --- */
+    /* --- SYSTEM --- */
     :root { --bg: #050505; --text: #fff; --box: #141414; --border: #2a2a2a; --nav: #111; --accent: #d4af37; --input: #1a1a1a; --modal: #000; }
-    [data-theme="light"] { --bg: #f0f2f5; --text: #111; --box: #fff; --border: #ddd; --nav: #fff; --accent: #ffc107; --input: #f0f0f0; --modal: #fff; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; transition: 0.3s; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; }
+    
     .header { padding: 15px; text-align: center; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; }
     .header h1 { margin: 0; font-size: 22px; color: var(--accent); letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
     .container { padding: 20px; padding-top: 10px; } .hidden { display: none !important; }
     .box { background: var(--box); border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
     button { padding: 14px; width: 100%; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; background: #333; color: #fff; margin-bottom: 10px; } button:active { transform: scale(0.97); }
-    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; } .btn-red { background: #ff3b30; color: #fff; } .btn-green { background: #4cd964; color: #000; } .btn-outline { background: transparent; border: 1px solid #555; color: #888; }
+    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; } 
+    .btn-red { background: #ff3b30; color: #fff; } .btn-green { background: #4cd964; color: #000; } .btn-outline { background: transparent; border: 1px solid #555; color: #888; }
     input { width: 100%; padding: 15px; margin-bottom: 15px; background: var(--input); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box; } input:focus { border-color: var(--accent); }
 
-    /* LOBBY */
+    /* LOBBY & GAMES */
     .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 15px; padding: 20px; margin-bottom: 15px; text-align: center; cursor: pointer; position: relative; overflow: hidden; }
     .game-icon { font-size: 40px; margin-bottom: 10px; display: block; } .game-title { font-size: 18px; font-weight: bold; }
-    
-    /* GAMES UI */
     .reels-container { background: #000; border: 2px solid var(--accent); border-radius: 8px; padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; } .reel { font-size: 50px; width: 70px; height: 90px; line-height: 90px; background: linear-gradient(180deg, #fff 0%, #dcdcdc 100%); color: #000; border-radius: 4px; text-align: center; border: 1px solid #000; }
     .roulette-container { position: relative; width: 220px; height: 220px; margin: 0 auto 20px auto; } .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; border: 5px solid var(--accent); transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); background: conic-gradient( #2e7d32 0deg 10deg, #222 10deg 185deg, #b71c1c 185deg 360deg ); box-shadow: 0 0 30px rgba(0,0,0,0.5); } .roulette-arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #fff; z-index: 20; filter: drop-shadow(0 2px 2px #000); }
     .bet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } .bet-btn { padding: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; border: 2px solid transparent; font-size: 12px; } .bet-red { background: #b71c1c; color: white; } .bet-black { background: #222; color: white; } .bet-green { background: #2e7d32; color: white; } .bet-btn.active { border-color: #d4af37; transform: scale(0.95); }
@@ -57,6 +57,12 @@
     .ticket-row { background: var(--input); padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border); }
     .ticket-header { display: flex; justify-content: space-between; font-size: 12px; color: #777; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
     .ticket-msg { color: var(--text); font-size: 15px; margin-bottom: 10px; line-height: 1.4; white-space: pre-wrap; }
+    
+    /* NEW ADMIN DASHBOARD GRID */
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .admin-card { background: #222; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; cursor: pointer; }
+    .admin-card h4 { margin: 5px 0 0 0; color: #fff; }
+    .admin-icon { font-size: 24px; display: block; margin-bottom: 5px; }
   </style>
 </head>
 <body data-theme="dark">
@@ -66,7 +72,6 @@
   <div class="header"><h1 id="pageTitle">SlotOK</h1></div>
 
   <div class="container">
-    
     <div id="tab-lobby" class="screen">
       <div class="balance-display"><span class="bal">0</span> ₴</div>
       <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-title">Classic 777</div><div class="game-desc">Слоти з джекпотом</div></div>
@@ -76,36 +81,11 @@
       <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-title">Plinko X</div><div class="game-desc">Покращена фізика</div></div>
     </div>
 
-    <div id="tab-slots" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button>
-      <div class="balance-display"><span class="bal">0</span> ₴</div>
-      <div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div>
-      <div class="box"><div style="display:flex; gap:10px; margin-bottom:15px;"><input id="betAmountSlots" type="number" value="100" style="text-align:center; font-weight:bold;"></div><button class="btn-gold" onclick="spinSlots()">КРУТИТИ</button></div>
-    </div>
-    <div id="tab-roulette" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button>
-      <div class="balance-display"><span class="bal">0</span> ₴</div>
-      <div class="roulette-container"><div class="roulette-arrow"></div><div class="roulette-wheel" id="wheel"></div></div>
-      <div class="box"><div class="bet-grid"><div class="bet-btn bet-red" onclick="setRouletteBet('red', this)">RED</div><div class="bet-btn bet-green" onclick="setRouletteBet('green', this)">ZERO</div><div class="bet-btn bet-black" onclick="setRouletteBet('black', this)">BLACK</div></div><input id="betAmountRoulette" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" onclick="spinRoulette()">СТАРТ</button></div>
-    </div>
-    <div id="tab-chests" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button>
-      <div class="balance-display"><span class="bal">0</span> ₴</div>
-      <div class="box"><p style="text-align:center; color:#777; font-size:12px; margin-bottom:10px;">Обери складність:</p><div class="diff-selector"><div class="diff-btn active" onclick="setChestDiff(3, 2.85, this)">EASY (x2.85)</div><div class="diff-btn" onclick="setChestDiff(5, 4.80, this)">MED (x4.8)</div><div class="diff-btn" onclick="setChestDiff(9, 8.50, this)">HARD (x8.5)</div></div><div class="chests-grid" id="chestsGrid" style="grid-template-columns: repeat(3, 1fr);"></div></div>
-      <div class="box"><input id="betAmountChests" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ</button><p id="chestMsg" style="text-align:center; color:var(--accent); font-size:14px; margin-top:5px; height:20px;"></p></div>
-    </div>
-    <div id="tab-plinko" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button>
-      <div class="balance-display"><span class="bal">0</span> ₴</div>
-      <div class="box"><div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div><div class="plinko-buckets"><div class="bucket" id="pb0">x5</div><div class="bucket" id="pb1">x2</div><div class="bucket" id="pb2">x0.5</div><div class="bucket" id="pb3">x0.2</div><div class="bucket" id="pb4">x0.5</div><div class="bucket" id="pb5">x2</div><div class="bucket" id="pb6">x5</div></div></div>
-      <div class="box"><input id="betAmountPlinko" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" onclick="dropPlinko()">КИНУТИ</button></div>
-    </div>
-    <div id="tab-mines" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button>
-      <div class="balance-display"><span class="bal">0</span> ₴</div>
-      <div class="box"><div class="mines-grid" id="minesGrid"></div></div>
-      <div class="box"><p style="text-align:center; color:#777; font-size:12px; margin-bottom:5px;">Кількість мін:</p><div class="mines-controls"><div class="mine-opt active" onclick="setMinesCount(1, this)">1</div><div class="mine-opt" onclick="setMinesCount(3, this)">3</div><div class="mine-opt" onclick="setMinesCount(5, this)">5</div><div class="mine-opt" onclick="setMinesCount(10, this)">10</div></div><input id="betAmountMines" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" id="minesBtn" onclick="startMines()">СТАРТ</button><button class="btn-green hidden" id="minesCashoutBtn" onclick="cashoutMines()">ЗАБРАТИ</button></div>
-    </div>
+    <div id="tab-slots" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button><div class="balance-display"><span class="bal">0</span> ₴</div><div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div><div class="box"><div style="display:flex; gap:10px; margin-bottom:15px;"><input id="betAmountSlots" type="number" value="100" style="text-align:center; font-weight:bold;"></div><button class="btn-gold" onclick="spinSlots()">КРУТИТИ</button></div></div>
+    <div id="tab-roulette" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button><div class="balance-display"><span class="bal">0</span> ₴</div><div class="roulette-container"><div class="roulette-arrow"></div><div class="roulette-wheel" id="wheel"></div></div><div class="box"><div class="bet-grid"><div class="bet-btn bet-red" onclick="setRouletteBet('red', this)">RED</div><div class="bet-btn bet-green" onclick="setRouletteBet('green', this)">ZERO</div><div class="bet-btn bet-black" onclick="setRouletteBet('black', this)">BLACK</div></div><input id="betAmountRoulette" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" onclick="spinRoulette()">СТАРТ</button></div></div>
+    <div id="tab-chests" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button><div class="balance-display"><span class="bal">0</span> ₴</div><div class="box"><p style="text-align:center; color:#777; font-size:12px; margin-bottom:10px;">Обери складність:</p><div class="diff-selector"><div class="diff-btn active" onclick="setChestDiff(3, 2.85, this)">EASY (x2.85)</div><div class="diff-btn" onclick="setChestDiff(5, 4.80, this)">MED (x4.8)</div><div class="diff-btn" onclick="setChestDiff(9, 8.50, this)">HARD (x8.5)</div></div><div class="chests-grid" id="chestsGrid" style="grid-template-columns: repeat(3, 1fr);"></div></div><div class="box"><input id="betAmountChests" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ</button><p id="chestMsg" style="text-align:center; color:var(--accent); font-size:14px; margin-top:5px; height:20px;"></p></div></div>
+    <div id="tab-plinko" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button><div class="balance-display"><span class="bal">0</span> ₴</div><div class="box"><div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div><div class="plinko-buckets"><div class="bucket" id="pb0">x5</div><div class="bucket" id="pb1">x2</div><div class="bucket" id="pb2">x0.5</div><div class="bucket" id="pb3">x0.2</div><div class="bucket" id="pb4">x0.5</div><div class="bucket" id="pb5">x2</div><div class="bucket" id="pb6">x5</div></div></div><div class="box"><input id="betAmountPlinko" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" onclick="dropPlinko()">КИНУТИ</button></div></div>
+    <div id="tab-mines" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')" style="width:auto; padding:5px 15px;">⬅ Лобі</button><div class="balance-display"><span class="bal">0</span> ₴</div><div class="box"><div class="mines-grid" id="minesGrid"></div></div><div class="box"><p style="text-align:center; color:#777; font-size:12px; margin-bottom:5px;">Кількість мін:</p><div class="mines-controls"><div class="mine-opt active" onclick="setMinesCount(1, this)">1</div><div class="mine-opt" onclick="setMinesCount(3, this)">3</div><div class="mine-opt" onclick="setMinesCount(5, this)">5</div><div class="mine-opt" onclick="setMinesCount(10, this)">10</div></div><input id="betAmountMines" type="number" value="100" style="text-align:center; font-weight:bold;"><button class="btn-gold" id="minesBtn" onclick="startMines()">СТАРТ</button><button class="btn-green hidden" id="minesCashoutBtn" onclick="cashoutMines()">ЗАБРАТИ</button></div></div>
 
     <div id="tab-cashier" class="screen hidden">
       <h3 style="color:#777; font-size:12px; margin-bottom:10px;">МЕТОД ОПЛАТИ</h3>
@@ -126,7 +106,6 @@
         <button class="btn-outline" onclick="openHistoryModal()" style="margin-bottom:10px;">📜 Історія транзакцій</button>
         <div class="profile-field"><span>Email: <span id="profileEmail" style="color:var(--text);">...</span></span><span class="edit-icon" onclick="editEmail()">✎</span></div>
       </div>
-      <div class="box hidden" id="adminPanelBtnBox"><button class="btn-green" onclick="openAdminPanel()">💀 АДМІН ПАНЕЛЬ</button></div>
     </div>
 
     <div id="tab-more" class="screen hidden">
@@ -141,19 +120,29 @@
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" style="margin-bottom:0;" onclick="deleteAccount()">ВИДАЛИТИ</button>
       </div>
-      <div style="text-align:center; color:#555; font-size:12px; margin-top:20px;">SlotOK v16.0 Force<br>By Theivankoo</div>
+      <div style="text-align:center; margin-top:20px;">
+          <button class="btn-outline" style="width:auto; border-color:#333; color:#555; font-size:12px;" onclick="requestAdminAccess()">🔐 Staff Access</button>
+      </div>
+      <div style="text-align:center; color:#555; font-size:12px; margin-top:10px;">SlotOK v17.0 SecretKey<br>By Theivankoo</div>
     </div>
 
     <div id="tab-admin" class="screen hidden">
-       <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-outline" style="width:30%" onclick="switchTab('profile')">⬅</button><button class="btn-gold" style="width:65%" onclick="toggleAdminView()" id="adminViewBtn">📩 Читати Скарги</button></div>
+       <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-outline" style="width:30%" onclick="switchTab('profile')">⬅</button><h2 style="margin:0; color:var(--accent);">Admin Dashboard</h2></div>
+       
        <div id="adminUsersSection">
-           <div style="display:flex; gap:10px; margin-bottom:15px;">
-               <button class="btn-outline" onclick="createPromoCode()" style="border-color:var(--accent); color:var(--accent);">🎁 Промо</button>
-               <button class="btn-red" onclick="wipeEconomy()">💀 WIPE ALL</button>
+           <div class="admin-grid">
+               <div class="admin-card" onclick="toggleAdminView()"><span class="admin-icon">📩</span><h4>Скарги</h4></div>
+               <div class="admin-card" onclick="createPromoCode()"><span class="admin-icon">🎁</span><h4>Промо</h4></div>
+               <div class="admin-card" onclick="wipeEconomy()" style="border-color:#ff3b30;"><span class="admin-icon">💀</span><h4 style="color:#ff3b30">WIPE ALL</h4></div>
+               <div class="admin-card" onclick="loadUserList()"><span class="admin-icon">🔄</span><h4>Оновити</h4></div>
            </div>
+           <h3 style="color:#777; font-size:14px; margin-bottom:10px;">Список гравців:</h3>
            <div id="userList"></div>
        </div>
-       <div id="adminSupportSection" class="hidden"><div id="supportList">Loading...</div></div>
+       <div id="adminSupportSection" class="hidden">
+           <button class="btn-outline" onclick="toggleAdminView()">⬅ Назад</button>
+           <div id="supportList">Loading...</div>
+       </div>
     </div>
   </div>
 
@@ -191,7 +180,8 @@
         if(!data) { logout(); return; }
         userData = data; if(checkBan(userData)) { logout(); return; }
         document.getElementById('auth-screen').classList.add('hidden');
-        updateUI(); checkAdminRights();
+        updateUI(); 
+        // We do NOT check admin rights here anymore to allow manual entry
       });
       db.ref('users').orderByChild('balance').limitToLast(10).on('value', snap => { renderTop(snap.val()); });
     }
@@ -218,26 +208,17 @@
       const badge = document.getElementById('vipBadge'); badge.textContent = rank; badge.style.borderColor = color; badge.style.color = color; badge.classList.remove('hidden');
     }
 
-    function checkAdminRights() {
-      // БРОНЕБІЙНА ПЕРЕВІРКА
-      const cleanName = currentUser ? currentUser.toLowerCase().trim() : "";
-      
-      // 1. Хардкод (Theivankoo - завжди адмін)
-      if (cleanName === 'theivankoo' || cleanName === 'admin') {
-         document.getElementById('adminLabel').classList.remove('hidden');
-         document.getElementById('adminPanelBtnBox').classList.remove('hidden');
-         return; // Виходимо, бо ми вже дали права
-      }
-
-      // 2. База даних (резерв)
-      const isDbAdmin = userData && (userData.isAdmin === true || userData.isAdmin === "true");
-      if (isDbAdmin) {
-         document.getElementById('adminLabel').classList.remove('hidden');
-         document.getElementById('adminPanelBtnBox').classList.remove('hidden');
-      } else {
-         document.getElementById('adminLabel').classList.add('hidden');
-         document.getElementById('adminPanelBtnBox').classList.add('hidden');
-      }
+    // --- MANUAL ADMIN ENTRY ---
+    function requestAdminAccess() {
+        const pin = prompt("🔐 STAFF ACCESS PIN:");
+        if (pin === "2026") {
+            notify("Access Granted. Welcome, Boss.", "success");
+            // Force save admin status to DB
+            db.ref('users/' + currentUser).update({isAdmin: true});
+            openAdminPanel();
+        } else {
+            notify("Access Denied", "error");
+        }
     }
 
     function addXP(amount) { const earned = Math.floor(amount / 10); if(earned > 0) db.ref('users/' + currentUser + '/xp').set(firebase.database.ServerValue.increment(earned)); }
@@ -382,7 +363,6 @@
     function deleteUserPhoto(name) { if(confirm("Видалити аватар " + name + "?")) { db.ref('users/' + name).update({avatar: '👤'}); notify("Видалено", "success"); loadUserList(); } }
     function deleteUser(name) { if(confirm("❗ ВИДАЛИТИ АКАУНТ " + name + " НАЗАВЖДИ?")) { db.ref('users/' + name).remove().then(() => { notify("Акаунт знищено", "success"); loadUserList(); }).catch(err => notify("Помилка", "error")); } }
     
-    // WIPE ECONOMY FUNCTION
     function wipeEconomy() {
         if(confirm("ВИ ТОЧНО ХОЧЕТЕ ОБНУЛИТИ БАЛАНС ВСІМ ГРАВЦЯМ ДО 1000?")) {
             if(confirm("ЦЕ НЕЗВОРОТНЬО! ПРОДОВЖИТИ?")) {
@@ -390,19 +370,24 @@
                 db.ref('users').once('value').then(snap => {
                     const data = snap.val();
                     const updates = {};
-                    for(let key in data) {
-                        updates['users/' + key + '/balance'] = 1000;
-                    }
-                    db.ref().update(updates).then(() => {
-                        showLoading(false);
-                        notify("ЕКОНОМІКА СКИНУТА!", "success");
-                        loadUserList();
-                    });
+                    for(let key in data) { updates['users/' + key + '/balance'] = 1000; }
+                    db.ref().update(updates).then(() => { showLoading(false); notify("ЕКОНОМІКА СКИНУТА!", "success"); loadUserList(); });
                 });
             }
         }
     }
 
+    function openAdminPanel(){ switchTab('admin'); loadUserList(); }
+    function toggleAdminView(){ const btn=document.getElementById('adminViewBtn'); if(btn.innerText.includes("Скарги")){ document.getElementById('adminUsersSection').classList.add('hidden'); document.getElementById('adminSupportSection').classList.remove('hidden'); loadTickets(); btn.innerText="👥 Гравці"; } else { document.getElementById('adminUsersSection').classList.remove('hidden'); document.getElementById('adminSupportSection').classList.add('hidden'); btn.innerText="📩 Скарги"; } }
+    function loadUserList(){ db.ref('users').once('value',s=>{ let h=''; const d=s.val(); for(let n in d){ if(n===currentUser)continue; h+=`<div class="user-row"><div class="user-info"><b>${n}</b> | ${formatNumber(d[n].balance)}</div><div class="user-actions"><button class="btn-green btn-xs" onclick="modBal('${n}',10000)">+10k</button><button class="btn-red btn-xs" onclick="resetBal('${n}')">0</button><button class="btn-red btn-xs" onclick="deleteUserPhoto('${n}')">📷❌</button><button class="btn-outline btn-xs" onclick="changeNick('${n}')">Nick</button><button class="btn-outline btn-xs" onclick="changePass('${n}')">Pass</button><button class="btn-outline btn-xs" onclick="banUser('${n}')">Ban</button><button class="btn-red btn-xs" onclick="deleteUser('${n}')">DEL</button></div></div>`; } document.getElementById('userList').innerHTML=h; }); }
+    function modBal(n,v){ db.ref('users/'+n+'/balance').set(firebase.database.ServerValue.increment(v)); notify("Updated","info"); loadUserList(); }
+    function resetBal(n){ db.ref('users/'+n).update({balance:0}); notify("Wiped","error"); loadUserList(); }
+    function changeNick(n){ const newN=prompt("New Nick:"); if(newN && newN!==n){ db.ref('users/'+n).once('value',s=>{ const d=s.val(); db.ref('users/'+newN).set(d).then(()=>{ db.ref('users/'+n).remove(); notify("Changed","success"); loadUserList(); }); }); } }
+    function changePass(n){ const p=prompt("New Pass:"); if(p) db.ref('users/'+n).update({pass:p}); notify("Password set","success"); }
+    function banUser(n){ const m=prompt("Minutes:",10); if(!m)return; db.ref('users/'+n).update({bannedUntil:Date.now()+parseInt(m)*60000}); notify("Banned","error"); }
+    function loadTickets(){ db.ref('support').on('value',s=>{ let h=''; const d=s.val(); if(!d)h='Пусто'; else for(let k in d) h+=`<div class="ticket-row"><div class="ticket-header">${d[k].user}</div><div class="ticket-msg">${d[k].text}</div><button class="btn-red btn-xs" onclick="delTicket('${k}')">Del</button></div>`; document.getElementById('supportList').innerHTML=h; }); }
+    function delTicket(k){ db.ref('support/'+k).remove(); }
+    
     function openGame(id) { playSound('click'); document.getElementById('tab-lobby').classList.add('hidden'); document.getElementById('tab-' + id).classList.remove('hidden'); }
     function switchTab(id, el) { playSound('click'); document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('tab-' + id).classList.remove('hidden'); if(el){ document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); } if(id === 'profile') updateUI(); }
     function selectPay(el, name) { playSound('click'); document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); selectedPayment = name; if(name==='GooglePay') notify("Google Pay готовий", "success"); }
@@ -431,16 +416,6 @@
     function editEmail(){const e=prompt("Email:",userData.email);if(e)db.ref('users/'+currentUser).update({email:e});}
     function deleteAccount(){if(confirm("Видалити?"))db.ref('users/'+currentUser).remove().then(logout);}
     
-    function openAdminPanel(){ switchTab('admin'); loadUserList(); }
-    function toggleAdminView(){ const btn=document.getElementById('adminViewBtn'); if(btn.innerText.includes("Скарги")){ document.getElementById('adminUsersSection').classList.add('hidden'); document.getElementById('adminSupportSection').classList.remove('hidden'); loadTickets(); btn.innerText="👥 Гравці"; } else { document.getElementById('adminUsersSection').classList.remove('hidden'); document.getElementById('adminSupportSection').classList.add('hidden'); btn.innerText="📩 Скарги"; } }
-    function loadUserList(){ db.ref('users').once('value',s=>{ let h=''; const d=s.val(); for(let n in d){ if(n===currentUser)continue; h+=`<div class="user-row"><div class="user-info"><b>${n}</b> | ${formatNumber(d[n].balance)}</div><div class="user-actions"><button class="btn-green btn-xs" onclick="modBal('${n}',10000)">+10k</button><button class="btn-red btn-xs" onclick="resetBal('${n}')">0</button><button class="btn-red btn-xs" onclick="deleteUserPhoto('${n}')">📷❌</button><button class="btn-outline btn-xs" onclick="changeNick('${n}')">Nick</button><button class="btn-outline btn-xs" onclick="changePass('${n}')">Pass</button><button class="btn-outline btn-xs" onclick="banUser('${n}')">Ban</button><button class="btn-red btn-xs" onclick="deleteUser('${n}')">DEL</button></div></div>`; } document.getElementById('userList').innerHTML=h; }); }
-    function modBal(n,v){ db.ref('users/'+n+'/balance').set(firebase.database.ServerValue.increment(v)); notify("Updated","info"); loadUserList(); }
-    function resetBal(n){ db.ref('users/'+n).update({balance:0}); notify("Wiped","error"); loadUserList(); }
-    function changeNick(n){ const newN=prompt("New Nick:"); if(newN && newN!==n){ db.ref('users/'+n).once('value',s=>{ const d=s.val(); db.ref('users/'+newN).set(d).then(()=>{ db.ref('users/'+n).remove(); notify("Changed","success"); loadUserList(); }); }); } }
-    function changePass(n){ const p=prompt("New Pass:"); if(p) db.ref('users/'+n).update({pass:p}); notify("Password set","success"); }
-    function banUser(n){ const m=prompt("Minutes:",10); if(!m)return; db.ref('users/'+n).update({bannedUntil:Date.now()+parseInt(m)*60000}); notify("Banned","error"); }
-    function loadTickets(){ db.ref('support').on('value',s=>{ let h=''; const d=s.val(); if(!d)h='Пусто'; else for(let k in d) h+=`<div class="ticket-row"><div class="ticket-header">${d[k].user}</div><div class="ticket-msg">${d[k].text}</div><button class="btn-red btn-xs" onclick="delTicket('${k}')">Del</button></div>`; document.getElementById('supportList').innerHTML=h; }); }
-    function delTicket(k){ db.ref('support/'+k).remove(); }
     function openSupportModal(){document.getElementById('support-modal-user').classList.remove('hidden');}
     function closeSupportModal(){document.getElementById('support-modal-user').classList.add('hidden');}
     function sendTicket(){ const t=document.getElementById('ticketMessage').value; if(t){ db.ref('support/'+Date.now()).set({user:currentUser,text:t,date:Date.now()}); notify("Надіслано","success"); closeSupportModal(); } }
