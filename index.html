@@ -973,7 +973,7 @@
       </div>
     </div>
 
-  </div><!-- /container -->
+
 
   <!-- БАККАРА -->
   <div id="tab-baccarat" class="screen hidden" style="padding:15px;">
@@ -1090,7 +1090,8 @@
     </div>
   </div>
 
-  </div><!-- /main-wrap -->
+
+  </div><!-- /container -->  </div><!-- /main-wrap -->
 
   <div id="auth-screen" class="full-modal">
       <div style="text-align:center; margin-bottom:30px;"><h1 style="color:var(--accent); font-size:50px; font-style:italic; font-weight:900;">SlotOK</h1><div style="color:#555; font-size:13px;">v36</div></div>
@@ -2038,13 +2039,6 @@
     // ============================================
     // ІНШІ ФУНКЦІЇ
     // ============================================
-    function switchTab(id, el) { 
-        document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); 
-        const tab = document.getElementById('tab-'+id);
-        if(tab) tab.classList.remove('hidden'); 
-        if(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); } 
-    }
-    
     function openGame(g) { switchTab(g); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -2883,25 +2877,7 @@
       loadDepositRequests();
     }
 
-    // ============================================
-    // ОНОВЛЕНИЙ switchTab — ініціалізація при відкритті
-    // ============================================
-    const _origSwitchTab = switchTab;
-    function switchTab(id, el) {
-      document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-      const tab = document.getElementById('tab-'+id);
-      if(tab) tab.classList.remove('hidden');
-      if(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); }
-      // Ініціалізація при першому відкритті
-      if(id==='chat') initLobbyChat();
-      if(id==='keno') initKeno();
-      if(id==='fortune') { setTimeout(()=>drawFortuneWheel(0), 50); }
-      if(id==='duels') loadDuels();
-      if(id==='tournaments') loadTournaments();
-      if(id==='referrals') initReferrals();
-      if(id==='admin') loadAdminStats();
-      if(id==='scratch') { const g=document.getElementById('scratchGrid'); if(!g.children.length) scratchReset(); }
-    }
+
 
     function scratchReset() {
       document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:#777;grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
@@ -3371,38 +3347,49 @@
     // ОНОВЛЕНИЙ switchTab
     // ============================================
     function switchTab(id, el) {
-      document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-      const tab = document.getElementById('tab-'+id);
-      if(tab) tab.classList.remove('hidden');
-      // Мобайл nav
-      if(el && el.classList.contains('nav-item')) {
-        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-        el.classList.add('active');
-      }
-      // Sidebar nav
-      document.querySelectorAll('.sidebar-item').forEach(n=>n.classList.remove('active'));
-      if(el && el.classList.contains('sidebar-item')) el.classList.add('active');
+      // Ховаємо всі екрани
+      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 
-      if(id==='chat') initLobbyChat();
-      if(id==='keno') initKeno();
-      if(id==='fortune') setTimeout(()=>drawFortuneWheel(0), 50);
-      if(id==='duels') loadDuels();
-      if(id==='tournaments') loadTournaments();
-      if(id==='referrals') initReferrals();
-      if(id==='admin') loadAdminStats();
-      if(id==='achievements') { checkAchievements(); renderAchievements(); }
-      if(id==='shop') renderShop();
-      if(id==='vault') { accrueVaultInterest(); renderVault(); }
-      if(id==='lottery') initLottery();
-      if(id==='profile') {
-        // Додати кнопку статистики
+      // Показуємо потрібний
+      const tab = document.getElementById('tab-' + id);
+      if (tab) tab.classList.remove('hidden');
+      else { console.warn('Tab not found:', id); return; }
+
+      // Активний стан мобайл nav
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.sidebar-item').forEach(n => n.classList.remove('active'));
+      if (el) {
+        el.classList.add('active');
+      } else {
+        // Підсвічуємо відповідний sidebar item програмно
+        document.querySelectorAll('.sidebar-item').forEach(n => {
+          const onc = n.getAttribute('onclick') || '';
+          if (onc.includes("'" + id + "'") || onc.includes('"' + id + '"')) {
+            n.classList.add('active');
+          }
+        });
+      }
+
+      // Ініціалізація при відкритті
+      if (id === 'chat')         initLobbyChat();
+      if (id === 'keno')         initKeno();
+      if (id === 'fortune')      setTimeout(() => drawFortuneWheel(0), 50);
+      if (id === 'duels')        loadDuels();
+      if (id === 'tournaments')  loadTournaments();
+      if (id === 'referrals')    initReferrals();
+      if (id === 'admin')        loadAdminStats();
+      if (id === 'achievements') { checkAchievements(); renderAchievements(); }
+      if (id === 'shop')         renderShop();
+      if (id === 'vault')        { accrueVaultInterest(); renderVault(); }
+      if (id === 'lottery')      initLottery();
+      if (id === 'scratch')      { const g = document.getElementById('scratchGrid'); if (!g || !g.children.length) scratchReset(); }
+      if (id === 'profile') {
         const box = document.querySelector('#tab-profile .box');
-        if(box && !document.getElementById('statsBtn')) {
+        if (box && !document.getElementById('statsBtn')) {
           const btn = document.createElement('button');
           btn.id = 'statsBtn'; btn.className = 'btn-outline';
-          btn.textContent = '📊 Статистика';
+          btn.textContent = '📊 Статистика балансу';
           btn.onclick = openStatsModal;
-          btn.style.marginTop = '8px';
           box.appendChild(btn);
         }
       }
