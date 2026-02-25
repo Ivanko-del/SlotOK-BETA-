@@ -13,46 +13,120 @@
     :root { --bg: #050505; --text: #fff; --box: #141414; --border: #333; --accent: #d4af37; --input: #1a1a1a; --green: #4cd964; --red: #ff3b30; --sidebar: #0a0a0a; --card-hover: #1e1e1e; }
     [data-theme="light"] { --bg: #f0f0f0; --text: #111; --box: #fff; --border: #ddd; --input: #f5f5f5; --sidebar: #e8e8e8; --card-hover: #f8f8f8; }
 
-    /* ===== DESKTOP LAYOUT ===== */
+    /* ===== LAYOUT ===== */
     * { box-sizing: border-box; }
     body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; user-select: none; transition: background 0.3s, color 0.3s; }
-
-    /* Sidebar (desktop) */
     .sidebar { display: none; }
-    @media (min-width: 900px) {
-      body { display: flex; min-height: 100vh; }
-      .sidebar { display: flex; flex-direction: column; width: 220px; min-height: 100vh; background: var(--sidebar); border-right: 1px solid var(--border); position: fixed; left: 0; top: 0; z-index: 800; padding: 0; }
-      .sidebar-logo { padding: 20px 20px 10px; font-size: 26px; font-weight: 900; font-style: italic; color: var(--accent); border-bottom: 1px solid var(--border); }
-      .sidebar-logo span { color: var(--text); }
-      .sidebar-bal { margin: 12px 16px; background: #222; border-radius: 10px; padding: 10px 14px; font-weight: bold; color: var(--green); font-size: 14px; border: 1px solid #333; cursor: pointer; }
-      .sidebar-nav { flex: 1; padding: 10px 0; overflow-y: auto; }
-      .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; color: #777; font-size: 14px; transition: 0.15s; border-left: 3px solid transparent; }
-      .sidebar-item:hover { background: var(--card-hover); color: var(--text); }
-      .sidebar-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(212,175,55,0.06); }
-      .sidebar-item .s-icon { font-size: 18px; width: 22px; text-align: center; }
-      .sidebar-section { padding: 10px 20px 4px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
-      .sidebar-bottom { padding: 12px 16px; border-top: 1px solid var(--border); }
-      .main-wrap { margin-left: 220px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
-      .header { padding: 14px 24px; }
-      .container { padding: 20px 28px; max-width: 900px; }
-      .bottom-nav { display: none !important; }
-      body { padding-bottom: 0; }
-    }
+
     @media (max-width: 899px) {
       body { padding-bottom: 90px; }
       .main-wrap { width: 100%; }
     }
 
-    /* Desktop grid для ігор */
     @media (min-width: 900px) {
-      .games-grid-desktop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-      .game-card { cursor: pointer; transition: 0.2s; }
-      .game-card:hover { background: var(--card-hover); border-color: var(--accent); transform: translateY(-2px); }
-      .container { padding-bottom: 30px; }
-      .reels-container { gap: 10px; }
-      .reel { width: 85px; height: 105px; line-height: 105px; font-size: 52px; }
-      .poker-table { max-width: 600px; margin: 0 auto 15px; }
-      .bj-table { max-width: 560px; margin: 0 auto 15px; }
+      body { display: flex; min-height: 100vh; padding-bottom: 0; }
+
+      /* ---- Sidebar (compact, nav only) ---- */
+      .sidebar {
+        display: flex; flex-direction: column;
+        width: 190px; min-height: 100vh;
+        background: var(--sidebar);
+        border-right: 1px solid var(--border);
+        position: fixed; left: 0; top: 0; z-index: 800;
+      }
+      .sidebar-logo {
+        padding: 20px 18px 12px;
+        font-size: 22px; font-weight: 900; font-style: italic;
+        color: var(--accent); border-bottom: 1px solid var(--border);
+      }
+      .sidebar-logo span { color: var(--text); }
+      .sidebar-bal {
+        margin: 10px 12px;
+        background: rgba(76,217,100,0.08);
+        border-radius: 8px; padding: 9px 12px;
+        font-weight: bold; color: var(--green);
+        font-size: 13px; border: 1px solid rgba(76,217,100,0.2);
+        cursor: pointer;
+      }
+      .sidebar-nav { flex: 1; padding: 4px 0; overflow-y: auto; scrollbar-width: none; }
+      .sidebar-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 16px; cursor: pointer;
+        color: #666; font-size: 13px;
+        transition: 0.12s; border-left: 3px solid transparent;
+        white-space: nowrap;
+      }
+      .sidebar-item:hover { background: var(--card-hover); color: var(--text); }
+      .sidebar-item.active {
+        color: var(--accent); border-left-color: var(--accent);
+        background: rgba(212,175,55,0.07); font-weight: 600;
+      }
+      .sidebar-item .s-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+      .sidebar-bottom { padding: 10px 12px; border-top: 1px solid var(--border); }
+
+      /* ---- Main wrap ---- */
+      .main-wrap { margin-left: 190px; flex: 1; min-height: 100vh; }
+      .bottom-nav { display: none !important; }
+      .header { padding: 12px 28px; }
+      .container { padding: 24px 32px; max-width: 1050px; }
+
+      /* ---- Lobby: card grid ---- */
+      .lobby-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .lobby-grid .game-card {
+        margin-bottom: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px 16px 16px;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: 0.18s;
+        gap: 10px;
+      }
+      .lobby-grid .game-card:hover {
+        border-color: var(--accent);
+        background: var(--card-hover);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      }
+      .lobby-grid .game-icon { font-size: 42px; }
+      .lobby-grid .game-title { font-size: 15px; }
+      .lobby-grid .game-desc { font-size: 12px; color: #777; }
+
+      /* ---- Home: quick games grid ---- */
+      #tab-home .games-scroll {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        overflow-x: unset;
+        padding-bottom: 0;
+      }
+      #tab-home .game-thumb {
+        min-width: unset; height: 110px;
+        transition: 0.18s;
+      }
+      #tab-home .game-thumb:hover {
+        border-color: var(--accent);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      }
+      .hero-banner { height: 190px; }
+
+      /* ---- Game screens: center content ---- */
+      .screen > .bj-table,
+      .screen > .poker-table,
+      .screen > .baccarat-table { max-width: 620px; margin-left: auto; margin-right: auto; }
+      .screen > .box { max-width: 520px; margin-left: auto; margin-right: auto; }
+      .screen > .btn-outline:first-child { margin-left: 0; }
+
+      .reel { width: 82px; height: 98px; line-height: 98px; font-size: 48px; }
+      .chat-box { height: 440px; }
+      .keno-grid { max-width: 480px; margin-left: auto; margin-right: auto; }
+      .scratch-grid { max-width: 400px; margin-left: auto; margin-right: auto; }
+      .fortune-wheel-wrap { width: 300px; height: 300px; }
     }
 
     /* ===== БАЗОВІ СТИЛІ (мобайл) ===== */
@@ -338,6 +412,40 @@
     .section-header { color: #777; font-size: 12px; margin: 15px 0 8px; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid var(--accent); padding-left: 8px; }
     .announce-item { background: #1a1a00; border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
     .tournament-card { background: linear-gradient(135deg, #1a1a00, #0d0d00); border: 1px solid var(--accent); border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+
+    /* Game screen centering on desktop */
+    .game-screen-wrap { width: 100%; }
+    @media (min-width: 900px) {
+      .game-screen-wrap {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .screen > .btn-outline:first-child {
+        display: inline-block;
+        width: auto;
+        margin-bottom: 16px;
+      }
+      /* Lobby section headers */
+      #tab-lobby h2 { margin-top: 0; }
+      #tab-lobby .section-header { margin-top: 20px; }
+      /* Profile, cashier etc - center narrower content */
+      #tab-profile .box,
+      #tab-cashier .box,
+      #tab-cashier .tg-deposit-box,
+      #tab-cashier .withdraw-box {
+        max-width: 560px; margin-left: auto; margin-right: auto;
+      }
+      #tab-top .box { max-width: 700px; margin: 0 auto 15px; }
+      #tab-vault .vault-box,
+      #tab-vault .box { max-width: 500px; margin-left: auto; margin-right: auto; }
+      #tab-lottery .box { max-width: 500px; margin-left: auto; margin-right: auto; }
+      #tab-achievements .achievements-grid { grid-template-columns: repeat(6, 1fr); }
+      #tab-shop .shop-grid { grid-template-columns: repeat(5, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      #mainHeader { display: none; }
+    }
   </style>
 </head>
 <body data-theme="dark">
@@ -351,36 +459,21 @@
     <div class="sidebar-logo">SLOT<span>OK</span></div>
     <div class="sidebar-bal" onclick="switchTab('cashier')">💰 <span class="bal sb-bal">0</span> ₴</div>
     <nav class="sidebar-nav">
-      <div class="sidebar-section">ГОЛОВНА</div>
       <div class="sidebar-item active" onclick="switchTab('home',this)"><span class="s-icon">🏠</span>Головна</div>
-      <div class="sidebar-item" onclick="switchTab('chat',this)"><span class="s-icon">💬</span>Чат Лобі</div>
+      <div class="sidebar-item" onclick="switchTab('lobby',this)"><span class="s-icon">🎰</span>Казино</div>
+      <div class="sidebar-item" onclick="switchTab('chat',this)"><span class="s-icon">💬</span>Чат</div>
       <div class="sidebar-item" onclick="switchTab('top',this)"><span class="s-icon">🏆</span>Рейтинг</div>
-      <div class="sidebar-section">ІГРИ</div>
-      <div class="sidebar-item" onclick="switchTab('lobby',this)"><span class="s-icon">🎰</span>Всі ігри</div>
-      <div class="sidebar-item" onclick="openGame('slots')"><span class="s-icon">🎰</span>Слоти</div>
-      <div class="sidebar-item" onclick="openGame('blackjack')"><span class="s-icon">🃏</span>Блекджек</div>
-      <div class="sidebar-item" onclick="openGame('roulette')"><span class="s-icon">🎡</span>Рулетка</div>
-      <div class="sidebar-item" onclick="openGame('crash')"><span class="s-icon">🚀</span>Краш</div>
-      <div class="sidebar-item" onclick="openGame('poker')"><span class="s-icon">♠️</span>Покер</div>
-      <div class="sidebar-item" onclick="openGame('baccarat')"><span class="s-icon">🎴</span>Баккара</div>
-      <div class="sidebar-item" onclick="openGame('sicbo')"><span class="s-icon">🎲</span>Сік-Бо</div>
-      <div class="sidebar-item" onclick="openGame('fortune')"><span class="s-icon">🎡</span>Колесо</div>
-      <div class="sidebar-item" onclick="openGame('keno')"><span class="s-icon">🔢</span>Кено</div>
-      <div class="sidebar-item" onclick="openGame('scratch')"><span class="s-icon">🎟️</span>Скретч</div>
-      <div class="sidebar-item" onclick="openGame('mines')"><span class="s-icon">💣</span>Міни</div>
-      <div class="sidebar-item" onclick="openGame('plinko')"><span class="s-icon">🔻</span>Плінко</div>
-      <div class="sidebar-section">СОЦІАЛЬНЕ</div>
+      <div class="sidebar-item" onclick="switchTab('cashier',this)"><span class="s-icon">💳</span>Каса</div>
       <div class="sidebar-item" onclick="switchTab('duels',this)"><span class="s-icon">⚔️</span>Дуелі</div>
       <div class="sidebar-item" onclick="switchTab('tournaments',this)"><span class="s-icon">🏆</span>Турніри</div>
       <div class="sidebar-item" onclick="switchTab('referrals',this)"><span class="s-icon">👥</span>Реферали</div>
-      <div class="sidebar-item" onclick="switchTab('contacts',this)"><span class="s-icon">🤝</span>Знайомі</div>
-      <div class="sidebar-section">ОСОБИСТЕ</div>
-      <div class="sidebar-item" onclick="switchTab('cashier',this)"><span class="s-icon">💳</span>Каса</div>
       <div class="sidebar-item" onclick="switchTab('shop',this)"><span class="s-icon">🛍️</span>Магазин</div>
       <div class="sidebar-item" onclick="switchTab('achievements',this)"><span class="s-icon">🏅</span>Досягнення</div>
       <div class="sidebar-item" onclick="switchTab('vault',this)"><span class="s-icon">🏦</span>Скарбниця</div>
       <div class="sidebar-item" onclick="switchTab('lottery',this)"><span class="s-icon">🎫</span>Лотерея</div>
+      <div class="sidebar-item" onclick="switchTab('contacts',this)"><span class="s-icon">🤝</span>Знайомі</div>
       <div class="sidebar-item" onclick="switchTab('profile',this)"><span class="s-icon">👤</span>Профіль</div>
+      <div class="sidebar-item" onclick="switchTab('more',this)"><span class="s-icon">⚙️</span>Ще</div>
     </nav>
     <div class="sidebar-bottom">
       <button class="btn-outline theme-btn" onclick="toggleTheme()" style="width:100%;margin:0;">🌙 Тема</button>
@@ -388,8 +481,8 @@
   </aside>
   <div class="main-wrap">
   <div id="toast-container"></div>
-  <div class="header">
-    <h1>SLOT<span>OK</span></h1>
+  <div class="header" id="mainHeader">
+    <h1>SLOT<span style="color:var(--text);">OK</span></h1>
     <div class="header-right">
       <button class="theme-btn" onclick="toggleTheme()">🌙</button>
       <div class="header-bal" onclick="switchTab('cashier')"><span class="bal">0</span> ₴</div>
@@ -430,22 +523,38 @@
 
     <!-- ЛОБІ -->
     <div id="tab-lobby" class="screen hidden">
-      <div class="game-card" onclick="openGame('blackjack')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Blackjack</div><div class="game-desc">21 • Класика</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('keno')"><span class="game-icon">🔢</span><div class="game-info"><div class="game-title">Keno</div><div class="game-desc">Вибери числа</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('scratch')"><span class="game-icon">🎟️</span><div class="game-info"><div class="game-title">Скретч</div><div class="game-desc">Стирай і вигравай</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('fortune')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Колесо Фортуни</div><div class="game-desc">Крути і вигравай</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Слоти • RTP 95%</div></div></div>
-      <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div><div class="game-desc">Рулетка • x2 / x14</div></div></div>
-      <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Краш • до x∞</div></div></div>
-      <div class="game-card" onclick="openGame('poker')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Video Poker</div><div class="game-desc">5-карткова роздача • NEW</div></div><span style="background:var(--green);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки</div></div></div>
-      <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
-      <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Плінко</div></div></div>
+      <h2 style="color:var(--accent);margin-bottom:16px;">🎮 Всі ігри</h2>
+      <div class="section-header">🃏 Карткові</div>
+      <div class="lobby-grid" style="margin-bottom:20px;">
+        <div class="game-card" onclick="openGame('blackjack')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Blackjack</div><div class="game-desc">21 • Класика</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">HOT</span></div>
+        <div class="game-card" onclick="openGame('poker')"><span class="game-icon">♠️</span><div class="game-info"><div class="game-title">Video Poker</div><div class="game-desc">5-карткова роздача</div></div><span style="background:var(--green);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
+        <div class="game-card" onclick="openGame('baccarat')"><span class="game-icon">🎴</span><div class="game-info"><div class="game-title">Баккара</div><div class="game-desc">Гравець vs Банкір</div></div><span style="background:var(--green);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
+      </div>
+      <div class="section-header">🎰 Слоти та Колесо</div>
+      <div class="lobby-grid" style="margin-bottom:20px;">
+        <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Слоти • RTP 95%</div></div></div>
+        <div class="game-card" onclick="openGame('fortune')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Колесо Фортуни</div><div class="game-desc">x0.2 до Джекпот x50</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">HOT</span></div>
+        <div class="game-card" onclick="openGame('scratch')"><span class="game-icon">🎟️</span><div class="game-info"><div class="game-title">Скретч-картки</div><div class="game-desc">Стирай і вигравай</div></div></div>
+      </div>
+      <div class="section-header">🎲 Числа та Кості</div>
+      <div class="lobby-grid" style="margin-bottom:20px;">
+        <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🔴</span><div class="game-info"><div class="game-title">Рулетка</div><div class="game-desc">Червоне/Чорне • x2/x14</div></div></div>
+        <div class="game-card" onclick="openGame('keno')"><span class="game-icon">🔢</span><div class="game-info"><div class="game-title">Кено</div><div class="game-desc">Вибери до 10 чисел</div></div></div>
+        <div class="game-card" onclick="openGame('sicbo')"><span class="game-icon">🎲</span><div class="game-info"><div class="game-title">Сік-Бо</div><div class="game-desc">3 кості • 6 видів ставок</div></div><span style="background:var(--green);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
+      </div>
+      <div class="section-header">💥 Аркадні</div>
+      <div class="lobby-grid">
+        <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Краш • до x∞</div></div><span style="background:var(--red);color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">HOT</span></div>
+        <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер • свій ризик</div></div></div>
+        <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Кулька падає вниз</div></div></div>
+        <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки з призами</div></div></div>
+      </div>
     </div>
 
     <!-- ІГРИ -->
     <div id="tab-slots" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <div class="game-screen-wrap">
       <div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div>
       <div class="box">
         <input id="betAmountSlots" type="number" value="100">
@@ -1146,6 +1255,7 @@
     function updateUI() {
         if(!userData) return;
         document.querySelectorAll('.bal').forEach(e => e.textContent = formatNumber(userData.balance));
+        document.querySelectorAll('.sb-bal').forEach(e => e.textContent = formatNumber(userData.balance));
         document.getElementById('profileName').textContent = currentUser;
         document.getElementById('profileId').textContent = userData.id || '---';
         document.getElementById('profileEmail').textContent = userData.email || "-";
