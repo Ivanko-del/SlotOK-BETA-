@@ -1,918 +1,411 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v33 Final</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SlotOK MEGA</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    /* --- ОСНОВА --- */
-    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #333; --accent: #d4af37; --input: #1a1a1a; }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; user-select: none; }
-    
-    .header { padding: 15px; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; display:flex; justify-content:space-between; align-items:center; }
-    .header h1 { margin: 0; font-size: 24px; color: var(--accent); font-weight: 900; font-style: italic; }
-    .header-bal { font-size: 16px; background: #222; padding: 5px 15px; border-radius: 20px; border: 1px solid #444; font-weight:bold; color: #4cd964; }
-
-    .container { padding: 15px; } 
+    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #333; --accent: #d4af37; }
+    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; }
     .hidden { display: none !important; }
+    .header { padding: 15px; background: #000; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+    .header-bal { color: #4cd964; font-weight: bold; background: #111; padding: 5px 12px; border-radius: 15px; border: 1px solid #333; }
+    .container { padding: 15px; }
     .box { background: var(--box); border-radius: 12px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
     
-    button { padding: 14px; width: 100%; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; background: #333; color: #fff; margin-bottom: 8px; transition: 0.2s; }
-    button:active { transform: scale(0.98); }
-    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; } 
-    .btn-red { background: #ff3b30; color: #fff; } 
-    .btn-green { background: #4cd964; color: #000; } 
+    button { padding: 14px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 8px; font-size: 15px; }
+    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; }
     .btn-outline { background: transparent; border: 1px solid #555; color: #ccc; }
-    
-    input { width: 100%; padding: 14px; margin-bottom: 12px; background: var(--input); border: 1px solid var(--border); color: #fff; border-radius: 10px; font-size: 16px; box-sizing: border-box; text-align: center; font-weight: bold; } 
+    .btn-red { background: #ff3b30; color: #fff; }
+    .btn-green { background: #4cd964; color: #000; }
 
-    /* ГОЛОВНА */
-    .hero-banner { width: 100%; height: 150px; background: linear-gradient(135deg, #1e1e1e, #000); border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-    .hero-title { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 5px; }
-    
-    .games-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-    .game-thumb { min-width: 100px; height: 100px; background: var(--box); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-    .game-thumb span { font-size: 35px; }
+    input { width: 100%; padding: 14px; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; text-align: center; font-size: 16px; }
 
-    /* ЛОБІ */
-    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 10px; display:flex; align-items:center; gap:15px; cursor: pointer; }
-    .game-icon { font-size: 35px; } .game-title { font-size: 16px; font-weight: bold; } .game-desc { font-size: 12px; color: #777; }
+    /* ГРИ */
+    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
+    .tower-grid { display: grid; grid-template-rows: repeat(10, 1fr); gap: 5px; margin-bottom: 15px; }
+    .tower-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; opacity: 0.3; pointer-events: none; }
+    .tower-row.active { opacity: 1; pointer-events: auto; }
+    .tower-cell { background: #222; height: 40px; border-radius: 5px; display: flex; align-items: center; justify-content: center; border: 1px solid #444; font-size: 20px; }
+    
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 10px; }
+    .mine-cell { aspect-ratio: 1; background: #222; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #333; }
 
-    /* ІГРИ */
-    .reels-container { background: #000; border: 1px solid var(--accent); border-radius: 10px; padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; } 
-    .reel { font-size: 45px; width: 70px; height: 90px; line-height: 90px; background: #fff; color: #000; border-radius: 5px; text-align: center; }
-    
-    .roulette-wheel { width: 220px; height: 220px; border-radius: 50%; border: 6px solid #222; margin: 0 auto 15px; background: conic-gradient(#4cd964 0deg 18deg, #222 18deg 189deg, #b71c1c 189deg 360deg); transition: 4s ease-out; transform: rotate(0deg); }
-    .bet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } 
-    .bet-btn { padding: 10px; border-radius: 6px; background: #222; color: #888; font-size: 11px; text-align: center; border: 1px solid #333; } 
-    .bet-btn.selected { border-color: var(--accent); color: #fff; background: #333; }
-    
-    .chests-grid { display: grid; gap: 8px; margin-bottom: 15px; grid-template-columns: repeat(3, 1fr); } 
-    .chest-item { background: #222; border-radius: 8px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 35px; border:1px solid #333; cursor:pointer;} 
-    
-    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 15px; }
-    .mine-cell { aspect-ratio: 1; background: #222; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #333; cursor:pointer;}
-    .mine-cell.revealed { background: #111; border-color: #000; }
-    
-    .plinko-board { position: relative; width: 100%; height: 250px; background: #111; border-radius: 10px; margin-bottom: 10px; border: 1px solid #333; overflow: hidden; } 
-    .plinko-ball { position: absolute; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; display: none; }
-    .plinko-buckets { display: flex; justify-content: space-between; } .bucket { font-size: 10px; background: #222; width: 14%; text-align: center; border-top: 2px solid #444; }
+    /* ЧАТ */
+    #chatBox { height: 300px; overflow-y: auto; background: #080808; border-radius: 10px; padding: 10px; border: 1px solid #222; margin-bottom: 10px; }
+    .msg { margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #111; padding-bottom: 5px; }
+    .msg-u { color: var(--accent); font-weight: bold; }
 
-    .crash-screen { background: #111; height: 200px; border-radius: 12px; border: 1px solid #333; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
-    .crash-rocket { font-size: 40px; position: absolute; bottom: 20px; left: 20px; transition: 0.1s linear; } 
-    .crash-multiplier { font-size: 40px; font-weight: bold; color: #fff; z-index: 10; }
+    /* НАВІГАЦІЯ */
+    .nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #000; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { color: #555; text-align: center; font-size: 10px; }
+    .nav-item.active { color: var(--accent); }
 
-    /* АДМІНКА & ТОП */
-    .admin-user-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #1a1a1a; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; color: #fff; cursor: pointer;}
-    .rank { color: var(--accent); font-weight: bold; width: 30px; text-align:center; }
-    table { width: 100%; border-collapse: collapse; } td { padding: 12px 5px; border-bottom: 1px solid #333; font-size: 14px; } 
-
-    /* NAV & MODALS */
-    .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #080808; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); } 
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 10px; width: 16%; height: 100%; cursor: pointer;} 
-    .nav-item span.icon { font-size: 22px; margin-bottom: 4px; } .nav-item.active { color: var(--accent); }
-    
-    #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index:9999; display:flex; justify-content:center; align-items:center; color:var(--accent); font-size:24px; flex-direction: column; transition: opacity 0.5s; }
-    #auth-screen, #modal-overlay, .full-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 6000; width: 90%; max-width: 400px; pointer-events: none; } 
-    .toast { background: #222; color: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; border-left: 4px solid var(--accent); box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-size: 14px; }
-    
-    .contact-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
-    .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; } 
-    .avatar-large { width: 70px; height: 70px; background: #222; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; } .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
-    .payment-methods { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; } .pay-btn { background: var(--input); border: 1px solid var(--border); padding: 10px 2px; border-radius: 8px; text-align: center; font-size: 10px; color: #aaa; cursor: pointer; } .pay-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(212, 175, 55, 0.1); }
+    #loading { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; color: var(--accent); font-weight: bold; font-size: 20px; }
   </style>
 </head>
-<body data-theme="dark">
+<body>
 
-  <div id="loading-overlay">
-    <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v33 Final</div>
-  </div>
+<div id="loading">ЗАВАНТАЖЕННЯ...</div>
+
+<div class="header">
+  <h2 style="margin:0; font-style:italic;">SLOTOK <span style="color:var(--accent)">PRO</span></h2>
+  <div class="header-bal"><span id="topBal">0</span> ₴</div>
+</div>
+
+<div class="container">
   
-  <div id="toast-container"></div>
-  
-  <div class="header">
-    <h1>SLOT<span>OK</span></h1>
-    <div class="header-bal"><span class="bal">0</span> ₴</div>
+  <div id="tab-home" class="screen">
+    <div class="box" style="text-align:center;">
+      <div style="font-size:12px; color:#777;">ВАШ СТАТУС</div>
+      <div id="uStatus" style="font-weight:bold; color:var(--accent); font-size:18px;">НОВАЧОК</div>
+    </div>
+    <div class="game-card" onclick="go('dice')"><span>🎲</span> <b>Dice (Кості)</b></div>
+    <div class="game-card" onclick="go('tower')"><span>🏰</span> <b>Tower (Вежа)</b></div>
+    <div class="game-card" onclick="go('double')"><span>🔴</span> <b>Double (Спільна)</b></div>
+    <div class="game-card" onclick="go('mines')"><span>💣</span> <b>Mines (Сапер)</b></div>
+    <div class="game-card" onclick="go('slots')"><span>🎰</span> <b>Slots (Слоти)</b></div>
   </div>
 
-  <div class="container">
-    
-    <div id="tab-home" class="screen">
-        <div class="hero-banner">
-            <div class="hero-title">BONUS 250%</div>
-            <div style="color:#aaa;">Вітальний бонус</div>
-        </div>
-        <div class="section-title" style="color:white; margin:10px 0; border-left:3px solid #d4af37; padding-left:10px;">🔥 Популярні</div>
-        <div class="games-scroll">
-            <div class="game-thumb" onclick="openGame('slots')"><span>🎰</span></div>
-            <div class="game-thumb" onclick="openGame('roulette')"><span>🎡</span></div>
-            <div class="game-thumb" onclick="openGame('crash')"><span>🚀</span></div>
-        </div>
-        <button class="btn-outline" style="margin-top:20px;" onclick="switchTab('lobby')">Всі ігри ➡</button>
+  <div id="tab-dice" class="screen hidden">
+    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
+    <div class="box" style="text-align:center;">
+      <div id="diceRes" style="font-size:45px; margin:10px 0; font-weight:bold; color:var(--accent);">0.00</div>
+      <p>Шанс виграшу: <span id="diceChanceVal">50</span>%</p>
+      <input type="range" id="diceRange" min="1" max="95" value="50" oninput="document.getElementById('diceChanceVal').innerText=this.value">
+      <input id="betDice" type="number" value="100">
+      <button class="btn-gold" onclick="playDice()">ГРАТИ</button>
     </div>
+  </div>
 
-    <div id="tab-lobby" class="screen hidden">
-      <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Слоти</div></div></div>
-      <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div><div class="game-desc">Рулетка</div></div></div>
-      <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Краш</div></div></div>
-      <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки</div></div></div>
-      <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
-      <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Плінко</div></div></div>
+  <div id="tab-tower" class="screen hidden">
+    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
+    <div class="tower-grid" id="towerGrid"></div>
+    <div class="box">
+      <input id="betTower" type="number" value="100">
+      <button class="btn-gold" id="towerStart" onclick="startTower()">СТАРТ</button>
+      <button class="btn-green hidden" id="towerCash" onclick="cashTower()">ЗАБРАТИ</button>
     </div>
+  </div>
 
-    <div id="tab-slots" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div><div class="box"><input id="betAmountSlots" type="number" value="100"><button class="btn-gold" onclick="spinSlots()">КРУТИТИ</button></div></div>
-    
-    <div id="tab-roulette" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="roulette-wheel" id="wheel"></div><div class="box"><div class="bet-grid"><div class="bet-btn" data-color="red" onclick="selectRouletteBet('red', this)">RED (x2)</div><div class="bet-btn" data-color="green" onclick="selectRouletteBet('green', this)">ZERO (x14)</div><div class="bet-btn" data-color="black" onclick="selectRouletteBet('black', this)">BLACK (x2)</div></div><input id="betAmountRoulette" type="number" value="100"><button class="btn-gold" onclick="spinRoulette()">СТАРТ</button></div></div>
-    
-    <div id="tab-crash" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="crash-screen"><div class="crash-rocket" id="crashRocket">🚀</div><div class="crash-multiplier" id="crashDisplay">1.00x</div></div><div class="box"><input id="betAmountCrash" type="number" value="100"><button class="btn-gold" id="crashBtn" onclick="startCrash()">СТАРТ</button><button class="btn-green hidden" id="crashCashoutBtn" onclick="cashoutCrash()">ЗАБРАТИ</button></div></div>
-    
-    <div id="tab-chests" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="chests-grid" id="chestsGrid"></div></div><div class="box"><input id="betAmountChests" type="number" value="100"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ</button></div></div>
-    
-    <div id="tab-mines" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="mines-grid" id="minesGrid"></div></div><div class="box"><input id="betAmountMines" type="number" value="100"><button class="btn-gold" id="minesBtn" onclick="startMines()">СТАРТ</button><button class="btn-green hidden" id="minesCashoutBtn" onclick="cashoutMines()">ЗАБРАТИ</button></div></div>
-    
-    <div id="tab-plinko" class="screen hidden"><button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button><div class="box"><div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div><div class="plinko-buckets"><div class="bucket">x5</div><div class="bucket">x2</div><div class="bucket">x0.5</div><div class="bucket">x0.2</div><div class="bucket">x0.5</div><div class="bucket">x2</div><div class="bucket">x5</div></div></div><div class="box"><input id="betAmountPlinko" type="number" value="100"><button class="btn-gold" onclick="dropPlinko()">КИНУТИ</button></div></div>
-
-    <div id="tab-cashier" class="screen hidden">
-      <h3 style="color:#777; font-size:14px; margin-bottom:15px;">ПОПОВНЕННЯ</h3>
-      <div class="payment-methods"><div class="pay-btn selected">🟢 Privat</div><div class="pay-btn">🐈 Mono</div><div class="pay-btn">💳 Visa</div><div class="pay-btn">🔵 G-Pay</div><div class="pay-btn">🍎 Pay</div><div class="pay-btn">₮ USDT</div><div class="pay-btn">₿ BTC</div><div class="pay-btn">🅿️ PayPal</div></div>
-      <div class="box"><input id="depAmount" placeholder="Введіть суму" type="number"><button class="btn-gold" onclick="initDepositManual()">ПОПОВНИТИ</button></div>
-      <button class="btn-outline" style="border-color:var(--accent); color:var(--accent); margin-top:20px;" onclick="openModal('transfer-modal')">💸 Переказ Другу</button>
-      <button class="btn-outline" onclick="openModal('promo-modal')">🎁 Промокод</button>
-    </div>
-
-    <div id="tab-top" class="screen hidden">
-        <div class="box"><h3 style="text-align:center; color:#777;">РЕЙТИНГ ГРАВЦІВ</h3><table id="topTable"></table></div>
-    </div>
-    
-    <div id="tab-profile" class="screen hidden">
-      <div class="box">
-        <div class="profile-header">
-            <div class="avatar-large" id="currentAvatar">👤</div>
-            <div>
-                <div style="font-size:24px; font-weight:bold;"><span id="profileName">...</span> <span id="adminBadge" class="hidden" style="color:red; font-size:12px;">[ADMIN]</span></div>
-                <div style="font-size:12px; color:#777; margin-top:5px;" id="profileTag">...</div>
-            </div>
-        </div>
-        <input id="bioInput" placeholder="Змінити статус..." onchange="updateBio(this.value)">
-        <div style="margin-top:10px; color:#777;">ID: <span id="profileId">...</span></div>
-        <div style="margin-top:5px; color:#777;">Email: <span id="profileEmail">...</span></div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn-outline" onclick="document.getElementById('avatarInput').click()">📷 Фото</button>
-            <button class="btn-outline" onclick="openHistoryModal()">📜 Історія</button>
-        </div>
-        <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(this)">
+  <div id="tab-double" class="screen hidden">
+    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
+    <div class="box" style="text-align:center;">
+      <div id="dTimer" style="font-size:20px; color:var(--accent); margin-bottom:10px;">Чекаємо...</div>
+      <div id="dHist" style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;"></div>
+      <div style="display:flex; gap:5px; margin-bottom:10px;">
+        <button class="btn-red" style="margin:0;" onclick="setDBet('red')">x2</button>
+        <button class="btn-green" style="margin:0;" onclick="setDBet('green')">x14</button>
+        <button class="btn-outline" style="margin:0; background:#222;" onclick="setDBet('black')">x2</button>
       </div>
-      <div class="box hidden" id="adminPanelBtnBox" style="border-color: #ff3b30; text-align:center;">
-          <button class="btn-red" onclick="switchTab('admin')">ПАНЕЛЬ АДМІНІСТРАТОРА</button>
-      </div>
-    </div>
-
-    <div id="tab-contacts" class="screen hidden">
-        <h2 style="color:var(--accent); margin-bottom:15px;">Знайомі</h2>
-        <div class="box"><div style="display:flex; gap:10px;"><input id="addContactInput" placeholder="Нік або ID" style="margin:0;"><button class="btn-gold" style="width:auto; margin:0;" onclick="addContact()">+</button></div></div>
-        <div id="contactsList" style="margin-top:20px;"></div>
-    </div>
-
-    <div id="tab-more" class="screen hidden">
-      <div class="box">
-        <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки</button>
-        <button class="btn-outline" onclick="logout()">Вийти</button>
-        <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
-      </div>
-    </div>
-
-    <div id="tab-admin" class="screen hidden">
-       <button class="btn-outline" onclick="switchTab('profile')">⬅ Назад у Профіль</button>
-       <h2 style="color:var(--accent);">Адмін-Панель</h2>
-       <div class="box">
-           <button class="btn-outline" onclick="loadUserList()">🔄 Оновити список гравців</button>
-           <button class="btn-red" onclick="wipeEconomy()">💀 ОБНУЛИТИ ВСІХ (1000)</button>
-       </div>
-       <h3 style="color:#fff;">Список гравців:</h3>
-       <div id="userList" style="margin-top:10px;">Натисніть "Оновити список"</div>
+      <input id="betDouble" type="number" value="100">
+      <div id="dMyBet" style="font-size:12px; color:#777;"></div>
     </div>
   </div>
 
-  <div id="auth-screen" class="full-modal">
-      <div style="text-align:center; margin-bottom:30px;"><h1 style="color:var(--accent); font-size:50px; font-style:italic; font-weight:900;">SlotOK</h1></div>
-      <div id="loginForm"><h3 style="color:#fff;">Вхід</h3><input id="loginName" placeholder="Нікнейм"><input id="loginPass" type="password" placeholder="Пароль"><button class="btn-gold" onclick="authLogin()">УВІЙТИ</button><div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(true)">Створити акаунт</div></div>
-      <div id="regForm" class="hidden"><h3 style="color:#fff;">Реєстрація</h3><input id="regEmail" placeholder="Email"><input id="regName" placeholder="Нікнейм (без пробілів)"><input id="regPass" type="password" placeholder="Пароль (мін 8 симв)"><button class="btn-green" onclick="authRegister()">СТВОРИТИ</button><div style="text-align:center; margin-top:20px; color:#777; cursor:pointer;" onclick="toggleAuthMode(false)">Вже є акаунт? Увійти</div></div>
-  </div>
-  
-  <div id="admin-user-manage" class="full-modal hidden">
-      <button class="btn-outline" onclick="closeModal('admin-user-manage')" style="width:50px;">⬅</button>
-      <h2 id="admManageName" style="color:var(--accent)">Гравець</h2>
-      <div class="box"><input id="admAmount" type="number" placeholder="Сума (+ або -)"><button class="btn-green" onclick="admGiveMoney()">Змінити баланс</button><input id="admTag" placeholder="Новий статус"><button class="btn-outline" onclick="admSetTag()">Змінити статус</button></div>
-      <div class="box" style="border-color:red;"><button class="btn-red" onclick="admBanUser()">🚫 ЗАБЛОКУВАТИ</button><button class="btn-red" onclick="admDeleteUser()">❌ ВИДАЛИТИ АКАУНТ</button></div>
+  <div id="tab-mines" class="screen hidden">
+    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
+    <div class="mines-grid" id="mGrid"></div>
+    <div class="box">
+      <input id="betMines" type="number" value="100">
+      <button class="btn-gold" id="mStart" onclick="startMines()">СТАРТ</button>
+      <button class="btn-green hidden" id="mCash" onclick="cashMines()">ЗАБРАТИ</button>
+    </div>
   </div>
 
-  <div id="support-modal" class="full-modal hidden"><button class="btn-outline" onclick="closeModal('support-modal')" style="width:50px;">⬅</button><h2>Чат Підтримки</h2><div id="supportChatBox" style="height:300px;overflow-y:auto;background:#111;border:1px solid #333;margin-bottom:10px;padding:10px;border-radius:8px;"></div><div style="display:flex; gap:10px;"><input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;"><button class="btn-gold" style="width:auto;margin-bottom:0;" onclick="sendSupportMsg()">➤</button></div></div>
-  <div id="transfer-modal" class="full-modal hidden"><button class="btn-outline" onclick="closeModal('transfer-modal')" style="width:50px;">⬅</button><h2>Переказ Другу</h2><input id="transferTo" placeholder="Нік отримувача"><input id="transferAmount" type="number" placeholder="Сума переказу"><button class="btn-gold" onclick="sendMoney()">НАДІСЛАТИ</button></div>
-  <div id="promo-modal" class="full-modal hidden"><button class="btn-outline" onclick="closeModal('promo-modal')" style="width:50px;">⬅</button><h2>Промокод</h2><input id="promoInput" placeholder="Введіть код"><button class="btn-gold" onclick="activatePromo()">АКТИВУВАТИ</button></div>
-  <div id="history-modal" class="full-modal hidden"><button class="btn-outline" onclick="closeModal('history-modal')" style="width:50px;">⬅</button><h2>Історія Транзакцій</h2><div id="historyList" style="background:#111; border-radius:8px; border:1px solid #333;"></div></div>
-  <div id="view-user-modal" class="full-modal hidden" onclick="closeModal('view-user-modal')"><div class="user-card" onclick="event.stopPropagation()" style="margin-top:20vh;"><div class="box" style="text-align:center;"><div class="avatar-large" id="viewUserAvatar" style="margin:0 auto 15px auto;">👤</div><h2 style="margin:0; color:var(--accent)" id="viewUserName">Name</h2><div id="viewUserTag" style="color:#777; margin-bottom:5px;"></div><p style="color:#555;">ID: <span id="viewUserId">000</span></p><div style="font-size:28px; font-weight:bold; margin-bottom:20px; color:#4cd964;"><span id="viewUserBal">0</span> ₴</div><button class="btn-outline" onclick="closeModal('view-user-modal')">Закрити</button></div></div></div>
+  <div id="tab-slots" class="screen hidden">
+    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
+    <div class="box" style="display:flex; justify-content:center; gap:15px; font-size:50px; padding:30px 0;">
+      <span id="s1">❓</span><span id="s2">❓</span><span id="s3">❓</span>
+    </div>
+    <input id="betSlots" type="number" value="100">
+    <button class="btn-gold" onclick="playSlots()">КРУТИТИ</button>
+  </div>
 
-  <nav class="bottom-nav">
-    <div class="nav-item active" onclick="switchTab('home', this)"><span class="icon">🏠</span><span>Головна</span></div>
-    <div class="nav-item" onclick="switchTab('lobby', this)"><span class="icon">🎰</span><span>Казино</span></div>
-    <div class="nav-item" onclick="switchTab('cashier', this)"><span class="icon">💳</span><span>Каса</span></div>
-    <div class="nav-item" onclick="switchTab('contacts', this)"><span class="icon">👥</span><span>Знайомі</span></div>
-    <div class="nav-item" onclick="switchTab('top', this)"><span class="icon">🏆</span><span>Топ</span></div>
-    <div class="nav-item" onclick="switchTab('profile', this)"><span class="icon">👤</span><span>Профіль</span></div>
-    <div class="nav-item" onclick="switchTab('more', this)"><span class="icon">⚙️</span><span>Ще</span></div>
-  </nav>
+  <div id="tab-chat" class="screen hidden">
+    <div id="chatBox"></div>
+    <div style="display:flex; gap:5px;">
+      <input id="chatIn" placeholder="Повідомлення..." style="margin:0;">
+      <button class="btn-gold" style="width:70px; margin:0;" onclick="sendChat()">➤</button>
+    </div>
+  </div>
 
-  <script>
-    // 1. БРОНЕБІЙНЕ ВІДКЛЮЧЕННЯ ЗАВАНТАЖЕННЯ (Спрацює 100% через 1.5с)
-    setTimeout(() => {
-        const loader = document.getElementById('loading-overlay');
-        if(loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.classList.add('hidden'), 500);
-        }
-    }, 1500);
+  <div id="tab-profile" class="screen hidden">
+    <div class="box" style="text-align:center;">
+      <h2 id="pName">...</h2>
+      <p id="pId" style="color:#777;"></p>
+      <button class="btn-outline" onclick="openPromo()">🎁 Промокод</button>
+      <button class="btn-red" onclick="logout()">ВИЙТИ</button>
+    </div>
+    <div id="admBox" class="box hidden" style="border-color:red;">
+      <h3 style="margin-top:0;">Адмін Панель</h3>
+      <input id="apName" placeholder="Назва промо">
+      <input id="apSum" type="number" placeholder="Сума">
+      <input id="apLimit" type="number" placeholder="Ліміт">
+      <button class="btn-green" onclick="addPromo()">Створити Промо</button>
+    </div>
+  </div>
 
-    // 2. ІНІЦІАЛІЗАЦІЯ БАЗИ ДАНИХ
-    const firebaseConfig = { 
-        apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", 
-        authDomain: "slotok-web-server.firebaseapp.com", 
-        databaseURL: "https://slotok-web-server-default-rtdb.firebaseio.com", 
-        projectId: "slotok-web-server", 
-        storageBucket: "slotok-web-server.firebasestorage.app", 
-        messagingSenderId: "1086314476940", 
-        appId: "1:1086314476940:web:d3629d2d0fe16f7c1f12a9" 
-    };
-    
-    try {
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    } catch(e) {
-        console.error("Firebase init error", e);
-    }
-    const db = firebase.database();
+  <div id="tab-top" class="screen hidden">
+    <div class="box">
+      <h3>ТОП ГРАВЦІВ</h3>
+      <div id="topList"></div>
+    </div>
+  </div>
 
-    // 3. ОСНОВНІ ЗМІННІ
-    let currentUser = null; 
-    let userData = {}; 
-    let isRegMode = false; 
-    let currentRouletteBet = null;
-    const MAX_BET = 100000; 
-    let audioCtx = null; 
+</div>
 
-    // 4. ПЕРЕВІРКА ЛОГІНУ (Плюс перевірка на "мертві душі")
-    const savedUser = localStorage.getItem("royal_online_user");
-    if(savedUser) { 
-        currentUser = savedUser; 
-        startDataSync(); 
-    }
+<div id="auth" class="hidden" style="position:fixed; inset:0; background:#000; z-index:5000; padding:30px;">
+  <h1 style="text-align:center; color:var(--accent); margin-bottom:40px;">SLOTOK</h1>
+  <input id="uName" placeholder="Нікнейм">
+  <input id="uPass" type="password" placeholder="Пароль">
+  <button class="btn-gold" onclick="auth('login')">УВІЙТИ</button>
+  <button class="btn-outline" onclick="auth('reg')">РЕЄСТРАЦІЯ</button>
+</div>
 
-    function startDataSync() {
-        try {
-            db.ref('users/' + currentUser).on('value', (snapshot) => {
-                const data = snapshot.val();
-                
-                // Якщо користувач є в браузері, але ВИДАЛЕНИЙ з бази - розлогінити
-                if(!data) { 
-                    console.log("User not found in DB. Logging out.");
-                    logout(); 
-                    return; 
-                }
-                
-                userData = data; 
-                if(userData.banned) { 
-                    alert("ВАШ АКАУНТ ЗАБЛОКОВАНО АДМІНІСТРАЦІЄЮ!"); 
-                    logout(); 
-                    return; 
-                }
-                
-                document.getElementById('auth-screen').classList.add('hidden');
-                updateUI(); 
-                loadContacts(); 
-                checkAdmin();
-            }, (error) => {
-                console.error("Firebase Read Error:", error);
-                notify("Помилка зв'язку з базою. Можливо проблеми з Firebase Rules.", "error");
-            });
-            
-            // Завантаження Топ-20
-            db.ref('users').orderByChild('balance').limitToLast(20).on('value', snap => renderTop(snap.val()));
-        } catch(e) {
-            console.error("Sync error:", e);
-        }
-    }
+<div id="promo-m" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:6000; padding:40px 20px;">
+  <div class="box">
+    <h3>Введіть Промокод</h3>
+    <input id="promoIn" placeholder="КОД">
+    <button class="btn-gold" onclick="usePromo()">АКТИВУВАТИ</button>
+    <button class="btn-outline" onclick="document.getElementById('promo-m').classList.add('hidden')">ЗАКРИТИ</button>
+  </div>
+</div>
 
-    // 5. ІНТЕРФЕЙС ТА УТИЛІТИ
-    function updateUI() {
-        if(!userData) return;
-        document.querySelectorAll('.bal').forEach(e => e.textContent = formatNumber(userData.balance));
-        document.getElementById('profileName').textContent = currentUser;
-        document.getElementById('profileId').textContent = userData.id || '---';
-        document.getElementById('profileEmail').textContent = userData.email || "-";
-        document.getElementById('profileTag').textContent = userData.tag || "Гравець";
-        const avDiv = document.getElementById('currentAvatar');
-        avDiv.innerHTML = (userData.avatar && userData.avatar.length > 20) ? `<img src="${userData.avatar}">` : '👤';
-    }
+<nav class="nav">
+  <div class="nav-item active" onclick="go('home', this)">🏠<br>Головна</div>
+  <div class="nav-item" onclick="go('chat', this)">💬<br>Чат</div>
+  <div class="nav-item" onclick="go('top', this)">🏆<br>Топ</div>
+  <div class="nav-item" onclick="go('profile', this)">👤<br>Профіль</div>
+</nav>
 
-    function checkAdmin() {
-        // Доступ до адмінки за ніком або прапорцем isAdmin
-        if (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true) {
-            document.getElementById('adminPanelBtnBox').classList.remove('hidden');
-            document.getElementById('adminBadge').classList.remove('hidden');
-        } else {
-            document.getElementById('adminPanelBtnBox').classList.add('hidden');
-            document.getElementById('adminBadge').classList.add('hidden');
-        }
-    }
+<script>
+  // Ініціалізація Firebase
+  const cfg = { apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", authDomain: "slotok-web-server.firebaseapp.com", databaseURL: "https://slotok-web-server-default-rtdb.firebaseio.com", projectId: "slotok-web-server", storageBucket: "slotok-web-server.firebasestorage.app", appId: "1:1086314476940:web:d3629d2d0fe16f7c1f12a9" };
+  firebase.initializeApp(cfg);
+  const db = firebase.database();
 
-    function formatNumber(num) {
-        if(num >= 1000000000) return (num/1000000000).toFixed(1) + 'B';
-        if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
-        if(num >= 1000) return (num/1000).toFixed(1) + 'k';
-        return num.toLocaleString();
-    }
+  let user = localStorage.getItem("slotok_v2_user");
+  let uData = null;
 
-    function notify(msg, type='info') { 
-        const c = document.getElementById('toast-container'); 
-        const d = document.createElement('div'); 
-        d.className = `toast ${type}`; 
-        d.innerHTML = `<span>${msg}</span>`; 
-        c.appendChild(d); 
-        setTimeout(() => d.remove(), 3000); 
-    }
-    
-    function playSound(type) { 
-        try {
-            if(!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-            if(audioCtx.state === 'suspended') audioCtx.resume(); 
-            const o = audioCtx.createOscillator(); 
-            const g = audioCtx.createGain(); 
-            o.connect(g); 
-            g.connect(audioCtx.destination); 
-            const t = audioCtx.currentTime; 
-            
-            if(type === 'click'){
-                o.frequency.value = 600;
-                g.gain.exponentialRampToValueAtTime(0.01, t+0.1);
-                o.start(t); o.stop(t+0.1);
-            } else if(type === 'win'){
-                o.type = 'triangle';
-                o.frequency.setValueAtTime(500, t);
-                o.frequency.linearRampToValueAtTime(1000, t+0.5);
-                g.gain.linearRampToValueAtTime(0, t+0.5);
-                o.start(t); o.stop(t+0.5);
-            } 
-        } catch(e) {} // Ігноруємо помилки звуку, якщо браузер блокує
-    }
-    
-    function validateBet(amount) { 
-        const bet = Math.abs(parseInt(amount)); 
-        if(isNaN(bet) || bet <= 0 || bet > MAX_BET || userData.balance < bet) { 
-            notify("Недостатньо коштів або невірна сума!", "error"); 
-            return false; 
-        } 
-        return bet; 
-    }
-    
-    function addToHistory(msg) { 
-        try { db.ref(`users/${currentUser}/history`).push({text: msg, date: Date.now()}); } catch(e){} 
-    }
+  window.onload = () => {
+    document.getElementById('loading').classList.add('hidden');
+    if(!user) document.getElementById('auth').classList.remove('hidden');
+    else init();
+  };
 
-    // 6. ІГРИ (Повністю робочі)
-    // --- Слоти ---
-    function spinSlots() { 
-        const b = validateBet(document.getElementById('betAmountSlots').value); 
-        if(!b) return; 
-        db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
-        playSound('click'); 
-        const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')]; 
-        const sym = ["🍒", "🍋", "7", "💎", "🔔"]; 
-        let count = 0; 
-        let int = setInterval(() => { 
-            reels.forEach(r => r.textContent = sym[Math.floor(Math.random()*sym.length)]); 
-            count++; 
-            if(count > 10) { clearInterval(int); finishSlots(b); } 
-        }, 100); 
-    }
-    
-    function finishSlots(bet) { 
-        const r = Math.random(); 
-        let win = 0; 
-        let res = ["🍒","🍋","🔔"]; 
-        if(r < 0.05) { res = ["7","7","7"]; win = bet*50; } 
-        else if(r < 0.15) { res = ["💎","💎","💎"]; win = bet*15; } 
-        else if(r < 0.30) { res = ["🍒","🍒","🍒"]; win = bet*3; } 
-        
-        document.getElementById('r1').textContent = res[0]; 
-        document.getElementById('r2').textContent = res[1]; 
-        document.getElementById('r3').textContent = res[2]; 
-        
-        if(win > 0) { 
-            db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win)); 
-            playSound('win'); 
-            notify(`WIN: ${win} ₴`, "success"); 
-            addToHistory(`Slots: +${win}`); 
-        } 
-    }
+  function init() {
+    db.ref('users/'+user).on('value', s => {
+      uData = s.val();
+      if(!uData) return logout();
+      document.getElementById('topBal').innerText = Math.floor(uData.balance);
+      document.getElementById('pName').innerText = user;
+      document.getElementById('pId').innerText = "ID: " + uData.id;
+      document.getElementById('auth').classList.add('hidden');
+      
+      let lvl = "НОВАЧОК";
+      if(uData.balance > 1000000) lvl = "МАГНАТ";
+      else if(uData.balance > 100000) lvl = "VIP";
+      document.getElementById('uStatus').innerText = lvl;
+      
+      if(user.toLowerCase() === 'theivankoo' || uData.isAdmin) {
+          document.getElementById('admBox').classList.remove('hidden');
+      }
+    });
+    loadChat();
+    loadTop();
+    startDoubleLoop();
+  }
 
-    // --- Рулетка ---
-    function selectRouletteBet(c, e){ 
-        document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected')); 
-        e.classList.add('selected'); 
-        currentRouletteBet = c; 
-        playSound('click'); 
+  // --- ІГРОВА ЛОГІКА ---
+  function playDice() {
+    let b = vB('betDice'); if(!b) return;
+    let ch = parseInt(document.getElementById('diceRange').value);
+    let r = (Math.random()*100).toFixed(2);
+    document.getElementById('diceRes').innerText = r;
+    if(parseFloat(r) <= ch) {
+      let win = b * (100/ch) * 0.95;
+      db.ref('users/'+user+'/balance').set(uData.balance + win);
+      msg("+"+Math.floor(win), "green");
+    } else {
+      db.ref('users/'+user+'/balance').set(uData.balance - b);
+      msg("Програш", "red");
     }
-    
-    function spinRoulette(){ 
-        const b = validateBet(document.getElementById('betAmountRoulette').value); 
-        if(!b || !currentRouletteBet) { notify("Оберіть колір і ставку"); return; }
-        
-        db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
-        playSound('click'); 
-        
-        const wheel = document.getElementById('wheel'); 
-        const randDeg = Math.random() * 360; 
-        const rot = 1800 + (360 - randDeg); 
-        wheel.style.transform = `rotate(${rot}deg)`; 
-        
-        setTimeout(() => { 
-            let win = 0; 
-            let c = 'black'; 
-            if(randDeg <= 18) c = 'green'; 
-            else if(randDeg <= 189) c = 'red'; 
-            
-            if(c === currentRouletteBet){ 
-                win = (c === 'green') ? b*14 : b*2; 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance + win); 
-                notify(`Виграш: ${win} ₴`, "success"); 
-                playSound('win'); 
-                addToHistory(`Roulette: +${win}`); 
+  }
+
+  let tR = 0; let tP = 0; let tB = 0;
+  function startTower() {
+    tB = vB('betTower'); if(!tB) return;
+    db.ref('users/'+user+'/balance').set(uData.balance - tB);
+    tR = 0; tP = tB;
+    document.getElementById('towerStart').classList.add('hidden');
+    document.getElementById('towerCash').classList.remove('hidden');
+    document.getElementById('towerCash').innerText = "ЗАБРАТИ " + tB;
+    drawTower();
+  }
+  function drawTower() {
+    let g = document.getElementById('towerGrid'); g.innerHTML = "";
+    for(let i=9; i>=0; i--) {
+      let r = document.createElement('div'); r.className = "tower-row" + (i===tR?" active":"");
+      for(let j=0; j<3; j++) {
+        let c = document.createElement('div'); c.className = "tower-cell"; c.innerText = "📦";
+        c.onclick = () => {
+          if(Math.random() > 0.35) {
+            tR++; tP *= 1.45;
+            document.getElementById('towerCash').innerText = "ЗАБРАТИ " + Math.floor(tP);
+            if(tR > 9) cashTower(); else drawTower();
+          } else {
+            msg("БОМБА!", "red"); stopTower();
+          }
+        };
+        r.appendChild(c);
+      }
+      g.appendChild(r);
+    }
+  }
+  function cashTower() { db.ref('users/'+user+'/balance').set(uData.balance + tP); msg("+"+Math.floor(tP), "green"); stopTower(); }
+  function stopTower() { document.getElementById('towerStart').classList.remove('hidden'); document.getElementById('towerCash').classList.add('hidden'); document.getElementById('towerGrid').innerHTML = ""; }
+
+  let dBet = null;
+  function setDBet(t) {
+    let b = vB('betDouble'); if(!b) return;
+    dBet = {t, b};
+    document.getElementById('dMyBet').innerText = "Ставка: " + b + " на " + t;
+  }
+  function startDoubleLoop() {
+    setInterval(() => {
+      let s = 15 - (Math.floor(Date.now()/1000) % 15);
+      document.getElementById('dTimer').innerText = "До розіграшу: " + s + "с";
+      if(s === 1) {
+        let cols = ['red','black','red','black','red','black','green'];
+        let res = cols[Math.floor(Math.random()*cols.length)];
+        setTimeout(() => {
+          if(dBet) {
+            if(dBet.t === res) {
+              let m = res==='green'?14:2;
+              db.ref('users/'+user+'/balance').set(uData.balance + (dBet.b * m));
+              msg("DOUBLE WIN!", "green");
             } else {
-                notify("Програш", "error"); 
+              db.ref('users/'+user+'/balance').set(uData.balance - dBet.b);
             }
-        }, 4000); 
-    }
+          }
+          dBet = null; document.getElementById('dMyBet').innerText = "";
+          let dot = `<div style="width:15px; height:15px; border-radius:50%; background:${res==='green'?'#4cd964':(res==='red'?'#ff3b30':'#555')}"></div>`;
+          document.getElementById('dHist').innerHTML = dot + document.getElementById('dHist').innerHTML;
+        }, 1000);
+      }
+    }, 1000);
+  }
 
-    // --- Сундуки ---
-    function startChests(){ 
-        const b = validateBet(document.getElementById('betAmountChests').value); 
-        if(!b) return; 
-        db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
-        const g = document.getElementById('chestsGrid'); 
-        g.innerHTML = ""; 
-        for(let i=0; i<3; i++){ 
-            const d = document.createElement('div'); 
-            d.className = "chest-item"; 
-            d.textContent = "📦"; 
-            d.onclick = () => { 
-                const w = Math.random() > 0.6 ? b*2.5 : 0; 
-                d.textContent = w ? "💰" : "💨"; 
-                if(w){ 
-                    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w)); 
-                    playSound('win'); notify(`+${w} ₴`, "success"); addToHistory(`Chests: +${w}`); 
-                } else {
-                    playSound('click');
-                }
-                // Відключаємо кліки по інших скринях
-                Array.from(g.children).forEach(c => c.onclick = null);
-            }; 
-            g.appendChild(d); 
-        }
+  let mB = 0; let mG = []; let mP = 0; let mAct = false;
+  function startMines() {
+    mB = vB('betMines'); if(!mB) return;
+    db.ref('users/'+user+'/balance').set(uData.balance - mB);
+    mAct = true; mP = mB; mG = new Array(25).fill(0);
+    let bCount = 0; while(bCount < 3) { let idx = Math.floor(Math.random()*25); if(mG[idx]===0){mG[idx]=1; bCount++;} }
+    document.getElementById('mStart').classList.add('hidden');
+    document.getElementById('mCash').classList.remove('hidden');
+    let g = document.getElementById('mGrid'); g.innerHTML = "";
+    for(let i=0; i<25; i++) {
+      let c = document.createElement('div'); c.className = "mine-cell"; c.innerText = "❓";
+      c.onclick = () => {
+        if(!mAct || c.innerText !== "❓") return;
+        if(mG[i] === 1) { c.innerText = "💣"; mAct = false; msg("БУМ!", "red"); setTimeout(startMines, 1000); stopMines(); }
+        else { c.innerText = "💎"; mP *= 1.2; document.getElementById('mCash').innerText = "ЗАБРАТИ " + Math.floor(mP); }
+      };
+      g.appendChild(c);
     }
+  }
+  function cashMines() { db.ref('users/'+user+'/balance').set(uData.balance + mP); msg("+"+Math.floor(mP), "green"); stopMines(); }
+  function stopMines() { mAct = false; document.getElementById('mStart').classList.remove('hidden'); document.getElementById('mCash').classList.add('hidden'); document.getElementById('mGrid').innerHTML = ""; }
 
-    // --- Краш ---
-    let crashInt; let isCrashPlaying = false;
-    function startCrash() { 
-        const b = validateBet(document.getElementById('betAmountCrash').value); 
-        if(!b) return; 
-        db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
-        document.getElementById('crashBtn').classList.add('hidden'); 
-        document.getElementById('crashCashoutBtn').classList.remove('hidden'); 
-        
-        let m = 1.00; 
-        let crashPoint = 1 + (Math.random() * 5); 
-        isCrashPlaying = true; 
-        
-        crashInt = setInterval(() => { 
-            m += 0.05; 
-            document.getElementById('crashDisplay').textContent = m.toFixed(2) + 'x'; 
-            if(m >= crashPoint){ 
-                clearInterval(crashInt); 
-                isCrashPlaying = false; 
-                notify("КРАШ!", "error"); 
-                document.getElementById('crashDisplay').style.color = "red";
-                setTimeout(()=> document.getElementById('crashDisplay').style.color = "white", 1000);
-                document.getElementById('crashBtn').classList.remove('hidden'); 
-                document.getElementById('crashCashoutBtn').classList.add('hidden'); 
-            } 
-        }, 100); 
-    }
-    
-    function cashoutCrash() { 
-        if(!isCrashPlaying) return; 
-        clearInterval(crashInt); 
-        isCrashPlaying = false; 
-        const b = parseInt(document.getElementById('betAmountCrash').value); 
-        const mult = parseFloat(document.getElementById('crashDisplay').textContent);
-        const w = Math.floor(b * mult); 
-        
-        db.ref('users/'+currentUser+'/balance').set(userData.balance + w); 
-        notify(`Виведено: +${w} ₴`, "success"); 
-        addToHistory(`Crash: +${w}`); 
-        document.getElementById('crashBtn').classList.remove('hidden'); 
-        document.getElementById('crashCashoutBtn').classList.add('hidden'); 
-    }
+  function playSlots() {
+    let b = vB('betSlots'); if(!b) return;
+    let s = ["🍎","🍋","💎","7️⃣"];
+    let r1=s[Math.floor(Math.random()*4)], r2=s[Math.floor(Math.random()*4)], r3=s[Math.floor(Math.random()*4)];
+    document.getElementById('s1').innerText=r1; document.getElementById('s2').innerText=r2; document.getElementById('s3').innerText=r3;
+    if(r1===r2 && r2===r3) {
+      let m = r1==="7️⃣"?50:10;
+      db.ref('users/'+user+'/balance').set(uData.balance + (b*m)); msg("SLOTS WIN!", "green");
+    } else db.ref('users/'+user+'/balance').set(uData.balance - b);
+  }
 
-    // --- Сапер (Mines) ---
-    let minesGrid = []; let isMinesPlaying = false; let currentMinesProfit = 0; let movesMade = 0;
-    function startMines() { 
-        const bet = validateBet(document.getElementById('betAmountMines').value); 
-        if(!bet) return; 
-        db.ref('users/' + currentUser).update({balance: userData.balance - bet}); 
-        isMinesPlaying = true; currentMinesProfit = bet; movesMade = 0; 
-        document.getElementById('minesBtn').classList.add('hidden'); 
-        document.getElementById('minesCashoutBtn').classList.remove('hidden'); 
-        document.getElementById('minesCashoutBtn').textContent = `ЗАБРАТИ (0)`;
-        
-        minesGrid = new Array(25).fill(0); 
-        let placed = 0; 
-        while(placed < 3) { // 3 бомби стандартно
-            let idx = Math.floor(Math.random() * 25); 
-            if(minesGrid[idx] === 0) { minesGrid[idx] = 1; placed++; } 
-        } 
-        
-        const container = document.getElementById('minesGrid'); 
-        container.innerHTML = ''; 
-        for(let i=0; i<25; i++) { 
-            const cell = document.createElement('div'); 
-            cell.className = 'mine-cell'; 
-            cell.textContent = "❓"; 
-            cell.onclick = () => clickMineCell(i, cell); 
-            container.appendChild(cell); 
-        } 
-        playSound('click'); 
-    }
-    
-    function clickMineCell(idx, el) { 
-        if(!isMinesPlaying || el.classList.contains('revealed')) return; 
-        el.classList.add('revealed'); 
-        
-        if(minesGrid[idx] === 1) { 
-            el.textContent = "💣"; 
-            playSound('click'); 
-            notify("Бум! Ви програли", "error");
-            isMinesPlaying = false;
-            document.getElementById('minesBtn').classList.remove('hidden'); 
-            document.getElementById('minesCashoutBtn').classList.add('hidden');
-        } else { 
-            el.textContent = "💎"; 
-            playSound('click'); 
-            movesMade++; 
-            currentMinesProfit = Math.floor(currentMinesProfit * 1.25); // x1.25 за кожен кристал
-            document.getElementById('minesCashoutBtn').textContent = `ЗАБРАТИ ${currentMinesProfit} ₴`; 
-        } 
-    }
-    
-    function cashoutMines() { 
-        if(!isMinesPlaying || movesMade === 0) return; 
-        db.ref('users/' + currentUser + '/balance').set(userData.balance + currentMinesProfit); 
-        playSound('win'); 
-        notify(`Виведено: +${currentMinesProfit} ₴`, "success"); 
-        addToHistory(`Mines: +${currentMinesProfit}`); 
-        isMinesPlaying = false;
-        document.getElementById('minesBtn').classList.remove('hidden'); 
-        document.getElementById('minesCashoutBtn').classList.add('hidden'); 
-    }
+  // --- СИСТЕМА ---
+  function go(t, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('tab-'+t).classList.remove('hidden');
+    if(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+  }
+  function vB(id) {
+    let v = parseInt(document.getElementById(id).value);
+    if(isNaN(v) || v <= 0 || v > uData.balance) { msg("Помилка ставки", "red"); return 0; }
+    return v;
+  }
+  function msg(t, c) {
+    let d = document.createElement('div');
+    d.style = `position:fixed; top:20px; left:50%; transform:translateX(-50%); background:${c==='green'?'#4cd964':'#ff3b30'}; color:#000; padding:10px 20px; border-radius:10px; z-index:10000; font-weight:bold;`;
+    d.innerText = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 2000);
+  }
+  function auth(t) {
+    let n = document.getElementById('uName').value.trim();
+    let p = document.getElementById('uPass').value;
+    if(n.length < 3) return msg("Короткий нік", "red");
+    db.ref('users/'+n).once('value', s => {
+      if(t === 'login') {
+        if(s.exists() && s.val().pass === p) { user = n; localStorage.setItem("slotok_v2_user", n); init(); }
+        else msg("Невірно", "red");
+      } else {
+        if(s.exists()) msg("Зайнято", "red");
+        else { db.ref('users/'+n).set({pass:p, balance:1000, id:Math.floor(Math.random()*90000)}); user = n; localStorage.setItem("slotok_v2_user", n); init(); }
+      }
+    });
+  }
+  function logout() { localStorage.removeItem("slotok_v2_user"); location.reload(); }
 
-    // --- Плінко ---
-    function dropPlinko() { 
-        const bet = validateBet(document.getElementById('betAmountPlinko').value); 
-        if(!bet) return; 
-        db.ref('users/' + currentUser).update({balance: userData.balance - bet}); 
-        playSound('click'); 
-        
-        const ball = document.getElementById('plinkoBall'); 
-        ball.style.display = 'block'; 
-        const rand = Math.random(); 
-        let bucketIndex = 3; 
-        
-        if(rand < 0.10) bucketIndex = 0; // x5
-        else if(rand < 0.30) bucketIndex = 1; // x2
-        else if(rand < 0.60) bucketIndex = 2; // x0.5
-        else bucketIndex = 3; // x0.2
-        
-        if(Math.random() > 0.5) bucketIndex = 6 - bucketIndex; // Дзеркальне відображення
-        
-        const targetLeft = (bucketIndex * 14) + 7; 
-        ball.animate([
-            { top: '0', left: '50%' }, 
-            { top: '100%', left: targetLeft + '%' }
-        ], { duration: 1500, fill: 'forwards', easing: 'linear' }); 
-        
-        setTimeout(() => { 
-            const multipliers = [5, 2, 0.5, 0.2, 0.5, 2, 5]; 
-            const mult = multipliers[bucketIndex]; 
-            const win = Math.floor(bet * mult); 
-            if(mult >= 1) { 
-                db.ref('users/' + currentUser + '/balance').set(userData.balance + win); 
-                playSound('win'); notify(`+${win} ₴`, "success"); addToHistory(`Plinko: +${win}`); 
-            } else { 
-                addToHistory(`Plinko: -${bet - win}`); 
-            } 
-            ball.style.display = 'none'; 
-        }, 1500); 
-    }
+  function sendChat() {
+    let m = document.getElementById('chatIn').value; if(!m) return;
+    db.ref('chat').push({u: user, m: m}); document.getElementById('chatIn').value = "";
+  }
+  function loadChat() {
+    db.ref('chat').limitToLast(20).on('value', s => {
+      let b = document.getElementById('chatBox'); b.innerHTML = "";
+      s.forEach(c => { b.innerHTML += `<div class="msg"><span class="msg-u">${c.val().u}:</span> ${c.val().m}</div>`; });
+      b.scrollTop = b.scrollHeight;
+    });
+  }
+  function loadTop() {
+    db.ref('users').orderByChild('balance').limitToLast(10).on('value', s => {
+      let l = document.getElementById('topList'); l.innerHTML = "";
+      let arr = []; s.forEach(c => { arr.push({n:c.key, b:c.val().balance}); });
+      arr.reverse().forEach((u, i) => { l.innerHTML += `<div style="padding:10px; border-bottom:1px solid #222;">${i+1}. ${u.n} - ${Math.floor(u.b)} ₴</div>`; });
+    });
+  }
 
-    // 7. РЕЙТИНГ (ТОП)
-    function renderTop(d) {
-        if(!d) return;
-        let arr = [];
-        for(let k in d) arr.push({n:k, ...d[k]});
-        arr.sort((a,b) => b.balance - a.balance);
-        let h = "";
-        arr.forEach((u,i) => {
-            const av = u.avatar && u.avatar.length > 20 ? `<img src="${u.avatar}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;">` : '👤';
-            h += `<tr onclick="openUserProfile('${u.n}')" style="cursor:pointer;">
-                    <td><b>${i+1}</b></td>
-                    <td>${av} ${u.n}</td>
-                    <td class="rank">${formatNumber(u.balance)} ₴</td>
-                  </tr>`;
-        });
-        document.getElementById('topTable').innerHTML = h;
-    }
+  function addPromo() {
+    let n = document.getElementById('apName').value;
+    let s = parseInt(document.getElementById('apSum').value);
+    let l = parseInt(document.getElementById('apLimit').value);
+    db.ref('promos/'+n).set({s, l}); msg("Промо створено", "green");
+  }
+  function openPromo() { document.getElementById('promo-m').classList.remove('hidden'); }
+  function usePromo() {
+    let c = document.getElementById('promoIn').value;
+    db.ref('promos/'+c).once('value', s => {
+      let p = s.val();
+      if(p && p.l > 0 && (!p.u || !p.u[user])) {
+        db.ref('users/'+user+'/balance').set(uData.balance + p.s);
+        db.ref('promos/'+c+'/l').set(p.l - 1);
+        db.ref('promos/'+c+'/u/'+user).set(true);
+        msg("Активовано!", "green");
+        document.getElementById('promo-m').classList.add('hidden');
+      } else msg("Помилка коду", "red");
+    });
+  }
+</script>
 
-    // 8. АВТОРИЗАЦІЯ
-    function authLogin() { 
-        const n = document.getElementById('loginName').value.trim(); 
-        const p = document.getElementById('loginPass').value; 
-        if(!n || !p) return notify("Введіть дані", "error"); 
-        
-        db.ref('users/'+n).once('value', s => { 
-            if(s.exists() && s.val().pass == p) { 
-                currentUser = n; 
-                localStorage.setItem("royal_online_user", n); 
-                startDataSync(); 
-            } else {
-                notify("Невірний логін або пароль", "error"); 
-            }
-        }); 
-    }
-    
-    function authRegister() { 
-        const e = document.getElementById('regEmail').value.trim(); 
-        const n = document.getElementById('regName').value.trim(); 
-        const p = document.getElementById('regPass').value; 
-        
-        if(!e || !n || !p) return notify("Заповніть всі поля", "error"); 
-        if(p.length < 8 || n.includes(' ') || n.includes('.')) return notify("Пароль мін 8 симв. Нік без пробілів і точок!", "error"); 
-        
-        db.ref('users/'+n).once('value', s => { 
-            if(s.exists()) {
-                notify("Цей нікнейм вже зайнятий", "error"); 
-            } else { 
-                const id = Math.floor(Math.random() * 900000) + 100000; 
-                db.ref('users/'+n).set({
-                    pass: p, 
-                    email: e, 
-                    balance: 1000, 
-                    id: id, 
-                    tag: "Новачок"
-                }).then(() => { 
-                    notify("Акаунт створено! Тепер увійдіть.", "success"); 
-                    toggleAuthMode(false); 
-                }); 
-            } 
-        }); 
-    }
-    
-    function toggleAuthMode(reg) { 
-        isRegMode = reg; 
-        document.getElementById('loginForm').classList.toggle('hidden', reg); 
-        document.getElementById('regForm').classList.toggle('hidden', !reg); 
-    }
-    
-    function logout(){ 
-        localStorage.removeItem("royal_online_user"); 
-        location.reload(); 
-    }
-
-    // 9. АДМІН-ПАНЕЛЬ
-    function loadUserList() { 
-        const d = document.getElementById('userList'); 
-        d.innerHTML = "Завантаження..."; 
-        db.ref('users').once('value', s => { 
-            d.innerHTML = ""; 
-            const users = s.val();
-            if (!users) { d.innerHTML = "Немає гравців"; return; }
-            for(let n in users) { 
-                d.innerHTML += `<div class="admin-user-card" onclick="openAdminManage('${n}')">
-                                <b>${n}</b> <span style="color:#4cd964">${formatNumber(users[n].balance)} ₴</span>
-                                </div>`; 
-            } 
-        }); 
-    }
-    
-    let admSelectedUser = null;
-    function openAdminManage(n) { 
-        admSelectedUser = n; 
-        document.getElementById('admin-user-manage').classList.remove('hidden'); 
-        document.getElementById('admManageName').textContent = n; 
-    }
-    
-    function admGiveMoney() { 
-        const a = parseInt(document.getElementById('admAmount').value); 
-        if(!a) return; 
-        db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a)); 
-        notify("Баланс змінено", "success"); 
-    }
-    
-    function admSetTag() { 
-        const t = document.getElementById('admTag').value; 
-        if(t) { db.ref('users/'+admSelectedUser).update({tag: t}); notify("Статус змінено"); }
-    }
-    
-    function admBanUser() { 
-        if(confirm("Заблокувати гравця?")) {
-            db.ref('users/'+admSelectedUser).update({banned: true}); notify("ГРАВЕЦЬ ЗАБЛОКОВАНИЙ"); 
-        }
-    }
-    
-    function admDeleteUser() { 
-        if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")) {
-            db.ref('users/'+admSelectedUser).remove().then(()=>{ 
-                notify("Акаунт видалено"); 
-                closeModal('admin-user-manage'); 
-                loadUserList(); 
-            }); 
-        }
-    }
-    
-    function wipeEconomy() { 
-        if(prompt("Введіть WIPE для підтвердження обнулення:") === "WIPE") {
-            db.ref('users').once('value', s => { 
-                for(let k in s.val()) {
-                    db.ref('users/'+k+'/balance').set(1000); 
-                }
-                notify("Економіку скинуто до 1000", "success"); 
-            }); 
-        }
-    }
-
-    // 10. ІНШІ ФУНКЦІЇ (Таби, Модалки, Депозити)
-    function switchTab(id, el) { 
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); 
-        document.getElementById('tab-'+id).classList.remove('hidden'); 
-        if(el){ 
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); 
-            el.classList.add('active'); 
-        } 
-    }
-    
-    function openGame(g) { switchTab(g); }
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    
-    function sendMoney() { 
-        const t = document.getElementById('transferTo').value; 
-        const a = parseInt(document.getElementById('transferAmount').value); 
-        if(userData.balance < a || a <= 0) return notify("Невірна сума", "error"); 
-        
-        db.ref('users/'+t).once('value', s => { 
-            if(s.exists()){ 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance - a); 
-                db.ref('users/'+t+'/balance').set(s.val().balance + a); 
-                notify("Гроші надіслано!", "success"); 
-                closeModal('transfer-modal'); 
-            } else {
-                notify("Користувача не знайдено", "error");
-            }
-        }); 
-    }
-    
-    function activatePromo() { 
-        const c = document.getElementById('promoInput').value.trim(); 
-        db.ref('promos/'+c).once('value', s => { 
-            if(s.exists()){ 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance + s.val().value); 
-                notify("Промокод активовано!", "success"); 
-                closeModal('promo-modal');
-            } else {
-                notify("Невірний код", "error");
-            }
-        }); 
-    }
-    
-    function initDepositManual() { 
-        const a = parseInt(document.getElementById('depAmount').value); 
-        if(a && a > 0) {
-            notify("Обробка платежу..."); 
-            setTimeout(() => { 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance + a); 
-                notify("Баланс успішно поповнено!", "success"); 
-            }, 1500);
-        }
-    }
-    
-    function addContact() { 
-        const i = document.getElementById('addContactInput').value; 
-        db.ref('users/'+i).once('value', s => { 
-            if(s.exists()){ 
-                db.ref('users/'+currentUser+'/contacts/'+i).set({avatar: s.val().avatar || '👤'}); 
-                notify("Додано у знайомі!"); 
-                loadContacts(); 
-            } else {
-                notify("Не знайдено", "error");
-            }
-        }); 
-    }
-    
-    function loadContacts() { 
-        const l = document.getElementById('contactsList'); 
-        if(!userData.contacts){ l.innerHTML = "<div style='color:#777'>Список порожній</div>"; return; } 
-        l.innerHTML = ""; 
-        for(let n in userData.contacts){ 
-            l.innerHTML += `<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend('${n}')">Надіслати</button></div>`; 
-        } 
-    }
-    
-    function quickSend(n) { 
-        document.getElementById('transferTo').value = n;
-        openModal('transfer-modal');
-    }
-    
-    function deleteAccount() { 
-        if(confirm("Ви впевнені, що хочете видалити акаунт НАЗАВЖДИ?")) {
-            db.ref('users/'+currentUser).remove().then(logout); 
-        }
-    }
-    
-    function updateBio(v) { 
-        db.ref('users/'+currentUser).update({tag: v}); 
-        notify("Статус оновлено"); 
-    }
-    
-    function handleAvatarUpload(i) { 
-        if(i.files[0]){ 
-            const r = new FileReader(); 
-            r.onload = e => db.ref('users/'+currentUser).update({avatar: e.target.result}); 
-            r.readAsDataURL(i.files[0]); 
-            notify("Завантаження фото...");
-        } 
-    }
-    
-    function openHistoryModal() { 
-        openModal('history-modal'); 
-        const c = document.getElementById('historyList'); 
-        c.innerHTML = "Завантаження...";
-        db.ref('users/'+currentUser+'/history').limitToLast(20).once('value', s => { 
-            c.innerHTML = ""; 
-            if(s.val()) {
-                Object.values(s.val()).reverse().forEach(i => {
-                    c.innerHTML += `<div style="padding:10px; border-bottom:1px solid #333; color:#ccc;">${i.text}</div>`;
-                });
-            } else {
-                c.innerHTML = "<div style='padding:10px; color:#777;'>Історія порожня</div>";
-            }
-        }); 
-    }
-    
-    function openSupportModal() { 
-        openModal('support-modal'); 
-        const box = document.getElementById('supportChatBox'); 
-        box.innerHTML = "";
-        db.ref('support_chats/'+currentUser).limitToLast(20).on('child_added', s => { 
-            const m = s.val(); 
-            box.innerHTML += `<div style="margin-bottom:8px; padding:8px 12px; background:${m.sender === 'user' ? '#005c4b' : '#333'}; border-radius:8px; width:fit-content; max-width:80%; margin-left:${m.sender === 'user' ? 'auto' : '0'}">${m.text}</div>`; 
-            box.scrollTop = box.scrollHeight; 
-        }); 
-    }
-    
-    function sendSupportMsg() { 
-        const t = document.getElementById('supportMsg').value; 
-        if(t) { 
-            db.ref('support_chats/'+currentUser).push({text: t, sender: 'user', time: Date.now()}); 
-            document.getElementById('supportMsg').value = ""; 
-        } 
-    }
-    
-    window.openUserProfile = function(name) { 
-        if(name === currentUser) return switchTab('profile'); 
-        db.ref('users/'+name).once('value', s => { 
-            const d = s.val(); 
-            if(d) { 
-                document.getElementById('viewUserName').textContent = name; 
-                document.getElementById('viewUserId').textContent = d.id; 
-                document.getElementById('viewUserBal').textContent = formatNumber(d.balance); 
-                document.getElementById('viewUserTag').textContent = d.tag || "Гравець"; 
-                document.getElementById('viewUserAvatar').innerHTML = (d.avatar && d.avatar.length > 20) ? `<img src="${d.avatar}">` : '👤'; 
-                openModal('view-user-modal'); 
-            } 
-        }); 
-    }
-  </script>
 </body>
 </html>
