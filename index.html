@@ -1,411 +1,415 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SlotOK MEGA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>SlotOK MEGA UPDATE</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #333; --accent: #d4af37; }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; user-select: none; }
+    :root { --bg: #050505; --text: #fff; --box: #141414; --border: #333; --accent: #d4af37; --input: #1a1a1a; }
+    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; user-select: none; overflow-x: hidden; }
+    .header { padding: 15px; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 900; display:flex; justify-content:space-between; align-items:center; }
+    .header h1 { margin: 0; font-size: 24px; color: var(--accent); font-weight: 900; font-style: italic; }
+    .header-bal { font-size: 16px; background: #222; padding: 5px 15px; border-radius: 20px; border: 1px solid #444; font-weight:bold; color: #4cd964; }
+    .container { padding: 15px; } 
     .hidden { display: none !important; }
-    .header { padding: 15px; background: #000; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-    .header-bal { color: #4cd964; font-weight: bold; background: #111; padding: 5px 12px; border-radius: 15px; border: 1px solid #333; }
-    .container { padding: 15px; }
     .box { background: var(--box); border-radius: 12px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-    
-    button { padding: 14px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 8px; font-size: 15px; }
-    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; }
+    button { padding: 14px; width: 100%; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; background: #333; color: #fff; margin-bottom: 8px; transition: 0.2s; }
+    button:active { transform: scale(0.98); }
+    .btn-gold { background: linear-gradient(45deg, var(--accent), #ffdb4d); color: #000; } 
+    .btn-red { background: #ff3b30; color: #fff; } 
+    .btn-green { background: #4cd964; color: #000; } 
     .btn-outline { background: transparent; border: 1px solid #555; color: #ccc; }
-    .btn-red { background: #ff3b30; color: #fff; }
-    .btn-green { background: #4cd964; color: #000; }
+    input { width: 100%; padding: 14px; margin-bottom: 12px; background: var(--input); border: 1px solid var(--border); color: #fff; border-radius: 10px; font-size: 16px; box-sizing: border-box; text-align: center; } 
 
-    input { width: 100%; padding: 14px; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; text-align: center; font-size: 16px; }
-
-    /* ГРИ */
-    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
-    .tower-grid { display: grid; grid-template-rows: repeat(10, 1fr); gap: 5px; margin-bottom: 15px; }
-    .tower-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; opacity: 0.3; pointer-events: none; }
-    .tower-row.active { opacity: 1; pointer-events: auto; }
-    .tower-cell { background: #222; height: 40px; border-radius: 5px; display: flex; align-items: center; justify-content: center; border: 1px solid #444; font-size: 20px; }
+    /* GAMES GRID */
+    .game-card { background: var(--box); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display:flex; align-items:center; gap:15px; cursor: pointer; }
+    .game-icon { font-size: 30px; }
     
-    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 10px; }
-    .mine-cell { aspect-ratio: 1; background: #222; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #333; }
+    /* DICE */
+    .dice-res { font-size: 40px; font-weight: bold; margin: 10px 0; text-align: center; color: var(--accent); }
+    
+    /* TOWER */
+    .tower-grid { display: grid; grid-template-rows: repeat(10, 1fr); gap: 5px; margin-bottom: 15px; }
+    .tower-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; opacity: 0.5; pointer-events: none; }
+    .tower-row.active { opacity: 1; pointer-events: auto; }
+    .tower-cell { background: #222; height: 35px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; }
+    .tower-cell.win { background: #4cd964; } .tower-cell.lose { background: #ff3b30; }
 
-    /* ЧАТ */
-    #chatBox { height: 300px; overflow-y: auto; background: #080808; border-radius: 10px; padding: 10px; border: 1px solid #222; margin-bottom: 10px; }
-    .msg { margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #111; padding-bottom: 5px; }
-    .msg-u { color: var(--accent); font-weight: bold; }
+    /* DOUBLE */
+    .double-timer { text-align: center; font-size: 18px; color: var(--accent); margin-bottom: 10px; }
+    .double-history { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; }
+    .hist-dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
 
-    /* НАВІГАЦІЯ */
-    .nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #000; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; }
-    .nav-item { color: #555; text-align: center; font-size: 10px; }
-    .nav-item.active { color: var(--accent); }
+    /* CHAT */
+    #chatBox { height: 250px; overflow-y: auto; background: #0a0a0a; border: 1px solid #222; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+    .chat-msg { margin-bottom: 8px; font-size: 13px; line-height: 1.4; }
+    .chat-name { color: var(--accent); font-weight: bold; margin-right: 5px; }
 
-    #loading { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; color: var(--accent); font-weight: bold; font-size: 20px; }
+    /* NAV */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #080808; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; z-index: 1000; } 
+    .nav-item { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 10px; cursor: pointer; width: 14%; } 
+    .nav-item.active { color: var(--accent); } .nav-item span.icon { font-size: 20px; }
+
+    #loading-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .full-modal { position: fixed; inset: 0; background: #000; z-index: 5000; padding: 20px; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-<div id="loading">ЗАВАНТАЖЕННЯ...</div>
-
-<div class="header">
-  <h2 style="margin:0; font-style:italic;">SLOTOK <span style="color:var(--accent)">PRO</span></h2>
-  <div class="header-bal"><span id="topBal">0</span> ₴</div>
-</div>
-
-<div class="container">
-  
-  <div id="tab-home" class="screen">
-    <div class="box" style="text-align:center;">
-      <div style="font-size:12px; color:#777;">ВАШ СТАТУС</div>
-      <div id="uStatus" style="font-weight:bold; color:var(--accent); font-size:18px;">НОВАЧОК</div>
-    </div>
-    <div class="game-card" onclick="go('dice')"><span>🎲</span> <b>Dice (Кості)</b></div>
-    <div class="game-card" onclick="go('tower')"><span>🏰</span> <b>Tower (Вежа)</b></div>
-    <div class="game-card" onclick="go('double')"><span>🔴</span> <b>Double (Спільна)</b></div>
-    <div class="game-card" onclick="go('mines')"><span>💣</span> <b>Mines (Сапер)</b></div>
-    <div class="game-card" onclick="go('slots')"><span>🎰</span> <b>Slots (Слоти)</b></div>
+  <div id="loading-overlay">
+    <div style="font-size:50px; margin-bottom:10px;">💎</div>
+    <div style="color:var(--accent); letter-spacing: 5px; font-weight: bold;">SLOTOK MEGA</div>
   </div>
 
-  <div id="tab-dice" class="screen hidden">
-    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
-    <div class="box" style="text-align:center;">
-      <div id="diceRes" style="font-size:45px; margin:10px 0; font-weight:bold; color:var(--accent);">0.00</div>
-      <p>Шанс виграшу: <span id="diceChanceVal">50</span>%</p>
-      <input type="range" id="diceRange" min="1" max="95" value="50" oninput="document.getElementById('diceChanceVal').innerText=this.value">
-      <input id="betDice" type="number" value="100">
-      <button class="btn-gold" onclick="playDice()">ГРАТИ</button>
-    </div>
+  <div id="toast-container"></div>
+
+  <div class="header">
+    <h1>SLOT<span>OK</span></h1>
+    <div class="header-bal"><span class="bal">0</span> ₴</div>
   </div>
 
-  <div id="tab-tower" class="screen hidden">
-    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
-    <div class="tower-grid" id="towerGrid"></div>
-    <div class="box">
-      <input id="betTower" type="number" value="100">
-      <button class="btn-gold" id="towerStart" onclick="startTower()">СТАРТ</button>
-      <button class="btn-green hidden" id="towerCash" onclick="cashTower()">ЗАБРАТИ</button>
+  <div class="container">
+    
+    <div id="tab-home" class="screen">
+        <div class="box" style="text-align: center; background: linear-gradient(135deg, #1a1a1a, #000);">
+            <div id="userLevelName" style="color:var(--accent); font-weight:bold;">НОВАЧОК</div>
+            <div style="font-size: 12px; color: #777;">Ваш поточний статус</div>
+        </div>
+        <div id="tab-lobby-main">
+            <div class="game-card" onclick="openGame('dice')"><span class="game-icon">🎲</span><div><div class="game-title">Dice</div><div class="game-desc">Вгадай число</div></div></div>
+            <div class="game-card" onclick="openGame('tower')"><span class="game-icon">🏰</span><div><div class="game-title">Tower</div><div class="game-desc">Підкори вежу</div></div></div>
+            <div class="game-card" onclick="openGame('double')"><span class="game-icon">🔴</span><div><div class="game-title">Double</div><div class="game-desc">Спільна гра кожні 15с</div></div></div>
+            <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div><div class="game-title">Slots</div><div class="game-desc">Класика 777</div></div></div>
+            <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
+        </div>
     </div>
+
+    <div id="tab-dice" class="screen hidden">
+        <button class="btn-outline" onclick="switchTab('home')">⬅ Назад</button>
+        <div class="box">
+            <div class="dice-res" id="diceRes">0.00</div>
+            <div style="text-align:center; color:#777; margin-bottom:10px;">Шанс: <span id="diceChanceVal">50</span>%</div>
+            <input type="range" id="diceChance" min="1" max="95" value="50" style="width:100%;" oninput="document.getElementById('diceChanceVal').innerText=this.value">
+            <input id="betAmountDice" type="number" value="100">
+            <button class="btn-gold" onclick="playDice()">ГРАТИ</button>
+        </div>
+    </div>
+
+    <div id="tab-tower" class="screen hidden">
+        <button class="btn-outline" onclick="switchTab('home')">⬅ Назад</button>
+        <div class="tower-grid" id="towerGrid"></div>
+        <div class="box">
+            <input id="betAmountTower" type="number" value="100">
+            <button class="btn-gold" id="towerStartBtn" onclick="startTower()">СТАРТ</button>
+            <button class="btn-green hidden" id="towerCashoutBtn" onclick="cashoutTower()">ЗАБРАТИ</button>
+        </div>
+    </div>
+
+    <div id="tab-double" class="screen hidden">
+        <button class="btn-outline" onclick="switchTab('home')">⬅ Назад</button>
+        <div class="box">
+            <div class="double-timer" id="doubleTimer">Очікування...</div>
+            <div class="double-history" id="doubleHistory"></div>
+            <div class="bet-grid" style="display:flex; gap:5px; margin-bottom:10px;">
+                <button class="btn-red" style="margin:0;" onclick="betDouble('red')">x2</button>
+                <button class="btn-green" style="margin:0;" onclick="betDouble('green')">x14</button>
+                <button class="btn-outline" style="margin:0; background:#222;" onclick="betDouble('black')">x2</button>
+            </div>
+            <input id="betAmountDouble" type="number" value="100" placeholder="Ставка">
+            <div id="myDoubleBet" style="text-align:center; font-size:12px; color:#777;"></div>
+        </div>
+    </div>
+
+    <div id="tab-slots" class="screen hidden"><button class="btn-outline" onclick="switchTab('home')">⬅ Назад</button><div class="box" style="display:flex; justify-content:center; gap:10px; font-size:40px;"><span id="rs1">❓</span><span id="rs2">❓</span><span id="rs3">❓</span></div><input id="betAmountSlots" type="number" value="100"><button class="btn-gold" onclick="playSlots()">КРУТИТИ</button></div>
+    
+    <div id="tab-mines" class="screen hidden"><button class="btn-outline" onclick="switchTab('home')">⬅ Назад</button><div id="minesGridUI" style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px;"></div><input id="betAmountMines" type="number" value="100"><button class="btn-gold" id="minesStartBtn" onclick="startMines()">СТАРТ</button><button class="btn-green hidden" id="minesCashBtn" onclick="cashoutMines()">ЗАБРАТИ</button></div>
+
+    <div id="tab-chat" class="screen hidden">
+        <div class="box">
+            <div id="chatBox"></div>
+            <div style="display:flex; gap:5px;">
+                <input id="chatMsg" placeholder="Повідомлення..." style="margin:0;">
+                <button class="btn-gold" style="width:60px; margin:0;" onclick="sendChat()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-top" class="screen hidden"><div class="box"><h3>ТОП ГРАВЦІВ</h3><table id="topTable" style="width:100%;"></table></div></div>
+    
+    <div id="tab-profile" class="screen hidden">
+        <div class="box" style="text-align:center;">
+            <div id="profAv" style="font-size:50px;">👤</div>
+            <h2 id="profName">...</h2>
+            <div id="profLevel" style="color:var(--accent);">Статус: ...</div>
+            <div style="color:#777; margin:10px 0;">ID: <span id="profId"></span></div>
+            <button class="btn-outline" onclick="openModal('promo-modal')">🎁 Активувати Промокод</button>
+            <button class="btn-red" onclick="logout()">ВИЙТИ</button>
+        </div>
+        <div id="admBtn" class="box hidden" style="border-color:red;"><button class="btn-red" onclick="switchTab('admin')">АДМІН ПАНЕЛЬ</button></div>
+    </div>
+
+    <div id="tab-admin" class="screen hidden">
+        <button class="btn-outline" onclick="switchTab('profile')">⬅ Назад</button>
+        <div class="box">
+            <h3>Створити Промокод</h3>
+            <input id="admPromoName" placeholder="Назва (напр. ГРОШІ)">
+            <input id="admPromoSum" type="number" placeholder="Сума">
+            <input id="admPromoLimit" type="number" placeholder="Ліміт використань">
+            <button class="btn-green" onclick="createPromo()">СТВОРИТИ</button>
+        </div>
+        <div class="box">
+            <h3>Керування Гравцями</h3>
+            <div id="admUserList"></div>
+        </div>
+    </div>
+
   </div>
 
-  <div id="tab-double" class="screen hidden">
-    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
-    <div class="box" style="text-align:center;">
-      <div id="dTimer" style="font-size:20px; color:var(--accent); margin-bottom:10px;">Чекаємо...</div>
-      <div id="dHist" style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;"></div>
-      <div style="display:flex; gap:5px; margin-bottom:10px;">
-        <button class="btn-red" style="margin:0;" onclick="setDBet('red')">x2</button>
-        <button class="btn-green" style="margin:0;" onclick="setDBet('green')">x14</button>
-        <button class="btn-outline" style="margin:0; background:#222;" onclick="setDBet('black')">x2</button>
-      </div>
-      <input id="betDouble" type="number" value="100">
-      <div id="dMyBet" style="font-size:12px; color:#777;"></div>
-    </div>
+  <div id="auth-screen" class="full-modal">
+    <div style="text-align:center; margin: 40px 0;"><h1 style="color:var(--accent); font-size:40px;">SLOTOK</h1></div>
+    <div id="loginForm"><input id="lName" placeholder="Нікнейм"><input id="lPass" type="password" placeholder="Пароль"><button class="btn-gold" onclick="login()">УВІЙТИ</button><p onclick="toggleAuth(true)" style="text-align:center; color:#777;">Реєстрація</p></div>
+    <div id="regForm" class="hidden"><input id="rName" placeholder="Нікнейм"><input id="rPass" type="password" placeholder="Пароль"><button class="btn-green" onclick="register()">СТВОРИТИ</button><p onclick="toggleAuth(false)" style="text-align:center; color:#777;">Вже є акаунт?</p></div>
   </div>
 
-  <div id="tab-mines" class="screen hidden">
-    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
-    <div class="mines-grid" id="mGrid"></div>
-    <div class="box">
-      <input id="betMines" type="number" value="100">
-      <button class="btn-gold" id="mStart" onclick="startMines()">СТАРТ</button>
-      <button class="btn-green hidden" id="mCash" onclick="cashMines()">ЗАБРАТИ</button>
-    </div>
+  <div id="promo-modal" class="full-modal hidden">
+      <button class="btn-outline" onclick="closeModal('promo-modal')" style="width:50px;">⬅</button>
+      <h2>Промокод</h2>
+      <input id="promoInput" placeholder="Введіть код">
+      <button class="btn-gold" onclick="usePromo()">АКТИВУВАТИ</button>
   </div>
 
-  <div id="tab-slots" class="screen hidden">
-    <button class="btn-outline" onclick="go('home')">⬅ Назад</button>
-    <div class="box" style="display:flex; justify-content:center; gap:15px; font-size:50px; padding:30px 0;">
-      <span id="s1">❓</span><span id="s2">❓</span><span id="s3">❓</span>
-    </div>
-    <input id="betSlots" type="number" value="100">
-    <button class="btn-gold" onclick="playSlots()">КРУТИТИ</button>
-  </div>
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home',this)"><span class="icon">🏠</span><span>Дім</span></div>
+    <div class="nav-item" onclick="switchTab('chat',this)"><span class="icon">💬</span><span>Чат</span></div>
+    <div class="nav-item" onclick="switchTab('top',this)"><span class="icon">🏆</span><span>Топ</span></div>
+    <div class="nav-item" onclick="switchTab('profile',this)"><span class="icon">👤</span><span>Профіль</span></div>
+  </nav>
 
-  <div id="tab-chat" class="screen hidden">
-    <div id="chatBox"></div>
-    <div style="display:flex; gap:5px;">
-      <input id="chatIn" placeholder="Повідомлення..." style="margin:0;">
-      <button class="btn-gold" style="width:70px; margin:0;" onclick="sendChat()">➤</button>
-    </div>
-  </div>
+  <script>
+    const firebaseConfig = { apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", authDomain: "slotok-web-server.firebaseapp.com", databaseURL: "https://slotok-web-server-default-rtdb.firebaseio.com", projectId: "slotok-web-server", storageBucket: "slotok-web-server.firebasestorage.app", messagingSenderId: "1086314476940", appId: "1:1086314476940:web:d3629d2d0fe16f7c1f12a9" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-  <div id="tab-profile" class="screen hidden">
-    <div class="box" style="text-align:center;">
-      <h2 id="pName">...</h2>
-      <p id="pId" style="color:#777;"></p>
-      <button class="btn-outline" onclick="openPromo()">🎁 Промокод</button>
-      <button class="btn-red" onclick="logout()">ВИЙТИ</button>
-    </div>
-    <div id="admBox" class="box hidden" style="border-color:red;">
-      <h3 style="margin-top:0;">Адмін Панель</h3>
-      <input id="apName" placeholder="Назва промо">
-      <input id="apSum" type="number" placeholder="Сума">
-      <input id="apLimit" type="number" placeholder="Ліміт">
-      <button class="btn-green" onclick="addPromo()">Створити Промо</button>
-    </div>
-  </div>
+    let user = null; let uData = {};
+    setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); }, 1500);
 
-  <div id="tab-top" class="screen hidden">
-    <div class="box">
-      <h3>ТОП ГРАВЦІВ</h3>
-      <div id="topList"></div>
-    </div>
-  </div>
+    const saved = localStorage.getItem("slotok_user");
+    if(saved) { user = saved; initApp(); }
 
-</div>
-
-<div id="auth" class="hidden" style="position:fixed; inset:0; background:#000; z-index:5000; padding:30px;">
-  <h1 style="text-align:center; color:var(--accent); margin-bottom:40px;">SLOTOK</h1>
-  <input id="uName" placeholder="Нікнейм">
-  <input id="uPass" type="password" placeholder="Пароль">
-  <button class="btn-gold" onclick="auth('login')">УВІЙТИ</button>
-  <button class="btn-outline" onclick="auth('reg')">РЕЄСТРАЦІЯ</button>
-</div>
-
-<div id="promo-m" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:6000; padding:40px 20px;">
-  <div class="box">
-    <h3>Введіть Промокод</h3>
-    <input id="promoIn" placeholder="КОД">
-    <button class="btn-gold" onclick="usePromo()">АКТИВУВАТИ</button>
-    <button class="btn-outline" onclick="document.getElementById('promo-m').classList.add('hidden')">ЗАКРИТИ</button>
-  </div>
-</div>
-
-<nav class="nav">
-  <div class="nav-item active" onclick="go('home', this)">🏠<br>Головна</div>
-  <div class="nav-item" onclick="go('chat', this)">💬<br>Чат</div>
-  <div class="nav-item" onclick="go('top', this)">🏆<br>Топ</div>
-  <div class="nav-item" onclick="go('profile', this)">👤<br>Профіль</div>
-</nav>
-
-<script>
-  // Ініціалізація Firebase
-  const cfg = { apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", authDomain: "slotok-web-server.firebaseapp.com", databaseURL: "https://slotok-web-server-default-rtdb.firebaseio.com", projectId: "slotok-web-server", storageBucket: "slotok-web-server.firebasestorage.app", appId: "1:1086314476940:web:d3629d2d0fe16f7c1f12a9" };
-  firebase.initializeApp(cfg);
-  const db = firebase.database();
-
-  let user = localStorage.getItem("slotok_v2_user");
-  let uData = null;
-
-  window.onload = () => {
-    document.getElementById('loading').classList.add('hidden');
-    if(!user) document.getElementById('auth').classList.remove('hidden');
-    else init();
-  };
-
-  function init() {
-    db.ref('users/'+user).on('value', s => {
-      uData = s.val();
-      if(!uData) return logout();
-      document.getElementById('topBal').innerText = Math.floor(uData.balance);
-      document.getElementById('pName').innerText = user;
-      document.getElementById('pId').innerText = "ID: " + uData.id;
-      document.getElementById('auth').classList.add('hidden');
-      
-      let lvl = "НОВАЧОК";
-      if(uData.balance > 1000000) lvl = "МАГНАТ";
-      else if(uData.balance > 100000) lvl = "VIP";
-      document.getElementById('uStatus').innerText = lvl;
-      
-      if(user.toLowerCase() === 'theivankoo' || uData.isAdmin) {
-          document.getElementById('admBox').classList.remove('hidden');
-      }
-    });
-    loadChat();
-    loadTop();
-    startDoubleLoop();
-  }
-
-  // --- ІГРОВА ЛОГІКА ---
-  function playDice() {
-    let b = vB('betDice'); if(!b) return;
-    let ch = parseInt(document.getElementById('diceRange').value);
-    let r = (Math.random()*100).toFixed(2);
-    document.getElementById('diceRes').innerText = r;
-    if(parseFloat(r) <= ch) {
-      let win = b * (100/ch) * 0.95;
-      db.ref('users/'+user+'/balance').set(uData.balance + win);
-      msg("+"+Math.floor(win), "green");
-    } else {
-      db.ref('users/'+user+'/balance').set(uData.balance - b);
-      msg("Програш", "red");
+    function initApp() {
+        db.ref('users/'+user).on('value', s => {
+            uData = s.val(); if(!uData) return logout();
+            document.querySelectorAll('.bal').forEach(e => e.textContent = Math.floor(uData.balance));
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('profName').textContent = user;
+            document.getElementById('profId').textContent = uData.id;
+            updateLevel();
+            if(user.toLowerCase()==='theivankoo' || uData.isAdmin) document.getElementById('admBtn').classList.remove('hidden');
+        });
+        loadChat();
+        loadTop();
+        startDoubleLoop();
     }
-  }
 
-  let tR = 0; let tP = 0; let tB = 0;
-  function startTower() {
-    tB = vB('betTower'); if(!tB) return;
-    db.ref('users/'+user+'/balance').set(uData.balance - tB);
-    tR = 0; tP = tB;
-    document.getElementById('towerStart').classList.add('hidden');
-    document.getElementById('towerCash').classList.remove('hidden');
-    document.getElementById('towerCash').innerText = "ЗАБРАТИ " + tB;
-    drawTower();
-  }
-  function drawTower() {
-    let g = document.getElementById('towerGrid'); g.innerHTML = "";
-    for(let i=9; i>=0; i--) {
-      let r = document.createElement('div'); r.className = "tower-row" + (i===tR?" active":"");
-      for(let j=0; j<3; j++) {
-        let c = document.createElement('div'); c.className = "tower-cell"; c.innerText = "📦";
-        c.onclick = () => {
-          if(Math.random() > 0.35) {
-            tR++; tP *= 1.45;
-            document.getElementById('towerCash').innerText = "ЗАБРАТИ " + Math.floor(tP);
-            if(tR > 9) cashTower(); else drawTower();
-          } else {
-            msg("БОМБА!", "red"); stopTower();
-          }
-        };
-        r.appendChild(c);
-      }
-      g.appendChild(r);
+    function updateLevel() {
+        let lvl = "Новачок";
+        if(uData.balance > 1000000) lvl = "МАГНАТ";
+        else if(uData.balance > 100000) lvl = "VIP ГРАВЕЦЬ";
+        else if(uData.balance > 10000) lvl = "ДОСВІДЧЕНИЙ";
+        document.getElementById('userLevelName').textContent = lvl;
+        document.getElementById('profLevel').textContent = "Статус: " + lvl;
     }
-  }
-  function cashTower() { db.ref('users/'+user+'/balance').set(uData.balance + tP); msg("+"+Math.floor(tP), "green"); stopTower(); }
-  function stopTower() { document.getElementById('towerStart').classList.remove('hidden'); document.getElementById('towerCash').classList.add('hidden'); document.getElementById('towerGrid').innerHTML = ""; }
 
-  let dBet = null;
-  function setDBet(t) {
-    let b = vB('betDouble'); if(!b) return;
-    dBet = {t, b};
-    document.getElementById('dMyBet').innerText = "Ставка: " + b + " на " + t;
-  }
-  function startDoubleLoop() {
-    setInterval(() => {
-      let s = 15 - (Math.floor(Date.now()/1000) % 15);
-      document.getElementById('dTimer').innerText = "До розіграшу: " + s + "с";
-      if(s === 1) {
-        let cols = ['red','black','red','black','red','black','green'];
-        let res = cols[Math.floor(Math.random()*cols.length)];
-        setTimeout(() => {
-          if(dBet) {
-            if(dBet.t === res) {
-              let m = res==='green'?14:2;
-              db.ref('users/'+user+'/balance').set(uData.balance + (dBet.b * m));
-              msg("DOUBLE WIN!", "green");
-            } else {
-              db.ref('users/'+user+'/balance').set(uData.balance - dBet.b);
+    // --- GAMES ---
+    function playDice() {
+        const b = valBet('betAmountDice'); if(!b) return;
+        const chance = parseInt(document.getElementById('diceChance').value);
+        const res = (Math.random()*100).toFixed(2);
+        document.getElementById('diceRes').textContent = res;
+        if(parseFloat(res) <= chance) {
+            const win = b * (100/chance) * 0.95;
+            db.ref('users/'+user+'/balance').set(uData.balance + win);
+            notify("+"+win.toFixed(0), "success");
+        } else {
+            db.ref('users/'+user+'/balance').set(uData.balance - b);
+            notify("Програш", "error");
+        }
+    }
+
+    let tRow = 0; let tProfit = 0; let tBet = 0;
+    function startTower() {
+        tBet = valBet('betAmountTower'); if(!tBet) return;
+        db.ref('users/'+user+'/balance').set(uData.balance - tBet);
+        tRow = 0; tProfit = tBet;
+        document.getElementById('towerStartBtn').classList.add('hidden');
+        document.getElementById('towerCashoutBtn').classList.remove('hidden');
+        renderTower();
+    }
+    function renderTower() {
+        const g = document.getElementById('towerGrid'); g.innerHTML = "";
+        for(let i=9; i>=0; i--) {
+            const r = document.createElement('div'); r.className = `tower-row ${i===tRow?'active':''}`;
+            for(let j=0; j<3; j++) {
+                const c = document.createElement('div'); c.className = "tower-cell"; c.textContent = "📦";
+                c.onclick = () => {
+                    if(Math.random() > 0.3) {
+                        c.className = "tower-cell win"; c.textContent = "💎";
+                        tRow++; tProfit *= 1.4;
+                        document.getElementById('towerCashoutBtn').textContent = `ЗАБРАТИ ${Math.floor(tProfit)}`;
+                        if(tRow > 9) cashoutTower(); else renderTower();
+                    } else {
+                        c.className = "tower-cell lose"; c.textContent = "💥";
+                        notify("Вежа впала!", "error"); endTower();
+                    }
+                };
+                r.appendChild(c);
             }
-          }
-          dBet = null; document.getElementById('dMyBet').innerText = "";
-          let dot = `<div style="width:15px; height:15px; border-radius:50%; background:${res==='green'?'#4cd964':(res==='red'?'#ff3b30':'#555')}"></div>`;
-          document.getElementById('dHist').innerHTML = dot + document.getElementById('dHist').innerHTML;
-        }, 1000);
-      }
-    }, 1000);
-  }
-
-  let mB = 0; let mG = []; let mP = 0; let mAct = false;
-  function startMines() {
-    mB = vB('betMines'); if(!mB) return;
-    db.ref('users/'+user+'/balance').set(uData.balance - mB);
-    mAct = true; mP = mB; mG = new Array(25).fill(0);
-    let bCount = 0; while(bCount < 3) { let idx = Math.floor(Math.random()*25); if(mG[idx]===0){mG[idx]=1; bCount++;} }
-    document.getElementById('mStart').classList.add('hidden');
-    document.getElementById('mCash').classList.remove('hidden');
-    let g = document.getElementById('mGrid'); g.innerHTML = "";
-    for(let i=0; i<25; i++) {
-      let c = document.createElement('div'); c.className = "mine-cell"; c.innerText = "❓";
-      c.onclick = () => {
-        if(!mAct || c.innerText !== "❓") return;
-        if(mG[i] === 1) { c.innerText = "💣"; mAct = false; msg("БУМ!", "red"); setTimeout(startMines, 1000); stopMines(); }
-        else { c.innerText = "💎"; mP *= 1.2; document.getElementById('mCash').innerText = "ЗАБРАТИ " + Math.floor(mP); }
-      };
-      g.appendChild(c);
+            g.appendChild(r);
+        }
     }
-  }
-  function cashMines() { db.ref('users/'+user+'/balance').set(uData.balance + mP); msg("+"+Math.floor(mP), "green"); stopMines(); }
-  function stopMines() { mAct = false; document.getElementById('mStart').classList.remove('hidden'); document.getElementById('mCash').classList.add('hidden'); document.getElementById('mGrid').innerHTML = ""; }
+    function cashoutTower() { db.ref('users/'+user+'/balance').set(uData.balance + tProfit); notify("+"+Math.floor(tProfit),"success"); endTower(); }
+    function endTower() { document.getElementById('towerStartBtn').classList.remove('hidden'); document.getElementById('towerCashoutBtn').classList.add('hidden'); document.getElementById('towerGrid').innerHTML = ""; }
 
-  function playSlots() {
-    let b = vB('betSlots'); if(!b) return;
-    let s = ["🍎","🍋","💎","7️⃣"];
-    let r1=s[Math.floor(Math.random()*4)], r2=s[Math.floor(Math.random()*4)], r3=s[Math.floor(Math.random()*4)];
-    document.getElementById('s1').innerText=r1; document.getElementById('s2').innerText=r2; document.getElementById('s3').innerText=r3;
-    if(r1===r2 && r2===r3) {
-      let m = r1==="7️⃣"?50:10;
-      db.ref('users/'+user+'/balance').set(uData.balance + (b*m)); msg("SLOTS WIN!", "green");
-    } else db.ref('users/'+user+'/balance').set(uData.balance - b);
-  }
+    // --- DOUBLE (SHARED) ---
+    let doubleBet = null;
+    function betDouble(type) {
+        const b = valBet('betAmountDouble'); if(!b) return;
+        doubleBet = {type, amount: b};
+        document.getElementById('myDoubleBet').textContent = `Ставка: ${b} на ${type.toUpperCase()}`;
+    }
+    function startDoubleLoop() {
+        setInterval(() => {
+            let sec = 15 - (Math.floor(Date.now()/1000) % 15);
+            document.getElementById('doubleTimer').textContent = `До розіграшу: ${sec}с`;
+            if(sec === 1) {
+                const colors = ['red','black','red','black','red','black','green'];
+                const res = colors[Math.floor(Math.random()*colors.length)];
+                setTimeout(() => {
+                    notify("Випало: "+res.toUpperCase());
+                    if(doubleBet && doubleBet.type === res) {
+                        let mult = res === 'green' ? 14 : 2;
+                        db.ref('users/'+user+'/balance').set(uData.balance + (doubleBet.amount * mult));
+                        notify("Double WIN!", "success");
+                    } else if(doubleBet) {
+                        db.ref('users/'+user+'/balance').set(uData.balance - doubleBet.amount);
+                    }
+                    doubleBet = null; document.getElementById('myDoubleBet').textContent = "";
+                    const dot = `<div class="hist-dot" style="background:${res==='green'?'#4cd964':(res==='red'?'#ff3b30':'#555')}"></div>`;
+                    document.getElementById('doubleHistory').innerHTML = dot + document.getElementById('doubleHistory').innerHTML;
+                }, 1000);
+            }
+        }, 1000);
+    }
 
-  // --- СИСТЕМА ---
-  function go(t, el) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    document.getElementById('tab-'+t).classList.remove('hidden');
-    if(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-  }
-  function vB(id) {
-    let v = parseInt(document.getElementById(id).value);
-    if(isNaN(v) || v <= 0 || v > uData.balance) { msg("Помилка ставки", "red"); return 0; }
-    return v;
-  }
-  function msg(t, c) {
-    let d = document.createElement('div');
-    d.style = `position:fixed; top:20px; left:50%; transform:translateX(-50%); background:${c==='green'?'#4cd964':'#ff3b30'}; color:#000; padding:10px 20px; border-radius:10px; z-index:10000; font-weight:bold;`;
-    d.innerText = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 2000);
-  }
-  function auth(t) {
-    let n = document.getElementById('uName').value.trim();
-    let p = document.getElementById('uPass').value;
-    if(n.length < 3) return msg("Короткий нік", "red");
-    db.ref('users/'+n).once('value', s => {
-      if(t === 'login') {
-        if(s.exists() && s.val().pass === p) { user = n; localStorage.setItem("slotok_v2_user", n); init(); }
-        else msg("Невірно", "red");
-      } else {
-        if(s.exists()) msg("Зайнято", "red");
-        else { db.ref('users/'+n).set({pass:p, balance:1000, id:Math.floor(Math.random()*90000)}); user = n; localStorage.setItem("slotok_v2_user", n); init(); }
-      }
-    });
-  }
-  function logout() { localStorage.removeItem("slotok_v2_user"); location.reload(); }
+    // --- CHAT ---
+    function sendChat() {
+        const m = document.getElementById('chatMsg').value; if(!m) return;
+        db.ref('global_chat').push({u: user, m: m, t: Date.now()});
+        document.getElementById('chatMsg').value = "";
+    }
+    function loadChat() {
+        db.ref('global_chat').limitToLast(30).on('value', s => {
+            const b = document.getElementById('chatBox'); b.innerHTML = "";
+            s.forEach(child => {
+                const d = child.val();
+                b.innerHTML += `<div class="chat-msg"><span class="chat-name">${d.u}:</span> ${d.m}</div>`;
+            });
+            b.scrollTop = b.scrollHeight;
+        });
+    }
 
-  function sendChat() {
-    let m = document.getElementById('chatIn').value; if(!m) return;
-    db.ref('chat').push({u: user, m: m}); document.getElementById('chatIn').value = "";
-  }
-  function loadChat() {
-    db.ref('chat').limitToLast(20).on('value', s => {
-      let b = document.getElementById('chatBox'); b.innerHTML = "";
-      s.forEach(c => { b.innerHTML += `<div class="msg"><span class="msg-u">${c.val().u}:</span> ${c.val().m}</div>`; });
-      b.scrollTop = b.scrollHeight;
-    });
-  }
-  function loadTop() {
-    db.ref('users').orderByChild('balance').limitToLast(10).on('value', s => {
-      let l = document.getElementById('topList'); l.innerHTML = "";
-      let arr = []; s.forEach(c => { arr.push({n:c.key, b:c.val().balance}); });
-      arr.reverse().forEach((u, i) => { l.innerHTML += `<div style="padding:10px; border-bottom:1px solid #222;">${i+1}. ${u.n} - ${Math.floor(u.b)} ₴</div>`; });
-    });
-  }
+    // --- PROMO ---
+    function usePromo() {
+        const c = document.getElementById('promoInput').value.trim();
+        db.ref('promos_v2/'+c).once('value', s => {
+            const p = s.val();
+            if(p && p.limit > 0 && (!p.users || !p.users[user])) {
+                db.ref('users/'+user+'/balance').set(uData.balance + p.sum);
+                db.ref('promos_v2/'+c+'/limit').set(p.limit - 1);
+                db.ref('promos_v2/'+c+'/users/'+user).set(true);
+                notify("Активовано: +"+p.sum, "success");
+                closeModal('promo-modal');
+            } else notify("Код недійсний або використаний", "error");
+        });
+    }
 
-  function addPromo() {
-    let n = document.getElementById('apName').value;
-    let s = parseInt(document.getElementById('apSum').value);
-    let l = parseInt(document.getElementById('apLimit').value);
-    db.ref('promos/'+n).set({s, l}); msg("Промо створено", "green");
-  }
-  function openPromo() { document.getElementById('promo-m').classList.remove('hidden'); }
-  function usePromo() {
-    let c = document.getElementById('promoIn').value;
-    db.ref('promos/'+c).once('value', s => {
-      let p = s.val();
-      if(p && p.l > 0 && (!p.u || !p.u[user])) {
-        db.ref('users/'+user+'/balance').set(uData.balance + p.s);
-        db.ref('promos/'+c+'/l').set(p.l - 1);
-        db.ref('promos/'+c+'/u/'+user).set(true);
-        msg("Активовано!", "green");
-        document.getElementById('promo-m').classList.add('hidden');
-      } else msg("Помилка коду", "red");
-    });
-  }
-</script>
+    function createPromo() {
+        const n = document.getElementById('admPromoName').value;
+        const s = parseInt(document.getElementById('admPromoSum').value);
+        const l = parseInt(document.getElementById('admPromoLimit').value);
+        db.ref('promos_v2/'+n).set({sum: s, limit: l});
+        notify("Промо створено!");
+    }
 
+    // --- SYSTEM ---
+    function valBet(id) { 
+        const b = parseInt(document.getElementById(id).value);
+        if(isNaN(b) || b <= 0 || b > uData.balance) { notify("Невірна ставка", "error"); return 0; }
+        return b;
+    }
+    function notify(m, t="info") {
+        const c = document.getElementById('toast-container');
+        const d = document.createElement('div'); d.className = `toast`;
+        d.style.background = t==="success"?"#4cd964":"#333";
+        d.innerHTML = m; c.appendChild(d); setTimeout(()=>d.remove(), 2500);
+    }
+    function switchTab(t, el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('tab-'+t).classList.remove('hidden');
+        if(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+    }
+    function openGame(g) { switchTab(g); }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function login() {
+        const n = document.getElementById('lName').value.trim();
+        const p = document.getElementById('lPass').value;
+        db.ref('users/'+n).once('value', s => {
+            if(s.exists() && s.val().pass === p) {
+                user = n; localStorage.setItem("slotok_user", n); initApp();
+            } else notify("Помилка входу","error");
+        });
+    }
+    function register() {
+        const n = document.getElementById('rName').value.trim();
+        const p = document.getElementById('rPass').value;
+        if(n.length<3 || p.length<6) return notify("Занадто короткі дані");
+        db.ref('users/'+n).set({pass:p, balance:1000, id:Math.floor(Math.random()*90000), isAdmin:false});
+        user = n; localStorage.setItem("slotok_user", n); initApp();
+    }
+    function toggleAuth(r) {
+        document.getElementById('loginForm').classList.toggle('hidden', r);
+        document.getElementById('regForm').classList.toggle('hidden', !r);
+    }
+    function logout() { localStorage.removeItem("slotok_user"); location.reload(); }
+
+    function loadTop() {
+        db.ref('users').orderByChild('balance').limitToLast(10).on('value', s => {
+            let h = ""; let i = 1; let arr = [];
+            s.forEach(c => { arr.push({n:c.key, b:c.val().balance}); });
+            arr.reverse().forEach(u => {
+                h += `<tr><td>${i++}. ${u.n}</td><td style="text-align:right;">${Math.floor(u.b)} ₴</td></tr>`;
+            });
+            document.getElementById('topTable').innerHTML = h;
+        });
+    }
+    
+    // Спрощені слоти та майни для цілісності
+    function playSlots() {
+        const b = valBet('betAmountSlots'); if(!b) return;
+        const s = ["🍒","🍋","777","💎"];
+        const r1=s[Math.floor(Math.random()*s.length)], r2=s[Math.floor(Math.random()*s.length)], r3=s[Math.floor(Math.random()*s.length)];
+        document.getElementById('rs1').textContent=r1; document.getElementById('rs2').textContent=r2; document.getElementById('rs3').textContent=r3;
+        if(r1===r2 && r2===r3) {
+            let m = 5; if(r1==="777") m=50;
+            db.ref('users/'+user+'/balance').set(uData.balance + (b*m)); notify("WIN x"+m, "success");
+        } else db.ref('users/'+user+'/balance').set(uData.balance - b);
+    }
+  </script>
 </body>
 </html>
