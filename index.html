@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v37</title>
+  <title>SlotOK v38</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -356,13 +356,64 @@
     .mono-log-item.info  { color: var(--accent); font-weight: bold; }
     .mono-action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 
+
+    /* ===== NAV DOT ===== */
+    .nav-notif-dot { position:absolute; top:8px; right:12px; width:8px; height:8px; background:var(--red); border-radius:50%; border:1.5px solid #080808; }
+
+    /* ===== СПОВІЩЕННЯ ===== */
+    .notif-item { display:flex; align-items:flex-start; gap:12px; padding:12px; background:#111; border:1px solid #1a1a1a; border-radius:12px; margin-bottom:8px; cursor:pointer; transition:border-color 0.2s; }
+    .notif-item.unread { border-left:3px solid var(--accent); background:rgba(212,175,55,0.04); }
+    .notif-item.unread.green-notif { border-left-color:var(--green); background:rgba(76,217,100,0.04); }
+    .notif-item.unread.red-notif   { border-left-color:var(--red); }
+    .notif-icon { font-size:26px; flex-shrink:0; margin-top:2px; }
+    .notif-body { flex:1; }
+    .notif-title { font-size:14px; font-weight:bold; margin-bottom:2px; }
+    .notif-text  { font-size:12px; color:#777; line-height:1.4; }
+    .notif-time  { font-size:10px; color:#444; margin-top:4px; }
+    .notif-filter { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+    .notif-filter-btn { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; background:#1a1a1a; border:1px solid #333; color:#777; white-space:nowrap; }
+    .notif-filter-btn.active { background:rgba(212,175,55,0.15); border-color:var(--accent); color:var(--accent); }
+
+    /* ===== НАЛАШТУВАННЯ ===== */
+    .settings-section { background:#111; border:1px solid #1a1a1a; border-radius:14px; overflow:hidden; margin-bottom:15px; }
+    .settings-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #1a1a1a; }
+    .settings-row:last-child { border-bottom:none; }
+    .settings-icon { font-size:22px; min-width:30px; }
+    .settings-label { flex:1; font-size:14px; }
+    .settings-sub   { font-size:11px; color:#555; margin-top:2px; }
+    .toggle-switch  { position:relative; width:46px; height:26px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider  { position:absolute; inset:0; background:#333; border-radius:26px; cursor:pointer; transition:.3s; }
+    .toggle-slider::before { content:''; position:absolute; width:20px; height:20px; left:3px; bottom:3px; background:#888; border-radius:50%; transition:.3s; }
+    .toggle-switch input:checked + .toggle-slider { background:rgba(76,217,100,0.3); }
+    .toggle-switch input:checked + .toggle-slider::before { background:var(--green); transform:translateX(20px); }
+    .settings-select { background:#222; border:1px solid #444; color:#fff; border-radius:8px; padding:6px 10px; font-size:13px; }
+    .theme-preview { display:flex; gap:8px; flex-wrap:wrap; }
+    .theme-dot { width:32px; height:32px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+    .theme-dot.active { border-color:#fff; }
+    .lang-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .lang-btn { background:#1a1a1a; border:1px solid #333; border-radius:10px; padding:10px; text-align:center; cursor:pointer; font-size:13px; }
+    .lang-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(212,175,55,0.08); }
+
+    /* ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ ===== */
+    .mp-room-card { background:#111; border:1px solid #222; border-radius:12px; padding:14px; margin-bottom:8px; }
+    .mp-room-card.waiting { border-color:#d4af37; }
+    .mp-room-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .mp-players { display:flex; gap:6px; margin-top:6px; }
+    .mp-player-slot { flex:1; background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:8px; text-align:center; font-size:12px; }
+    .mp-player-slot.filled { border-color:var(--green); background:rgba(76,217,100,0.05); }
+    .mp-player-slot.empty  { border-style:dashed; color:#555; }
+    .mp-status-badge { font-size:10px; padding:3px 8px; border-radius:10px; font-weight:bold; }
+    .mp-waiting { background:rgba(212,175,55,0.2); color:var(--accent); }
+    .mp-playing  { background:rgba(76,217,100,0.2); color:var(--green); }
+
   </style>
 </head>
 <body data-theme="dark">
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v37</div>
+    <div>SlotOK v38</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -759,7 +810,8 @@
           <div style="color:#777;font-size:13px;margin-bottom:15px;">Ти грієш проти AI-суперника.<br>Стартовий капітал: 3 000 ₴ кожному</div>
           <input id="monoEntryBet" type="number" value="500" placeholder="Початкова ставка (₴)">
           <div style="color:#555;font-size:12px;margin-bottom:15px;">Переможець забирає всі гроші</div>
-          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 ПОЧАТИ ГРУ</button>
+          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 vs AI</button>
+          <button class="btn-outline" style="margin-top:0;" onclick="switchTab('monopoly-mp')">👥 МУЛЬТИПЛЕЄР</button>
         </div>
       </div>
 
@@ -786,7 +838,8 @@
 
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <button class="btn-gold" id="monoRollBtn" onclick="monoRoll()" style="flex:2;">🎲 КИНУТИ КУБИКИ</button>
-          <button class="btn-outline" id="monoBuyBtn" onclick="monoBuy()" style="flex:1;" disabled>🏠 Купити</button>
+          <button class="btn-green" id="monoBuyBtn" onclick="monoBuy()" style="flex:1;" disabled>🏠 Купити</button>
+          <button class="btn-red" id="monoPassBtn" onclick="monoPass()" style="flex:1;" disabled>⏭ Пас</button>
         </div>
 
         <div class="mono-log" id="monoLog">
@@ -795,6 +848,222 @@
 
         <button class="btn-red" style="margin-top:10px;" onclick="surrenderMonopoly()">🏳️ Здатись</button>
       </div>
+    </div>
+
+
+
+    <!-- ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ ===== -->
+    <div id="tab-monopoly-mp" class="screen hidden">
+      <button class="btn-outline" onclick="switchTab('monopoly')">⬅ Назад</button>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія — Мультиплеєр</h2>
+      <div style="color:#777;font-size:12px;margin-bottom:15px;">Грай з реальними гравцями онлайн!</div>
+
+      <div id="mpLobbyScreen">
+        <div class="box">
+          <div class="section-header" style="margin-top:0;">➕ Створити кімнату</div>
+          <input id="mpBetInput" type="number" value="500" placeholder="Ставка (₴)">
+          <button class="btn-gold" onclick="createMpRoom()">🎲 СТВОРИТИ КІМНАТУ</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="section-header" style="margin:0;">🏠 Відкриті кімнати</div>
+          <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="loadMpRooms()">🔄 Оновити</button>
+        </div>
+        <div id="mpRoomsList"><div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає кімнат</div></div>
+      </div>
+
+      <div id="mpWaitScreen" class="hidden">
+        <div class="box" style="text-align:center;">
+          <div style="font-size:40px;margin-bottom:10px;">⏳</div>
+          <h3 style="color:var(--accent);margin:0 0 6px;">Очікування гравця...</h3>
+          <div id="mpWaitInfo" style="color:#777;font-size:13px;margin-bottom:15px;"></div>
+          <div class="mp-players" id="mpWaitPlayers"></div>
+          <button class="btn-red" style="margin-top:15px;" onclick="cancelMpRoom()">❌ Скасувати</button>
+        </div>
+      </div>
+
+      <div id="mpGameScreen" class="hidden">
+        <div class="mono-info-bar">
+          <div class="mono-info-card">
+            <div class="mono-info-val" id="mpPlayerMoney" style="color:var(--green);">3000₴</div>
+            <div class="mono-info-lbl">💰 Ваш капітал</div>
+          </div>
+          <div class="mono-info-card">
+            <div class="mono-info-val" id="mpOpponentMoney" style="color:var(--red);">3000₴</div>
+            <div class="mono-info-lbl" id="mpOpponentLabel">👤 Суперник</div>
+          </div>
+        </div>
+
+        <div class="mono-board-wrap" id="mpBoardWrap">
+          <div class="mono-board" id="mpBoard"></div>
+        </div>
+
+        <div class="mono-dice">
+          <div class="mono-die" id="mpDie1">🎲</div>
+          <div class="mono-die" id="mpDie2">🎲</div>
+        </div>
+
+        <div id="mpTurnInfo" style="text-align:center;color:var(--accent);font-size:13px;margin-bottom:8px;font-weight:bold;">Ваш хід!</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn-gold" id="mpRollBtn" onclick="mpRoll()" style="flex:2;">🎲 КИНУТИ КУБИКИ</button>
+          <button class="btn-outline" id="mpBuyBtn" onclick="mpBuy()" style="flex:1;" disabled>🏠 Купити</button>
+          <button class="btn-red" id="mpPassBtn" onclick="mpPass()" style="flex:1;" disabled>⏭ Пас</button>
+        </div>
+
+        <div class="mono-log" id="mpLog">
+          <div class="mono-log-item info">🎩 Гра почалась!</div>
+        </div>
+
+        <button class="btn-red" style="margin-top:10px;" onclick="surrenderMp()">🏳️ Здатись</button>
+      </div>
+    </div>
+
+    <!-- ===== СПОВІЩЕННЯ ===== -->
+    <div id="tab-notifications" class="screen hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 style="margin:0;color:var(--accent);">🔔 Сповіщення</h2>
+        <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="markAllNotifsRead()">✅ Всі прочитано</button>
+      </div>
+      <div class="notif-filter">
+        <div class="notif-filter-btn active" onclick="filterNotifs('all',this)">Всі</div>
+        <div class="notif-filter-btn" onclick="filterNotifs('gift',this)">🎀 Подарунки</div>
+        <div class="notif-filter-btn" onclick="filterNotifs('game',this)">🎮 Ігри</div>
+        <div class="notif-filter-btn" onclick="filterNotifs('bonus',this)">🎁 Бонуси</div>
+        <div class="notif-filter-btn" onclick="filterNotifs('system',this)">📢 Система</div>
+      </div>
+      <div id="notifList"><div style="color:#777;font-size:13px;text-align:center;padding:30px 0;">Немає сповіщень</div></div>
+    </div>
+
+    <!-- ===== НАЛАШТУВАННЯ ===== -->
+    <div id="tab-settings" class="screen hidden">
+      <h2 style="color:var(--accent);margin-bottom:15px;">⚙️ Налаштування</h2>
+
+      <!-- Звук -->
+      <div class="settings-section">
+        <div class="settings-row">
+          <span class="settings-icon">🔊</span>
+          <div style="flex:1;"><div class="settings-label">Звукові ефекти</div><div class="settings-sub">Звуки виграшу і натискань</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingSounds" checked onchange="saveSetting('sounds',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">🎵</span>
+          <div style="flex:1;"><div class="settings-label">Фонова музика</div><div class="settings-sub">Музика в казино</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingMusic" onchange="saveSetting('music',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">📳</span>
+          <div style="flex:1;"><div class="settings-label">Вібрація</div><div class="settings-sub">Тактильний відгук</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingVibrate" checked onchange="saveSetting('vibrate',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Тема -->
+      <div class="settings-section">
+        <div class="settings-row">
+          <span class="settings-icon">🎨</span>
+          <div style="flex:1;">
+            <div class="settings-label">Тема</div>
+            <div style="margin-top:10px;" class="theme-preview">
+              <div class="theme-dot active" id="theme-dark" style="background:#050505;border:2px solid #444;" onclick="setTheme('dark',this)" title="Темна"></div>
+              <div class="theme-dot" id="theme-light" style="background:#f0f0f0;border:2px solid #ccc;" onclick="setTheme('light',this)" title="Світла"></div>
+              <div class="theme-dot" id="theme-blue"  style="background:linear-gradient(135deg,#0a0a2e,#1a1a5e);" onclick="setTheme('blue',this)" title="Синя ніч"></div>
+              <div class="theme-dot" id="theme-green" style="background:linear-gradient(135deg,#0a1a0a,#0d3318);" onclick="setTheme('green',this)" title="Зелена"></div>
+              <div class="theme-dot" id="theme-red"   style="background:linear-gradient(135deg,#1a0505,#3a0808);" onclick="setTheme('red',this)" title="Червона"></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">🔡</span>
+          <div style="flex:1;"><div class="settings-label">Розмір тексту</div></div>
+          <select class="settings-select" id="settingFontSize" onchange="saveSetting('fontSize',this.value);applyFontSize(this.value)">
+            <option value="14">Малий</option>
+            <option value="16" selected>Середній</option>
+            <option value="18">Великий</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Мова -->
+      <div class="settings-section">
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;width:100%;">
+            <span class="settings-icon">🌐</span>
+            <div class="settings-label">Мова / Language</div>
+          </div>
+          <div class="lang-grid" style="width:100%;">
+            <div class="lang-btn active" id="lang-uk" onclick="setLang('uk',this)">🇺🇦 Українська</div>
+            <div class="lang-btn" id="lang-en" onclick="setLang('en',this)">🇺🇸 English</div>
+            <div class="lang-btn" id="lang-ru" onclick="setLang('ru',this)">🇷🇺 Русский</div>
+            <div class="lang-btn" id="lang-pl" onclick="setLang('pl',this)">🇵🇱 Polski</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Сповіщення -->
+      <div class="settings-section">
+        <div class="settings-row">
+          <span class="settings-icon">🔔</span>
+          <div style="flex:1;"><div class="settings-label">Push-сповіщення</div><div class="settings-sub">Сповіщення про бонуси і виграші</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingNotifs" checked onchange="saveSetting('notifs',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">🎁</span>
+          <div style="flex:1;"><div class="settings-label">Сповіщення про подарунки</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingGiftNotifs" checked onchange="saveSetting('giftNotifs',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">⏰</span>
+          <div style="flex:1;"><div class="settings-label">Нагадування про бонус</div><div class="settings-sub">Погодинний і щоденний бонуси</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingBonusNotifs" checked onchange="saveSetting('bonusNotifs',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Акаунт -->
+      <div class="settings-section">
+        <div class="settings-row" onclick="openDailyBonus()" style="cursor:pointer;">
+          <span class="settings-icon">🎁</span>
+          <div class="settings-label">Щоденний бонус</div>
+          <span style="color:#555;font-size:18px;">›</span>
+        </div>
+        <div class="settings-row" onclick="openHistoryModal()" style="cursor:pointer;">
+          <span class="settings-icon">📜</span>
+          <div class="settings-label">Історія транзакцій</div>
+          <span style="color:#555;font-size:18px;">›</span>
+        </div>
+        <div class="settings-row" onclick="openModal('promo-modal')" style="cursor:pointer;">
+          <span class="settings-icon">🎟️</span>
+          <div class="settings-label">Ввести промокод</div>
+          <span style="color:#555;font-size:18px;">›</span>
+        </div>
+        <div class="settings-row" onclick="logout()" style="cursor:pointer;">
+          <span class="settings-icon">🚪</span>
+          <div class="settings-label" style="color:#aaa;">Вийти з акаунту</div>
+        </div>
+        <div class="settings-row" onclick="deleteAccount()" style="cursor:pointer;">
+          <span class="settings-icon">🗑️</span>
+          <div class="settings-label" style="color:var(--red);">Видалити акаунт</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v38 • Made with ❤️</div>
     </div>
 
 
@@ -1245,11 +1514,14 @@
   <nav class="bottom-nav">
     <div class="nav-item active" onclick="switchTab('home', this)"><span class="icon">🏠</span><span>Головна</span></div>
     <div class="nav-item" onclick="switchTab('lobby', this)"><span class="icon">🎰</span><span>Казино</span></div>
-    <div class="nav-item" onclick="switchTab('chat', this)"><span class="icon">💬</span><span>Чат</span></div>
     <div class="nav-item" onclick="switchTab('cashier', this)"><span class="icon">💳</span><span>Каса</span></div>
-    <div class="nav-item" onclick="switchTab('top', this)"><span class="icon">🏆</span><span>Топ</span></div>
+    <div class="nav-item" onclick="switchTab('notifications', this)" style="position:relative;">
+      <span class="icon">🔔</span><span>Сповіщення</span>
+      <span id="notifNavBadge" class="nav-notif-dot hidden"></span>
+    </div>
     <div class="nav-item" onclick="switchTab('profile', this)"><span class="icon">👤</span><span>Профіль</span></div>
-    <div class="nav-item" onclick="switchTab('more', this)"><span class="icon">⚙️</span><span>Ще</span></div>
+    <div class="nav-item" onclick="switchTab('settings', this)"><span class="icon">⚙️</span><span>Налашт.</span></div>
+    <div class="nav-item" onclick="switchTab('more', this)"><span class="icon">☰</span><span>Ще</span></div>
   </nav>
 
   <script>
@@ -1308,6 +1580,9 @@
                 checkAdmin();
                 checkDailyBonus();
                 checkInboxGifts();
+                loadNotifsFromStorage();
+                updateNotifBadge();
+                loadSettings();
             }, (error) => {
                 notify("Помилка зв'язку з базою.", "error");
             });
@@ -3516,7 +3791,9 @@
         const owner = monoState.props[cell.pos];
         if(!owner) {
           monoLog('🏠 ' + cell.label.replace('\n',' ') + ' — вільна (' + cell.price + '₴). Купити?', 'info');
+          const passBtn = document.getElementById('monoPassBtn');
           if(buyBtn) { buyBtn.disabled = false; buyBtn.onclick = () => monoPlayerBuy(cell); }
+          if(passBtn) { passBtn.disabled = false; passBtn.onclick = () => monoPass(); }
           return;
         } else if(owner === 'ai') {
           const rent = cell.rent || 25;
@@ -4072,12 +4349,638 @@
       if(id==='leaderboard') loadLeaderboard('balance', document.querySelector('.lb-tab'));
       if(id==='gifts') { loadInboxGifts(); }
       if(id==='monopoly') { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); }
+      if(id==='monopoly-mp') { loadMpRooms(); }
+      if(id==='notifications') { renderNotifs(); }
+      if(id==='settings') { loadSettings(); }
     }
 
     function scratchReset() {
       document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:#777;grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
       document.getElementById('scratchBuyBtn').classList.remove('hidden');
     }
+
+
+    // ============================================
+    // ===== MONO PASS (пропустити купівлю) =====
+    // ============================================
+    function monoPass() {
+      const buyBtn  = document.getElementById('monoBuyBtn');
+      const passBtn = document.getElementById('monoPassBtn');
+      if(buyBtn)  buyBtn.disabled  = true;
+      if(passBtn) passBtn.disabled = true;
+      monoLog('⏭ Ви пропустили купівлю', 'info');
+      setTimeout(monoAiTurn, 500);
+    }
+
+    // ============================================
+    // ===== НАЛАШТУВАННЯ =====
+    // ============================================
+    let appSettings = {};
+
+    function loadSettings() {
+      try {
+        appSettings = JSON.parse(localStorage.getItem('slotok_settings') || '{}');
+      } catch(e) { appSettings = {}; }
+      applyAllSettings();
+    }
+
+    function saveSetting(key, val) {
+      appSettings[key] = val;
+      localStorage.setItem('slotok_settings', JSON.stringify(appSettings));
+      if(key === 'sounds') {
+        notify(val ? '🔊 Звук увімкнено' : '🔇 Звук вимкнено', 'info');
+      }
+    }
+
+    function getSetting(key, def) {
+      return appSettings[key] !== undefined ? appSettings[key] : def;
+    }
+
+    function applyAllSettings() {
+      // Sync toggles
+      const ids = { sounds:'settingSounds', music:'settingMusic', vibrate:'settingVibrate', notifs:'settingNotifs', giftNotifs:'settingGiftNotifs', bonusNotifs:'settingBonusNotifs' };
+      const defaults = { sounds:true, music:false, vibrate:true, notifs:true, giftNotifs:true, bonusNotifs:true };
+      Object.entries(ids).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if(el) el.checked = getSetting(key, defaults[key]);
+      });
+      // Font size
+      const fs = getSetting('fontSize', '16');
+      const fsel = document.getElementById('settingFontSize');
+      if(fsel) fsel.value = fs;
+      applyFontSize(fs);
+      // Theme
+      const theme = getSetting('theme', 'dark');
+      applyThemeVars(theme);
+      document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+      const td = document.getElementById('theme-' + theme);
+      if(td) td.classList.add('active');
+      // Lang
+      const lang = getSetting('lang', 'uk');
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      const lb = document.getElementById('lang-' + lang);
+      if(lb) lb.classList.add('active');
+    }
+
+    function applyFontSize(size) {
+      document.body.style.fontSize = size + 'px';
+    }
+
+    const THEMES = {
+      dark:  { bg:'#050505', box:'#141414', border:'#333', input:'#1a1a1a', text:'#fff' },
+      light: { bg:'#f0f0f0', box:'#ffffff', border:'#ddd', input:'#e8e8e8', text:'#111' },
+      blue:  { bg:'#050518', box:'#0d0d2e', border:'#1a1a55', input:'#0a0a22', text:'#e0e8ff' },
+      green: { bg:'#030e03', box:'#071407', border:'#0d2a0d', input:'#051005', text:'#d0f0d0' },
+      red:   { bg:'#0e0303', box:'#1a0505', border:'#3a0a0a', input:'#120404', text:'#ffe0e0' },
+    };
+
+    function applyThemeVars(theme) {
+      const t = THEMES[theme] || THEMES.dark;
+      const root = document.documentElement;
+      root.style.setProperty('--bg', t.bg);
+      root.style.setProperty('--box', t.box);
+      root.style.setProperty('--border', t.border);
+      root.style.setProperty('--input', t.input);
+      root.style.setProperty('--text', t.text);
+      document.body.style.background = t.bg;
+      document.body.style.color = t.text;
+    }
+
+    function setTheme(theme, el) {
+      saveSetting('theme', theme);
+      applyThemeVars(theme);
+      document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+      el.classList.add('active');
+      notify('🎨 Тема змінена', 'info');
+    }
+
+    function setLang(lang, el) {
+      saveSetting('lang', lang);
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      notify('🌐 Мову збережено', 'info');
+    }
+
+    // Патч playSound — поважати налаштування
+    const _origPlaySound = playSound;
+    window.playSound = function(type) {
+      if(!getSetting('sounds', true)) return;
+      _origPlaySound(type);
+    };
+
+    // ============================================
+    // ===== СПОВІЩЕННЯ =====
+    // ============================================
+    let allNotifs = [];
+    let notifFilter = 'all';
+
+    function pushNotif(type, icon, title, text, colorClass) {
+      const id = 'n_' + Date.now() + '_' + Math.random();
+      const notif = { id, type, icon, title, text, colorClass: colorClass||'', time: Date.now(), read: false };
+      allNotifs.unshift(notif);
+      if(allNotifs.length > 100) allNotifs = allNotifs.slice(0, 100);
+      try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+      updateNotifBadge();
+    }
+
+    function loadNotifsFromStorage() {
+      try {
+        allNotifs = JSON.parse(localStorage.getItem('slotok_notifs') || '[]');
+      } catch(e) { allNotifs = []; }
+    }
+
+    function updateNotifBadge() {
+      const unread = allNotifs.filter(n => !n.read).length;
+      const dot = document.getElementById('notifNavBadge');
+      if(dot) dot.classList.toggle('hidden', unread === 0);
+    }
+
+    function filterNotifs(f, el) {
+      notifFilter = f;
+      document.querySelectorAll('.notif-filter-btn').forEach(b => b.classList.remove('active'));
+      if(el) el.classList.add('active');
+      renderNotifs();
+    }
+
+    function renderNotifs() {
+      const list = document.getElementById('notifList');
+      if(!list) return;
+      const filtered = notifFilter === 'all' ? allNotifs : allNotifs.filter(n => n.type === notifFilter);
+      if(!filtered.length) {
+        list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:30px 0;">Немає сповіщень</div>';
+        return;
+      }
+      list.innerHTML = filtered.map(n => {
+        const t = timeAgo(n.time);
+        return '<div class="notif-item ' + (n.read ? '' : 'unread ' + (n.colorClass||'')) + '" onclick="readNotif(\'' + n.id + '\')">' +
+          '<div class="notif-icon">' + n.icon + '</div>' +
+          '<div class="notif-body">' +
+            '<div class="notif-title">' + n.title + '</div>' +
+            '<div class="notif-text">' + n.text + '</div>' +
+            '<div class="notif-time">' + t + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function readNotif(id) {
+      const n = allNotifs.find(x => x.id === id);
+      if(n) n.read = true;
+      try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+      updateNotifBadge();
+      renderNotifs();
+    }
+
+    function markAllNotifsRead() {
+      allNotifs.forEach(n => n.read = true);
+      try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+      updateNotifBadge();
+      renderNotifs();
+    }
+
+    function timeAgo(ts) {
+      const diff = Date.now() - ts;
+      if(diff < 60000) return 'щойно';
+      if(diff < 3600000) return Math.floor(diff/60000) + ' хв тому';
+      if(diff < 86400000) return Math.floor(diff/3600000) + ' год тому';
+      return new Date(ts).toLocaleDateString('uk-UA');
+    }
+
+    // Хуки для авто-сповіщень
+    const _origNotify = notify;
+    window.notify = function(msg, type) {
+      _origNotify(msg, type);
+      // Категоризуємо
+      if(msg.includes('бонус') || msg.includes('Бонус') || msg.includes('щоденний') || msg.includes('погодинний')) {
+        pushNotif('bonus', '🎁', 'Бонус', msg, 'green-notif');
+      } else if(msg.includes('Подарунок') || msg.includes('подарунок')) {
+        pushNotif('gift', '🎀', 'Подарунок', msg, 'green-notif');
+      } else if(msg.includes('WIN') || msg.includes('Виграш') || msg.includes('виграш') || msg.includes('виграли') || msg.includes('Перемога')) {
+        pushNotif('game', '🏆', 'Виграш', msg, 'green-notif');
+      } else if(msg.includes('Програш') || msg.includes('програли') || msg.includes('Краш') || msg.includes('КРАШ')) {
+        pushNotif('game', '😔', 'Гра', msg, 'red-notif');
+      } else if(type === 'success') {
+        pushNotif('system', '✅', 'Успіх', msg, 'green-notif');
+      } else if(type === 'error') {
+        // не зберігаємо помилки
+      }
+    };
+
+    // ============================================
+    // ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ =====
+    // ============================================
+    let mpRoomId  = null;
+    let mpIsHost  = false;
+    let mpState   = null;
+    let mpListener = null;
+
+    function createMpRoom() {
+      const bet = parseInt(document.getElementById('mpBetInput').value) || 500;
+      if(bet < 100) return notify('Мінімальна ставка 100₴', 'error');
+      if(userData.balance < bet) return notify('Недостатньо коштів', 'error');
+
+      db.ref('users/' + currentUser).update({ balance: userData.balance - bet });
+
+      const roomId = 'mp_' + currentUser + '_' + Date.now();
+      mpRoomId = roomId;
+      mpIsHost = true;
+
+      db.ref('mp_rooms/' + roomId).set({
+        host: currentUser, guest: null, bet,
+        status: 'waiting', created: Date.now(),
+        state: {
+          hostMoney: 3000, guestMoney: 3000,
+          hostPos: 0, guestPos: 0,
+          props: {}, turn: 'host',
+          jailHost: 0, jailGuest: 0,
+          gameOver: false
+        }
+      });
+
+      showMpWaitScreen(roomId, bet);
+      listenMpRoom(roomId);
+    }
+
+    function showMpWaitScreen(roomId, bet) {
+      document.getElementById('mpLobbyScreen').classList.add('hidden');
+      document.getElementById('mpWaitScreen').classList.remove('hidden');
+      document.getElementById('mpWaitInfo').textContent = 'Кімната: ' + roomId + ' • Ставка: ' + bet + '₴';
+      document.getElementById('mpWaitPlayers').innerHTML =
+        '<div class="mp-player-slot filled">🧑 ' + currentUser + '<br><small>Хост</small></div>' +
+        '<div class="mp-player-slot empty">❓ Очікування...<br><small>Гість</small></div>';
+    }
+
+    function loadMpRooms() {
+      db.ref('mp_rooms').orderByChild('status').equalTo('waiting').limitToLast(10).once('value', snap => {
+        const list = document.getElementById('mpRoomsList');
+        if(!list) return;
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).forEach(([id, r]) => {
+          if(r.host === currentUser) return; // не показуємо свою
+          list.innerHTML += '<div class="mp-room-card waiting">' +
+            '<div class="mp-room-header">' +
+              '<span style="font-weight:bold;">🧑 ' + r.host + '</span>' +
+              '<span class="mp-status-badge mp-waiting">⏳ Чекає</span>' +
+            '</div>' +
+            '<div style="color:#777;font-size:12px;margin-bottom:8px;">Ставка: <b style="color:var(--accent);">' + r.bet + '₴</b></div>' +
+            '<button class="btn-gold" style="padding:10px;" onclick="joinMpRoom(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button>' +
+          '</div>';
+        });
+        if(!list.innerHTML) list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>';
+      });
+    }
+
+    function joinMpRoom(roomId, bet) {
+      if(userData.balance < bet) return notify('Недостатньо коштів: потрібно ' + bet + '₴', 'error');
+      db.ref('mp_rooms/' + roomId).once('value', snap => {
+        const r = snap.val();
+        if(!r || r.status !== 'waiting') return notify('Кімната вже зайнята', 'error');
+        db.ref('users/' + currentUser).update({ balance: userData.balance - bet });
+        mpRoomId = roomId;
+        mpIsHost = false;
+        db.ref('mp_rooms/' + roomId).update({ guest: currentUser, status: 'playing' });
+        listenMpRoom(roomId);
+      });
+    }
+
+    function cancelMpRoom() {
+      if(!mpRoomId) return;
+      db.ref('mp_rooms/' + mpRoomId + '/state/hostMoney').once('value', snap => {
+        // повернути ставку
+        db.ref('mp_rooms/' + mpRoomId).once('value', s => {
+          const r = s.val();
+          if(r) db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(r.bet));
+        });
+      });
+      db.ref('mp_rooms/' + mpRoomId).update({ status: 'cancelled' });
+      if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
+      mpRoomId = null;
+      document.getElementById('mpWaitScreen').classList.add('hidden');
+      document.getElementById('mpLobbyScreen').classList.remove('hidden');
+    }
+
+    function listenMpRoom(roomId) {
+      if(mpListener) db.ref('mp_rooms/' + roomId).off('value', mpListener);
+      mpListener = db.ref('mp_rooms/' + roomId).on('value', snap => {
+        const r = snap.val();
+        if(!r) return;
+        if(r.status === 'cancelled') {
+          notify('Кімнату скасовано', 'error');
+          resetMpUI(); return;
+        }
+        if(r.status === 'playing' && document.getElementById('mpGameScreen').classList.contains('hidden')) {
+          startMpGame(r);
+        }
+        if(r.status === 'playing') {
+          mpState = r.state;
+          renderMpBoard();
+          updateMpInfo(r);
+          updateMpTurnUI(r);
+        }
+        if(r.status === 'finished') {
+          handleMpFinished(r);
+        }
+      });
+    }
+
+    function startMpGame(r) {
+      document.getElementById('mpWaitScreen').classList.add('hidden');
+      document.getElementById('mpLobbyScreen').classList.add('hidden');
+      document.getElementById('mpGameScreen').classList.remove('hidden');
+      const opponentName = mpIsHost ? r.guest : r.host;
+      const lbl = document.getElementById('mpOpponentLabel');
+      if(lbl) lbl.textContent = '👤 ' + opponentName;
+      const mpLog = document.getElementById('mpLog');
+      if(mpLog) mpLog.innerHTML = '<div class="mono-log-item info">🎩 Гра почалась! ' + (mpIsHost ? 'Ваш хід.' : 'Хід суперника.') + '</div>';
+    }
+
+    function isMyMpTurn(r) {
+      return (mpIsHost && r.state.turn === 'host') || (!mpIsHost && r.state.turn === 'guest');
+    }
+
+    function updateMpTurnUI(r) {
+      const myTurn = isMyMpTurn(r);
+      const rollBtn = document.getElementById('mpRollBtn');
+      const infoEl  = document.getElementById('mpTurnInfo');
+      if(rollBtn) rollBtn.disabled = !myTurn || r.state.gameOver;
+      if(infoEl) {
+        infoEl.textContent = myTurn ? '⚡ Ваш хід!' : '⏳ Хід суперника...';
+        infoEl.style.color = myTurn ? 'var(--green)' : '#777';
+      }
+    }
+
+    function updateMpInfo(r) {
+      const s = r.state;
+      const myMoney  = mpIsHost ? s.hostMoney  : s.guestMoney;
+      const oppMoney = mpIsHost ? s.guestMoney : s.hostMoney;
+      const pm = document.getElementById('mpPlayerMoney');
+      const om = document.getElementById('mpOpponentMoney');
+      if(pm) pm.textContent = myMoney + '₴';
+      if(om) om.textContent = oppMoney + '₴';
+    }
+
+    function mpRoll() {
+      if(!mpRoomId || !mpState) return;
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val();
+        if(!r || !isMyMpTurn(r) || r.state.gameOver) return;
+
+        const d1 = rollDice(), d2 = rollDice();
+        const die1 = document.getElementById('mpDie1');
+        const die2 = document.getElementById('mpDie2');
+        if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
+        if(die2) { die2.classList.add('rolling'); die2.textContent = DICE_EMOJI[d2]; }
+        setTimeout(() => { if(die1) die1.classList.remove('rolling'); if(die2) die2.classList.remove('rolling'); }, 500);
+
+        const steps = d1 + d2;
+        const st = Object.assign({}, r.state);
+        const myKey  = mpIsHost ? 'hostPos'   : 'guestPos';
+        const myMon  = mpIsHost ? 'hostMoney'  : 'guestMoney';
+        const jailKey= mpIsHost ? 'jailHost'   : 'jailGuest';
+
+        mpAddLog('🎲 ' + (mpIsHost ? r.host : r.guest) + ' кидає: ' + d1 + '+' + d2 + '=' + steps);
+
+        if(st[jailKey] > 0) {
+          st[jailKey]--;
+          st.turn = mpIsHost ? 'guest' : 'host';
+          db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
+          return;
+        }
+
+        const oldPos = st[myKey];
+        st[myKey] = (st[myKey] + steps) % 40;
+        if(st[myKey] < oldPos) { st[myMon] += 200; mpAddLog('🏁 Пройшов GO +200₴'); }
+
+        // Landing logic
+        const cell = MONO_CELLS[st[myKey]];
+        if(cell) {
+          if(cell.pos === 30) {
+            st[myKey] = 10; st[jailKey] = 2;
+            mpAddLog('👮 У в\'язницю!');
+            st.turn = mpIsHost ? 'guest' : 'host';
+          } else if(cell.type === 'tax') {
+            const tax = cell.pos === 4 ? 100 : 150;
+            st[myMon] -= tax;
+            mpAddLog('💸 Податок -' + tax + '₴');
+            if(st[myMon] <= 0) { finishMpGame(mpIsHost ? 'guest' : 'host', r.bet); return; }
+            st.turn = mpIsHost ? 'guest' : 'host';
+          } else if(cell.type === 'special') {
+            const bonus = [100, -75, 50, 150, -50, 200][Math.floor(Math.random()*6)];
+            st[myMon] += bonus;
+            mpAddLog('🃏 Шанс: ' + (bonus>0?'+':'') + bonus + '₴');
+            if(st[myMon] <= 0) { finishMpGame(mpIsHost ? 'guest' : 'host', r.bet); return; }
+            st.turn = mpIsHost ? 'guest' : 'host';
+          } else if((cell.type === 'prop' || cell.type === 'station') && cell.price) {
+            const propsObj = st.props || {};
+            const owner = propsObj[cell.pos];
+            if(!owner) {
+              // Гравець має вибір: купити або пропустити — зберігаємо pendingBuy
+              st.pendingBuy = { pos: cell.pos, price: cell.price, label: cell.label, buyer: mpIsHost ? 'host' : 'guest' };
+              mpAddLog('🏠 ' + cell.label.replace('\n',' ') + ' — вільна (' + cell.price + '₴). Купити або пас.');
+              const buyBtn = document.getElementById('mpBuyBtn');
+              const passBtn = document.getElementById('mpPassBtn');
+              if(buyBtn) { buyBtn.disabled = false; buyBtn.onclick = () => mpDoBuy(); }
+              if(passBtn){ passBtn.disabled = false; passBtn.onclick = () => mpDoPass(); }
+            } else {
+              const oppKey = mpIsHost ? 'guest' : 'host';
+              const oppMon = mpIsHost ? 'guestMoney' : 'hostMoney';
+              const isOwnedByMe = (mpIsHost && owner === 'host') || (!mpIsHost && owner === 'guest');
+              if(!isOwnedByMe) {
+                const rent = cell.rent || 25;
+                st[myMon] -= rent; st[oppMon] += rent;
+                mpAddLog('💸 Рента: -' + rent + '₴');
+                if(st[myMon] <= 0) { finishMpGame(owner, r.bet); return; }
+              } else {
+                mpAddLog('✅ Ваша власність');
+              }
+              st.turn = mpIsHost ? 'guest' : 'host';
+            }
+          } else {
+            st.turn = mpIsHost ? 'guest' : 'host';
+          }
+        } else {
+          st.turn = mpIsHost ? 'guest' : 'host';
+        }
+
+        db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
+      });
+    }
+
+    function mpDoBuy() {
+      db.ref('mp_rooms/' + mpRoomId + '/state').once('value', snap => {
+        const st = Object.assign({}, snap.val());
+        if(!st.pendingBuy) return;
+        const pb = st.pendingBuy;
+        const myMon = mpIsHost ? 'hostMoney' : 'guestMoney';
+        if(st[myMon] < pb.price) { notify('Недостатньо коштів!', 'error'); mpDoPass(); return; }
+        st[myMon] -= pb.price;
+        if(!st.props) st.props = {};
+        st.props[pb.pos] = mpIsHost ? 'host' : 'guest';
+        st.pendingBuy = null;
+        st.turn = mpIsHost ? 'guest' : 'host';
+        mpAddLog('✅ Куплено: ' + pb.label.replace('\n',' '));
+        document.getElementById('mpBuyBtn').disabled = true;
+        document.getElementById('mpPassBtn').disabled = true;
+        db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
+      });
+    }
+
+    function mpDoPass() {
+      db.ref('mp_rooms/' + mpRoomId + '/state').once('value', snap => {
+        const st = Object.assign({}, snap.val());
+        st.pendingBuy = null;
+        st.turn = mpIsHost ? 'guest' : 'host';
+        mpAddLog('⏭ Пропущено');
+        const buyBtn = document.getElementById('mpBuyBtn');
+        const passBtn= document.getElementById('mpPassBtn');
+        if(buyBtn)  buyBtn.disabled = true;
+        if(passBtn) passBtn.disabled= true;
+        db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
+      });
+    }
+
+    function mpPass() { mpDoPass(); }
+    function mpBuy()  { mpDoBuy(); }
+
+    function finishMpGame(winnerRole, bet) {
+      const winnerName = winnerRole === 'host'
+        ? db.ref('mp_rooms/' + mpRoomId).once('value', snap => snap.val().host)
+        : null;
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val();
+        const winner = winnerRole === 'host' ? r.host : r.guest;
+        db.ref('mp_rooms/' + mpRoomId).update({ status: 'finished', winner });
+        // Нараховуємо переможцю
+        const prize = Math.floor(bet * 1.9);
+        db.ref('users/' + winner + '/balance').set(firebase.database.ServerValue.increment(prize));
+        addToHistory('МП Монополія ' + (winner===currentUser?'+'+prize:'-'+bet) + '₴');
+      });
+    }
+
+    function handleMpFinished(r) {
+      const isWin = r.winner === currentUser;
+      const prize = Math.floor(r.bet * 1.9);
+      mpAddLog(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + prize + '₴' : '💀 ' + r.winner + ' переміг', isWin ? 'good' : 'bad');
+      if(isWin) { playSound('win'); notify('🎩 МП Монополія: +' + prize + '₴!', 'success'); }
+      else { notify('😔 ' + r.winner + ' переміг у МП Монополії', 'error'); }
+      const rollBtn = document.getElementById('mpRollBtn');
+      if(rollBtn) rollBtn.disabled = true;
+      if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
+      setTimeout(resetMpUI, 3500);
+    }
+
+    function surrenderMp() {
+      if(!mpRoomId) return;
+      if(confirm('Здатись? Ви програєте ставку.')) {
+        db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+          const r = snap.val();
+          const winner = mpIsHost ? r.guest : r.host;
+          if(winner) finishMpGame(mpIsHost ? 'guest' : 'host', r.bet);
+        });
+      }
+    }
+
+    function resetMpUI() {
+      mpRoomId = null; mpIsHost = false; mpState = null;
+      document.getElementById('mpGameScreen').classList.add('hidden');
+      document.getElementById('mpWaitScreen').classList.add('hidden');
+      document.getElementById('mpLobbyScreen').classList.remove('hidden');
+    }
+
+    function mpAddLog(text, cls) {
+      const log = document.getElementById('mpLog');
+      if(!log) return;
+      const item = document.createElement('div');
+      item.className = 'mono-log-item ' + (cls||'');
+      item.textContent = text;
+      log.appendChild(item);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderMpBoard() {
+      if(!mpState) return;
+      const board = document.getElementById('mpBoard');
+      if(!board) return;
+
+      // Build grid same as solo
+      board.innerHTML = '';
+      board.style.display = 'grid';
+      board.style.gridTemplateColumns = '1fr repeat(9,1fr) 1fr';
+      board.style.gridTemplateRows = '1fr repeat(9,1fr) 1fr';
+
+      const grid = Array.from({length:11}, () => Array(11).fill(null));
+      MONO_CELLS.forEach(cell => { const [c,r] = cellGridPos(cell.pos); grid[r][c] = cell; });
+
+      for(let r = 0; r < 11; r++) {
+        for(let c = 0; c < 11; c++) {
+          if(r >= 1 && r <= 9 && c >= 1 && c <= 9) {
+            if(r === 1 && c === 1) {
+              const ctr = document.createElement('div');
+              ctr.className = 'mono-center';
+              ctr.style.gridColumn = '2 / 11';
+              ctr.style.gridRow = '2 / 11';
+              ctr.innerHTML = '<div style="font-size:14px;letter-spacing:1px;">МОНОПОЛІЯ</div><div style="font-size:30px;">🎩</div><div style="font-size:10px;color:#555;margin-top:5px;">МП режим</div>';
+              board.appendChild(ctr);
+            }
+            continue;
+          }
+          const cell = grid[r][c];
+          const div = document.createElement('div');
+          if(!cell) { div.style.cssText='background:transparent;border:none;'; board.appendChild(div); continue; }
+
+          let stripeClass = '';
+          if(cell.pos>=1&&cell.pos<=9)  stripeClass='prop-top';
+          if(cell.pos>=11&&cell.pos<=19) stripeClass='prop-right';
+          if(cell.pos>=21&&cell.pos<=29) stripeClass='prop-bottom';
+          if(cell.pos>=31&&cell.pos<=39) stripeClass='prop-left';
+
+          const propsObj = mpState.props || {};
+          let ownerClass = '';
+          if(propsObj[cell.pos] === 'host')  ownerClass = mpIsHost ? 'owned-me' : 'owned-ai';
+          if(propsObj[cell.pos] === 'guest') ownerClass = mpIsHost ? 'owned-ai' : 'owned-me';
+
+          div.className = 'mono-cell ' + (cell.type==='corner'?'corner':'') + ' ' + stripeClass + ' ' + ownerClass;
+          if(cell.color) div.style.borderColor = MONO_COLORS[cell.color]||'#999';
+
+          const cornerIcons = {0:'🏁',10:'⛓️',20:'🌳',30:'👮'};
+          if(cell.type==='corner') div.innerHTML='<span style="font-size:12px;">'+(cornerIcons[cell.pos]||'')+'</span><span style="font-size:8px;white-space:pre-line;">'+cell.label+'</span>';
+          else if(cell.type==='prop') div.innerHTML='<span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span><span class="cell-price">'+cell.price+'₴</span>';
+          else if(cell.type==='station') div.innerHTML='<span style="font-size:11px;">🚂</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
+          else if(cell.type==='utility') div.innerHTML='<span style="font-size:13px;">'+(cell.icon||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
+          else if(cell.type==='special') div.innerHTML='<span style="font-size:15px;">'+(cell.icon||'?')+'</span>';
+          else if(cell.type==='tax') div.innerHTML='<span style="font-size:11px;">'+(cell.icon||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
+
+          board.appendChild(div);
+        }
+      }
+      placeMpPlayers();
+    }
+
+    function placeMpPlayers() {
+      document.querySelectorAll('#mpBoardWrap .mono-player').forEach(e => e.remove());
+      if(!mpState) return;
+      const wrap = document.getElementById('mpBoardWrap');
+      if(!wrap) return;
+      const cellW = wrap.offsetWidth / 11;
+      const myPos  = mpIsHost ? mpState.hostPos  : mpState.guestPos;
+      const oppPos = mpIsHost ? mpState.guestPos : mpState.hostPos;
+      [
+        { pos: myPos,  color:'#4CD964', offset:0 },
+        { pos: oppPos, color:'#FF3B30', offset:7 }
+      ].forEach(p => {
+        const [col, row] = cellGridPos(p.pos);
+        const el = document.createElement('div');
+        el.className = 'mono-player';
+        el.style.background = p.color;
+        el.style.left = (col * cellW + p.offset + 1) + 'px';
+        el.style.top  = (row * cellW + 2) + 'px';
+        wrap.appendChild(el);
+      });
+    }
+
+
 
     // Перевірка реферала при старті
     checkRefParam();
