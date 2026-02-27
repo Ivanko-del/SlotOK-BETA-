@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v39</title>
+  <title>SlotOK v40</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -472,7 +472,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v39</div>
+    <div>SlotOK v40</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -523,6 +523,7 @@
             <div class="game-thumb" onclick="openGame('poker')"><span class="icon">♠️</span><span class="label">Покер</span></div>
             <div class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></div>
             <div class="game-thumb" onclick="openGame('monopoly')"><span class="icon">🎩</span><span class="label">Монополія</span></div>
+            <div class="game-thumb" onclick="openGame('cardgame')"><span class="icon">🃏</span><span class="label">Карти</span></div>
         </div>
         <button class="btn-outline" style="margin-top:15px;" onclick="switchTab('lobby')">Всі ігри ➡</button>
       </div>
@@ -576,7 +577,8 @@
       <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки</div></div></div>
       <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
       <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Плінко</div></div></div>
-      <div class="game-card" onclick="openGame('monopoly')"><span class="game-icon">🎩</span><div class="game-info"><div class="game-title">Монополія</div><div class="game-desc">Купуй нерухомість • Стратегія</div></div><span style="background:#9b59b6;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
+      <div class="game-card" onclick="openGame('monopoly')"><span class="game-icon">🎩</span><div class="game-info"><div class="game-title">Монополія</div><div class="game-desc">Купуй нерухомість • Стратегія</div></div><span style="background:#9b59b6;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">HOT</span></div>
+      <div class="game-card" onclick="openGame('cardgame')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Карти (Дурень)</div><div class="game-desc">vs AI • vs гравці онлайн</div></div><span style="background:#e91e63;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
     </div>
 
     <!-- ІГРИ -->
@@ -963,65 +965,62 @@
     <div id="tab-monopoly-mp" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('monopoly')">⬅ Назад</button>
       <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія — Мультиплеєр</h2>
-      <div style="color:#777;font-size:12px;margin-bottom:15px;">Грай з реальними гравцями онлайн!</div>
+      <div style="color:#777;font-size:12px;margin-bottom:12px;">Грай з реальними гравцями: 2, 3 або 4 учасники</div>
 
       <div id="mpLobbyScreen">
         <div class="box">
-          <div class="section-header" style="margin-top:0;">➕ Створити кімнату</div>
-          <input id="mpBetInput" type="number" value="500" placeholder="Ставка (₴)">
+          <div class="section-header" style="margin-top:0;">➕ Нова кімната</div>
+          <input id="mpBetInput" type="number" value="500" placeholder="Ставка на гравця (₴)">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div class="mp-size-btn active" id="mpSize2" onclick="selectMpSize(2,this)">👥 2 гравці</div>
+            <div class="mp-size-btn" id="mpSize3" onclick="selectMpSize(3,this)">👥 3 гравці</div>
+            <div class="mp-size-btn" id="mpSize4" onclick="selectMpSize(4,this)">👥 4 гравці</div>
+          </div>
           <button class="btn-gold" onclick="createMpRoom()">🎲 СТВОРИТИ КІМНАТУ</button>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div class="section-header" style="margin:0;">🏠 Відкриті кімнати</div>
-          <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="loadMpRooms()">🔄 Оновити</button>
+          <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:11px;margin:0;" onclick="loadMpRooms()">🔄</button>
         </div>
         <div id="mpRoomsList"><div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає кімнат</div></div>
       </div>
 
       <div id="mpWaitScreen" class="hidden">
         <div class="box" style="text-align:center;">
-          <div style="font-size:40px;margin-bottom:10px;">⏳</div>
-          <h3 style="color:var(--accent);margin:0 0 6px;">Очікування гравця...</h3>
-          <div id="mpWaitInfo" style="color:#777;font-size:13px;margin-bottom:15px;"></div>
+          <div style="font-size:36px;margin-bottom:8px;">⏳</div>
+          <h3 style="color:var(--accent);margin:0 0 4px;">Збираємо гравців...</h3>
+          <div id="mpWaitInfo" style="color:#777;font-size:12px;margin-bottom:12px;"></div>
           <div class="mp-players" id="mpWaitPlayers"></div>
-          <button class="btn-red" style="margin-top:15px;" onclick="cancelMpRoom()">❌ Скасувати</button>
+          <button class="btn-red" style="margin-top:12px;" onclick="cancelMpRoom()">❌ Скасувати</button>
         </div>
       </div>
 
       <div id="mpGameScreen" class="hidden">
-        <div class="mono-info-bar">
-          <div class="mono-info-card">
-            <div class="mono-info-val" id="mpPlayerMoney" style="color:var(--green);">3000₴</div>
-            <div class="mono-info-lbl">💰 Ваш капітал</div>
-          </div>
-          <div class="mono-info-card">
-            <div class="mono-info-val" id="mpOpponentMoney" style="color:var(--red);">3000₴</div>
-            <div class="mono-info-lbl" id="mpOpponentLabel">👤 Суперник</div>
-          </div>
-        </div>
+        <!-- Інфобар усіх гравців -->
+        <div id="mpPlayersInfoBar" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;scrollbar-width:none;"></div>
 
-        <div class="mono-board-wrap" id="mpBoardWrap">
+        <div class="mono-board-wrap" id="mpBoardWrap" style="margin-bottom:8px;">
           <div class="mono-board" id="mpBoard"></div>
         </div>
 
-        <div class="mono-dice">
+        <div class="mono-dice" style="margin:6px 0;">
           <div class="mono-die" id="mpDie1">🎲</div>
           <div class="mono-die" id="mpDie2">🎲</div>
         </div>
 
-        <div id="mpTurnInfo" style="text-align:center;color:var(--accent);font-size:13px;margin-bottom:8px;font-weight:bold;">Ваш хід!</div>
+        <div id="mpTurnInfo" style="text-align:center;font-size:13px;margin-bottom:8px;font-weight:bold;padding:8px;background:#111;border-radius:8px;border:1px solid #222;">Ваш хід!</div>
 
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <button class="btn-gold" id="mpRollBtn" onclick="mpRoll()" style="flex:2;">🎲 КИНУТИ КУБИКИ</button>
-          <button class="btn-outline" id="mpBuyBtn" onclick="mpBuy()" style="flex:1;" disabled>🏠 Купити</button>
-          <button class="btn-red" id="mpPassBtn" onclick="mpPass()" style="flex:1;" disabled>⏭ Пас</button>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+          <button class="btn-gold" id="mpRollBtn" onclick="mpRoll()">🎲 КУБИКИ</button>
+          <button class="btn-green" id="mpBuyBtn" onclick="mpBuy()" disabled style="font-size:12px;">🏠 Купити</button>
+          <button class="btn-outline" id="mpPassBtn" onclick="mpPass()" disabled style="font-size:12px;">⏭ Пас</button>
         </div>
 
-        <div class="mono-log" id="mpLog">
-          <div class="mono-log-item info">🎩 Гра почалась!</div>
+        <div class="mono-log" id="mpLog" style="height:100px;">
+          <div class="mono-log-item info">🎩 Гра починається!</div>
         </div>
 
-        <button class="btn-red" style="margin-top:10px;" onclick="surrenderMp()">🏳️ Здатись</button>
+        <button class="btn-red" style="margin-top:8px;padding:10px;" onclick="surrenderMp()">🏳️ Здатись</button>
       </div>
     </div>
 
@@ -1170,7 +1169,91 @@
         </div>
       </div>
 
-      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v39 • Made with ❤️</div>
+      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v40 • Made with ❤️</div>
+    </div>
+
+
+
+    <!-- ===== КАРТИ (ДУРЕНЬ) ===== -->
+    <div id="tab-cardgame" class="screen hidden">
+      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🃏 Карти — Дурень</h2>
+      <div style="color:#777;font-size:12px;margin-bottom:10px;">Класичний Дурень. Програв — платиш ставку!</div>
+
+      <!-- Стартовий екран -->
+      <div id="cgStartScreen">
+        <div class="box" style="text-align:center;">
+          <div style="font-size:50px;margin-bottom:10px;">🃏</div>
+          <div style="color:#777;font-size:13px;margin-bottom:15px;">Класичний Дурень: скинь всі карти першим!</div>
+          <input id="cgBet" type="number" value="200" placeholder="Ставка (₴)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button class="btn-gold" onclick="startCardGame('ai')">🤖 vs AI</button>
+            <button class="btn-outline" onclick="openCardLobby()">👥 Онлайн</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Онлайн лобі -->
+      <div id="cgOnlineLobby" class="hidden">
+        <div class="box">
+          <div class="section-header" style="margin-top:0;">Відкриті кімнати</div>
+          <div id="cgRoomsList" style="min-height:60px;"></div>
+          <button class="btn-gold" onclick="createCardRoom()">➕ Створити кімнату</button>
+          <button class="btn-outline" onclick="loadCardRooms()">🔄 Оновити</button>
+          <button class="btn-red" style="margin-top:0;" onclick="document.getElementById('cgOnlineLobby').classList.add('hidden');document.getElementById('cgStartScreen').classList.remove('hidden');">⬅ Назад</button>
+        </div>
+      </div>
+
+      <!-- Ігровий стіл -->
+      <div id="cgGameScreen" class="hidden">
+        <!-- Карти суперника -->
+        <div style="background:linear-gradient(135deg,#0d3318,#051a0a);border:1px solid #1a3a1a;border-radius:12px;padding:12px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:12px;color:#777;" id="cgOpponentLabel">🤖 AI</div>
+            <div class="tab-badge" id="cgOpponentCards" style="background:#555;animation:none;font-size:12px;padding:3px 8px;">0 карт</div>
+          </div>
+          <div id="cgOpponentHand" style="display:flex;gap:4px;flex-wrap:wrap;min-height:50px;"></div>
+        </div>
+
+        <!-- Стіл (козир + стопка + поле бою) -->
+        <div style="background:#0a1a0a;border:1px solid #1a2a1a;border-radius:12px;padding:10px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:#777;">Козир:</div>
+              <div id="cgTrumpCard" style="background:#fff;border-radius:6px;width:36px;height:50px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;border:1px solid #ddd;"></div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:11px;color:#777;">Колода</div>
+              <div id="cgDeckCount" style="font-size:18px;font-weight:bold;color:var(--accent);">36</div>
+            </div>
+            <div id="cgPhaseInfo" style="font-size:12px;color:var(--accent);font-weight:bold;text-align:right;"></div>
+          </div>
+          <!-- Поле бою -->
+          <div id="cgBattleField" style="min-height:70px;background:#081508;border-radius:8px;padding:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <div style="color:#333;font-size:12px;font-style:italic;">Поле порожнє</div>
+          </div>
+        </div>
+
+        <!-- Рука гравця -->
+        <div style="background:linear-gradient(135deg,#0d1a3a,#050d1a);border:1px solid #1a2a5a;border-radius:12px;padding:12px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:12px;color:#777;">Ваші карти</div>
+            <div class="tab-badge" id="cgPlayerCardsCount" style="background:var(--accent);color:#000;animation:none;font-size:12px;padding:3px 8px;">0</div>
+          </div>
+          <div id="cgPlayerHand" style="display:flex;gap:6px;flex-wrap:wrap;min-height:60px;"></div>
+        </div>
+
+        <!-- Кнопки дій -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button class="btn-gold" id="cgAttackBtn" onclick="cgAttack()">⚔️ Атакувати</button>
+          <button class="btn-outline" id="cgPassBtn" onclick="cgPass()">⏭ Пас / Взяти</button>
+        </div>
+
+        <!-- Лог -->
+        <div class="mono-log" id="cgLog" style="height:80px;">
+          <div class="mono-log-item info">🃏 Гра почалась!</div>
+        </div>
+      </div>
     </div>
 
 
@@ -1704,7 +1787,7 @@
     let currentRouletteBet = null;
     let selectedWithdrawMethod = 'privat';
     let selectedDepAmount = 0;
-    const MAX_BET = 100000; 
+    const MAX_BET = 1000000; 
     let audioCtx = null;
 
     // Telegram Bot Username — замінити на свій!
@@ -1733,6 +1816,7 @@
                 updateNotifBadge();
                 loadSettings();
                 initHomeTab();
+                initChatAutoClear();
             }, (error) => {
                 notify("Помилка зв'язку з базою.", "error");
             });
@@ -2072,10 +2156,10 @@
     function finishSlots(bet) { 
         const r = Math.random(); 
         let win = 0; let res = ["🍒","🍋","🔔"]; 
-        if(r < 0.03) { res = ["7","7","7"]; win = bet*50; } 
-        else if(r < 0.08) { res = ["💎","💎","💎"]; win = bet*15; } 
-        else if(r < 0.20) { res = ["🍒","🍒","🍒"]; win = bet*3; } 
-        else if(r < 0.35) { res = ["🔔","🔔","🍋"]; win = bet*1.5; }
+        if(r < 0.015) { res = ["7","7","7"]; win = bet*40; }       // 1.5% → x40
+        else if(r < 0.04) { res = ["💎","💎","💎"]; win = bet*12; } // 2.5% → x12
+        else if(r < 0.12) { res = ["🍒","🍒","🍒"]; win = bet*2.5; }// 8% → x2.5
+        else if(r < 0.25) { res = ["🔔","🔔","🍋"]; win = bet*1.3; }// 13% → x1.3
         
         document.getElementById('r1').textContent = res[0]; 
         document.getElementById('r2').textContent = res[1]; 
@@ -2192,8 +2276,8 @@
     // ============================================
     // ВІДЕОПОКЕР
     // ============================================
-    const SUITS = ['♠', '♥', '♦', '♣'];
-    const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    const POKER_SUITS = ['♠', '♥', '♦', '♣'];
+    const POKER_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
     const RANK_VALUES = {2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14};
 
     let pokerHand = [];
@@ -2203,7 +2287,7 @@
 
     function createDeck() {
         const deck = [];
-        for(const suit of SUITS) for(const rank of RANKS) deck.push({rank, suit});
+        for(const suit of POKER_SUITS) for(const rank of POKER_RANKS) deck.push({rank, suit});
         return deck.sort(() => Math.random() - 0.5);
     }
 
@@ -2331,7 +2415,7 @@
         document.getElementById('minesCashoutBtn').textContent = `ЗАБРАТИ (0)`;
         minesGrid = new Array(25).fill(0); 
         let placed = 0; 
-        while(placed < 3) { let idx = Math.floor(Math.random()*25); if(minesGrid[idx]===0){ minesGrid[idx]=1; placed++; } } 
+        while(placed < 5) { let idx = Math.floor(Math.random()*25); if(minesGrid[idx]===0){ minesGrid[idx]=1; placed++; } } 
         const container = document.getElementById('minesGrid'); 
         container.innerHTML = ''; 
         for(let i=0; i<25; i++){ 
@@ -2353,7 +2437,7 @@
             document.getElementById('minesCashoutBtn').classList.add('hidden'); 
         } else { 
             el.textContent="💎"; playSound('click'); movesMade++; 
-            currentMinesProfit=Math.floor(currentMinesProfit*1.25); 
+            currentMinesProfit=Math.floor(currentMinesProfit*1.18); 
             document.getElementById('minesCashoutBtn').textContent=`ЗАБРАТИ ${currentMinesProfit} ₴`; 
         } 
     }
@@ -2389,7 +2473,7 @@
         const targetLeft=(bucketIndex*14)+7; 
         ball.animate([{top:'0',left:'50%'},{top:'100%',left:targetLeft+'%'}],{duration:1500,fill:'forwards',easing:'linear'}); 
         setTimeout(() => { 
-            const multipliers=[5,2,0.5,0.2,0.5,2,5]; 
+            const multipliers=[3,1.5,0.4,0.1,0.4,1.5,3]; 
             const mult=multipliers[bucketIndex]; 
             const win=Math.floor(bet*mult); 
             if(mult>=1){ db.ref('users/'+currentUser+'/balance').set(userData.balance+win); playSound('win'); notify(`🔻 +${win} ₴`, "success"); addToHistory(`Plinko: +${win}`); } 
@@ -2891,7 +2975,7 @@
     // КОЛЕСО ФОРТУНИ
     // ============================================
     const FORTUNE_SEGMENTS = [
-      {label:'x0.2', mult:0.2, color:'#333'},
+      {label:'x0',   mult:0,   color:'#1a0505'},
       {label:'x1',   mult:1,   color:'#1a3a6b'},
       {label:'x0.5', mult:0.5, color:'#333'},
       {label:'x2',   mult:2,   color:'#1a5c2a'},
@@ -3067,7 +3151,6 @@
         const el = document.createElement('div');
         const isMe = m.sender === currentUser;
         const isAdmin = m.isAdmin;
-        const isBot = m.isBot;
         if(m.system) {
           el.style.cssText = 'color:#555;font-size:11px;text-align:center;padding:6px 0;';
           el.textContent = m.text;
@@ -3079,12 +3162,16 @@
             ? '<div class="chat-avatar-sm"><img src="' + m.avatarUrl + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
             : '<div class="chat-avatar-sm">' + av + '</div>';
           const adminTag = isAdmin ? '<span style="background:#ff4444;color:#fff;font-size:8px;padding:1px 5px;border-radius:6px;margin-left:3px;">ADMIN</span>' : '';
-          const botTag   = isBot   ? '<span style="background:#9b59b6;color:#fff;font-size:8px;padding:1px 5px;border-radius:6px;margin-left:3px;">BOT</span>' : '';
+          const botTag = '';  // bots look like regular players
+          const msgKey = snap.key;
+          const isAdminUser = (currentUser.toLowerCase()==='theivankoo' || (userData && userData.isAdmin===true));
+          const delBtn = isAdminUser ? '<button onclick="adminDeleteMsg(\'' + msgKey + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 3px;opacity:0.5;" title="Видалити">✕</button>' : '';
           el.innerHTML =
             '<div class="chat-header-line">' + avHtml +
               '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(\'' + m.sender + '\')">' + m.sender + '</span>' +
               adminTag + botTag +
               '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
+              delBtn +
             '</div>' +
             '<div class="chat-body-text">' + escapeHtml(m.text) + '</div>';
         }
@@ -3363,7 +3450,7 @@
 
       // Створюємо юзера-бота в Firebase
       db.ref('users/' + nick).set({
-        balance, tag: '[BOT]', isBot: true, isActive: activity === 'active',
+        balance, tag: '', isBot: true, isActive: activity === 'active',
         createdBy: currentUser, createdAt: Date.now(),
         regDate: Date.now(), dailyStreak: 0, id: 'BOT_' + Date.now(),
         avatar: avatarUrl || avatarEmoji,
@@ -4541,10 +4628,20 @@
     // ===== VIP СИСТЕМА =====
     // ============================================
     const VIP_LEVELS = [
-      { name: 'Bronze', icon: '🥉', min: 0,      max: 4999,   cashback: 0,    hourly: 25,  dailyMult: 1.0, class: 'bronze', cssVar: 'var(--bronze)' },
-      { name: 'Silver', icon: '🥈', min: 5000,   max: 24999,  cashback: 0.01, hourly: 50,  dailyMult: 1.2, class: 'silver', cssVar: 'var(--silver-c)' },
-      { name: 'Gold',   icon: '🥇', min: 25000,  max: 99999,  cashback: 0.02, hourly: 100, dailyMult: 1.5, class: 'gold',   cssVar: 'var(--gold-c)' },
-      { name: 'Platinum',icon: '💎',min: 100000, max: Infinity,cashback: 0.05, hourly: 200, dailyMult: 2.0, class: 'platinum', cssVar: 'var(--plat)' },
+      { name: 'Iron',      icon: '⚙️',  min: 0,         cashback: 0,     hourly: 10,  dailyMult: 1.0,  class: 'bronze',   cssVar: '#555' },
+      { name: 'Bronze',    icon: '🥉',  min: 1000,      cashback: 0,     hourly: 25,  dailyMult: 1.0,  class: 'bronze',   cssVar: 'var(--bronze)' },
+      { name: 'Silver',    icon: '🥈',  min: 5000,      cashback: 0.005, hourly: 50,  dailyMult: 1.1,  class: 'silver',   cssVar: 'var(--silver-c)' },
+      { name: 'Gold',      icon: '🥇',  min: 20000,     cashback: 0.01,  hourly: 80,  dailyMult: 1.25, class: 'gold',     cssVar: 'var(--gold-c)' },
+      { name: 'Emerald',   icon: '💚',  min: 60000,     cashback: 0.015, hourly: 120, dailyMult: 1.4,  class: 'gold',     cssVar: '#2ecc71' },
+      { name: 'Sapphire',  icon: '💙',  min: 150000,    cashback: 0.02,  hourly: 160, dailyMult: 1.6,  class: 'silver',   cssVar: '#3498db' },
+      { name: 'Ruby',      icon: '❤️',  min: 350000,    cashback: 0.025, hourly: 200, dailyMult: 1.75, class: 'gold',     cssVar: '#e74c3c' },
+      { name: 'Platinum',  icon: '💎',  min: 700000,    cashback: 0.03,  hourly: 250, dailyMult: 1.9,  class: 'platinum', cssVar: 'var(--plat)' },
+      { name: 'Master',    icon: '🔮',  min: 1500000,   cashback: 0.035, hourly: 350, dailyMult: 2.0,  class: 'platinum', cssVar: '#9b59b6' },
+      { name: 'Elite',     icon: '⭐',  min: 3000000,   cashback: 0.04,  hourly: 500, dailyMult: 2.2,  class: 'platinum', cssVar: '#f39c12' },
+      { name: 'Diamond',   icon: '💠',  min: 7000000,   cashback: 0.05,  hourly: 750, dailyMult: 2.5,  class: 'platinum', cssVar: '#1abc9c' },
+      { name: 'Legend',    icon: '🌟',  min: 15000000,  cashback: 0.06,  hourly: 1000,dailyMult: 3.0,  class: 'platinum', cssVar: '#e67e22' },
+      { name: 'Mythic',    icon: '🔱',  min: 35000000,  cashback: 0.07,  hourly: 1500,dailyMult: 3.5,  class: 'platinum', cssVar: '#e91e63' },
+      { name: 'Supreme',   icon: '👑',  min: 100000000, cashback: 0.10,  hourly: 3000,dailyMult: 5.0,  class: 'platinum', cssVar: 'linear-gradient(45deg,#d4af37,#fff)' },
     ];
 
     function getVipLevel(wagered) {
@@ -4927,6 +5024,7 @@
       if(id==='leaderboard') loadLeaderboard('balance', document.querySelector('.lb-tab'));
       if(id==='gifts') { loadInboxGifts(); }
       if(id==='monopoly') { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); }
+      if(id==='cardgame') { document.getElementById('cgStartScreen').classList.remove('hidden'); document.getElementById('cgGameScreen').classList.add('hidden'); document.getElementById('cgOnlineLobby').classList.add('hidden'); }
       if(id==='monopoly-mp') { loadMpRooms(); }
       if(id==='notifications') { renderNotifs(); }
       if(id==='settings') { loadSettings(); }
@@ -5556,6 +5654,876 @@
         el.style.left = (col * cellW + p.offset + 1) + 'px';
         el.style.top  = (row * cellW + 2) + 'px';
         wrap.appendChild(el);
+      });
+    }
+
+
+
+
+    // ============================================
+    // ===== CSS ДЛЯ MP SIZE КНОПОК (додаємо inline) =====
+    // ============================================
+    (function addDynCSS(){
+      const s = document.createElement('style');
+      s.textContent = `
+        .mp-size-btn { padding:10px 6px; background:#1a1a1a; border:1px solid #333; border-radius:10px;
+          text-align:center; cursor:pointer; font-size:12px; font-weight:bold; color:#777; transition:all 0.2s; }
+        .mp-size-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(212,175,55,0.1); }
+        .mp-player-info { min-width:80px; flex:1; background:#111; border:2px solid #222; border-radius:10px;
+          padding:8px; text-align:center; font-size:11px; }
+        .mp-player-info.my-turn { border-color:var(--accent); animation:pulse 1s infinite; }
+        .mp-player-info.bankrupt { opacity:0.4; text-decoration:line-through; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.4)} 50%{box-shadow:0 0 8px 4px rgba(212,175,55,0.15)} }
+        .card { display:inline-flex; align-items:center; justify-content:center; width:48px; height:68px;
+          background:#fff; border-radius:8px; font-size:18px; color:#000; font-weight:bold; cursor:pointer;
+          border:2px solid transparent; transition:all 0.15s; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);
+          flex-direction:column; line-height:1; }
+        .card.red { color:#cc0000; }
+        .card.selected { border-color:var(--accent); transform:translateY(-8px); }
+        .card.face-down { background:#1a4a1a; color:#fff; font-size:24px; }
+        .card.small { width:36px; height:50px; font-size:14px; }
+        .cg-table-card { width:44px; height:62px; background:#fff; border-radius:6px; font-size:16px;
+          display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+          color:#000; margin:2px; box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+        .cg-table-card.red { color:#cc0000; }
+        .cg-table-card.covered { background:#fff; border:1px dashed #4cd964; }
+        .cg-room-card { background:#111; border:1px solid #222; border-radius:10px; padding:12px; margin-bottom:8px; }
+        .cg-room-card.waiting { border-color:#d4af37; }
+        .vip-tab-btns { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; margin-bottom:12px; }
+        .vip-tab-btn { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer;
+          background:#1a1a1a; border:1px solid #333; color:#777; white-space:nowrap; }
+        .vip-tab-btn.active { background:rgba(212,175,55,0.15); border-color:var(--accent); color:var(--accent); }
+      `;
+      document.head.appendChild(s);
+    })();
+
+    // ============================================
+    // ===== ЧАТ: ADMIN DELETE + AUTO-CLEAR =====
+    // ============================================
+    function adminDeleteMsg(key) {
+      if(!confirm('Видалити це повідомлення?')) return;
+      db.ref('lobby_chat/' + key).remove()
+        .then(() => notify('🗑️ Повідомлення видалено', 'info'))
+        .catch(() => notify('Помилка видалення', 'error'));
+    }
+
+    function adminDeleteComment(newsId, commentId) {
+      if(!confirm('Видалити коментар?')) return;
+      db.ref('casino_news/' + newsId + '/comments/' + commentId).remove().then(() => {
+        db.ref('casino_news/' + newsId + '/commentCount').transaction(v => Math.max(0,(v||1)-1));
+        notify('🗑️ Коментар видалено', 'info');
+        loadComments(newsId);
+      });
+    }
+
+    // Патч loadComments — додати кнопки видалення для адмінів
+    const _origLoadComments = loadComments;
+    window.loadComments = function(newsId) {
+      const list = document.getElementById('cmtlist-' + newsId);
+      if(!list) return;
+      list.innerHTML = '<div style="color:#555;font-size:12px;padding:5px 0;">Завантаження...</div>';
+      db.ref('casino_news/' + newsId + '/comments').orderByChild('time').limitToLast(30).once('value', snap => {
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Коментарів ще немає!</div>'; return; }
+        list.innerHTML = '';
+        const isAdminUser = (currentUser.toLowerCase()==='theivankoo' || (userData && userData.isAdmin===true));
+        Object.entries(data).forEach(([cid, c]) => {
+          const t = timeAgo(c.time);
+          const avHtml = c.avatarUrl
+            ? '<div class="comment-avatar"><img src="' + c.avatarUrl + '"></div>'
+            : '<div class="comment-avatar">' + (c.avatarEmoji||'👤') + '</div>';
+          const delBtn = isAdminUser ? '<button onclick="adminDeleteComment(\'' + newsId + '\',\'' + cid + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 4px;opacity:0.6;" title="Видалити">✕</button>' : '';
+          const div = document.createElement('div');
+          div.className = 'comment-item';
+          div.innerHTML = avHtml +
+            '<div style="flex:1;">' +
+              '<div style="display:flex;align-items:center;gap:4px;">' +
+                '<span class="comment-nick" onclick="openPublicProfile(\'' + c.author + '\')">' + c.author + '</span>' +
+                delBtn +
+              '</div>' +
+              '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
+              '<div class="comment-time">' + t + '</div>' +
+            '</div>';
+          list.appendChild(div);
+        });
+      });
+    };
+
+    // Авто-очищення чату кожні 24 год через Firebase scheduled timestamp
+    function initChatAutoClear() {
+      db.ref('chat_meta/lastClear').once('value', snap => {
+        const last = snap.val() || 0;
+        const now = Date.now();
+        if(now - last > 24 * 3600 * 1000) {
+          const isAdminUser = (currentUser.toLowerCase()==='theivankoo' || (userData && userData.isAdmin===true));
+          if(isAdminUser) {
+            db.ref('lobby_chat').remove();
+            db.ref('chat_meta/lastClear').set(now);
+            db.ref('lobby_chat').push({ system: true, text: '🧹 Чат очищено автоматично', time: now });
+          }
+        }
+      });
+    }
+
+    // ============================================
+    // ===== МОНОПОЛІЯ МП: 2-4 ГРАВЦІ =====
+    // ============================================
+    let mpSelectedSize = 2;
+    const MP_COLORS = ['#4CD964','#FF9500','#FF3B30','#007AFF'];
+    const MP_TOKENS = ['🟢','🟠','🔴','🔵'];
+
+    function selectMpSize(n, el) {
+      mpSelectedSize = n;
+      document.querySelectorAll('.mp-size-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Override createMpRoom to support 2-4
+    window.createMpRoom = function() {
+      const bet = parseInt(document.getElementById('mpBetInput').value) || 500;
+      if(bet < 100) return notify('Мінімальна ставка 100₴', 'error');
+      if((userData.balance || 0) < bet) return notify('Недостатньо коштів', 'error');
+
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+
+      const roomId = 'mp_' + currentUser + '_' + Date.now();
+      mpRoomId = roomId;
+      mpIsHost = true;
+
+      const players = {};
+      players[currentUser] = { money: 3000, pos: 0, jail: 0, bankrupt: false, color: MP_COLORS[0], token: MP_TOKENS[0] };
+
+      db.ref('mp_rooms/' + roomId).set({
+        host: currentUser, bet, maxPlayers: mpSelectedSize, status: 'waiting',
+        created: Date.now(),
+        players,
+        props: {},
+        turn: currentUser,
+        turnOrder: [currentUser],
+        gameOver: false
+      });
+
+      showMpWaitScreen2(roomId, bet, mpSelectedSize);
+      listenMpRoom2(roomId);
+    };
+
+    function showMpWaitScreen2(roomId, bet, maxPlayers) {
+      document.getElementById('mpLobbyScreen').classList.add('hidden');
+      document.getElementById('mpWaitScreen').classList.remove('hidden');
+      document.getElementById('mpWaitInfo').textContent = 'Ставка: ' + bet + '₴ • ' + maxPlayers + ' гравці • ID: ' + roomId.slice(-8);
+      renderWaitPlayers({ [currentUser]: { color: MP_COLORS[0], token: MP_TOKENS[0] } }, maxPlayers);
+    }
+
+    function renderWaitPlayers(players, maxPlayers) {
+      const el = document.getElementById('mpWaitPlayers');
+      if(!el) return;
+      el.innerHTML = '';
+      const filled = Object.keys(players);
+      for(let i = 0; i < maxPlayers; i++) {
+        const div = document.createElement('div');
+        div.className = 'mp-player-slot ' + (filled[i] ? 'filled' : 'empty');
+        div.innerHTML = filled[i]
+          ? '<div style="font-size:16px;">' + (players[filled[i]].token||'👤') + '</div><div style="font-size:11px;margin-top:3px;">' + filled[i] + '</div>'
+          : '<div style="font-size:20px;color:#333;">+</div><div style="font-size:11px;color:#555;margin-top:3px;">Чекаємо...</div>';
+        el.appendChild(div);
+      }
+    }
+
+    // Override loadMpRooms for new structure
+    window.loadMpRooms = function() {
+      db.ref('mp_rooms').orderByChild('status').equalTo('waiting').limitToLast(15).once('value', snap => {
+        const list = document.getElementById('mpRoomsList');
+        if(!list) return;
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).forEach(([id, r]) => {
+          if(r.host === currentUser) return;
+          const playerCount = r.players ? Object.keys(r.players).length : 1;
+          const spotsLeft = (r.maxPlayers || 2) - playerCount;
+          if(spotsLeft <= 0) return;
+          list.innerHTML += '<div class="mp-room-card waiting">' +
+            '<div class="mp-room-header">' +
+              '<span style="font-weight:bold;">🧑 ' + r.host + '</span>' +
+              '<span class="mp-status-badge mp-waiting">' + playerCount + '/' + r.maxPlayers + ' 👥</span>' +
+            '</div>' +
+            '<div style="color:#777;font-size:12px;margin-bottom:8px;">Ставка: <b style="color:var(--accent);">' + r.bet + '₴</b> • Вільних місць: <b style="color:var(--green);">' + spotsLeft + '</b></div>' +
+            '<button class="btn-gold" style="padding:10px;" onclick="joinMpRoom2(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button>' +
+          '</div>';
+        });
+        if(!list.innerHTML) list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>';
+      });
+    };
+
+    function joinMpRoom2(roomId, bet) {
+      if((userData.balance||0) < bet) return notify('Недостатньо коштів: ' + bet + '₴', 'error');
+      db.ref('mp_rooms/' + roomId).once('value', snap => {
+        const r = snap.val();
+        if(!r || r.status !== 'waiting') return notify('Кімната недоступна', 'error');
+        const playerCount = r.players ? Object.keys(r.players).length : 0;
+        if(playerCount >= r.maxPlayers) return notify('Кімната заповнена', 'error');
+        if(r.players && r.players[currentUser]) return notify('Ви вже в цій кімнаті', 'error');
+
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+        mpRoomId = roomId; mpIsHost = false;
+
+        const colorIdx = playerCount % MP_COLORS.length;
+        const playerData = { money: 3000, pos: 0, jail: 0, bankrupt: false, color: MP_COLORS[colorIdx], token: MP_TOKENS[colorIdx] };
+        db.ref('mp_rooms/' + roomId + '/players/' + currentUser).set(playerData);
+
+        const newCount = playerCount + 1;
+        if(newCount >= r.maxPlayers) {
+          const allPlayers = Object.keys(r.players || {}).concat([currentUser]);
+          db.ref('mp_rooms/' + roomId).update({ status: 'playing', turnOrder: allPlayers, turn: allPlayers[0] });
+        }
+
+        listenMpRoom2(roomId);
+        document.getElementById('mpLobbyScreen').classList.add('hidden');
+        document.getElementById('mpWaitScreen').classList.remove('hidden');
+      });
+    }
+
+    function listenMpRoom2(roomId) {
+      if(mpListener) { try { db.ref('mp_rooms/' + roomId).off('value', mpListener); } catch(e){} }
+      mpListener = db.ref('mp_rooms/' + roomId).on('value', snap => {
+        const r = snap.val(); if(!r) return;
+        if(r.status === 'cancelled') { notify('Кімнату скасовано', 'error'); resetMpUI(); return; }
+        if(r.status === 'waiting' && r.players) {
+          renderWaitPlayers(r.players, r.maxPlayers || 2);
+        }
+        if(r.status === 'playing') {
+          const gsc = document.getElementById('mpGameScreen');
+          if(gsc && gsc.classList.contains('hidden')) {
+            document.getElementById('mpWaitScreen').classList.add('hidden');
+            gsc.classList.remove('hidden');
+            mpAddLog2('🎩 Гра почалась! Гравці: ' + Object.keys(r.players).join(', '));
+          }
+          renderMpGame2(r);
+        }
+        if(r.status === 'finished') handleMpFinished2(r);
+      });
+    }
+
+    function renderMpGame2(r) {
+      // Info bar
+      const bar = document.getElementById('mpPlayersInfoBar');
+      if(bar) {
+        bar.innerHTML = '';
+        (r.turnOrder || Object.keys(r.players)).forEach(name => {
+          const p = r.players[name];
+          const isCurrent = r.turn === name;
+          const isMe = name === currentUser;
+          const div = document.createElement('div');
+          div.className = 'mp-player-info' + (isCurrent ? ' my-turn' : '') + (p.bankrupt ? ' bankrupt' : '');
+          div.innerHTML =
+            '<div style="font-size:18px;">' + (p.token||'👤') + '</div>' +
+            '<div style="font-size:10px;font-weight:bold;color:' + (isMe?'var(--accent)':'#ccc') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;">' + name + (isMe?' (я)':'') + '</div>' +
+            '<div style="font-size:11px;color:' + (p.bankrupt?'#ff3b30':'var(--green)') + ';font-weight:bold;">' + (p.bankrupt?'БАНКРУТ':formatNumber(p.money||0)+'₴') + '</div>';
+          if(p.bankrupt) div.style.opacity = '0.4';
+          bar.appendChild(div);
+        });
+      }
+
+      // Turn info
+      const myTurn = r.turn === currentUser;
+      const turnEl = document.getElementById('mpTurnInfo');
+      if(turnEl) {
+        if(r.gameOver) { turnEl.textContent = '🏁 Гра завершена!'; turnEl.style.color = '#777'; }
+        else if(myTurn) { turnEl.textContent = '⚡ Ваш хід!'; turnEl.style.color = 'var(--green)'; }
+        else { turnEl.textContent = '⏳ Хід гравця ' + r.turn; turnEl.style.color = '#777'; }
+      }
+
+      // Buttons
+      const rollBtn = document.getElementById('mpRollBtn');
+      const buyBtn  = document.getElementById('mpBuyBtn');
+      const passBtn = document.getElementById('mpPassBtn');
+      if(rollBtn) rollBtn.disabled = !myTurn || r.gameOver || !!(r.pendingBuy);
+      if(buyBtn)  { buyBtn.disabled  = !myTurn || !r.pendingBuy; }
+      if(passBtn) { passBtn.disabled = !myTurn || !r.pendingBuy; }
+
+      // Board
+      renderMpBoard2(r);
+    }
+
+    function renderMpBoard2(r) {
+      const board = document.getElementById('mpBoard');
+      if(!board) return;
+      board.innerHTML = '';
+      board.style.display = 'grid';
+      board.style.gridTemplateColumns = '1fr repeat(9,1fr) 1fr';
+      board.style.gridTemplateRows = '1fr repeat(9,1fr) 1fr';
+
+      const grid = Array.from({length:11}, () => Array(11).fill(null));
+      MONO_CELLS.forEach(cell => { const [c,ro] = cellGridPos(cell.pos); grid[ro][c] = cell; });
+
+      for(let ro = 0; ro < 11; ro++) {
+        for(let c = 0; c < 11; c++) {
+          if(ro >= 1 && ro <= 9 && c >= 1 && c <= 9) {
+            if(ro === 1 && c === 1) {
+              const ctr = document.createElement('div');
+              ctr.className = 'mono-center';
+              ctr.style.gridColumn = '2 / 11'; ctr.style.gridRow = '2 / 11';
+              ctr.innerHTML = '<div style="font-size:12px;letter-spacing:1px;">МОНОПОЛІЯ</div><div style="font-size:28px;">🎩</div>';
+              board.appendChild(ctr);
+            }
+            continue;
+          }
+          const cell = grid[ro][c];
+          const div = document.createElement('div');
+          if(!cell) { div.style.cssText='background:transparent;border:none;'; board.appendChild(div); continue; }
+
+          let stripeClass = '';
+          if(cell.pos>=1&&cell.pos<=9)  stripeClass='prop-top';
+          if(cell.pos>=11&&cell.pos<=19) stripeClass='prop-right';
+          if(cell.pos>=21&&cell.pos<=29) stripeClass='prop-bottom';
+          if(cell.pos>=31&&cell.pos<=39) stripeClass='prop-left';
+
+          const propsObj = r.props || {};
+          const owner = propsObj[cell.pos];
+          let ownerClass = '';
+          if(owner === currentUser) ownerClass = 'owned-me';
+          else if(owner) ownerClass = 'owned-ai';
+
+          div.className = 'mono-cell ' + (cell.type==='corner'?'corner':'') + ' ' + stripeClass + ' ' + ownerClass;
+          if(cell.color && MONO_COLORS) div.style.borderColor = MONO_COLORS[cell.color]||'#999';
+
+          const cornerIcons = {0:'🏁',10:'⛓️',20:'🌳',30:'👮'};
+          if(cell.type==='corner') div.innerHTML='<span style="font-size:11px;">'+(cornerIcons[cell.pos]||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
+          else if(cell.type==='prop') div.innerHTML='<span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span><span class="cell-price">'+cell.price+'₴</span>';
+          else if(cell.type==='station') div.innerHTML='<span style="font-size:10px;">🚂</span><span style="font-size:7px;">'+cell.label+'</span>';
+          else if(cell.type==='utility') div.innerHTML='<span style="font-size:12px;">'+(cell.icon||'')+'</span>';
+          else if(cell.type==='special') div.innerHTML='<span style="font-size:13px;">'+(cell.icon||'❓')+'</span>';
+          else if(cell.type==='tax') div.innerHTML='<span style="font-size:10px;">'+(cell.icon||'💸')+'</span>';
+          board.appendChild(div);
+        }
+      }
+      placeMpPlayers2(r);
+    }
+
+    function placeMpPlayers2(r) {
+      document.querySelectorAll('#mpBoardWrap .mono-player').forEach(e => e.remove());
+      const wrap = document.getElementById('mpBoardWrap');
+      if(!wrap || !r.players) return;
+      const cellW = wrap.offsetWidth / 11;
+      Object.entries(r.players).forEach(([name, p], i) => {
+        if(p.bankrupt) return;
+        const [col, row] = cellGridPos(p.pos || 0);
+        const el = document.createElement('div');
+        el.className = 'mono-player';
+        el.style.background = p.color || MP_COLORS[i % MP_COLORS.length];
+        el.style.left = (col * cellW + 2 + i * 8) + 'px';
+        el.style.top  = (row * cellW + 2) + 'px';
+        el.title = name;
+        wrap.appendChild(el);
+      });
+    }
+
+    // Override mpRoll for multi-player
+    window.mpRoll = function() {
+      if(!mpRoomId) return;
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val(); if(!r) return;
+        if(r.turn !== currentUser || r.gameOver || r.pendingBuy) return;
+
+        const d1 = rollDice(), d2 = rollDice();
+        const die1 = document.getElementById('mpDie1'), die2 = document.getElementById('mpDie2');
+        if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
+        if(die2) { die2.classList.add('rolling'); die2.textContent = DICE_EMOJI[d2]; }
+        setTimeout(() => { if(die1) die1.classList.remove('rolling'); if(die2) die2.classList.remove('rolling'); }, 500);
+
+        const steps = d1 + d2;
+        const players = JSON.parse(JSON.stringify(r.players));
+        const p = players[currentUser];
+        mpAddLog2('🎲 ' + currentUser + ' кидає: ' + d1 + '+' + d2 + '=' + steps);
+
+        if(p.jail > 0) { p.jail--; mpAddLog2('⛓️ ' + currentUser + ' у в\'язниці'); mpNextTurn2(r, players, {}); return; }
+
+        const oldPos = p.pos;
+        p.pos = (p.pos + steps) % 40;
+        if(p.pos < oldPos) { p.money += 200; mpAddLog2('🏁 ' + currentUser + ' пройшов GO +200₴'); }
+
+        const cell = MONO_CELLS.find(c => c.pos === p.pos);
+        const props = r.props || {};
+        let pendingBuy = null;
+
+        if(cell) {
+          if(cell.pos === 30) { p.pos = 10; p.jail = 2; mpAddLog2('👮 ' + currentUser + ' іде у в\'язницю!'); }
+          else if(cell.type === 'tax') { const tax = cell.pos===4?100:150; p.money -= tax; mpAddLog2('💸 Податок -' + tax + '₴'); }
+          else if(cell.type === 'special') { const bonus = [100,-75,50,150,-50,200][Math.floor(Math.random()*6)]; p.money += bonus; mpAddLog2('🃏 ' + currentUser + ': ' + (bonus>0?'+':'') + bonus + '₴'); }
+          else if((cell.type==='prop'||cell.type==='station'||cell.type==='utility') && cell.price) {
+            const owner = props[cell.pos];
+            if(!owner) {
+              pendingBuy = { pos: cell.pos, price: cell.price, label: cell.label, buyer: currentUser };
+              mpAddLog2('🏠 ' + cell.label.replace('\n',' ') + ' вільна — купити?');
+            } else if(owner !== currentUser) {
+              const rent = cell.rent || 25;
+              p.money -= rent;
+              players[owner] = players[owner] || {}; players[owner].money = (players[owner].money||0) + rent;
+              mpAddLog2('💸 ' + currentUser + ' платить ренту ' + rent + '₴ → ' + owner);
+              if(p.money <= 0) { p.bankrupt = true; mpAddLog2('💀 ' + currentUser + ' банкрут!'); }
+            } else { mpAddLog2('✅ ' + currentUser + ' на своїй ділянці'); }
+          }
+        }
+
+        // Check game over
+        const activePlayers = Object.entries(players).filter(([,v]) => !v.bankrupt);
+        if(activePlayers.length === 1) { finishMpGame2(activePlayers[0][0], r.bet, r.turnOrder); return; }
+
+        if(pendingBuy) {
+          db.ref('mp_rooms/' + mpRoomId).update({ players, pendingBuy, props });
+        } else {
+          mpNextTurn2(r, players, props);
+        }
+      });
+    };
+
+    function mpNextTurn2(r, players, props) {
+      const order = r.turnOrder || Object.keys(r.players);
+      const activePlayers = order.filter(n => players[n] && !players[n].bankrupt);
+      if(!activePlayers.length) return;
+      const curIdx = activePlayers.indexOf(r.turn);
+      const nextTurn = activePlayers[(curIdx + 1) % activePlayers.length];
+      db.ref('mp_rooms/' + mpRoomId).update({ players, props: props||r.props, turn: nextTurn, pendingBuy: null });
+    }
+
+    window.mpBuy = function() {
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val(); if(!r || !r.pendingBuy || r.pendingBuy.buyer !== currentUser) return;
+        const pb = r.pendingBuy;
+        const players = JSON.parse(JSON.stringify(r.players));
+        const p = players[currentUser];
+        if(p.money < pb.price) { notify('Недостатньо коштів!', 'error'); mpDoPass2(r); return; }
+        p.money -= pb.price;
+        const props = Object.assign({}, r.props, { [pb.pos]: currentUser });
+        mpAddLog2('✅ ' + currentUser + ' купив ' + pb.label.replace('\n',' '));
+        mpNextTurn2(r, players, props);
+      });
+    };
+
+    window.mpPass = function() {
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val(); if(!r) return;
+        mpAddLog2('⏭ ' + currentUser + ' пропустив');
+        mpNextTurn2(r, JSON.parse(JSON.stringify(r.players)), r.props||{});
+      });
+    };
+
+    function mpDoPass2(r) { mpNextTurn2(r, JSON.parse(JSON.stringify(r.players)), r.props||{}); }
+
+    function finishMpGame2(winnerName, bet, turnOrder) {
+      const prize = Math.floor(bet * (turnOrder ? turnOrder.length : 2) * 0.9);
+      db.ref('mp_rooms/' + mpRoomId).update({ status: 'finished', winner: winnerName, prize });
+      db.ref('users/' + winnerName + '/balance').set(firebase.database.ServerValue.increment(prize));
+    }
+
+    function handleMpFinished2(r) {
+      const isWin = r.winner === currentUser;
+      mpAddLog2(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + r.prize + '₴' : '😔 Переміг ' + r.winner, isWin?'good':'bad');
+      if(isWin) { playSound('win'); notify('🎩 Монополія: +' + r.prize + '₴!', 'success'); }
+      if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
+      setTimeout(resetMpUI, 4000);
+    }
+
+    window.cancelMpRoom = function() {
+      if(!mpRoomId) return;
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val(); if(!r) return;
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(r.bet));
+        db.ref('mp_rooms/' + mpRoomId).update({ status: 'cancelled' });
+      });
+      if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
+      mpRoomId = null; resetMpUI();
+    };
+
+    window.surrenderMp = function() {
+      if(!mpRoomId || !confirm('Здатись? Ви програєте.')) return;
+      db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
+        const r = snap.val(); if(!r) return;
+        const players = JSON.parse(JSON.stringify(r.players));
+        players[currentUser].bankrupt = true;
+        const active = (r.turnOrder||Object.keys(r.players)).filter(n => !players[n].bankrupt);
+        if(active.length === 1) finishMpGame2(active[0], r.bet, r.turnOrder);
+        else db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser).update({ bankrupt: true });
+      });
+    };
+
+    function mpAddLog2(text, cls) {
+      const log = document.getElementById('mpLog'); if(!log) return;
+      const item = document.createElement('div');
+      item.className = 'mono-log-item ' + (cls||'');
+      item.textContent = text;
+      log.appendChild(item);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // ============================================
+    // ===== ГРА В КАРТИ: ДУРЕНЬ =====
+    // ============================================
+    const SUITS = ['♠','♣','♥','♦'];
+    const RANKS = ['6','7','8','9','10','J','Q','K','A'];
+    const RED_SUITS = new Set(['♥','♦']);
+
+    let cgState = null; // { deck, playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking, selectedCard, aiMode, gameOver }
+    let cgRoomId = null;
+    let cgListener = null;
+    let cgSelectedCards = [];
+
+    function makeCardDeck() {
+      const deck = [];
+      for(const s of SUITS) for(const r of RANKS) deck.push({ suit:s, rank:r, id:r+s });
+      return deck.sort(() => Math.random()-0.5);
+    }
+
+    function cardValue(rank) { return RANKS.indexOf(rank); }
+    function beats(attacker, defender, trumpSuit) {
+      if(defender.suit === attacker.suit) return cardValue(defender.rank) > cardValue(attacker.rank);
+      if(defender.suit === trumpSuit && attacker.suit !== trumpSuit) return true;
+      return false;
+    }
+    function cardHtml(card, small, selected) {
+      const isRed = RED_SUITS.has(card.suit);
+      return '<div class="card' + (small?' small':'') + (selected?' selected':'') + (isRed?' red':'') +
+        '" data-id="' + card.id + '">' +
+        '<span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
+    }
+    function tableCardHtml(card, isCover) {
+      if(!card) return '<div class="cg-table-card covered" style="border:2px dashed #4cd964;background:transparent;width:44px;height:62px;border-radius:6px;"></div>';
+      const isRed = RED_SUITS.has(card.suit);
+      return '<div class="cg-table-card' + (isRed?' red':'') + '"><span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
+    }
+
+    function startCardGame(mode) {
+      const bet = parseInt(document.getElementById('cgBet').value) || 200;
+      if(bet < 10) return notify('Мінімум 10₴', 'error');
+      if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
+
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+      addWager(bet);
+
+      const deck = makeCardDeck();
+      const playerHand = deck.splice(0, 6);
+      const aiHand = deck.splice(0, 6);
+      const trumpCard = deck[deck.length - 1];
+      const trumpSuit = trumpCard.suit;
+
+      cgState = {
+        bet, deck, playerHand, aiHand, table: [], trump: trumpCard, trumpSuit,
+        isPlayerAttacking: true, // player attacks first
+        gameOver: false, aiMode: mode === 'ai'
+      };
+      cgSelectedCards = [];
+
+      document.getElementById('cgStartScreen').classList.add('hidden');
+      document.getElementById('cgGameScreen').classList.remove('hidden');
+      document.getElementById('cgPhaseInfo').textContent = '⚔️ Ваш хід — атакуйте!';
+      renderCgBoard();
+      cgLog('🃏 Гра почалась! Козир: ' + trumpCard.rank + trumpCard.suit);
+    }
+
+    function renderCgBoard() {
+      if(!cgState) return;
+      const { playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking } = cgState;
+
+      // Trump card
+      const tc = document.getElementById('cgTrumpCard');
+      if(tc) { const isRed = RED_SUITS.has(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'#cc0000':'#000') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
+
+      // Deck count
+      const dc = document.getElementById('cgDeckCount');
+      if(dc) dc.textContent = cgState.deck.length;
+
+      // Opponent hand (face down)
+      const opp = document.getElementById('cgOpponentHand');
+      if(opp) {
+        opp.innerHTML = '';
+        for(let i = 0; i < aiHand.length; i++) {
+          opp.innerHTML += '<div class="card face-down small">🂠</div>';
+        }
+      }
+      const oppCnt = document.getElementById('cgOpponentCards');
+      if(oppCnt) oppCnt.textContent = aiHand.length + ' карт';
+
+      // Player hand
+      const ph = document.getElementById('cgPlayerHand');
+      if(ph) {
+        ph.innerHTML = playerHand.map(c => cardHtml(c, false, cgSelectedCards.includes(c.id))).join('');
+        ph.querySelectorAll('.card').forEach((el, i) => {
+          el.onclick = () => { cgSelectCard(playerHand[i]); };
+        });
+      }
+      const pcc = document.getElementById('cgPlayerCardsCount');
+      if(pcc) pcc.textContent = playerHand.length;
+
+      // Battle field
+      const bf = document.getElementById('cgBattleField');
+      if(bf) {
+        if(!table.length) { bf.innerHTML = '<div style="color:#333;font-size:12px;font-style:italic;width:100%;text-align:center;">Поле порожнє</div>'; }
+        else {
+          bf.innerHTML = '';
+          table.forEach(pair => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;align-items:center;';
+            wrap.innerHTML = tableCardHtml(pair.attack) + (pair.defend ? tableCardHtml(pair.defend) : '<div class="cg-table-card" style="border:2px dashed #555;background:transparent;"></div>');
+            bf.appendChild(wrap);
+          });
+        }
+      }
+
+      // Phase
+      const pi = document.getElementById('cgPhaseInfo');
+      if(pi) pi.textContent = isPlayerAttacking ? '⚔️ Атакуйте!' : '🛡️ Відбийтесь!';
+
+      // Buttons
+      const attackBtn = document.getElementById('cgAttackBtn');
+      const passBtn   = document.getElementById('cgPassBtn');
+      if(attackBtn) attackBtn.textContent = isPlayerAttacking ? '⚔️ Атакувати' : '🛡️ Відбити';
+      if(passBtn)   passBtn.textContent   = isPlayerAttacking ? '⏭ Завершити атаку' : '😩 Взяти карти';
+    }
+
+    function cgSelectCard(card) {
+      if(cgState && cgState.gameOver) return;
+      const idx = cgSelectedCards.indexOf(card.id);
+      if(idx >= 0) cgSelectedCards.splice(idx, 1); else cgSelectedCards.push(card.id);
+      renderCgBoard();
+    }
+
+    function cgAttack() {
+      if(!cgState || cgState.gameOver) return;
+      const { isPlayerAttacking, playerHand, aiHand, table, trumpSuit } = cgState;
+
+      if(isPlayerAttacking) {
+        // Player attacks
+        const cards = playerHand.filter(c => cgSelectedCards.includes(c.id));
+        if(!cards.length) return notify('Оберіть карту для атаки', 'error');
+        const card = cards[0];
+
+        // Validate: must match rank of table cards if table not empty
+        if(table.length && !table.some(p => p.attack.rank === card.rank || (p.defend && p.defend.rank === card.rank))) {
+          return notify('Можна підкидати лише карти такого ж номіналу!', 'error');
+        }
+
+        cgState.playerHand = playerHand.filter(c => c.id !== card.id);
+        table.push({ attack: card, defend: null });
+        cgSelectedCards = [];
+        cgLog('⚔️ Ви атакуєте: ' + card.rank + card.suit);
+        renderCgBoard();
+        // AI defends
+        setTimeout(cgAiDefend, 700);
+
+      } else {
+        // Player defends
+        if(!cgSelectedCards.length) return notify('Оберіть карту для захисту', 'error');
+        const openAttack = table.find(p => !p.defend);
+        if(!openAttack) return notify('Немає відкритих атак', 'error');
+        const card = playerHand.find(c => c.id === cgSelectedCards[0]);
+        if(!card) return;
+        if(!beats(openAttack.attack, card, trumpSuit)) return notify('Ця карта не може відбити ' + openAttack.attack.rank + openAttack.attack.suit, 'error');
+        openAttack.defend = card;
+        cgState.playerHand = playerHand.filter(c => c.id !== card.id);
+        cgSelectedCards = [];
+        cgLog('🛡️ Ви відбили: ' + card.rank + card.suit);
+        renderCgBoard();
+        // Check if all attacks defended
+        if(!table.some(p => !p.defend)) {
+          cgLog('✅ Всі атаки відбиті!');
+          setTimeout(() => cgEndRound(false), 800);
+        }
+      }
+    }
+
+    function cgPass() {
+      if(!cgState || cgState.gameOver) return;
+      if(cgState.isPlayerAttacking) {
+        // End attack
+        if(!cgState.table.some(p => p.defend === null)) {
+          cgLog('⏭ Атаку завершено');
+          cgEndRound(false);
+        } else notify('AI ще не відбив всі карти!', 'error');
+      } else {
+        // Player takes all table cards
+        const allCards = cgState.table.flatMap(p => [p.attack, p.defend].filter(Boolean));
+        cgState.playerHand.push(...allCards);
+        cgState.table = [];
+        cgLog('😩 Ви взяли ' + allCards.length + ' карт');
+        cgRefill();
+        cgState.isPlayerAttacking = false; // AI attacks again
+        renderCgBoard();
+        setTimeout(cgAiAttack, 1000);
+      }
+    }
+
+    function cgAiDefend() {
+      if(!cgState) return;
+      const openAttack = cgState.table.find(p => !p.defend);
+      if(!openAttack) { cgEndRound(false); return; }
+
+      // Find best defending card
+      const defenders = cgState.aiHand.filter(c => beats(openAttack.attack, c, cgState.trumpSuit));
+      if(!defenders.length) {
+        // AI takes
+        cgLog('🤖 AI не може відбити, бере карти!');
+        const allCards = cgState.table.flatMap(p => [p.attack, p.defend].filter(Boolean));
+        cgState.aiHand.push(...allCards);
+        cgState.table = [];
+        cgRefill();
+        cgState.isPlayerAttacking = true;
+        renderCgBoard();
+        cgCheckWin();
+        return;
+      }
+      const defCard = defenders.sort((a,b) => cardValue(a.rank)-cardValue(b.rank))[0];
+      cgState.aiHand = cgState.aiHand.filter(c => c.id !== defCard.id);
+      openAttack.defend = defCard;
+      cgLog('🤖 AI відбиває: ' + defCard.rank + defCard.suit);
+      renderCgBoard();
+      // All attacks defended?
+      if(!cgState.table.some(p => !p.defend)) {
+        setTimeout(() => cgEndRound(false), 600);
+      }
+    }
+
+    function cgAiAttack() {
+      if(!cgState || cgState.gameOver) return;
+      const { aiHand, playerHand, table, trumpSuit } = cgState;
+      if(!aiHand.length) { cgEndRound(false); return; }
+
+      // Play lowest non-trump or trump if must
+      const nonTrump = aiHand.filter(c => c.suit !== trumpSuit).sort((a,b) => cardValue(a.rank)-cardValue(b.rank));
+      const attack = nonTrump.length ? nonTrump[0] : aiHand.sort((a,b) => cardValue(a.rank)-cardValue(b.rank))[0];
+      cgState.aiHand = aiHand.filter(c => c.id !== attack.id);
+      table.push({ attack, defend: null });
+      cgLog('🤖 AI атакує: ' + attack.rank + attack.suit);
+      cgState.isPlayerAttacking = false;
+      renderCgBoard();
+    }
+
+    function cgEndRound(playerTook) {
+      if(!cgState) return;
+      cgState.table = [];
+      cgRefill();
+      cgState.isPlayerAttacking = !playerTook;
+      renderCgBoard();
+      cgCheckWin();
+      if(!cgState.gameOver) {
+        if(!cgState.isPlayerAttacking) setTimeout(cgAiAttack, 800);
+        else cgLog('⚔️ Ваш хід!');
+      }
+    }
+
+    function cgRefill() {
+      if(!cgState) return;
+      // Refill to 6 cards each
+      while(cgState.playerHand.length < 6 && cgState.deck.length) cgState.playerHand.push(cgState.deck.pop());
+      while(cgState.aiHand.length < 6 && cgState.deck.length) cgState.aiHand.push(cgState.deck.pop());
+    }
+
+    function cgCheckWin() {
+      if(!cgState) return;
+      if(!cgState.playerHand.length && !cgState.deck.length) {
+        cgState.gameOver = true;
+        const prize = Math.floor(cgState.bet * 1.85);
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(prize));
+        playSound('win');
+        notify('🃏 Ви перемогли! +' + prize + '₴', 'success');
+        cgLog('🏆 ВИ ВИГРАЛИ! +' + prize + '₴');
+        addToHistory('Карти: +' + prize);
+        addToWinFeed('Карти', prize, (prize/cgState.bet).toFixed(1));
+        renderCgBoard();
+        setTimeout(cgReset, 3000);
+      } else if(!cgState.aiHand.length && !cgState.deck.length) {
+        cgState.gameOver = true;
+        cgLog('😔 AI виграв — ви "Дурень"!');
+        notify('😔 Програш у Дурня', 'error');
+        addToHistory('Карти: -' + cgState.bet);
+        renderCgBoard();
+        setTimeout(cgReset, 3000);
+      }
+    }
+
+    function cgReset() {
+      cgState = null; cgSelectedCards = [];
+      document.getElementById('cgGameScreen').classList.add('hidden');
+      document.getElementById('cgStartScreen').classList.remove('hidden');
+    }
+
+    function cgLog(text) {
+      const log = document.getElementById('cgLog'); if(!log) return;
+      const item = document.createElement('div');
+      item.className = 'mono-log-item info';
+      item.textContent = text;
+      log.appendChild(item);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Онлайн лобі для карт
+    function openCardLobby() {
+      document.getElementById('cgStartScreen').classList.add('hidden');
+      document.getElementById('cgOnlineLobby').classList.remove('hidden');
+      loadCardRooms();
+    }
+
+    function createCardRoom() {
+      const bet = parseInt(document.getElementById('cgBet').value) || 200;
+      if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+      const roomId = 'cg_' + currentUser + '_' + Date.now();
+      cgRoomId = roomId;
+      const deck = makeCardDeck();
+      const p1Hand = deck.splice(0,6), p2Hand = deck.splice(0,6);
+      const trumpCard = deck[deck.length-1];
+      db.ref('card_rooms/' + roomId).set({
+        host: currentUser, guest: null, bet, status: 'waiting', created: Date.now(),
+        deck: deck.map(c=>c.id), p1Hand: p1Hand.map(c=>c.id), p2Hand: p2Hand.map(c=>c.id),
+        trump: trumpCard.id, trumpSuit: trumpCard.suit, table: [], turn: currentUser, attacker: currentUser
+      });
+      notify('🃏 Кімнату створено! Чекаємо суперника...', 'info');
+      listenCardRoom(roomId);
+    }
+
+    function loadCardRooms() {
+      db.ref('card_rooms').orderByChild('status').equalTo('waiting').limitToLast(10).once('value', snap => {
+        const list = document.getElementById('cgRoomsList'); if(!list) return;
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:10px 0;">Немає кімнат</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).forEach(([id, r]) => {
+          if(r.host === currentUser) return;
+          list.innerHTML += '<div class="cg-room-card waiting"><div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span style="font-weight:bold;">🧑 ' + r.host + '</span><span style="color:var(--accent);font-weight:bold;">' + r.bet + '₴</span>' +
+            '</div><button class="btn-gold" style="margin-top:8px;" onclick="joinCardRoom(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button></div>';
+        });
+        if(!list.innerHTML) list.innerHTML = '<div style="color:#555;font-size:12px;padding:10px 0;">Немає кімнат</div>';
+      });
+    }
+
+    function joinCardRoom(roomId, bet) {
+      if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+      cgRoomId = roomId;
+      db.ref('card_rooms/' + roomId).update({ guest: currentUser, status: 'playing' });
+      listenCardRoom(roomId);
+      document.getElementById('cgOnlineLobby').classList.add('hidden');
+      document.getElementById('cgGameScreen').classList.remove('hidden');
+    }
+
+    function listenCardRoom(roomId) {
+      if(cgListener) { db.ref('card_rooms/'+roomId).off('value', cgListener); cgListener = null; }
+      cgListener = db.ref('card_rooms/'+roomId).on('value', snap => {
+        const r = snap.val(); if(!r) return;
+        if(r.status==='playing') {
+          document.getElementById('cgOnlineLobby').classList.add('hidden');
+          document.getElementById('cgStartScreen').classList.add('hidden');
+          document.getElementById('cgGameScreen').classList.remove('hidden');
+          cgLog('🃏 Гра з ' + (r.host===currentUser?r.guest:r.host) + ' почалась!');
+        }
+        if(r.status==='finished') {
+          const isWin = r.winner===currentUser;
+          const prize = Math.floor(r.bet*1.85);
+          if(isWin) { playSound('win'); notify('🃏 Ви виграли! +'+prize+'₴','success'); cgLog('🏆 ВИ ВИГРАЛИ!'); }
+          else { notify('😔 Програш у Дурня','error'); cgLog('😔 Суперник переміг'); }
+          if(cgListener) { db.ref('card_rooms/'+roomId).off('value',cgListener); cgListener=null; }
+          setTimeout(cgReset, 3000);
+        }
       });
     }
 
