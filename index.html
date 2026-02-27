@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v38</title>
+  <title>SlotOK v39</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -173,8 +173,67 @@
     .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; background: #8B6914; border-radius: 50%; border: 3px solid #ffdb4d; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
     /* ЧАТ ЛОБІ */
-    .chat-box { height: 280px; overflow-y: auto; background: #0a0a0a; border: 1px solid #222; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-    .chat-msg { margin-bottom: 8px; font-size: 13px; line-height: 1.4; }
+    /* old chat-box replaced below */
+
+    /* ===== HOME SUB-TABS ===== */
+    .home-tabs { display:flex; gap:0; background:#111; border-radius:12px; padding:4px; margin-bottom:15px; border:1px solid #222; }
+    .home-tab-btn { flex:1; padding:10px 6px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; text-align:center; color:#666; transition:all 0.2s; position:relative; }
+    .home-tab-btn.active { background:var(--box); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
+    .home-tab-btn .htbadge { position:absolute; top:4px; right:6px; background:var(--red); color:#fff; border-radius:8px; font-size:8px; padding:1px 4px; font-weight:bold; }
+    .home-panel { display:none; }
+    .home-panel.active { display:block; }
+
+    /* ===== НОВИНИ ===== */
+    .news-card { background:var(--box); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; }
+    .news-header { padding:14px 14px 10px; }
+    .news-author { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .news-avatar { width:38px; height:38px; border-radius:50%; background:#222; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
+    .news-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .news-name { font-size:13px; font-weight:bold; }
+    .news-time { font-size:10px; color:#555; }
+    .news-admin-badge { background:linear-gradient(45deg,#ff4444,#cc0000); color:#fff; font-size:9px; padding:1px 6px; border-radius:8px; margin-left:4px; font-weight:bold; }
+    .news-title { font-size:16px; font-weight:900; color:#fff; margin-bottom:6px; line-height:1.3; }
+    .news-body  { font-size:13px; color:#aaa; line-height:1.5; margin-bottom:10px; }
+    .news-image { width:100%; max-height:200px; object-fit:cover; background:#111; }
+    .news-reactions { display:flex; gap:8px; padding:10px 14px; border-top:1px solid #1a1a1a; flex-wrap:wrap; }
+    .reaction-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; background:#1a1a1a; border-radius:20px; cursor:pointer; font-size:13px; border:1px solid transparent; transition:all 0.15s; }
+    .reaction-btn.reacted { border-color:var(--accent); background:rgba(212,175,55,0.1); }
+    .reaction-count { font-size:11px; color:#777; }
+    .news-comments-toggle { padding:8px 14px; color:#777; font-size:12px; cursor:pointer; border-top:1px solid #111; display:flex; align-items:center; gap:5px; }
+    .news-comments-toggle:hover { color:#aaa; }
+    .news-comments-box { display:none; border-top:1px solid #1a1a1a; padding:10px 14px; }
+    .news-comments-box.open { display:block; }
+    .comment-item { display:flex; gap:8px; padding:7px 0; border-bottom:1px solid #111; }
+    .comment-avatar { width:28px; height:28px; border-radius:50%; background:#222; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; overflow:hidden; }
+    .comment-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .comment-nick { font-size:12px; font-weight:bold; color:var(--accent); cursor:pointer; }
+    .comment-text { font-size:12px; color:#ccc; margin-top:2px; line-height:1.4; }
+    .comment-time { font-size:10px; color:#444; margin-top:2px; }
+    .comment-input-row { display:flex; gap:8px; margin-top:8px; }
+
+    /* ===== БОТИ ===== */
+    .bot-card { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#111; border:1px solid #222; border-radius:10px; margin-bottom:6px; }
+    .bot-avatar { width:36px; height:36px; border-radius:50%; background:#1a1a1a; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; overflow:hidden; }
+    .bot-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .bot-status { font-size:9px; padding:2px 7px; border-radius:8px; font-weight:bold; }
+    .bot-status.active   { background:rgba(76,217,100,0.2); color:var(--green); }
+    .bot-status.inactive { background:rgba(100,100,100,0.2); color:#666; }
+
+    /* ===== CHAT IMPROVEMENTS ===== */
+    .chat-box { height:300px; overflow-y:auto; background:#050505; border:1px solid #1a1a1a; border-radius:10px; padding:10px; margin-bottom:10px; scrollbar-width:thin; scrollbar-color:#222 transparent; }
+    .chat-msg { margin-bottom:10px; padding:8px 10px; background:#111; border-radius:8px; border-left:2px solid #222; }
+    .chat-msg.mine { border-left-color:var(--accent); background:rgba(212,175,55,0.06); }
+    .chat-msg.admin-msg { border-left-color:var(--red); background:rgba(255,59,48,0.05); }
+    .chat-msg.bot-msg { border-left-color:#9b59b6; background:rgba(155,89,182,0.06); }
+    .chat-avatar-sm { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; vertical-align:middle; margin-right:5px; overflow:hidden; flex-shrink:0; }
+    .chat-avatar-sm img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .chat-header-line { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+    .chat-body-text { font-size:13px; color:#ccc; line-height:1.4; word-break:break-word; }
+    .chat-emoji-pick { display:flex; gap:6px; padding:6px; background:#111; border-radius:8px; margin-bottom:8px; }
+    .chat-emoji-btn { font-size:20px; cursor:pointer; padding:4px; border-radius:6px; transition:transform 0.1s; }
+    .chat-emoji-btn:active { transform:scale(1.3); }
+    .online-pill { display:inline-flex; align-items:center; gap:5px; background:#0d1a0d; border:1px solid #1a2a1a; border-radius:20px; padding:4px 10px; font-size:12px; color:var(--green); }
+
     .chat-nick { font-weight: bold; cursor: pointer; }
     .chat-nick:hover { text-decoration: underline; }
     .chat-time { color: #555; font-size: 10px; margin-left: 5px; }
@@ -413,7 +472,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v38</div>
+    <div>SlotOK v39</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -428,20 +487,31 @@
     
     <!-- ГОЛОВНА -->
     <div id="tab-home" class="screen">
+      <!-- Sub-tabs -->
+      <div class="home-tabs">
+        <div class="home-tab-btn active" id="htb-main" onclick="switchHomeTab('main',this)">🏠 Головна</div>
+        <div class="home-tab-btn" id="htb-chat" onclick="switchHomeTab('chat',this)">💬 Чат <span class="htbadge hidden" id="chatNewBadge">!</span></div>
+        <div class="home-tab-btn" id="htb-news" onclick="switchHomeTab('news',this)">📰 Новини <span class="htbadge hidden" id="newsNewBadge">!</span></div>
+      </div>
+
+      <!-- === ГОЛОВНА панель === -->
+      <div class="home-panel active" id="hp-main">
         <div class="hero-banner">
             <div class="hero-title">🎁 BONUS 250%</div>
             <div style="color:#aaa; font-size:13px;">Вітальний бонус на перший депозит</div>
         </div>
-        
-        <!-- Щоденний бонус банер -->
-        <div id="dailyBonusBanner" class="hidden" style="background: linear-gradient(135deg, #1a2a1a, #0d3a1a); border: 1px solid var(--green); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="openDailyBonus()">
-            <div>
-                <div style="font-size:16px; font-weight:bold; color:var(--green);">🎁 Щоденний бонус!</div>
-                <div style="font-size:12px; color:#aaa;">Забери свою нагороду</div>
-            </div>
+
+        <div id="dailyBonusBanner" class="hidden" style="background:linear-gradient(135deg,#1a2a1a,#0d3a1a);border:1px solid var(--green);border-radius:12px;padding:15px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openDailyBonus()">
+            <div><div style="font-size:16px;font-weight:bold;color:var(--green);">🎁 Щоденний бонус!</div><div style="font-size:12px;color:#aaa;">Забери свою нагороду</div></div>
             <div style="font-size:30px;">✨</div>
         </div>
-        
+
+        <!-- Лайв лента виграшів -->
+        <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;padding:8px 12px;margin-bottom:15px;overflow:hidden;white-space:nowrap;">
+          <span style="color:#555;font-size:11px;margin-right:8px;">🔴 LIVE</span>
+          <span id="winTicker" style="font-size:12px;color:#ccc;"></span>
+        </div>
+
         <div class="section-header">🔥 Популярні</div>
         <div class="games-scroll">
             <div class="game-thumb" onclick="openGame('slots')"><span class="icon">🎰</span><span class="label">Слоти</span></div>
@@ -452,8 +522,45 @@
             <div class="game-thumb" onclick="openGame('scratch')"><span class="icon">🎟️</span><span class="label">Скретч</span></div>
             <div class="game-thumb" onclick="openGame('poker')"><span class="icon">♠️</span><span class="label">Покер</span></div>
             <div class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></div>
+            <div class="game-thumb" onclick="openGame('monopoly')"><span class="icon">🎩</span><span class="label">Монополія</span></div>
         </div>
         <button class="btn-outline" style="margin-top:15px;" onclick="switchTab('lobby')">Всі ігри ➡</button>
+      </div>
+
+      <!-- === ЧАТ панель === -->
+      <div class="home-panel" id="hp-chat">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:16px;font-weight:bold;color:var(--accent);">💬 Глобальний чат</div>
+          <div class="online-pill"><span id="onlineCount">—</span> онлайн</div>
+        </div>
+        <div id="announceBanner" class="hidden" style="background:#1a1a00;border:1px solid var(--accent);border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--accent);"></div>
+        <div class="chat-emoji-pick">
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('😄')">😄</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('🔥')">🔥</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('🎰')">🎰</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('💰')">💰</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('😂')">😂</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('👑')">👑</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('💎')">💎</span>
+          <span class="chat-emoji-btn" onclick="appendChatEmoji('🤑')">🤑</span>
+        </div>
+        <div class="chat-box" id="lobbyChatBox"></div>
+        <div class="chat-input-row">
+          <input id="lobbyChatInput" placeholder="Повідомлення..." style="margin:0;" onkeypress="if(event.key==='Enter')sendLobbyMsg()" maxlength="200">
+          <button class="btn-gold" style="width:auto;padding:14px 18px;margin:0;" onclick="sendLobbyMsg()">➤</button>
+        </div>
+      </div>
+
+      <!-- === НОВИНИ панель === -->
+      <div class="home-panel" id="hp-news">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+          <div style="font-size:16px;font-weight:bold;color:var(--accent);">📰 Новини казино</div>
+          <div style="font-size:11px;color:#555;">від адміністрації</div>
+        </div>
+        <div id="newsListContainer">
+          <div style="text-align:center;color:#555;padding:30px 0;font-size:13px;">Завантаження...</div>
+        </div>
+      </div>
     </div>
 
     <!-- ЛОБІ -->
@@ -1063,7 +1170,7 @@
         </div>
       </div>
 
-      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v38 • Made with ❤️</div>
+      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v39 • Made with ❤️</div>
     </div>
 
 
@@ -1277,6 +1384,59 @@
            <button class="btn-red" onclick="wipeEconomy()">💀 ОБНУЛИТИ ВСІХ (1000)</button>
        </div>
        <div id="userList" style="margin-top:10px;">Натисніть "Оновити список"</div>
+
+       <!-- Боти -->
+       <div class="section-header">🤖 Управління ботами</div>
+       <div class="box">
+         <input id="botNick" placeholder="Нік бота (напр. Lucky_77)">
+         <input id="botBalance" type="number" placeholder="Початковий баланс (₴)" value="5000">
+         <div style="display:flex;gap:8px;margin-bottom:10px;">
+           <select id="botAvatar" style="flex:1;background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
+             <option value="👤">👤 Стандарт</option>
+             <option value="🤑">🤑 Грошовий</option>
+             <option value="😎">😎 Крутий</option>
+             <option value="🎰">🎰 Гравець</option>
+             <option value="👑">👑 Король</option>
+             <option value="🐉">🐉 Дракон</option>
+             <option value="💀">💀 Скелет</option>
+             <option value="🦊">🦊 Лисиця</option>
+             <option value="🐺">🐺 Вовк</option>
+             <option value="custom">📷 Свій URL...</option>
+           </select>
+         </div>
+         <div id="botAvatarUrlBox" class="hidden">
+           <input id="botAvatarUrl" placeholder="URL аватарки (https://...)">
+         </div>
+         <div style="display:flex;gap:8px;">
+           <select id="botActivity" style="flex:1;background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
+             <option value="active">🟢 Активний (пише в чат)</option>
+             <option value="passive">⚫ Пасивний (тільки баланс)</option>
+           </select>
+         </div>
+         <button class="btn-gold" style="margin-top:8px;" onclick="createBot()">🤖 СТВОРИТИ БОТА</button>
+       </div>
+       <div id="botList" style="margin-top:4px;"></div>
+       <button class="btn-outline" onclick="loadBots()">🔄 Список ботів</button>
+
+       <!-- Публікація новин -->
+       <div class="section-header">📰 Публікація новин</div>
+       <div class="box">
+         <input id="newsTitle" placeholder="Заголовок новини...">
+         <textarea id="newsBody" placeholder="Текст новини..." style="width:100%;min-height:80px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;padding:12px;font-size:14px;box-sizing:border-box;resize:vertical;margin-bottom:10px;font-family:sans-serif;"></textarea>
+         <input id="newsEmoji" placeholder="Emoji/іконка (напр. 🎉)" value="📢" style="text-align:left;">
+         <div style="display:flex;gap:8px;">
+           <select id="newsCategory" style="flex:1;background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
+             <option value="news">📰 Новина</option>
+             <option value="update">🔄 Оновлення</option>
+             <option value="event">🎉 Подія</option>
+             <option value="promo">🎁 Акція</option>
+             <option value="warn">⚠️ Важливо</option>
+           </select>
+         </div>
+         <button class="btn-gold" style="margin-top:8px;" onclick="publishNews()">📰 ОПУБЛІКУВАТИ НОВИНУ</button>
+       </div>
+       <div id="adminNewsList" style="margin-top:4px;max-height:200px;overflow-y:auto;"></div>
+       <button class="btn-outline" onclick="loadAdminNews()">🔄 Мої новини</button>
     </div>
     <!-- БЛЕКДЖЕК -->
     <div id="tab-blackjack" class="screen hidden">
@@ -1345,18 +1505,7 @@
     </div>
 
     <!-- ЧАТ ЛОБІ -->
-    <div id="tab-chat" class="screen hidden">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <h2 style="margin:0;color:var(--accent);">💬 Чат Лобі</h2>
-        <div style="font-size:12px;color:var(--green);"><span class="online-badge"></span><span id="onlineCount">—</span> онлайн</div>
-      </div>
-      <div id="announceBanner" class="hidden" style="background:#1a1a00;border:1px solid var(--accent);border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--accent);"></div>
-      <div class="chat-box" id="lobbyChatBox"></div>
-      <div class="chat-input-row">
-        <input id="lobbyChatInput" placeholder="Повідомлення..." style="margin:0;" onkeypress="if(event.key==='Enter')sendLobbyMsg()">
-        <button class="btn-gold" style="width:auto;padding:14px 18px;margin:0;" onclick="sendLobbyMsg()">➤</button>
-      </div>
-    </div>
+    <!-- chat moved to home sub-tab -->
 
     <!-- ДУЕЛІ -->
     <div id="tab-duels" class="screen hidden">
@@ -1583,6 +1732,7 @@
                 loadNotifsFromStorage();
                 updateNotifBadge();
                 loadSettings();
+                initHomeTab();
             }, (error) => {
                 notify("Помилка зв'язку з базою.", "error");
             });
@@ -2823,39 +2973,141 @@
     }
 
     // ============================================
-    // ЧАТ ЛОБІ
+    // ЧАТ ЛОБІ (moved to home tab, new version below)
     // ============================================
     let chatListener = null;
 
+    // ============================================
+    // ===== HOME SUB-TABS =====
+    // ============================================
+    let homeTabInited = { chat: false, news: false };
+
+    function initHomeTab() {
+      startWinTicker();
+      if(!chatListener) initLobbyChat();
+    }
+
+    function switchHomeTab(tab, el) {
+      document.querySelectorAll('.home-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.home-panel').forEach(p => p.classList.remove('active'));
+      if(el) el.classList.add('active');
+      const panel = document.getElementById('hp-' + tab);
+      if(panel) panel.classList.add('active');
+
+      if(tab === 'chat') {
+        if(!chatListener) initLobbyChat();
+        const badge = document.getElementById('chatNewBadge');
+        if(badge) badge.classList.add('hidden');
+        setTimeout(() => {
+          const box = document.getElementById('lobbyChatBox');
+          if(box) box.scrollTop = box.scrollHeight;
+        }, 100);
+      }
+      if(tab === 'news') {
+        if(!homeTabInited.news) { loadNews(); homeTabInited.news = true; }
+        const badge = document.getElementById('newsNewBadge');
+        if(badge) badge.classList.add('hidden');
+      }
+    }
+
+    function appendChatEmoji(emoji) {
+      const inp = document.getElementById('lobbyChatInput');
+      if(inp) { inp.value += emoji; inp.focus(); }
+    }
+
+    // ===== WIN TICKER =====
+    const TICKER_GAMES = ['Slots','Blackjack','Crash','Roulette','Mines','Poker','Plinko','Keno','Fortune'];
+    const TICKER_NAMES = ['Lucky_77','ProGamer','MaxWin','CashKing','SlotMaster','VegasPro','UkrChamp','BonusHunter'];
+    let tickerIdx = 0;
+    let tickerItems = [];
+
+    function startWinTicker() {
+      const el = document.getElementById('winTicker');
+      if(!el) return;
+      // Завантажимо реальні виграші + додамо фейкові між ними
+      db.ref('win_feed').limitToLast(20).once('value', snap => {
+        const real = snap.val() ? Object.values(snap.val()) : [];
+        const fake = Array.from({length:10}, () => ({
+          user: TICKER_NAMES[Math.floor(Math.random()*TICKER_NAMES.length)],
+          game: TICKER_GAMES[Math.floor(Math.random()*TICKER_GAMES.length)],
+          amount: (Math.floor(Math.random()*200)+2)*50,
+          mult: (Math.random()*15+1.5).toFixed(1)
+        }));
+        tickerItems = [...real.map(r => ({ user:r.user, game:r.game, amount:r.amount, mult:r.mult })), ...fake];
+        tickerItems.sort(() => Math.random()-0.5);
+        animateTicker();
+      });
+    }
+
+    function animateTicker() {
+      const el = document.getElementById('winTicker');
+      if(!el || !tickerItems.length) return;
+      const item = tickerItems[tickerIdx % tickerItems.length];
+      tickerIdx++;
+      const emojis = { Slots:'🎰', Blackjack:'🃏', Crash:'🚀', Roulette:'🎡', Mines:'💣', Poker:'♠️', Plinko:'🔻', Keno:'🔢', Fortune:'🎡' };
+      el.textContent = (emojis[item.game]||'🎮') + ' ' + item.user + ' виграв ' + formatNumber(item.amount) + '₴ × ' + item.mult + ' у ' + item.game;
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.5s';
+      setTimeout(() => { el.style.opacity = '1'; }, 50);
+      setTimeout(animateTicker, 4000);
+    }
+
+    // ============================================
+    // ===== ПОКРАЩЕНИЙ ЧАТ =====
+    // ============================================
+    // Override initLobbyChat completely
     function initLobbyChat() {
       const box = document.getElementById('lobbyChatBox');
-      if(chatListener) return;
+      if(!box || chatListener) return;
       box.innerHTML = '';
-      chatListener = db.ref('lobby_chat').limitToLast(50).on('child_added', snap => {
+      chatListener = db.ref('lobby_chat').limitToLast(60).on('child_added', snap => {
         const m = snap.val();
         if(!m) return;
         const time = new Date(m.time).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
         const el = document.createElement('div');
+        const isMe = m.sender === currentUser;
+        const isAdmin = m.isAdmin;
+        const isBot = m.isBot;
         if(m.system) {
-          el.className = 'chat-system'; el.textContent = m.text;
+          el.style.cssText = 'color:#555;font-size:11px;text-align:center;padding:6px 0;';
+          el.textContent = m.text;
         } else {
-          el.className = 'chat-msg';
-          const nickColor = m.sender === currentUser ? 'var(--accent)' : (m.isAdmin ? '#ff6b6b' : '#4a9eff');
-          el.innerHTML = `<span class="chat-nick" style="color:${nickColor}" onclick="openPublicProfile('${m.sender}')">${m.isAdmin?'[ADMIN] ':''}${m.sender}</span><span class="chat-time">${time}</span><br>${m.text}`;
+          el.className = 'chat-msg' + (isMe ? ' mine' : '') + (isAdmin ? ' admin-msg' : '') + (isBot ? ' bot-msg' : '');
+          const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : (isBot ? '#b57bee' : '#4a9eff'));
+          const av = m.avatarEmoji || '👤';
+          const avHtml = m.avatarUrl
+            ? '<div class="chat-avatar-sm"><img src="' + m.avatarUrl + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
+            : '<div class="chat-avatar-sm">' + av + '</div>';
+          const adminTag = isAdmin ? '<span style="background:#ff4444;color:#fff;font-size:8px;padding:1px 5px;border-radius:6px;margin-left:3px;">ADMIN</span>' : '';
+          const botTag   = isBot   ? '<span style="background:#9b59b6;color:#fff;font-size:8px;padding:1px 5px;border-radius:6px;margin-left:3px;">BOT</span>' : '';
+          el.innerHTML =
+            '<div class="chat-header-line">' + avHtml +
+              '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(\'' + m.sender + '\')">' + m.sender + '</span>' +
+              adminTag + botTag +
+              '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
+            '</div>' +
+            '<div class="chat-body-text">' + escapeHtml(m.text) + '</div>';
         }
         box.appendChild(el);
         box.scrollTop = box.scrollHeight;
+
+        // Якщо чат не відкритий — показати badge
+        const htbChat = document.getElementById('htb-chat');
+        if(htbChat && !htbChat.classList.contains('active') && !m.system) {
+          const badge = document.getElementById('chatNewBadge');
+          if(badge) badge.classList.remove('hidden');
+        }
       });
 
-      // Оголошення
       db.ref('announcement').on('value', snap => {
         const txt = snap.val();
         const banner = document.getElementById('announceBanner');
-        if(txt) { banner.textContent = '📢 ' + txt; banner.classList.remove('hidden'); }
-        else { banner.classList.add('hidden'); }
+        if(banner) {
+          if(txt) { banner.textContent = '📢 ' + txt; banner.classList.remove('hidden'); }
+          else { banner.classList.add('hidden'); }
+        }
       });
 
-      // Онлайн лічильник
       db.ref('online').on('value', snap => {
         const count = snap.val() ? Object.keys(snap.val()).length : 0;
         const el = document.getElementById('onlineCount');
@@ -2865,17 +3117,343 @@
       db.ref('online/'+currentUser).onDisconnect().remove();
     }
 
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     function sendLobbyMsg() {
       const input = document.getElementById('lobbyChatInput');
       const txt = input.value.trim();
       if(!txt || txt.length > 200) return;
       if(userData.muted) return notify('Вас замутовано в чаті', 'error');
+      const isAdmin = (currentUser.toLowerCase()==='theivankoo' || userData.isAdmin===true);
       db.ref('lobby_chat').push({
-        sender: currentUser, text: txt, time: Date.now(),
-        isAdmin: (currentUser.toLowerCase()==='theivankoo' || userData.isAdmin===true)
+        sender: currentUser,
+        text: txt,
+        time: Date.now(),
+        isAdmin,
+        avatarEmoji: typeof userData.avatar === 'string' && userData.avatar.length <= 4 ? userData.avatar : '👤',
+        avatarUrl: typeof userData.avatar === 'string' && userData.avatar.length > 10 ? userData.avatar : null,
       });
       input.value = '';
     }
+
+    // ============================================
+    // ===== НОВИНИ =====
+    // ============================================
+    const NEWS_REACTIONS = ['❤️','🔥','👏','😮','😂','💎'];
+
+    function loadNews() {
+      const container = document.getElementById('newsListContainer');
+      if(!container) return;
+      container.innerHTML = '<div style="text-align:center;color:#555;padding:30px 0;">Завантаження...</div>';
+      db.ref('casino_news').orderByChild('time').limitToLast(20).once('value', snap => {
+        const data = snap.val();
+        if(!data) {
+          container.innerHTML = '<div style="text-align:center;color:#555;padding:30px 0;font-size:13px;">Новин ще немає.<br>Слідкуй за оновленнями!</div>';
+          return;
+        }
+        const items = Object.entries(data).map(([id,n])=>({id,...n})).reverse();
+        container.innerHTML = '';
+        items.forEach(n => container.appendChild(buildNewsCard(n)));
+      });
+    }
+
+    function buildNewsCard(n) {
+      const card = document.createElement('div');
+      card.className = 'news-card';
+      card.id = 'news-' + n.id;
+      const t = timeAgo(n.time);
+      const catColors = { news:'#4a9eff', update:'#4cd964', event:'#d4af37', promo:'#ff6b6b', warn:'#ff9f0a' };
+      const catColor = catColors[n.category] || '#777';
+
+      // Reactions
+      const myReactions = n.myReaction ? [n.myReaction] : [];
+      const reactionHtml = NEWS_REACTIONS.map(r => {
+        const cnt = n.reactions && n.reactions[r] ? n.reactions[r] : 0;
+        const reacted = myReactions.includes(r);
+        return '<div class="reaction-btn ' + (reacted?'reacted':'') + '" onclick="reactNews(\'' + n.id + '\',\'' + r + '\',this)">' +
+          r + '<span class="reaction-count">' + (cnt||'') + '</span></div>';
+      }).join('');
+
+      const avHtml = n.authorAvatarUrl
+        ? '<div class="news-avatar"><img src="' + n.authorAvatarUrl + '"></div>'
+        : '<div class="news-avatar">' + (n.authorEmoji||'👤') + '</div>';
+
+      card.innerHTML =
+        '<div class="news-header">' +
+          '<div class="news-author">' +
+            avHtml +
+            '<div>' +
+              '<div class="news-name">' + (n.author||'Адмін') + ' <span class="news-admin-badge">ADMIN</span></div>' +
+              '<div class="news-time">' + t + ' · <span style="color:' + catColor + ';font-size:10px;">' + (n.emoji||'📢') + ' ' + n.category + '</span></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="news-title">' + escapeHtml(n.title) + '</div>' +
+          '<div class="news-body">' + escapeHtml(n.body) + '</div>' +
+        '</div>' +
+        '<div class="news-reactions" id="reactions-' + n.id + '">' + reactionHtml + '</div>' +
+        '<div class="news-comments-toggle" onclick="toggleComments(\'' + n.id + '\')">' +
+          '💬 Коментарі <span id="cmtcount-' + n.id + '">' + (n.commentCount||0) + '</span>' +
+        '</div>' +
+        '<div class="news-comments-box" id="cmtbox-' + n.id + '">' +
+          '<div id="cmtlist-' + n.id + '"></div>' +
+          '<div class="comment-input-row">' +
+            '<input id="cmtinput-' + n.id + '" placeholder="Написати коментар..." style="margin:0;flex:1;padding:10px;" maxlength="200" onkeypress="if(event.key===\'Enter\')submitComment(\'' + n.id + '\')">' +
+            '<button class="btn-gold" style="width:auto;padding:10px 14px;margin:0;" onclick="submitComment(\'' + n.id + '\')">➤</button>' +
+          '</div>' +
+        '</div>';
+
+      return card;
+    }
+
+    function reactNews(newsId, reaction, el) {
+      db.ref('casino_news/' + newsId + '/reactions/' + reaction).transaction(v => (v||0) + 1);
+      // Track user reaction locally
+      const container = document.getElementById('reactions-' + newsId);
+      if(container) {
+        container.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('reacted'));
+        el.classList.toggle('reacted');
+        const countEl = el.querySelector('.reaction-count');
+        if(countEl) {
+          const cur = parseInt(countEl.textContent) || 0;
+          countEl.textContent = cur + 1;
+        }
+      }
+    }
+
+    function toggleComments(newsId) {
+      const box = document.getElementById('cmtbox-' + newsId);
+      if(!box) return;
+      const isOpen = box.classList.contains('open');
+      box.classList.toggle('open', !isOpen);
+      if(!isOpen) loadComments(newsId);
+    }
+
+    function loadComments(newsId) {
+      const list = document.getElementById('cmtlist-' + newsId);
+      if(!list) return;
+      list.innerHTML = '<div style="color:#555;font-size:12px;padding:5px 0;">Завантаження...</div>';
+      db.ref('casino_news/' + newsId + '/comments').orderByChild('time').limitToLast(30).once('value', snap => {
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Коментарів ще немає. Будь першим!</div>'; return; }
+        list.innerHTML = '';
+        Object.values(data).forEach(c => {
+          const t = timeAgo(c.time);
+          const avHtml = c.avatarUrl
+            ? '<div class="comment-avatar"><img src="' + c.avatarUrl + '"></div>'
+            : '<div class="comment-avatar">' + (c.avatarEmoji||'👤') + '</div>';
+          const div = document.createElement('div');
+          div.className = 'comment-item';
+          div.innerHTML = avHtml +
+            '<div>' +
+              '<span class="comment-nick" onclick="openPublicProfile(\'' + c.author + '\')">' + c.author + '</span>' +
+              '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
+              '<div class="comment-time">' + t + '</div>' +
+            '</div>';
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function submitComment(newsId) {
+      const inp = document.getElementById('cmtinput-' + newsId);
+      const txt = inp ? inp.value.trim() : '';
+      if(!txt || txt.length > 200) return;
+      const isAdmin = (currentUser.toLowerCase()==='theivankoo' || userData.isAdmin===true);
+      const av = typeof userData.avatar === 'string';
+      const comment = {
+        author: currentUser,
+        text: txt,
+        time: Date.now(),
+        avatarEmoji: av && userData.avatar.length <= 4 ? userData.avatar : '👤',
+        avatarUrl: av && userData.avatar.length > 10 ? userData.avatar : null,
+        isAdmin,
+      };
+      db.ref('casino_news/' + newsId + '/comments').push(comment);
+      db.ref('casino_news/' + newsId + '/commentCount').transaction(v => (v||0)+1);
+      inp.value = '';
+      // Оновити список
+      setTimeout(() => loadComments(newsId), 500);
+      // Оновити лічильник
+      const cnt = document.getElementById('cmtcount-' + newsId);
+      if(cnt) cnt.textContent = parseInt(cnt.textContent||0)+1;
+      notify('💬 Коментар додано!', 'success');
+    }
+
+    // ===== ADMIN: ПУБЛІКАЦІЯ НОВИН =====
+    function publishNews() {
+      const title    = document.getElementById('newsTitle').value.trim();
+      const body     = document.getElementById('newsBody').value.trim();
+      const emoji    = document.getElementById('newsEmoji').value.trim() || '📢';
+      const category = document.getElementById('newsCategory').value;
+      if(!title || !body) return notify('Введіть заголовок і текст новини', 'error');
+
+      const av = typeof userData.avatar === 'string';
+      db.ref('casino_news').push({
+        title, body, emoji, category,
+        author: currentUser,
+        authorEmoji: av && userData.avatar.length <= 4 ? userData.avatar : '👤',
+        authorAvatarUrl: av && userData.avatar.length > 10 ? userData.avatar : null,
+        time: Date.now(),
+        reactions: {},
+        commentCount: 0,
+      });
+      document.getElementById('newsTitle').value = '';
+      document.getElementById('newsBody').value = '';
+      notify('📰 Новину опубліковано!', 'success');
+      homeTabInited.news = false; // Reset so it reloads
+
+      // Показати badge на news вкладці
+      const badge = document.getElementById('newsNewBadge');
+      if(badge) badge.classList.remove('hidden');
+    }
+
+    function loadAdminNews() {
+      const list = document.getElementById('adminNewsList');
+      if(!list) return;
+      db.ref('casino_news').orderByChild('author').equalTo(currentUser).limitToLast(10).once('value', snap => {
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Новин немає</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).reverse().forEach(([id,n]) => {
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px;background:#111;border-radius:8px;margin-bottom:5px;border:1px solid #222;';
+          div.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<div style="font-size:13px;font-weight:bold;">' + (n.emoji||'📢') + ' ' + n.title + '</div>' +
+              '<button onclick="deleteNews(\'' + id + '\')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">🗑️</button>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#555;margin-top:3px;">' + timeAgo(n.time) + ' · 💬' + (n.commentCount||0) + '</div>';
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function deleteNews(id) {
+      if(!confirm('Видалити новину?')) return;
+      db.ref('casino_news/' + id).remove();
+      notify('🗑️ Новину видалено', 'info');
+      loadAdminNews();
+    }
+
+    // ============================================
+    // ===== БОТИ =====
+    // ============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('botAvatar');
+      if(sel) sel.addEventListener('change', function() {
+        const urlBox = document.getElementById('botAvatarUrlBox');
+        if(urlBox) urlBox.classList.toggle('hidden', this.value !== 'custom');
+      });
+    });
+
+    function createBot() {
+      const nick    = document.getElementById('botNick').value.trim();
+      const balance = parseInt(document.getElementById('botBalance').value) || 5000;
+      const avSel   = document.getElementById('botAvatar').value;
+      const avUrl   = document.getElementById('botAvatarUrl') ? document.getElementById('botAvatarUrl').value.trim() : '';
+      const activity= document.getElementById('botActivity').value;
+
+      if(!nick || nick.length < 2) return notify('Введіть нік бота (мін. 2 символи)', 'error');
+      if(!/^[a-zA-Zа-яА-ЯёЁіІїЇєЄ0-9_]+$/.test(nick)) return notify('Нік може містити лише букви, цифри та _', 'error');
+
+      const avatarEmoji = avSel === 'custom' ? '👤' : avSel;
+      const avatarUrl   = avSel === 'custom' ? avUrl : null;
+
+      // Створюємо юзера-бота в Firebase
+      db.ref('users/' + nick).set({
+        balance, tag: '[BOT]', isBot: true, isActive: activity === 'active',
+        createdBy: currentUser, createdAt: Date.now(),
+        regDate: Date.now(), dailyStreak: 0, id: 'BOT_' + Date.now(),
+        avatar: avatarUrl || avatarEmoji,
+        stats: { gamesPlayed: Math.floor(Math.random()*500)+50, biggestWin: Math.floor(Math.random()*5000)+500 },
+        totalWagered: Math.floor(Math.random()*50000)+1000,
+      });
+
+      // Якщо активний — запускаємо автоматичні повідомлення в чат
+      if(activity === 'active') scheduleBotMessages(nick, avatarEmoji, avatarUrl);
+
+      notify('🤖 Бот ' + nick + ' створено!', 'success');
+      document.getElementById('botNick').value = '';
+      loadBots();
+    }
+
+    const BOT_MESSAGES = [
+      'Тільки що зробив x{{mult}} на слотах! 🎰', 'Хто грає в краш? 🚀',
+      'Удача сьогодні на моєму боці! 💰', 'Ставлю 500 на чорне 🎡',
+      'Ого, виграв {{amount}}₴! 🤑', 'Хто ще в онлайні?',
+      'Монополія — найкраща гра! 🎩', 'Жаль, програв... спробую ще раз',
+      'Блекджек дав мені 21! 🃏', 'Краш злетів до x{{mult}}!',
+    ];
+
+    function scheduleBotMessages(nick, avatarEmoji, avatarUrl) {
+      // Запланувати кілька повідомлень протягом 10 хвилин
+      for(let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const tpl = BOT_MESSAGES[Math.floor(Math.random()*BOT_MESSAGES.length)];
+          const msg = tpl
+            .replace('{{mult}}', (Math.random()*10+1.5).toFixed(1))
+            .replace('{{amount}}', formatNumber((Math.floor(Math.random()*100)+5)*100));
+          db.ref('lobby_chat').push({
+            sender: nick, text: msg, time: Date.now(),
+            isBot: true, avatarEmoji, avatarUrl,
+          });
+        }, (i+1) * (Math.random()*60000 + 30000)); // 30-90 сек між повідомленнями
+      }
+    }
+
+    function loadBots() {
+      const list = document.getElementById('botList');
+      if(!list) return;
+      list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Завантаження...</div>';
+      db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
+        const data = snap.val();
+        if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Ботів немає</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).forEach(([nick, b]) => {
+          const av = typeof b.avatar === 'string' && b.avatar.length > 4
+            ? '<img src="' + b.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+            : (b.avatar||'👤');
+          const div = document.createElement('div');
+          div.className = 'bot-card';
+          div.innerHTML =
+            '<div class="bot-avatar">' + av + '</div>' +
+            '<div style="flex:1;">' +
+              '<div style="font-weight:bold;font-size:14px;">' + nick + '</div>' +
+              '<div style="font-size:11px;color:#777;">Баланс: ' + formatNumber(b.balance) + '₴</div>' +
+            '</div>' +
+            '<span class="bot-status ' + (b.isActive?'active':'inactive') + '">' + (b.isActive?'🟢 Активний':'⚫ Пасивний') + '</span>' +
+            '<button onclick="deleteBot(\'' + nick + '\')" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;margin-left:6px;">✕</button>';
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function deleteBot(nick) {
+      if(!confirm('Видалити бота ' + nick + '?')) return;
+      db.ref('users/' + nick).remove();
+      notify('🗑️ Бота видалено', 'info');
+      loadBots();
+    }
+
+    // ===== WIN FEED для тікера =====
+    function addToWinFeed(game, amount, mult) {
+      if(amount < 500) return; // Тільки великі виграші
+      db.ref('win_feed').push({
+        user: currentUser, game, amount, mult: mult||1,
+        time: Date.now()
+      });
+      // Чистимо старі
+      db.ref('win_feed').orderByChild('time').limitToFirst(1).once('value', snap => {
+        const data = snap.val();
+        if(!data) return;
+        const count = Object.keys(data).length;
+        if(count > 50) Object.keys(data).forEach(k => db.ref('win_feed/' + k).remove());
+      });
+    }
+
+
 
     // ============================================
     // ПУБЛІЧНИЙ ПРОФІЛЬ
@@ -4352,6 +4930,7 @@
       if(id==='monopoly-mp') { loadMpRooms(); }
       if(id==='notifications') { renderNotifs(); }
       if(id==='settings') { loadSettings(); }
+      if(id==='home') { initHomeTab(); }
     }
 
     function scratchReset() {
