@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v45</title>
+  <title>SlotOK v46</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -531,13 +531,34 @@
     .mp-waiting { background:rgba(212,175,55,0.2); color:var(--accent); }
     .mp-playing  { background:rgba(76,217,100,0.2); color:var(--green); }
 
+
+    /* ===== СЛОТІКИ ===== */
+    #tab-slotiky .section-header { color:#c9a0ff; }
+
+    /* ===== СТРІМ VIEWER ===== */
+    #streamViewerModal { backdrop-filter: blur(4px); }
+
+    /* ===== ТУРНІР V2 ===== */
+    .tournament-card { background:linear-gradient(135deg,#1a1200,#0d0800);border:1px solid #3a2800;border-radius:14px;padding:14px;margin-bottom:10px; }
+    .t-prize { font-size:22px;font-weight:900;color:var(--accent);margin:6px 0; }
+    .t-info  { font-size:11px;color:#555; }
+    .t-row   { display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #111; }
+    .t-row:last-child { border-bottom:none; }
+
+    /* ===== КЕШБЕК у касі ===== */
+    #cashierCashbackPanel .btn-green { width:100%;padding:12px;font-size:14px;font-weight:bold;border:none;border-radius:12px;background:linear-gradient(135deg,var(--green),#1a5a20);color:#000;cursor:pointer; }
+    #cashierCashbackPanel .btn-green:disabled { background:#1a1a1a;color:#555; }
+
+    /* ===== ESPORTS BADGE ===== */
+    .esport-badge { background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;color:#c9a0ff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;display:inline-block;margin-left:4px; }
+
   </style>
 </head>
 <body data-theme="dark">
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v45</div>
+    <div>SlotOK v46</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -548,6 +569,9 @@
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="header-bal" onclick="switchTab('cashier')"><span class="bal">₴ 0</span></div>
+        <div onclick="switchTab('slotiky')" style="background:#1a0a2e;border:1px solid #5a20c0;border-radius:10px;padding:3px 8px;font-size:11px;color:#c9a0ff;cursor:pointer;display:flex;align-items:center;gap:3px;" title="Слотіки">
+          <span>🪙</span><span id="headerSlotiky">0</span>
+        </div>
         <button onclick="openCurrencyPicker()" style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:5px 8px;font-size:11px;color:#aaa;cursor:pointer;font-weight:bold;" id="headerCurrencyCode" title="Змінити валюту">UAH</button>
       </div>
       <div id="currencyRateLine" style="font-size:9px;color:#444;text-align:right;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
@@ -881,6 +905,7 @@
       <div style="display:flex;gap:0;background:var(--box);border-radius:14px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
         <button class="cashier-tab-btn active" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">💳 Поповнення</button>
         <button class="cashier-tab-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">💸 Вивід</button>
+        <button class="cashier-tab-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">💰 Кешбек</button>
         <button class="cashier-tab-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">📊 Ринок</button>
       </div>
 
@@ -943,6 +968,13 @@
         <button class="btn-outline" onclick="openModal('promo-modal')">🎁 Промокод</button>
       </div>
       </div><!-- /cashier-panel-withdraw -->
+
+      <!-- CASHBACK PANEL -->
+      <div id="cashier-panel-cashback" class="hidden">
+        <div id="cashierCashbackPanel" style="padding:4px 0;">
+          <div style="text-align:center;color:#555;padding:20px;">Завантаження...</div>
+        </div>
+      </div><!-- /cashier-panel-cashback -->
 
       <!-- MARKETS PANEL -->
       <div id="cashier-panel-markets" class="hidden">
@@ -1135,6 +1167,11 @@
           <button class="sport-tab-btn"        data-sport="mma"         onclick="loadRealSportMatches('mma',this)">🥊 UFC</button>
           <button class="sport-tab-btn"        data-sport="football"    onclick="loadRealSportMatches('football',this)">🏈 NFL</button>
           <button class="sport-tab-btn"        data-sport="baseball"    onclick="loadRealSportMatches('baseball',this)">⚾ MLB</button>
+          <button class="sport-tab-btn"        data-sport="csgo"        onclick="loadRealSportMatches('csgo',this)">🎮 CS2</button>
+          <button class="sport-tab-btn"        data-sport="dota2"       onclick="loadRealSportMatches('dota2',this)">⚔️ Dota 2</button>
+          <button class="sport-tab-btn"        data-sport="lol"         onclick="loadRealSportMatches('lol',this)">🏆 LoL</button>
+          <button class="sport-tab-btn"        data-sport="valorant"    onclick="loadRealSportMatches('valorant',this)">🔫 Valorant</button>
+          <button class="sport-tab-btn"        data-sport="efootball"   onclick="loadRealSportMatches('efootball',this)">⚡ eFootball</button>
         </div>
       </div>
 
@@ -1265,6 +1302,7 @@
         <button class="btn-outline" onclick="openDailyBonus()">🎁 Щоденний бонус</button>
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
+        <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
       </div>
     </div>
 
@@ -2100,9 +2138,94 @@
     </div>
 
     <!-- ТУРНІРИ -->
-    <div id="tab-tournaments" class="screen hidden">
-      <h2 style="color:var(--accent);">🏆 Турніри</h2>
-      <div id="tournamentsList"></div>
+    <!-- ТУРНІРИ — повна система -->
+    <div id="tab-tournaments" class="screen hidden" style="padding:0;">
+      <div style="background:linear-gradient(180deg,#1a1200,#000);padding:16px 15px 12px;border-bottom:1px solid #2a2000;">
+        <div style="font-size:20px;font-weight:900;color:var(--accent);">🏆 Турніри</div>
+        <div style="font-size:10px;color:#555;margin-top:2px;">Змагайся • Заробляй очки • Отримуй призи</div>
+      </div>
+
+      <!-- My tournament stats -->
+      <div id="myTourneyStats" style="padding:12px 15px;background:#0a0a00;border-bottom:1px solid #1a1a00;"></div>
+
+      <!-- Sub-tabs: Активні / Мої / Ігри -->
+      <div style="display:flex;gap:0;padding:10px 15px 0;background:#050500;">
+        <button class="cashier-tab-btn active" id="ttb-active" onclick="switchTourneyTab('active',this)">🟢 Активні</button>
+        <button class="cashier-tab-btn" id="ttb-mine" onclick="switchTourneyTab('mine',this)">🎯 Мої</button>
+        <button class="cashier-tab-btn" id="ttb-games" onclick="switchTourneyTab('games',this)">🎮 Турнір. ігри</button>
+      </div>
+
+      <div style="padding:10px 15px;">
+        <!-- Active tournaments -->
+        <div id="tourney-panel-active">
+          <div id="tournamentsList"></div>
+        </div>
+        <!-- My tournaments -->
+        <div id="tourney-panel-mine" class="hidden">
+          <div id="myTournamentsList"></div>
+        </div>
+        <!-- Tournament games -->
+        <div id="tourney-panel-games" class="hidden">
+          <div style="background:linear-gradient(135deg,#1a1200,#0d0800);border:1px solid #3a2800;border-radius:14px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:4px;">🎮 Ексклюзивні турнірні ігри</div>
+            <div style="font-size:11px;color:#777;">Доступні лише учасникам активного турніру. Заробляй очки — піднімайся на вершину!</div>
+          </div>
+          <div id="tourneyGamesGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- СЛОТІКИ — внутрішня валюта казино -->
+    <div id="tab-slotiky" class="screen hidden">
+      <button class="btn-outline" onclick="history.back()||switchTab('more')">⬅ Назад</button>
+
+      <!-- Balance -->
+      <div style="background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;border-radius:20px;padding:20px;margin:12px 0;text-align:center;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;font-size:100px;opacity:0.08;">🪙</div>
+        <div style="font-size:11px;color:#a080e0;margin-bottom:4px;text-transform:uppercase;letter-spacing:2px;">Ваш баланс</div>
+        <div style="font-size:48px;font-weight:900;color:#c9a0ff;" id="slotikyBalance">0</div>
+        <div style="font-size:14px;color:#8060c0;margin-top:2px;">🪙 Слотіків</div>
+        <div style="font-size:10px;color:#5a3090;margin-top:8px;">1 Слотік = 10,000,000 ₴ • Купується окремо</div>
+      </div>
+
+      <!-- Buy slotiky -->
+      <div style="background:var(--box);border:1px solid #3a1080;border-radius:16px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:14px;font-weight:bold;color:#c9a0ff;margin-bottom:12px;">💎 Придбати Слотіки</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div onclick="buySlotiky(1)" style="background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;border-radius:12px;padding:12px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">🪙</div>
+            <div style="font-size:16px;font-weight:bold;color:#c9a0ff;margin:4px 0;">1 Слотік</div>
+            <div style="font-size:13px;color:#8060c0;">10,000,000 ₴</div>
+          </div>
+          <div onclick="buySlotiky(5)" style="background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;border-radius:12px;padding:12px;text-align:center;cursor:pointer;">
+            <div style="font-size:24px;">🪙🪙🪙</div>
+            <div style="font-size:16px;font-weight:bold;color:#c9a0ff;margin:4px 0;">5 Слотіків</div>
+            <div style="font-size:13px;color:#8060c0;">50,000,000 ₴</div>
+            <div style="font-size:9px;background:#5a20c0;color:#fff;border-radius:6px;padding:2px 6px;margin-top:4px;display:inline-block;">-0%</div>
+          </div>
+          <div onclick="buySlotiky(10)" style="background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #7a30e0;border-radius:12px;padding:12px;text-align:center;cursor:pointer;position:relative;">
+            <div style="position:absolute;top:-6px;right:8px;background:#f39c12;color:#000;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;">ЗНИЖКА</div>
+            <div style="font-size:24px;">💎</div>
+            <div style="font-size:16px;font-weight:bold;color:#c9a0ff;margin:4px 0;">10 Слотіків</div>
+            <div style="font-size:13px;color:#8060c0;">95,000,000 ₴</div>
+            <div style="font-size:9px;background:#f39c12;color:#000;border-radius:6px;padding:2px 6px;margin-top:4px;display:inline-block;">Знижка 5%</div>
+          </div>
+          <div onclick="buySlotiky(50)" style="background:linear-gradient(135deg,#2e0a1a,#601030);border:1px solid #e020a0;border-radius:12px;padding:12px;text-align:center;cursor:pointer;position:relative;">
+            <div style="position:absolute;top:-6px;right:8px;background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;">BEST</div>
+            <div style="font-size:24px;">👑</div>
+            <div style="font-size:16px;font-weight:bold;color:#ff80c0;margin:4px 0;">50 Слотіків</div>
+            <div style="font-size:13px;color:#c060a0;">450,000,000 ₴</div>
+            <div style="font-size:9px;background:#e74c3c;color:#fff;border-radius:6px;padding:2px 6px;margin-top:4px;display:inline-block;">Знижка 10%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shop -->
+      <div style="font-size:15px;font-weight:bold;color:#c9a0ff;margin-bottom:10px;">🛒 Магазин Слотіків</div>
+      <div id="slotikyShopGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      <div style="height:20px;"></div>
     </div>
 
     <!-- РЕФЕРАЛИ -->
@@ -2150,6 +2273,30 @@
         <button class="btn-outline" onclick="declineDuel()">❌ Відхилити</button>
       </div>
     </div>
+
+
+    <!-- STREAM VIEWER MODAL -->
+    <div id="streamViewerModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9800;display:flex;flex-direction:column;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#080808;border-bottom:1px solid #1a1a1a;flex-shrink:0;">
+        <button onclick="closeStreamViewer()" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:6px 12px;color:#aaa;font-size:12px;cursor:pointer;">✕ Закрити</button>
+        <div style="font-size:13px;font-weight:bold;color:#fff;" id="streamTitle">🎮 Live трансляція</div>
+        <div style="background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;padding:3px 8px;border-radius:12px;animation:pulse2 1.5s infinite;">🔴 LIVE</div>
+      </div>
+      <!-- Stream area -->
+      <div style="flex:1;position:relative;background:#0a0a0a;overflow:hidden;">
+        <div id="streamEmbedArea" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+          <div style="font-size:48px;margin-bottom:16px;animation:pulse2 2s infinite;">📺</div>
+          <div style="font-size:14px;color:#777;margin-bottom:8px;">Вибери трансляцію нижче</div>
+        </div>
+      </div>
+      <!-- Stream sources -->
+      <div style="padding:12px 16px;background:#080808;border-top:1px solid #1a1a1a;flex-shrink:0;">
+        <div style="font-size:11px;color:#555;margin-bottom:8px;">📡 Джерела трансляцій:</div>
+        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;" id="streamSourcesList"></div>
+      </div>
+    </div>
+
 
   </div><!-- /container -->
   <div id="auth-screen" class="full-modal">
@@ -4355,12 +4502,14 @@
     }
 
     function createTournament() {
-      const name = document.getElementById('tName').value.trim();
+      const name  = document.getElementById('tName').value.trim();
       const prize = parseInt(document.getElementById('tPrize').value);
-      const dur = parseInt(document.getElementById('tDuration').value);
+      const dur   = parseInt(document.getElementById('tDuration').value);
+      const icon  = document.getElementById('tIcon')?.value || '🏆';
       if(!name || !prize || !dur) return notify('Заповніть усі поля', 'error');
-      db.ref('tournaments').push({name, prize, duration: dur, startTime: Date.now(), createdBy: currentUser});
-      notify(`🏆 Турнір "${name}" створено!`, 'success');
+      const allowedGames = ['crash','slots','mines','plinko','tower','limbo','dice','hilo'];
+      db.ref('tournaments').push({name, prize, duration: dur, startTime: Date.now(), createdBy: currentUser, icon, allowedGames});
+      notify(`${icon} Турнір "${name}" створено! Приз: ${formatNumber(prize)} ₴`, 'success');
       document.getElementById('tName').value=''; document.getElementById('tPrize').value=''; document.getElementById('tDuration').value='';
     }
 
@@ -5246,20 +5395,20 @@
     // ===== VIP СИСТЕМА =====
     // ============================================
     const VIP_LEVELS = [
-      { name: 'Iron',      icon: '⚙️',  min: 0,         cashback: 0,     hourly: 10,  dailyMult: 1.0,  class: 'bronze',   cssVar: '#555' },
-      { name: 'Bronze',    icon: '🥉',  min: 1000,      cashback: 0,     hourly: 25,  dailyMult: 1.0,  class: 'bronze',   cssVar: 'var(--bronze)' },
-      { name: 'Silver',    icon: '🥈',  min: 5000,      cashback: 0.005, hourly: 50,  dailyMult: 1.1,  class: 'silver',   cssVar: 'var(--silver-c)' },
-      { name: 'Gold',      icon: '🥇',  min: 20000,     cashback: 0.01,  hourly: 80,  dailyMult: 1.25, class: 'gold',     cssVar: 'var(--gold-c)' },
-      { name: 'Emerald',   icon: '💚',  min: 60000,     cashback: 0.015, hourly: 120, dailyMult: 1.4,  class: 'gold',     cssVar: '#2ecc71' },
-      { name: 'Sapphire',  icon: '💙',  min: 150000,    cashback: 0.02,  hourly: 160, dailyMult: 1.6,  class: 'silver',   cssVar: '#3498db' },
-      { name: 'Ruby',      icon: '❤️',  min: 350000,    cashback: 0.025, hourly: 200, dailyMult: 1.75, class: 'gold',     cssVar: '#e74c3c' },
-      { name: 'Platinum',  icon: '💎',  min: 700000,    cashback: 0.03,  hourly: 250, dailyMult: 1.9,  class: 'platinum', cssVar: 'var(--plat)' },
-      { name: 'Master',    icon: '🔮',  min: 1500000,   cashback: 0.035, hourly: 350, dailyMult: 2.0,  class: 'platinum', cssVar: '#9b59b6' },
-      { name: 'Elite',     icon: '⭐',  min: 3000000,   cashback: 0.04,  hourly: 500, dailyMult: 2.2,  class: 'platinum', cssVar: '#f39c12' },
-      { name: 'Diamond',   icon: '💠',  min: 7000000,   cashback: 0.05,  hourly: 750, dailyMult: 2.5,  class: 'platinum', cssVar: '#1abc9c' },
-      { name: 'Legend',    icon: '🌟',  min: 15000000,  cashback: 0.06,  hourly: 1000,dailyMult: 3.0,  class: 'platinum', cssVar: '#e67e22' },
-      { name: 'Mythic',    icon: '🔱',  min: 35000000,  cashback: 0.07,  hourly: 1500,dailyMult: 3.5,  class: 'platinum', cssVar: '#e91e63' },
-      { name: 'Supreme',   icon: '👑',  min: 100000000, cashback: 0.10,  hourly: 3000,dailyMult: 5.0,  class: 'platinum', cssVar: 'linear-gradient(45deg,#d4af37,#fff)' },
+      { name: 'Iron',      icon: '⚙️',  min: 0,         cashback: 0,      hourly: 10,  dailyMult: 1.0,  class: 'bronze',   cssVar: '#555' },
+      { name: 'Bronze',    icon: '🥉',  min: 1000,      cashback: 0,      hourly: 25,  dailyMult: 1.0,  class: 'bronze',   cssVar: 'var(--bronze)' },
+      { name: 'Silver',    icon: '🥈',  min: 5000,      cashback: 0.001,  hourly: 50,  dailyMult: 1.1,  class: 'silver',   cssVar: 'var(--silver-c)' },
+      { name: 'Gold',      icon: '🥇',  min: 20000,     cashback: 0.002,  hourly: 80,  dailyMult: 1.25, class: 'gold',     cssVar: 'var(--gold-c)' },
+      { name: 'Emerald',   icon: '💚',  min: 60000,     cashback: 0.003,  hourly: 120, dailyMult: 1.4,  class: 'gold',     cssVar: '#2ecc71' },
+      { name: 'Sapphire',  icon: '💙',  min: 150000,    cashback: 0.004,  hourly: 160, dailyMult: 1.6,  class: 'silver',   cssVar: '#3498db' },
+      { name: 'Ruby',      icon: '❤️',  min: 350000,    cashback: 0.005,  hourly: 200, dailyMult: 1.75, class: 'gold',     cssVar: '#e74c3c' },
+      { name: 'Platinum',  icon: '💎',  min: 700000,    cashback: 0.006,  hourly: 250, dailyMult: 1.9,  class: 'platinum', cssVar: 'var(--plat)' },
+      { name: 'Master',    icon: '🔮',  min: 1500000,   cashback: 0.007,  hourly: 350, dailyMult: 2.0,  class: 'platinum', cssVar: '#9b59b6' },
+      { name: 'Elite',     icon: '⭐',  min: 3000000,   cashback: 0.008,  hourly: 500, dailyMult: 2.2,  class: 'platinum', cssVar: '#f39c12' },
+      { name: 'Diamond',   icon: '💠',  min: 7000000,   cashback: 0.009,  hourly: 750, dailyMult: 2.5,  class: 'platinum', cssVar: '#1abc9c' },
+      { name: 'Legend',    icon: '🌟',  min: 15000000,  cashback: 0.010,  hourly: 1000,dailyMult: 3.0,  class: 'platinum', cssVar: '#e67e22' },
+      { name: 'Mythic',    icon: '🔱',  min: 35000000,  cashback: 0.012,  hourly: 1500,dailyMult: 3.5,  class: 'platinum', cssVar: '#e91e63' },
+      { name: 'Supreme',   icon: '👑',  min: 100000000, cashback: 0.015,  hourly: 3000,dailyMult: 5.0,  class: 'platinum', cssVar: 'linear-gradient(45deg,#d4af37,#fff)' },
     ];
 
     function getVipLevel(wagered) {
@@ -5269,29 +5418,126 @@
       return { ...VIP_LEVELS[0], index: 0 };
     }
 
+    // ============================================================
+    // CASHBACK SYSTEM — ліміт 50₴/ставка, 5000₴/тиждень
+    // ============================================================
+    const CASHBACK_MAX_PER_BET  = 50;    // грн
+    const CASHBACK_MAX_PER_WEEK = 5000;  // грн
+
+    function getCashbackEnabled() {
+      try { return localStorage.getItem('cashback_enabled') !== 'false'; } catch(e) { return true; }
+    }
+    function setCashbackEnabled(val) {
+      try { localStorage.setItem('cashback_enabled', val ? 'true' : 'false'); } catch(e) {}
+    }
+
     function addWager(amount) {
-      // Відслідковуємо загальну суму ставок і нараховуємо кешбек
       const wagered = (userData.totalWagered || 0) + amount;
       const vip = getVipLevel(wagered);
-      const cashback = Math.floor(amount * vip.cashback);
-      const updates = { totalWagered: wagered };
-      if(cashback > 0) {
-        updates.balance = (userData.balance || 0) + cashback;
-        // Показуємо кешбек тоастер
-        setTimeout(() => {
-          const t = document.createElement('div');
-          t.className = 'toast success cashback-toast';
-          t.innerHTML = `<span>💰 VIP кешбек: +${cashback} ₴</span>`;
-          document.getElementById('toast-container').appendChild(t);
-          setTimeout(() => t.remove(), 3000);
-        }, 500);
-      }
-      // Перевіряємо підвищення рівня
       const prevVip = getVipLevel(userData.totalWagered || 0);
+      const updates = { totalWagered: wagered };
+
+      // Cashback (only if enabled by user)
+      if(vip.cashback > 0 && getCashbackEnabled()) {
+        // Raw cashback for this bet
+        const rawCashback = Math.floor(amount * vip.cashback);
+        // Clamp per-bet
+        const betCashback = Math.min(rawCashback, CASHBACK_MAX_PER_BET);
+        if(betCashback > 0) {
+          // Check weekly limit
+          const weeklyUsed = userData.cashbackWeekUsed || 0;
+          const weekStart  = userData.cashbackWeekStart || 0;
+          const now = Date.now();
+          const oneWeek = 7 * 24 * 3600 * 1000;
+          const isNewWeek = (now - weekStart) >= oneWeek;
+          const currentWeekUsed = isNewWeek ? 0 : weeklyUsed;
+          const canAdd = Math.max(0, CASHBACK_MAX_PER_WEEK - currentWeekUsed);
+          const finalCashback = Math.min(betCashback, canAdd);
+          if(finalCashback > 0) {
+            // Accumulate pending cashback (user claims it from cashier)
+            const pending = (userData.cashbackPending || 0) + finalCashback;
+            updates.cashbackPending   = pending;
+            updates.cashbackWeekUsed  = currentWeekUsed + finalCashback;
+            updates.cashbackWeekStart = isNewWeek ? now : weekStart;
+          }
+        }
+      }
+
+      // VIP level up
       if(vip.index > prevVip.index) {
-        setTimeout(() => notify(`🎉 Вітаємо! Ваш VIP рівень підвищено до ${vip.icon} ${vip.name}!`, 'success'), 700);
+        setTimeout(() => notify(`🎉 VIP підвищено до ${vip.icon} ${vip.name}!`, 'success'), 700);
       }
       db.ref('users/' + currentUser).update(updates);
+    }
+
+    // Claim cashback from cashier
+    function claimCashback() {
+      const pending = userData.cashbackPending || 0;
+      if(pending <= 0) return notify('Немає накопиченого кешбеку', 'info');
+      db.ref('users/'+currentUser).update({
+        balance: (userData.balance||0) + pending,
+        cashbackPending: 0,
+        cashbackTotalClaimed: (userData.cashbackTotalClaimed||0) + pending
+      });
+      playSound('win');
+      notify(`💰 Кешбек отримано: +${formatNumber(pending)} ₴`, 'success');
+      addToHistory('Кешбек: +'+pending);
+      updateCashierCashbackUI();
+    }
+
+    function toggleCashback(el) {
+      const enabled = el.checked;
+      setCashbackEnabled(enabled);
+      notify(enabled ? '💰 Кешбек увімкнено' : '💰 Кешбек вимкнено', 'info');
+    }
+
+    function updateCashierCashbackUI() {
+      const pending   = userData.cashbackPending || 0;
+      const weekUsed  = userData.cashbackWeekUsed || 0;
+      const weekStart = userData.cashbackWeekStart || Date.now();
+      const daysLeft  = Math.max(0, Math.ceil((7*24*3600000 - (Date.now()-weekStart)) / 86400000));
+      const weekLeft  = Math.max(0, CASHBACK_MAX_PER_WEEK - weekUsed);
+
+      const el = document.getElementById('cashierCashbackPanel');
+      if(!el) return;
+      const vip = getVipLevel(userData.totalWagered||0);
+      const enabled = getCashbackEnabled();
+
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div style="font-size:15px;font-weight:bold;color:var(--green);">💰 Кешбек</div>
+            <div style="font-size:10px;color:#555;margin-top:2px;">${vip.icon} ${vip.name} • ${(vip.cashback*100).toFixed(1)}% з ставки</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <span style="font-size:11px;color:#777;">${enabled?'Увімкнено':'Вимкнено'}</span>
+            <div class="toggle-switch" style="width:40px;height:22px;"><input type="checkbox" ${enabled?'checked':''} onchange="toggleCashback(this)"><div class="toggle-slider"></div></div>
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;color:#555;margin-bottom:3px;">Накопичено</div>
+            <div style="font-size:18px;font-weight:900;color:var(--green);">${formatNumber(pending)}₴</div>
+          </div>
+          <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;color:#555;margin-bottom:3px;">Тижн. ліміт</div>
+            <div style="font-size:18px;font-weight:900;color:var(--accent);">${formatNumber(weekLeft)}₴</div>
+          </div>
+          <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:9px;color:#555;margin-bottom:3px;">Скидання</div>
+            <div style="font-size:18px;font-weight:900;color:#777;">${daysLeft}д</div>
+          </div>
+        </div>
+        <div style="background:#050a05;border:1px solid #0d2a0d;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#555;">
+          ℹ️ Ліміт кешбеку: <b style="color:var(--green);">${CASHBACK_MAX_PER_BET}₴</b> за ставку •
+          <b style="color:var(--green);">${formatNumber(CASHBACK_MAX_PER_WEEK)}₴</b>/тиждень
+        </div>
+        <button class="btn-green" onclick="claimCashback()" ${pending<=0?'disabled style="opacity:0.5;"':''}>
+          💰 ЗАБРАТИ ${formatNumber(pending)} ₴
+        </button>
+        <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;">
+          Всього отримано: ${formatNumber(userData.cashbackTotalClaimed||0)} ₴
+        </div>`;
     }
 
     function updateVipUI() {
@@ -5300,6 +5546,8 @@
       const nextVip = VIP_LEVELS[Math.min(vip.index + 1, VIP_LEVELS.length - 1)];
       
       // Значок у профілі
+      const slotikyHeaderEl = document.getElementById('headerSlotiky');
+      if(slotikyHeaderEl) slotikyHeaderEl.textContent = formatNumber(userData.slotiky||0);
       const badge = document.getElementById('profileVipBadge');
       if(badge) badge.innerHTML = `<span class="vip-badge vip-${vip.class}">${vip.icon} ${vip.name}</span>`;
 
@@ -5646,8 +5894,10 @@
       if(id==='tower') { towerReset(); setTimeout(()=>{if(document.getElementById('towerStartArea'))document.getElementById('towerStartArea').classList.remove('hidden');},50); }
       if(id==='hilo') { hiloState=null; document.getElementById('hiloGameArea')?.classList.add('hidden'); }
       if(id==='dice') { updateDiceUI(); }
+      if(id==='slotiky') { initSlotiky(); }
+      if(id==='tournaments') { loadTournamentsV2(); loadTourneyStatsBar(); }
       if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
-      if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); }
+      if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); setTimeout(()=>updateCashierCashbackUI(),300); }
       if(id==='monopoly-mp') { loadMpRooms(); }
       if(id==='notifications') { renderNotifs(); }
       if(id==='settings') { loadSettings(); }
@@ -7708,6 +7958,7 @@
     // ===== CASHIER SUB-TABS =====
     // ============================================================
     function switchCashierTab(tab, el) {
+      if(tab === 'cashback') updateCashierCashbackUI();
       document.querySelectorAll('.cashier-tab-btn').forEach(b => b.classList.remove('active'));
       if(el) el.classList.add('active');
       ['deposit','withdraw','markets'].forEach(t => {
@@ -8278,6 +8529,12 @@
       mma:        { icon:'🥊', name:'UFC/MMA',    espnUrl:'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard', league:'UFC' },
       baseball:   { icon:'⚾', name:'MLB',        espnUrl:'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard', league:'MLB' },
       football:   { icon:'🏈', name:'NFL',        espnUrl:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', league:'NFL' },
+      // ESPORTS — немає ESPN API, використовуємо fallback
+      csgo:       { icon:'🎮', name:'CS2',        espnUrl: null, league:'BLAST Premier / ESL' },
+      dota2:      { icon:'⚔️', name:'Dota 2',     espnUrl: null, league:'Dota Pro Circuit' },
+      lol:        { icon:'🏆', name:'LoL',         espnUrl: null, league:'LEC / LCK / LPL' },
+      valorant:   { icon:'🔫', name:'Valorant',    espnUrl: null, league:'VCT Champions' },
+      efootball:  { icon:'⚡', name:'eFootball',   espnUrl: null, league:'eFootball League' },
     };
 
     // Хороші фіксовані матчі як fallback (реалістичні)
@@ -8340,6 +8597,37 @@
         { id:'nfl1', home:'Kansas City Chiefs',  away:'San Francisco 49ers',league:'NFL Playoffs',homeOdds:1.75, drawOdds:null, awayOdds:2.10, matchTime:null, isLive:false },
         { id:'nfl2', home:'Dallas Cowboys',      away:'Philadelphia Eagles', league:'NFL',         homeOdds:2.00, drawOdds:null, awayOdds:1.80, matchTime:null, isLive:false },
         { id:'nfl3', home:'Baltimore Ravens',    away:'Cincinnati Bengals',  league:'NFL',         homeOdds:1.85, drawOdds:null, awayOdds:1.95, matchTime:null, isLive:false },
+      ],
+      // ===== ESPORTS =====
+      csgo: [
+        { id:'cs1', home:'Natus Vincere',  away:'FaZe Clan',       league:'BLAST Premier',      homeOdds:2.10, drawOdds:null, awayOdds:1.75, matchTime:null, isLive:false },
+        { id:'cs2', home:'Team Vitality',  away:'G2 Esports',      league:'ESL Pro League',     homeOdds:1.85, drawOdds:null, awayOdds:1.95, matchTime:null, isLive:false },
+        { id:'cs3', home:'Liquid',         away:'Cloud9',           league:'BLAST Premier',      homeOdds:1.70, drawOdds:null, awayOdds:2.20, matchTime:null, isLive:false },
+        { id:'cs4', home:'MOUZ',           away:'Heroic',           league:'ESL Pro League',     homeOdds:2.00, drawOdds:null, awayOdds:1.82, matchTime:null, isLive:false },
+        { id:'cs5', home:'Spirit',         away:'Virtus.pro',       league:'ESL One',            homeOdds:1.60, drawOdds:null, awayOdds:2.35, matchTime:null, isLive:false },
+      ],
+      dota2: [
+        { id:'d1', home:'Team Spirit',    away:'OG',               league:'ESL One Bangkok',     homeOdds:1.65, drawOdds:null, awayOdds:2.25, matchTime:null, isLive:false },
+        { id:'d2', home:'Gaimin Gladiators',away:'Nigma Galaxy',   league:'DPC WEU',            homeOdds:1.80, drawOdds:null, awayOdds:2.00, matchTime:null, isLive:false },
+        { id:'d3', home:'Team Liquid',    away:'Alliance',          league:'DPC League',          homeOdds:1.55, drawOdds:null, awayOdds:2.50, matchTime:null, isLive:false },
+        { id:'d4', home:'Tundra Esports', away:'Entity',            league:'DPC WEU',            homeOdds:1.90, drawOdds:null, awayOdds:1.90, matchTime:null, isLive:false },
+      ],
+      lol: [
+        { id:'l1', home:'G2 Esports',    away:'Fnatic',            league:'LEC Spring',          homeOdds:1.75, drawOdds:null, awayOdds:2.10, matchTime:null, isLive:false },
+        { id:'l2', home:'T1',            away:'Gen.G',             league:'LCK Spring',          homeOdds:2.00, drawOdds:null, awayOdds:1.80, matchTime:null, isLive:false },
+        { id:'l3', home:'BLG',           away:'JDG',               league:'LPL Spring',          homeOdds:1.85, drawOdds:null, awayOdds:1.95, matchTime:null, isLive:false },
+        { id:'l4', home:'Cloud9',        away:'100 Thieves',        league:'LCS Spring',          homeOdds:1.90, drawOdds:null, awayOdds:1.90, matchTime:null, isLive:false },
+      ],
+      valorant: [
+        { id:'v1', home:'Sentinels',      away:'NRG Esports',       league:'VCT Americas',       homeOdds:1.95, drawOdds:null, awayOdds:1.85, matchTime:null, isLive:false },
+        { id:'v2', home:'Fnatic',         away:'Team Liquid',        league:'VCT EMEA',           homeOdds:2.10, drawOdds:null, awayOdds:1.74, matchTime:null, isLive:false },
+        { id:'v3', home:'Paper Rex',      away:'DRX',                league:'VCT Pacific',        homeOdds:1.80, drawOdds:null, awayOdds:2.00, matchTime:null, isLive:false },
+        { id:'v4', home:'Evil Geniuses',  away:'LOUD',               league:'VCT Americas',       homeOdds:2.20, drawOdds:null, awayOdds:1.68, matchTime:null, isLive:false },
+      ],
+      efootball: [
+        { id:'ef1', home:'FC Barcelona eS', away:'Real Madrid eS',  league:'eFootball League',   homeOdds:2.00, drawOdds:null, awayOdds:1.82, matchTime:null, isLive:false },
+        { id:'ef2', home:'Man City eS',     away:'Chelsea eS',       league:'eFootball Cup',      homeOdds:1.75, drawOdds:null, awayOdds:2.10, matchTime:null, isLive:false },
+        { id:'ef3', home:'PSG eS',          away:'Bayern eS',        league:'eFootball Champions',homeOdds:2.15, drawOdds:null, awayOdds:1.72, matchTime:null, isLive:false },
       ],
     };
 
@@ -8536,7 +8824,10 @@
             <div style="height:100%;background:${confColor};width:${m.confidence||65}%;transition:width 1s;"></div>
           </div>
         </div>
-        ${isLive ? `<button onclick="openLiveView('${m.id}')" style="width:100%;margin-top:8px;padding:8px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:12px;font-weight:bold;cursor:pointer;">🔴 LIVE ПЕРЕГЛЯД</button>` : ''}
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          ${isLive ? `<button onclick="openLiveView('${m.id}')" style="flex:1;padding:8px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:11px;font-weight:bold;cursor:pointer;">🔴 LIVE</button>` : ''}
+          <button onclick="openStreamViewer('${m.sport}','${m.home.replace(/'/g,"\'")} vs ${m.away.replace(/'/g,"\'")} ')" style="${isLive?'flex:1;':'width:100%;'}padding:8px;background:#1a0a2e;border:1px solid #5a20c0;border-radius:8px;color:#c9a0ff;font-size:11px;font-weight:bold;cursor:pointer;">📺 СТРІМ</button>
+        </div>
         ${isFinal ? `<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">🏁 Матч завершено</div>` : ''}
       `;
     }
@@ -8904,6 +9195,417 @@
         jackEl.textContent = formatNumber(base) + '₴';
       }
     }
+
+
+    // ============================================================
+    // DAILY CLEANUP: чат підтримки + сповіщення (раз на день)
+    // ============================================================
+    function runDailyCleanup() {
+      const CLEANUP_KEY = 'slotok_last_cleanup';
+      const now = Date.now();
+      const lastClean = parseInt(localStorage.getItem(CLEANUP_KEY)||'0');
+      const ONE_DAY = 24*60*60*1000;
+      if(now - lastClean < ONE_DAY) return; // Already cleaned today
+
+      // Clear all support chats (admin-level: each user's chat)
+      db.ref('support_chats').once('value', snap => {
+        const all = snap.val() || {};
+        const promises = Object.keys(all).map(uid => db.ref('support_chats/'+uid).remove());
+        Promise.all(promises).then(() => console.log('Support chats cleared'));
+      });
+
+      // Clear notifications from Firebase
+      db.ref('notifications').remove();
+
+      // Clear local notifications
+      try {
+        localStorage.removeItem('slotok_notifs');
+        allNotifs = [];
+        updateNotifBadge();
+      } catch(e) {}
+
+      localStorage.setItem(CLEANUP_KEY, String(now));
+      console.log('Daily cleanup done');
+    }
+
+
+    // ============================================================
+    // ===== STREAM VIEWER =====
+    // ============================================================
+    const STREAM_SOURCES = {
+      soccer: [
+        { name:'Footbal TV', icon:'📺', url:'https://www.youtube.com/embed/live_stream?channel=UCqZQlzSHbVJrwrn5XvzrzcA&autoplay=1', type:'youtube' },
+        { name:'ESPN Goals', icon:'⚽', url:'https://www.twitch.tv/embed/espnfc/chat', type:'twitch' },
+        { name:'Sky Sports', icon:'🌐', url:'https://www.bbc.co.uk/sport/football', type:'web' },
+      ],
+      csgo: [
+        { name:'ESL CS2', icon:'🎮', url:'https://player.twitch.tv/?channel=ESL_CSGO&parent=' + location.hostname, type:'twitch' },
+        { name:'BLAST CS2', icon:'💥', url:'https://player.twitch.tv/?channel=BLASTPremier&parent=' + location.hostname, type:'twitch' },
+        { name:'cs2 Clips', icon:'🎯', url:'https://www.youtube.com/embed?listType=search&list=CS2+match+live&autoplay=1', type:'youtube' },
+      ],
+      dota2: [
+        { name:'DPC League', icon:'⚔️', url:'https://player.twitch.tv/?channel=dota2&parent=' + location.hostname, type:'twitch' },
+        { name:'Twitch Dota', icon:'🟣', url:'https://player.twitch.tv/?channel=BeyondTheSummit&parent=' + location.hostname, type:'twitch' },
+      ],
+      lol: [
+        { name:'LoL Esports', icon:'🏆', url:'https://player.twitch.tv/?channel=lolesports&parent=' + location.hostname, type:'twitch' },
+        { name:'LEC Live', icon:'⚡', url:'https://player.twitch.tv/?channel=LEC&parent=' + location.hostname, type:'twitch' },
+      ],
+      valorant: [
+        { name:'VCT', icon:'🔫', url:'https://player.twitch.tv/?channel=valorant&parent=' + location.hostname, type:'twitch' },
+        { name:'Valorant Live', icon:'🎯', url:'https://player.twitch.tv/?channel=valorant_jpn&parent=' + location.hostname, type:'twitch' },
+      ],
+      basketball: [
+        { name:'NBA TV', icon:'🏀', url:'https://www.youtube.com/embed?listType=search&list=NBA+highlights+live&autoplay=1', type:'youtube' },
+      ],
+      hockey: [
+        { name:'NHL Network', icon:'🏒', url:'https://www.youtube.com/embed?listType=search&list=NHL+game+live&autoplay=1', type:'youtube' },
+      ],
+      default: [
+        { name:'YouTube Live', icon:'📺', url:'https://www.youtube.com/embed?listType=search&list=sports+live&autoplay=1', type:'youtube' },
+        { name:'Twitch Sports', icon:'🟣', url:'https://player.twitch.tv/?channel=nba&parent=' + location.hostname, type:'twitch' },
+      ]
+    };
+
+    function openStreamViewer(sport, matchTitle) {
+      const modal = document.getElementById('streamViewerModal');
+      const titleEl = document.getElementById('streamTitle');
+      const sourcesEl = document.getElementById('streamSourcesList');
+      const icon = (typeof SPORT_META !== 'undefined' && SPORT_META[sport]) ? SPORT_META[sport].icon : '🎮';
+
+      if(titleEl) titleEl.textContent = icon + ' ' + (matchTitle || 'Live трансляція');
+
+      const sources = STREAM_SOURCES[sport] || STREAM_SOURCES.default;
+
+      // Build source buttons
+      if(sourcesEl) {
+        sourcesEl.innerHTML = sources.map((s,i) =>
+          `<button onclick="loadStreamSource(${i},'${sport}')" style="flex-shrink:0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 12px;color:#ccc;font-size:12px;cursor:pointer;white-space:nowrap;" id="streamBtn_${i}">
+            ${s.icon} ${s.name}
+          </button>`
+        ).join('');
+      }
+
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Auto-load first source
+      if(sources.length) loadStreamSource(0, sport);
+    }
+
+    function loadStreamSource(idx, sport) {
+      const sources = STREAM_SOURCES[sport] || STREAM_SOURCES.default;
+      const s = sources[idx];
+      if(!s) return;
+
+      // Highlight active button
+      document.querySelectorAll('[id^="streamBtn_"]').forEach((b,i) => {
+        b.style.borderColor = i === idx ? 'var(--accent)' : '#333';
+        b.style.color = i === idx ? 'var(--accent)' : '#ccc';
+      });
+
+      const area = document.getElementById('streamEmbedArea');
+      if(!area) return;
+
+      if(s.type === 'twitch' || s.type === 'youtube') {
+        area.innerHTML = `
+          <iframe src="${s.url}" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" onerror="this.parentElement.innerHTML='<div style=\'text-align:center;color:#555;padding:40px;\'>📺<br><br>Трансляція недоступна.<br><a href=\'${s.url.replace('embed/','watch?v=').replace('player.','').replace('?channel=','/')}\' target=\'_blank\' style=\'color:var(--accent);\'>Відкрити на сайті ↗</a></div>'">
+          </iframe>`;
+      } else {
+        area.innerHTML = `
+          <div style="text-align:center;padding:30px;">
+            <div style="font-size:36px;margin-bottom:12px;">${s.icon}</div>
+            <div style="font-size:14px;color:#ccc;margin-bottom:16px;">${s.name}</div>
+            <a href="${s.url}" target="_blank" style="display:inline-block;background:var(--accent);color:#000;font-weight:bold;padding:12px 24px;border-radius:12px;font-size:14px;text-decoration:none;">
+              📺 Відкрити трансляцію ↗
+            </a>
+          </div>`;
+      }
+    }
+
+    function closeStreamViewer() {
+      const modal = document.getElementById('streamViewerModal');
+      if(modal) {
+        modal.classList.add('hidden');
+        // Stop stream
+        const area = document.getElementById('streamEmbedArea');
+        if(area) area.innerHTML = '';
+      }
+      document.body.style.overflow = '';
+    }
+
+
+
+    // ============================================================
+    // ===== СЛОТІКИ — внутрішня валюта =====
+    // ============================================================
+    const SLOTIKY_PRICE = 10000000; // 10M UAH per 1 slotik
+
+    const SLOTIKY_SHOP_ITEMS = [
+      { id:'avatar_gold',    name:'Золотий аватар',      icon:'👑', price:2,  desc:'Ексклюзивна золота рамка',   type:'cosmetic' },
+      { id:'avatar_diamond', name:'Diamond аватар',      icon:'💎', price:5,  desc:'Алмазна рамка профілю',       type:'cosmetic' },
+      { id:'username_color', name:'Кольоровий нік',       icon:'🌈', price:3,  desc:'Веселка у чаті',              type:'cosmetic' },
+      { id:'chat_emoji_x2',  name:'Подвійні емодзі чату', icon:'😎', price:1,  desc:'+20 доп. емодзі в чаті',     type:'feature'  },
+      { id:'vip_boost',      name:'VIP Прискорення',      icon:'🚀', price:8,  desc:'2x вагер рахується 7 днів',  type:'boost'    },
+      { id:'cashback_boost', name:'Кешбек x2',            icon:'💰', price:4,  desc:'Подвоєний кешбек 3 дні',     type:'boost'    },
+      { id:'badge_whale',    name:'Значок "Кит"',          icon:'🐋', price:10, desc:'Рідкісний значок у профілі', type:'cosmetic' },
+      { id:'daily_x3',       name:'Щоденний бонус x3',    icon:'🎁', price:3,  desc:'Утричі більше щодня 7 днів', type:'boost'    },
+      { id:'lootbox_ultra',  name:'Ultra Лут-бокс',        icon:'📦', price:2,  desc:'Ексклюзивний лут-бокс',      type:'item'     },
+      { id:'name_frame',     name:'Рамка "Supreme"',       icon:'🔱', price:15, desc:'Supreme рамка для імені',    type:'cosmetic' },
+    ];
+
+    function initSlotiky() {
+      const bal = document.getElementById('slotikyBalance');
+      if(bal) bal.textContent = formatNumber(userData.slotiky || 0);
+      renderSlotikyShop();
+    }
+
+    function buySlotiky(amount) {
+      const prices = { 1: 10000000, 5: 50000000, 10: 95000000, 50: 450000000 };
+      const cost = prices[amount] || amount * SLOTIKY_PRICE;
+      const bal = userData.balance || 0;
+      if(bal < cost) {
+        notify(`❌ Недостатньо коштів! Потрібно ${formatNumber(cost)} ₴`, 'error');
+        return;
+      }
+      // Confirm
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+      modal.innerHTML = `
+        <div style="background:#111;border:1px solid #5a20c0;border-radius:20px;padding:24px;max-width:320px;width:100%;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">🪙</div>
+          <div style="font-size:18px;font-weight:bold;color:#c9a0ff;margin-bottom:8px;">Купити ${amount} Слотік${amount>1?'ів':''}?</div>
+          <div style="font-size:14px;color:#888;margin-bottom:20px;">Вартість: <b style="color:#fff;">${formatNumber(cost)} ₴</b></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:12px;background:#1a1a1a;border:1px solid #333;border-radius:10px;color:#aaa;cursor:pointer;">Скасувати</button>
+            <button onclick="confirmBuySlotiky(${amount},${cost});this.closest('div[style*=fixed]').remove();" style="padding:12px;background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;">✅ Купити</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function confirmBuySlotiky(amount, cost) {
+      db.ref('users/'+currentUser).update({
+        balance:  (userData.balance  || 0) - cost,
+        slotiky:  (userData.slotiky  || 0) + amount,
+      });
+      playSound('bonus');
+      notify(`🪙 Куплено ${amount} Слотік${amount>1?'ів':''}!`, 'success');
+      addToHistory(`Куплено ${amount} Слотік${amount>1?'ів':''}: -${formatNumber(cost)}₴`);
+      setTimeout(()=>{ const b=document.getElementById('slotikyBalance'); if(b) b.textContent=formatNumber((userData.slotiky||0)+amount); }, 300);
+    }
+
+    function renderSlotikyShop() {
+      const grid = document.getElementById('slotikyShopGrid'); if(!grid) return;
+      const owned = userData.slotikyItems || {};
+      grid.innerHTML = SLOTIKY_SHOP_ITEMS.map(item => {
+        const isOwned = owned[item.id];
+        const typeColor = item.type==='boost'?'#f39c12':item.type==='cosmetic'?'#c9a0ff':item.type==='feature'?'#27ae60':'#4a90e2';
+        return `<div style="background:linear-gradient(180deg,#0d0520,#050010);border:1px solid ${isOwned?'#27ae60':'#3a1080'};border-radius:14px;padding:14px;position:relative;">
+          ${isOwned?'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:#27ae60;font-weight:bold;">✅ Є</div>':''}
+          <div style="font-size:28px;margin-bottom:6px;">${item.icon}</div>
+          <div style="font-size:12px;font-weight:bold;color:#fff;margin-bottom:3px;">${item.name}</div>
+          <div style="font-size:10px;color:#666;margin-bottom:8px;">${item.desc}</div>
+          <div style="font-size:11px;color:#c9a0ff;font-weight:bold;margin-bottom:8px;">🪙 ${item.price} Слотік${item.price>1?'ів':''}</div>
+          <button onclick="buyShopItem('${item.id}',${item.price})" ${isOwned?'disabled':''} style="width:100%;padding:7px;background:${isOwned?'#1a1a1a':'linear-gradient(135deg,#5a20c0,#8040e0)'};border:none;border-radius:8px;color:${isOwned?'#555':'#fff'};font-size:11px;font-weight:bold;cursor:${isOwned?'default':'pointer'};">${isOwned?'Придбано':'Купити'}</button>
+        </div>`;
+      }).join('');
+    }
+
+    function buyShopItem(itemId, price) {
+      const currentSlotiky = userData.slotiky || 0;
+      if(currentSlotiky < price) { notify(`❌ Недостатньо слотіків! Потрібно ${price} 🪙`, 'error'); return; }
+      const item = SLOTIKY_SHOP_ITEMS.find(i=>i.id===itemId); if(!item) return;
+      const owned = userData.slotikyItems || {};
+      owned[itemId] = true;
+      db.ref('users/'+currentUser).update({ slotiky: currentSlotiky - price, slotikyItems: owned });
+      playSound('win');
+      notify(`🎉 Придбано: ${item.icon} ${item.name}!`, 'success');
+      setTimeout(renderSlotikyShop, 300);
+    }
+
+    // ============================================================
+    // ===== ТУРНІР — ПОВНА СИСТЕМА =====
+    // ============================================================
+    let activeTournament = null; // tournament the user joined
+
+    const TOURNEY_GAMES = [
+      { id:'t_crash',   name:'Турнір Краш',   icon:'🚀', desc:'Множник × точки',    game:'crash',   pointMult: 1    },
+      { id:'t_slots',   name:'Турнір Слоти',  icon:'🎰', desc:'Виграш → очки',      game:'slots',   pointMult: 0.5  },
+      { id:'t_mines',   name:'Турнір Міни',   icon:'💣', desc:'Відкрий клітинки',   game:'mines',   pointMult: 2    },
+      { id:'t_plinko',  name:'Турнір Плінко', icon:'🔻', desc:'Множник × ставку',   game:'plinko',  pointMult: 1.5  },
+      { id:'t_tower',   name:'Турнір Вежа',   icon:'🗼', desc:'Рівень × ставку',    game:'tower',   pointMult: 3    },
+      { id:'t_limbo',   name:'Турнір Лімбо',  icon:'🎯', desc:'Мета × точки',       game:'limbo',   pointMult: 1    },
+      { id:'t_dice',    name:'Турнір Кубик',  icon:'🎲', desc:'Виграш → очки',      game:'dice',    pointMult: 1    },
+      { id:'t_hilo',    name:'Турнір Hi-Lo',  icon:'🃏', desc:'Серія → очки',       game:'hilo',    pointMult: 2    },
+    ];
+
+    function switchTourneyTab(tab, el) {
+      document.querySelectorAll('#tab-tournaments .cashier-tab-btn').forEach(b=>b.classList.remove('active'));
+      if(el) el.classList.add('active');
+      ['active','mine','games'].forEach(t => {
+        const p = document.getElementById('tourney-panel-'+t);
+        if(p) p.classList.toggle('hidden', t!==tab);
+      });
+      if(tab==='active') loadTournamentsV2();
+      if(tab==='mine')   loadMyTournaments();
+      if(tab==='games')  renderTourneyGames();
+    }
+
+    function loadTournamentsV2() {
+      db.ref('tournaments').once('value', snap => {
+        const data = snap.val();
+        const list = document.getElementById('tournamentsList');
+        if(!list) return;
+        if(!data) { list.innerHTML = '<div style="color:#555;padding:30px;text-align:center;">Немає активних турнірів</div>'; return; }
+        list.innerHTML = '';
+        Object.entries(data).forEach(([id, t]) => {
+          const endTime = t.startTime + t.duration * 3600000;
+          const msLeft = endTime - Date.now();
+          const hoursLeft = Math.max(0, Math.floor(msLeft / 3600000));
+          const minsLeft  = Math.max(0, Math.floor((msLeft % 3600000) / 60000));
+          const isActive  = msLeft > 0;
+          const card = document.createElement('div');
+          card.className = 'tournament-card';
+          card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font-size:16px;font-weight:bold;">${t.icon||'🏆'} ${t.name}</div>
+              <span style="font-size:10px;background:${isActive?'rgba(76,217,100,0.2)':'rgba(255,59,48,0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:10px;font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
+            </div>
+            <div style="background:linear-gradient(135deg,#1a1200,#0d0800);border-radius:10px;padding:12px;margin-bottom:10px;">
+              <div style="font-size:24px;font-weight:900;color:var(--accent);text-align:center;">🏆 ${formatNumber(t.prize)} ₴</div>
+              <div style="font-size:10px;color:#555;text-align:center;margin-top:2px;">Перше місце</div>
+            </div>
+            <div style="font-size:11px;color:#777;margin-bottom:10px;">
+              ⏱ ${isActive ? `Залишилось: ${hoursLeft}год ${minsLeft}хв` : 'Турнір завершено'} •
+              👥 Ігри: ${(t.allowedGames||['crash','slots','mines']).join(', ')}
+            </div>
+            <div id="t-lb-${id}" style="margin-bottom:10px;"></div>
+            ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+          `;
+          list.appendChild(card);
+          loadTournamentLeaderboard(id);
+        });
+      });
+    }
+
+    function loadMyTournaments() {
+      const el = document.getElementById('myTournamentsList'); if(!el) return;
+      db.ref('tournament_scores').once('value', snap => {
+        const all = snap.val() || {};
+        const mine = Object.entries(all).filter(([tid,scores]) => scores && scores[currentUser] !== undefined);
+        if(!mine.length) { el.innerHTML = '<div style="color:#555;padding:30px;text-align:center;">Ви не берете участі в жодному турнірі</div>'; return; }
+        el.innerHTML = mine.map(([tid, scores]) => {
+          const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+          const myPos  = sorted.findIndex(([u])=>u===currentUser)+1;
+          const myScore= scores[currentUser]||0;
+          return `<div class="tournament-card">
+            <div style="font-size:13px;font-weight:bold;margin-bottom:6px;">Турнір: ${tid}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-size:11px;color:#555;">Ваші очки</div><div style="font-size:22px;font-weight:900;color:var(--accent);">${formatNumber(myScore)}</div></div>
+              <div><div style="font-size:11px;color:#555;">Позиція</div><div style="font-size:22px;font-weight:900;color:${myPos===1?'var(--accent)':'#aaa'};">#${myPos}</div></div>
+              <div><div style="font-size:11px;color:#555;">Учасників</div><div style="font-size:22px;font-weight:900;color:#777;">${sorted.length}</div></div>
+            </div>
+          </div>`;
+        }).join('');
+      });
+    }
+
+    // Add tournament points after any win
+    function addTournamentPoints(gameId, winAmount, multiplier) {
+      if(!currentUser) return;
+      db.ref('tournament_scores').once('value', snap => {
+        const all = snap.val() || {};
+        Object.entries(all).forEach(([tid, scores]) => {
+          if(scores && scores[currentUser] !== undefined) {
+            // Check if game is allowed for this tournament
+            const tGame = TOURNEY_GAMES.find(g=>g.game===gameId);
+            const pts = tGame ? Math.floor((winAmount || 0) * tGame.pointMult / 100) : Math.floor((winAmount||0)/100);
+            if(pts > 0) {
+              db.ref('tournament_scores/'+tid+'/'+currentUser).set(firebase.database.ServerValue.increment(pts));
+              // Brief notification
+              const t = document.createElement('div');
+              t.className = 'toast success';
+              t.innerHTML = `<span>🏆 +${pts} очків турніру!</span>`;
+              document.getElementById('toast-container').appendChild(t);
+              setTimeout(()=>t.remove(), 2000);
+            }
+          }
+        });
+      });
+    }
+
+    function renderTourneyGames() {
+      const grid = document.getElementById('tourneyGamesGrid'); if(!grid) return;
+      // Check if user is in any active tournament
+      db.ref('tournament_scores').once('value', snap => {
+        const all = snap.val() || {};
+        const inTournament = Object.values(all).some(scores => scores && scores[currentUser] !== undefined);
+        if(!inTournament) {
+          grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#555;padding:30px;">
+            <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+            <div style="font-size:13px;color:#777;margin-bottom:8px;">Спочатку приєднайся до турніру</div>
+            <button class="btn-gold" onclick="switchTourneyTab('active',document.getElementById('ttb-active'))">🏆 Переглянути турніри</button>
+          </div>`;
+          return;
+        }
+        grid.innerHTML = TOURNEY_GAMES.map(g => `
+          <div onclick="openTourneyGame('${g.game}')" style="background:linear-gradient(135deg,#1a1200,#0d0800);border:1px solid #3a2800;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-10px;right:-10px;font-size:50px;opacity:0.08;">${g.icon}</div>
+            <div style="font-size:28px;margin-bottom:6px;">${g.icon}</div>
+            <div style="font-size:12px;font-weight:bold;color:#fff;margin-bottom:2px;">${g.name}</div>
+            <div style="font-size:10px;color:#777;margin-bottom:6px;">${g.desc}</div>
+            <div style="font-size:9px;background:rgba(212,175,55,0.2);color:var(--accent);border-radius:6px;padding:2px 6px;display:inline-block;">×${g.pointMult} очки</div>
+          </div>`).join('');
+      });
+    }
+
+    function openTourneyGame(gameId) {
+      // Check if user is in tournament
+      db.ref('tournament_scores').once('value', snap => {
+        const all = snap.val() || {};
+        const inT = Object.values(all).some(s => s && s[currentUser] !== undefined);
+        if(!inT) { notify('❌ Спочатку приєднайся до турніру!', 'error'); return; }
+        openGame(gameId);
+        notify(`🏆 Турнірний режим! Виграш → очки`, 'info');
+        activeTournament = 'active';
+      });
+    }
+
+    function joinTournamentV2(id, name, prize) {
+      db.ref('tournament_scores/'+id+'/'+currentUser).once('value', snap => {
+        if(!snap.exists()) {
+          db.ref('tournament_scores/'+id+'/'+currentUser).set(0);
+          notify(`🏆 Ви приєднались до "${name}"! Грай і заробляй очки!`, 'success');
+          activeTournament = id;
+        } else {
+          notify(`Ви вже в турнірі "${name}"`, 'info');
+        }
+      });
+    }
+
+    function loadTourneyStatsBar() {
+      const el = document.getElementById('myTourneyStats'); if(!el) return;
+      db.ref('tournament_scores').once('value', snap => {
+        const all = snap.val() || {};
+        let totalPoints = 0, bestPos = 999, tourCount = 0;
+        Object.entries(all).forEach(([tid, scores]) => {
+          if(!scores || scores[currentUser] === undefined) return;
+          tourCount++;
+          totalPoints += scores[currentUser]||0;
+          const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+          const pos = sorted.findIndex(([u])=>u===currentUser)+1;
+          if(pos < bestPos) bestPos = pos;
+        });
+        el.innerHTML = tourCount ? `
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Турнірів</div><div style="font-size:20px;font-weight:900;color:var(--accent);">${tourCount}</div></div>
+            <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Всього очків</div><div style="font-size:20px;font-weight:900;color:var(--green);">${formatNumber(totalPoints)}</div></div>
+            <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Кращий результат</div><div style="font-size:20px;font-weight:900;color:#f39c12;">#${bestPos===999?'—':bestPos}</div></div>
+          </div>` : '<div style="font-size:11px;color:#555;text-align:center;">Ще не брали участі в турнірах</div>';
+      });
+    }
+
 
     // Перевірка реферала при старті
     checkRefParam();
