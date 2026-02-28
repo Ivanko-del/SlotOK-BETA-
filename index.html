@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v43</title>
+  <title>SlotOK v44</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -180,7 +180,21 @@
     .chart-period-btn { padding:4px 10px;background:var(--input);border:1px solid var(--border);color:#777;border-radius:8px;font-size:11px;cursor:pointer; }
     .chart-period-btn.active { background:var(--accent);color:#000;border-color:var(--accent); }
 
-    /* ===== SPORT BETTING ===== */
+    /* ===== SPORT BETTING v2 — REAL ===== */
+    .match-card { background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
+    .match-card:hover { border-color:#444; }
+    .match-card.live { border-color:#e74c3c;box-shadow:0 0 12px rgba(231,76,60,0.15); }
+    .live-score-badge { background:#1a0505;border:2px solid #e74c3c;color:#fff;font-size:22px;font-weight:900;font-family:monospace;border-radius:12px;padding:6px 14px;letter-spacing:2px;animation:livePulse 2s infinite; }
+    @keyframes livePulse { 0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.4)} 50%{box-shadow:0 0 0 8px rgba(231,76,60,0)} }
+    .match-odds-row { display:flex;gap:6px; }
+    .odds-btn { flex:1;background:var(--input);border:2px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;transition:all 0.15s; }
+    .odds-btn:hover:not(.disabled) { border-color:var(--accent);background:rgba(212,175,55,0.08); }
+    .odds-btn.disabled { opacity:0.4;cursor:not-allowed; }
+    .odds-label { font-size:10px;color:#777;margin-bottom:4px; }
+    .odds-val { font-size:16px;font-weight:900;color:var(--accent); }
+    .ai-badge { background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.3);color:var(--accent);font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px; }
+
+        /* ===== SPORT BETTING ===== */
     .sport-tab-btn { padding:8px 14px;background:var(--input);border:1px solid var(--border);color:#777;border-radius:20px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0; }
     .sport-tab-btn.active { background:var(--green);color:#000;border-color:var(--green); }
     .match-card { background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer; }
@@ -520,7 +534,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v43</div>
+    <div>SlotOK v44</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -1008,61 +1022,94 @@
     <!-- SPORTS BETTING -->
     <div id="tab-sports" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
-      <h2 style="color:#27ae60;margin-bottom:4px;">⚽ Sports Betting</h2>
-      <div style="color:#777;font-size:12px;margin-bottom:12px;">Ставки на реальний спорт. AI аналізує матчі і дає прогнози!</div>
 
-      <!-- Sport selector -->
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;" id="sportTabsRow">
-        <button class="sport-tab-btn active" onclick="loadSportMatches('soccer',this)" data-sport="soccer">⚽ Футбол</button>
-        <button class="sport-tab-btn" onclick="loadSportMatches('basketball',this)" data-sport="basketball">🏀 Баскет</button>
-        <button class="sport-tab-btn" onclick="loadSportMatches('tennis',this)" data-sport="tennis">🎾 Теніс</button>
-        <button class="sport-tab-btn" onclick="loadSportMatches('hockey',this)" data-sport="hockey">🏒 Хокей</button>
-        <button class="sport-tab-btn" onclick="loadSportMatches('mma',this)" data-sport="mma">🥊 MMA</button>
-      </div>
-
-      <!-- AI insight banner -->
-      <div style="background:linear-gradient(135deg,#0d1a0d,#051505);border:1px solid #27ae60;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;">
-        <div style="font-size:24px;">🤖</div>
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;">
         <div>
-          <div style="font-size:12px;font-weight:bold;color:#27ae60;margin-bottom:4px;">AI Прогноз дня</div>
-          <div id="aiDailyTip" style="font-size:12px;color:#aaa;">Завантаження...</div>
+          <div style="font-size:22px;font-weight:900;color:var(--accent);">⚽ Реальний Спорт</div>
+          <div style="font-size:11px;color:#555;">Живі матчі • ШІ аналізує рахунок • Авто-закриття ставок</div>
         </div>
+        <button onclick="loadRealSportMatches(sportsCurrentSport, document.querySelector('.sport-tab-btn.active'))" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;color:#aaa;cursor:pointer;">🔄</button>
       </div>
 
-      <!-- Matches list -->
-      <div id="sportMatchesList">
-        <div style="text-align:center;padding:30px;color:#555;">⏳ Завантаження матчів...</div>
+      <!-- Sport tabs -->
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:2px;">
+        <button class="sport-tab-btn active" onclick="loadRealSportMatches('soccer',this)">⚽ Футбол</button>
+        <button class="sport-tab-btn" onclick="loadRealSportMatches('basketball',this)">🏀 Баскет</button>
+        <button class="sport-tab-btn" onclick="loadRealSportMatches('tennis',this)">🎾 Теніс</button>
+        <button class="sport-tab-btn" onclick="loadRealSportMatches('hockey',this)">🏒 Хокей</button>
+        <button class="sport-tab-btn" onclick="loadRealSportMatches('mma',this)">🥊 MMA</button>
       </div>
+
+      <!-- Loading indicator -->
+      <div id="sportsLoadingEl" class="hidden" style="text-align:center;padding:20px;color:#555;font-size:13px;">🤖 ШІ шукає реальні матчі...</div>
+
+      <!-- Live badge -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:#e74c3c;color:#fff;font-size:10px;font-weight:bold;padding:3px 10px;border-radius:20px;animation:pulse2 1.5s infinite;">🔴 LIVE</div>
+        <div style="font-size:10px;color:#555;">Натисніть LIVE для перегляду матчу в реальному часі</div>
+      </div>
+
+      <!-- Matches -->
+      <div id="sportMatchesList"></div>
 
       <!-- My bets -->
-      <div style="margin-top:14px;">
-        <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:8px;">📋 Мої ставки</div>
-        <div id="sportMyBets" style="color:#555;font-size:12px;">Немає активних ставок</div>
+      <div style="margin-top:14px;background:var(--box);border:1px solid var(--border);border-radius:14px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:bold;color:var(--accent);">📋 Мої ставки</div>
+          <button onclick="loadSportMyBets()" style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;">🔄 Оновити</button>
+        </div>
+        <div id="sportMyBets" style="color:#555;font-size:12px;">Немає ставок</div>
       </div>
     </div>
 
-    <!-- BET SLIP modal (full-screen) -->
-    <div id="betSlipModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:8000;display:flex;align-items:flex-end;">
-      <div style="width:100%;background:var(--box);border-radius:20px 20px 0 0;padding:20px;box-sizing:border-box;">
-        <div style="font-size:16px;font-weight:bold;color:var(--accent);margin-bottom:4px;">🎯 Зробити ставку</div>
-        <div id="betSlipMatchInfo" style="font-size:13px;color:#aaa;margin-bottom:12px;"></div>
-        <div id="betSlipOddsInfo" style="background:var(--input);border-radius:10px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;">
-          <span style="color:#aaa;font-size:13px;">Коефіцієнт</span>
-          <span style="font-size:18px;font-weight:900;color:var(--green);" id="betSlipOdds">x2.00</span>
+    </div>
+
+    <!-- BET SLIP modal -->
+    <div id="betSlipModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:8000;display:flex;align-items:flex-end;backdrop-filter:blur(4px);">
+      <div style="width:100%;background:var(--box);border-radius:24px 24px 0 0;padding:0;box-shadow:0 -8px 40px rgba(0,0,0,0.8);max-height:85vh;overflow-y:auto;box-sizing:border-box;">
+        <!-- Header -->
+        <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
+          <div style="font-size:18px;font-weight:900;color:var(--accent);">🎯 Купон ставки</div>
+          <button onclick="closeBetSlip()" style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;border:1px solid #333;color:#777;font-size:16px;cursor:pointer;">✕</button>
         </div>
-        <input id="betSlipAmount" type="number" value="100" placeholder="Ставка (₴)">
-        <div style="display:flex;justify-content:space-between;background:var(--input);border-radius:10px;padding:10px;margin-bottom:12px;">
-          <span style="color:#aaa;font-size:12px;">Потенційний виграш</span>
-          <span id="betSlipPotential" style="font-size:14px;font-weight:bold;color:var(--green);">0 ₴</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button class="btn-outline" onclick="closeBetSlip()">Скасувати</button>
-          <button class="btn-gold" onclick="confirmSportBet()">✅ СТАВКА</button>
+        <div style="padding:16px 20px 24px;">
+          <!-- Match info -->
+          <div id="betSlipMatchInfo" style="font-size:13px;color:#aaa;margin-bottom:14px;background:var(--input);border-radius:12px;padding:12px;"></div>
+          <!-- Odds display -->
+          <div style="background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#aaa;font-size:13px;">Коефіцієнт</span>
+            <span style="font-size:24px;font-weight:900;color:var(--accent);" id="betSlipOdds">×2.00</span>
+          </div>
+          <!-- Amount -->
+          <div style="font-size:11px;color:#555;margin-bottom:4px;">Сума ставки (₴)</div>
+          <input id="betSlipAmount" type="number" value="100" placeholder="Ставка (₴)" oninput="updateBetSlipPotential()" style="margin-bottom:4px;">
+          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=100;updateBetSlipPotential()">100₴</div>
+            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=500;updateBetSlipPotential()">500₴</div>
+            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=1000;updateBetSlipPotential()">1k₴</div>
+            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=5000;updateBetSlipPotential()">5k₴</div>
+          </div>
+          <!-- Potential win -->
+          <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#aaa;font-size:12px;">Потенційний виграш</span>
+            <span id="betSlipPotential" style="font-size:20px;font-weight:900;color:var(--green);">0 ₴</span>
+          </div>
+          <!-- AI tip in slip -->
+          <div style="background:#080d14;border:1px solid #0d1a2e;border-radius:12px;padding:10px;margin-bottom:14px;font-size:11px;color:#777;" id="betSlipAiTip">🤖 Завантаження аналізу...</div>
+          <!-- Buttons -->
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+            <button class="btn-outline" onclick="closeBetSlip()">Скасувати</button>
+            <button class="btn-gold" onclick="confirmRealSportBet()">✅ ПІДТВЕРДИТИ СТАВКУ</button>
+          </div>
+          <div style="font-size:10px;color:#333;text-align:center;margin-top:8px;">Ставки закриваються автоматично ШІ по завершенню матчу</div>
         </div>
       </div>
     </div>
 
-    <!-- ТОП -->
+    <!-- LIVE VIEW modal (built dynamically) -->
+
+        <!-- ТОП -->
     <div id="tab-top" class="screen hidden">
         <div class="box"><h3 style="text-align:center; color:#777; margin:0 0 15px;">🏆 РЕЙТИНГ ГРАВЦІВ</h3><table id="topTable"></table></div>
     </div>
@@ -2177,6 +2224,7 @@
                   setTimeout(initChatAutoClear, 500);
                   setTimeout(initAiSupport, 600);
                   setTimeout(initCurrencySystem, 200);
+                  setTimeout(checkPendingBetsOnStartup, 3000);
                 }
             }, (error) => {
                 notify("Помилка зв'язку з базою.", "error");
@@ -5498,7 +5546,7 @@
       if(id==='tower') { towerReset(); setTimeout(()=>{if(document.getElementById('towerStartArea'))document.getElementById('towerStartArea').classList.remove('hidden');},50); }
       if(id==='hilo') { hiloState=null; document.getElementById('hiloGameArea')?.classList.add('hidden'); }
       if(id==='dice') { updateDiceUI(); }
-      if(id==='sports') { loadSportMatches('soccer', document.querySelector('.sport-tab-btn')); loadSportMyBets(); }
+      if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
       if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); }
       if(id==='monopoly-mp') { loadMpRooms(); }
       if(id==='notifications') { renderNotifs(); }
@@ -7977,249 +8025,576 @@
     }
 
     // ============================================================
-    // ===== SPORTS BETTING (AI-assisted) =====
+    // ===== РЕАЛЬНИЙ СПОРТ — ПОВНА СИСТЕМА =====
     // ============================================================
-    let sportCurrentMatches = [];
-    let sportActiveBet = null;
 
-    // Sport icons
-    const SPORT_ICONS = { soccer:'⚽', basketball:'🏀', tennis:'🎾', hockey:'🏒', mma:'🥊' };
+    // ---- Стан системи ----
+    let realMatches       = {};       // matchId → matchObj
+    let pendingBets       = {};       // betId → betObj (з Firebase)
+    let liveTrackerTimer  = null;
+    let activeLiveMatchId = null;     // матч відкритий в Live-перегляді
+    let sportsCurrentSport = 'soccer';
+    let betSlipMatchRef   = null;
 
-    // Realistic teams by sport
-    const TEAMS = {
-      soccer: [['Реал Мадрид','Барселона'],['Манчестер Сіті','Арсенал'],['ПСЖ','Марсель'],['Байєрн','Дортмунд'],['Ювентус','Мілан'],['Ліон','Монако'],['Порту','Бенфіка'],['Аякс','Феєноорд']],
-      basketball: [['Lakers','Celtics'],['Bulls','Heat'],['Warriors','Suns'],['Bucks','Nets'],['Nuggets','Clippers'],['76ers','Raptors']],
-      tennis: [['Джокович','Алькарас'],['Синнер','Медведєв'],['Рублєв','Циципас'],['Надаль','Федерер']],
-      hockey: [['Канадієнс','Торонто'],['Дейтройт','Чикаго'],['Нью-Йорк','Бостон'],['Ванкувер','Едмонтон']],
-      mma: [['Іслам Махачев','Чарльз Олівейра'],['Александр Волкановскі','Ілія Топурія'],['Леон Едвардс','Белал Мухаммад']],
+    const SPORT_META = {
+      soccer:     { icon:'⚽', name:'Футбол',    api:'epl,la_liga,bundesliga,serie_a,champions_league,mls' },
+      basketball: { icon:'🏀', name:'Баскетбол', api:'nba' },
+      tennis:     { icon:'🎾', name:'Теніс',     api:'tennis' },
+      hockey:     { icon:'🏒', name:'Хокей',     api:'nhl' },
+      mma:        { icon:'🥊', name:'MMA/UFC',   api:'mma' },
     };
 
-    function generateMatches(sport) {
-      const teams = TEAMS[sport] || TEAMS.soccer;
-      return teams.slice(0, 5).map((pair, i) => {
-        // AI calculates "realistic" odds
-        const homeStrength = 0.4 + Math.random()*0.35;
-        const awayStrength = 1 - homeStrength - 0.1;
-        const drawStrength = 0.1 + Math.random()*0.15;
-        const total = homeStrength + awayStrength + drawStrength;
-        const homeOdds = parseFloat((0.93/((homeStrength+drawStrength*0.3)/total)).toFixed(2));
-        const drawOdds = sport==='soccer' ? parseFloat((0.93/(drawStrength/total)).toFixed(2)) : null;
-        const awayOdds = parseFloat((0.93/((awayStrength+drawStrength*0.3)/total)).toFixed(2));
+    // ============================================================
+    // КРОК 1: Завантажити реальні матчі через Claude AI + web_search
+    // ============================================================
+    async function fetchRealMatchesAI(sport) {
+      const meta = SPORT_META[sport] || SPORT_META.soccer;
+      const today = new Date().toLocaleDateString('uk-UA', { day:'numeric', month:'long', year:'numeric' });
+      const prompt = `Ти букмекерський аналітик. Сьогодні ${today}.
+Знайди 5 РЕАЛЬНИХ майбутніх або поточних матчів з ${meta.name} (ТОП ліги).
+Для кожного матчу вкажи реальні команди, лігу, час матчу, реальні коефіцієнти букмекерів.
 
-        // AI confidence
-        const confidence = Math.floor(55 + Math.random()*35);
-        const aiPick = homeOdds < awayOdds ? 'home' : 'away';
+Відповідай СТРОГО JSON (без markdown):
+{
+  "matches": [
+    {
+      "id": "уникальний_id",
+      "home": "Назва команди 1",
+      "away": "Назва команди 2", 
+      "league": "Ліга",
+      "matchTime": "2026-02-28T20:00:00",
+      "isLive": false,
+      "liveScore": null,
+      "liveMinute": null,
+      "homeOdds": 1.85,
+      "drawOdds": 3.40,
+      "awayOdds": 4.20,
+      "aiPick": "home",
+      "aiConfidence": 68,
+      "aiAnalysis": "Детальний аналіз 1-2 речення з реальними причинами"
+    }
+  ]
+}`;
 
-        // Match time (some live, some upcoming)
-        const startDelta = Math.floor(Math.random()*180) - 60; // -60 to +120 min
-        const isLive = startDelta < 0 && startDelta > -90;
-        const minute = isLive ? Math.abs(startDelta) : null;
-
-        return {
-          id: sport + '_' + i + '_' + Date.now(),
-          sport, home: pair[0], away: pair[1],
-          homeOdds, drawOdds, awayOdds,
-          isLive, minute,
-          aiPick, confidence,
-          aiReason: generateAiReason(pair[0], pair[1], aiPick, confidence)
-        };
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role:'user', content: prompt }]
+        })
       });
+
+      if(!res.ok) throw new Error('API error ' + res.status);
+      const data = await res.json();
+      // Collect all text blocks (after web search)
+      const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+      const json = text.replace(/```json|```/g,'').trim();
+      const idx = json.indexOf('{');
+      const parsed = JSON.parse(json.slice(idx));
+      return parsed.matches || [];
     }
 
-    function generateAiReason(home, away, pick, confidence) {
-      const team = pick === 'home' ? home : away;
-      const reasons = [
-        `${team} виграли 4 з останніх 5 матчів. Очікую перемогу з вірогідністю ${confidence}%.`,
-        `${team} мають перевагу по статистиці ударів і xG. AI дає ${confidence}% на перемогу.`,
-        `Аналіз форми і складу: ${team} у хорошій формі. Прогноз: ${confidence}% впевненість.`,
-        `Гра на полі ${team === home ? 'домашньому' : 'виїзному'}. Статистика сприяє ${team}.`,
-        `${team} лідирують у поточному чемпіонаті. Сильний склад, ${confidence}% шанс перемоги.`,
-      ];
-      return reasons[Math.floor(Math.random()*reasons.length)];
+    // ============================================================
+    // КРОК 2: Перевірити ЖИВИЙ рахунок матчу через web_search
+    // ============================================================
+    async function checkLiveScore(match) {
+      const prompt = `Знайди актуальний рахунок матчу ${match.home} vs ${match.away}.
+Відповідай JSON:
+{"homeScore":0,"awayScore":0,"minute":45,"status":"live","events":[{"minute":23,"type":"goal","team":"home","player":"Ім'я"},{"minute":67,"type":"yellowCard","team":"away","player":"Ім'я"}],"isFinished":false}
+Якщо матч не знайдений або ще не почався, поверни status:"notStarted". Тільки JSON, без тексту.`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 600,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role:'user', content: prompt }]
+        })
+      });
+      if(!res.ok) throw new Error('API error');
+      const data = await res.json();
+      const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+      const idx = text.indexOf('{');
+      if(idx < 0) return null;
+      return JSON.parse(text.slice(idx));
     }
 
-    function loadSportMatches(sport, btnEl) {
-      // Update tab buttons
-      document.querySelectorAll('.sport-tab-btn').forEach(b => b.classList.remove('active'));
-      if(btnEl) btnEl.classList.add('active');
+    // ============================================================
+    // КРОК 3: Settle bets — ШІ закриває ставки по результату
+    // ============================================================
+    async function settleMatchBets(match, finalScore) {
+      if(!currentUser) return;
+      // Load all pending bets for this match from Firebase
+      const snap = await db.ref('sport_bets').orderByChild('matchId').equalTo(match.id).once('value');
+      const bets = snap.val();
+      if(!bets) return;
 
-      sportCurrentMatches = generateMatches(sport);
-      renderSportMatches();
+      // Determine winner
+      const homeScore = finalScore.homeScore || 0;
+      const awayScore = finalScore.awayScore || 0;
+      let winner;
+      if(homeScore > awayScore)      winner = 'home';
+      else if(awayScore > homeScore) winner = 'away';
+      else                           winner = 'draw';
 
-      // Load AI daily tip via Claude API
-      loadAiDailyTip(sport);
-    }
-
-    async function loadAiDailyTip(sport) {
-      const tipEl = document.getElementById('aiDailyTip');
-      if(!tipEl) return;
-      tipEl.textContent = '🤖 Аналізую матчі...';
-
+      // Ask AI to verify result (double-check)
+      let verifiedWinner = winner;
       try {
-        const match = sportCurrentMatches[0];
-        const prompt = `Ти спортивний аналітик. Дай короткий прогноз (2-3 речення) на матч ${match.home} vs ${match.away} у ${SPORT_ICONS[sport]} ${sport}. Назви фаворита, причину і відсоток впевненості. Відповідай українською, коротко.`;
-
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const verifyPrompt = `Перевір підсумок матчу ${match.home} vs ${match.away}. Рахунок ${homeScore}:${awayScore}. Хто переміг? Відповідай JSON: {"winner":"home"|"away"|"draw","finalHome":${homeScore},"finalAway":${awayScore}}`;
+        const vRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 200,
-            messages: [{ role:'user', content: prompt }]
+            model:'claude-sonnet-4-20250514', max_tokens:150,
+            tools:[{type:'web_search_20250305',name:'web_search'}],
+            messages:[{role:'user',content:verifyPrompt}]
           })
         });
-        if(res.ok) {
-          const data = await res.json();
-          const text = data.content?.[0]?.text || '';
-          if(text) { tipEl.textContent = text; return; }
+        if(vRes.ok) {
+          const vData = await vRes.json();
+          const vText = (vData.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+          const vi = vText.indexOf('{'); if(vi>=0) { const vj = JSON.parse(vText.slice(vi)); verifiedWinner = vj.winner || winner; }
         }
       } catch(e) {}
 
-      // Fallback
-      const m = sportCurrentMatches[0];
-      if(m) tipEl.textContent = m.aiReason;
-    }
+      // Settle all bets
+      const settlePromises = Object.entries(bets).map(async ([betId, bet]) => {
+        if(bet.status !== 'pending') return;
+        const won = bet.outcome === verifiedWinner;
+        const payout = won ? Math.floor(bet.amount * bet.odds) : 0;
 
-    function renderSportMatches() {
-      const list = document.getElementById('sportMatchesList');
-      if(!list) return;
-      list.innerHTML = '';
+        // Update bet record
+        await db.ref('sport_bets/'+betId).update({ status: won ? 'won' : 'lost', settledAt: Date.now(), finalScore: homeScore+':'+awayScore });
 
-      sportCurrentMatches.forEach(match => {
-        const card = document.createElement('div');
-        card.className = 'match-card';
-
-        const liveTag = match.isLive
-          ? `<span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;margin-right:6px;">🔴 LIVE ${match.minute}'</span>`
-          : '<span style="font-size:10px;color:#555;">Скоро</span>';
-
-        const aiTag = `<span class="ai-badge">🤖 ${match.confidence}%</span>`;
-        const aiTeam = match.aiPick === 'home' ? match.home : match.away;
-
-        let oddsHtml = `
-          <div class="match-odds-row">
-            <div class="odds-btn" onclick="openBetSlip('${match.id}','home','${match.home}','${match.homeOdds}','${match.home} vs ${match.away}')">
-              <div class="odds-label">${match.home.length>10?match.home.slice(0,10)+'...':match.home}</div>
-              <div class="odds-val">${match.homeOdds}</div>
-            </div>`;
-        if(match.drawOdds) {
-          oddsHtml += `<div class="odds-btn" onclick="openBetSlip('${match.id}','draw','Нічия','${match.drawOdds}','${match.home} vs ${match.away}')">
-              <div class="odds-label">Нічия</div>
-              <div class="odds-val">${match.drawOdds}</div>
-            </div>`;
+        // Credit user if won
+        if(won && bet.userId) {
+          await db.ref('users/'+bet.userId+'/balance').set(firebase.database.ServerValue.increment(payout));
+          // Notify if it's current user
+          if(bet.userId === currentUser) {
+            playSound('bonus');
+            notify(`⚽ ${match.home} ${homeScore}:${awayScore} ${match.away} — ВИ ВИГРАЛИ +${formatNumber(payout)}₴!`, 'success');
+            if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
+          }
+        } else if(bet.userId === currentUser) {
+          playSound('loss');
+          notify(`⚽ ${match.home} ${homeScore}:${awayScore} ${match.away} — Програш`, 'error');
         }
-        oddsHtml += `<div class="odds-btn" onclick="openBetSlip('${match.id}','away','${match.away}','${match.awayOdds}','${match.home} vs ${match.away}')">
-              <div class="odds-label">${match.away.length>10?match.away.slice(0,10)+'...':match.away}</div>
-              <div class="odds-val">${match.awayOdds}</div>
-            </div>
-          </div>`;
-
-        card.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            ${liveTag}
-            <div style="font-size:11px;color:#555;">${SPORT_ICONS[match.sport] || '🏆'} ${match.sport}</div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:14px;font-weight:bold;">${match.home}</span>
-            <span style="font-size:12px;color:#555;padding:0 8px;">vs</span>
-            <span style="font-size:14px;font-weight:bold;">${match.away}</span>
-          </div>
-          <div style="font-size:11px;color:#555;margin-bottom:8px;">
-            🤖 AI фаворит: <b style="color:var(--green);">${aiTeam}</b>${aiTag}
-          </div>
-          ${oddsHtml}`;
-        list.appendChild(card);
+        addToHistory(`Спорт ${bet.team}: ${won?'+'+payout:'-'+bet.amount}`);
       });
-    }
+      await Promise.all(settlePromises);
 
-    let betSlipData = null;
-
-    function openBetSlip(matchId, outcome, team, odds, matchTitle) {
-      betSlipData = { matchId, outcome, team, odds: parseFloat(odds), matchTitle };
-      const modal = document.getElementById('betSlipModal');
-      document.getElementById('betSlipMatchInfo').textContent = matchTitle + ' → ' + team;
-      document.getElementById('betSlipOdds').textContent = 'x' + odds;
-      const betInp = document.getElementById('betSlipAmount');
-      betInp.oninput = updateBetSlipPotential;
-      updateBetSlipPotential();
-      modal.classList.remove('hidden');
-    }
-
-    function updateBetSlipPotential() {
-      if(!betSlipData) return;
-      const amt = parseInt(document.getElementById('betSlipAmount').value) || 0;
-      document.getElementById('betSlipPotential').textContent = formatNumber(Math.floor(amt * betSlipData.odds)) + ' ₴';
-    }
-
-    function closeBetSlip() {
-      document.getElementById('betSlipModal').classList.add('hidden');
-      betSlipData = null;
-    }
-
-    function confirmSportBet() {
-      if(!betSlipData) return;
-      const bet = validateBet(document.getElementById('betSlipAmount').value);
-      if(!bet) return;
-      db.ref('users/'+currentUser).update({balance: userData.balance - bet});
-      addWager(bet);
-
-      // Simulate result after 30 sec–5 min (for demo: resolve instantly with weighted random)
-      const match = sportCurrentMatches.find(m => m.id === betSlipData.matchId);
-      const wins = match ? resolveMatchBet(match, betSlipData.outcome) : (Math.random() < 0.45);
-      const potential = Math.floor(bet * betSlipData.odds);
-      const betRecord = {
-        matchTitle: betSlipData.matchTitle,
-        team: betSlipData.team,
-        odds: betSlipData.odds,
-        bet, potential,
-        result: wins ? 'won' : 'lost',
-        time: Date.now()
-      };
-      db.ref('users/'+currentUser+'/sportBets').push(betRecord);
-
-      if(wins) {
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(potential));
-        playSound('bonus');
-        notify('⚽ '+betSlipData.team+' переміг! +'+formatNumber(potential)+'₴', 'success');
-        addToHistory('Sport '+betSlipData.team+': +'+potential);
-        if(potential >= 500) addToWinFeed('Sport', potential, betSlipData.odds);
-      } else {
-        playSound('loss');
-        notify('❌ '+betSlipData.team+' програв(-ла). -'+formatNumber(bet)+'₴', 'error');
-        addToHistory('Sport '+betSlipData.team+': -'+bet);
-      }
-
-      closeBetSlip();
-      loadSportMyBets();
-    }
-
-    function resolveMatchBet(match, outcome) {
-      // Probability based on odds (implied)
-      const prob = 0.93 / (outcome==='home' ? match.homeOdds : outcome==='away' ? match.awayOdds : match.drawOdds);
-      return Math.random() < prob;
-    }
-
-    function loadSportMyBets() {
-      const el = document.getElementById('sportMyBets'); if(!el) return;
-      db.ref('users/'+currentUser+'/sportBets').limitToLast(5).once('value', snap => {
-        const bets = snap.val();
-        if(!bets) { el.innerHTML = '<div style="color:#555;font-size:12px;">Немає ставок</div>'; return; }
-        el.innerHTML = '';
-        Object.values(bets).reverse().forEach(b => {
-          const div = document.createElement('div');
-          div.style.cssText = 'background:var(--box);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;';
-          const statusColor = b.result==='won'?'var(--green)':b.result==='lost'?'var(--red)':'var(--accent)';
-          const statusText = b.result==='won'?'✅ +'+formatNumber(b.potential)+'₴':b.result==='lost'?'❌ -'+formatNumber(b.bet)+'₴':'⏳ Очікується';
-          div.innerHTML =
-            '<div><div style="font-size:12px;font-weight:bold;">' + b.team + '</div>' +
-            '<div style="font-size:10px;color:#555;">' + b.matchTitle + ' • x' + b.odds + '</div></div>' +
-            '<div style="font-size:13px;font-weight:bold;color:' + statusColor + ';">' + statusText + '</div>';
-          el.appendChild(div);
-        });
-      });
+      // Mark match as finished in Firebase
+      await db.ref('sport_matches/'+match.id).update({ status:'finished', finalScore: homeScore+':'+awayScore });
+      notify(`🏁 Матч завершено: ${match.home} ${homeScore}:${awayScore} ${match.away}`, 'info');
     }
 
     // ============================================================
+    // UI — ВІДОБРАЖЕННЯ МАТЧІВ
+    // ============================================================
+    async function loadRealSportMatches(sport, btnEl) {
+      sportsCurrentSport = sport;
+      document.querySelectorAll('.sport-tab-btn').forEach(b => b.classList.remove('active'));
+      if(btnEl) btnEl.classList.add('active');
+
+      const listEl  = document.getElementById('sportMatchesList');
+      const loadEl  = document.getElementById('sportsLoadingEl');
+      if(listEl) listEl.innerHTML = '';
+      if(loadEl) { loadEl.classList.remove('hidden'); loadEl.textContent = '🤖 ШІ шукає реальні матчі...'; }
+
+      try {
+        const matches = await fetchRealMatchesAI(sport);
+        matches.forEach(m => { m.sport = sport; realMatches[m.id] = m; });
+        renderRealMatches(matches);
+
+        // Save to Firebase for settlement tracking
+        matches.forEach(m => { db.ref('sport_matches/'+m.id).set({...m, createdAt: Date.now()}); });
+
+        if(loadEl) loadEl.classList.add('hidden');
+
+        // Start live tracker for live matches
+        const liveOnes = matches.filter(m => m.isLive);
+        if(liveOnes.length) startLiveTracker(liveOnes[0]);
+      } catch(e) {
+        if(loadEl) { loadEl.textContent = '⚠️ Не вдалося завантажити. Перевірте з\'єднання.'; }
+        console.error('Sport fetch error:', e);
+      }
+    }
+
+    function renderRealMatches(matches) {
+      const listEl = document.getElementById('sportMatchesList');
+      if(!listEl) return;
+      listEl.innerHTML = '';
+      if(!matches.length) {
+        listEl.innerHTML = '<div style="text-align:center;color:#555;padding:40px;">Матчів не знайдено</div>';
+        return;
+      }
+      matches.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'match-card';
+        card.id = 'match-card-'+m.id;
+        card.innerHTML = buildMatchCardHTML(m);
+        listEl.appendChild(card);
+      });
+    }
+
+    function buildMatchCardHTML(m) {
+      const isLive = m.isLive || m.status==='live';
+      const isFinished = m.status==='finished';
+      const sport = SPORT_META[m.sport] || SPORT_META.soccer;
+      const hasDraw = m.sport === 'soccer';
+
+      const matchTimeStr = isFinished ? '🏁 Завершено'
+        : isLive ? `🔴 LIVE ${m.liveMinute||''}\'`
+        : ('🕐 ' + (m.matchTime ? new Date(m.matchTime).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'Скоро'));
+
+      const scoreBlock = (isLive || isFinished) && m.liveScore !== null
+        ? `<div class="live-score-badge">${m.liveScore?.home ?? 0} : ${m.liveScore?.away ?? 0}</div>`
+        : '';
+
+      const confColor = m.aiConfidence >= 70 ? 'var(--green)' : m.aiConfidence >= 55 ? '#f39c12' : '#e74c3c';
+      const aiTeam = m.aiPick==='home' ? m.home : m.aiPick==='away' ? m.away : 'Нічия';
+
+      const oddsRow = `
+        <div class="match-odds-row">
+          <div class="odds-btn ${isFinished?'disabled':''}" onclick="${isFinished?'':'openBetSlip(\''+m.id+'\',\'home\',\''+m.home.replace(/'/g,'\\\'')+'\')'}" >
+            <div class="odds-label">${shortName(m.home)}</div>
+            <div class="odds-val">${m.homeOdds}</div>
+          </div>
+          ${hasDraw ? `<div class="odds-btn ${isFinished?'disabled':''}" onclick="${isFinished?'':'openBetSlip(\''+m.id+'\',\'draw\',\'Нічия\')'}">
+            <div class="odds-label">X</div>
+            <div class="odds-val">${m.drawOdds||'3.40'}</div>
+          </div>` : ''}
+          <div class="odds-btn ${isFinished?'disabled':''}" onclick="${isFinished?'':'openBetSlip(\''+m.id+'\',\'away\',\''+m.away.replace(/'/g,'\\\'')+'\')'}" >
+            <div class="odds-label">${shortName(m.away)}</div>
+            <div class="odds-val">${m.awayOdds}</div>
+          </div>
+        </div>`;
+
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:10px;color:#555;">${sport.icon} ${m.league||''}</span>
+          <span style="font-size:11px;${isLive?'color:#e74c3c;font-weight:bold;':isFinished?'color:#555;':'color:#777;'}">${matchTimeStr}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:bold;text-align:center;">${m.home}</div>
+          <div style="text-align:center;">
+            ${scoreBlock || '<div style="font-size:11px;color:#555;padding:4px 8px;">vs</div>'}
+          </div>
+          <div style="font-size:14px;font-weight:bold;text-align:center;">${m.away}</div>
+        </div>
+        ${oddsRow}
+        <!-- AI аналіз -->
+        <div style="background:#0a0a0a;border-radius:10px;padding:8px 10px;margin-top:8px;border-left:3px solid ${confColor};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:11px;color:${confColor};font-weight:bold;">🤖 ШІ: ${aiTeam}</span>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <div style="width:50px;height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;">
+                <div style="width:${m.aiConfidence}%;height:100%;background:${confColor};"></div>
+              </div>
+              <span style="font-size:10px;color:${confColor};">${m.aiConfidence}%</span>
+            </div>
+          </div>
+          <div style="font-size:10px;color:#777;">${m.aiAnalysis||''}</div>
+        </div>
+        ${isLive ? `<button onclick="openLiveView('${m.id}')" style="width:100%;margin-top:8px;padding:8px;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:12px;font-weight:bold;cursor:pointer;">🔴 LIVE ПЕРЕГЛЯД</button>` : ''}
+      `;
+    }
+
+    function shortName(name) {
+      return name.length > 11 ? name.slice(0,10)+'…' : name;
+    }
+
+    // ============================================================
+    // LIVE TRACKER — оновлює рахунок кожні 45 секунд
+    // ============================================================
+    function startLiveTracker(match) {
+      if(liveTrackerTimer) clearInterval(liveTrackerTimer);
+      liveTrackerTimer = setInterval(async () => {
+        try {
+          const score = await checkLiveScore(match);
+          if(!score) return;
+          // Update match object
+          match.liveScore = { home: score.homeScore, away: score.awayScore };
+          match.liveMinute = score.minute;
+          match.status = score.isFinished ? 'finished' : 'live';
+          match.events = score.events || [];
+          realMatches[match.id] = match;
+
+          // Re-render card
+          const card = document.getElementById('match-card-'+match.id);
+          if(card) card.innerHTML = buildMatchCardHTML(match);
+
+          // Update live view if open
+          if(activeLiveMatchId === match.id) updateLiveView(match, score);
+
+          // Settle bets if finished
+          if(score.isFinished) {
+            clearInterval(liveTrackerTimer);
+            await settleMatchBets(match, score);
+          }
+        } catch(e) { console.warn('Live tracker error:', e); }
+      }, 45000); // 45 seconds
+    }
+
+    // ============================================================
+    // LIVE VIEW — повноекранний перегляд матчу
+    // ============================================================
+    function openLiveView(matchId) {
+      const match = realMatches[matchId];
+      if(!match) return;
+      activeLiveMatchId = matchId;
+      let modal = document.getElementById('liveViewModal');
+      if(!modal) {
+        modal = document.createElement('div');
+        modal.id = 'liveViewModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#030303;z-index:9500;overflow-y:auto;';
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = buildLiveViewHTML(match, []);
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Immediately update
+      checkLiveScore(match).then(score => { if(score) updateLiveView(match, score); }).catch(()=>{});
+    }
+
+    function buildLiveViewHTML(match, events) {
+      const homeS = match.liveScore?.home ?? 0;
+      const awayS = match.liveScore?.away ?? 0;
+      return `
+        <div style="background:#030303;min-height:100vh;padding:16px;padding-bottom:90px;box-sizing:border-box;">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <button onclick="closeLiveView()" style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;">⬅ Назад</button>
+            <div style="font-size:12px;color:#e74c3c;font-weight:bold;animation:pulse2 1s infinite;">🔴 LIVE</div>
+            <div style="font-size:11px;color:#555;">${SPORT_META[match.sport]?.icon||'🏆'} ${match.league||''}</div>
+          </div>
+
+          <!-- Scoreboard -->
+          <div style="background:linear-gradient(135deg,#0d1520,#0a1a0a);border:1px solid #1a3a1a;border-radius:20px;padding:24px 16px;text-align:center;margin-bottom:16px;">
+            <div style="font-size:11px;color:#555;margin-bottom:16px;" id="liveMatchMinute">⏱ ${match.liveMinute||0}\' хвилина</div>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:20px;">
+              <div>
+                <div style="font-size:13px;font-weight:bold;color:#fff;margin-bottom:8px;">${match.home}</div>
+                <div style="font-size:10px;color:#555;">Господарі</div>
+              </div>
+              <div id="liveScoreBoard" style="background:#000;border-radius:16px;padding:16px 20px;min-width:100px;">
+                <div style="font-size:40px;font-weight:900;font-family:monospace;letter-spacing:4px;color:#fff;">${homeS}<span style="color:#555;margin:0 4px;">:</span>${awayS}</div>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:bold;color:#fff;margin-bottom:8px;">${match.away}</div>
+                <div style="font-size:10px;color:#555;">Гості</div>
+              </div>
+            </div>
+            <!-- Mini stats bar -->
+            <div id="liveStatsBar" style="display:flex;gap:0;height:8px;border-radius:4px;overflow:hidden;margin-bottom:12px;">
+              <div style="background:#2ecc71;flex:${50};transition:flex 0.8s;"></div>
+              <div style="background:#e74c3c;flex:${50};transition:flex 0.8s;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;">
+              <span id="liveHomePoss">50%</span><span>Позиція</span><span id="liveAwayPoss">50%</span>
+            </div>
+          </div>
+
+          <!-- Events timeline -->
+          <div style="background:#0d0d0d;border-radius:16px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:bold;margin-bottom:10px;">📋 Події матчу</div>
+            <div id="liveEventsList" style="max-height:200px;overflow-y:auto;">
+              <div style="color:#555;font-size:12px;text-align:center;padding:20px;">⏳ Очікуємо події...</div>
+            </div>
+          </div>
+
+          <!-- Quick bet from live view -->
+          <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:16px;padding:14px;">
+            <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:10px;">⚡ Швидка ставка</div>
+            <div class="match-odds-row" style="gap:6px;">
+              <div class="odds-btn" onclick="openBetSlip('${match.id}','home','${match.home.replace(/'/g,"\\'")}')">
+                <div class="odds-label">${shortName(match.home)}</div><div class="odds-val">${match.homeOdds}</div>
+              </div>
+              ${match.sport==='soccer'?`<div class="odds-btn" onclick="openBetSlip('${match.id}','draw','Нічия')">
+                <div class="odds-label">X</div><div class="odds-val">${match.drawOdds||'3.40'}</div>
+              </div>`:''}
+              <div class="odds-btn" onclick="openBetSlip('${match.id}','away','${match.away.replace(/'/g,"\\'")}')">
+                <div class="odds-label">${shortName(match.away)}</div><div class="odds-val">${match.awayOdds}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateLiveView(match, score) {
+      const minEl  = document.getElementById('liveMatchMinute');
+      const sbEl   = document.getElementById('liveScoreBoard');
+      const evEl   = document.getElementById('liveEventsList');
+      const statEl = document.getElementById('liveStatsBar');
+      const homePEl = document.getElementById('liveHomePoss');
+      const awayPEl = document.getElementById('liveAwayPoss');
+
+      if(minEl) minEl.textContent = `⏱ ${score.minute||match.liveMinute||0}\' хвилина`;
+      if(sbEl) {
+        const h = score.homeScore ?? 0, a = score.awayScore ?? 0;
+        sbEl.innerHTML = `<div style="font-size:40px;font-weight:900;font-family:monospace;letter-spacing:4px;color:#fff;">${h}<span style="color:#555;margin:0 4px;">:</span>${a}</div>`;
+      }
+      if(evEl && score.events?.length) {
+        const typeIcons = { goal:'⚽', yellowCard:'🟨', redCard:'🟥', substitution:'🔄', penalty:'⚡', ownGoal:'😬' };
+        evEl.innerHTML = [...score.events].reverse().map(ev => {
+          const icon = typeIcons[ev.type] || '📌';
+          const side = ev.team === 'home' ? match.home : match.away;
+          return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #111;">
+            <div style="min-width:32px;font-size:11px;color:#555;text-align:center;">${ev.minute}'</div>
+            <div style="font-size:16px;">${icon}</div>
+            <div><div style="font-size:12px;font-weight:bold;">${ev.player||''}</div><div style="font-size:10px;color:#555;">${side}</div></div>
+          </div>`;
+        }).join('');
+      }
+      // Fake possession based on score
+      const hP = score.homeScore > score.awayScore ? 55 : score.awayScore > score.homeScore ? 45 : 50;
+      if(statEl) statEl.innerHTML = `<div style="background:#2ecc71;flex:${hP};transition:flex 0.8s;"></div><div style="background:#e74c3c;flex:${100-hP};transition:flex 0.8s;"></div>`;
+      if(homePEl) homePEl.textContent = hP+'%';
+      if(awayPEl) awayPEl.textContent = (100-hP)+'%';
+    }
+
+    function closeLiveView() {
+      const modal = document.getElementById('liveViewModal');
+      if(modal) modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      activeLiveMatchId = null;
+    }
+
+    // ============================================================
+    // BET SLIP — з реальним Firebase зберіганням
+    // ============================================================
+    let currentBetSlip = null;
+
+    function openBetSlip(matchId, outcome, team) {
+      const match = realMatches[matchId];
+      if(!match) return;
+      const odds = outcome==='home' ? match.homeOdds : outcome==='away' ? match.awayOdds : (match.drawOdds||3.40);
+      currentBetSlip = { matchId, outcome, team, odds: parseFloat(odds), match };
+
+      const modal = document.getElementById('betSlipModal');
+      const sport = SPORT_META[match.sport] || SPORT_META.soccer;
+      document.getElementById('betSlipMatchInfo').innerHTML =
+        `<div style="font-size:11px;color:#555;margin-bottom:4px;">${sport.icon} ${match.league||''}</div>` +
+        `<div style="font-weight:bold;">${match.home} vs ${match.away}</div>` +
+        `<div style="color:var(--green);margin-top:4px;">Ваша ставка: <b>${team}</b></div>`;
+      document.getElementById('betSlipOdds').textContent = 'x' + parseFloat(odds).toFixed(2);
+      updateBetSlipPotential();
+
+      // Show AI tip for this bet
+      loadBetSlipAiTip(match, outcome, team);
+      modal.classList.remove('hidden');
+    }
+
+    async function loadBetSlipAiTip(match, outcome, team) {
+      const tipEl = document.getElementById('betSlipAiTip');
+      if(!tipEl) return;
+      tipEl.textContent = '🤖 Аналізую...';
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            model:'claude-sonnet-4-20250514', max_tokens:200,
+            tools:[{type:'web_search_20250305',name:'web_search'}],
+            messages:[{role:'user', content:`Коротко (1 речення) оціни ставку на "${team}" у матчі ${match.home} vs ${match.away}. Реальна форма команд? Хороша чи погана ставка? Українською.`}]
+          })
+        });
+        const d = await res.json();
+        const t = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+        if(tipEl) tipEl.textContent = t || '🤖 Немає додаткового аналізу';
+      } catch(e) { if(tipEl) tipEl.textContent = '🤖 ' + (match.aiAnalysis||'Аналіз недоступний'); }
+    }
+
+    function confirmRealSportBet() {
+      if(!currentBetSlip) return;
+      const bet = validateBet(document.getElementById('betSlipAmount').value);
+      if(!bet) return;
+
+      db.ref('users/'+currentUser).update({balance: userData.balance - bet});
+      addWager(bet);
+
+      const betRecord = {
+        userId: currentUser,
+        matchId: currentBetSlip.matchId,
+        outcome: currentBetSlip.outcome,
+        team: currentBetSlip.team,
+        odds: currentBetSlip.odds,
+        amount: bet,
+        potential: Math.floor(bet * currentBetSlip.odds),
+        status: 'pending',
+        matchTitle: `${currentBetSlip.match.home} vs ${currentBetSlip.match.away}`,
+        sport: currentBetSlip.match.sport,
+        placedAt: Date.now()
+      };
+
+      db.ref('sport_bets').push(betRecord).then(() => {
+        playSound('click');
+        notify(`🎫 Ставку прийнято: ${bet}₴ на ${currentBetSlip.team} (×${currentBetSlip.odds.toFixed(2)})`, 'success');
+        closeBetSlip();
+        loadSportMyBets();
+
+        // Start tracking this match if not already
+        if(currentBetSlip.match && !liveTrackerTimer) {
+          startLiveTracker(currentBetSlip.match);
+        }
+      });
+    }
+
+    function loadSportMyBets() {
+      const el = document.getElementById('sportMyBets');
+      if(!el) return;
+      db.ref('sport_bets').orderByChild('userId').equalTo(currentUser).limitToLast(10).once('value', snap => {
+        const bets = snap.val();
+        if(!bets) { el.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Немає ставок</div>'; return; }
+        const sorted = Object.values(bets).sort((a,b) => b.placedAt - a.placedAt);
+        el.innerHTML = sorted.map(b => {
+          const statusColor = b.status==='won'?'var(--green)':b.status==='lost'?'var(--red)':'var(--accent)';
+          const statusTxt = b.status==='won'?`✅ +${formatNumber(b.potential)}₴`:b.status==='lost'?`❌ -${formatNumber(b.amount)}₴`:'⏳ Очікує';
+          const sportIcon = SPORT_META[b.sport]?.icon||'🏆';
+          return `<div style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:12px;font-weight:bold;">${sportIcon} ${b.team} <span style="font-size:10px;color:#555;">×${b.odds}</span></div>
+              <div style="font-size:10px;color:#555;">${b.matchTitle||''}</div>
+              <div style="font-size:10px;color:#555;">${new Date(b.placedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+            </div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:bold;color:${statusColor};">${statusTxt}</div><div style="font-size:10px;color:#555;">${b.amount}₴</div></div>
+          </div>`;
+        }).join('');
+      });
+    }
+
+    // Override old functions to route to real system
+    window.loadSportMatches = function(sport, btnEl) { loadRealSportMatches(sport, btnEl); };
+    window.confirmSportBet  = function() { confirmRealSportBet(); };
+
+    // Auto-check pending bets on startup
+    function checkPendingBetsOnStartup() {
+      if(!currentUser) return;
+      db.ref('sport_bets').orderByChild('userId').equalTo(currentUser).once('value', snap => {
+        const bets = snap.val() || {};
+        const pending = Object.values(bets).filter(b => b.status==='pending');
+        if(pending.length) {
+          notify(`⏳ У вас ${pending.length} незакритих ставок на спорт`, 'info');
+          // Try to settle each
+          pending.forEach(async bet => {
+            const matchSnap = await db.ref('sport_matches/'+bet.matchId).once('value');
+            const match = matchSnap.val();
+            if(match && match.status==='finished' && match.finalScore) {
+              const [hs,as] = match.finalScore.split(':').map(Number);
+              await settleMatchBets(match, {homeScore:hs, awayScore:as, isFinished:true});
+            }
+          });
+        }
+      });
+    }
+
+
+        // ============================================================
     // ===== AI SUPPORT CHAT =====
     // ============================================================
     let supportChatListener = null;
