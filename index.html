@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v40</title>
+  <title>SlotOK v41</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -472,7 +472,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v40</div>
+    <div>SlotOK v41</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -532,7 +532,20 @@
       <div class="home-panel" id="hp-chat">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div style="font-size:16px;font-weight:bold;color:var(--accent);">💬 Глобальний чат</div>
-          <div class="online-pill"><span id="onlineCount">—</span> онлайн</div>
+          <div class="online-pill" onclick="showOnlineUsers()" style="cursor:pointer;" title="Переглянути онлайн">
+            <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;"></span>
+            <span id="onlineCount">—</span> онлайн ▾
+          </div>
+        </div>
+        <!-- Online users dropdown -->
+        <div id="onlineUsersDropdown" class="hidden" style="position:relative;z-index:100;margin-bottom:8px;">
+          <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font-size:13px;font-weight:bold;color:var(--accent);">🟢 Зараз онлайн</div>
+              <button onclick="document.getElementById('onlineUsersDropdown').classList.add('hidden')" style="background:none;border:none;color:#777;font-size:18px;cursor:pointer;">✕</button>
+            </div>
+            <div id="onlineUsersList" style="display:flex;flex-wrap:wrap;gap:8px;max-height:200px;overflow-y:auto;"></div>
+          </div>
         </div>
         <div id="announceBanner" class="hidden" style="background:#1a1a00;border:1px solid var(--accent);border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--accent);"></div>
         <div class="chat-emoji-pick">
@@ -1169,7 +1182,7 @@
         </div>
       </div>
 
-      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v40 • Made with ❤️</div>
+      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v41 • Made with ❤️</div>
     </div>
 
 
@@ -1815,8 +1828,11 @@
                 loadNotifsFromStorage();
                 updateNotifBadge();
                 loadSettings();
-                initHomeTab();
-                initChatAutoClear();
+                if(!window._initDone) {
+                  window._initDone = true;
+                  setTimeout(initHomeTab, 100);
+                  setTimeout(initChatAutoClear, 500);
+                }
             }, (error) => {
                 notify("Помилка зв'язку з базою.", "error");
             });
@@ -1869,15 +1885,56 @@
     
     function playSound(type) { 
         try {
+            // Check settings - getSetting may not be available yet, use localStorage directly
+            try { const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}'); if(s.sounds===false) return; } catch(e){}
             if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if(audioCtx.state === 'suspended') audioCtx.resume(); 
-            const o = audioCtx.createOscillator(); 
-            const g = audioCtx.createGain(); 
-            o.connect(g); g.connect(audioCtx.destination); 
-            const t = audioCtx.currentTime; 
-            if(type === 'click'){ o.frequency.value = 600; g.gain.exponentialRampToValueAtTime(0.01, t+0.1); o.start(t); o.stop(t+0.1); } 
-            else if(type === 'win'){ o.type = 'triangle'; o.frequency.setValueAtTime(500, t); o.frequency.linearRampToValueAtTime(1000, t+0.5); g.gain.linearRampToValueAtTime(0, t+0.5); o.start(t); o.stop(t+0.5); } 
-        } catch(e) {} 
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            const t = audioCtx.currentTime;
+            if(type === 'click') {
+                o.frequency.value = 800; g.gain.setValueAtTime(0.15, t);
+                g.gain.exponentialRampToValueAtTime(0.01, t+0.08);
+                o.start(t); o.stop(t+0.08);
+            } else if(type === 'win') {
+                o.type = 'sine';
+                o.frequency.setValueAtTime(440, t);
+                o.frequency.linearRampToValueAtTime(880, t+0.1);
+                o.frequency.linearRampToValueAtTime(1320, t+0.25);
+                g.gain.setValueAtTime(0.25, t); g.gain.linearRampToValueAtTime(0, t+0.5);
+                o.start(t); o.stop(t+0.5);
+                // Second tone for big win
+                const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                o2.connect(g2); g2.connect(audioCtx.destination); o2.type = 'triangle';
+                o2.frequency.setValueAtTime(660, t+0.1); o2.frequency.linearRampToValueAtTime(1100, t+0.4);
+                g2.gain.setValueAtTime(0.15, t+0.1); g2.gain.linearRampToValueAtTime(0, t+0.5);
+                o2.start(t+0.1); o2.stop(t+0.5);
+            } else if(type === 'spin') {
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(200, t);
+                o.frequency.linearRampToValueAtTime(100, t+0.3);
+                g.gain.setValueAtTime(0.1, t); g.gain.linearRampToValueAtTime(0, t+0.3);
+                o.start(t); o.stop(t+0.3);
+            } else if(type === 'deal') {
+                o.frequency.setValueAtTime(600, t); o.frequency.setValueAtTime(400, t+0.05);
+                g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.01, t+0.1);
+                o.start(t); o.stop(t+0.1);
+            } else if(type === 'loss') {
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(300, t);
+                o.frequency.linearRampToValueAtTime(150, t+0.4);
+                g.gain.setValueAtTime(0.15, t); g.gain.linearRampToValueAtTime(0, t+0.4);
+                o.start(t); o.stop(t+0.4);
+            } else if(type === 'bonus') {
+                // Multi-tone fanfare
+                [440,554,659,880].forEach((freq, i) => {
+                    const oi = audioCtx.createOscillator(); const gi = audioCtx.createGain();
+                    oi.connect(gi); gi.connect(audioCtx.destination); oi.type = 'sine';
+                    oi.frequency.value = freq; gi.gain.setValueAtTime(0.2, t+i*0.1);
+                    gi.gain.linearRampToValueAtTime(0, t+i*0.1+0.15);
+                    oi.start(t+i*0.1); oi.stop(t+i*0.1+0.15);
+                });
+            }
+        } catch(e) {}
     }
     
     function validateBet(amount) { 
@@ -3018,38 +3075,58 @@
       const b = validateBet(document.getElementById('betAmountFortune').value);
       if(!b) return;
       db.ref('users/'+currentUser).update({balance: userData.balance - b});
+      addWager(b);
       fortuneSpinning = true;
       document.getElementById('fortuneBtn').disabled = true;
+      playSound('spin');
 
-      const winIdx = Math.floor(Math.random() * FORTUNE_SEGMENTS.length);
       const seg = FORTUNE_SEGMENTS.length;
       const arc = (2 * Math.PI) / seg;
-      const extraSpins = 5 * 2 * Math.PI;
-      const targetAngle = extraSpins + (seg - winIdx) * arc - arc/2;
-      const totalRotation = fortuneRotation + targetAngle;
-      const steps = 120, duration = 4000;
+      const winIdx = Math.floor(Math.random() * seg);
+
+      // Pointer (▼) is at TOP of wheel = angle -π/2 in canvas coordinates.
+      // Segment i is drawn from angle (rotation + i*arc) to (rotation + (i+1)*arc).
+      // For pointer to land in center of segment winIdx:
+      //   rotation_final + winIdx*arc + arc/2 = -π/2  (mod 2π)
+      //   rotation_final = -π/2 - winIdx*arc - arc/2
+      const neededRot = -Math.PI/2 - winIdx * arc - arc/2;
+
+      // How many radians to rotate forward from current position
+      let diff = ((neededRot - fortuneRotation) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+      if(diff < 0.3) diff += 2 * Math.PI; // at least one full segment
+
+      const totalRotation = fortuneRotation + 5 * 2 * Math.PI + diff;
+      const steps = 120, duration = 4500;
       let step = 0;
       const startRot = fortuneRotation;
 
       const anim = setInterval(() => {
         step++;
         const progress = step / steps;
-        const ease = 1 - Math.pow(1 - progress, 3);
+        const ease = 1 - Math.pow(1 - progress, 4);
         const current = startRot + (totalRotation - startRot) * ease;
         drawFortuneWheel(current);
         if(step >= steps) {
           clearInterval(anim);
-          fortuneRotation = totalRotation % (2 * Math.PI);
+          // Store exact final angle for next spin
+          fortuneRotation = ((neededRot % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+          drawFortuneWheel(fortuneRotation);
+
           const won = FORTUNE_SEGMENTS[winIdx];
           const win = Math.floor(b * won.mult);
-          document.getElementById('fortuneResult').innerHTML = `<span style="color:${win>=b?'var(--green)':'#aaa'}">${won.label} → ${win > 0 ? '+'+win+' ₴' : '0 ₴'}</span>`;
+          document.getElementById('fortuneResult').innerHTML =
+            `<span style="color:${win>0?'var(--green)':'var(--red)'}">${won.label} → ${win > 0 ? '+'+formatNumber(win)+' ₴' : '0 ₴'}</span>`;
           if(win > 0) {
             db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
-            playSound('win');
-            if(won.mult >= 10) notify(`🎉 ВЕЛИКИЙ ВИГРАШ: +${win} ₴!`, 'success');
-            else notify(`🎡 ${won.label}: +${win} ₴`, 'success');
-            addToHistory(`Fortune ${won.label}: +${win}`);
-          } else { addToHistory(`Fortune ${won.label}: -${b}`); }
+            playSound(won.mult >= 10 ? 'bonus' : 'win');
+            if(won.mult >= 10) notify('🎉 ВЕЛИКИЙ ВИГРАШ: +'+formatNumber(win)+' ₴!', 'success');
+            else notify('🎡 '+won.label+': +'+formatNumber(win)+' ₴', 'success');
+            addToHistory('Fortune '+won.label+': +'+win);
+            if(win >= 500) addToWinFeed('Fortune', win, won.mult);
+          } else {
+            playSound('loss');
+            addToHistory('Fortune '+won.label+': -'+b);
+          }
           fortuneSpinning = false;
           document.getElementById('fortuneBtn').disabled = false;
         }
@@ -3155,8 +3232,8 @@
           el.style.cssText = 'color:#555;font-size:11px;text-align:center;padding:6px 0;';
           el.textContent = m.text;
         } else {
-          el.className = 'chat-msg' + (isMe ? ' mine' : '') + (isAdmin ? ' admin-msg' : '') + (isBot ? ' bot-msg' : '');
-          const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : (isBot ? '#b57bee' : '#4a9eff'));
+          el.className = 'chat-msg' + (isMe ? ' mine' : '') + (isAdmin ? ' admin-msg' : '');
+          const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : '#4a9eff');
           const av = m.avatarEmoji || '👤';
           const avHtml = m.avatarUrl
             ? '<div class="chat-avatar-sm"><img src="' + m.avatarUrl + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
@@ -3196,9 +3273,11 @@
       });
 
       db.ref('online').on('value', snap => {
-        const count = snap.val() ? Object.keys(snap.val()).length : 0;
+        const data = snap.val() || {};
+        const users = Object.keys(data);
+        window._onlineUsers = users;
         const el = document.getElementById('onlineCount');
-        if(el) el.textContent = count;
+        if(el) el.textContent = users.length;
       });
       db.ref('online/'+currentUser).set(true);
       db.ref('online/'+currentUser).onDisconnect().remove();
@@ -3523,6 +3602,51 @@
       notify('🗑️ Бота видалено', 'info');
       loadBots();
     }
+
+    // ===== ONLINE USERS POPUP =====
+    function showOnlineUsers() {
+      const dropdown = document.getElementById('onlineUsersDropdown');
+      const listEl = document.getElementById('onlineUsersList');
+      if(!dropdown || !listEl) return;
+
+      const isOpen = !dropdown.classList.contains('hidden');
+      if(isOpen) { dropdown.classList.add('hidden'); return; }
+
+      dropdown.classList.remove('hidden');
+      listEl.innerHTML = '<div style="color:#555;font-size:12px;">Завантаження...</div>';
+
+      const users = window._onlineUsers || [];
+      if(!users.length) { listEl.innerHTML = '<div style="color:#555;font-size:12px;">Немає онлайн</div>'; return; }
+
+      // Fetch avatars for online users
+      listEl.innerHTML = '';
+      let loaded = 0;
+      users.slice(0, 30).forEach(name => {
+        db.ref('users/' + name + '/avatar').once('value', snap => {
+          const av = snap.val();
+          const avHtml = av && av.length > 4
+            ? '<img src="' + av + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">'
+            : (av || '👤');
+          const pill = document.createElement('div');
+          pill.style.cssText = 'display:flex;align-items:center;gap:6px;background:var(--box);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 4px;cursor:pointer;';
+          pill.onclick = () => { dropdown.classList.add('hidden'); openPublicProfile(name); };
+          pill.innerHTML =
+            '<div style="width:28px;height:28px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;">' + avHtml + '</div>' +
+            '<span style="font-size:12px;font-weight:bold;' + (name===currentUser?'color:var(--accent);':'') + '">' + name + (name===currentUser?' (я)':'') + '</span>' +
+            '<span style="width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;"></span>';
+          listEl.appendChild(pill);
+        });
+      });
+    }
+
+    // Close online dropdown on outside click
+    document.addEventListener('click', e => {
+      const dropdown = document.getElementById('onlineUsersDropdown');
+      const pill = e.target.closest('.online-pill');
+      if(dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && !pill) {
+        dropdown.classList.add('hidden');
+      }
+    });
 
     // ===== WIN FEED для тікера =====
     function addToWinFeed(game, amount, mult) {
@@ -5121,6 +5245,25 @@
       root.style.setProperty('--text', t.text);
       document.body.style.background = t.bg;
       document.body.style.color = t.text;
+      document.body.setAttribute('data-theme', theme);
+
+      // Apply theme-specific overrides inline for elements that use hardcoded colors
+      const styleId = 'theme-override-style';
+      let styleEl = document.getElementById(styleId);
+      if(!styleEl) { styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
+      styleEl.textContent = `
+        body, .header, .bottom-nav, .screen, .modal-content { background-color: ${t.bg} !important; color: ${t.text} !important; }
+        .box, .game-card, .game-thumb, .home-tabs, .home-tab-btn, .mp-size-btn,
+        .chat-box, .chat-msg, .mono-log, .news-card, .settings-section, .settings-row,
+        .bot-card, .cg-room-card, .mp-room-card, .vip-card, .notif-item { background-color: ${t.box} !important; border-color: ${t.border} !important; color: ${t.text} !important; }
+        input, select, textarea { background-color: ${t.input} !important; border-color: ${t.border} !important; color: ${t.text} !important; }
+        .home-tab-btn.active { background-color: ${t.input} !important; }
+        .chat-msg.mine { background: ${theme==='dark'?'rgba(212,175,55,0.06)':theme==='blue'?'rgba(100,150,255,0.1)':theme==='green'?'rgba(76,217,100,0.1)':theme==='red'?'rgba(255,100,80,0.1)':'rgba(0,100,200,0.1)'} !important; }
+        .chat-body-text { color: ${theme==='light'?'#333':'#ccc'} !important; }
+        .section-header { color: ${theme==='light'?'#555':'#777'} !important; }
+        .nav-item span:last-child { color: ${theme==='light'?'#555':'#777'} !important; }
+        .nav-item.active span { color: var(--accent) !important; }
+      `;
     }
 
     function setTheme(theme, el) {
@@ -5138,12 +5281,8 @@
       notify('🌐 Мову збережено', 'info');
     }
 
-    // Патч playSound — поважати налаштування
-    const _origPlaySound = playSound;
-    window.playSound = function(type) {
-      if(!getSetting('sounds', true)) return;
-      _origPlaySound(type);
-    };
+    // Звуки - поважати налаштування (пряма заміна функції)
+    // (patch applied below - playSound checks settings inline)
 
     // ============================================
     // ===== СПОВІЩЕННЯ =====
@@ -5751,16 +5890,25 @@
 
     // Авто-очищення чату кожні 24 год через Firebase scheduled timestamp
     function initChatAutoClear() {
+      // Auto-clear: only runs for admins, max once per 24h per server timestamp
+      const isAdminUser = (currentUser.toLowerCase()==='theivankoo' || (userData && userData.isAdmin===true));
+      if(!isAdminUser) return; // Non-admins skip
       db.ref('chat_meta/lastClear').once('value', snap => {
         const last = snap.val() || 0;
         const now = Date.now();
         if(now - last > 24 * 3600 * 1000) {
-          const isAdminUser = (currentUser.toLowerCase()==='theivankoo' || (userData && userData.isAdmin===true));
-          if(isAdminUser) {
-            db.ref('lobby_chat').remove();
-            db.ref('chat_meta/lastClear').set(now);
-            db.ref('lobby_chat').push({ system: true, text: '🧹 Чат очищено автоматично', time: now });
-          }
+          // Use transaction to prevent multiple admins clearing at once
+          db.ref('chat_meta/lastClear').transaction(current => {
+            if(!current || now - current > 24 * 3600 * 1000) return now;
+            return; // abort - someone else already cleared
+          }, (err, committed) => {
+            if(committed && !err) {
+              db.ref('lobby_chat').remove();
+              setTimeout(() => {
+                db.ref('lobby_chat').push({ system: true, text: '🧹 Чат очищено автоматично', time: Date.now() });
+              }, 500);
+            }
+          });
         }
       });
     }
@@ -6464,20 +6612,44 @@
 
     function createCardRoom() {
       const bet = parseInt(document.getElementById('cgBet').value) || 200;
-      if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
+      if(bet < 10) return notify('Мінімум 10₴', 'error');
+      if((userData.balance||0) < bet) return notify('Недостатньо коштів: потрібно ' + bet + '₴', 'error');
       db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
+      addWager(bet);
       const roomId = 'cg_' + currentUser + '_' + Date.now();
       cgRoomId = roomId;
+      // Generate deck and hands on creation
       const deck = makeCardDeck();
       const p1Hand = deck.splice(0,6), p2Hand = deck.splice(0,6);
       const trumpCard = deck[deck.length-1];
       db.ref('card_rooms/' + roomId).set({
         host: currentUser, guest: null, bet, status: 'waiting', created: Date.now(),
-        deck: deck.map(c=>c.id), p1Hand: p1Hand.map(c=>c.id), p2Hand: p2Hand.map(c=>c.id),
-        trump: trumpCard.id, trumpSuit: trumpCard.suit, table: [], turn: currentUser, attacker: currentUser
-      });
-      notify('🃏 Кімнату створено! Чекаємо суперника...', 'info');
-      listenCardRoom(roomId);
+        deckIds: deck.map(c=>c.id),
+        p1HandIds: p1Hand.map(c=>c.id),
+        p2HandIds: p2Hand.map(c=>c.id),
+        trumpId: trumpCard.id, trumpSuit: trumpCard.suit,
+        table: [], turn: currentUser, attacker: currentUser
+      }).then(() => {
+        notify('🃏 Кімнату створено! Код: ' + roomId.slice(-6), 'success');
+        // Show waiting screen in online lobby
+        const roomsList = document.getElementById('cgRoomsList');
+        if(roomsList) roomsList.innerHTML = '<div style="background:linear-gradient(135deg,#0d2a0d,#051505);border:1px solid var(--green);border-radius:10px;padding:15px;text-align:center;">' +
+          '<div style="font-size:28px;margin-bottom:8px;">⏳</div>' +
+          '<div style="color:var(--green);font-weight:bold;margin-bottom:4px;">Кімната створена!</div>' +
+          '<div style="color:#777;font-size:12px;margin-bottom:12px;">Ставка: ' + bet + '₴ • Чекаємо суперника...</div>' +
+          '<button class="btn-red" onclick="cancelCardRoom(\'' + roomId + '\',' + bet + ')" style="padding:10px;">❌ Скасувати</button>' +
+          '</div>';
+        listenCardRoom(roomId);
+      }).catch(e => { notify('Помилка: ' + e.message, 'error'); });
+    }
+
+    function cancelCardRoom(roomId, bet) {
+      db.ref('card_rooms/' + roomId).update({ status: 'cancelled' });
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bet));
+      if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e){} cgListener = null; }
+      cgRoomId = null;
+      notify('❌ Кімнату скасовано, ставку повернено', 'info');
+      loadCardRooms();
     }
 
     function loadCardRooms() {
@@ -6507,20 +6679,39 @@
     }
 
     function listenCardRoom(roomId) {
-      if(cgListener) { db.ref('card_rooms/'+roomId).off('value', cgListener); cgListener = null; }
+      if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e){} cgListener = null; }
       cgListener = db.ref('card_rooms/'+roomId).on('value', snap => {
         const r = snap.val(); if(!r) return;
-        if(r.status==='playing') {
+        if(r.status === 'cancelled') {
+          notify('❌ Кімнату скасовано', 'error');
+          if(cgListener) { db.ref('card_rooms/'+roomId).off('value',cgListener); cgListener=null; }
+          cgReset(); return;
+        }
+        if(r.status === 'playing' && r.guest) {
           document.getElementById('cgOnlineLobby').classList.add('hidden');
           document.getElementById('cgStartScreen').classList.add('hidden');
           document.getElementById('cgGameScreen').classList.remove('hidden');
+          // Setup local cgState for this player
+          if(!cgState) {
+            const allCards = {}; // rebuild card objects from IDs
+            for(const s of SUITS) for(const rk of RANKS) { const id=rk+s; allCards[id]={suit:s,rank:rk,id}; }
+            const isHost = r.host === currentUser;
+            const myHandIds = isHost ? r.p1HandIds : r.p2HandIds;
+            cgState = {
+              bet: r.bet, deck: [], table: [], trump: allCards[r.trumpId],
+              trumpSuit: r.trumpSuit, gameOver: false, aiMode: false,
+              playerHand: (myHandIds||[]).map(id=>allCards[id]).filter(Boolean),
+              aiHand: [] // opponent's hand tracked server-side
+            };
+          }
           cgLog('🃏 Гра з ' + (r.host===currentUser?r.guest:r.host) + ' почалась!');
+          renderCgBoard();
         }
-        if(r.status==='finished') {
-          const isWin = r.winner===currentUser;
-          const prize = Math.floor(r.bet*1.85);
-          if(isWin) { playSound('win'); notify('🃏 Ви виграли! +'+prize+'₴','success'); cgLog('🏆 ВИ ВИГРАЛИ!'); }
-          else { notify('😔 Програш у Дурня','error'); cgLog('😔 Суперник переміг'); }
+        if(r.status === 'finished') {
+          const isWin = r.winner === currentUser;
+          const prize = Math.floor(r.bet * 1.85);
+          if(isWin) { playSound('bonus'); notify('🃏 Ви виграли! +'+formatNumber(prize)+'₴','success'); cgLog('🏆 ВИ ВИГРАЛИ! +'+formatNumber(prize)+'₴'); }
+          else { playSound('loss'); notify('😔 Програш у Дурня','error'); cgLog('😔 Суперник переміг...'); }
           if(cgListener) { db.ref('card_rooms/'+roomId).off('value',cgListener); cgListener=null; }
           setTimeout(cgReset, 3000);
         }
