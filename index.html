@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v46</title>
+  <title>SlotOK v47</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -624,13 +624,108 @@
     /* ===== ESPORTS BADGE ===== */
     .esport-badge { background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;color:#c9a0ff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:8px;display:inline-block;margin-left:4px; }
 
+
+    /* ===== LIVE MATCH TRACKER ===== */
+    .tracker-container {
+      background: linear-gradient(180deg, #0a0f0a 0%, #111811 100%);
+      border: 1px solid #1a2a1a;
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .tracker-header {
+      background: linear-gradient(90deg, #0077b6, #00b4d8);
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tracker-header .live-dot {
+      width: 8px; height: 8px; background: #fff;
+      border-radius: 50%; animation: pulse2 1s infinite;
+    }
+    .pitch-area {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      overflow: hidden;
+    }
+    .pitch-canvas { width: 100%; height: 100%; display: block; }
+    .event-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      border-radius: 20px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      min-width: 160px;
+    }
+    .event-overlay.show { opacity: 1; }
+    .event-overlay .ev-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #0077b6, #00b4d8);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .tracker-events {
+      padding: 10px 14px;
+      max-height: 120px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      border-top: 1px solid #1a2a1a;
+    }
+    .tracker-event-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid #0d150d;
+      font-size: 12px;
+    }
+    .tracker-event-row:last-child { border-bottom: none; }
+    .ev-min { color: #f4a261; font-weight: bold; min-width: 34px; font-size: 11px; }
+    .ev-score { color: var(--accent); font-weight: 900; min-width: 34px; text-align: center; }
+    .ev-text { color: #ccc; }
+    .ev-side-home { text-align: left; }
+    .ev-side-away { text-align: right; margin-left: auto; }
+    .tracker-score-bar {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #1a2a1a;
+      background: #080f08;
+    }
+    .tracker-team { font-size: 12px; font-weight: bold; max-width: 100px; text-align: center; }
+    .tracker-score { font-size: 28px; font-weight: 900; color: #fff; }
+    .tracker-minute { font-size: 11px; color: #f4a261; text-align: center; }
+    @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    @keyframes ballMove {
+      0% { transform: translate(var(--bx0), var(--by0)); }
+      100% { transform: translate(var(--bx1), var(--by1)); }
+    }
   </style>
 </head>
 <body data-theme="dark">
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v46</div>
+    <div>SlotOK v47</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -1536,6 +1631,7 @@
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
+        <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
       </div>
     </div>
 
@@ -2229,7 +2325,20 @@
        <div class="section-header">👥 Гравці</div>
        <div class="box">
            <button class="btn-outline" onclick="loadUserList()">🔄 Оновити список</button>
-           <button class="btn-red" onclick="wipeEconomy()">💀 ОБНУЛИТИ ВСІХ (1000)</button>
+           <button class="btn-red" onclick="wipeEconomy()">💀 ПОВНЕ ОБНУЛЕННЯ (баланс+рівні)</button>
+           <div style="background:#111;border:1px solid #333;border-radius:10px;padding:12px;margin-top:8px;">
+             <div style="font-size:12px;color:var(--accent);font-weight:bold;margin-bottom:8px;">⏰ Авто-скидання за розкладом</div>
+             <div style="display:flex;gap:8px;margin-bottom:8px;">
+               <select id="autoWipeMode" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;">
+                 <option value="daily">Щодня</option>
+                 <option value="weekly">Щотижня</option>
+                 <option value="monthly">Щомісяця</option>
+               </select>
+               <input id="autoWipeTime" type="time" value="03:00" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;">
+             </div>
+             <button class="btn-gold" style="padding:10px;" onclick="saveAutoWipe()">⏰ ЗБЕРЕГТИ РОЗКЛАД</button>
+             <div style="font-size:11px;color:#555;margin-top:6px;">Статус: <span id="autoWipeStatus">Завантаження...</span></div>
+           </div>
        </div>
        <div id="userList" style="margin-top:10px;">Натисніть "Оновити список"</div>
 
@@ -2461,6 +2570,18 @@
       <div style="height:20px;"></div>
     </div>
 
+    <!-- ДОСЯГНЕННЯ -->
+    <div id="tab-achievements" class="screen hidden" style="padding:0;">
+      <div style="background:linear-gradient(180deg,#1a1200,#000);padding:16px 15px 12px;border-bottom:1px solid #2a2000;">
+        <div style="font-size:20px;font-weight:900;color:var(--accent);">🏆 Досягнення</div>
+        <div style="font-size:10px;color:#555;margin-top:2px;">Виконуй завдання • Збирай XP • Отримуй нагороди</div>
+      </div>
+      <div style="padding:12px 15px;">
+        <div id="achievementsHeader"></div>
+        <div id="achievementsGrid"></div>
+      </div>
+    </div>
+
     <!-- РЕФЕРАЛИ -->
     <div id="tab-referrals" class="screen hidden">
       <h2 style="color:var(--accent);">👥 Реферали</h2>
@@ -2531,9 +2652,84 @@
     </div>
 
 
+
+    <!-- LIVE MATCH TRACKER MODAL -->
+    <div id="matchTrackerModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#060d06;z-index:9700;overflow-y:auto;padding-bottom:20px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#070e07;border-bottom:1px solid #1a2a1a;position:sticky;top:0;z-index:10;">
+        <button onclick="closeMatchTracker()" style="background:#1a2a1a;border:1px solid #2a3a2a;border-radius:8px;padding:6px 12px;color:#aaa;font-size:12px;cursor:pointer;">⬅ Назад</button>
+        <div id="trackerMatchTitle" style="font-size:13px;font-weight:bold;color:#fff;text-align:center;"></div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div style="width:8px;height:8px;background:#4cd964;border-radius:50%;animation:pulse2 1s infinite;"></div>
+          <span style="font-size:11px;color:#4cd964;font-weight:bold;">LIVE</span>
+        </div>
+      </div>
+
+      <!-- Score bar -->
+      <div style="padding:16px;background:#070e07;border-bottom:1px solid #1a2a1a;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="text-align:center;flex:1;">
+            <div id="trackerHomeEmoji" style="font-size:32px;margin-bottom:4px;">🏠</div>
+            <div id="trackerHomeName" style="font-size:13px;font-weight:bold;color:#fff;"></div>
+          </div>
+          <div style="text-align:center;min-width:100px;">
+            <div id="trackerScore" style="font-size:36px;font-weight:900;color:#fff;letter-spacing:4px;">0 – 0</div>
+            <div id="trackerMinute" style="font-size:12px;color:#f4a261;font-weight:bold;margin-top:2px;">0'</div>
+            <div style="font-size:10px;color:#555;margin-top:1px;" id="trackerStatus">Очікування...</div>
+          </div>
+          <div style="text-align:center;flex:1;">
+            <div id="trackerAwayEmoji" style="font-size:32px;margin-bottom:4px;">✈️</div>
+            <div id="trackerAwayName" style="font-size:13px;font-weight:bold;color:#fff;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pitch tracker -->
+      <div style="padding:12px 14px;">
+        <div class="tracker-container">
+          <div class="tracker-header">
+            <div class="live-dot"></div>
+            Live Action
+            <span style="margin-left:auto;font-size:10px;opacity:0.7;" id="trackerSport">Football</span>
+          </div>
+          <div class="pitch-area">
+            <canvas id="pitchCanvas" class="pitch-canvas" width="360" height="220"></canvas>
+            <div class="event-overlay" id="eventOverlay">
+              <div class="ev-icon" id="evIcon">⚽</div>
+              <div><div id="evTitle" style="font-size:13px;"></div><div id="evSub" style="font-size:10px;color:#aaa;margin-top:1px;"></div></div>
+            </div>
+          </div>
+
+          <!-- Stats mini bar -->
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;padding:10px 14px;background:#060d06;border-top:1px solid #1a2a1a;font-size:11px;" id="trackerStats">
+            <div style="text-align:right;color:#ccc;" id="statHomeVal">0</div>
+            <div style="text-align:center;color:#555;">Удари</div>
+            <div style="text-align:left;color:#ccc;" id="statAwayVal">0</div>
+          </div>
+
+          <!-- Events list -->
+          <div class="tracker-events" id="trackerEventsList">
+            <div style="color:#555;font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>
+          </div>
+        </div>
+
+        <!-- Match stats -->
+        <div style="background:#070e07;border:1px solid #1a2a1a;border-radius:14px;padding:14px;margin-top:10px;">
+          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">📊 Статистика матчу</div>
+          <div id="matchStatsGrid"></div>
+        </div>
+
+        <!-- Bet quick panel -->
+        <div style="background:#070e07;border:1px solid #1a2a1a;border-radius:14px;padding:14px;margin-top:10px;" id="trackerBetPanel">
+          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">⚡ Швидка ставка</div>
+          <div id="trackerBetButtons" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /container -->
   <div id="auth-screen" class="full-modal">
-      <div style="text-align:center; margin-bottom:30px;"><h1 style="color:var(--accent); font-size:50px; font-style:italic; font-weight:900;">SlotOK</h1><div style="color:#555; font-size:13px;">v34 — Telegram Deposits</div></div>
+      <div style="text-align:center; margin-bottom:30px;"><h1 style="color:var(--accent); font-size:50px; font-style:italic; font-weight:900;">SlotOK</h1><div style="color:#555; font-size:13px;">v47 — Tracker+Achievements</div></div>
       <div id="loginForm">
         <h3 style="color:#fff;">Вхід</h3>
         <input id="loginName" placeholder="Нікнейм">
@@ -3085,23 +3281,28 @@
     }
     
     function finishSlots(bet) { 
-        const r = Math.random(); 
+        const r = Math.random();
+        // Перевіряємо lucky streak для нових гравців
+        const luck = getNewPlayerLuck();
+        const adj = luck ? (r * 0.3) : r; // нові гравці: менший r = більше шансів
         let win = 0; let res = ["🍒","🍋","🔔"]; 
-        if(r < 0.015) { res = ["7","7","7"]; win = bet*40; }       // 1.5% → x40
-        else if(r < 0.04) { res = ["💎","💎","💎"]; win = bet*12; } // 2.5% → x12
-        else if(r < 0.12) { res = ["🍒","🍒","🍒"]; win = bet*2.5; }// 8% → x2.5
-        else if(r < 0.25) { res = ["🔔","🔔","🍋"]; win = bet*1.3; }// 13% → x1.3
+        if(adj < 0.005) { res = ["7","7","7"]; win = bet*40; }      // 0.5% → x40
+        else if(adj < 0.015) { res = ["💎","💎","💎"]; win = bet*10; }// 1% → x10
+        else if(adj < 0.06) { res = ["🍒","🍒","🍒"]; win = bet*2; } // 4.5% → x2
+        else if(adj < 0.13) { res = ["🔔","🔔","🍋"]; win = bet*1.2; }// 7% → x1.2
         
         document.getElementById('r1').textContent = res[0]; 
         document.getElementById('r2').textContent = res[1]; 
         document.getElementById('r3').textContent = res[2]; 
         
         if(win > 0) { 
+            consumeLuckyGame();
             db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win)); 
             playSound('win'); 
             notify(`🎰 WIN: ${win} ₴`, "success"); 
-            addToHistory(`Slots: +${win}`); 
-        } 
+            addToHistory(`Slots: +${win}`);
+            checkAchievements('win', win);
+        } else { checkAchievements('lose', b); }
     }
 
     // --- Рулетка ---
@@ -3172,7 +3373,15 @@
         document.getElementById('crashBtn').classList.add('hidden'); 
         document.getElementById('crashCashoutBtn').classList.remove('hidden'); 
         let m = 1.00; 
-        let crashPoint = 1 + (Math.random() * 8);
+        // crashPoint: переважно 1.0–2.5x, зрідка вище
+        const crashRng = Math.random();
+        const newPLuck = getNewPlayerLuck();
+        let crashPoint;
+        if(newPLuck) { crashPoint = 1.3 + Math.random() * 5; }        // нові гравці: 1.3–6.3x
+        else if(crashRng < 0.45) { crashPoint = 1 + Math.random() * 0.5; }  // 45%: краш 1.0–1.5x
+        else if(crashRng < 0.75) { crashPoint = 1.5 + Math.random() * 1.5; }// 30%: 1.5–3.0x
+        else if(crashRng < 0.92) { crashPoint = 3 + Math.random() * 4; }    // 17%: 3–7x
+        else { crashPoint = 7 + Math.random() * 15; }                        // 8%: 7–22x
         isCrashPlaying = true; 
         crashInt = setInterval(() => { 
             m += 0.03 + (m * 0.002); 
@@ -3458,8 +3667,14 @@
             if(s.exists()){ notify("Цей нікнейм вже зайнятий","error"); } 
             else { 
                 const id=Math.floor(Math.random()*900000)+100000; 
-                db.ref('users/'+n).set({pass:p,email:e,balance:1000,id:id,tag:"Новачок",dailyStreak:0}).then(() => { 
-                    notify("Акаунт створено! Тепер увійдіть.","success"); toggleAuthMode(false); 
+                db.ref('users/'+n).set({
+                    pass:p, email:e, balance:1000, id:id, tag:"Новачок", dailyStreak:0,
+                    luckyGamesLeft: 3,    // перші 3 гри з підвищеним шансом
+                    luckyGamesUsed: 0,
+                    registeredAt: Date.now()
+                }).then(() => { 
+                    notify("🎉 Акаунт створено! Перші 3 гри — підвищений шанс виграшу!","success"); 
+                    toggleAuthMode(false); 
                 }); 
             } 
         }); 
@@ -3561,10 +3776,84 @@
             db.ref('users/'+admSelectedUser).remove().then(()=>{ notify("Видалено"); closeModal('admin-user-manage'); loadUserList(); }); 
         } 
     }
-    function wipeEconomy() { 
-        if(prompt("Введіть WIPE:")==="WIPE"){ 
-            db.ref('users').once('value', s=>{ for(let k in s.val()) db.ref('users/'+k+'/balance').set(1000); notify("Скинуто","success"); }); 
-        } 
+    function wipeEconomy() {
+        if(prompt("Введіть WIPE щоб обнулити ВСІХ гравців:") !== "WIPE") return;
+        db.ref('users').once('value', s => {
+            const users = s.val() || {};
+            const updates = {};
+            Object.keys(users).forEach(k => {
+                updates[k+'/balance']        = 0;
+                updates[k+'/totalWagered']   = 0;
+                updates[k+'/totalWins']      = 0;
+                updates[k+'/totalLosses']    = 0;
+                updates[k+'/totalBets']      = 0;
+                updates[k+'/dailyStreak']    = 0;
+                updates[k+'/cashbackPending']= 0;
+                updates[k+'/cashbackWeekUsed']= 0;
+                updates[k+'/slotiky']        = 0;
+                updates[k+'/achievements']   = null;
+                updates[k+'/achievementXP']  = 0;
+                updates[k+'/luckyGamesLeft'] = 0;
+            });
+            db.ref('users').update(updates).then(()=>notify('💀 Всі гравці обнулені!','success'));
+        });
+    }
+
+    // Авто-скидання за розкладом
+    function setupAutoWipe() {
+        const setting = userData.autoWipeSchedule;
+        const el = document.getElementById('autoWipeStatus');
+        if(el) el.textContent = setting ? `Активно: ${setting}` : 'Не налаштовано';
+    }
+
+    function saveAutoWipe() {
+        const mode = document.getElementById('autoWipeMode').value;
+        const time = document.getElementById('autoWipeTime').value;
+        if(!time) return notify('Вкажіть час', 'error');
+        db.ref('settings/autoWipe').set({ mode, time, setBy: currentUser, setAt: Date.now() });
+        notify(`✅ Авто-скидання: ${mode} о ${time}`, 'success');
+        // Save to Firebase settings, will be processed server-side
+        // Client-side: check on login if wipe is due
+        localStorage.setItem('slotok_autoWipe', JSON.stringify({ mode, time }));
+    }
+
+    function checkAutoWipeOnLoad() {
+        try {
+            const cfg = JSON.parse(localStorage.getItem('slotok_autoWipe') || 'null');
+            if(!cfg) return;
+            const now = new Date();
+            const [h, m] = cfg.time.split(':').map(Number);
+            const lastWipe = parseInt(localStorage.getItem('slotok_lastAutoWipe') || '0');
+            const oneDay = 86400000, oneWeek = 604800000, oneMonth = 2592000000;
+            const periods = { daily: oneDay, weekly: oneWeek, monthly: oneMonth };
+            const period = periods[cfg.mode] || oneDay;
+            // Check if now is close to scheduled time and period has elapsed
+            const scheduledToday = new Date(); scheduledToday.setHours(h, m, 0, 0);
+            const diffMs = Math.abs(now - scheduledToday);
+            if(diffMs < 60000 && (Date.now() - lastWipe) > period - 60000) {
+                // Time to wipe!
+                const isAdm = (currentUser === 'theivankoo' || userData.isAdmin);
+                if(isAdm) {
+                    wipeEconomy_auto();
+                    localStorage.setItem('slotok_lastAutoWipe', String(Date.now()));
+                }
+            }
+        } catch(e) {}
+    }
+
+    function wipeEconomy_auto() {
+        db.ref('users').once('value', s => {
+            const users = s.val() || {};
+            const updates = {};
+            Object.keys(users).forEach(k => {
+                updates[k+'/balance']        = 0;
+                updates[k+'/totalWagered']   = 0;
+                updates[k+'/dailyStreak']    = 0;
+                updates[k+'/cashbackPending']= 0;
+            });
+            db.ref('users').update(updates);
+            db.ref('settings/lastAutoWipe').set(Date.now());
+        });
     }
 
     // ============================================
@@ -3905,20 +4194,34 @@
     // ============================================
     // КОЛЕСО ФОРТУНИ
     // ============================================
+    // FORTUNE WHEEL: 24 сегменти — більшість програшні/мінімальні
     const FORTUNE_SEGMENTS = [
-      {label:'x0',   mult:0,   color:'#1a0505'},
-      {label:'x1',   mult:1,   color:'#1a3a6b'},
-      {label:'x0.5', mult:0.5, color:'#333'},
-      {label:'x2',   mult:2,   color:'#1a5c2a'},
-      {label:'x0.2', mult:0.2, color:'#333'},
-      {label:'x3',   mult:3,   color:'#5c1a1a'},
-      {label:'x0.5', mult:0.5, color:'#333'},
-      {label:'x5',   mult:5,   color:'#8B6914'},
-      {label:'x0.2', mult:0.2, color:'#333'},
-      {label:'x10',  mult:10,  color:'#4a0080'},
-      {label:'x0.5', mult:0.5, color:'#333'},
-      {label:'x50 🎉',mult:50, color:'#c00'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x0.2',  mult:0.2,  color:'#1a1a1a'},
+      {label:'x0',    mult:0,    color:'#0d0d0d'},
+      {label:'x0.5',  mult:0.5,  color:'#252525'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x1',    mult:1,    color:'#1a3060'},
+      {label:'x0',    mult:0,    color:'#0d0d0d'},
+      {label:'x0.2',  mult:0.2,  color:'#1a1a1a'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x0.5',  mult:0.5,  color:'#252525'},
+      {label:'x0',    mult:0,    color:'#0d0d0d'},
+      {label:'x2',    mult:2,    color:'#1a4020'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x0.2',  mult:0.2,  color:'#1a1a1a'},
+      {label:'x0',    mult:0,    color:'#0d0d0d'},
+      {label:'x0.5',  mult:0.5,  color:'#252525'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x3',    mult:3,    color:'#3a1060'},
+      {label:'x0',    mult:0,    color:'#0d0d0d'},
+      {label:'x0.2',  mult:0.2,  color:'#1a1a1a'},
+      {label:'x0',    mult:0,    color:'#1a0202'},
+      {label:'x5',    mult:5,    color:'#5c3a00'},
+      {label:'x0.2',  mult:0.2,  color:'#1a1a1a'},
+      {label:'x10🎉', mult:10,   color:'#4a0080'},
     ];
+    // Шанс виграшу: ~21% (5 з 24 сегментів > x0.5), решта програш/дуже мало
     let fortuneRotation = 0, fortuneSpinning = false;
 
     function drawFortuneWheel(rotation=0) {
@@ -3942,6 +4245,26 @@
         ctx.fillText(s.label, r - 8, 4);
         ctx.restore();
       });
+    }
+
+
+    // ============================================================
+    // LUCKY STREAK — перші 3 гри нового гравця
+    // ============================================================
+    function getNewPlayerLuck() {
+      const left = userData.luckyGamesLeft || 0;
+      return left > 0;
+    }
+    function consumeLuckyGame() {
+      if(!getNewPlayerLuck()) return;
+      const left = Math.max(0, (userData.luckyGamesLeft||0) - 1);
+      const used  = (userData.luckyGamesUsed||0) + 1;
+      db.ref('users/'+currentUser).update({ luckyGamesLeft: left, luckyGamesUsed: used });
+      if(left === 0) {
+        setTimeout(()=> notify('🎮 Везіння закінчилось — удачі у грі!','info'), 500);
+      } else {
+        notify(`🍀 Везіння: ще ${left} удачлив${left===1?'а':'і'} гр${left===1?'а':'и'}!`, 'info');
+      }
     }
 
     function spinFortune() {
@@ -5707,6 +6030,7 @@
     function claimCashback() {
       const pending = userData.cashbackPending || 0;
       if(pending <= 0) return notify('Немає накопиченого кешбеку', 'info');
+      if(pending < 2000) return notify(`❌ Мінімум для виплати: 2000 ₴. Зараз: ${formatNumber(pending)} ₴`, 'error');
       db.ref('users/'+currentUser).update({
         balance: (userData.balance||0) + pending,
         cashbackPending: 0,
@@ -5766,8 +6090,7 @@
           </div>
         </div>
         <div style="background:#050a05;border:1px solid #0d2a0d;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#555;">
-          ℹ️ Ліміт кешбеку: <b style="color:var(--green);">${CASHBACK_MAX_PER_BET}₴</b> за ставку •
-          <b style="color:var(--green);">${formatNumber(CASHBACK_MAX_PER_WEEK)}₴</b>/тиждень
+          ℹ️ Ліміт: <b style="color:var(--green);">${CASHBACK_MAX_PER_BET}₴</b>/ставка • <b style="color:var(--green);">${formatNumber(CASHBACK_MAX_PER_WEEK)}₴</b>/тиждень • Мінімум виплати: <b style="color:var(--accent);">2 000₴</b>
         </div>
         <button class="btn-green" onclick="claimCashback()" ${pending<=0?'disabled style="opacity:0.5;"':''}>
           💰 ЗАБРАТИ ${formatNumber(pending)} ₴
@@ -6132,6 +6455,7 @@
       if(id==='hilo') { hiloState=null; document.getElementById('hiloGameArea')?.classList.add('hidden'); }
       if(id==='dice') { updateDiceUI(); }
       if(id==='slotiky') { initSlotiky(); }
+      if(id==='achievements') { initAchievementsTab(); checkAchievements('tab',null); }
       if(id==='tournaments') { loadTournamentsV2(); loadTourneyStatsBar(); }
       if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
       if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); setTimeout(()=>updateCashierCashbackUI(),300); }
@@ -8703,7 +9027,11 @@
 
       // Result: 48.5% red, 48.5% black, 3% green
       const r = Math.random();
-      const result = r < 0.485 ? 'red' : r < 0.97 ? 'black' : 'green';
+      // Red: 46.5%, Black: 46.5%, Green: 7% — гірший для гравця
+      const newPLuck2 = getNewPlayerLuck();
+      const result = newPLuck2 
+        ? (r < 0.48 ? 'red' : r < 0.96 ? 'black' : 'green')
+        : (r < 0.465 ? 'red' : r < 0.93 ? 'black' : 'green');
       const mult = result === 'green' ? 14 : 2;
       const win = color === result;
 
@@ -9062,9 +9390,10 @@
             <div style="height:100%;background:${confColor};width:${m.confidence||65}%;transition:width 1s;"></div>
           </div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          ${isLive ? `<button onclick="openLiveView('${m.id}')" style="flex:1;padding:8px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:11px;font-weight:bold;cursor:pointer;">🔴 LIVE</button>` : ''}
-          <button onclick="openStreamViewer('${m.sport}','${m.home.replace(/'/g,"\'")} vs ${m.away.replace(/'/g,"\'")} ')" style="${isLive?'flex:1;':'width:100%;'}padding:8px;background:#1a0a2e;border:1px solid #5a20c0;border-radius:8px;color:#c9a0ff;font-size:11px;font-weight:bold;cursor:pointer;">📺 СТРІМ</button>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          ${isLive ? `<button onclick="openLiveView('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:11px;font-weight:bold;cursor:pointer;">🔴 LIVE</button>` : ''}
+          <button onclick="openMatchTracker('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgba(0,119,182,0.15);border:1px solid #0077b6;border-radius:8px;color:#00b4d8;font-size:11px;font-weight:bold;cursor:pointer;">📡 ТРЕКЕР</button>
+          <button onclick="openStreamViewer('${m.sport}','${m.home.replace(/'/g,"\'")} vs ${m.away.replace(/'/g,"\'")} ')" style="flex:1;min-width:70px;padding:8px;background:#1a0a2e;border:1px solid #5a20c0;border-radius:8px;color:#c9a0ff;font-size:11px;font-weight:bold;cursor:pointer;">📺 СТРІМ</button>
         </div>
         ${isFinal ? `<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">🏁 Матч завершено</div>` : ''}
       `;
@@ -9435,6 +9764,161 @@
     }
 
 
+
+    // ============================================================
+    // ===== СИСТЕМА ДОСЯГНЕНЬ (50 штук) =====
+    // ============================================================
+    const ACHIEVEMENTS = [
+      // ── ПЕРШІ КРОКИ ──
+      { id:'first_game',      icon:'🎮', name:'Перша гра',           desc:'Зіграй будь-яку гру',                  cat:'Початок',   xp:10,  cond: d => (d.totalGames||0) >= 1 },
+      { id:'first_win',       icon:'🏆', name:'Перший виграш',       desc:'Виграй будь-яку ставку',               cat:'Початок',   xp:15,  cond: d => (d.totalWins||0) >= 1 },
+      { id:'first_deposit',   icon:'💳', name:'Перший депозит',      desc:'Поповни баланс',                       cat:'Початок',   xp:20,  cond: d => (d.totalDeposited||0) >= 1 },
+      { id:'first_sport',     icon:'⚽', name:'Перша спорт ставка',  desc:'Постав на спорт',                      cat:'Початок',   xp:15,  cond: d => (d.sportBets||0) >= 1 },
+      { id:'register_done',   icon:'👤', name:'Ласкаво просимо!',    desc:'Зареєструйся',                         cat:'Початок',   xp:5,   cond: d => true },
+      // ── СЛОТИ ──
+      { id:'slots_10',        icon:'🎰', name:'Одноруких 10',        desc:'10 ігор у слотах',                     cat:'Слоти',     xp:20,  cond: d => (d.slotsPlayed||0) >= 10 },
+      { id:'slots_100',       icon:'🎰', name:'Слотоман',            desc:'100 ігор у слотах',                    cat:'Слоти',     xp:50,  cond: d => (d.slotsPlayed||0) >= 100 },
+      { id:'slots_777',       icon:'7️⃣',  name:'Lucky 777',          desc:'Вибий 7-7-7 у слотах',                cat:'Слоти',     xp:100, cond: d => (d.slots777||0) >= 1 },
+      { id:'slots_jackpot',   icon:'💰', name:'ДЖЕКПОТ!',            desc:'Виграй 50к+ у слотах',                 cat:'Слоти',     xp:150, cond: d => (d.slotsMaxWin||0) >= 50000 },
+      { id:'slots_diamond',   icon:'💎', name:'Три Діаманти',        desc:'Вибий 💎💎💎 у слотах',               cat:'Слоти',     xp:80,  cond: d => (d.slotsDiamond||0) >= 1 },
+      // ── КРАШ ──
+      { id:'crash_10x',       icon:'🚀', name:'Місяць',              desc:'Виведи при x10 або більше',            cat:'Краш',      xp:60,  cond: d => (d.crashBest||0) >= 10 },
+      { id:'crash_50x',       icon:'🌙', name:'Орбіта',              desc:'Виведи при x50 або більше',            cat:'Краш',      xp:120, cond: d => (d.crashBest||0) >= 50 },
+      { id:'crash_cashout',   icon:'✈️', name:'Вчасно!',             desc:'10 успішних виведень з краша',         cat:'Краш',      xp:40,  cond: d => (d.crashCashouts||0) >= 10 },
+      { id:'crash_100',       icon:'🎯', name:'Краш Майстер',        desc:'100 ігор у крашу',                     cat:'Краш',      xp:50,  cond: d => (d.crashGames||0) >= 100 },
+      // ── РУЛЕТКА ──
+      { id:'roulette_green',  icon:'🟢', name:'Зелений Шанс',        desc:'Вгадай зелений (0)',                   cat:'Рулетка',   xp:100, cond: d => (d.rouletteGreen||0) >= 1 },
+      { id:'roulette_streak', icon:'🔴', name:'7 на 7',              desc:'7 виграшів поспіль у рулетці',         cat:'Рулетка',   xp:80,  cond: d => (d.rouletteStreak||0) >= 7 },
+      { id:'roulette_50',     icon:'🎡', name:'Колесо крутиться',    desc:'50 ігор у рулетці',                    cat:'Рулетка',   xp:40,  cond: d => (d.rouletteBets||0) >= 50 },
+      // ── МАЙНЕР ──
+      { id:'mines_5x5',       icon:'💣', name:'Сапер',               desc:'Відкрий всі 24 клітини без міни',      cat:'Майнер',    xp:200, cond: d => (d.minesPerfect||0) >= 1 },
+      { id:'mines_50',        icon:'💥', name:'Мінне поле',          desc:'50 ігор у майнері',                    cat:'Майнер',    xp:40,  cond: d => (d.minesGames||0) >= 50 },
+      { id:'mines_big',       icon:'💰', name:'Скарб!',              desc:'Виграй 10к+ в майнері за раз',         cat:'Майнер',    xp:80,  cond: d => (d.minesMaxWin||0) >= 10000 },
+      // ── СПОРТ ──
+      { id:'sport_win',       icon:'⚽', name:'Передбачувач',        desc:'10 виграшних спорт-ставок',            cat:'Спорт',     xp:60,  cond: d => (d.sportWins||0) >= 10 },
+      { id:'sport_multi',     icon:'🏆', name:'Мультиставка',        desc:'Постав на 5 різних видів спорту',      cat:'Спорт',     xp:50,  cond: d => (d.sportTypes||0) >= 5 },
+      { id:'sport_big',       icon:'💎', name:'Ставковий Кит',       desc:'Виграй 50к+ на спорті',               cat:'Спорт',     xp:150, cond: d => (d.sportMaxWin||0) >= 50000 },
+      { id:'sport_100',       icon:'📊', name:'Букмекер',            desc:'100 спортивних ставок',                cat:'Спорт',     xp:80,  cond: d => (d.sportBets||0) >= 100 },
+      // ── ФІНАНСИ ──
+      { id:'balance_10k',     icon:'💵', name:'10 тисяч',            desc:'Накопич 10 000 ₴ на балансі',          cat:'Фінанси',   xp:30,  cond: d => (d.balance||0) >= 10000 },
+      { id:'balance_100k',    icon:'💰', name:'100 тисяч',           desc:'Накопич 100 000 ₴ на балансі',         cat:'Фінанси',   xp:80,  cond: d => (d.balance||0) >= 100000 },
+      { id:'balance_1m',      icon:'🤑', name:'Мільйонер!',          desc:'Накопич 1 000 000 ₴ на балансі',       cat:'Фінанси',   xp:300, cond: d => (d.balance||0) >= 1000000 },
+      { id:'wager_100k',      icon:'📈', name:'Ризиковий',           desc:'Загальна сума ставок 100 000 ₴',       cat:'Фінанси',   xp:50,  cond: d => (d.totalWagered||0) >= 100000 },
+      { id:'wager_1m',        icon:'🔥', name:'Хай-роллер',          desc:'Загальна сума ставок 1 000 000 ₴',     cat:'Фінанси',   xp:200, cond: d => (d.totalWagered||0) >= 1000000 },
+      { id:'cashback_claim',  icon:'💸', name:'Перший кешбек',       desc:'Отримай перший кешбек',                cat:'Фінанси',   xp:30,  cond: d => (d.cashbackTotalClaimed||0) >= 1 },
+      // ── СОЦІАЛЬНІ ──
+      { id:'chat_10',         icon:'💬', name:'Балакучий',           desc:'Надішли 10 повідомлень у чаті',        cat:'Соціальні', xp:15,  cond: d => (d.chatMessages||0) >= 10 },
+      { id:'referral_1',      icon:'👥', name:'Перший реферал',      desc:'Запроси першого друга',                cat:'Соціальні', xp:50,  cond: d => (d.referrals||0) >= 1 },
+      { id:'referral_5',      icon:'🌟', name:'Інфлюєнсер',         desc:'Запроси 5 друзів',                     cat:'Соціальні', xp:150, cond: d => (d.referrals||0) >= 5 },
+      { id:'clan_join',       icon:'⚔️', name:'Командний гравець',   desc:'Вступи до клану',                     cat:'Соціальні', xp:30,  cond: d => !!(d.clanId) },
+      { id:'duel_win',        icon:'🤺', name:'Дуелянт',             desc:'Виграй 5 дуелей',                     cat:'Соціальні', xp:80,  cond: d => (d.duelWins||0) >= 5 },
+      { id:'gift_sent',       icon:'🎁', name:'Щедрий',              desc:'Надішли подарунок іншому гравцю',      cat:'Соціальні', xp:25,  cond: d => (d.giftsSent||0) >= 1 },
+      // ── VIP / ПРОГРЕС ──
+      { id:'vip_silver',      icon:'🥈', name:'Срібний',             desc:'Досягни VIP рівня Silver',             cat:'VIP',       xp:40,  cond: d => (d.totalWagered||0) >= 5000 },
+      { id:'vip_gold',        icon:'🥇', name:'Золотий',             desc:'Досягни VIP рівня Gold',               cat:'VIP',       xp:80,  cond: d => (d.totalWagered||0) >= 20000 },
+      { id:'vip_platinum',    icon:'💎', name:'Платиновий',          desc:'Досягни VIP рівня Platinum',           cat:'VIP',       xp:200, cond: d => (d.totalWagered||0) >= 700000 },
+      { id:'daily_7',         icon:'📅', name:'Тижнева звичка',      desc:'7 днів поспіль щоденний бонус',        cat:'VIP',       xp:50,  cond: d => (d.dailyStreak||0) >= 7 },
+      { id:'daily_30',        icon:'🗓️', name:'Місячна звичка',      desc:'30 днів поспіль щоденний бонус',       cat:'VIP',       xp:200, cond: d => (d.dailyStreak||0) >= 30 },
+      { id:'quest_10',        icon:'📋', name:'Виконавець',          desc:'Виконай 10 квестів',                   cat:'VIP',       xp:60,  cond: d => (d.questsCompleted||0) >= 10 },
+      // ── ОСОБЛИВІ ──
+      { id:'tournament_win',  icon:'🥇', name:'Чемпіон',             desc:'Перемогти у турнірі',                  cat:'Особливі',  xp:300, cond: d => (d.tournamentsWon||0) >= 1 },
+      { id:'tournament_5',    icon:'🏅', name:'Турнірний гравець',   desc:'Взяти участь у 5 турнірах',            cat:'Особливі',  xp:100, cond: d => (d.tournamentsJoined||0) >= 5 },
+      { id:'slots_free_use',  icon:'🎟️', name:'На халяву',           desc:'Використай безкоштовний спін',         cat:'Особливі',  xp:20,  cond: d => (d.freeSlotsUsed||0) >= 1 },
+      { id:'win_500k',        icon:'🚀', name:'Пів мільярда!',       desc:'Виграй 500 000 ₴ за одну ставку',      cat:'Особливі',  xp:500, cond: d => (d.biggestWin||0) >= 500000 },
+      { id:'loss_1m',         icon:'😅', name:'Залізні нерви',       desc:'Програй в сумі 1 000 000 ₴',           cat:'Особливі',  xp:100, cond: d => (d.totalLosses||0) >= 1000000 },
+      { id:'night_owl',       icon:'🦉', name:'Нічна пташка',        desc:'Зіграй між 00:00–05:00',               cat:'Особливі',  xp:30,  cond: d => (d.nightGames||0) >= 1 },
+      { id:'slotiky_buy',     icon:'🪙', name:'Перші Слотіки',       desc:'Купи перший Слотік',                   cat:'Особливі',  xp:40,  cond: d => (d.slotiky||0) > 0 || (d.slotikySpent||0) > 0 },
+      { id:'shop_purchase',   icon:'🛒', name:'Перша покупка',       desc:'Купи щось у магазині Слотіків',         cat:'Особливі',  xp:25,  cond: d => Object.keys(d.slotikyItems||{}).length >= 1 },
+      { id:'all_games',       icon:'🎲', name:'Всеїдний',            desc:'Зіграй у 8 різних ігор',               cat:'Особливі',  xp:120, cond: d => (d.uniqueGames||0) >= 8 },
+      { id:'legend',          icon:'👑', name:'ЛЕГЕНДА',             desc:'Збери 2000+ XP досягнень',             cat:'Особливі',  xp:0,   cond: d => (d.achievementXP||0) >= 2000 },
+    ];
+
+    function checkAchievements(trigger, value) {
+      if(!currentUser || !userData) return;
+      const owned = userData.achievements || {};
+      const newOnes = [];
+      let totalXP = userData.achievementXP || 0;
+
+      ACHIEVEMENTS.forEach(a => {
+        if(owned[a.id]) return; // already unlocked
+        try {
+          if(a.cond(userData)) {
+            newOnes.push(a);
+            owned[a.id] = { unlockedAt: Date.now(), xp: a.xp };
+            totalXP += a.xp;
+          }
+        } catch(e) {}
+      });
+
+      if(newOnes.length) {
+        db.ref('users/'+currentUser).update({ achievements: owned, achievementXP: totalXP });
+        newOnes.forEach((a, i) => {
+          setTimeout(() => {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7000;background:linear-gradient(135deg,#1a1200,#2a2000);border:2px solid var(--accent);border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(212,175,55,0.4);min-width:250px;animation:slideIn 0.4s ease;';
+            t.innerHTML = `<div style="font-size:32px;">${a.icon}</div><div><div style="font-size:11px;color:var(--accent);font-weight:bold;text-transform:uppercase;letter-spacing:1px;">🏆 НОВЕ ДОСЯГНЕННЯ!</div><div style="font-size:14px;font-weight:bold;color:#fff;margin-top:2px;">${a.name}</div><div style="font-size:11px;color:#777;margin-top:1px;">${a.desc}</div><div style="font-size:10px;color:var(--accent);margin-top:3px;">+${a.xp} XP</div></div>`;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); }, 3500);
+          }, i * 1200);
+        });
+      }
+    }
+
+    function initAchievementsTab() {
+      const owned = userData.achievements || {};
+      const totalXp = userData.achievementXP || 0;
+      const el = document.getElementById('achievementsGrid');
+      if(!el) return;
+      const unlockedCount = Object.keys(owned).length;
+      const totalCount = ACHIEVEMENTS.length;
+
+      // Header stats
+      const header = document.getElementById('achievementsHeader');
+      if(header) header.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
+            <div style="font-size:22px;font-weight:900;color:var(--accent);">${unlockedCount}</div>
+            <div style="font-size:10px;color:#555;">з ${totalCount}</div>
+          </div>
+          <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
+            <div style="font-size:22px;font-weight:900;color:var(--green);">${totalXp}</div>
+            <div style="font-size:10px;color:#555;">XP</div>
+          </div>
+          <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
+            <div style="font-size:22px;font-weight:900;color:#c17eea;">${Math.round(unlockedCount/totalCount*100)}%</div>
+            <div style="font-size:10px;color:#555;">Виконано</div>
+          </div>
+        </div>
+        <div style="background:#111;border-radius:8px;height:8px;overflow:hidden;margin-bottom:16px;">
+          <div style="height:100%;width:${Math.round(unlockedCount/totalCount*100)}%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:8px;transition:width 0.5s;"></div>
+        </div>`;
+
+      // Group by category
+      const cats = {};
+      ACHIEVEMENTS.forEach(a => {
+        if(!cats[a.cat]) cats[a.cat] = [];
+        cats[a.cat].push(a);
+      });
+      el.innerHTML = '';
+      Object.entries(cats).forEach(([cat, items]) => {
+        const catUnlocked = items.filter(a => owned[a.id]).length;
+        el.innerHTML += `<div style="font-size:12px;font-weight:bold;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;border-left:3px solid var(--accent);padding-left:8px;">${cat} (${catUnlocked}/${items.length})</div>`;
+        el.innerHTML += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;">${
+          items.map(a => {
+            const unlocked = !!owned[a.id];
+            const ts = owned[a.id]?.unlockedAt ? new Date(owned[a.id].unlockedAt).toLocaleDateString('uk') : '';
+            return `<div style="background:${unlocked?'linear-gradient(135deg,#1a1200,#2a2000)':'#0a0a0a'};border:1px solid ${unlocked?'var(--accent)':'#1a1a1a'};border-radius:12px;padding:12px;opacity:${unlocked?1:0.55};position:relative;overflow:hidden;">
+              ${unlocked?'<div style="position:absolute;top:4px;right:6px;font-size:9px;color:var(--accent);">✓</div>':''}
+              <div style="font-size:24px;margin-bottom:4px;">${a.icon}</div>
+              <div style="font-size:11px;font-weight:bold;color:${unlocked?'#fff':'#666'};">${a.name}</div>
+              <div style="font-size:9px;color:#555;margin-top:2px;line-height:1.4;">${a.desc}</div>
+              <div style="font-size:9px;color:${unlocked?'var(--accent)':'#333'};margin-top:4px;font-weight:bold;">+${a.xp} XP ${ts?'• '+ts:''}</div>
+            </div>`;
+          }).join('')
+        }</div>`;
+      });
+    }
+
     // ============================================================
     // DAILY CLEANUP: чат підтримки + сповіщення (раз на день)
     // ============================================================
@@ -9656,16 +10140,55 @@
     const SLOTIKY_PRICE = 10000000; // 10M UAH per 1 slotik
 
     const SLOTIKY_SHOP_ITEMS = [
-      { id:'avatar_gold',    name:'Золотий аватар',      icon:'👑', price:2,  desc:'Ексклюзивна золота рамка',   type:'cosmetic' },
-      { id:'avatar_diamond', name:'Diamond аватар',      icon:'💎', price:5,  desc:'Алмазна рамка профілю',       type:'cosmetic' },
-      { id:'username_color', name:'Кольоровий нік',       icon:'🌈', price:3,  desc:'Веселка у чаті',              type:'cosmetic' },
-      { id:'chat_emoji_x2',  name:'Подвійні емодзі чату', icon:'😎', price:1,  desc:'+20 доп. емодзі в чаті',     type:'feature'  },
-      { id:'vip_boost',      name:'VIP Прискорення',      icon:'🚀', price:8,  desc:'2x вагер рахується 7 днів',  type:'boost'    },
-      { id:'cashback_boost', name:'Кешбек x2',            icon:'💰', price:4,  desc:'Подвоєний кешбек 3 дні',     type:'boost'    },
-      { id:'badge_whale',    name:'Значок "Кит"',          icon:'🐋', price:10, desc:'Рідкісний значок у профілі', type:'cosmetic' },
-      { id:'daily_x3',       name:'Щоденний бонус x3',    icon:'🎁', price:3,  desc:'Утричі більше щодня 7 днів', type:'boost'    },
-      { id:'lootbox_ultra',  name:'Ultra Лут-бокс',        icon:'📦', price:2,  desc:'Ексклюзивний лут-бокс',      type:'item'     },
-      { id:'name_frame',     name:'Рамка "Supreme"',       icon:'🔱', price:15, desc:'Supreme рамка для імені',    type:'cosmetic' },
+      // ── КОСМЕТИКА ──
+      { id:'avatar_silver',   name:'Срібний аватар',       icon:'🥈', price:1,  desc:'Срібна рамка профілю',             type:'cosmetic' },
+      { id:'avatar_gold',     name:'Золотий аватар',       icon:'👑', price:2,  desc:'Золота рамка профілю',             type:'cosmetic' },
+      { id:'avatar_diamond',  name:'Diamond аватар',       icon:'💎', price:5,  desc:'Алмазна рамка профілю',            type:'cosmetic' },
+      { id:'avatar_fire',     name:'Вогняний аватар',      icon:'🔥', price:4,  desc:'Вогняна анімація рамки',           type:'cosmetic' },
+      { id:'avatar_cosmic',   name:'Космічний аватар',     icon:'🌌', price:8,  desc:'Зоряна рамка профілю',             type:'cosmetic' },
+      { id:'username_gold',   name:'Золотий нік',          icon:'✨', price:2,  desc:'Золотий колір у чаті',             type:'cosmetic' },
+      { id:'username_rainbow',name:'Веселковий нік',       icon:'🌈', price:4,  desc:'Анімований веселковий нік',        type:'cosmetic' },
+      { id:'username_red',    name:'Червоний нік',         icon:'❤️', price:1,  desc:'Червоний колір нікнейму',          type:'cosmetic' },
+      { id:'name_frame',      name:'Рамка "Supreme"',      icon:'🔱', price:15, desc:'Supreme рамка для імені',          type:'cosmetic' },
+      { id:'name_frame_neon', name:'Неонова рамка',        icon:'💜', price:7,  desc:'Неонова анімована рамка',          type:'cosmetic' },
+      { id:'badge_whale',     name:'Значок "Кит"',         icon:'🐋', price:10, desc:'Рідкісний значок у профілі',       type:'cosmetic' },
+      { id:'badge_shark',     name:'Значок "Акула"',       icon:'🦈', price:6,  desc:'Значок Акули',                     type:'cosmetic' },
+      { id:'badge_crown',     name:'Значок "Корона"',      icon:'👑', price:8,  desc:'Значок монарха',                   type:'cosmetic' },
+      { id:'badge_dragon',    name:'Значок "Дракон"',      icon:'🐉', price:12, desc:'Легендарний значок',               type:'cosmetic' },
+      { id:'badge_alien',     name:'Значок "Прибулець"',   icon:'👽', price:5,  desc:'Загадковий значок',                type:'cosmetic' },
+      { id:'chat_emoji_pack', name:'Емодзі Пак 1',         icon:'😎', price:1,  desc:'+20 емодзі у чаті',                type:'feature'  },
+      { id:'chat_emoji_pro',  name:'Емодзі Пак PRO',       icon:'🎭', price:3,  desc:'+50 преміум емодзі',               type:'feature'  },
+      { id:'chat_gif',        name:'GIF у чаті',           icon:'📹', price:5,  desc:'Відправляй GIF у чаті',            type:'feature'  },
+      { id:'chat_sticker',    name:'Стікери',              icon:'🎨', price:4,  desc:'10 ексклюзивних стікерів',         type:'feature'  },
+      // ── БУСТИ ──
+      { id:'vip_boost_3d',    name:'VIP Буст 3 дні',       icon:'🚀', price:4,  desc:'2x вагер 3 дні',                   type:'boost'    },
+      { id:'vip_boost_7d',    name:'VIP Буст 7 днів',      icon:'🚀', price:8,  desc:'2x вагер 7 днів',                  type:'boost'    },
+      { id:'cashback_x2',     name:'Кешбек x2',            icon:'💰', price:4,  desc:'Подвоєний кешбек 3 дні',           type:'boost'    },
+      { id:'cashback_x3',     name:'Кешбек x3',            icon:'💸', price:9,  desc:'Потрійний кешбек 7 днів',          type:'boost'    },
+      { id:'daily_x2',        name:'Щоденний бонус x2',    icon:'🎁', price:2,  desc:'Подвоєний щоденний 7 днів',        type:'boost'    },
+      { id:'daily_x3',        name:'Щоденний бонус x3',    icon:'🎁', price:4,  desc:'Потрійний щоденний 7 днів',        type:'boost'    },
+      { id:'lucky_boost',     name:'Везіння x2',           icon:'🍀', price:6,  desc:'+50% шанс виграшу 24 год',         type:'boost'    },
+      { id:'xp_boost',        name:'XP Буст x2',           icon:'⚡', price:3,  desc:'2x досягнення очки 3 дні',          type:'boost'    },
+      { id:'withdraw_fast',   name:'Пріоритетний вивід',   icon:'💳', price:3,  desc:'Вивід без черги',                  type:'feature'  },
+      { id:'transfer_free',   name:'Переказ без комісії',  icon:'🔄', price:2,  desc:'10 переказів без комісії',         type:'feature'  },
+      // ── ПРЕДМЕТИ ──
+      { id:'lootbox_basic',   name:'Лут-бокс Basic',       icon:'📦', price:1,  desc:'Звичайний лут-бокс',               type:'item'     },
+      { id:'lootbox_ultra',   name:'Ultra Лут-бокс',       icon:'🎁', price:3,  desc:'Рідкісний лут-бокс',               type:'item'     },
+      { id:'lootbox_legend',  name:'Legendary Лут-бокс',   icon:'🔮', price:8,  desc:'Легендарний лут-бокс',             type:'item'     },
+      { id:'slot_free_5',     name:'5 Безкоштовних Спінів',icon:'🎰', price:2,  desc:'5 безкоштовних ставок у слотах',   type:'item'     },
+      { id:'slot_free_20',    name:'20 Безкоштов. Спінів', icon:'🎰', price:6,  desc:'20 безкоштовних ставок у слотах',  type:'item'     },
+      { id:'fortune_free',    name:'Безкошт. Прокрутка',   icon:'🎡', price:2,  desc:'3 безкоштовних прокруток Колеса',  type:'item'     },
+      { id:'crash_insurance', name:'Краш-страховка',       icon:'🛡️', price:5,  desc:'Повернення ставки при краші <1.2',  type:'item'     },
+      { id:'mines_hint',      name:'Підказка в Майнері',   icon:'💡', price:3,  desc:'3 підказки безпечної клітинки',    type:'item'     },
+      { id:'sport_bet_free',  name:'Безкошт. Спортставка', icon:'⚽', price:4,  desc:'1 безкоштовна спортивна ставка',   type:'item'     },
+      { id:'nickname_change', name:'Зміна нікнейму',       icon:'✏️', price:5,  desc:'Змінити нікнейм без перереєстр.',  type:'feature'  },
+      { id:'profile_bio',     name:'Біографія профілю',    icon:'📝', price:2,  desc:'Додати опис до профілю',           type:'feature'  },
+      // ── ЕКСКЛЮЗИВ ──
+      { id:'vip_trial',       name:'VIP Пробний тиждень',  icon:'💠', price:10, desc:'Всі VIP бонуси на 7 днів',         type:'exclusive'},
+      { id:'private_room',    name:'Приватна кімната',     icon:'🏠', price:20, desc:'Власна кімната для гри з друзями', type:'exclusive'},
+      { id:'custom_bet_limit',name:'Підвищений Max-Bet',   icon:'📈', price:15, desc:'Max ставка x10 на 7 днів',         type:'exclusive'},
+      { id:'guaranteed_win',  name:'Гарантований виграш',  icon:'🎯', price:25, desc:'100% виграш у наступній грі',      type:'exclusive'},
+      { id:'monthly_pass',    name:'Місячний Пропуск',     icon:'📅', price:30, desc:'Всі буст бонуси на місяць',        type:'exclusive'},
     ];
 
     function initSlotiky() {
@@ -10003,6 +10526,352 @@
         if(_orig) _orig(tab);
       };
     })();
+
+
+    // ============================================================
+    // ===== LIVE MATCH TRACKER — animated pitch =====
+    // ============================================================
+    let trackerMatchId  = null;
+    let trackerInterval = null;
+    let trackerMinute   = 0;
+    let trackerHomeScore = 0;
+    let trackerAwayScore = 0;
+    let trackerEvents   = [];
+    let trackerBallX    = 0.5;  // 0–1 normalized
+    let trackerBallY    = 0.5;
+    let trackerBallTargetX = 0.5;
+    let trackerBallTargetY = 0.5;
+    let pitchAnimFrame  = null;
+
+    const SPORT_PITCH_CONFIGS = {
+      soccer:     { field:'football', color:'#2d5a27', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','🔴 Червона','↔️ Заміна','⛳ Кутовий','🛡️ Сейв'] },
+      ucl:        { field:'football', color:'#1a3a7a', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','↔️ Заміна'] },
+      basketball: { field:'basketball', color:'#8B4513', lineColor:'rgba(255,255,255,0.4)', events:['🏀 М\u02BCяч у кільці','🚫 Фол','⏱️ Тайм-аут'] },
+      hockey:     { field:'hockey', color:'#c0d8e8', lineColor:'rgba(0,0,0,0.4)', events:['🏒 Гол!','🚫 Пенальті','↔️ Заміна'] },
+      tennis:     { field:'tennis', color:'#2d6a4f', lineColor:'rgba(255,255,255,0.5)', events:['🎾 Ейс!','🚫 Подвійна','🏆 Гейм'] },
+      csgo:       { field:'esport', color:'#1a1a2e', lineColor:'rgba(0,200,255,0.4)', events:['💀 Вбивство','💣 Бомба посаджена','🛡️ Раунд виграно'] },
+      default:    { field:'football', color:'#2d5a27', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','↔️ Заміна'] },
+    };
+
+    function openMatchTracker(matchId) {
+      const m = realMatches[matchId];
+      if(!m) { notify('Матч не знайдено', 'error'); return; }
+
+      trackerMatchId    = matchId;
+      trackerMinute     = m.isLive ? (30 + Math.floor(Math.random()*30)) : 0;
+      trackerHomeScore  = m.isLive ? (Math.floor(Math.random()*3)) : 0;
+      trackerAwayScore  = m.isLive ? (Math.floor(Math.random()*3)) : 0;
+      trackerEvents     = [];
+      trackerBallX = trackerBallY = 0.5;
+
+      // Set UI info
+      const sportCfg = SPORT_PITCH_CONFIGS[m.sport] || SPORT_PITCH_CONFIGS.default;
+      const sportEmoji = { soccer:'⚽', ucl:'🏆', basketball:'🏀', hockey:'🏒', tennis:'🎾', csgo:'🎮', dota2:'⚔️', lol:'🏆', valorant:'🔫', efootball:'⚡', football:'🏈', baseball:'⚾' };
+
+      document.getElementById('trackerMatchTitle').textContent = m.home + ' vs ' + m.away;
+      document.getElementById('trackerHomeName').textContent   = m.home;
+      document.getElementById('trackerAwayName').textContent   = m.away;
+      document.getElementById('trackerHomeEmoji').textContent  = sportEmoji[m.sport] || '🏅';
+      document.getElementById('trackerAwayEmoji').textContent  = sportEmoji[m.sport] || '🏅';
+      document.getElementById('trackerSport').textContent      = (m.league || m.sport || '').toUpperCase();
+      document.getElementById('trackerStatus').textContent     = m.isLive ? '🟢 LIVE' : '⏳ Очікується';
+
+      updateTrackerScore();
+      renderTrackerEvents();
+      renderMatchStats(m);
+      renderTrackerBets(m);
+
+      // Populate initial events if live
+      if(m.isLive && trackerHomeScore + trackerAwayScore > 0) {
+        const totalGoals = trackerHomeScore + trackerAwayScore;
+        for(let i = 0; i < totalGoals; i++) {
+          const isHome = i < trackerHomeScore;
+          const min = 5 + Math.floor(Math.random() * (trackerMinute - 5));
+          trackerEvents.push({ min, icon:'⚽', title:'Гол!', sub: isHome ? m.home : m.away, side: isHome ? 'home' : 'away', score: (isHome?i+1:trackerHomeScore)+'-'+(isHome?trackerAwayScore:i+1) });
+        }
+        trackerEvents.sort((a,b) => a.min - b.min);
+        renderTrackerEvents();
+      }
+
+      // Show modal
+      document.getElementById('matchTrackerModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Draw pitch
+      drawPitch(sportCfg);
+
+      // Start simulation
+      if(trackerInterval) clearInterval(trackerInterval);
+      trackerInterval = setInterval(() => simulateTrackerTick(m, sportCfg), 1500);
+
+      // Animate ball
+      animateBall();
+    }
+
+    function closeMatchTracker() {
+      document.getElementById('matchTrackerModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      if(trackerInterval) { clearInterval(trackerInterval); trackerInterval = null; }
+      if(pitchAnimFrame)  { cancelAnimationFrame(pitchAnimFrame); pitchAnimFrame = null; }
+    }
+
+    function drawPitch(cfg) {
+      const canvas = document.getElementById('pitchCanvas');
+      if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = cfg.color;
+      ctx.fillRect(0,0,W,H);
+
+      // Stripes
+      for(let i = 0; i < 8; i++) {
+        ctx.fillStyle = i%2===0 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.03)';
+        ctx.fillRect(i * W/8, 0, W/8, H);
+      }
+
+      ctx.strokeStyle = cfg.lineColor;
+      ctx.lineWidth = 1.5;
+
+      if(cfg.field === 'football') {
+        // Outer
+        ctx.strokeRect(12, 8, W-24, H-16);
+        // Center line
+        ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
+        // Center circle
+        ctx.beginPath(); ctx.arc(W/2, H/2, 32, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W/2, H/2, 3, 0, Math.PI*2);
+        ctx.fillStyle = cfg.lineColor; ctx.fill();
+        // Left goal area
+        ctx.strokeRect(12, H/2-24, 30, 48);
+        ctx.strokeRect(12, H/2-44, 56, 88);
+        // Right goal area
+        ctx.strokeRect(W-42, H/2-24, 30, 48);
+        ctx.strokeRect(W-68, H/2-44, 56, 88);
+        // Goals
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(6, H/2-20, 6, 40);
+        ctx.fillRect(W-12, H/2-20, 6, 40);
+        ctx.strokeRect(6, H/2-20, 6, 40);
+        ctx.strokeRect(W-12, H/2-20, 6, 40);
+      } else if(cfg.field === 'basketball') {
+        ctx.strokeRect(12, 8, W-24, H-16);
+        ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W/2, H/2, 40, 0, Math.PI*2); ctx.stroke();
+        // Hoops
+        ctx.beginPath(); ctx.arc(50, H/2, 18, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W-50, H/2, 18, 0, Math.PI*2); ctx.stroke();
+      } else if(cfg.field === 'esport') {
+        // Map grid
+        ctx.strokeStyle = 'rgba(0,200,255,0.2)';
+        for(let x = 0; x < W; x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+        for(let y = 0; y < H; y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+        ctx.strokeStyle = cfg.lineColor; ctx.strokeRect(12,8,W-24,H-16);
+      }
+    }
+
+    function drawBall(x, y, sport) {
+      const canvas = document.getElementById('pitchCanvas');
+      if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const bx = x * W, by = y * H;
+      const ballEmoji = { basketball:'🏀', hockey:'🏒', tennis:'🎾', csgo:'💀' };
+      const emoji = ballEmoji[sport] || null;
+
+      if(emoji) {
+        ctx.font = '14px serif';
+        ctx.fillText(emoji, bx-7, by+5);
+      } else {
+        // Soccer ball
+        ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
+        // Hexagons
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
+      }
+
+      // Shadow
+      ctx.beginPath(); ctx.ellipse(bx, by+8, 6, 2, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
+    }
+
+    function animateBall() {
+      const canvas = document.getElementById('pitchCanvas');
+      if(!canvas) return;
+      const m = realMatches[trackerMatchId];
+      const cfg = m ? (SPORT_PITCH_CONFIGS[m.sport] || SPORT_PITCH_CONFIGS.default) : SPORT_PITCH_CONFIGS.default;
+
+      // Lerp ball toward target
+      trackerBallX += (trackerBallTargetX - trackerBallX) * 0.08;
+      trackerBallY += (trackerBallTargetY - trackerBallY) * 0.08;
+
+      drawPitch(cfg);
+      drawBall(trackerBallX, trackerBallY, m?.sport);
+      pitchAnimFrame = requestAnimationFrame(animateBall);
+    }
+
+    function simulateTrackerTick(m, cfg) {
+      if(!m) return;
+      trackerMinute = Math.min(trackerMinute + 1, 90);
+      document.getElementById('trackerMinute').textContent = trackerMinute + "'";
+      if(trackerMinute >= 90) {
+        document.getElementById('trackerStatus').textContent = '🏁 Завершено';
+        clearInterval(trackerInterval); trackerInterval = null;
+      }
+
+      // Move ball randomly
+      trackerBallTargetX = 0.1 + Math.random() * 0.8;
+      trackerBallTargetY = 0.05 + Math.random() * 0.9;
+
+      // Update shot stats
+      const homeShots = parseInt(document.getElementById('statHomeVal')?.textContent || '0');
+      const awayShots = parseInt(document.getElementById('statAwayVal')?.textContent || '0');
+      if(Math.random() < 0.15) {
+        const isHome = Math.random() < 0.5;
+        if(isHome) document.getElementById('statHomeVal').textContent = homeShots + 1;
+        else       document.getElementById('statAwayVal').textContent = awayShots + 1;
+        renderMatchStatsLive(homeShots + (isHome?1:0), awayShots + (isHome?0:1));
+      }
+
+      // Random events (5% chance per tick)
+      if(Math.random() < 0.05) {
+        const eventIdx = Math.floor(Math.random() * cfg.events.length);
+        const evText   = cfg.events[eventIdx];
+        const isGoal   = evText.includes('Гол') || evText.includes('кільце');
+        const isHome   = Math.random() < 0.5;
+
+        if(isGoal) {
+          if(isHome) trackerHomeScore++;
+          else trackerAwayScore++;
+          updateTrackerScore();
+
+          // Ball fly to goal
+          trackerBallTargetX = isHome ? 0.97 : 0.03;
+          trackerBallTargetY = 0.4 + Math.random() * 0.2;
+
+          // Particle burst
+          goalBurst(isHome);
+        }
+
+        const eventIcons = { '⚽':1,'🟡':2,'🔴':3,'↔️':4,'⛳':5,'🛡️':6,'🏀':7,'🏒':8,'🎾':9,'💀':10,'💣':11 };
+        const parts = evText.split(' ');
+        const ev = {
+          min:   trackerMinute,
+          icon:  parts[0] || '⚽',
+          title: parts.slice(1).join(' ') || evText,
+          sub:   isHome ? m.home : m.away,
+          side:  isHome ? 'home' : 'away',
+        };
+        trackerEvents.unshift(ev);
+        if(trackerEvents.length > 15) trackerEvents.pop();
+        renderTrackerEvents();
+
+        // Show overlay
+        showEventOverlay(ev.icon, ev.title, ev.sub);
+      }
+    }
+
+    function updateTrackerScore() {
+      const el = document.getElementById('trackerScore');
+      if(el) el.textContent = trackerHomeScore + ' – ' + trackerAwayScore;
+    }
+
+    function renderTrackerEvents() {
+      const el = document.getElementById('trackerEventsList');
+      if(!el) return;
+      if(!trackerEvents.length) {
+        el.innerHTML = '<div style="color:#555;font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>';
+        return;
+      }
+      el.innerHTML = trackerEvents.map(ev => `
+        <div class="tracker-event-row">
+          <span class="ev-min">${ev.min}'</span>
+          <span style="font-size:16px;">${ev.icon}</span>
+          <span class="ev-text ${ev.side==='home'?'ev-side-home':'ev-side-away'}">${ev.title} — <b>${ev.sub}</b></span>
+          ${ev.score ? `<span class="ev-score">${ev.score}</span>` : ''}
+        </div>`).join('');
+    }
+
+    function renderMatchStats(m) {
+      const el = document.getElementById('matchStatsGrid');
+      if(!el) return;
+      const stats = [
+        { label:'Удари', home: Math.floor(Math.random()*8)+1, away: Math.floor(Math.random()*8)+1 },
+        { label:'У ціль', home: Math.floor(Math.random()*5), away: Math.floor(Math.random()*5) },
+        { label:'Кутові', home: Math.floor(Math.random()*6), away: Math.floor(Math.random()*6) },
+        { label:'Офсайди', home: Math.floor(Math.random()*4), away: Math.floor(Math.random()*4) },
+        { label:'Жовті', home: Math.floor(Math.random()*3), away: Math.floor(Math.random()*3) },
+        { label:'Воло\u02BCяч', home: null, away: null, pct: true },
+      ];
+      el.innerHTML = stats.map(s => {
+        const pctHome = s.pct ? (40+Math.floor(Math.random()*20)) : null;
+        const hVal = s.pct ? pctHome+'%' : s.home;
+        const aVal = s.pct ? (100-pctHome)+'%' : s.away;
+        const pctW  = s.pct ? pctHome : (s.home+s.away > 0 ? Math.round(s.home/(s.home+s.away)*100) : 50);
+        return `<div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#ccc;margin-bottom:3px;">
+            <span style="font-weight:bold;">${hVal}</span>
+            <span style="color:#555;">${s.label}</span>
+            <span style="font-weight:bold;">${aVal}</span>
+          </div>
+          <div style="height:4px;background:#0d150d;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${pctW}%;background:linear-gradient(90deg,#0077b6,#00b4d8);border-radius:2px;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderMatchStatsLive(hShots, aShots) {
+      const el = document.getElementById('statHomeVal');
+      const el2 = document.getElementById('statAwayVal');
+      if(el) el.textContent = hShots;
+      if(el2) el2.textContent = aShots;
+    }
+
+    function renderTrackerBets(m) {
+      const el = document.getElementById('trackerBetButtons');
+      if(!el || !m) return;
+      el.innerHTML = [
+        { label: '1 ' + (m.home.split(' ')[0]||'Хазяїн'), odds: m.homeOdds, outcome:'home' },
+        ...(m.drawOdds ? [{ label: 'X Нічия', odds: m.drawOdds, outcome:'draw' }] : []),
+        { label: '2 ' + (m.away.split(' ')[0]||'Гість'), odds: m.awayOdds, outcome:'away' },
+      ].map(b => `
+        <div onclick="openBetSlip('${m.id}','${b.outcome}','${b.outcome==='home'?m.home:b.outcome==='away'?m.away:'Нічия'}')"
+             style="background:#0a150a;border:1px solid #1a2a1a;border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all 0.15s;"
+             onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''">
+          <div style="font-size:10px;color:#777;margin-bottom:3px;">${b.label}</div>
+          <div style="font-size:18px;font-weight:900;color:var(--accent);">${b.odds}</div>
+        </div>`).join('');
+    }
+
+    function showEventOverlay(icon, title, sub) {
+      const ov = document.getElementById('eventOverlay');
+      const ic = document.getElementById('evIcon');
+      const ti = document.getElementById('evTitle');
+      const su = document.getElementById('evSub');
+      if(!ov) return;
+      if(ic) ic.textContent = icon;
+      if(ti) ti.textContent = title;
+      if(su) su.textContent = sub;
+      ov.classList.add('show');
+      setTimeout(()=>ov.classList.remove('show'), 2500);
+    }
+
+    function goalBurst(isHome) {
+      const canvas = document.getElementById('pitchCanvas');
+      if(!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const bx = isHome ? W-20 : 20;
+      const by = H/2;
+      // Flash
+      ctx.fillStyle = 'rgba(255,220,0,0.3)';
+      ctx.fillRect(0,0,W,H);
+    }
+
 
     // Перевірка реферала при старті
     checkRefParam();
