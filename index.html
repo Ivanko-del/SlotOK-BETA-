@@ -314,6 +314,78 @@
     .ds-waiting { background: rgba(212,175,55,0.2); color: var(--accent); }
     .ds-active { background: rgba(76,217,100,0.2); color: var(--green); }
 
+    /* ═══════════════════════════════════════
+       CASINO LOBBY v2
+    ═══════════════════════════════════════ */
+    .casino-hero-banner { background: linear-gradient(135deg,#1a0800,#0d0500,#1a1000); border:1px solid rgba(212,175,55,0.3); border-radius:14px; padding:18px; margin-bottom:14px; position:relative; overflow:hidden; display:flex; align-items:center; }
+    .casino-hero-banner::before { content:'🎰'; position:absolute; right:-10px; top:50%; transform:translateY(-50%); font-size:80px; opacity:0.12; pointer-events:none; }
+    .casino-hero-content { position:relative; z-index:1; }
+    .casino-hero-label { font-size:10px; color:var(--accent); font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+    .casino-hero-title { font-size:26px; font-weight:900; color:#fff; line-height:1.1; margin-bottom:6px; }
+    .casino-hero-title span { color:var(--accent); }
+    .casino-hero-sub { font-size:11px; color:#aaa; margin-bottom:12px; }
+    .casino-hero-btn { background:linear-gradient(45deg,var(--accent),#ffdb4d); color:#000; border:none; border-radius:8px; padding:9px 20px; font-size:12px; font-weight:800; cursor:pointer; }
+
+    .casino-cats { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; padding-bottom:2px; }
+    .casino-cats::-webkit-scrollbar { display:none; }
+    .casino-cat-btn { flex-shrink:0; background:#1a1a1a; border:1px solid #333; border-radius:20px; padding:6px 13px; font-size:11px; font-weight:700; color:#888; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .casino-cat-btn.active { background:rgba(212,175,55,0.15); border-color:var(--accent); color:var(--accent); }
+
+    .jackpot-strip { background:linear-gradient(90deg,#1a0800,#120500,#1a0800); border:1px solid rgba(212,175,55,0.4); border-radius:12px; padding:12px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+    .jackpot-num { font-size:28px; font-weight:900; color:#fff; letter-spacing:1px; }
+    .jackpot-num span { color:var(--accent); }
+    .jackpot-play-btn { background:var(--accent); color:#000; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:800; cursor:pointer; }
+
+    .casino-featured { border-radius:12px; overflow:hidden; position:relative; margin-bottom:12px; border:1px solid #2a2a2a; cursor:pointer; }
+    .casino-featured:active { transform:scale(0.99); }
+    .casino-featured-img { height:150px; display:flex; align-items:center; justify-content:center; font-size:70px; position:relative; }
+    .casino-featured-img::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.8) 100%); }
+    .casino-featured-info { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#141414; }
+    .casino-featured-name { font-size:15px; font-weight:800; }
+    .casino-featured-rtp { background:rgba(76,217,100,0.15); border:1px solid rgba(76,217,100,0.3); border-radius:6px; padding:3px 9px; font-size:10px; font-weight:700; color:var(--green); }
+    .casino-featured-badge { position:absolute; top:8px; left:8px; background:var(--accent); color:#000; font-size:9px; font-weight:800; padding:3px 9px; border-radius:4px; letter-spacing:1px; z-index:1; }
+
+    .casino-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+    .casino-game-card { background:#141414; border:1px solid #222; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; transition:border-color 0.2s; }
+    .casino-game-card:active { transform:scale(0.96); }
+    .casino-game-card:hover { border-color:rgba(212,175,55,0.3); }
+    .casino-game-card-img { height:80px; display:flex; align-items:center; justify-content:center; font-size:38px; }
+    .casino-game-card-info { padding:6px 8px 8px; }
+    .casino-game-card-name { font-size:10px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .casino-game-card-prov { font-size:9px; color:#555; margin-top:1px; }
+    .casino-badge-hot { position:absolute; top:5px; right:5px; background:var(--red); color:#fff; font-size:8px; font-weight:800; padding:2px 5px; border-radius:3px; }
+    .casino-badge-new { position:absolute; top:5px; right:5px; background:var(--green); color:#000; font-size:8px; font-weight:800; padding:2px 5px; border-radius:3px; }
+
+    .providers-scroll { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; }
+    .providers-scroll::-webkit-scrollbar { display:none; }
+    .provider-pill { flex-shrink:0; background:#1a1a1a; border:1px solid #222; border-radius:8px; padding:7px 12px; font-size:10px; font-weight:700; color:#888; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .provider-pill:hover { border-color:rgba(212,175,55,0.3); color:var(--accent); }
+
+    .wins-feed { background:#141414; border:1px solid #222; border-radius:12px; overflow:hidden; margin-bottom:12px; }
+    .win-feed-row { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid #1a1a1a; animation:wfSlide 0.4s ease; }
+    .win-feed-row:last-child { border-bottom:none; }
+    @keyframes wfSlide { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+    .win-feed-avatar { width:30px; height:30px; border-radius:50%; background:#222; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .win-feed-user { font-size:11px; font-weight:700; }
+    .win-feed-game { font-size:9px; color:#555; margin-top:1px; }
+    .win-feed-amount { font-size:13px; font-weight:900; color:var(--green); }
+
+    /* GAME MODAL */
+    .game-open-modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:8500; display:flex; flex-direction:column; }
+    .game-open-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:#141414; border-bottom:1px solid #222; }
+    .game-open-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; }
+    .game-open-emoji { font-size:88px; animation:goFloat 2s ease-in-out infinite alternate; }
+    @keyframes goFloat { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+    .game-open-name { font-size:26px; font-weight:900; color:var(--accent); letter-spacing:1px; }
+    .game-open-meta { font-size:12px; color:#777; }
+    .game-open-play { background:linear-gradient(45deg,var(--accent),#ffdb4d); color:#000; border:none; border-radius:10px; padding:14px; width:100%; font-size:15px; font-weight:800; cursor:pointer; }
+    .game-open-demo { background:transparent; border:1px solid #333; border-radius:10px; padding:12px; width:100%; font-size:13px; font-weight:700; color:#888; cursor:pointer; }
+
+    /* STREAM FALLBACK FIX */
+    .stream-fallback-ui { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px; background:linear-gradient(135deg,#0d0d0d,#1a0a00); width:100%; height:100%; }
+    .stream-fallback-ui .retry-btn { background:var(--accent); color:#000; border:none; border-radius:8px; padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; }
+    .stream-fallback-ui .open-ext-btn { background:transparent; border:1px solid #444; border-radius:8px; padding:8px 20px; font-size:12px; color:#aaa; cursor:pointer; }
+
     /* ТУРНІРИ */
     .tournament-card { background: linear-gradient(135deg, #1a1a00, #0d0d00); border: 1px solid var(--accent); border-radius: 12px; padding: 15px; margin-bottom: 12px; }
     .t-prize { font-size: 24px; font-weight: 900; color: var(--accent); }
@@ -773,21 +845,182 @@
       </div>
     </div>
 
-    <!-- ЛОБІ -->
+    <!-- ЛОБІ (CASINO v2) -->
     <div id="tab-lobby" class="screen hidden">
-      <div class="game-card" onclick="openGame('blackjack')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Blackjack</div><div class="game-desc">21 • Класика</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('keno')"><span class="game-icon">🔢</span><div class="game-info"><div class="game-title">Keno</div><div class="game-desc">Вибери числа</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('scratch')"><span class="game-icon">🎟️</span><div class="game-info"><div class="game-title">Скретч</div><div class="game-desc">Стирай і вигравай</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('fortune')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Колесо Фортуни</div><div class="game-desc">Крути і вигравай</div></div><span style="background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('slots')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Classic 777</div><div class="game-desc">Слоти • RTP 95%</div></div></div>
-      <div class="game-card" onclick="openGame('roulette')"><span class="game-icon">🎡</span><div class="game-info"><div class="game-title">Royal Roulette</div><div class="game-desc">Рулетка • x2 / x14</div></div></div>
-      <div class="game-card" onclick="openGame('crash')"><span class="game-icon">🚀</span><div class="game-info"><div class="game-title">Crash Aviator</div><div class="game-desc">Краш • до x∞</div></div></div>
-      <div class="game-card" onclick="openGame('poker')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Video Poker</div><div class="game-desc">5-карткова роздача • NEW</div></div><span style="background:var(--green);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('chests')"><span class="game-icon">📦</span><div class="game-info"><div class="game-title">Magic Chests</div><div class="game-desc">Сундуки</div></div></div>
-      <div class="game-card" onclick="openGame('mines')"><span class="game-icon">💣</span><div class="game-info"><div class="game-title">Mines</div><div class="game-desc">Сапер</div></div></div>
-      <div class="game-card" onclick="openGame('plinko')"><span class="game-icon">🔻</span><div class="game-info"><div class="game-title">Plinko</div><div class="game-desc">Плінко</div></div></div>
-      <div class="game-card" onclick="openGame('monopoly')"><span class="game-icon">🎩</span><div class="game-info"><div class="game-title">Монополія</div><div class="game-desc">Купуй нерухомість • Стратегія</div></div><span style="background:#9b59b6;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">HOT</span></div>
-      <div class="game-card" onclick="openGame('cardgame')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Карти (Дурень)</div><div class="game-desc">vs AI • vs гравці онлайн</div></div><span style="background:#e91e63;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:10px;margin-left:auto;">NEW</span></div>
+
+      <!-- Game open modal (overlay) -->
+      <div id="casinoGameModal" class="game-open-modal hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:8500;display:none;flex-direction:column;">
+        <div class="game-open-header">
+          <span id="casinoGameModalTitle" style="font-size:15px;font-weight:800;"></span>
+          <button onclick="closeCasinoModal()" style="background:#1f1f1f;border:1px solid #333;border-radius:8px;color:#aaa;padding:6px 12px;font-size:12px;cursor:pointer;">✕ Закрити</button>
+        </div>
+        <div class="game-open-body">
+          <div id="casinoGameModalEmoji" class="game-open-emoji"></div>
+          <div id="casinoGameModalName" class="game-open-name"></div>
+          <div id="casinoGameModalMeta" class="game-open-meta"></div>
+          <button class="game-open-play" id="casinoGameModalPlayBtn">🎮 Грати на гроші</button>
+          <button class="game-open-demo" onclick="closeCasinoModal()">Демо режим (скоро)</button>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="casino-hero-banner">
+        <div class="casino-hero-content">
+          <div class="casino-hero-label">🎰 Казино SlotOK</div>
+          <div class="casino-hero-title">БОНУС<br><span>+100%</span></div>
+          <div class="casino-hero-sub">На перший депозит до ₴ 10 000</div>
+          <button class="casino-hero-btn" onclick="switchTab('cashier')">💳 Отримати бонус</button>
+        </div>
+      </div>
+
+      <!-- Category tabs -->
+      <div class="casino-cats">
+        <div class="casino-cat-btn active" onclick="filterCasinoGames('all',this)">🔥 Топ</div>
+        <div class="casino-cat-btn" onclick="filterCasinoGames('slots',this)">🎰 Слоти</div>
+        <div class="casino-cat-btn" onclick="filterCasinoGames('cards',this)">🃏 Карти</div>
+        <div class="casino-cat-btn" onclick="filterCasinoGames('crash',this)">🚀 Краш</div>
+        <div class="casino-cat-btn" onclick="filterCasinoGames('mini',this)">🎯 Міні</div>
+        <div class="casino-cat-btn" onclick="filterCasinoGames('sport',this)">⚽ Спорт</div>
+      </div>
+
+      <!-- Jackpot live -->
+      <div class="jackpot-strip">
+        <div>
+          <div style="font-size:9px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;">🏆 Поточний джекпот</div>
+          <div class="jackpot-num">₴ <span id="lobbyJackpotNum">4 287 341</span></div>
+          <div style="font-size:9px;color:#555;margin-top:1px;">Оновлюється в реальному часі</div>
+        </div>
+        <button class="jackpot-play-btn" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Spribe • до x∞')">Грати</button>
+      </div>
+
+      <!-- Featured game of the day -->
+      <div class="section-header">⚡ Гра дня</div>
+      <div class="casino-featured" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Spribe • RTP 97%')">
+        <div class="casino-featured-badge">ТОП</div>
+        <div class="casino-featured-img" style="background:linear-gradient(135deg,#00001a,#050505);">🚀</div>
+        <div class="casino-featured-info">
+          <div>
+            <div class="casino-featured-name">Crash Aviator</div>
+            <div style="font-size:10px;color:#777;margin-top:2px;">Spribe</div>
+          </div>
+          <div class="casino-featured-rtp">RTP 97.0%</div>
+        </div>
+      </div>
+
+      <!-- All games grid -->
+      <div class="section-header">🎮 Всі ігри</div>
+      <div class="casino-grid-3" id="casinoGamesGrid">
+        <div class="casino-game-card" data-cat="slots" onclick="openGame('slots')">
+          <span class="casino-badge-hot">HOT</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0800,#050505);">🎰</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Classic 777</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" onclick="openGame('crash')">
+          <span class="casino-badge-hot">HOT</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#00001a,#050505);">🚀</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash Aviator</div><div class="casino-game-card-prov">Spribe</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('mines')">
+          <span class="casino-badge-hot">HOT</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0000,#050505);">💣</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Mines</div><div class="casino-game-card-prov">Spribe</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" onclick="openGame('blackjack')">
+          <span class="casino-badge-new">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#001a0a,#050505);">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Blackjack</div><div class="casino-game-card-prov">Класика</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('plinko')">
+          <span class="casino-badge-new">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#0a001a,#050505);">🔻</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko</div><div class="casino-game-card-prov">BGaming</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('dice')">
+          <span class="casino-badge-new">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#0a1a00,#050505);">🎲</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Dice Roll</div><div class="casino-game-card-prov">BGaming</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" onclick="openGame('fortune')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a1000,#050505);">🎡</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Колесо Фортуни</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" onclick="openGame('poker')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a000a,#050505);">♠️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Video Poker</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('hilo')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#001a1a,#050505);">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Hi-Lo Cards</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" onclick="openGame('scratch')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a1a00,#050505);">🎟️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Скретч</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('limbo')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0500,#050505);">🎯</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Limbo</div><div class="casino-game-card-prov">Spribe</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" onclick="openGame('tower')">
+          <span class="casino-badge-hot">HOT</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#050a1a,#050505);">🗼</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Tower Climb</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" onclick="openGame('roulette')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a001a,#050505);">🎡</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Roulette</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" onclick="openGame('keno')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#001a00,#050505);">🔢</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Keno</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('monopoly')">
+          <span class="casino-badge-hot">HOT</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#0a1a0a,#050505);">🎩</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Монополія</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" onclick="openGame('cardgame')">
+          <span class="casino-badge-new">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0a1a,#050505);">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Карти (Дурень)</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" onclick="openGame('chests')">
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0a00,#050505);">📦</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Magic Chests</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" onclick="openGame('double')">
+          <span class="casino-badge-new">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a001a,#050505);">🎰</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Double</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="sport" onclick="switchTab('sports')">
+          <span style="position:absolute;top:5px;right:5px;background:#e74c3c;color:#fff;font-size:8px;font-weight:800;padding:2px 5px;border-radius:3px;">LIVE</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#0a1a0a,#050505);">⚽</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Sport Betting</div><div class="casino-game-card-prov">Реальні матчі</div></div>
+        </div>
+      </div>
+
+      <!-- Providers -->
+      <div class="section-header">🏢 Провайдери</div>
+      <div class="providers-scroll">
+        <div class="provider-pill">Pragmatic Play</div>
+        <div class="provider-pill">NetEnt</div>
+        <div class="provider-pill">Spribe</div>
+        <div class="provider-pill">BGaming</div>
+        <div class="provider-pill">Evolution</div>
+        <div class="provider-pill">Hacksaw</div>
+        <div class="provider-pill">Novomatic</div>
+        <div class="provider-pill">Microgaming</div>
+      </div>
+
+      <!-- Last wins feed -->
+      <div class="section-header">🏆 Останні виграші</div>
+      <div class="wins-feed" id="lobbyWinsFeed">
+        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🦁</div><div><div class="win-feed-user">Олег Р.</div><div class="win-feed-game">Crash Aviator</div></div></div><div class="win-feed-amount">+₴ 12 450</div></div>
+        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🦊</div><div><div class="win-feed-user">Катя М.</div><div class="win-feed-game">Mines</div></div></div><div class="win-feed-amount">+₴ 3 280</div></div>
+        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐯</div><div><div class="win-feed-user">Ігор В.</div><div class="win-feed-game">Classic 777</div></div></div><div class="win-feed-amount">+₴ 8 900</div></div>
+        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐻</div><div><div class="win-feed-user">Аня К.</div><div class="win-feed-game">Blackjack</div></div></div><div class="win-feed-amount">+₴ 5 150</div></div>
+        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐺</div><div><div class="win-feed-user">Марк С.</div><div class="win-feed-game">Plinko</div></div></div><div class="win-feed-amount">+₴ 21 000</div></div>
+      </div>
 
       <!-- NEW MULTIPLIER GAMES -->
       <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:bold;padding:8px 0 4px;">🎯 Мультиплаєр ігри</div>
@@ -5492,14 +5725,18 @@
     }
 
     function updateCashierCashbackUI() {
+      const el = document.getElementById('cashierCashbackPanel');
+      if(!el) return;
+      // Guard: userData not loaded yet
+      if(!userData) {
+        el.innerHTML = '<div style="text-align:center;color:#555;padding:30px;font-size:13px;">⏳ Завантаження...</div>';
+        return;
+      }
       const pending   = userData.cashbackPending || 0;
       const weekUsed  = userData.cashbackWeekUsed || 0;
       const weekStart = userData.cashbackWeekStart || Date.now();
       const daysLeft  = Math.max(0, Math.ceil((7*24*3600000 - (Date.now()-weekStart)) / 86400000));
       const weekLeft  = Math.max(0, CASHBACK_MAX_PER_WEEK - weekUsed);
-
-      const el = document.getElementById('cashierCashbackPanel');
-      if(!el) return;
       const vip = getVipLevel(userData.totalWagered||0);
       const enabled = getCashbackEnabled();
 
@@ -7958,14 +8195,15 @@
     // ===== CASHIER SUB-TABS =====
     // ============================================================
     function switchCashierTab(tab, el) {
-      if(tab === 'cashback') updateCashierCashbackUI();
       document.querySelectorAll('.cashier-tab-btn').forEach(b => b.classList.remove('active'));
       if(el) el.classList.add('active');
-      ['deposit','withdraw','markets'].forEach(t => {
+      // Show/hide ALL cashier panels including cashback
+      ['deposit','withdraw','cashback','markets'].forEach(t => {
         const p = document.getElementById('cashier-panel-' + t);
         if(p) p.classList.toggle('hidden', t !== tab);
       });
-      if(tab === 'markets') buildMarketsPage();
+      if(tab === 'cashback') updateCashierCashbackUI();
+      if(tab === 'markets')  buildMarketsPage();
     }
 
     function buildMarketsPage() {
@@ -9232,38 +9470,85 @@
     // ============================================================
     // ===== STREAM VIEWER =====
     // ============================================================
+    // ============================================================
+    // STREAM SOURCES — прямі посилання (YouTube/Twitch блокують iframe)
+    // ============================================================
     const STREAM_SOURCES = {
       soccer: [
-        { name:'Footbal TV', icon:'📺', url:'https://www.youtube.com/embed/live_stream?channel=UCqZQlzSHbVJrwrn5XvzrzcA&autoplay=1', type:'youtube' },
-        { name:'ESPN Goals', icon:'⚽', url:'https://www.twitch.tv/embed/espnfc/chat', type:'twitch' },
-        { name:'Sky Sports', icon:'🌐', url:'https://www.bbc.co.uk/sport/football', type:'web' },
+        { name:'⚽ LiveScore',    icon:'⚽', url:'https://www.livescore.com/en/football/',         label:'Рахунки та огляди' },
+        { name:'📺 YouTube Live', icon:'📺', url:'https://www.youtube.com/results?search_query=football+live+stream+today', label:'YouTube пошук' },
+        { name:'🌐 BBC Sport',    icon:'🌐', url:'https://www.bbc.co.uk/sport/football',            label:'Новини та відео' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com/football',              label:'Live рахунки' },
+        { name:'📡 ESPN FC',      icon:'📡', url:'https://www.espnfc.com',                          label:'Аналітика' },
       ],
-      csgo: [
-        { name:'ESL CS2', icon:'🎮', url:'https://player.twitch.tv/?channel=ESL_CSGO&parent=' + location.hostname, type:'twitch' },
-        { name:'BLAST CS2', icon:'💥', url:'https://player.twitch.tv/?channel=BLASTPremier&parent=' + location.hostname, type:'twitch' },
-        { name:'cs2 Clips', icon:'🎯', url:'https://www.youtube.com/embed?listType=search&list=CS2+match+live&autoplay=1', type:'youtube' },
+      ucl: [
+        { name:'🏆 UEFA.com',     icon:'🏆', url:'https://www.uefa.com/uefachampionsleague/',       label:'Офіційний сайт UCL' },
+        { name:'📺 YouTube UCL',  icon:'📺', url:'https://www.youtube.com/results?search_query=champions+league+live', label:'YouTube пошук' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com/football',              label:'Live рахунки' },
       ],
-      dota2: [
-        { name:'DPC League', icon:'⚔️', url:'https://player.twitch.tv/?channel=dota2&parent=' + location.hostname, type:'twitch' },
-        { name:'Twitch Dota', icon:'🟣', url:'https://player.twitch.tv/?channel=BeyondTheSummit&parent=' + location.hostname, type:'twitch' },
+      laliga: [
+        { name:'🇪🇸 LaLiga.com',  icon:'🇪🇸', url:'https://www.laliga.com/en-GB',                   label:'Офіційний сайт' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=la+liga+live+stream', label:'YouTube пошук' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com/football/spain',        label:'Live рахунки Іспанії' },
       ],
-      lol: [
-        { name:'LoL Esports', icon:'🏆', url:'https://player.twitch.tv/?channel=lolesports&parent=' + location.hostname, type:'twitch' },
-        { name:'LEC Live', icon:'⚡', url:'https://player.twitch.tv/?channel=LEC&parent=' + location.hostname, type:'twitch' },
-      ],
-      valorant: [
-        { name:'VCT', icon:'🔫', url:'https://player.twitch.tv/?channel=valorant&parent=' + location.hostname, type:'twitch' },
-        { name:'Valorant Live', icon:'🎯', url:'https://player.twitch.tv/?channel=valorant_jpn&parent=' + location.hostname, type:'twitch' },
+      bundesliga: [
+        { name:'🇩🇪 Bundesliga',  icon:'🇩🇪', url:'https://www.bundesliga.com/en/bundesliga',        label:'Офіційний сайт' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=bundesliga+live+stream', label:'YouTube пошук' },
       ],
       basketball: [
-        { name:'NBA TV', icon:'🏀', url:'https://www.youtube.com/embed?listType=search&list=NBA+highlights+live&autoplay=1', type:'youtube' },
+        { name:'🏀 NBA.com',      icon:'🏀', url:'https://www.nba.com/watch',                      label:'Офіційний NBA' },
+        { name:'📺 YouTube NBA',  icon:'📺', url:'https://www.youtube.com/results?search_query=NBA+live+game+today', label:'YouTube пошук' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com/basketball',            label:'Live рахунки' },
       ],
       hockey: [
-        { name:'NHL Network', icon:'🏒', url:'https://www.youtube.com/embed?listType=search&list=NHL+game+live&autoplay=1', type:'youtube' },
+        { name:'🏒 NHL.com',      icon:'🏒', url:'https://www.nhl.com/tv',                         label:'Офіційний NHL' },
+        { name:'📺 YouTube NHL',  icon:'📺', url:'https://www.youtube.com/results?search_query=NHL+game+live+today', label:'YouTube пошук' },
+      ],
+      tennis: [
+        { name:'🎾 ATP Tour',     icon:'🎾', url:'https://www.atptour.com/en/tv-and-media',        label:'Офіційний ATP' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=tennis+live+stream+today', label:'YouTube пошук' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com/tennis',               label:'Live рахунки' },
+      ],
+      mma: [
+        { name:'🥊 UFC.com',      icon:'🥊', url:'https://www.ufc.com/events',                     label:'Офіційний UFC' },
+        { name:'📺 YouTube UFC',  icon:'📺', url:'https://www.youtube.com/results?search_query=UFC+live+fight+tonight', label:'YouTube пошук' },
+      ],
+      csgo: [
+        { name:'🎮 Twitch CS2',   icon:'🎮', url:'https://www.twitch.tv/directory/category/counter-strike-2', label:'CS2 стріми на Twitch' },
+        { name:'💥 BLAST',        icon:'💥', url:'https://blast.tv/watch',                         label:'BLAST Premier' },
+        { name:'📺 ESL YouTube',  icon:'📺', url:'https://www.youtube.com/results?search_query=CS2+match+live+ESL', label:'ESL YouTube' },
+        { name:'🎯 HLTV',         icon:'🎯', url:'https://www.hltv.org/matches',                   label:'CS2 матчі та рахунки' },
+      ],
+      dota2: [
+        { name:'⚔️ Twitch Dota2', icon:'⚔️', url:'https://www.twitch.tv/directory/category/dota-2', label:'Dota 2 на Twitch' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=dota+2+live+tournament', label:'YouTube пошук' },
+        { name:'🎯 Liquipedia',   icon:'🎯', url:'https://liquipedia.net/dota2/Main_Page',          label:'Розклад матчів' },
+      ],
+      lol: [
+        { name:'🏆 Twitch LoL',   icon:'🏆', url:'https://www.twitch.tv/directory/category/league-of-legends', label:'LoL на Twitch' },
+        { name:'⚡ LoL Esports',  icon:'⚡', url:'https://lolesports.com/en-US/schedule',           label:'Офіційний розклад' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=lol+esports+live', label:'YouTube пошук' },
+      ],
+      valorant: [
+        { name:'🔫 Twitch VCT',   icon:'🔫', url:'https://www.twitch.tv/directory/category/valorant', label:'Valorant на Twitch' },
+        { name:'📡 VCT',          icon:'📡', url:'https://valorantesports.com/en-US/schedule',      label:'Офіційний VCT' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=valorant+VCT+live', label:'YouTube пошук' },
+      ],
+      efootball: [
+        { name:'⚡ eFootball',    icon:'⚡', url:'https://www.youtube.com/results?search_query=eFootball+tournament+live', label:'YouTube пошук' },
+      ],
+      football: [
+        { name:'🏈 NFL.com',      icon:'🏈', url:'https://www.nfl.com/network/watch/nfl-network-live', label:'Офіційний NFL' },
+        { name:'📺 YouTube NFL',  icon:'📺', url:'https://www.youtube.com/results?search_query=NFL+game+live+today', label:'YouTube пошук' },
+      ],
+      baseball: [
+        { name:'⚾ MLB.tv',       icon:'⚾', url:'https://www.mlb.com/tv',                         label:'Офіційний MLB' },
+        { name:'📺 YouTube',      icon:'📺', url:'https://www.youtube.com/results?search_query=MLB+baseball+live+today', label:'YouTube пошук' },
       ],
       default: [
-        { name:'YouTube Live', icon:'📺', url:'https://www.youtube.com/embed?listType=search&list=sports+live&autoplay=1', type:'youtube' },
-        { name:'Twitch Sports', icon:'🟣', url:'https://player.twitch.tv/?channel=nba&parent=' + location.hostname, type:'twitch' },
+        { name:'📺 YouTube Live', icon:'📺', url:'https://www.youtube.com/results?search_query=sports+live+stream+today', label:'YouTube пошук' },
+        { name:'🎯 Sofascore',    icon:'🎯', url:'https://www.sofascore.com',                      label:'Live рахунки всіх видів' },
+        { name:'🌐 ESPN',         icon:'🌐', url:'https://www.espn.com/watch',                     label:'ESPN відео' },
       ]
     };
 
@@ -9280,7 +9565,7 @@
       // Build source buttons
       if(sourcesEl) {
         sourcesEl.innerHTML = sources.map((s,i) =>
-          `<button onclick="loadStreamSource(${i},'${sport}')" style="flex-shrink:0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 12px;color:#ccc;font-size:12px;cursor:pointer;white-space:nowrap;" id="streamBtn_${i}">
+          `<button onclick="loadStreamSource(${i},'${sport}')" style="flex-shrink:0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 14px;color:#ccc;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" id="streamBtn_${i}">
             ${s.icon} ${s.name}
           </button>`
         ).join('');
@@ -9308,9 +9593,38 @@
       if(!area) return;
 
       if(s.type === 'twitch' || s.type === 'youtube') {
-        area.innerHTML = `
-          <iframe src="${s.url}" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" onerror="this.parentElement.innerHTML='<div style=\'text-align:center;color:#555;padding:40px;\'>📺<br><br>Трансляція недоступна.<br><a href=\'${s.url.replace('embed/','watch?v=').replace('player.','').replace('?channel=','/')}\' target=\'_blank\' style=\'color:var(--accent);\'>Відкрити на сайті ↗</a></div>'">
-          </iframe>`;
+        // Build iframe safely
+        const iframe = document.createElement('iframe');
+        iframe.src = s.url;
+        iframe.style.cssText = 'width:100%;height:100%;border:none;';
+        iframe.allowFullscreen = true;
+        iframe.allow = 'autoplay; fullscreen';
+        iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups allow-forms');
+
+        function showFallback() {
+          const extUrl = s.url.replace('embed/','watch?v=').replace('?listType=search&list=','?search_query=').replace('player.twitch.tv','twitch.tv');
+          area.innerHTML = `
+            <div class="stream-fallback-ui">
+              <div style="font-size:50px;">📡</div>
+              <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">Трансляція недоступна</div>
+              <div style="font-size:12px;color:#777;text-align:center;max-width:270px;line-height:1.5;">Відео заблоковано або недоступне в embed-режимі. Спробуйте інше джерело.</div>
+              <button class="retry-btn" onclick="loadStreamSource(${idx},'${sport}')">🔄 Спробувати знову</button>
+              <a href="${extUrl}" target="_blank" style="text-decoration:none;"><button class="open-ext-btn">↗ Відкрити на сайті</button></a>
+            </div>`;
+        }
+
+        // onerror doesn't fire for YouTube blocks — use timeout fallback
+        iframe.onerror = showFallback;
+        const fbTimer = setTimeout(() => {
+          try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if(!doc || !doc.body || doc.body.innerHTML.trim() === '') showFallback();
+          } catch(e) { /* cross-origin = probably OK */ }
+        }, 8000);
+        iframe.onload = () => clearTimeout(fbTimer);
+
+        area.innerHTML = '';
+        area.appendChild(iframe);
       } else {
         area.innerHTML = `
           <div style="text-align:center;padding:30px;">
@@ -9606,6 +9920,89 @@
       });
     }
 
+
+    // ═══════════════════════════════════════
+    // CASINO LOBBY v2 — Jackpot + Wins feed
+    // ═══════════════════════════════════════
+    let _lobbyJackpot = 4287341 + Math.floor(Math.random()*500000);
+    let _lobbyJackpotTimer = null;
+    let _lobbyWinsTimer    = null;
+
+    const LOBBY_WIN_POOL = [
+      {user:'Дмитро Л.', game:'Plinko',       avatar:'🦅'},
+      {user:'Оля Т.',    game:'Mines',         avatar:'🦋'},
+      {user:'Саша П.',   game:'Crash Aviator', avatar:'🐬'},
+      {user:'Вова Д.',   game:'Classic 777',   avatar:'🦜'},
+      {user:'Юля К.',    game:'Blackjack',     avatar:'🐱'},
+      {user:'Петро М.',  game:'Limbo',         avatar:'🦊'},
+    ];
+
+    function startLobbyTimers() {
+      // Jackpot counter
+      _lobbyJackpotTimer = setInterval(() => {
+        _lobbyJackpot += Math.floor(Math.random()*180 + 40);
+        const el = document.getElementById('lobbyJackpotNum');
+        if(el) el.textContent = _lobbyJackpot.toLocaleString('uk');
+      }, 1200);
+
+      // Wins feed rotation
+      _lobbyWinsTimer = setInterval(() => {
+        const feed = document.getElementById('lobbyWinsFeed');
+        if(!feed) return;
+        const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
+        const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+        const row = document.createElement('div');
+        row.className = 'win-feed-row';
+        row.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">${p.avatar}</div><div><div class="win-feed-user">${p.user}</div><div class="win-feed-game">${p.game}</div></div></div><div class="win-feed-amount">+₴ ${amt}</div>`;
+        feed.insertBefore(row, feed.firstChild);
+        const rows = feed.querySelectorAll('.win-feed-row');
+        if(rows.length > 5) rows[rows.length-1].remove();
+      }, 3000);
+    }
+
+    function stopLobbyTimers() {
+      clearInterval(_lobbyJackpotTimer);
+      clearInterval(_lobbyWinsTimer);
+    }
+
+    // Category filter for casino grid
+    function filterCasinoGames(cat, btn) {
+      document.querySelectorAll('.casino-cat-btn').forEach(b => b.classList.remove('active'));
+      if(btn) btn.classList.add('active');
+      const cards = document.querySelectorAll('#casinoGamesGrid .casino-game-card');
+      cards.forEach(c => {
+        const cardCat = c.getAttribute('data-cat') || 'all';
+        c.style.display = (cat === 'all' || cardCat === cat) ? '' : 'none';
+      });
+    }
+
+    // Casino game info modal
+    function openCasinoGameCard(gameId, emoji, name, meta) {
+      const modal = document.getElementById('casinoGameModal');
+      if(!modal) return;
+      document.getElementById('casinoGameModalTitle').textContent  = name;
+      document.getElementById('casinoGameModalEmoji').textContent  = emoji;
+      document.getElementById('casinoGameModalName').textContent   = name;
+      document.getElementById('casinoGameModalMeta').textContent   = meta;
+      document.getElementById('casinoGameModalPlayBtn').onclick    = () => { closeCasinoModal(); openGame(gameId); };
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+    }
+
+    function closeCasinoModal() {
+      const modal = document.getElementById('casinoGameModal');
+      if(modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+    }
+
+    // Hook into tab switching to start/stop timers
+    (function() {
+      const _orig = window.switchTab;
+      window.switchTab = function(tab) {
+        if(tab === 'lobby') startLobbyTimers();
+        else stopLobbyTimers();
+        if(_orig) _orig(tab);
+      };
+    })();
 
     // Перевірка реферала при старті
     checkRefParam();
