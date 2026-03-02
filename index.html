@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v47</title>
+  <title>SlotOK v48</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -725,7 +725,7 @@
 
   <div id="loading-overlay">
     <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div>SlotOK v47</div>
+    <div>SlotOK v48</div>
     <div style="font-size:12px; color:#555; margin-top:10px;">Завантаження...</div>
   </div>
   
@@ -1132,10 +1132,48 @@
     <!-- ІГРИ -->
     <div id="tab-slots" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
-      <div class="reels-container"><div class="reel" id="r1">7</div><div class="reel" id="r2">7</div><div class="reel" id="r3">7</div></div>
+
+      <!-- Free spins indicator -->
+      <div id="freeSlotsBar" class="hidden" style="background:linear-gradient(135deg,#1a4020,#0d2a10);border:1px solid var(--green);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:bold;color:var(--green);">🎟️ Безкоштовні спіни</div>
+        <div style="font-size:20px;font-weight:900;color:var(--green);" id="freeSlotsCount">0</div>
+      </div>
+
+      <!-- Bonus round indicator -->
+      <div id="bonusRoundBanner" class="hidden" style="background:linear-gradient(135deg,#4a0080,#7a00c0);border:2px solid #c9a0ff;border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center;animation:pulse2 0.8s infinite;">
+        <div style="font-size:14px;font-weight:900;color:#fff;">🎰 БОНУС РАУНД АКТИВНИЙ!</div>
+        <div style="font-size:11px;color:#c9a0ff;margin-top:3px;">Залишилось спінів: <span id="bonusSpinsLeft" style="font-weight:bold;">0</span> • Мультиплікатор: <span id="bonusMult" style="color:#ffdb4d;font-weight:bold;">x1</span></div>
+      </div>
+
+      <!-- Reels -->
+      <div class="reels-container" id="reelsContainer">
+        <div class="reel" id="r1">7</div>
+        <div class="reel" id="r2">7</div>
+        <div class="reel" id="r3">7</div>
+      </div>
+
+      <!-- Win line flash -->
+      <div id="slotsWinLine" style="height:4px;border-radius:2px;margin-bottom:10px;transition:background 0.3s;"></div>
+
+      <!-- Result -->
+      <div id="slotsResult" style="text-align:center;min-height:28px;font-size:15px;font-weight:bold;margin-bottom:10px;"></div>
+
+      <!-- Paytable toggle -->
+      <div style="text-align:center;margin-bottom:8px;">
+        <button onclick="togglePaytable()" style="background:none;border:1px solid #333;border-radius:8px;padding:5px 14px;color:#555;font-size:11px;cursor:pointer;">📋 Виплати</button>
+      </div>
+      <div id="slotsPaytable" class="hidden" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;margin-bottom:10px;font-size:11px;color:#888;line-height:2;">
+        <div style="color:var(--accent);font-weight:bold;margin-bottom:6px;">💰 Таблиця виплат</div>
+        7️ 7️ 7️ → <b style="color:var(--green)">×40</b> | 💎 💎 💎 → <b style="color:var(--green)">×10</b><br>
+        🍒 🍒 🍒 → <b style="color:var(--green)">×2</b> | 🔔 🔔 🍋 → <b style="color:var(--green)">×1.2</b><br>
+        🎰 🎰 🎰 → <b style="color:#c9a0ff">БОНУС РАУНД!</b> (10 спінів × мультиплікатор)<br>
+        ⭐ ⭐ ⭐ → <b style="color:#4a9eff">+5 Безкоштовних спінів</b>
+      </div>
+
       <div class="box">
         <input id="betAmountSlots" type="number" value="100">
-        <button class="btn-gold" onclick="spinSlots()">КРУТИТИ 🎰</button>
+        <button class="btn-gold" id="slotsSpinBtn" onclick="spinSlots()">КРУТИТИ 🎰</button>
+        <div style="font-size:10px;color:#555;text-align:center;margin-top:5px;" id="slotsHint"></div>
       </div>
     </div>
     
@@ -1631,7 +1669,9 @@
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
+        <button class="btn-outline" onclick="switchTab('battlepass')" style="border-color:#5a20c0;color:#c9a0ff;">🎫 Battle Pass</button>
         <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
+        <button class="btn-outline" onclick="switchTab('stats')">📊 Моя статистика</button>
       </div>
     </div>
 
@@ -1906,6 +1946,14 @@
           <div style="flex:1;"><div class="settings-label">Вібрація</div><div class="settings-sub">Тактильний відгук</div></div>
           <label class="toggle-switch">
             <input type="checkbox" id="settingVibrate" checked onchange="saveSetting('vibrate',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="settings-icon">🔔</span>
+          <div style="flex:1;"><div class="settings-label">Сповіщення</div><div class="settings-sub">Toast-повідомлення про виграші</div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingNotifs" checked onchange="saveSetting('notifs',this.checked)">
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -2566,6 +2614,19 @@
 
       <!-- Shop -->
       <div style="font-size:15px;font-weight:bold;color:#c9a0ff;margin-bottom:10px;">🛒 Магазин Слотіків</div>
+      <!-- Active boosts display -->
+      <div style="background:#0a0a10;border:1px solid #1a1a2a;border-radius:14px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:bold;color:#c9a0ff;margin-bottom:8px;">⚡ Активні буст-предмети</div>
+        <div id="activeBoostsList"><div style="color:#555;font-size:11px;">Немає активних бустів</div></div>
+      </div>
+      <!-- Shop filter tabs -->
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;">
+        <button onclick="filterShop(null,this)" style="flex-shrink:0;background:var(--accent);color:#000;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">Всі</button>
+        <button onclick="filterShop('cosmetic',this)" style="flex-shrink:0;background:#1a1a1a;color:#aaa;border:1px solid #333;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;">🎨 Косметика</button>
+        <button onclick="filterShop('boost',this)" style="flex-shrink:0;background:#1a1a1a;color:#aaa;border:1px solid #333;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;">🚀 Буст</button>
+        <button onclick="filterShop('item',this)" style="flex-shrink:0;background:#1a1a1a;color:#aaa;border:1px solid #333;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;">📦 Предмети</button>
+        <button onclick="filterShop('exclusive',this)" style="flex-shrink:0;background:#1a1a1a;color:#aaa;border:1px solid #333;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;">💎 Ексклюзив</button>
+      </div>
       <div id="slotikyShopGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       <div style="height:20px;"></div>
     </div>
@@ -2579,6 +2640,78 @@
       <div style="padding:12px 15px;">
         <div id="achievementsHeader"></div>
         <div id="achievementsGrid"></div>
+      </div>
+    </div>
+
+    <!-- BATTLE PASS -->
+    <div id="tab-battlepass" class="screen hidden" style="padding:0;">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#0d0520,#1a0840);padding:16px 15px;border-bottom:1px solid #2a1060;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:20px;font-weight:900;color:#c9a0ff;">🎫 Battle Pass</div>
+            <div style="font-size:10px;color:#6040a0;margin-top:2px;">Сезон 1 • 50 рівнів</div>
+          </div>
+          <div id="bpVipBadge" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border-radius:12px;padding:6px 12px;font-size:11px;font-weight:bold;color:#fff;">FREE</div>
+        </div>
+        <!-- Season progress bar -->
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#6040a0;margin-bottom:4px;">
+            <span>Рівень <span id="bpLevel" style="color:#c9a0ff;font-weight:bold;">1</span></span>
+            <span><span id="bpXP">0</span> / <span id="bpXPNext">1000</span> XP</span>
+          </div>
+          <div style="background:#1a0a40;border-radius:6px;height:10px;overflow:hidden;">
+            <div id="bpProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#5a20c0,#c9a0ff);border-radius:6px;transition:width 0.4s;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buy VIP button -->
+      <div id="bpVipBuyBox" style="padding:12px 15px;background:#080410;border-bottom:1px solid #1a0840;">
+        <div style="background:linear-gradient(135deg,#1a0840,#2d1060);border:1px solid #5a20c0;border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:bold;color:#c9a0ff;">👑 VIP Battle Pass</div>
+            <div style="font-size:10px;color:#6040a0;margin-top:3px;">Ексклюзивні нагороди + вдвічі більше XP</div>
+          </div>
+          <button onclick="buyVipBattlePass()" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:10px;padding:10px 16px;color:#fff;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;">
+            🪙 500 слотіків
+          </button>
+        </div>
+      </div>
+
+      <!-- Reward tracks -->
+      <div style="padding:10px 15px;">
+        <div style="font-size:11px;color:#555;margin-bottom:10px;display:flex;gap:16px;">
+          <span>⬛ Free Track</span>
+          <span style="color:#c9a0ff;">👑 VIP Track</span>
+        </div>
+        <div id="battlePassTrack" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;"></div>
+      </div>
+
+      <!-- Earn XP guide -->
+      <div style="padding:0 15px 15px;">
+        <div style="background:#080410;border:1px solid #1a0840;border-radius:14px;padding:14px;">
+          <div style="font-size:12px;font-weight:bold;color:#c9a0ff;margin-bottom:10px;">⚡ Як заробити XP</div>
+          <div style="font-size:11px;color:#777;line-height:2;">
+            🎰 Будь-яка гра — 1 XP за 100₴ ставки<br>
+            ⚽ Спорт ставка — 2 XP за 100₴<br>
+            🏆 Турнір участь — 50 XP<br>
+            📅 Щоденний бонус — 20 XP<br>
+            🎯 Квест виконано — 30 XP<br>
+            👑 VIP Pass — подвоює весь XP
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ОСОБИСТА СТАТИСТИКА -->
+    <div id="tab-stats" class="screen hidden" style="padding:0;">
+      <div style="background:linear-gradient(180deg,#0a1a0a,#000);padding:16px 15px 12px;border-bottom:1px solid #1a3a1a;">
+        <div style="font-size:20px;font-weight:900;color:var(--green);">📊 Моя статистика</div>
+        <div style="font-size:10px;color:#3a6a3a;margin-top:2px;">Аналіз твоєї гри</div>
+      </div>
+      <div style="padding:12px 15px;" id="statsContent">
+        <div style="color:#555;text-align:center;padding:30px;">Завантаження...</div>
       </div>
     </div>
 
@@ -2757,6 +2890,11 @@
         <input id="admTag" placeholder="Новий статус">
         <button class="btn-outline" onclick="admSetTag()">Змінити статус</button>
       </div>
+      <div class="box" style="border-color:#5a20c0;">
+        <div style="font-size:11px;color:#c9a0ff;font-weight:bold;margin-bottom:8px;">🎫 Battle Pass</div>
+        <button class="btn-outline" style="border-color:#5a20c0;color:#c9a0ff;" onclick="adminGrantVipBp(admSelectedUser); notify('VIP BP видано!','success');">👑 Видати VIP Battle Pass</button>
+        <button class="btn-outline" style="border-color:#5a20c0;color:#c9a0ff;" onclick="db.ref('users/'+admSelectedUser).update({bpXP:(userData.bpXP||0)+5000,bpLevel:Math.min((userData.bpLevel||0)+5,50)}); notify('Додано 5 рівнів BP','success');">⬆️ +5 рівнів Battle Pass</button>
+      </div>
       <div class="box" style="border-color:red;">
         <button class="btn-red" onclick="admBanUser()">🚫 ЗАБЛОКУВАТИ</button>
         <button class="btn-red" onclick="admDeleteUser()">❌ ВИДАЛИТИ АКАУНТ</button>
@@ -2823,7 +2961,7 @@
   </div>
 
   <nav class="bottom-nav">
-    <div class="nav-item active" onclick="switchTab('home', this)"><span class="icon">🏠</span><span>Головна</span></div>
+    <div class="nav-item" onclick="switchTab('home', this)"><span class="icon">🏠</span><span>Головна</span></div>
     <div class="nav-item" onclick="switchTab('lobby', this)"><span class="icon">🎰</span><span>Казино</span></div>
     <div class="nav-item" onclick="switchTab('cashier', this)"><span class="icon">💳</span><span>Каса</span></div>
     <div class="nav-item" onclick="switchTab('notifications', this)" style="position:relative;">
@@ -2897,6 +3035,7 @@
                 if(!window._initDone) {
                   window._initDone = true;
                   setTimeout(initHomeTab, 100);
+                  setTimeout(initBgMusicFromSettings, 1800);
                   setTimeout(initChatAutoClear, 500);
                   setTimeout(initAiSupport, 600);
                   setTimeout(initCurrencySystem, 200);
@@ -2944,13 +3083,21 @@
         return Math.floor(num).toLocaleString();
     }
 
-    function notify(msg, type='info') { 
-        const c = document.getElementById('toast-container'); 
-        const d = document.createElement('div'); 
-        d.className = `toast ${type}`; 
-        d.innerHTML = `<span>${msg}</span>`; 
-        c.appendChild(d); 
-        setTimeout(() => d.remove(), 3500); 
+    function notify(msg, type='info') {
+        // Respect notification setting (except errors which always show)
+        if(type !== 'error') {
+          try {
+            const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}');
+            if(s.notifs === false) return;
+          } catch(e) {}
+        }
+        const c = document.getElementById('toast-container');
+        if(!c) return;
+        const d = document.createElement('div');
+        d.className = `toast ${type}`;
+        d.innerHTML = `<span>${msg}</span>`;
+        c.appendChild(d);
+        setTimeout(() => d.remove(), 3500);
     }
     
     function playSound(type) { 
@@ -3261,48 +3408,171 @@
 
     // --- Слоти ---
     function spinSlots() { 
-        const b = validateBet(document.getElementById('betAmountSlots').value); 
-        if(!b) return; 
-        db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
-        addWager(b);
-        if(userData.clanId) trackClanWager(b);
+        // Free spins check
+        const freeSp = userData.freeSlots || 0;
+        let b;
+        const _spinBtn = document.getElementById('slotsSpinBtn');
+        if(_spinBtn) _spinBtn.disabled = true;  // завжди знімемо в finally
+        try {
+        if(freeSp > 0) {
+          b = parseInt(document.getElementById('betAmountSlots').value) || 100;
+          db.ref('users/'+currentUser+'/freeSlots').set(freeSp - 1);
+          notify('🎟️ Використано 1 безкоштовний спін! Залишилось: ' + (freeSp-1), 'info');
+        } else if(slotBonusRound > 0) {
+          b = slotBonusBet;
+        } else {
+          b = validateBet(document.getElementById('betAmountSlots').value);
+          if(!b) return;
+          db.ref('users/'+currentUser).update({balance: userData.balance - b});
+          addWager(b);
+          if(userData.clanId) trackClanWager(b);
+        }
         trackQuest('slotsPlayed', 1);
         trackQuest('totalGames', 1);
-        trackQuest('weekWager', b);
-        playSound('click'); 
-        const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')]; 
-        const sym = ["🍒", "🍋", "7", "💎", "🔔"]; 
-        let count = 0; 
-        let int = setInterval(() => { 
-            reels.forEach(r => r.textContent = sym[Math.floor(Math.random()*sym.length)]); 
-            count++; 
-            if(count > 15) { clearInterval(int); finishSlots(b); } 
-        }, 80); 
+        if(b) trackQuest('weekWager', b);
+        document.getElementById('slotsSpinBtn').disabled = true;
+        playSound('click');
+        const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+        const sym = ["🍒", "🍋", "7️", "💎", "🔔", "🎰", "⭐", "🃏"];
+        let count = 0;
+        let spinInterval = setInterval(() => {
+            reels.forEach((r,i) => {
+              setTimeout(() => { r.textContent = sym[Math.floor(Math.random()*sym.length)]; }, i * 60);
+            });
+            count++;
+            if(count > 18) { clearInterval(spinInterval); finishSlots(b); }
+        }, 75);
+        } catch(e) { console.error('spinSlots error:', e); if(_spinBtn) _spinBtn.disabled = false; }
     }
-    
-    function finishSlots(bet) { 
+
+    let slotBonusRound = 0;   // remaining bonus spins
+    let slotBonusBet   = 0;
+    let slotBonusMult  = 1;
+    let slotBonusWins  = 0;
+
+    function updateFreeSlotsUI() {
+      const free = userData.freeSlots || 0;
+      const bar = document.getElementById('freeSlotsBar');
+      const cnt = document.getElementById('freeSlotsCount');
+      const hint = document.getElementById('slotsHint');
+      if(bar)  bar.classList.toggle('hidden', free === 0);
+      if(cnt)  cnt.textContent = free;
+      if(hint) hint.textContent = free > 0 ? `У вас ${free} безкоштовних спінів` : (slotBonusRound > 0 ? '' : '');
+    }
+
+    function finishSlots(bet) {
         const r = Math.random();
-        // Перевіряємо lucky streak для нових гравців
         const luck = getNewPlayerLuck();
-        const adj = luck ? (r * 0.3) : r; // нові гравці: менший r = більше шансів
-        let win = 0; let res = ["🍒","🍋","🔔"]; 
-        if(adj < 0.005) { res = ["7","7","7"]; win = bet*40; }      // 0.5% → x40
-        else if(adj < 0.015) { res = ["💎","💎","💎"]; win = bet*10; }// 1% → x10
-        else if(adj < 0.06) { res = ["🍒","🍒","🍒"]; win = bet*2; } // 4.5% → x2
-        else if(adj < 0.13) { res = ["🔔","🔔","🍋"]; win = bet*1.2; }// 7% → x1.2
+        const isBonusRound = slotBonusRound > 0;
+        const mult = isBonusRound ? slotBonusMult : 1;
+
+        // Adjust odds in bonus round — better chances
+        let adj;
+        if(isBonusRound) adj = r * 0.5;       // bonus: much better odds
+        else if(luck)    adj = r * 0.35;       // new player luck
+        else             adj = r;
+
+        let win = 0; let res = ["🍒","🍋","🔔"];
+        if(adj < 0.005)       { res = ["7️","7️","7️"];   win = bet*40*mult; }
+        else if(adj < 0.015)  { res = ["💎","💎","💎"]; win = bet*10*mult; }
+        else if(adj < 0.06)   { res = ["🍒","🍒","🍒"]; win = bet*2*mult;  }
+        else if(adj < 0.13)   { res = ["🔔","🔔","🍋"]; win = bet*1.2*mult;}
+        // BONUS ROUND trigger (only outside bonus round)
+        else if(adj < 0.155 && !isBonusRound) { res = ["🎰","🎰","🎰"]; win = 0; /* handled below */ }
+        // FREE SPINS trigger
+        else if(adj < 0.19 && !isBonusRound)  { res = ["⭐","⭐","⭐"]; win = 0; /* free spins */ }
         
-        document.getElementById('r1').textContent = res[0]; 
-        document.getElementById('r2').textContent = res[1]; 
-        document.getElementById('r3').textContent = res[2]; 
-        
-        if(win > 0) { 
+        const r1 = document.getElementById('r1');
+        const r2 = document.getElementById('r2');
+        const r3 = document.getElementById('r3');
+        const winLine = document.getElementById('slotsWinLine');
+        const resultEl = document.getElementById('slotsResult');
+
+        // Staggered reveal
+        setTimeout(()=>{ if(r1) r1.textContent = res[0]; }, 0);
+        setTimeout(()=>{ if(r2) r2.textContent = res[1]; }, 150);
+        setTimeout(()=>{
+          if(r3) r3.textContent = res[2];
+
+          // Win line animation
+          if(win > 0) {
+            if(winLine) { winLine.style.background = 'linear-gradient(90deg,transparent,var(--accent),transparent)'; setTimeout(()=>{ if(winLine) winLine.style.background=''; }, 1000); }
+          }
+
+          // BONUS ROUND trigger
+          if(res[0]==='🎰' && res[1]==='🎰' && res[2]==='🎰' && slotBonusRound===0) {
+            slotBonusRound = 10;
+            slotBonusBet   = bet;
+            slotBonusMult  = 2 + Math.floor(Math.random()*4); // x2–x5
+            slotBonusWins  = 0;
+            const banner = document.getElementById('bonusRoundBanner');
+            const spinsEl = document.getElementById('bonusSpinsLeft');
+            const multEl  = document.getElementById('bonusMult');
+            if(banner) banner.classList.remove('hidden');
+            if(spinsEl) spinsEl.textContent = slotBonusRound;
+            if(multEl)  multEl.textContent  = 'x'+slotBonusMult;
+            if(resultEl) resultEl.innerHTML = '<span style="color:#c9a0ff;font-size:16px;">🎰 БОНУС РАУНД! 10 спінів × '+slotBonusMult+'!</span>';
+            playSound('bonus');
+            notify('🎰 БОНУС РАУНД! Отримано 10 безкоштовних спінів × '+slotBonusMult+'!', 'success');
+            if(_spinBtn) _spinBtn.disabled = false;
+            return;
+          }
+
+          // FREE SPINS trigger
+          if(res[0]==='⭐' && res[1]==='⭐' && res[2]==='⭐' && slotBonusRound===0) {
+            const newFree = (userData.freeSlots||0) + 5;
+            db.ref('users/'+currentUser+'/freeSlots').set(newFree);
+            if(resultEl) resultEl.innerHTML = '<span style="color:var(--green);">⭐ +5 БЕЗКОШТОВНИХ СПІНІВ!</span>';
+            playSound('win');
+            notify('⭐ Ви виграли 5 безкоштовних спінів!', 'success');
+            setTimeout(updateFreeSlotsUI, 300);
+            if(_spinBtn) _spinBtn.disabled = false;
+            return;
+          }
+
+          // Normal win / loss
+          if(win > 0) {
             consumeLuckyGame();
-            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win)); 
-            playSound('win'); 
-            notify(`🎰 WIN: ${win} ₴`, "success"); 
+            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+            playSound(win > bet*10 ? 'bonus' : 'win');
+            if(resultEl) resultEl.innerHTML = `<span style="color:var(--green);">🎰 +${formatNumber(win)} ₴${slotBonusRound>0?' (×'+slotBonusMult+')':''}</span>`;
+            notify(`🎰 WIN: +${formatNumber(win)} ₴`, 'success');
             addToHistory(`Slots: +${win}`);
+            addToWinFeed('Slots', win, win/bet);
             checkAchievements('win', win);
-        } else { checkAchievements('lose', b); }
+            slotBonusWins += win;
+            // Achievements
+            if(res.every(s=>s==='7️')) db.ref('users/'+currentUser+'/slots777').set((userData.slots777||0)+1);
+            if(res.every(s=>s==='💎')) db.ref('users/'+currentUser+'/slotsDiamond').set((userData.slotsDiamond||0)+1);
+            const maxW = Math.max(win, userData.slotsMaxWin||0);
+            if(win > (userData.slotsMaxWin||0)) db.ref('users/'+currentUser+'/slotsMaxWin').set(win);
+          } else {
+            if(resultEl) resultEl.innerHTML = `<span style="color:#555;">Немає комбінації</span>`;
+            checkAchievements('lose', bet);
+          }
+
+          // Bonus round management
+          if(slotBonusRound > 0) {
+            slotBonusRound--;
+            const spinsEl = document.getElementById('bonusSpinsLeft');
+            if(spinsEl) spinsEl.textContent = slotBonusRound;
+            if(slotBonusRound === 0) {
+              const banner = document.getElementById('bonusRoundBanner');
+              if(banner) banner.classList.add('hidden');
+              notify(`🎰 Бонус раунд завершено! Виграш: +${formatNumber(slotBonusWins)} ₴`, 'success');
+              if(resultEl) resultEl.innerHTML = `<span style="color:#c9a0ff;">🎰 Бонус: +${formatNumber(slotBonusWins)} ₴!</span>`;
+            }
+          }
+
+          if(_spinBtn) _spinBtn.disabled = false;
+          // Track slotsPlayed for achievements
+          db.ref('users/'+currentUser+'/slotsPlayed').set((userData.slotsPlayed||0)+1);
+        }, 300);
+    }
+
+    function togglePaytable() {
+      const el = document.getElementById('slotsPaytable');
+      if(el) el.classList.toggle('hidden');
     }
 
     // --- Рулетка ---
@@ -3330,11 +3600,13 @@
             if(randDeg <= 18) c = 'green'; 
             else if(randDeg <= 189) c = 'red'; 
             if(c === currentRouletteBet){ 
-                win = (c === 'green') ? b*14 : b*2; 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance + win); 
+                win = (c === 'green') ? b*14 : b*2;
+                consumeLuckyGame();
+                db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
                 notify(`🎡 Виграш: ${win} ₴`, "success"); 
                 playSound('win'); 
-                addToHistory(`Roulette: +${win}`); 
+                addToHistory(`Roulette: +${win}`);
+                db.ref('users/'+currentUser+'/rouletteBets').set(firebase.database.ServerValue.increment(1));
             } else { notify("Програш 😔", "error"); } 
         }, 4000); 
     }
@@ -3362,10 +3634,11 @@
     }
 
     // --- Краш ---
-    let crashInt; let isCrashPlaying = false;
+    let crashInt; let isCrashPlaying = false; let crashActiveBet = 0;
     function startCrash() { 
         const b = validateBet(document.getElementById('betAmountCrash').value); 
-        if(!b) return; 
+        if(!b) return;
+        crashActiveBet = b;  // зберігаємо ставку — не читаємо input під час гри
         db.ref('users/'+currentUser).update({balance: userData.balance - b}); 
         addWager(b);
         trackQuest('totalGames', 1);
@@ -3399,13 +3672,14 @@
     }
     
     function cashoutCrash() { 
-        if(!isCrashPlaying) return; 
+        if(!isCrashPlaying) return;
+        isCrashPlaying = false;  // скидаємо ОДРАЗУ щоб запобігти подвійному кліку
         clearInterval(crashInt); 
-        isCrashPlaying = false; 
-        const b = parseInt(document.getElementById('betAmountCrash').value); 
+        const b = crashActiveBet;  // читаємо збережену ставку, не input
         const mult = parseFloat(document.getElementById('crashDisplay').textContent);
         const w = Math.floor(b * mult); 
-        db.ref('users/'+currentUser+'/balance').set(userData.balance + w); 
+        // ServerValue.increment — безпечно від race condition
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w));
         trackQuest('crashCashouts', 1);
         notify(`🚀 Виведено: +${w} ₴`, "success"); 
         addToHistory(`Crash: +${w} (x${mult})`); 
@@ -3535,17 +3809,18 @@
         return {name:'Нічого', multiplier:0};
     }
 
-    function togglePaytable() {
+    function togglePokerPaytable() {
         const pt = document.getElementById('pokerPaytable');
-        pt.style.display = pt.style.display === 'none' ? 'block' : 'none';
+        if(pt) pt.style.display = pt.style.display === 'none' ? 'block' : 'none';
     }
 
     // --- Сапер ---
     let minesGrid = []; let isMinesPlaying = false; let currentMinesProfit = 0; let movesMade = 0;
     function startMines() { 
         const bet = validateBet(document.getElementById('betAmountMines').value); 
-        if(!bet) return; 
-        db.ref('users/'+currentUser).update({balance: userData.balance - bet}); 
+        if(!bet) return;
+        if(isMinesPlaying) return notify('Гра вже йде!', 'error');
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
         addWager(bet);
         trackQuest('totalGames', 1);
         trackQuest('weekWager', bet);
@@ -3626,9 +3901,11 @@
     // РЕЙТИНГ
     // ============================================
     function renderTop(d) {
-        if(!d) return;
+        if(!d || typeof d !== 'object') return;
         let arr = [];
-        for(let k in d) arr.push({n:k, ...d[k]});
+        for(let k in d) {
+          if(d[k] && typeof d[k] === 'object') arr.push({n:k, ...d[k]});
+        }
         arr.sort((a,b) => b.balance - a.balance);
         let h = "";
         arr.forEach((u,i) => {
@@ -3685,7 +3962,11 @@
         document.getElementById('regForm').classList.toggle('hidden', !reg); 
     }
     
-    function logout(){ localStorage.removeItem("royal_online_user"); location.reload(); }
+    function logout(){
+      stopBgMusic();
+      localStorage.removeItem("royal_online_user");
+      location.reload();
+    }
 
     // ============================================
     // АДМІН-ПАНЕЛЬ
@@ -3842,6 +4123,8 @@
     }
 
     function wipeEconomy_auto() {
+        // Тільки адмін може викликати
+        if(currentUser !== 'theivankoo' && !(userData && userData.isAdmin)) return;
         db.ref('users').once('value', s => {
             const users = s.val() || {};
             const updates = {};
@@ -3859,13 +4142,6 @@
     // ============================================
     // ІНШІ ФУНКЦІЇ
     // ============================================
-    function switchTab(id, el) { 
-        document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden')); 
-        const tab = document.getElementById('tab-'+id);
-        if(tab) tab.classList.remove('hidden'); 
-        if(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); } 
-    }
-    
     function openGame(g) { switchTab(g); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -3876,8 +4152,8 @@
         if(userData.balance<a||a<=0) return notify("Невірна сума","error"); 
         db.ref('users/'+t).once('value', s=>{ 
             if(s.exists()){ 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance-a); 
-                db.ref('users/'+t+'/balance').set(s.val().balance+a); 
+                db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
+                db.ref('users/'+t+'/balance').set(firebase.database.ServerValue.increment(a)); 
                 notify("Гроші надіслано!","success"); closeModal('transfer-modal'); 
             } else { notify("Користувача не знайдено","error"); } 
         }); 
@@ -3887,7 +4163,7 @@
         const c=document.getElementById('promoInput').value.trim(); 
         db.ref('promos/'+c).once('value', s=>{ 
             if(s.exists()){ 
-                db.ref('users/'+currentUser+'/balance').set(userData.balance+s.val().value); 
+                db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(s.val().value)); 
                 notify("Промокод активовано!","success"); closeModal('promo-modal'); 
             } else { notify("Невірний код","error"); } 
         }); 
@@ -4127,24 +4403,44 @@
     let scratchRevealed = 0, scratchValues = [], scratchBetAmt = 0, scratchDone = false;
 
     function buyScratch() {
+      const btn = document.getElementById('scratchBuyBtn');
+      if(btn && btn.disabled) return;  // запобігаємо подвійному кліку
+      if(btn) btn.disabled = true;
       const b = validateBet(document.getElementById('betAmountScratch').value);
-      if(!b) return;
+      if(!b) { if(btn) btn.disabled = false; return; }
       scratchBetAmt = b;
-      db.ref('users/'+currentUser).update({balance: userData.balance - b});
-      document.getElementById('scratchBuyBtn').classList.add('hidden');
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+      if(btn) btn.classList.add('hidden');
+      if(btn) btn.disabled = false;
       scratchRevealed = 0; scratchDone = false;
-      const symbols = ['💰','💰','💎','💎','7️','🍒','🍒','🔔','⭐','💰'];
-      // Генеруємо 9 клітинок: може бути виграш
+      const symbols = ['💰','💎','7️','🍒','🔔','⭐','🍋','🎯','🃏','🎪'];
       scratchValues = [];
       const r = Math.random();
-      let winSym = null;
-      if(r < 0.05) { winSym = '💎'; } // Три однакових = джекпот
-      else if(r < 0.20) { winSym = '💰'; }
-      else if(r < 0.40) { winSym = '⭐'; }
+      const luck = getNewPlayerLuck();
 
-      for(let i=0; i<9; i++) {
-        if(winSym && i < 3) scratchValues.push(winSym);
-        else scratchValues.push(symbols[Math.floor(Math.random()*symbols.length)]);
+      // WIN RATES: Diamond 2%, Money 6%, Star 10%, else pure random (no 3-match)
+      const winChance = luck ? r * 0.4 : r; // lucky players have better odds
+      let winSym = null;
+      if(winChance < 0.02)       winSym = '💎';
+      else if(winChance < 0.08)  winSym = '💰';
+      else if(winChance < 0.18)  winSym = '⭐';
+      // 82%+ → no winning combination
+
+      if(winSym) {
+        // Put exactly 3 of the winning symbol, rest are all different
+        scratchValues.push(winSym, winSym, winSym);
+        const others = symbols.filter(s => s !== winSym);
+        others.sort(() => Math.random()-0.5);
+        for(let i=0; i<6; i++) scratchValues.push(others[i % others.length]);
+      } else {
+        // Guaranteed no 3-in-a-row: pick 9 symbols ensuring no sym appears 3+ times
+        const pool = [...symbols, ...symbols].sort(() => Math.random()-0.5);
+        const counts = {};
+        for(let sym of pool) {
+          if((counts[sym]||0) < 2) { scratchValues.push(sym); counts[sym]=(counts[sym]||0)+1; }
+          if(scratchValues.length === 9) break;
+        }
+        while(scratchValues.length < 9) scratchValues.push(symbols[Math.floor(Math.random()*symbols.length)]);
       }
       scratchValues.sort(() => Math.random()-0.5);
 
@@ -4314,6 +4610,7 @@
           document.getElementById('fortuneResult').innerHTML =
             `<span style="color:${win>0?'var(--green)':'var(--red)'}">${won.label} → ${win > 0 ? '+'+formatNumber(win)+' ₴' : '0 ₴'}</span>`;
           if(win > 0) {
+            consumeLuckyGame();
             db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
             playSound(won.mult >= 10 ? 'bonus' : 'win');
             if(won.mult >= 10) notify('🎉 ВЕЛИКИЙ ВИГРАШ: +'+formatNumber(win)+' ₴!', 'success');
@@ -5715,14 +6012,14 @@
     }
 
     const DICE_EMOJI = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
-    function rollDice() { return Math.floor(Math.random()*6)+1; }
+    function monoRollDie() { return Math.floor(Math.random()*6)+1; }
 
     function monoRoll() {
       if(!monoState || monoState.gameOver || monoState.turn !== 'player') return;
       const rollBtn = document.getElementById('monoRollBtn');
       if(rollBtn) rollBtn.disabled = true;
 
-      const d1 = rollDice(), d2 = rollDice();
+      const d1 = monoRollDie(), d2 = monoRollDie();
       const die1 = document.getElementById('die1');
       const die2 = document.getElementById('die2');
       if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
@@ -5811,7 +6108,7 @@
       if(!monoState || monoState.gameOver) return;
       monoState.turn = 'ai';
       setTimeout(() => {
-        const d1 = rollDice(), d2 = rollDice();
+        const d1 = monoRollDie(), d2 = monoRollDie();
         const die1 = document.getElementById('die1');
         const die2 = document.getElementById('die2');
         if(die1) die1.textContent = DICE_EMOJI[d1];
@@ -6024,6 +6321,8 @@
         setTimeout(() => notify(`🎉 VIP підвищено до ${vip.icon} ${vip.name}!`, 'success'), 700);
       }
       db.ref('users/' + currentUser).update(updates);
+      // Battle Pass XP: 1 XP per 100₴ wagered
+      addBpXP(Math.floor(amount / 100));
     }
 
     // Claim cashback from cashier
@@ -6032,9 +6331,10 @@
       if(pending <= 0) return notify('Немає накопиченого кешбеку', 'info');
       if(pending < 2000) return notify(`❌ Мінімум для виплати: 2000 ₴. Зараз: ${formatNumber(pending)} ₴`, 'error');
       db.ref('users/'+currentUser).update({
-        balance: (userData.balance||0) + pending,
+        balance: firebase.database.ServerValue.increment(pending),
         cashbackPending: 0,
-        cashbackTotalClaimed: (userData.cashbackTotalClaimed||0) + pending
+        cashbackTotalClaimed: (userData.cashbackTotalClaimed||0) + pending,
+        cashbackWeekUsed: Math.max(0, (userData.cashbackWeekUsed||0) - pending)
       });
       playSound('win');
       notify(`💰 Кешбек отримано: +${formatNumber(pending)} ₴`, 'success');
@@ -6429,11 +6729,44 @@
     // ОНОВЛЕННЯ switchTab + ІНТЕГРАЦІЯ КВЕСТІВ
     // ============================================
     const _origSwitchTab = switchTab;
+    // Яка nav-кнопка відповідає якому табу
+    const NAV_TAB_MAP = {
+      home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:6,
+      slots:1, roulette:1, crash:1, mines:1, fortune:1, poker:1, blackjack:1,
+      scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
+      cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1, duels:1,
+      tournaments:6, referrals:6, vip:6, quests:6, lootboxes:6,
+      hourly:6, clans:6, leaderboard:6, gifts:6, slotiky:6,
+      achievements:6, battlepass:6, stats:6, admin:4
+    };
+
     function switchTab(id, el) {
       document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
       const tab = document.getElementById('tab-'+id);
       if(tab) tab.classList.remove('hidden');
-      if(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); }
+
+      // Оновлюємо активний nav-item завжди — навіть якщо el не передано
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(n => n.classList.remove('active'));
+      if(el && el.classList && el.classList.contains('nav-item')) {
+        el.classList.add('active');
+      } else {
+        const navIdx = NAV_TAB_MAP[id];
+        if(navIdx !== undefined && navItems[navIdx]) navItems[navIdx].classList.add('active');
+      }
+      // Зупиняємо краш якщо виходимо зі сторінки
+      if(id !== 'crash' && isCrashPlaying) {
+        clearInterval(crashInt);
+        isCrashPlaying = false;
+        crashActiveBet = 0;
+        document.getElementById('crashBtn')?.classList.remove('hidden');
+        document.getElementById('crashCashoutBtn')?.classList.add('hidden');
+      }
+      // Скидаємо бонус-раунд слотів якщо виходимо
+      if(id !== 'slots' && slotBonusRound > 0) {
+        slotBonusRound = 0; slotBonusBet = 0;
+        document.getElementById('bonusRoundBanner')?.classList.add('hidden');
+      }
       if(id==='chat') initLobbyChat();
       if(id==='keno') initKeno();
       if(id==='fortune') { setTimeout(()=>drawFortuneWheel(0), 50); }
@@ -6456,6 +6789,8 @@
       if(id==='dice') { updateDiceUI(); }
       if(id==='slotiky') { initSlotiky(); }
       if(id==='achievements') { initAchievementsTab(); checkAchievements('tab',null); }
+      if(id==='battlepass') { initBattlePass(); }
+      if(id==='stats') { initStatsTab(); }
       if(id==='tournaments') { loadTournamentsV2(); loadTourneyStatsBar(); }
       if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
       if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); setTimeout(()=>updateCashierCashbackUI(),300); }
@@ -6531,6 +6866,13 @@
       if(key === 'sounds') {
         notify(val ? '🔊 Звук увімкнено' : '🔇 Звук вимкнено', 'info');
       }
+      if(key === 'music') {
+        if(val) startBgMusic();
+        else    stopBgMusic();
+      }
+      if(key === 'notifs') {
+        notify(val ? '🔔 Сповіщення увімкнено' : '🔕 Сповіщення вимкнено', 'info');
+      }
     }
 
     function getSetting(key, def) {
@@ -6539,7 +6881,7 @@
 
     function applyAllSettings() {
       // Sync toggles
-      const ids = { sounds:'settingSounds', music:'settingMusic', vibrate:'settingVibrate', notifs:'settingNotifs', giftNotifs:'settingGiftNotifs', bonusNotifs:'settingBonusNotifs' };
+      const ids = { sounds:'settingSounds', music:'settingMusic', vibrate:'settingVibrate', notifs:'settingNotifs' };
       const defaults = { sounds:true, music:false, vibrate:true, notifs:true, giftNotifs:true, bonusNotifs:true };
       Object.entries(ids).forEach(([key, id]) => {
         const el = document.getElementById(id);
@@ -7017,7 +7359,7 @@
         const r = snap.val();
         if(!r || !isMyMpTurn(r) || r.state.gameOver) return;
 
-        const d1 = rollDice(), d2 = rollDice();
+        const d1 = monoRollDie(), d2 = monoRollDie();
         const die1 = document.getElementById('mpDie1');
         const die2 = document.getElementById('mpDie2');
         if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
@@ -7647,7 +7989,7 @@
         const r = snap.val(); if(!r) return;
         if(r.turn !== currentUser || r.gameOver || r.pendingBuy) return;
 
-        const d1 = rollDice(), d2 = rollDice();
+        const d1 = monoRollDie(), d2 = monoRollDie();
         const die1 = document.getElementById('mpDie1'), die2 = document.getElementById('mpDie2');
         if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
         if(die2) { die2.classList.add('rolling'); die2.textContent = DICE_EMOJI[d2]; }
@@ -8978,7 +9320,7 @@
       const mult = parseFloat((0.97/chance).toFixed(2));
       const winAmt = Math.floor(bet * mult);
 
-      db.ref('users/'+currentUser).update({balance: userData.balance - bet});
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
       addWager(bet);
       playSound('spin');
 
@@ -9750,10 +10092,10 @@
       // VIP level
       if(statVip && userData) {
         const wager = userData.totalWager || 0;
-        const VIP_LEVELS = ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Master','Supreme'];
+        const _VIP_LEVEL_NAMES = ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Master','Supreme'];
         const VIP_REQ    = [0,1000,5000,20000,50000,100000,250000,500000];
         let vipLevel = 0;
-        for(let i=VIP_LEVELS.length-1;i>=0;i--) { if(wager>=VIP_REQ[i]){vipLevel=i;break;} }
+        for(let i=_VIP_LEVEL_NAMES.length-1;i>=0;i--) { if(wager>=VIP_REQ[i]){vipLevel=i;break;} }
         statVip.textContent = VIP_LEVELS[vipLevel];
       }
       // Random jackpot
@@ -10232,10 +10574,26 @@
       setTimeout(()=>{ const b=document.getElementById('slotikyBalance'); if(b) b.textContent=formatNumber((userData.slotiky||0)+amount); }, 300);
     }
 
+
+    let _shopFilter = null;
+    function filterShop(type, btn) {
+      _shopFilter = type;
+      document.querySelectorAll('[onclick^="filterShop"]').forEach(b => {
+        b.style.background = '#1a1a1a';
+        b.style.color = '#aaa';
+        b.style.border = '1px solid #333';
+      });
+      if(btn) { btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.border='none'; }
+      renderSlotikyShop();
+    }
+
     function renderSlotikyShop() {
       const grid = document.getElementById('slotikyShopGrid'); if(!grid) return;
       const owned = userData.slotikyItems || {};
-      grid.innerHTML = SLOTIKY_SHOP_ITEMS.map(item => {
+      const filteredItems = _shopFilter
+        ? SLOTIKY_SHOP_ITEMS.filter(i => i.type === _shopFilter)
+        : SLOTIKY_SHOP_ITEMS;
+      grid.innerHTML = filteredItems.map(item => {
         const isOwned = owned[item.id];
         const typeColor = item.type==='boost'?'#f39c12':item.type==='cosmetic'?'#c9a0ff':item.type==='feature'?'#27ae60':'#4a90e2';
         return `<div style="background:linear-gradient(180deg,#0d0520,#050010);border:1px solid ${isOwned?'#27ae60':'#3a1080'};border-radius:14px;padding:14px;position:relative;">
@@ -10254,11 +10612,143 @@
       if(currentSlotiky < price) { notify(`❌ Недостатньо слотіків! Потрібно ${price} 🪙`, 'error'); return; }
       const item = SLOTIKY_SHOP_ITEMS.find(i=>i.id===itemId); if(!item) return;
       const owned = userData.slotikyItems || {};
-      owned[itemId] = true;
-      db.ref('users/'+currentUser).update({ slotiky: currentSlotiky - price, slotikyItems: owned });
-      playSound('win');
-      notify(`🎉 Придбано: ${item.icon} ${item.name}!`, 'success');
-      setTimeout(renderSlotikyShop, 300);
+      if(owned[itemId] && item.type !== 'boost' && item.type !== 'item') {
+        notify('Вже придбано!', 'info'); return;
+      }
+      owned[itemId] = { boughtAt: Date.now(), expires: getItemExpiry(item) };
+      const updates = {
+        slotiky:       currentSlotiky - price,
+        slotikyItems:  owned,
+        slotikySpent:  (userData.slotikySpent||0) + price
+      };
+      // Apply instant effects
+      applyShopItemEffect(itemId, item, updates);
+      db.ref('users/'+currentUser).update(updates);
+      playSound('bonus');
+      notify(`🎉 Придбано: ${item.icon} ${item.name}!
+${getItemEffectDesc(item)}`, 'success');
+      setTimeout(()=>{ renderSlotikyShop(); applyAllShopEffects(); }, 300);
+    }
+
+    function getItemExpiry(item) {
+      const durations = {
+        vip_boost_3d:3*86400000, vip_boost_7d:7*86400000,
+        cashback_x2:3*86400000, cashback_x3:7*86400000,
+        daily_x2:7*86400000, daily_x3:7*86400000,
+        lucky_boost:86400000, xp_boost:3*86400000
+      };
+      return durations[item.id] ? Date.now() + durations[item.id] : null;
+    }
+
+    function getItemEffectDesc(item) {
+      const effects = {
+        avatar_silver:'✓ Срібна рамка активована в профілі',
+        avatar_gold:'✓ Золота рамка активована в профілі',
+        avatar_diamond:'✓ Алмазна рамка активована в профілі',
+        avatar_fire:'✓ Вогняна рамка активована',
+        avatar_cosmic:'✓ Космічна рамка активована',
+        username_gold:'✓ Золотий нікнейм у чаті',
+        username_rainbow:'✓ Веселковий нікнейм активовано',
+        username_red:'✓ Червоний нікнейм активовано',
+        vip_boost_3d:'✓ 2× вагер зараховується 3 дні',
+        vip_boost_7d:'✓ 2× вагер зараховується 7 днів',
+        cashback_x2:'✓ Подвійний кешбек на 3 дні',
+        cashback_x3:'✓ Потрійний кешбек на 7 днів',
+        daily_x2:'✓ Подвоєний щоденний бонус 7 днів',
+        daily_x3:'✓ Потрійний щоденний бонус 7 днів',
+        lucky_boost:'✓ +50% шанс виграшу на 24 год',
+        slot_free_5:'✓ Додано 5 безкоштовних спінів',
+        slot_free_20:'✓ Додано 20 безкоштовних спінів',
+        fortune_free:'✓ Додано 3 безкоштовні прокрутки',
+        mines_hint:'✓ Додано 3 підказки в майнер',
+        guaranteed_win:'✓ Наступна гра — 100% виграш!',
+        crash_insurance:'✓ Страховка краша <1.2 активна',
+        lootbox_basic:'✓ Відкрий лут-бокс у розділі Бонуси',
+        lootbox_ultra:'✓ Відкрий лут-бокс у розділі Бонуси',
+        lootbox_legend:'✓ Відкрий лут-бокс у розділі Бонуси',
+        vip_trial:'✓ VIP бонуси активні на 7 днів',
+        monthly_pass:'✓ Місячний пропуск активовано',
+      };
+      return effects[item.id] || '✓ Предмет додано до акаунту';
+    }
+
+    function applyShopItemEffect(itemId, item, updates) {
+      // Items with immediate stat effects
+      if(itemId === 'slot_free_5')   updates.freeSlots = (userData.freeSlots||0) + 5;
+      if(itemId === 'slot_free_20')  updates.freeSlots = (userData.freeSlots||0) + 20;
+      if(itemId === 'fortune_free')  updates.freeFortune = (userData.freeFortune||0) + 3;
+      if(itemId === 'mines_hint')    updates.minesHints = (userData.minesHints||0) + 3;
+      if(itemId === 'sport_bet_free')updates.freeSportBet = (userData.freeSportBet||0) + 1;
+      if(itemId === 'guaranteed_win')updates.guaranteedWin = true;
+      if(itemId === 'crash_insurance')updates.crashInsurance = true;
+    }
+
+    let _applyShopTimer = null;
+    function applyAllShopEffects() {
+      clearTimeout(_applyShopTimer);
+      _applyShopTimer = setTimeout(_doApplyShopEffects, 300);
+    }
+    function _doApplyShopEffects() {
+      const items = userData.slotikyItems || {};
+      const now = Date.now();
+
+      // Avatar frames
+      const frames = ['avatar_cosmic','avatar_fire','avatar_diamond','avatar_gold','avatar_silver'];
+      let activeFrame = null;
+      for(const f of frames) {
+        const it = items[f];
+        if(it && (it === true || !it.expires || it.expires > now)) { activeFrame = f; break; }
+      }
+      const frameColors = {
+        avatar_cosmic: 'linear-gradient(135deg,#1a0a2e,#4a1080)',
+        avatar_fire:   'linear-gradient(135deg,#8b0000,#ff4500)',
+        avatar_diamond:'linear-gradient(135deg,#0a2a4a,#00b4d8)',
+        avatar_gold:   'linear-gradient(135deg,#6b4c00,var(--accent))',
+        avatar_silver: 'linear-gradient(135deg,#333,#aaa)',
+      };
+      const avatarEl = document.getElementById('currentAvatar');
+      if(avatarEl && activeFrame) {
+        avatarEl.style.background = frameColors[activeFrame] || '';
+        avatarEl.style.border = '3px solid ' + (activeFrame==='avatar_gold'?'var(--accent)':activeFrame==='avatar_diamond'?'#00b4d8':activeFrame==='avatar_fire'?'#ff4500':'#aaa');
+        avatarEl.style.borderRadius = '50%';
+      }
+
+      // Nick colors in chat
+      const nickColorItems = { username_rainbow:'rainbow', username_gold:'#d4af37', username_red:'#e74c3c' };
+      let activeNick = null;
+      for(const [id, color] of Object.entries(nickColorItems)) {
+        if(items[id]) { activeNick = color; break; }
+      }
+      window._chatNickColor = activeNick;
+
+      // Active boosts display
+      updateActiveBoostsUI(items, now);
+    }
+
+    function updateActiveBoostsUI(items, now) {
+      const el = document.getElementById('activeBoostsList');
+      if(!el) return;
+      const boostLabels = {
+        vip_boost_3d:'🚀 VIP Буст', vip_boost_7d:'🚀 VIP Буст',
+        cashback_x2:'💰 Кешбек ×2', cashback_x3:'💸 Кешбек ×3',
+        daily_x2:'🎁 Щоден. ×2', daily_x3:'🎁 Щоден. ×3',
+        lucky_boost:'🍀 Везіння', monthly_pass:'📅 Місяч. пропуск',
+        vip_trial:'💠 VIP Пробний',
+      };
+      const active = Object.entries(items).filter(([id, val]) => {
+        if(!boostLabels[id]) return false;
+        const expires = val?.expires;
+        return !expires || expires > now;
+      });
+      if(!active.length) { el.innerHTML = '<div style="color:#555;font-size:11px;">Немає активних бустів</div>'; return; }
+      el.innerHTML = active.map(([id, val]) => {
+        const expires = val?.expires;
+        const left = expires ? Math.max(0, Math.ceil((expires - now) / 86400000)) : null;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#0a0a00;border:1px solid #2a2000;border-radius:8px;margin-bottom:5px;">
+          <span style="font-size:12px;color:#ccc;">${boostLabels[id]}</span>
+          <span style="font-size:10px;color:var(--accent);">${left!==null?left+'д':'Активно'}</span>
+        </div>`;
+      }).join('');
     }
 
     // ============================================================
@@ -10554,6 +11044,9 @@
     };
 
     function openMatchTracker(matchId) {
+      if(!realMatches || Object.keys(realMatches).length === 0) {
+        notify('⏳ Матчі ще завантажуються, спробуй через секунду', 'info'); return;
+      }
       const m = realMatches[matchId];
       if(!m) { notify('Матч не знайдено', 'error'); return; }
 
@@ -10872,6 +11365,485 @@
       ctx.fillRect(0,0,W,H);
     }
 
+
+
+    // ============================================================
+    // ===== ФОНОВА МУЗИКА — Web Audio API ambient casino =====
+    // ============================================================
+    let bgMusicNodes   = [];
+    let bgMusicRunning = false;
+    let bgMusicCtx     = null;
+
+    function startBgMusic() {
+      if(bgMusicRunning) return;
+      try {
+        if(!bgMusicCtx) bgMusicCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if(bgMusicCtx.state === 'suspended') bgMusicCtx.resume();
+        bgMusicRunning = true;
+        bgMusicNodes = [];
+        playAmbientLayer();
+      } catch(e) { console.warn('BG music error', e); }
+    }
+
+    function stopBgMusic() {
+      bgMusicRunning = false;
+      bgMusicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+      bgMusicNodes = [];
+    }
+
+    function playAmbientLayer() {
+      if(!bgMusicRunning || !bgMusicCtx) return;
+
+      // ── Slow jazzy bass ──
+      const bassNotes = [65.41, 82.41, 87.31, 73.42]; // C2 E2 F2 D2
+      bassNotes.forEach((freq, i) => {
+        const osc = bgMusicCtx.createOscillator();
+        const gain = bgMusicCtx.createGain();
+        const filter = bgMusicCtx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.value = 200;
+        osc.connect(filter); filter.connect(gain); gain.connect(bgMusicCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, bgMusicCtx.currentTime);
+        gain.gain.setValueAtTime(0, bgMusicCtx.currentTime + i * 1.6);
+        gain.gain.linearRampToValueAtTime(0.04, bgMusicCtx.currentTime + i * 1.6 + 0.3);
+        gain.gain.linearRampToValueAtTime(0.04, bgMusicCtx.currentTime + i * 1.6 + 1.2);
+        gain.gain.linearRampToValueAtTime(0,    bgMusicCtx.currentTime + i * 1.6 + 1.6);
+        osc.start(bgMusicCtx.currentTime + i * 1.6);
+        osc.stop(bgMusicCtx.currentTime + i * 1.6 + 1.8);
+        bgMusicNodes.push(osc);
+      });
+
+      // ── Soft piano melody ──
+      const melody = [261.63,329.63,392.00,329.63,261.63,220.00,246.94,261.63]; // C4 E4 G4...
+      melody.forEach((freq, i) => {
+        const osc = bgMusicCtx.createOscillator();
+        const gain = bgMusicCtx.createGain();
+        osc.connect(gain); gain.connect(bgMusicCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const t = bgMusicCtx.currentTime + i * 0.55;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.025, t + 0.08);
+        gain.gain.linearRampToValueAtTime(0.015, t + 0.3);
+        gain.gain.linearRampToValueAtTime(0, t + 0.55);
+        osc.start(t);
+        osc.stop(t + 0.6);
+        bgMusicNodes.push(osc);
+      });
+
+      // ── Soft hi-hat rhythm ──
+      for(let i = 0; i < 16; i++) {
+        const bufferSize = bgMusicCtx.sampleRate * 0.05;
+        const buffer = bgMusicCtx.createBuffer(1, bufferSize, bgMusicCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for(let j=0; j<bufferSize; j++) data[j] = (Math.random()*2-1) * 0.3;
+        const source = bgMusicCtx.createBufferSource();
+        const gain   = bgMusicCtx.createGain();
+        const hpf    = bgMusicCtx.createBiquadFilter();
+        hpf.type = 'highpass'; hpf.frequency.value = 8000;
+        source.buffer = buffer;
+        source.connect(hpf); hpf.connect(gain); gain.connect(bgMusicCtx.destination);
+        const t = bgMusicCtx.currentTime + i * 0.275;
+        gain.gain.setValueAtTime(i%4===0 ? 0.025 : 0.012, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.05);
+        source.start(t);
+        bgMusicNodes.push(source);
+      }
+
+      // Loop after 8 seconds
+      if(bgMusicRunning) {
+        setTimeout(() => { if(bgMusicRunning) playAmbientLayer(); }, 8000);
+      }
+    }
+
+    // Auto-start music if setting is on after login
+    let _bgMusicInitialized = false;
+    function initBgMusicFromSettings() {
+      if(_bgMusicInitialized) return;
+      _bgMusicInitialized = true;
+      try {
+        const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}');
+        if(s.music === true) setTimeout(startBgMusic, 1500);
+      } catch(e) {}
+    }
+
+
+    // ============================================================
+    // ===== BATTLE PASS SYSTEM =====
+    // ============================================================
+    const BP_XP_PER_LEVEL = 1000;
+    const BP_MAX_LEVEL    = 50;
+
+    // 50 levels of rewards
+    const BP_REWARDS = [
+      // lv: level, free: free reward, vip: vip-only reward
+      {lv:1,  free:{icon:'💰',label:'500 ₴',type:'balance',val:500},          vip:{icon:'🪙',label:'1 Слотік',type:'slotiky',val:1}},
+      {lv:2,  free:{icon:'🎟️',label:'2 Спіни',type:'freeSlots',val:2},         vip:{icon:'💰',label:'1 000 ₴',type:'balance',val:1000}},
+      {lv:3,  free:{icon:'💰',label:'1 000 ₴',type:'balance',val:1000},        vip:{icon:'🪙',label:'2 Слотіки',type:'slotiky',val:2}},
+      {lv:4,  free:{icon:'🎡',label:'1 Прокрутка',type:'freeFortune',val:1},   vip:{icon:'💰',label:'2 000 ₴',type:'balance',val:2000}},
+      {lv:5,  free:{icon:'💰',label:'2 000 ₴',type:'balance',val:2000},        vip:{icon:'🛡️',label:'Краш страх.',type:'crashInsurance',val:true}},
+      {lv:6,  free:{icon:'🎟️',label:'5 Спінів',type:'freeSlots',val:5},        vip:{icon:'🪙',label:'3 Слотіки',type:'slotiky',val:3}},
+      {lv:7,  free:{icon:'💰',label:'3 000 ₴',type:'balance',val:3000},        vip:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000}},
+      {lv:8,  free:{icon:'📦',label:'Лут-бокс',type:'lootbox',val:1},          vip:{icon:'🪙',label:'4 Слотіки',type:'slotiky',val:4}},
+      {lv:9,  free:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000},        vip:{icon:'🚀',label:'VIP Буст 3д',type:'vipBoost',val:3}},
+      {lv:10, free:{icon:'🎡',label:'3 Прокрутки',type:'freeFortune',val:3},   vip:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000}},
+      {lv:11, free:{icon:'💰',label:'7 000 ₴',type:'balance',val:7000},        vip:{icon:'🪙',label:'5 Слотіків',type:'slotiky',val:5}},
+      {lv:12, free:{icon:'🎟️',label:'10 Спінів',type:'freeSlots',val:10},      vip:{icon:'💰',label:'15 000 ₴',type:'balance',val:15000}},
+      {lv:13, free:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000},      vip:{icon:'🪙',label:'6 Слотіків',type:'slotiky',val:6}},
+      {lv:14, free:{icon:'💡',label:'3 Підказки',type:'minesHints',val:3},     vip:{icon:'💰',label:'20 000 ₴',type:'balance',val:20000}},
+      {lv:15, free:{icon:'💰',label:'15 000 ₴',type:'balance',val:15000},      vip:{icon:'🚀',label:'VIP Буст 7д',type:'vipBoost',val:7}},
+      {lv:16, free:{icon:'📦',label:'Ultra Лут',type:'lootbox',val:2},          vip:{icon:'🪙',label:'8 Слотіків',type:'slotiky',val:8}},
+      {lv:17, free:{icon:'💰',label:'20 000 ₴',type:'balance',val:20000},      vip:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000}},
+      {lv:18, free:{icon:'🎟️',label:'15 Спінів',type:'freeSlots',val:15},      vip:{icon:'🪙',label:'10 Слотіків',type:'slotiky',val:10}},
+      {lv:19, free:{icon:'💰',label:'25 000 ₴',type:'balance',val:25000},      vip:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000}},
+      {lv:20, free:{icon:'🎡',label:'5 Прокрут.',type:'freeFortune',val:5},    vip:{icon:'🪙',label:'12 Слотіків',type:'slotiky',val:12}},
+      {lv:21, free:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000},      vip:{icon:'💰',label:'50 000 ₴',type:'balance',val:50000}},
+      {lv:22, free:{icon:'🎟️',label:'20 Спінів',type:'freeSlots',val:20},      vip:{icon:'🪙',label:'15 Слотіків',type:'slotiky',val:15}},
+      {lv:23, free:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000},      vip:{icon:'💰',label:'70 000 ₴',type:'balance',val:70000}},
+      {lv:24, free:{icon:'📦',label:'Legend Лут',type:'lootbox',val:3},         vip:{icon:'🪙',label:'18 Слотіків',type:'slotiky',val:18}},
+      {lv:25, free:{icon:'💰',label:'50 000 ₴',type:'balance',val:50000},      vip:{icon:'💰',label:'100 000 ₴',type:'balance',val:100000}},
+      {lv:26, free:{icon:'🎟️',label:'25 Спінів',type:'freeSlots',val:25},      vip:{icon:'🪙',label:'20 Слотіків',type:'slotiky',val:20}},
+      {lv:27, free:{icon:'💰',label:'60 000 ₴',type:'balance',val:60000},      vip:{icon:'💰',label:'120 000 ₴',type:'balance',val:120000}},
+      {lv:28, free:{icon:'🎡',label:'7 Прокрут.',type:'freeFortune',val:7},    vip:{icon:'🪙',label:'22 Слотіки',type:'slotiky',val:22}},
+      {lv:29, free:{icon:'💰',label:'75 000 ₴',type:'balance',val:75000},      vip:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000}},
+      {lv:30, free:{icon:'💡',label:'5 Підказок',type:'minesHints',val:5},     vip:{icon:'🪙',label:'25 Слотіків',type:'slotiky',val:25}},
+      {lv:31, free:{icon:'💰',label:'90 000 ₴',type:'balance',val:90000},      vip:{icon:'💰',label:'180 000 ₴',type:'balance',val:180000}},
+      {lv:32, free:{icon:'🎟️',label:'30 Спінів',type:'freeSlots',val:30},      vip:{icon:'🪙',label:'28 Слотіків',type:'slotiky',val:28}},
+      {lv:33, free:{icon:'💰',label:'100 000 ₴',type:'balance',val:100000},    vip:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000}},
+      {lv:34, free:{icon:'📦',label:'×5 Лут',type:'lootbox',val:5},            vip:{icon:'🪙',label:'30 Слотіків',type:'slotiky',val:30}},
+      {lv:35, free:{icon:'💰',label:'120 000 ₴',type:'balance',val:120000},    vip:{icon:'💰',label:'250 000 ₴',type:'balance',val:250000}},
+      {lv:36, free:{icon:'🎡',label:'10 Прокрут.',type:'freeFortune',val:10},  vip:{icon:'🪙',label:'35 Слотіків',type:'slotiky',val:35}},
+      {lv:37, free:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000},    vip:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000}},
+      {lv:38, free:{icon:'🎟️',label:'40 Спінів',type:'freeSlots',val:40},      vip:{icon:'🪙',label:'40 Слотіків',type:'slotiky',val:40}},
+      {lv:39, free:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000},    vip:{icon:'💰',label:'400 000 ₴',type:'balance',val:400000}},
+      {lv:40, free:{icon:'💡',label:'10 Підказок',type:'minesHints',val:10},   vip:{icon:'🪙',label:'50 Слотіків',type:'slotiky',val:50}},
+      {lv:41, free:{icon:'💰',label:'250 000 ₴',type:'balance',val:250000},    vip:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000}},
+      {lv:42, free:{icon:'🎟️',label:'50 Спінів',type:'freeSlots',val:50},      vip:{icon:'🪙',label:'55 Слотіків',type:'slotiky',val:55}},
+      {lv:43, free:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000},    vip:{icon:'💰',label:'600 000 ₴',type:'balance',val:600000}},
+      {lv:44, free:{icon:'📦',label:'×10 Лут',type:'lootbox',val:10},          vip:{icon:'🪙',label:'60 Слотіків',type:'slotiky',val:60}},
+      {lv:45, free:{icon:'💰',label:'400 000 ₴',type:'balance',val:400000},    vip:{icon:'💰',label:'800 000 ₴',type:'balance',val:800000}},
+      {lv:46, free:{icon:'🎡',label:'15 Прокрут.',type:'freeFortune',val:15},  vip:{icon:'🪙',label:'70 Слотіків',type:'slotiky',val:70}},
+      {lv:47, free:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000},    vip:{icon:'💰',label:'1 000 000 ₴',type:'balance',val:1000000}},
+      {lv:48, free:{icon:'🎟️',label:'75 Спінів',type:'freeSlots',val:75},      vip:{icon:'🪙',label:'80 Слотіків',type:'slotiky',val:80}},
+      {lv:49, free:{icon:'💰',label:'750 000 ₴',type:'balance',val:750000},    vip:{icon:'💰',label:'1 500 000 ₴',type:'balance',val:1500000}},
+      {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'💎',label:'100 Слотіків',type:'slotiky',val:100}},
+    ];
+
+    function getBpData() {
+      return {
+        xp:       userData.bpXP        || 0,
+        level:    userData.bpLevel     || 0,
+        isVip:    userData.bpVip       || false,
+        claimed:  userData.bpClaimed   || {},
+      };
+    }
+
+    function initBattlePass() {
+      if(!userData || !currentUser) return;  // userData ще не завантажено
+      const bp = getBpData();
+      const level  = bp.level;
+      const xp     = bp.xp;
+      const xpNext = BP_XP_PER_LEVEL;
+      const pct    = Math.min(100, Math.round((xp % xpNext) / xpNext * 100));
+
+      document.getElementById('bpLevel').textContent  = level + 1;
+      document.getElementById('bpXP').textContent     = xp % xpNext;
+      document.getElementById('bpXPNext').textContent = xpNext;
+      document.getElementById('bpProgressBar').style.width = pct + '%';
+
+      const badge = document.getElementById('bpVipBadge');
+      if(badge) {
+        badge.textContent = bp.isVip ? '👑 VIP' : '⬛ FREE';
+        badge.style.background = bp.isVip ? 'linear-gradient(135deg,#b8860b,#d4af37)' : 'linear-gradient(135deg,#333,#555)';
+      }
+
+      const vipBox = document.getElementById('bpVipBuyBox');
+      if(vipBox) vipBox.style.display = bp.isVip ? 'none' : '';
+
+      renderBattlePassTrack(bp);
+    }
+
+    function renderBattlePassTrack(bp) {
+      const el = document.getElementById('battlePassTrack'); if(!el) return;
+      const level   = bp.level;  // levels unlocked (0-based index: completed levels)
+      const claimed = bp.claimed || {};
+
+      el.innerHTML = `<div style="display:flex;gap:8px;padding:4px 2px;min-width:max-content;">` +
+        BP_REWARDS.map(row => {
+          const unlocked  = level >= row.lv;
+          const claimedF  = claimed['f'+row.lv];
+          const claimedV  = claimed['v'+row.lv];
+          const isVip     = bp.isVip;
+          const isCurrent = level + 1 === row.lv;
+
+          return `<div style="flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;border:2px solid ${isCurrent?'var(--accent)':unlocked?'#3a3a3a':'#1a1a1a'};">
+            <!-- Level label -->
+            <div style="background:${isCurrent?'rgba(212,175,55,0.2)':'#0a0a0a'};padding:4px 0;text-align:center;font-size:10px;font-weight:bold;color:${isCurrent?'var(--accent)':'#555'};">
+              Рівень ${row.lv}
+            </div>
+            <!-- VIP reward -->
+            <div style="padding:8px;background:linear-gradient(135deg,#0d0520,#1a0840);border-bottom:1px solid #1a1a1a;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;${!isVip?'opacity:0.4;':''}">
+              <div style="font-size:22px;">${row.vip.icon}</div>
+              <div style="font-size:9px;color:#c9a0ff;text-align:center;line-height:1.3;">${row.vip.label}</div>
+              ${unlocked && isVip ? (claimedV
+                ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
+                : `<button onclick="claimBpReward(${row.lv},'v')" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+                : (isVip ? `<div style="font-size:9px;color:#333;">🔒</div>` : `<div style="font-size:9px;color:#5a20c0;">👑 VIP</div>`)}
+            </div>
+            <!-- Free reward -->
+            <div style="padding:8px;background:#0a0a0a;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+              <div style="font-size:22px;">${row.free.icon}</div>
+              <div style="font-size:9px;color:#aaa;text-align:center;line-height:1.3;">${row.free.label}</div>
+              ${unlocked ? (claimedF
+                ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
+                : `<button onclick="claimBpReward(${row.lv},'f')" style="background:linear-gradient(135deg,#1a5a20,#27ae60);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+                : `<div style="font-size:9px;color:#333;">🔒</div>`}
+            </div>
+          </div>`;
+        }).join('') + `</div>`;
+
+      // Scroll to current level
+      setTimeout(() => {
+        const cur = el.querySelector('div[style*="accent"]');
+        if(cur) cur.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+      }, 100);
+    }
+
+    let _bpClaimLock = false;
+    function claimBpReward(lv, track) {
+      if(_bpClaimLock) return;  // запобігаємо подвійному кліку
+      _bpClaimLock = true;
+      setTimeout(() => { _bpClaimLock = false; }, 2000);
+      const bp      = getBpData();
+      const claimed = bp.claimed || {};
+      const key     = track + lv;
+      if(claimed[key]) { _bpClaimLock = false; return notify('Вже отримано!', 'info'); }
+
+      const row    = BP_REWARDS.find(r => r.lv === lv);
+      if(!row) return;
+      const reward = track === 'f' ? row.free : row.vip;
+      if(track === 'v' && !bp.isVip) return notify('❌ Потрібен VIP Battle Pass!', 'error');
+      if(lv > bp.level) return notify('❌ Рівень ще не досягнуто!', 'error');
+
+      claimed[key] = true;
+      const updates = { bpClaimed: claimed };
+
+      // Apply reward
+      if(reward.type === 'balance')       updates.balance   = (userData.balance||0)   + reward.val;
+      if(reward.type === 'slotiky')       updates.slotiky   = (userData.slotiky||0)   + reward.val;
+      if(reward.type === 'freeSlots')     updates.freeSlots = (userData.freeSlots||0) + reward.val;
+      if(reward.type === 'freeFortune')   updates.freeFortune = (userData.freeFortune||0) + reward.val;
+      if(reward.type === 'minesHints')    updates.minesHints = (userData.minesHints||0) + reward.val;
+      if(reward.type === 'crashInsurance')updates.crashInsurance = true;
+      if(reward.type === 'vipBoost') {
+        const days = reward.val;
+        const expiry = Date.now() + days * 86400000;
+        const items = userData.slotikyItems || {};
+        items['vip_boost_7d'] = { boughtAt: Date.now(), expires: expiry };
+        updates.slotikyItems = items;
+      }
+      if(reward.type === 'lootbox') {
+        updates.lootboxes = (userData.lootboxes||0) + reward.val;
+      }
+
+      db.ref('users/'+currentUser).update(updates);
+      playSound('bonus');
+      notify(`🎫 ${reward.icon} ${reward.label} отримано!`, 'success');
+      setTimeout(initBattlePass, 400);
+    }
+
+    function addBpXP(amount) {
+      if(!currentUser || amount <= 0) return;  // не пишемо при 0 XP
+      const bp = getBpData();
+      const isVip = bp.isVip;
+      const earnedXP = isVip ? amount * 2 : amount; // VIP = double XP
+      const newXP    = bp.xp + earnedXP;
+      const newLevel = Math.min(Math.floor(newXP / BP_XP_PER_LEVEL), BP_MAX_LEVEL);
+      const updates  = { bpXP: newXP };
+
+      if(newLevel > bp.level) {
+        updates.bpLevel = newLevel;
+        // Notify level up
+        setTimeout(() => {
+          const t = document.createElement('div');
+          t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
+          t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Рівень ${newLevel}!</div>`;
+          document.body.appendChild(t);
+          playSound('bonus');
+          setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
+        }, 500);
+      }
+
+      db.ref('users/'+currentUser).update(updates);
+    }
+
+    function buyVipBattlePass() {
+      const cost = 500; // slotiky
+      if((userData.slotiky||0) < cost) {
+        notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
+        return;
+      }
+      db.ref('users/'+currentUser).update({
+        slotiky: (userData.slotiky||0) - cost,
+        bpVip:   true,
+        bpVipBoughtAt: Date.now(),
+        bpVipMethod:   'slotiky'
+      });
+      playSound('bonus');
+      notify('👑 VIP Battle Pass активовано! Тепер ви отримуєте подвійний XP!', 'success');
+      setTimeout(initBattlePass, 400);
+    }
+
+    // Admin can grant VIP BP in cashier
+    function adminGrantVipBp(username) {
+      db.ref('users/'+username).update({ bpVip: true, bpVipBoughtAt: Date.now(), bpVipMethod: 'admin' });
+      notify(`✅ VIP Battle Pass видано гравцю ${username}`, 'success');
+    }
+
+
+    // ============================================================
+    // ===== ОСОБИСТА СТАТИСТИКА =====
+    // ============================================================
+    function initStatsTab() {
+      const el = document.getElementById('statsContent');
+      if(!el || !userData) return;
+      const d = userData;
+      const totalBets    = d.totalBets     || 0;
+      const totalWins    = d.totalWins     || 0;
+      const totalLosses  = d.totalLosses   || 0;
+      const totalWagered = d.totalWagered  || 0;
+      const biggestWin   = d.biggestWin    || 0;
+      const slotsPlayed  = d.slotsPlayed   || 0;
+      const crashGames   = d.crashGames    || 0;
+      const sportBets    = d.sportBets     || 0;
+      const rouletteBets = d.rouletteBets  || 0;
+      const minesGames   = d.minesGames    || 0;
+      const winRate      = totalBets > 0 ? Math.round(totalWins/totalBets*100) : 0;
+      const roi          = totalWagered > 0
+        ? ((d.balance||0) - 1000) / Math.max(totalWagered, 1) * 100 : 0;
+      const bpLevel      = d.bpLevel || 0;
+      const achievements = Object.keys(d.achievements||{}).length;
+      const dailyStreak  = d.dailyStreak || 0;
+      const cashbackTotal= d.cashbackTotalClaimed || 0;
+      const referrals    = d.referrals || 0;
+
+      const favGame = (() => {
+        const games = {
+          '🎰 Слоти': slotsPlayed,
+          '🚀 Краш': crashGames,
+          '⚽ Спорт': sportBets,
+          '🎡 Рулетка': rouletteBets,
+          '💣 Майнер': minesGames,
+        };
+        const sorted = Object.entries(games).sort((a,b)=>b[1]-a[1]);
+        return sorted[0][1] > 0 ? sorted[0][0] : '—';
+      })();
+
+      // Win rate color
+      const wrColor = winRate >= 50 ? '#4cd964' : winRate >= 35 ? '#f4a261' : '#ff3b30';
+
+      el.innerHTML = `
+        <!-- Main balance stat -->
+        <div style="background:linear-gradient(135deg,#0a1a0a,#111);border:1px solid #1a3a1a;border-radius:16px;padding:16px;margin-bottom:14px;text-align:center;">
+          <div style="font-size:11px;color:#555;margin-bottom:4px;">ПОТОЧНИЙ БАЛАНС</div>
+          <div style="font-size:32px;font-weight:900;color:var(--green);">${formatNumber(d.balance||0)} ₴</div>
+          <div style="font-size:11px;color:${roi>=0?'var(--green)':'var(--red)'};margin-top:4px;">
+            ROI: ${roi>=0?'+':''}${roi.toFixed(1)}% від усіх ставок
+          </div>
+        </div>
+
+        <!-- 3-col quick stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+          <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:900;color:${wrColor};">${winRate}%</div>
+            <div style="font-size:9px;color:#555;">Win Rate</div>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:900;color:var(--accent);">${totalBets}</div>
+            <div style="font-size:9px;color:#555;">Всього ставок</div>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
+            <div style="font-size:20px;font-weight:900;color:#c9a0ff;">${bpLevel}</div>
+            <div style="font-size:9px;color:#555;">Рівень BP</div>
+          </div>
+        </div>
+
+        <!-- Win/Loss bar -->
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:8px;">
+            <span>🏆 Виграші: <b style="color:var(--green);">${totalWins}</b></span>
+            <span>💸 Програші: <b style="color:var(--red);">${totalLosses}</b></span>
+          </div>
+          <div style="background:#1a1a1a;border-radius:6px;height:12px;overflow:hidden;">
+            <div style="height:100%;width:${winRate}%;background:linear-gradient(90deg,var(--green),#27ae60);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <!-- Financial stats -->
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">💰 Фінанси</div>
+          ${[
+            ['Загальний вагер', formatNumber(totalWagered)+' ₴'],
+            ['Найбільший виграш', formatNumber(biggestWin)+' ₴'],
+            ['Отримано кешбеку', formatNumber(cashbackTotal)+' ₴'],
+            ['Щоденна серія', dailyStreak+' днів 🔥'],
+            ['Рефералів', referrals+' осіб'],
+            ['Слотіків куплено', (d.slotikySpent||0)+' 🪙'],
+          ].map(([l,v])=>`
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #111;font-size:12px;">
+              <span style="color:#666;">${l}</span>
+              <span style="color:#ccc;font-weight:bold;">${v}</span>
+            </div>`).join('')}
+        </div>
+
+        <!-- Games breakdown -->
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">🎮 Ігри</div>
+          <div style="font-size:11px;color:#555;margin-bottom:10px;">Улюблена гра: <b style="color:#fff;">${favGame}</b></div>
+          ${[
+            ['🎰 Слоти',    slotsPlayed],
+            ['🚀 Краш',     crashGames],
+            ['⚽ Спорт',    sportBets],
+            ['🎡 Рулетка',  rouletteBets],
+            ['💣 Майнер',   minesGames],
+          ].map(([label, count])=>{
+            const maxCount = Math.max(slotsPlayed, crashGames, sportBets, rouletteBets, minesGames, 1);
+            const pct = Math.round(count/maxCount*100);
+            return `<div style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                <span style="color:#aaa;">${label}</span>
+                <span style="color:#555;">${count}</span>
+              </div>
+              <div style="background:#111;border-radius:4px;height:6px;overflow:hidden;">
+                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#4a9eff,#00b4d8);border-radius:4px;"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <!-- Achievements summary -->
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:12px;font-weight:bold;color:var(--accent);">🏆 Досягнення</div>
+            <button onclick="switchTab('achievements')" style="background:none;border:1px solid #333;border-radius:6px;padding:4px 10px;color:#555;font-size:10px;cursor:pointer;">Всі →</button>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:28px;font-weight:900;color:var(--accent);">${achievements}</div>
+            <div>
+              <div style="font-size:11px;color:#aaa;">з 50 досягнень</div>
+              <div style="font-size:11px;color:#555;">${d.achievementXP||0} XP зароблено</div>
+            </div>
+          </div>
+          <div style="background:#111;border-radius:6px;height:8px;overflow:hidden;margin-top:8px;">
+            <div style="height:100%;width:${Math.round(achievements/50*100)}%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <div style="text-align:center;padding:8px 0;">
+          <button onclick="initStatsTab()" style="background:none;border:1px solid #333;border-radius:8px;padding:8px 20px;color:#555;font-size:11px;cursor:pointer;">🔄 Оновити</button>
+        </div>
+      `;
+    }
 
     // Перевірка реферала при старті
     checkRefParam();
