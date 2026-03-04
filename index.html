@@ -719,6 +719,106 @@
       0% { transform: translate(var(--bx0), var(--by0)); }
       100% { transform: translate(var(--bx1), var(--by1)); }
     }
+
+    /* ============================================
+       VIRTUAL BANK CARD
+    ============================================ */
+    .vcard-wrap { perspective: 1000px; width: 100%; max-width: 360px; margin: 0 auto 20px; height: 200px; }
+    .vcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.4,0,0.2,1); cursor: pointer; }
+    .vcard.flipped { transform: rotateY(180deg); }
+    .vcard-front, .vcard-back {
+      position: absolute; width: 100%; height: 100%; border-radius: 18px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      padding: 20px 24px; box-sizing: border-box;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .vcard-back { transform: rotateY(180deg); }
+
+    /* SKIN: default gold */
+    .vcard-skin-gold .vcard-front { background: linear-gradient(135deg, #1a0d00 0%, #3d2200 40%, #6b3d00 70%, #d4af37 100%); }
+    .vcard-skin-gold .vcard-back  { background: linear-gradient(135deg, #d4af37 0%, #6b3d00 40%, #3d2200 100%); }
+    .vcard-skin-black .vcard-front { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2d2d2d 100%); }
+    .vcard-skin-black .vcard-back  { background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); }
+    .vcard-skin-blue .vcard-front  { background: linear-gradient(135deg, #0a0a2e 0%, #1a1a5e 50%, #2244aa 100%); }
+    .vcard-skin-blue .vcard-back   { background: linear-gradient(135deg, #2244aa 0%, #1a1a5e 100%); }
+    .vcard-skin-red .vcard-front   { background: linear-gradient(135deg, #1a0505 0%, #5c0a0a 50%, #cc1a1a 100%); }
+    .vcard-skin-red .vcard-back    { background: linear-gradient(135deg, #cc1a1a 0%, #5c0a0a 100%); }
+    .vcard-skin-green .vcard-front { background: linear-gradient(135deg, #001a00 0%, #0a3d14 50%, #1a7a2a 100%); }
+    .vcard-skin-green .vcard-back  { background: linear-gradient(135deg, #1a7a2a 0%, #0a3d14 100%); }
+    .vcard-skin-purple .vcard-front{ background: linear-gradient(135deg, #0d0520 0%, #2d0d60 50%, #6a20c0 100%); }
+    .vcard-skin-purple .vcard-back { background: linear-gradient(135deg, #6a20c0 0%, #2d0d60 100%); }
+    .vcard-skin-titanium .vcard-front{ background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 30%, #8a8a8a 60%, #c0c0c0 100%); }
+    .vcard-skin-titanium .vcard-back { background: linear-gradient(135deg, #c0c0c0 0%, #8a8a8a 50%, #3a3a3a 100%); }
+    .vcard-skin-galaxy .vcard-front  { background: linear-gradient(135deg, #000010 0%, #0a004a 30%, #300080 60%, #7000b0 100%); }
+    .vcard-skin-galaxy .vcard-back   { background: linear-gradient(135deg, #7000b0 0%, #300080 50%, #0a004a 100%); }
+
+    /* Card front elements */
+    .vcard-chip {
+      width: 42px; height: 32px; background: linear-gradient(135deg, #d4af37, #ffdb4d, #a0820c);
+      border-radius: 6px; margin-bottom: 16px; position: relative;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3);
+    }
+    .vcard-chip::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:rgba(0,0,0,0.2); }
+    .vcard-chip::after  { content:''; position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(0,0,0,0.2); }
+    .vcard-contactless { position:absolute; top:20px; right:24px; font-size:22px; opacity:0.8; }
+    .vcard-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight:bold; letter-spacing: 3px; color: rgba(255,255,255,0.95); text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 14px; }
+    .vcard-holder-row { display:flex; justify-content:space-between; align-items:flex-end; }
+    .vcard-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing: 1px; }
+    .vcard-value { font-size: 13px; font-weight:bold; color: rgba(255,255,255,0.9); letter-spacing:1px; }
+    .vcard-logo { position:absolute; bottom:18px; right:24px; display:flex; gap:-6px; }
+    .vcard-logo .c1, .vcard-logo .c2 { width:30px; height:30px; border-radius:50%; opacity:0.9; }
+    .vcard-logo .c1 { background:#eb001b; }
+    .vcard-logo .c2 { background:#f79e1b; margin-left:-10px; }
+    .vcard-bank-name { font-size:13px; font-weight:900; color:rgba(255,255,255,0.9); letter-spacing:2px; text-transform:uppercase; margin-bottom:2px; }
+    
+    /* Card back elements */
+    .vcard-stripe { height: 44px; background: rgba(0,0,0,0.7); margin: -20px -24px 14px; }
+    .vcard-cvv-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .vcard-cvv-tape { flex:1; background:rgba(255,255,255,0.85); height:36px; border-radius:4px; display:flex; align-items:center; padding: 0 10px; }
+    .vcard-cvv-value { font-family:'Courier New',monospace; font-size:16px; font-weight:bold; color:#000; letter-spacing:4px; }
+    .vcard-cvv-label { font-size:10px; color:rgba(255,255,255,0.6); white-space:nowrap; }
+    .vcard-signature { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:6px 12px; font-size:10px; color:rgba(255,255,255,0.6); font-style:italic; }
+    .vcard-back-logo { text-align:right; margin-top:8px; }
+
+    /* CARD SKINS SHOP */
+    .skin-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .skin-item { border-radius:14px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:0.2s; position:relative; }
+    .skin-item.active { border-color:var(--accent); }
+    .skin-item.locked { opacity:0.5; cursor:default; }
+    .skin-preview { height:70px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; color:rgba(255,255,255,0.8); }
+    .skin-info { background:rgba(0,0,0,0.4); padding:6px 10px; display:flex; justify-content:space-between; align-items:center; }
+    .skin-locked-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; font-size:18px; }
+
+    /* CARD ONBOARDING MODAL */
+    .card-onboard-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9900; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .card-onboard-box { background:linear-gradient(135deg,#0a0a0a,#141414); border:1px solid var(--accent); border-radius:24px; padding:28px 22px; max-width:380px; width:100%; text-align:center; }
+    
+    /* BANK TAB */
+    .bank-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+    .bank-action-btn { background:var(--box); border:1px solid var(--border); border-radius:14px; padding:16px 12px; text-align:center; cursor:pointer; transition:0.2s; }
+    .bank-action-btn:active { transform:scale(0.97); }
+    .bank-action-btn .ba-icon { font-size:26px; margin-bottom:6px; }
+    .bank-action-btn .ba-label { font-size:12px; font-weight:bold; color:#aaa; }
+    .bank-tx-item { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid #111; }
+    .bank-tx-icon { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .bank-tx-desc { flex:1; }
+    .bank-tx-title { font-size:13px; font-weight:bold; color:#ddd; }
+    .bank-tx-time  { font-size:10px; color:#555; margin-top:1px; }
+    .bank-tx-amount { font-size:14px; font-weight:bold; }
+    .bank-tx-amount.plus  { color:var(--green); }
+    .bank-tx-amount.minus { color:var(--red); }
+
+    /* Shimmer animation for card */
+    @keyframes cardShimmer {
+      0%   { background-position: -300% center; }
+      100% { background-position: 300% center; }
+    }
+    .vcard-skin-titanium .vcard-front, .vcard-skin-galaxy .vcard-front {
+      background-size: 200% auto;
+      animation: cardShimmer 4s linear infinite;
+    }
+
   </style>
 </head>
 <body data-theme="dark">
@@ -1269,15 +1369,134 @@
     <div id="tab-cashier" class="screen hidden">
       <!-- Cashier sub-tabs -->
       <div style="display:flex;gap:0;background:var(--box);border-radius:14px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
-        <button class="cashier-tab-btn active" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">💳 Поповнення</button>
+        <button class="cashier-tab-btn active" id="ctb-card" onclick="switchCashierTab('card',this)">💳 Моя картка</button>
+        <button class="cashier-tab-btn" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">⬆️ Поповнення</button>
         <button class="cashier-tab-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">💸 Вивід</button>
         <button class="cashier-tab-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">💰 Кешбек</button>
         <button class="cashier-tab-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">📊 Ринок</button>
       </div>
 
       
+
+      <!-- CARD PANEL -->
+      <div id="cashier-panel-card">
+        <!-- Virtual card display -->
+        <div class="vcard-wrap" onclick="flipCard()" id="vcardWrap">
+          <div class="vcard vcard-skin-gold" id="vcardEl">
+            <!-- FRONT -->
+            <div class="vcard-front">
+              <div class="vcard-bank-name">SlotOK Bank</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div class="vcard-chip"></div>
+                <div class="vcard-contactless">((·))</div>
+              </div>
+              <div class="vcard-number" id="vcardNumber">4874 0700 7092 4301</div>
+              <div class="vcard-holder-row">
+                <div>
+                  <div class="vcard-label">Власник</div>
+                  <div class="vcard-value" id="vcardHolder">IVAN IVANOV</div>
+                </div>
+                <div>
+                  <div class="vcard-label">Дійсна до</div>
+                  <div class="vcard-value" id="vcardExpiry">12/28</div>
+                </div>
+                <div class="vcard-logo">
+                  <div class="c1"></div>
+                  <div class="c2"></div>
+                </div>
+              </div>
+            </div>
+            <!-- BACK -->
+            <div class="vcard-back">
+              <div class="vcard-stripe"></div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:8px;">ПІДПИС ВЛАСНИКА / AUTHORIZED SIGNATURE</div>
+              <div class="vcard-cvv-row">
+                <div class="vcard-cvv-tape">
+                  <span class="vcard-cvv-value" id="vcardCvvDisplay">***</span>
+                </div>
+                <div>
+                  <div class="vcard-cvv-label">CVV/CVC</div>
+                  <div class="vcard-cvv-value" id="vcardCvvBack" style="color:#fff;font-size:18px;">***</div>
+                </div>
+              </div>
+              <div class="vcard-signature" id="vcardSignatureText">Authorized Signature</div>
+              <div class="vcard-back-logo">
+                <div style="display:flex;justify-content:flex-end;gap:-6px;margin-top:8px;">
+                  <div style="width:24px;height:24px;border-radius:50%;background:#eb001b;"></div>
+                  <div style="width:24px;height:24px;border-radius:50%;background:#f79e1b;margin-left:-8px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card actions quick -->
+        <div style="text-align:center;font-size:10px;color:#555;margin-top:-10px;margin-bottom:14px;">Натисни на картку щоб перевернути 👆</div>
+
+        <!-- Show/hide CVV -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button onclick="toggleCvvVisibility()" style="flex:1;background:var(--box);border:1px solid var(--border);border-radius:10px;color:#aaa;font-size:12px;padding:10px;" id="cvvToggleBtn">👁 Показати CVV</button>
+          <button onclick="copyCardNumber()" style="flex:1;background:var(--box);border:1px solid var(--border);border-radius:10px;color:#aaa;font-size:12px;padding:10px;">📋 Скопіювати номер</button>
+        </div>
+
+        <!-- Card balance -->
+        <div style="background:linear-gradient(135deg,#0a1a0a,#0d2a10);border:1px solid #1a4020;border-radius:16px;padding:16px;margin-bottom:14px;">
+          <div style="font-size:11px;color:#3a7a3a;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Баланс картки</div>
+          <div style="font-size:28px;font-weight:900;color:var(--green);" id="vcardBalance">0 ₴</div>
+          <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:#555;">
+            <span>↗ Поповнень: <span id="vcardTotalIn" style="color:#4cd964;">0 ₴</span></span>
+            <span>↙ Знято: <span id="vcardTotalOut" style="color:#ff3b30;">0 ₴</span></span>
+          </div>
+        </div>
+
+        <!-- Quick action buttons (4-grid like Mono/Privat) -->
+        <div class="bank-action-grid">
+          <div class="bank-action-btn" onclick="bankAction('topup')">
+            <div class="ba-icon">💳</div>
+            <div class="ba-label">Поповнити</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('withdraw')">
+            <div class="ba-icon">💸</div>
+            <div class="ba-label">Зняти</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('transfer')">
+            <div class="ba-icon">↗️</div>
+            <div class="ba-label">Переказ</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('buySlotyky')">
+            <div class="ba-icon">🪙</div>
+            <div class="ba-label">Слотіки</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('skinShop')">
+            <div class="ba-icon">🎨</div>
+            <div class="ba-label">Скін картки</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('freeze')">
+            <div class="ba-icon" id="cardFreezeIcon">🔒</div>
+            <div class="ba-label" id="cardFreezeLabel">Заблокувати</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('cashback')">
+            <div class="ba-icon">💰</div>
+            <div class="ba-label">Кешбек</div>
+          </div>
+          <div class="bank-action-btn" onclick="bankAction('slotikiBuy')">
+            <div class="ba-icon">🎰</div>
+            <div class="ba-label">В казино</div>
+          </div>
+        </div>
+
+        <!-- Recent transactions -->
+        <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:bold;color:var(--accent);">📋 Останні операції</div>
+            <button onclick="showAllTransactions()" style="background:none;border:1px solid #333;border-radius:6px;padding:3px 10px;color:#555;font-size:10px;cursor:pointer;">Всі →</button>
+          </div>
+          <div id="cardTransactionsList"><div style="color:#555;font-size:12px;text-align:center;padding:16px;">Немає операцій</div></div>
+        </div>
+      </div><!-- /cashier-panel-card -->
+
       <!-- DEPOSIT PANEL -->
-      <div id="cashier-panel-deposit">
+      <div id="cashier-panel-deposit" class="hidden">
       <div class="tg-deposit-box">
         <div class="tg-logo">✈️</div>
         <div class="tg-title">Поповнення через Telegram</div>
@@ -1382,6 +1601,90 @@
       </div><!-- /cashier-panel-markets -->
     </div>
 
+
+
+    <!-- ╔══════════════════════════════════════════╗ -->
+    <!-- ║           BANK TAB (tab-bank)            ║ -->
+    <!-- ╚══════════════════════════════════════════╝ -->
+    <div id="tab-bank" class="screen hidden" style="padding:0;background:var(--bg);min-height:100vh;">
+
+      <!-- Bank header -->
+      <div style="background:linear-gradient(135deg,#0a1400,#1a2e00,#2d4a00);padding:20px 15px 60px;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2220%22 cy=%2220%22 r=%2240%22 fill=%22rgba(255,255,255,0.02)%22/><circle cx=%2280%22 cy=%2280%22 r=%2260%22 fill=%22rgba(255,255,255,0.01)%22/></svg>');"></div>
+        <div style="position:relative;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;">🏦 SlotOK Bank</div>
+            <div style="font-size:22px;font-weight:900;color:#fff;margin-top:2px;" id="bankGreeting">Привіт!</div>
+          </div>
+          <div onclick="switchTab('cashier')" style="background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 14px;font-size:12px;color:#fff;cursor:pointer;">💳 Картка</div>
+        </div>
+        <!-- Balance card -->
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:18px;">
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Загальний баланс</div>
+          <div style="font-size:34px;font-weight:900;color:#fff;" id="bankTotalBalance">0 ₴</div>
+          <div style="display:flex;gap:20px;margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5);">
+            <span>💳 На картці: <span id="bankCardBal" style="color:#4cd964;">0 ₴</span></span>
+            <span>🎰 Казино: <span id="bankCasinoBal" style="color:var(--accent);">0 ₴</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions row -->
+      <div style="background:var(--bg);border-radius:24px 24px 0 0;margin-top:-24px;padding:20px 15px 0;position:relative;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
+          <div onclick="bankAction('topup')" style="text-align:center;cursor:pointer;flex:1;">
+            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a4020,#27ae60);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(39,174,96,0.4);">💳</div>
+            <div style="font-size:10px;color:#777;">Поповнити</div>
+          </div>
+          <div onclick="bankAction('withdraw')" style="text-align:center;cursor:pointer;flex:1;">
+            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a05,#cc4400);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(204,68,0,0.4);">💸</div>
+            <div style="font-size:10px;color:#777;">Вивід</div>
+          </div>
+          <div onclick="bankAction('transfer')" style="text-align:center;cursor:pointer;flex:1;">
+            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#0a0a2e,#2244aa);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(34,68,170,0.4);">↗️</div>
+            <div style="font-size:10px;color:#777;">Переказ</div>
+          </div>
+          <div onclick="bankAction('buySlotyky')" style="text-align:center;cursor:pointer;flex:1;">
+            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a2e,#6a20c0);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(106,32,192,0.4);">🪙</div>
+            <div style="font-size:10px;color:#777;">Слотіки</div>
+          </div>
+          <div onclick="bankAction('casino')" style="text-align:center;cursor:pointer;flex:1;">
+            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a00,var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(212,175,55,0.3);">🎰</div>
+            <div style="font-size:10px;color:#777;">Казино</div>
+          </div>
+        </div>
+
+        <!-- Cashback & Bonuses row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div onclick="switchCashierTabAndGo('cashback')" style="background:linear-gradient(135deg,#0a1a0a,#111);border:1px solid #1a3a1a;border-radius:14px;padding:14px;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:4px;">💰</div>
+            <div style="font-size:11px;color:#3a7a3a;">Накопичений кешбек</div>
+            <div style="font-size:18px;font-weight:bold;color:var(--green);margin-top:3px;" id="bankCashbackAmt">0 ₴</div>
+          </div>
+          <div onclick="switchTab('slotiky')" style="background:linear-gradient(135deg,#0a0a1a,#111);border:1px solid #1a1a3a;border-radius:14px;padding:14px;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:4px;">🪙</div>
+            <div style="font-size:11px;color:#3a3a7a;">Слотіки</div>
+            <div style="font-size:18px;font-weight:bold;color:#c9a0ff;margin-top:3px;" id="bankSlotiky">0</div>
+          </div>
+        </div>
+
+        <!-- Transactions -->
+        <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:80px;">
+          <div style="padding:14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:bold;">📋 Виписка по рахунку</div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="filterBankTx('all',this)" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:bold;cursor:pointer;">Всі</button>
+              <button onclick="filterBankTx('in',this)" style="background:var(--input);color:#aaa;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;">Надходження</button>
+              <button onclick="filterBankTx('out',this)" style="background:var(--input);color:#aaa;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;">Витрати</button>
+            </div>
+          </div>
+          <div id="bankTransactionList" style="max-height:400px;overflow-y:auto;">
+            <div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-bank -->
 
     <!-- TOWER CLIMB -->
     <div id="tab-tower" class="screen hidden">
@@ -1668,6 +1971,7 @@
         <button class="btn-outline" onclick="openDailyBonus()">🎁 Щоденний бонус</button>
         <button class="btn-outline" onclick="logout()">Вийти</button>
         <button class="btn-red" onclick="deleteAccount()">ВИДАЛИТИ АКАУНТ</button>
+        <button class="btn-outline" onclick="switchTab('bank')" style="border-color:#27ae60;color:#4cd964;">🏦 SlotOK Bank</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
         <button class="btn-outline" onclick="switchTab('battlepass')" style="border-color:#5a20c0;color:#c9a0ff;">🎫 Battle Pass</button>
         <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
@@ -2922,9 +3226,14 @@
 
   <div id="transfer-modal" class="full-modal hidden">
     <button class="btn-outline" onclick="closeModal('transfer-modal')" style="width:50px;">⬅</button>
-    <h2>💸 Переказ Другу</h2>
-    <input id="transferTo" placeholder="Нік отримувача">
-    <input id="transferAmount" type="number" placeholder="Сума переказу">
+    <h2>↗️ Переказ по картці</h2>
+    <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:11px;color:#777;">
+      💳 Переказ можливий лише по <b style="color:#fff;">номеру картки SlotOK Bank</b>. Картка є у кожного гравця у вкладці «Каса → Моя картка».
+    </div>
+    <div style="font-size:11px;color:#555;margin-bottom:4px;">Номер картки отримувача</div>
+    <input id="transferToCard" placeholder="4874 XXXX XXXX XXXX" maxlength="19" oninput="formatCardInput(this)" style="font-family:'Courier New',monospace;letter-spacing:2px;font-size:16px;text-align:center;">
+    <div id="transferRecipientInfo" style="font-size:11px;color:#555;min-height:20px;margin-bottom:4px;text-align:center;"></div>
+    <input id="transferAmount" type="number" placeholder="Сума переказу (мін. 10 ₴)">
     <button class="btn-gold" onclick="sendMoney()">НАДІСЛАТИ</button>
   </div>
 
@@ -3036,6 +3345,7 @@
                   window._initDone = true;
                   setTimeout(initHomeTab, 100);
                   setTimeout(initBgMusicFromSettings, 1800);
+                  setTimeout(checkCardOnboarding, 3500);
                   setTimeout(initChatAutoClear, 500);
                   setTimeout(initAiSupport, 600);
                   setTimeout(initCurrencySystem, 200);
@@ -4146,17 +4456,60 @@
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     
-    function sendMoney() { 
-        const t=document.getElementById('transferTo').value; 
-        const a=parseInt(document.getElementById('transferAmount').value); 
-        if(userData.balance<a||a<=0) return notify("Невірна сума","error"); 
-        db.ref('users/'+t).once('value', s=>{ 
-            if(s.exists()){ 
-                db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
-                db.ref('users/'+t+'/balance').set(firebase.database.ServerValue.increment(a)); 
-                notify("Гроші надіслано!","success"); closeModal('transfer-modal'); 
-            } else { notify("Користувача не знайдено","error"); } 
-        }); 
+    function formatCardInput(inp) {
+      let val = inp.value.replace(/[^0-9]/g,'').substring(0,16);
+      inp.value = val.replace(/(.{4})(?=.)/g,'$1 ');
+      const info = document.getElementById('transferRecipientInfo');
+      if(val.length === 16) {
+        if(info) { info.textContent = '🔍 Пошук...'; info.style.color = '#555'; }
+        db.ref('users').once('value', snap => {
+          const users = snap.val() || {};
+          let found = null;
+          Object.entries(users).forEach(([name, data]) => {
+            if(data.virtualCard && data.virtualCard.number && data.virtualCard.number.replace(/\s/g,'') === val) found = name;
+          });
+          if(info) { info.textContent = found ? ('✅ Отримувач: ' + found) : '❌ Картку не знайдено'; info.style.color = found ? '#4cd964' : '#ff3b30'; }
+        });
+      } else {
+        if(info) { info.textContent = ''; }
+      }
+    }
+
+    function sendMoney() {
+      const rawCard = (document.getElementById('transferToCard') || {value:''}).value.replace(/\s/g,'');
+      const a = parseInt(document.getElementById('transferAmount').value);
+      if(!rawCard || rawCard.length !== 16) return notify('Введіть номер картки (16 цифр)', 'error');
+      if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
+      if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
+      if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+
+      db.ref('users').once('value', snap => {
+        const users = snap.val() || {};
+        let recipientName = null;
+        Object.entries(users).forEach(([name, data]) => {
+          if(data.virtualCard && data.virtualCard.number && data.virtualCard.number.replace(/\s/g,'') === rawCard) recipientName = name;
+        });
+        if(!recipientName) return notify('❌ Картку не знайдено в SlotOK Bank', 'error');
+        if(recipientName === currentUser) return notify('❌ Не можна переказати самому собі', 'error');
+        if(users[recipientName]?.virtualCard?.frozen) return notify('❌ Картка отримувача заблокована', 'error');
+
+        const formattedCard = rawCard.replace(/(.{4})(?=.)/g,'$1 ');
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
+        db.ref('users/'+recipientName+'/balance').set(firebase.database.ServerValue.increment(a));
+        db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(a));
+        db.ref('users/'+recipientName+'/virtualCard/totalIn').set(firebase.database.ServerValue.increment(a));
+
+        // Transactions log both sides
+        addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
+        db.ref('users/'+recipientName+'/cardTx').push({ dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: (userData.virtualCard ? userData.virtualCard.number : ''), ts: Date.now() });
+
+        playSound('win');
+        notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
+        closeModal('transfer-modal');
+        const inp = document.getElementById('transferToCard'); if(inp) inp.value = '';
+        const info = document.getElementById('transferRecipientInfo'); if(info) info.textContent = '';
+        document.getElementById('transferAmount').value = '';
+      });
     }
     
     function activatePromo() { 
@@ -6339,6 +6692,7 @@
       playSound('win');
       notify(`💰 Кешбек отримано: +${formatNumber(pending)} ₴`, 'success');
       addToHistory('Кешбек: +'+pending);
+      addCardTransaction('in', pending, 'Кешбек нараховано', 'SlotOK Casino');
       updateCashierCashbackUI();
     }
 
@@ -6737,7 +7091,7 @@
       cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1, duels:1,
       tournaments:6, referrals:6, vip:6, quests:6, lootboxes:6,
       hourly:6, clans:6, leaderboard:6, gifts:6, slotiky:6,
-      achievements:6, battlepass:6, stats:6, admin:4
+      achievements:6, battlepass:6, stats:6, bank:6, admin:4
     };
 
     function switchTab(id, el) {
@@ -6791,9 +7145,13 @@
       if(id==='achievements') { initAchievementsTab(); checkAchievements('tab',null); }
       if(id==='battlepass') { initBattlePass(); }
       if(id==='stats') { initStatsTab(); }
+      if(id==='bank') { initBankTab(); }
       if(id==='tournaments') { loadTournamentsV2(); loadTourneyStatsBar(); }
       if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
-      if(id==='cashier') { switchCashierTab('deposit', document.getElementById('ctb-deposit')); setTimeout(()=>updateCashierCashbackUI(),300); }
+      if(id==='cashier') { 
+        switchCashierTab('card', document.getElementById('ctb-card')); 
+        setTimeout(()=>{ updateCashierCashbackUI(); renderCardPanel(); }, 300); 
+      }
       if(id==='monopoly-mp') { loadMpRooms(); }
       if(id==='notifications') { renderNotifs(); }
       if(id==='settings') { loadSettings(); }
@@ -8863,13 +9221,14 @@
     function switchCashierTab(tab, el) {
       document.querySelectorAll('.cashier-tab-btn').forEach(b => b.classList.remove('active'));
       if(el) el.classList.add('active');
-      // Show/hide ALL cashier panels including cashback
-      ['deposit','withdraw','cashback','markets'].forEach(t => {
+      // Show/hide ALL cashier panels — включаючи нову 'card'
+      ['card','deposit','withdraw','cashback','markets'].forEach(t => {
         const p = document.getElementById('cashier-panel-' + t);
         if(p) p.classList.toggle('hidden', t !== tab);
       });
       if(tab === 'cashback') updateCashierCashbackUI();
       if(tab === 'markets')  buildMarketsPage();
+      if(tab === 'card')     renderCardPanel();
     }
 
     function buildMarketsPage() {
@@ -11845,9 +12204,593 @@ ${getItemEffectDesc(item)}`, 'success');
       `;
     }
 
+
+    // ============================================================
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║          SLOTOK BANK & VIRTUAL CARD SYSTEM               ║
+    // ╚══════════════════════════════════════════════════════════╝
+    // ============================================================
+
+    // ── CARD SKINS CATALOG ──
+    const CARD_SKINS = [
+      { id:'gold',     name:'Gold',      cls:'vcard-skin-gold',     price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
+      { id:'black',    name:'Black',     cls:'vcard-skin-black',    price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
+      { id:'blue',     name:'Navy Blue', cls:'vcard-skin-blue',     price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
+      { id:'red',      name:'Ruby Red',  cls:'vcard-skin-red',      price:0,   slotiky:5,  unlock:'slotiky', desc:'5 🪙' },
+      { id:'green',    name:'Emerald',   cls:'vcard-skin-green',    price:0,   slotiky:5,  unlock:'slotiky', desc:'5 🪙' },
+      { id:'purple',   name:'Royal Purple',cls:'vcard-skin-purple', price:0,   slotiky:8,  unlock:'slotiky', desc:'8 🪙' },
+      { id:'titanium', name:'Titanium',  cls:'vcard-skin-titanium', price:0,   slotiky:15, unlock:'slotiky', desc:'15 🪙' },
+      { id:'galaxy',   name:'Galaxy',    cls:'vcard-skin-galaxy',   price:0,   slotiky:25, unlock:'slotiky', desc:'25 🪙' },
+    ];
+
+    const SLOTIKY_PACKAGES = [
+      { count:1,   price:50,   label:'Стартер',  bonus:'' },
+      { count:5,   price:230,  label:'Базовий',  bonus:'+1 🎁' },
+      { count:10,  price:450,  label:'Стандарт', bonus:'+2 🎁' },
+      { count:25,  price:1000, label:'Просунутий',bonus:'+5 🎁' },
+      { count:50,  price:1800, label:'VIP',      bonus:'+15 🎁' },
+      { count:100, price:3000, label:'Legendary',bonus:'+35 🎁' },
+    ];
+
+    // ── GENERATE UNIQUE CARD NUMBER ──
+    function generateCardNumber(userId) {
+      // Deterministic based on userId — always same card for same user
+      const seed = userId.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+      const r = (n, s) => {
+        let x = (seed * 1664525 + n * 1013904223) & 0xFFFFFFFF;
+        x = ((x >>> 16) ^ x) + s;
+        return Math.abs(x) % 10000;
+      };
+      const p1 = 4874;
+      const p2 = String(r(1, 700)).padStart(4,'0');
+      const p3 = String(r(2, 300)).padStart(4,'0');
+      const p4 = String(r(3, 100)).padStart(4,'0');
+      return `${p1} ${p2} ${p3} ${p4}`;
+    }
+
+    function generateCvv(userId) {
+      const seed = userId.split('').reduce((a,c) => a + c.charCodeAt(0)*7, 0);
+      return String((seed * 8191 + 42949) % 900 + 100);
+    }
+
+    function generateExpiry(userId) {
+      const seed = userId.split('').reduce((a,c) => a + c.charCodeAt(0)*3, 0);
+      const month = String((seed % 12) + 1).padStart(2,'0');
+      const year  = String(28 + (seed % 4));
+      return `${month}/${year}`;
+    }
+
+    // ── CARD DATA ──
+    function getCardData() {
+      if(!userData || !currentUser) return null;
+      const card = userData.virtualCard;
+      if(!card || !card.number) return null;
+      return card;
+    }
+
+    function getUserCardOrGenerate() {
+      const card = userData.virtualCard;
+      if(card && card.number) return card;
+      return null;
+    }
+
+    // ── CREATE CARD ──
+    function createVirtualCard() {
+      if(!currentUser) return;
+      const number  = generateCardNumber(currentUser);
+      const cvv     = generateCvv(currentUser);
+      const expiry  = generateExpiry(currentUser);
+      const holder  = currentUser.toUpperCase().substring(0, 20);
+      const card = {
+        number, cvv, expiry, holder,
+        skin: 'gold',
+        ownedSkins: ['gold','black','blue'],
+        frozen: false,
+        createdAt: Date.now(),
+        totalIn: 0,
+        totalOut: 0,
+      };
+      db.ref('users/'+currentUser+'/virtualCard').set(card);
+      document.getElementById('cardOnboardModal').classList.add('hidden');
+      playSound('bonus');
+      notify('🎉 Картку створено! Ласкаво просимо до SlotOK Bank!', 'success');
+      setTimeout(() => {
+        switchTab('cashier');
+        switchCashierTab('card', document.getElementById('ctb-card'));
+      }, 500);
+    }
+
+    function dismissCardOnboard() {
+      document.getElementById('cardOnboardModal').classList.add('hidden');
+      localStorage.setItem('cardOnboardDismissed_'+currentUser, '1');
+    }
+
+    // ── CARD ONBOARD CHECK ──
+    function checkCardOnboarding() {
+      if(!currentUser || !userData) return;
+      if(userData.virtualCard && userData.virtualCard.number) return; // already has card
+      const dismissed = localStorage.getItem('cardOnboardDismissed_'+currentUser);
+      if(dismissed) return; // they dismissed it before
+      // Show onboarding
+      setTimeout(() => {
+        document.getElementById('cardOnboardModal').classList.remove('hidden');
+      }, 2000);
+    }
+
+    // ── RENDER CARD PANEL ──
+    let cvvVisible = false;
+    function renderCardPanel() {
+      const card = getUserCardOrGenerate();
+      if(!card) {
+        // No card — show create button
+        const panel = document.getElementById('cashier-panel-card');
+        if(panel) panel.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;">
+            <div style="font-size:60px;margin-bottom:16px;">💳</div>
+            <div style="font-size:17px;font-weight:bold;color:var(--accent);margin-bottom:8px;">Картки ще немає</div>
+            <div style="font-size:12px;color:#555;margin-bottom:24px;">Створи безкоштовну картку SlotOK Bank</div>
+            <button onclick="createVirtualCard()" style="background:linear-gradient(135deg,var(--accent),#ffdb4d);color:#000;border:none;border-radius:14px;padding:16px 32px;font-weight:bold;font-size:15px;cursor:pointer;">🏦 Створити картку</button>
+          </div>`;
+        return;
+      }
+      
+      // Update card display
+      const numEl   = document.getElementById('vcardNumber');
+      const holdEl  = document.getElementById('vcardHolder');
+      const expEl   = document.getElementById('vcardExpiry');
+      const balEl   = document.getElementById('vcardBalance');
+      const inEl    = document.getElementById('vcardTotalIn');
+      const outEl   = document.getElementById('vcardTotalOut');
+      const sigEl   = document.getElementById('vcardSignatureText');
+      const cardEl  = document.getElementById('vcardEl');
+      const cvvDisp = document.getElementById('vcardCvvDisplay');
+      const cvvBack = document.getElementById('vcardCvvBack');
+      
+      if(numEl)  numEl.textContent  = card.number;
+      if(holdEl) holdEl.textContent = card.holder || currentUser.toUpperCase();
+      if(expEl)  expEl.textContent  = card.expiry;
+      if(balEl)  balEl.textContent  = formatNumber(userData.balance||0) + ' ₴';
+      if(inEl)   inEl.textContent   = formatNumber(card.totalIn||0) + ' ₴';
+      if(outEl)  outEl.textContent  = formatNumber(card.totalOut||0) + ' ₴';
+      if(sigEl)  sigEl.textContent  = card.holder || currentUser;
+
+      // Apply skin
+      if(cardEl) {
+        cardEl.className = 'vcard ' + (CARD_SKINS.find(s=>s.id===card.skin)||CARD_SKINS[0]).cls;
+        if(card.frozen) cardEl.style.filter = 'grayscale(0.7) brightness(0.6)';
+        else cardEl.style.filter = '';
+      }
+
+      // CVV
+      if(cvvDisp) cvvDisp.textContent = cvvVisible ? card.cvv : '***';
+      if(cvvBack) cvvBack.textContent  = cvvVisible ? card.cvv : '***';
+
+      // Freeze label
+      const fIcon  = document.getElementById('cardFreezeIcon');
+      const fLabel = document.getElementById('cardFreezeLabel');
+      if(fIcon)  fIcon.textContent  = card.frozen ? '🔓' : '🔒';
+      if(fLabel) fLabel.textContent = card.frozen ? 'Розблокувати' : 'Заблокувати';
+
+      // Transactions
+      renderCardTransactions(5);
+    }
+
+    function flipCard() {
+      const el = document.getElementById('vcardEl');
+      if(el) el.classList.toggle('flipped');
+    }
+
+    function toggleCvvVisibility() {
+      const card = getCardData();
+      if(!card) return;
+      cvvVisible = !cvvVisible;
+      const btn = document.getElementById('cvvToggleBtn');
+      if(btn) btn.textContent = cvvVisible ? '🙈 Сховати CVV' : '👁 Показати CVV';
+      const cvvDisp = document.getElementById('vcardCvvDisplay');
+      const cvvBack = document.getElementById('vcardCvvBack');
+      if(cvvDisp) cvvDisp.textContent = cvvVisible ? card.cvv : '***';
+      if(cvvBack) cvvBack.textContent  = cvvVisible ? card.cvv : '***';
+    }
+
+    function copyCardNumber() {
+      const card = getCardData();
+      if(!card) return;
+      navigator.clipboard.writeText(card.number.replace(/\s/g,'')).then(()=>{
+        notify('📋 Номер картки скопійовано!', 'success');
+      }).catch(()=>{
+        notify('Номер: ' + card.number, 'info');
+      });
+    }
+
+    // ── BANK ACTIONS ──
+    function bankAction(action) {
+      const card = getCardData();
+      if(!card && action !== 'skinShop') {
+        document.getElementById('cardOnboardModal').classList.remove('hidden');
+        return;
+      }
+      if(action === 'topup') {
+        const el = document.getElementById('ctmCardNum');
+        if(el) el.textContent = card ? card.number : '—';
+        openModal('cardTopupModal');
+      }
+      else if(action === 'withdraw') {
+        const el = document.getElementById('cwdAvailBal');
+        if(el) el.textContent = formatNumber(userData.balance||0) + ' ₴';
+        openModal('cardWithdrawModal');
+      }
+      else if(action === 'transfer') {
+        openModal('transfer-modal');
+      }
+      else if(action === 'buySlotyky' || action === 'slotikiBuy') {
+        renderSlotikyPackages();
+        openModal('buySlotikyModal');
+      }
+      else if(action === 'skinShop') {
+        renderCardSkinShop();
+        openModal('cardSkinModal');
+      }
+      else if(action === 'freeze') {
+        toggleCardFreeze();
+      }
+      else if(action === 'cashback') {
+        switchTab('cashier');
+        setTimeout(()=>switchCashierTab('cashback', document.getElementById('ctb-cashback')), 100);
+      }
+      else if(action === 'casino') {
+        switchTab('lobby');
+      }
+    }
+
+    function switchCashierTabAndGo(tabId) {
+      switchTab('cashier');
+      setTimeout(()=>switchCashierTab(tabId, document.getElementById('ctb-'+tabId)), 150);
+    }
+
+    function toggleCardFreeze() {
+      const card = getCardData();
+      if(!card) return;
+      const newFrozen = !card.frozen;
+      db.ref('users/'+currentUser+'/virtualCard/frozen').set(newFrozen);
+      notify(newFrozen ? '🔒 Картку заблоковано' : '🔓 Картку розблоковано', newFrozen?'error':'success');
+      setTimeout(renderCardPanel, 300);
+    }
+
+    // ── CARD WITHDRAW ──
+    function submitCardWithdraw() {
+      const amount = parseInt(document.getElementById('cwdAmount').value);
+      const cardNum = document.getElementById('cwdCardNum').value.trim();
+      if(!amount || amount < 200) return notify('Мінімум 200 ₴', 'error');
+      if(!cardNum) return notify('Введіть номер картки', 'error');
+      if((userData.balance||0) < amount) return notify('Недостатньо коштів', 'error');
+      const card = getCardData();
+      if(card && card.frozen) return notify('🔒 Картку заблоковано!', 'error');
+      // Submit withdraw request same as standard
+      const method = document.querySelector('.wm-btn.selected')?.textContent || 'PrivatBank';
+      const req = { user:currentUser, amount, card:cardNum, method, status:'pending', ts:Date.now() };
+      db.ref('withdrawRequests').push(req);
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amount));
+      // Track card stats
+      db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(amount));
+      // Add to transactions
+      addCardTransaction('out', amount, 'Вивід на ' + cardNum.slice(-4), method);
+      closeModal('cardWithdrawModal');
+      notify(`💸 Заявку на ${formatNumber(amount)} ₴ подано!`, 'success');
+    }
+
+    // ── BUY SLOTIKY ──
+    function renderSlotikyPackages() {
+      const grid = document.getElementById('slotikyPackagesGrid');
+      if(!grid) return;
+      const balEl = document.getElementById('bsmBalance');
+      const sEl   = document.getElementById('bsmSlotiky');
+      if(balEl) balEl.textContent = formatNumber(userData.balance||0) + ' ₴';
+      if(sEl)   sEl.textContent   = (userData.slotiky||0) + ' 🪙';
+
+      grid.innerHTML = SLOTIKY_PACKAGES.map(pkg => {
+        const canAfford = (userData.balance||0) >= pkg.price;
+        return `<div onclick="purchaseSlotikyPackage(${pkg.count},${pkg.price})" style="background:${canAfford?'linear-gradient(135deg,#0d0520,#2d0d60)':'#0a0a0a'};border:1px solid ${canAfford?'#5a20c0':'#222'};border-radius:14px;padding:14px;text-align:center;cursor:${canAfford?'pointer':'default'};transition:0.2s;${!canAfford?'opacity:0.4':''}">
+          <div style="font-size:24px;font-weight:900;color:${canAfford?'#c9a0ff':'#555'};">${pkg.count} 🪙</div>
+          <div style="font-size:10px;color:#6040a0;margin:3px 0;">${pkg.label}</div>
+          ${pkg.bonus?`<div style="font-size:9px;color:var(--green);">${pkg.bonus}</div>`:''}
+          <div style="font-size:13px;font-weight:bold;color:${canAfford?'var(--accent)':'#555'};margin-top:6px;">${formatNumber(pkg.price)} ₴</div>
+        </div>`;
+      }).join('');
+    }
+
+    function purchaseSlotikyPackage(count, price) {
+      if((userData.balance||0) < price) return notify('Недостатньо коштів!', 'error');
+      const card = getCardData();
+      if(card && card.frozen) return notify('🔒 Картку заблоковано! Розблокуй щоб робити покупки.', 'error');
+      db.ref('users/'+currentUser).update({
+        balance: firebase.database.ServerValue.increment(-price),
+        slotiky: firebase.database.ServerValue.increment(count)
+      });
+      db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(price));
+      addCardTransaction('out', price, `Купівля ${count} Слотіків`, 'SlotOK Shop');
+      closeModal('buySlotikyModal');
+      playSound('bonus');
+      notify(`🪙 Придбано ${count} Слотіків!`, 'success');
+    }
+
+    // ── CARD SKIN SHOP ──
+    function renderCardSkinShop() {
+      const grid = document.getElementById('skinShopGrid');
+      if(!grid) return;
+      const card = getCardData();
+      const owned = card ? (card.ownedSkins || ['gold','black','blue']) : ['gold','black','blue'];
+      const active = card ? (card.skin || 'gold') : 'gold';
+
+      const gradients = {
+        gold:     'linear-gradient(135deg,#1a0d00,#6b3d00,#d4af37)',
+        black:    'linear-gradient(135deg,#0a0a0a,#2d2d2d)',
+        blue:     'linear-gradient(135deg,#0a0a2e,#2244aa)',
+        red:      'linear-gradient(135deg,#1a0505,#cc1a1a)',
+        green:    'linear-gradient(135deg,#001a00,#1a7a2a)',
+        purple:   'linear-gradient(135deg,#0d0520,#6a20c0)',
+        titanium: 'linear-gradient(135deg,#1a1a1a,#c0c0c0)',
+        galaxy:   'linear-gradient(135deg,#000010,#7000b0)',
+      };
+
+      grid.innerHTML = CARD_SKINS.map(skin => {
+        const isOwned  = owned.includes(skin.id);
+        const isActive = skin.id === active;
+        return `<div class="skin-item ${isActive?'active':''} ${!isOwned?'locked':''}"
+          onclick="${isOwned ? `applySkin('${skin.id}')` : `buySkin('${skin.id}',${skin.slotiky})`}"
+          style="border-color:${isActive?'var(--accent)':'transparent'};">
+          <div class="skin-preview" style="background:${gradients[skin.id]||'#111'};">
+            <span>${skin.name}</span>
+            ${isActive?'<span style="position:absolute;top:6px;right:8px;font-size:16px;">✓</span>':''}
+          </div>
+          <div class="skin-info">
+            <span style="font-size:11px;color:#aaa;">${skin.name}</span>
+            <span style="font-size:10px;color:${isOwned?'var(--green)':'#c9a0ff'};">
+              ${isActive?'Активний':isOwned?'Встановити':skin.desc}
+            </span>
+          </div>
+          ${!isOwned?`<div class="skin-locked-overlay">🔒</div>`:''}
+        </div>`;
+      }).join('');
+    }
+
+    function applySkin(skinId) {
+      db.ref('users/'+currentUser+'/virtualCard/skin').set(skinId);
+      notify('🎨 Скін змінено!', 'success');
+      setTimeout(()=>{ renderCardPanel(); renderCardSkinShop(); }, 300);
+    }
+
+    function buySkin(skinId, price) {
+      if((userData.slotiky||0) < price) {
+        notify(`❌ Потрібно ${price} 🪙. У вас: ${userData.slotiky||0}`, 'error');
+        return;
+      }
+      const card = getCardData();
+      const owned = card ? [...(card.ownedSkins||['gold','black','blue']), skinId] : ['gold','black','blue', skinId];
+      db.ref('users/'+currentUser).update({
+        slotiky: (userData.slotiky||0) - price,
+        'virtualCard/ownedSkins': owned,
+        'virtualCard/skin': skinId,
+      });
+      playSound('win');
+      notify(`🎨 Скін "${CARD_SKINS.find(s=>s.id===skinId)?.name}" куплено і встановлено!`, 'success');
+      setTimeout(()=>{ renderCardPanel(); renderCardSkinShop(); }, 300);
+    }
+
+    // ── CARD TRANSACTIONS ──
+    function addCardTransaction(direction, amount, title, subtitle) {
+      if(!currentUser) return;
+      const tx = {
+        dir: direction, amount, title, subtitle: subtitle || '',
+        ts: Date.now()
+      };
+      db.ref('users/'+currentUser+'/cardTx').push(tx);
+    }
+
+    function renderCardTransactions(limit) {
+      const el = document.getElementById('cardTransactionsList');
+      if(!el) return;
+      db.ref('users/'+currentUser+'/cardTx').orderByChild('ts').limitToLast(limit||5).once('value', snap => {
+        const raw = snap.val();
+        if(!raw) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:16px;">Немає операцій</div>'; return; }
+        const txs = Object.values(raw).reverse();
+        el.innerHTML = txs.map(tx => renderTxItem(tx)).join('');
+      });
+    }
+
+    function renderTxItem(tx) {
+      const icons = { out:'↗️', in:'↙️', slotiky:'🪙', game:'🎰', cashback:'💰', freeze:'🔒' };
+      const color = tx.dir==='in' ? '#4cd964' : '#ff3b30';
+      const sign  = tx.dir==='in' ? '+' : '-';
+      const dt = new Date(tx.ts).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="bank-tx-item">
+        <div class="bank-tx-icon" style="background:${tx.dir==='in'?'rgba(76,217,100,0.1)':'rgba(255,59,48,0.1)'};">
+          ${icons[tx.dir]||'💳'}
+        </div>
+        <div class="bank-tx-desc">
+          <div class="bank-tx-title">${tx.title||'Операція'}</div>
+          <div class="bank-tx-time">${tx.subtitle||''} • ${dt}</div>
+        </div>
+        <div class="bank-tx-amount ${tx.dir==='in'?'plus':'minus'}">${sign}${formatNumber(tx.amount)} ₴</div>
+      </div>`;
+    }
+
+    function showAllTransactions() {
+      const el = document.getElementById('allTransactionsList');
+      if(el) el.innerHTML = '<div style="color:#555;text-align:center;padding:16px;">Завантаження...</div>';
+      openModal('allTransactionsModal');
+      db.ref('users/'+currentUser+'/cardTx').orderByChild('ts').limitToLast(100).once('value', snap => {
+        const raw = snap.val();
+        if(!el) return;
+        if(!raw) { el.innerHTML = '<div style="color:#555;text-align:center;padding:24px;">Немає операцій</div>'; return; }
+        const txs = Object.values(raw).reverse();
+        el.innerHTML = txs.map(tx => renderTxItem(tx)).join('');
+      });
+    }
+
+    // ── BANK TAB ──
+    function initBankTab() {
+      if(!userData || !currentUser) return;
+      const greet = document.getElementById('bankGreeting');
+      const hour  = new Date().getHours();
+      const time  = hour < 12 ? 'Доброго ранку' : hour < 18 ? 'Добрий день' : 'Добрий вечір';
+      if(greet) greet.textContent = `${time}, ${currentUser}!`;
+
+      const totalBal = document.getElementById('bankTotalBalance');
+      const cardBal  = document.getElementById('bankCardBal');
+      const casBal   = document.getElementById('bankCasinoBal');
+      const cbAmt    = document.getElementById('bankCashbackAmt');
+      const slot     = document.getElementById('bankSlotiky');
+
+      const bal = userData.balance || 0;
+      if(totalBal) totalBal.textContent = formatNumber(bal) + ' ₴';
+      if(cardBal)  cardBal.textContent  = formatNumber(bal) + ' ₴';
+      if(casBal)   casBal.textContent   = formatNumber(bal) + ' ₴';
+      if(cbAmt)    cbAmt.textContent    = formatNumber(userData.cashbackPending||0) + ' ₴';
+      if(slot)     slot.textContent     = (userData.slotiky||0);
+
+      renderBankTransactionList('all');
+    }
+
+    let bankTxFilter = 'all';
+    function filterBankTx(filter, btn) {
+      bankTxFilter = filter;
+      document.querySelectorAll('#tab-bank button').forEach(b => {
+        if(['Всі','Надходження','Витрати'].includes(b.textContent.trim())) {
+          b.style.background = 'var(--input)'; b.style.color = '#aaa'; b.style.border = '1px solid var(--border)';
+        }
+      });
+      if(btn) { btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.border='none'; }
+      renderBankTransactionList(filter);
+    }
+
+    function renderBankTransactionList(filter) {
+      const el = document.getElementById('bankTransactionList');
+      if(!el) return;
+      db.ref('users/'+currentUser+'/cardTx').orderByChild('ts').limitToLast(50).once('value', snap => {
+        const raw = snap.val();
+        if(!raw) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>'; return; }
+        let txs = Object.values(raw).reverse();
+        if(filter === 'in')  txs = txs.filter(t => t.dir === 'in');
+        if(filter === 'out') txs = txs.filter(t => t.dir === 'out');
+        if(!txs.length) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>'; return; }
+        el.innerHTML = txs.map(tx => `<div style="padding:0 14px;">${renderTxItem(tx)}</div>`).join('');
+      });
+    }
+
+    function openTelegramBotWithCard() {
+      const card = getCardData();
+      const cardInfo = card ? `Картка: ${card.number}` : '';
+      const userId = userData.id || currentUser;
+      const url = `https://t.me/slotokbot?start=deposit_${userId}`;
+      window.open(url, '_blank');
+      closeModal('cardTopupModal');
+    }
+
+    function selectCardTopupAmt(amt, btn) {
+      document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+      if(btn) btn.classList.add('selected');
+      const inp = document.getElementById('cardTopupAmount');
+      if(inp) inp.value = amt;
+    }
+
     // Перевірка реферала при старті
     checkRefParam();
     setTimeout(loadSavedLang, 500);
 
+
   </script>
+
+  <!-- ═══ CARD ONBOARDING MODAL ═══ -->
+  <div id="cardOnboardModal" class="card-onboard-modal hidden">
+    <div class="card-onboard-box">
+      <div style="font-size:48px;margin-bottom:12px;">💳</div>
+      <div style="font-size:20px;font-weight:900;color:var(--accent);margin-bottom:8px;">SlotOK Bank</div>
+      <div style="font-size:13px;color:#888;line-height:1.6;margin-bottom:20px;">
+        Для поповнення, кешбеку та Слотіків потрібна <b style="color:#fff;">особиста банківська картка</b>.
+      </div>
+      <div style="background:linear-gradient(135deg,#1a0d00,#6b3d00,#d4af37);border-radius:16px;padding:16px;text-align:left;margin-bottom:16px;font-family:'Courier New',monospace;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:bold;letter-spacing:2px;margin-bottom:10px;">SLOTOK BANK</div>
+        <div style="font-size:15px;font-weight:bold;color:#fff;letter-spacing:3px;margin-bottom:10px;">•••• •••• •••• ••••</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.7);"><span>ВАШЕ ІМ'Я</span><span>MM/YY</span></div>
+      </div>
+      <div style="background:#111;border-radius:12px;padding:12px;margin-bottom:16px;text-align:left;font-size:11px;color:#777;line-height:2;">
+        ✅ Безкоштовна для кожного гравця<br>
+        ✅ Поповнення через Telegram<br>
+        ✅ Миттєвий кешбек на картку<br>
+        ✅ Купівля Слотіків в один клік<br>
+        ✅ Скіни та персоналізація
+      </div>
+      <button onclick="createVirtualCard()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),#ffdb4d);color:#000;font-weight:900;font-size:15px;border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;">🏦 Створити картку</button>
+      <button onclick="dismissCardOnboard()" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#555;font-size:13px;border-radius:12px;cursor:pointer;">Пізніше (обмежений доступ)</button>
+    </div>
+  </div>
+
+  <!-- Card Topup Modal -->
+  <div id="cardTopupModal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeModal('cardTopupModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <h2>💳 Поповнення картки</h2>
+    <div style="background:var(--box);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;color:#555;margin-bottom:6px;">Номер картки:</div>
+      <div style="font-size:14px;font-weight:bold;color:var(--accent);font-family:'Courier New',monospace;" id="ctmCardNum">—</div>
+    </div>
+    <div class="amount-grid" style="margin-bottom:12px;">
+      <div class="amount-btn" onclick="selectCardTopupAmt(100,this)">100₴</div>
+      <div class="amount-btn" onclick="selectCardTopupAmt(250,this)">250₴</div>
+      <div class="amount-btn" onclick="selectCardTopupAmt(500,this)">500₴</div>
+      <div class="amount-btn" onclick="selectCardTopupAmt(1000,this)">1k₴</div>
+      <div class="amount-btn" onclick="selectCardTopupAmt(2000,this)">2k₴</div>
+      <div class="amount-btn" onclick="selectCardTopupAmt(5000,this)">5k₴</div>
+    </div>
+    <input id="cardTopupAmount" type="number" placeholder="Або введіть суму" style="margin-bottom:12px;">
+    <button class="btn-tg" onclick="openTelegramBotWithCard()">✈️ Відкрити Telegram Бот</button>
+    <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;">Кошти зараховуються протягом 1–5 хв</div>
+  </div>
+
+  <!-- Card Withdraw Modal -->
+  <div id="cardWithdrawModal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeModal('cardWithdrawModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <h2>💸 Вивід коштів</h2>
+    <div style="background:var(--box);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;color:#555;margin-bottom:4px;">Ваш баланс</div>
+      <div style="font-size:22px;font-weight:900;color:var(--green);" id="cwdAvailBal">0 ₴</div>
+    </div>
+    <div class="withdraw-method" style="margin-bottom:12px;">
+      <div class="wm-btn selected" id="cwm-privat" onclick="selectWithdrawMethod('privat',this)">🟢 PrivatBank</div>
+      <div class="wm-btn" id="cwm-mono" onclick="selectWithdrawMethod('mono',this)">🐈 Monobank</div>
+      <div class="wm-btn" id="cwm-usdt" onclick="selectWithdrawMethod('usdt',this)">₮ USDT</div>
+    </div>
+    <input id="cwdCardNum" placeholder="Номер картки / адреса" style="margin-bottom:8px;">
+    <input id="cwdAmount" type="number" placeholder="Сума (мін. 200₴)" style="margin-bottom:12px;">
+    <button class="btn-green" onclick="submitCardWithdraw()">💸 ПОДАТИ ЗАЯВКУ</button>
+  </div>
+
+  <!-- Buy Slotiky from balance -->
+  <div id="buySlotikyModal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeModal('buySlotikyModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <h2>🪙 Купити Слотіки</h2>
+    <div style="background:var(--box);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;">
+        <div><div style="font-size:11px;color:#555;">Баланс</div><div style="font-size:18px;font-weight:bold;color:var(--green);" id="bsmBalance">0 ₴</div></div>
+        <div><div style="font-size:11px;color:#555;">Слотіки</div><div style="font-size:18px;font-weight:bold;color:#c9a0ff;" id="bsmSlotiky">0 🪙</div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;" id="slotikyPackagesGrid"></div>
+    <div style="font-size:10px;color:#555;text-align:center;">1 Слотік = 50 ₴ • Списується з балансу гравця</div>
+  </div>
+
+  <!-- Card Skin Shop -->
+  <div id="cardSkinModal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeModal('cardSkinModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <h2>🎨 Скіни картки</h2>
+    <div style="font-size:11px;color:#555;margin-bottom:14px;">Натисни щоб одягнути. Преміум за Слотіки 🪙</div>
+    <div class="skin-grid" id="skinShopGrid"></div>
+  </div>
+
+  <!-- All Transactions Modal -->
+  <div id="allTransactionsModal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeModal('allTransactionsModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <h2>📋 Всі операції</h2>
+    <div id="allTransactionsList"></div>
+  </div>
+
 </body
