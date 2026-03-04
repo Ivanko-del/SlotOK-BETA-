@@ -1434,10 +1434,13 @@
         <div style="text-align:center;font-size:10px;color:#555;margin-top:-10px;margin-bottom:14px;">Натисни на картку щоб перевернути 👆</div>
 
         <!-- Show/hide CVV -->
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
           <button onclick="toggleCvvVisibility()" style="flex:1;background:var(--box);border:1px solid var(--border);border-radius:10px;color:#aaa;font-size:12px;padding:10px;" id="cvvToggleBtn">👁 Показати CVV</button>
           <button onclick="copyCardNumber()" style="flex:1;background:var(--box);border:1px solid var(--border);border-radius:10px;color:#aaa;font-size:12px;padding:10px;">📋 Скопіювати номер</button>
         </div>
+
+        <!-- Axiom Bank link button -->
+        <div id="axiomLinkCardBlock" style="margin-bottom:14px;"></div>
 
         <!-- Card balance -->
         <div style="background:linear-gradient(135deg,#0a1a0a,#0d2a10);border:1px solid #1a4020;border-radius:16px;padding:16px;margin-bottom:14px;">
@@ -12373,6 +12376,8 @@ ${getItemEffectDesc(item)}`, 'success');
 
       // Transactions
       renderCardTransactions(5);
+      // Axiom Bank link block
+      setTimeout(renderAxiomLinkCardBlock, 50);
     }
 
     function flipCard() {
@@ -12649,6 +12654,7 @@ ${getItemEffectDesc(item)}`, 'success');
       if(slot)     slot.textContent     = (userData.slotiky||0);
 
       renderBankTransactionList('all');
+      renderBankAxiomBanner();
     }
 
     let bankTxFilter = 'all';
@@ -12663,6 +12669,33 @@ ${getItemEffectDesc(item)}`, 'success');
       renderBankTransactionList(filter);
     }
 
+
+    function renderBankAxiomBanner() {
+      const el = document.getElementById('bankAxiomBanner');
+      if(!el || !userData) return;
+      const linked = userData.virtualCard?.axiomLinked;
+      if(linked) {
+        el.innerHTML = `
+          <div style="background:linear-gradient(135deg,#08080e,#0f0f18);border:1.5px solid rgba(92,110,248,.5);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchCashierTabAndGo('card')">
+            <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-size:18px;font-family:'Courier New',monospace;font-weight:900;color:#fff;flex-shrink:0;">А</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:bold;color:#7c8eff;">Аксіома Банк ✅</div>
+              <div style="font-size:10px;color:#555;margin-top:1px;">Картка підключена · Баланс синхронізовано</div>
+            </div>
+            <div style="font-size:11px;color:#555;">›</div>
+          </div>`;
+      } else {
+        el.innerHTML = `
+          <div style="background:linear-gradient(135deg,#08080e,#0f0f18);border:1.5px dashed rgba(92,110,248,.3);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchCashierTabAndGo('card')">
+            <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#1a1a3e,#2d2d6e);display:flex;align-items:center;justify-content:center;font-size:18px;font-family:'Courier New',monospace;font-weight:900;color:#7c8eff;flex-shrink:0;">А</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:bold;color:#7c8eff;">Підключи Аксіома Банк</div>
+              <div style="font-size:10px;color:#555;margin-top:1px;">Банк-партнер · Поповнення, виписка, картка</div>
+            </div>
+            <div style="background:rgba(92,110,248,.15);color:#7c8eff;font-size:10px;border-radius:6px;padding:2px 8px;font-weight:bold;">+ Підключити</div>
+          </div>`;
+      }
+    }
     function renderBankTransactionList(filter) {
       const el = document.getElementById('bankTransactionList');
       if(!el) return;
@@ -12693,12 +12726,138 @@ ${getItemEffectDesc(item)}`, 'success');
       if(inp) inp.value = amt;
     }
 
+
+    // ============================================================
+    // ===== SLOTOK ↔ AXIOM BANK INTEGRATION =====
+    // ============================================================
+
+    function renderAxiomLinkCardBlock() {
+      const el = document.getElementById('axiomLinkCardBlock');
+      if(!el || !userData) return;
+      const linked = userData.virtualCard?.axiomLinked;
+      if(linked) {
+        el.innerHTML = `
+          <div style="background:linear-gradient(135deg,rgba(92,110,248,.1),rgba(140,92,248,.05));border:1.5px solid rgba(92,110,248,.4);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px">🏦</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:bold;color:#7c8eff;">Аксіома Банк підключено ✅</div>
+              <div style="font-size:10px;color:#555;margin-top:2px;">Баланс синхронізовано автоматично</div>
+            </div>
+            <button onclick="unlinkAxiom()" style="background:rgba(240,62,95,.1);border:1px solid #f03e5f;border-radius:8px;color:#f03e5f;font-size:10px;padding:5px 10px;cursor:pointer;">Відключити</button>
+          </div>`;
+      } else {
+        el.innerHTML = `
+          <button onclick="openModal('axiomLinkModal');renderAxiomLinkContent();" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(92,110,248,.15),rgba(140,92,248,.08));border:1.5px solid rgba(92,110,248,.4);border-radius:14px;color:#7c8eff;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:center;">
+            <span style="font-size:20px">🏦</span> Підключити Аксіома Банк
+          </button>`;
+      }
+    }
+
+    function renderAxiomLinkContent() {
+      const el = document.getElementById('axiomLinkContent');
+      if(!el) return;
+      const linked = userData?.virtualCard?.axiomLinked;
+
+      if(linked) {
+        el.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <div style="font-size:52px;margin-bottom:12px;">✅</div>
+            <div style="font-size:17px;font-weight:900;color:#7c8eff;margin-bottom:8px;">Вже підключено!</div>
+            <div style="font-size:12px;color:#555;line-height:1.7;">
+              Твоя картка SlotOK активна в Аксіомі.<br>
+              Баланс та транзакції синхронізуються.
+            </div>
+          </div>
+          <button class="btn-outline" onclick="closeModal('axiomLinkModal')" style="width:100%;">Закрити</button>`;
+        return;
+      }
+
+      el.innerHTML = `
+        <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:16px;">
+          Відкрий <b style="color:#fff;">Аксіома Банк</b> → Профіль → SlotOK підключення → скопіюй <b style="color:#7c8eff;">6-значний код</b> і введи нижче.
+        </div>
+
+        <!-- Code input -->
+        <div style="font-size:11px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Код підтвердження з Аксіоми</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;" id="axiomCodeBoxes"></div>
+        <input id="axiomCodeInput" type="number" placeholder="або введи 6 цифр" maxlength="6"
+          style="text-align:center;font-size:22px;font-weight:bold;letter-spacing:6px;font-family:'Courier New',monospace;margin-bottom:14px;"
+          oninput="this.value=this.value.slice(0,6)">
+
+        <button onclick="confirmAxiomLink()" style="width:100%;padding:16px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);color:#fff;font-weight:bold;font-size:15px;border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;">
+          🏦 Підтвердити підключення
+        </button>
+        <div style="font-size:10px;color:#444;text-align:center;line-height:1.6;">
+          Код генерується в Аксіомі і дійсний 10 хвилин.<br>
+          Якщо ще не маєш акаунту → зареєструйся в Аксіомі за своїм ніком SlotOK.
+        </div>
+      `;
+    }
+
+    function confirmAxiomLink() {
+      const code = document.getElementById('axiomCodeInput')?.value?.trim();
+      if(!code || code.length !== 6) return notify('Введи 6-значний код з Аксіоми', 'error');
+
+      // Verify code in Firebase
+      db.ref('axiomLinkCodes/' + currentUser).once('value', snap => {
+        const data = snap.val();
+        if(!data) return notify('❌ Код не знайдено. Спочатку відкрий Аксіому і натисни «Підключити SlotOK»', 'error');
+        if(data.used) return notify('❌ Цей код вже використано', 'error');
+        if(data.code !== code) return notify('❌ Невірний код', 'error');
+        const age = Date.now() - (data.ts || 0);
+        if(age > 10 * 60 * 1000) return notify('❌ Код застарів. Згенеруй новий в Аксіомі', 'error');
+
+        // Mark code as used + set axiomLinked flag
+        db.ref('axiomLinkCodes/' + currentUser + '/used').set(true);
+        db.ref('users/' + currentUser + '/virtualCard/axiomLinked').set(true);
+
+        playSound('bonus');
+        notify('🏦 Аксіома Банк підключено! Баланс синхронізовано.', 'success');
+        closeModal('axiomLinkModal');
+        setTimeout(() => { renderCardPanel(); renderAxiomLinkCardBlock(); }, 400);
+      });
+    }
+
+    function unlinkAxiom() {
+      db.ref('users/' + currentUser + '/virtualCard/axiomLinked').set(false);
+      notify('🏦 Аксіома Банк відключено', 'info');
+      setTimeout(() => { renderCardPanel(); renderAxiomLinkCardBlock(); }, 300);
+    }
+
     // Перевірка реферала при старті
     checkRefParam();
     setTimeout(loadSavedLang, 500);
 
 
   </script>
+
+  <!-- ═══ AXIOM BANK LINK MODAL (SlotOK side) ═══ -->
+  <div id="axiomLinkModal" class="full-modal hidden">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <button class="btn-outline" onclick="closeModal('axiomLinkModal')" style="width:44px;padding:10px;">⬅</button>
+      <div style="font-size:16px;font-weight:bold;">🏦 Аксіома Банк</div>
+    </div>
+
+    <!-- Axiom branding -->
+    <div style="background:linear-gradient(135deg,#08080e,#0f0f18,#1a1a2e);border:1px solid rgba(92,110,248,.3);border-radius:20px;padding:20px;text-align:center;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
+        <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:20px;font-weight:900;color:#fff;">А</div>
+        <div>
+          <div style="font-size:17px;font-weight:900;color:#fff;">Аксіома</div>
+          <div style="font-size:10px;color:rgba(92,110,248,0.8);">Банк нового покоління</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#666;line-height:1.6;">
+        Підключи свою картку SlotOK до Аксіома Банку. Баланс та транзакції синхронізуються автоматично.
+      </div>
+    </div>
+
+    <!-- Input for code from Axiom -->
+    <div id="axiomLinkContent">
+      <!-- Rendered by renderAxiomLinkContent() -->
+    </div>
+  </div>
+
 
   <!-- ═══ CARD ONBOARDING MODAL ═══ -->
   <div id="cardOnboardModal" class="card-onboard-modal hidden">
