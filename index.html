@@ -1332,10 +1332,13 @@
 <body data-theme="dark">
   <canvas id="liveBgCanvas"></canvas>
 
-  <div id="loading-overlay">
-    <div style="font-size:50px; margin-bottom:20px;">🎰</div>
-    <div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;background:linear-gradient(135deg,#d4af37,#ffdb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px;">SLOTOK</div>
-    <div style="font-size:11px; color:#555; margin-top:10px;">v64 · Завантаження...</div>
+  <div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity .5s;">
+    <div style="font-size:58px;margin-bottom:16px;animation:float 2s ease-in-out infinite;">🎰</div>
+    <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,#d4af37,#ffdb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px;margin-bottom:8px;">SLOTOK</div>
+    <div style="font-size:11px;color:#444;margin-top:4px;letter-spacing:2px;">v69 · Завантаження...</div>
+    <div style="width:120px;height:2px;background:#111;border-radius:2px;margin-top:16px;overflow:hidden;">
+      <div id="splashBar" style="height:100%;width:0;background:linear-gradient(90deg,#d4af37,#ffdb6a);border-radius:2px;transition:width .4s ease;"></div>
+    </div>
   </div>
   
   <div id="toast-container"></div>
@@ -1384,71 +1387,93 @@
       <!-- === ГОЛОВНА панель === -->
       <div class="home-panel active" id="hp-main">
 
-        <!-- HERO BANNER — анімований -->
-        <div class="hero-banner" onclick="openDailyBonus()" style="cursor:pointer;position:relative;overflow:hidden;">
-          <div style="position:absolute;top:-30px;right:-20px;font-size:100px;opacity:0.06;pointer-events:none;">🎰</div>
-          <div style="position:relative;z-index:1;width:100%;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-              <div>
-                <div class="hero-title" style="font-size:28px;letter-spacing:2px;">💎 VIP БОНУС</div>
-                <div style="color:#d4af37;font-size:13px;font-weight:bold;margin-top:4px;">До +250% на депозит</div>
-                <div style="color:#888;font-size:11px;margin-top:2px;">Щоденні бонуси • Лут-бокси • Подарунки</div>
+        <!-- HERO BANNER — преміум -->
+        <div style="background:linear-gradient(135deg,#1a0d00,#2d1800,#1a0d00);border:1.5px solid rgba(212,175,55,.35);border-radius:20px;padding:18px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;animation:slideUp .4s ease;" onclick="openDailyBonus()">
+          <div style="position:absolute;top:-20px;right:-20px;font-size:110px;opacity:.06;pointer-events:none;">💎</div>
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.6),transparent);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,#d4af37,#ffdb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px;">💎 VIP БОНУС</div>
+              <div style="color:#d4af37;font-size:13px;font-weight:700;margin-top:4px;">До +250% на депозит</div>
+              <div style="color:#666;font-size:11px;margin-top:3px;">Щоденні бонуси • Лут-бокси • Подарунки</div>
+              <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                <span style="background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);border-radius:20px;padding:4px 10px;font-size:10px;color:#d4af37;">🎁 +100% перший деп</span>
+                <span style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:20px;padding:4px 10px;font-size:10px;color:#3dd68c;">✨ 10 фріспінів</span>
               </div>
-              <div style="background:rgba(212,175,55,0.2);border:1px solid var(--accent);border-radius:12px;padding:8px 14px;text-align:center;flex-shrink:0;">
-                <div style="font-size:9px;color:#888;">Сьогодні</div>
-                <div style="font-size:18px;font-weight:900;color:var(--accent);" id="homeJackpot">—</div>
-                <div style="font-size:9px;color:#888;">Джекпот</div>
-              </div>
+            </div>
+            <div style="background:rgba(0,0,0,.4);border:1.5px solid rgba(212,175,55,.3);border-radius:14px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:70px;">
+              <div style="font-size:9px;color:#666;">Джекпот</div>
+              <div style="font-size:17px;font-weight:900;color:#d4af37;font-family:'Orbitron',monospace;" id="homeJackpot">—</div>
+              <div style="font-size:9px;color:#3dd68c;margin-top:4px;">Сьогодні</div>
             </div>
           </div>
         </div>
 
-        <!-- Щоденний бонус -->
-        <div id="dailyBonusBanner" class="hidden" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1px solid var(--green);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openDailyBonus()">
+        <!-- Щоденний бонус banner -->
+        <div id="dailyBonusBanner" class="hidden" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation:popIn .4s ease;" onclick="openDailyBonus()">
           <div>
-            <div style="font-size:15px;font-weight:bold;color:var(--green);">🎁 Щоденний бонус готовий!</div>
+            <div style="font-size:15px;font-weight:900;color:var(--green);">🎁 Щоденний бонус готовий!</div>
             <div style="font-size:11px;color:#aaa;margin-top:2px;">Натисни щоб забрати нагороду</div>
           </div>
-          <div style="font-size:36px;animation:pulse2 1s infinite;">✨</div>
+          <div style="font-size:36px;animation:heartbeat 1s ease infinite;">✨</div>
         </div>
 
         <!-- Live лента виграшів -->
-        <div style="background:#050505;border:1px solid #1a1a1a;border-radius:10px;padding:8px 12px;margin-bottom:12px;overflow:hidden;display:flex;align-items:center;gap:8px;">
-          <span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:10px;flex-shrink:0;animation:pulse2 1.5s infinite;">LIVE</span>
+        <div style="background:linear-gradient(90deg,rgba(231,76,60,.06),rgba(0,0,0,0));border:1px solid rgba(231,76,60,.15);border-radius:10px;padding:8px 12px;margin-bottom:12px;overflow:hidden;display:flex;align-items:center;gap:8px;">
+          <span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;flex-shrink:0;animation:heartbeat 2s infinite;letter-spacing:.5px;">LIVE</span>
           <span id="winTicker" style="font-size:12px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         </div>
 
-        <!-- Швидкі картки-банери -->
+        <!-- Quick stats row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
+          <div style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
+            <div style="font-size:15px;font-weight:900;color:#3dd68c;" id="homeStatBalance">₴0</div>
+            <div style="font-size:9px;color:#555;margin-top:2px;">Баланс</div>
+          </div>
+          <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('vip')">
+            <div style="font-size:15px;font-weight:900;color:#d4af37;" id="homeStatVip">—</div>
+            <div style="font-size:9px;color:#555;margin-top:2px;">VIP рівень</div>
+          </div>
+          <div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="openDailyBonus()">
+            <div style="font-size:15px;font-weight:900;color:#4a9eff;" id="homeStatStreak">0🔥</div>
+            <div style="font-size:9px;color:#555;margin-top:2px;">Серія днів</div>
+          </div>
+        </div>
+
+        <!-- 4 банери -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div onclick="switchTab('sports')" style="background:linear-gradient(135deg,#0a1a0a,#0d2a14);border:1px solid #1a3a1a;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
-            <div style="position:absolute;right:-8px;top:-8px;font-size:52px;opacity:0.12;">⚽</div>
-            <div style="font-size:22px;margin-bottom:4px;">⚽</div>
-            <div style="font-size:13px;font-weight:bold;color:var(--green);">Спортбетинг</div>
+          <div onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">⚽</div>
+            <div style="font-size:24px;margin-bottom:5px;">⚽</div>
+            <div style="font-size:13px;font-weight:800;color:#3dd68c;">Спортбетинг</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Live ставки</div>
           </div>
-          <div onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1a05,#2a2005);border:1px solid #3a3010;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
-            <div style="position:absolute;right:-8px;top:-8px;font-size:52px;opacity:0.12;">🎁</div>
-            <div style="font-size:22px;margin-bottom:4px;">🎁</div>
-            <div style="font-size:13px;font-weight:bold;color:var(--accent);">Бонус дня</div>
+          <div onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🎁</div>
+            <div style="font-size:24px;margin-bottom:5px;">🎁</div>
+            <div style="font-size:13px;font-weight:800;color:#d4af37;">Бонус дня</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Щоденна нагорода</div>
           </div>
-          <div onclick="switchTab('vip')" style="background:linear-gradient(135deg,#1a0a1a,#2a0530);border:1px solid #3a0a50;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
-            <div style="position:absolute;right:-8px;top:-8px;font-size:52px;opacity:0.12;">👑</div>
-            <div style="font-size:22px;margin-bottom:4px;">👑</div>
-            <div style="font-size:13px;font-weight:bold;color:#c17eea;">VIP Клуб</div>
+          <div onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">👑</div>
+            <div style="font-size:24px;margin-bottom:5px;">👑</div>
+            <div style="font-size:13px;font-weight:800;color:#c17eea;">VIP Клуб</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">14 рівнів • Cashback</div>
           </div>
-          <div onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#1a0a05,#2a1505);border:1px solid #3a2505;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
-            <div style="position:absolute;right:-8px;top:-8px;font-size:52px;opacity:0.12;">🏆</div>
-            <div style="font-size:22px;margin-bottom:4px;">🏆</div>
-            <div style="font-size:13px;font-weight:bold;color:#f39c12;">Турніри</div>
+          <div onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🏆</div>
+            <div style="font-size:24px;margin-bottom:5px;">🏆</div>
+            <div style="font-size:13px;font-weight:800;color:#f39c12;">Турніри</div>
             <div style="font-size:10px;color:#555;margin-top:2px;" id="homeTournamentPrize">Топ призи</div>
           </div>
         </div>
 
         <!-- Популярні ігри -->
-        <div class="section-header">🔥 Популярні</div>
-        <div class="games-scroll">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="section-header" style="margin:0;">🔥 Популярні</div>
+          <div onclick="switchTab('lobby')" style="font-size:11px;color:#d4af37;cursor:pointer;font-weight:700;">Всі ігри →</div>
+        </div>
+        <div class="games-scroll" style="margin-bottom:14px;">
           <div class="game-thumb" onclick="switchTab('coinflip')"><span class="icon">🪙</span><span class="label">Coinflip</span></div>
           <div class="game-thumb" onclick="switchTab('rps')"><span class="icon">✊</span><span class="label">Камінь</span></div>
           <div class="game-thumb" onclick="switchTab('predict')"><span class="icon">🔮</span><span class="label">Predict</span></div>
@@ -1460,117 +1485,90 @@
           <div class="game-thumb" onclick="openGame('plinko')"><span class="icon">🔻</span><span class="label">Plinko</span></div>
           <div class="game-thumb" onclick="openGame('blackjack')"><span class="icon">🃏</span><span class="label">Блекджек</span></div>
           <div class="game-thumb" onclick="openGame('roulette')"><span class="icon">🎡</span><span class="label">Рулетка</span></div>
-          <div class="game-thumb" onclick="openGame('fortune')"><span class="icon">🎡</span><span class="label">Колесо</span></div>
           <div class="game-thumb" onclick="openGame('hilo')"><span class="icon">🃏</span><span class="label">Hi-Lo</span></div>
           <div class="game-thumb" onclick="openGame('dice')"><span class="icon">🎲</span><span class="label">Dice</span></div>
-          <div class="game-thumb" onclick="openGame('poker')"><span class="icon">♠️</span><span class="label">Покер</span></div>
-          <div class="game-thumb" onclick="openGame('keno')"><span class="icon">🔢</span><span class="label">Кено</span></div>
-          <div class="game-thumb" onclick="openGame('monopoly')"><span class="icon">🎩</span><span class="label">Монополія</span></div>
-          <div class="game-thumb" onclick="openGame('scratch')"><span class="icon">🎟️</span><span class="label">Скретч</span></div>
-          <div class="game-thumb" onclick="openGame('cardgame')"><span class="icon">🃏</span><span class="label">Карти</span></div>
+          <div class="game-thumb" onclick="switchTab('horseracing')"><span class="icon">🏇</span><span class="label">Скачки</span></div>
+          <div class="game-thumb" onclick="switchTab('balloon')"><span class="icon">🎈</span><span class="label">Balloon</span></div>
+          <div class="game-thumb" onclick="switchTab('quiz')"><span class="icon">🧠</span><span class="label">Quiz</span></div>
+          <div class="game-thumb" onclick="switchTab('russianroulette')"><span class="icon">🔫</span><span class="label">Ризик</span></div>
+          <div class="game-thumb" onclick="switchTab('colorbet')"><span class="icon">🎨</span><span class="label">Колір</span></div>
+          <div class="game-thumb" onclick="switchTab('baccarat')"><span class="icon">🃏</span><span class="label">Бакара</span></div>
+          <div class="game-thumb" onclick="switchTab('videpoker')"><span class="icon">🎴</span><span class="label">Відеопокер</span></div>
         </div>
 
-        <!-- Нові ігри (горизонтальний скролл карточок) -->
-        <div class="section-header" style="margin-top:16px;">✨ Нові ігри</div>
-        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:12px;">
-          <div onclick="openGame('limbo')" style="min-width:130px;background:linear-gradient(135deg,#1a0a05,#2a1005);border:1px solid #4a2010;border-radius:14px;padding:14px;cursor:pointer;flex-shrink:0;">
-            <div style="font-size:28px;">🎯</div><div style="font-size:13px;font-weight:bold;margin-top:6px;">Limbo</div><div style="font-size:10px;color:#f39c12;">до ×1,000,000</div>
-            <div style="background:#f39c12;color:#000;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:6px;">NEW</div>
-          </div>
-          <div onclick="openGame('tower')" style="min-width:130px;background:linear-gradient(135deg,#050a1a,#0a1530);border:1px solid #0a2060;border-radius:14px;padding:14px;cursor:pointer;flex-shrink:0;">
-            <div style="font-size:28px;">🗼</div><div style="font-size:13px;font-weight:bold;margin-top:6px;">Tower</div><div style="font-size:10px;color:#4a90e2;">8 рівнів вгору</div>
-            <div style="background:#4a90e2;color:#fff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:6px;">HOT</div>
-          </div>
-          <div onclick="openGame('hilo')" style="min-width:130px;background:linear-gradient(135deg,#0a1a05,#102505);border:1px solid #1a4010;border-radius:14px;padding:14px;cursor:pointer;flex-shrink:0;">
-            <div style="font-size:28px;">🃏</div><div style="font-size:13px;font-weight:bold;margin-top:6px;">Hi-Lo</div><div style="font-size:10px;color:var(--green);">Вище чи нижче?</div>
-            <div style="background:var(--green);color:#000;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:6px;">NEW</div>
-          </div>
-          <div onclick="openGame('dice')" style="min-width:130px;background:linear-gradient(135deg,#1a0a1a,#2a0a30);border:1px solid #3a1050;border-radius:14px;padding:14px;cursor:pointer;flex-shrink:0;">
-            <div style="font-size:28px;">🎲</div><div style="font-size:13px;font-weight:bold;margin-top:6px;">Dice</div><div style="font-size:10px;color:#c17eea;">Кинь число 0-99</div>
-            <div style="background:#c17eea;color:#000;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:6px;">NEW</div>
-          </div>
-          <div onclick="switchTab('sports')" style="min-width:130px;background:linear-gradient(135deg,#0a1a0a,#0d2a14);border:1px solid #1a4020;border-radius:14px;padding:14px;cursor:pointer;flex-shrink:0;">
-            <div style="font-size:28px;">⚽</div><div style="font-size:13px;font-weight:bold;margin-top:6px;">Спорт</div><div style="font-size:10px;color:var(--green);">Live ставки</div>
-            <div style="background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:6px;display:inline-block;margin-top:6px;">LIVE</div>
+        <!-- Battle Pass промо -->
+        <div style="background:linear-gradient(135deg,#0a0020,#1a0040,#0a0020);border:1.5px solid rgba(138,43,226,.4);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;" onclick="switchTab('battlepass')">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(138,43,226,.8),transparent);"></div>
+          <div style="position:absolute;right:-10px;top:-10px;font-size:80px;opacity:.08;">🎫</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-size:36px;animation:float 3s ease-in-out infinite;">🎫</div>
+            <div>
+              <div style="font-weight:900;font-size:15px;color:#c9a0ff;font-family:'Orbitron',monospace;">BATTLE PASS</div>
+              <div style="font-size:12px;color:#888;margin-top:2px;">50 рівнів • Ексклюзивні нагороди</div>
+              <div style="display:flex;gap:4px;margin-top:6px;">
+                <span style="background:rgba(201,160,255,.1);border:1px solid rgba(201,160,255,.2);border-radius:6px;padding:2px 8px;font-size:10px;color:#c9a0ff;">💰 До 50 000 ₴</span>
+                <span style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;padding:2px 8px;font-size:10px;color:#3dd68c;">🎟️ Фріспіни</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Статистика гравця -->
-        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:12px;">
-          <div style="font-size:12px;font-weight:bold;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Моя статистика</div>
+        <!-- Статистика казино онлайн -->
+        <div style="background:#070707;border:1px solid #111;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Казино зараз</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-            <div style="text-align:center;"><div style="font-size:11px;color:#555;">Ставок</div><div style="font-size:18px;font-weight:bold;color:var(--accent);" id="homeStatBets">—</div></div>
-            <div style="text-align:center;"><div style="font-size:11px;color:#555;">Виграшів</div><div style="font-size:18px;font-weight:bold;color:var(--green);" id="homeStatWins">—</div></div>
-            <div style="text-align:center;"><div style="font-size:11px;color:#555;">VIP рівень</div><div style="font-size:18px;font-weight:bold;color:#c17eea;" id="homeStatVip">—</div></div>
+            <div style="text-align:center;">
+              <div style="font-size:16px;font-weight:900;color:#3dd68c;" id="casinoOnlineCount">—</div>
+              <div style="font-size:9px;color:#444;margin-top:2px;">Онлайн</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:16px;font-weight:900;color:#d4af37;" id="casinoTodayWins">—</div>
+              <div style="font-size:9px;color:#444;margin-top:2px;">Виграшів</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:16px;font-weight:900;color:#4a9eff;" id="casinoTotalPlayers">—</div>
+              <div style="font-size:9px;color:#444;margin-top:2px;">Гравців</div>
+            </div>
           </div>
         </div>
 
-        <!-- Axiom Bank widget -->
-        <div id="homeAxiomWidget" style="margin-bottom:12px;"></div>
-
-        <!-- Прогрес-бар VIP та Battle Pass -->
-        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:11px;color:#555;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">⚡ Прогрес</div>
-            <div style="font-size:10px;color:#555;cursor:pointer;" onclick="switchTab('vip')">VIP →</div>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
-            <div style="font-size:11px;color:#777;width:55px;flex-shrink:0;" id="homeVipLabel">Bronze</div>
-            <div style="flex:1;background:#111;border-radius:6px;height:6px;">
-              <div id="homeVipBar" style="height:6px;border-radius:6px;background:linear-gradient(90deg,#cd7f32,#d4af37);width:0%;transition:width 0.5s;"></div>
-            </div>
-            <div style="font-size:10px;color:#555;" id="homeVipPct">0%</div>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <div style="font-size:11px;color:#777;width:55px;flex-shrink:0;">Battle Pass</div>
-            <div style="flex:1;background:#111;border-radius:6px;height:6px;">
-              <div id="homeBpBar" style="height:6px;border-radius:6px;background:linear-gradient(90deg,#4a9eff,#c17eea);width:0%;transition:width 0.5s;"></div>
-            </div>
-            <div style="font-size:10px;color:#555;" id="homeBpPct">0%</div>
-          </div>
-        </div>
-
-        <!-- Activity Feed -->
-        <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="font-size:11px;font-weight:bold;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;">⚡ Активність</div>
-            <div style="font-size:10px;color:#333;">Живий</div>
-          </div>
+        <!-- Активність + Графік -->
+        <div style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.1);border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚡ Активність</div>
           <div id="activityFeed"></div>
         </div>
-
-        <!-- Останні оновлення (міні-версія changelog) -->
-        <!-- Event Calendar mini -->
-        <div style="background:linear-gradient(135deg,#0d0520,#1a0535);border:1px solid rgba(138,43,226,.3);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="openEventCalendar()">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:13px;font-weight:bold;color:#c9a0ff;">📆 Календар подій</div>
-            <div style="font-size:10px;color:#c9a0ff;background:rgba(138,43,226,.2);padding:3px 8px;border-radius:8px;" id="nextEventLabel">Завантаження...</div>
-          </div>
-          <div id="eventCalendarMini" style="margin-top:8px;display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
-        </div>
-        <!-- Balance chart mini -->
         <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="switchTab('stats')">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:13px;font-weight:bold;color:#aaa;">📈 Графік балансу</div>
-            <div style="font-size:11px;color:#555;">30 ігор</div>
+            <div style="font-size:13px;font-weight:700;color:#aaa;">📈 Графік балансу</div>
+            <div style="font-size:11px;color:#555;">30 ігор →</div>
           </div>
           <canvas id="miniBalanceChart" height="50" style="width:100%;display:block;"></canvas>
         </div>
-        <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="font-size:11px;font-weight:bold;color:#4cd964;text-transform:uppercase;letter-spacing:1px;">🔄 Останнє оновлення</div>
+
+        <!-- Календар подій -->
+        <div style="background:linear-gradient(135deg,#0d0520,#1a0535);border:1px solid rgba(138,43,226,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="openEventCalendar()">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:700;color:#c9a0ff;">📆 Календар подій</div>
+            <div style="font-size:10px;color:#c9a0ff;background:rgba(138,43,226,.15);padding:3px 8px;border-radius:8px;" id="nextEventLabel">Завантаження...</div>
+          </div>
+          <div id="eventCalendarMini" style="margin-top:8px;display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;"></div>
+        </div>
+
+        <!-- Останнє оновлення -->
+        <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:11px;font-weight:700;color:#4cd964;text-transform:uppercase;letter-spacing:1px;">🔄 Останнє оновлення</div>
             <div style="font-size:10px;color:#333;">Всі →</div>
           </div>
           <div id="homeLastUpdate" style="font-size:12px;color:#666;">Завантаження...</div>
         </div>
 
-        <!-- Кнопки -->
+        <!-- CTA -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <button class="btn-gold" onclick="switchTab('cashier')">💳 Поповнити</button>
-          <button class="btn-outline" onclick="switchTab('lobby')">🎰 Всі ігри</button>
+          <button class="btn-gold" onclick="switchTab('cashier')" style="font-size:14px;">💳 Поповнити</button>
+          <button class="btn-outline" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
         </div>
       </div>
-
       <!-- === ЧАТ панель === -->
       <div class="home-panel" id="hp-chat">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -3011,17 +3009,6 @@
     <!-- ЩЕ -->
     <div id="tab-more" class="screen hidden">
 
-      <!-- ── 🎮 ІГРИ ── -->
-      <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">🎮 Ексклюзивні Ігри</div>
-      <div class="game-card" onclick="switchTab('baccarat')" style="border-color:#1a4a1a;">
-        <div class="game-icon">🃏</div>
-        <div><div class="game-title">Бакара</div><div class="game-desc">Класика казино • Гравець vs Банкір</div></div>
-      </div>
-      <div class="game-card" onclick="switchTab('videpoker')" style="border-color:#1a2a4a;">
-        <div class="game-icon">🎴</div>
-        <div><div class="game-title">Відео Покер</div><div class="game-desc">Jacks or Better • Утримуй кращі карти</div></div>
-      </div>
-
       <!-- ── 👥 СОЦІАЛЬНЕ ── -->
       <div style="font-size:10px;color:#4a9eff;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">👥 Соціальне</div>
       <div class="box" style="padding:8px;">
@@ -3048,12 +3035,6 @@
       <div class="box" style="padding:8px;">
         <button class="btn-outline" onclick="switchTab('vip')" style="border-color:#d4af37;color:#d4af37;">👑 VIP Статус</button>
         <button class="btn-outline" onclick="switchTab('battlepass')" style="border-color:#5a20c0;color:#c9a0ff;">🎫 Battle Pass</button>
-        <button class="btn-outline" onclick="switchTab('balloon')" style="border-color:#4a9eff;color:#4a9eff;">🎈 Balloon Pop</button>
-        <button class="btn-outline" onclick="switchTab('russianroulette')" style="border-color:#ff6b6b;color:#ff6b6b;">🔫 Рулетка Ризику</button>
-        <button class="btn-outline" onclick="switchTab('quiz')" style="border-color:#c9a0ff;color:#c9a0ff;">🧠 Quiz Battle</button>
-        <button class="btn-outline" onclick="switchTab('horseracing')" style="border-color:#3dd68c;color:#3dd68c;">🏇 Horse Racing</button>
-        <button class="btn-outline" onclick="switchTab('colorbet')" style="border-color:#e74c3c;color:#e74c3c;">🎨 Color Bet</button>
-        <button class="btn-outline" onclick="switchTab('chat')" style="border-color:#4a9eff;color:#4a9eff;">💬 Чатик</button>
         <button class="btn-outline" onclick="switchTab('affiliate')" style="border-color:var(--accent);color:var(--accent);">🤝 Афілейт</button>
         <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
         <button class="btn-outline" onclick="switchTab('seasons')" style="border-color:#5c6ef8;color:#7c8eff;">🌟 Сезони</button>
@@ -4949,7 +4930,7 @@
       opacity:.6;
     }
     .auth-logo-icon {
-      animation:float 3s ease-in-out infinite, authPulse 2s ease-in-out infinite alternate !important;
+      animation:authSpin 6s ease-in-out infinite, authPulse 2s ease-in-out infinite alternate;
     }
     .auth-card {
       animation:slideUp .6s ease !important;
@@ -5048,9 +5029,9 @@
       pointer-events:none;
     }
 
-    /* Screen entry animation */
-    .screen:not(.hidden) {
-      animation:slideUp .3s ease;
+    /* Screen entry animation - only for non-auth screens */
+    .screen:not(.hidden):not(#auth-screen) {
+      animation:slideUp .25s ease;
     }
 
     /* Req card animation */
@@ -5060,15 +5041,18 @@
     /* ═══ AUTH SCREEN ═══ */
     #auth-screen {
       background: #000 !important;
-      overflow: hidden !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
       padding: 0 !important;
     }
-    .auth-canvas { position:absolute;inset:0;z-index:0;pointer-events:none; }
+    .auth-canvas { position:fixed;inset:0;z-index:0;pointer-events:none; }
     .auth-wrapper {
       position: relative; z-index:1;
       min-height: 100vh;
-      display: flex; flex-direction:column; align-items:center; justify-content:center;
-      padding: 24px 20px 40px;
+      display: flex; flex-direction:column; align-items:center;
+      justify-content:flex-start;
+      padding: 24px 20px 50px;
+      box-sizing: border-box;
     }
     .auth-logo-block { text-align:center; margin-bottom:28px; }
     .auth-logo-icon {
@@ -5193,7 +5177,7 @@
     <div class="auth-wrapper">
 
       <!-- Logo block -->
-      <div class="auth-logo-block" style="animation:slideUp .5s ease both;">
+      <div class="auth-logo-block" style="animation:slideUp .4s ease both;">
         <span class="auth-logo-icon" style="font-size:72px;display:block;margin-bottom:8px;">🎰</span>
         <div class="auth-logo-name" style="font-size:40px;letter-spacing:8px;">SLOTOK</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;">
@@ -5204,28 +5188,28 @@
       </div>
 
       <!-- Live jackpot counter -->
-      <div style="animation:slideUp .5s .1s ease both;opacity:0;animation-fill-mode:both;text-align:center;margin-bottom:16px;">
+      <div style="text-align:center;margin-bottom:16px;">
         <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">🏆 Поточний джекпот</div>
         <div class="hero-jackpot-counter" id="authJackpot">₴ 0</div>
       </div>
 
       <!-- Feature pills -->
-      <div class="auth-features" style="animation:slideUp .5s .2s ease both;opacity:0;animation-fill-mode:both;">
-        <div class="auth-feature-pill" style="animation-delay:.15s">🎮 <span>30+</span> ігор</div>
-        <div class="auth-feature-pill" style="animation-delay:.25s">🏆 <span>Джекпот</span> щодня</div>
-        <div class="auth-feature-pill" style="animation-delay:.35s">⚡ <span>Миттєво</span></div>
-        <div class="auth-feature-pill" style="animation-delay:.45s">🎁 Бонус <span>+100%</span></div>
-        <div class="auth-feature-pill" style="animation-delay:.55s">🔒 <span>Безпечно</span></div>
+      <div class="auth-features">
+        <div class="auth-feature-pill">🎮 <span>30+</span> ігор</div>
+        <div class="auth-feature-pill">🏆 <span>Джекпот</span> щодня</div>
+        <div class="auth-feature-pill">⚡ <span>Миттєво</span></div>
+        <div class="auth-feature-pill">🎁 Бонус <span>+100%</span></div>
+        <div class="auth-feature-pill">🔒 <span>Безпечно</span></div>
       </div>
 
       <!-- Bonus badge -->
-      <div class="auth-bonus-badge" style="animation:slideUp .5s .3s ease both;opacity:0;animation-fill-mode:both;position:relative;overflow:hidden;">
+      <div class="auth-bonus-badge" style="position:relative;overflow:hidden;">
         <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);animation:btnShine 3s ease infinite;"></div>
         🎁 Новачку: <b>+100% до першого депозиту</b> · 10 безкоштовних спінів
       </div>
 
       <!-- Form card -->
-      <div class="auth-card" style="animation:slideUp .6s .35s ease both;opacity:0;animation-fill-mode:both;">
+      <div class="auth-card" style="animation:slideUp .4s ease both;">
         <!-- Tabs -->
         <div class="auth-tabs">
           <button class="auth-tab-btn active" id="authTabLogin" onclick="switchAuthTab('login')">🔑 Вхід</button>
@@ -5295,7 +5279,7 @@
       </div>
 
       <!-- Live stats -->
-      <div class="auth-stats-row" style="animation:slideUp .6s .5s ease both;opacity:0;animation-fill-mode:both;">
+      <div class="auth-stats-row">
         <div class="auth-stat">
           <div class="auth-stat-val" id="authStatPlayers">—</div>
           <div class="auth-stat-lbl">ГРАВЦІВ</div>
@@ -5312,7 +5296,7 @@
         </div>
       </div>
 
-      <div style="margin-top:14px;font-size:9px;color:#222;text-align:center;animation:slideUp .6s .6s ease both;opacity:0;animation-fill-mode:both;">
+      <div style="margin-top:14px;font-size:9px;color:#222;text-align:center;">
         🔞 18+ · Грайте відповідально · SlotOK v69
       </div>
 
@@ -5689,10 +5673,34 @@
     // ============================================
     // ІНІЦІАЛІЗАЦІЯ
     // ============================================
-    setTimeout(() => {
-        const loader = document.getElementById('loading-overlay');
-        if(loader) { loader.style.opacity = '0'; setTimeout(() => loader.classList.add('hidden'), 500); }
-    }, 1500);
+    // ============================================
+    // СПЛЕШ-ЕКРАН — надійне приховування
+    // ============================================
+    (function hideSplash() {
+      const loader = document.getElementById('loading-overlay');
+      const bar = document.getElementById('splashBar');
+      if(!loader) return;
+      // Animate progress bar
+      let w = 0;
+      const iv = setInterval(() => {
+        w = Math.min(w + (w < 60 ? 8 : w < 85 ? 3 : 1), 95);
+        if(bar) bar.style.width = w + '%';
+      }, 80);
+      // Primary: hide after 1.8s
+      const hide = () => {
+        clearInterval(iv);
+        if(bar) bar.style.width = '100%';
+        setTimeout(() => {
+          loader.style.opacity = '0';
+          setTimeout(() => { loader.style.display = 'none'; }, 500);
+        }, 200);
+      };
+      setTimeout(hide, 1800);
+      // Failsafe 1: 4s
+      setTimeout(() => { if(loader.style.opacity !== '0') hide(); }, 4000);
+      // Failsafe 2: 8s — force remove even without transition
+      setTimeout(() => { loader.style.display = 'none'; }, 8000);
+    })();
 
     const firebaseConfig = { 
         apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", 
@@ -5830,7 +5838,28 @@
         updateVipUI();
         loadMyWithdraws();
         loadMyDeposits();
-    }
+        // Home page quick stats
+        const hb = document.getElementById('homeStatBalance');
+        const hv = document.getElementById('homeStatVip');
+        const hs = document.getElementById('homeStatStreak');
+        if(hb) hb.textContent = '₴' + formatNumber(userData.balance||0);
+        if(hs) hs.textContent = (userData.dailyStreak||0) + '🔥';
+        const vipLevel = getVipLevel ? getVipLevel(userData.totalWagered||0) : null;
+        if(hv) hv.textContent = vipLevel ? vipLevel.name : 'Немає';
+        // Casino stats
+        db.ref('users').once('value', snap => {
+          const users = snap.val()||{};
+          const total = Object.keys(users).filter(k=>!users[k].isBot).length;
+          const online = Object.values(users).filter(u=>u.lastSeen && Date.now()-u.lastSeen < 300000).length;
+          const wins = Object.values(users).reduce((s,u)=>s+(u.totalWins||0),0);
+          const ce = document.getElementById('casinoOnlineCount');
+          const cw = document.getElementById('casinoTodayWins');
+          const ct = document.getElementById('casinoTotalPlayers');
+          if(ce) ce.textContent = Math.max(online,1)+'';
+          if(cw) cw.textContent = formatNumber(wins);
+          if(ct) ct.textContent = total+'';
+        });
+    } // end updateProfileUI
 
     function checkAdmin() {
         if (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true) {
@@ -9806,9 +9835,130 @@
 
     const BUILTIN_CHANGELOG = [
       {
+        version: '69',
+        title: '🚀 Оновлення v69 — Великий патч якості',
+        date: Date.now(),
+        dev: 'SlotOK Dev',
+        sections: [
+          {
+            type: 'fix',
+            title: '🐛 Виправлені баги',
+            items: [
+              'Баг з безкоштовними спінами — після першого спіну кнопка більше не зависає',
+              'Приватні повідомлення — поле для тексту тепер велике і зручне (textarea)',
+              'Заявки на поповнення — функція updateRequestBadge більше не викидає помилку',
+              'Реєстрація — при виборі методу оплати показуються реквізити',
+              'approveDeposit — тепер оновлює casino_stats і надсилає гравцю PM з emoji',
+            ]
+          },
+          {
+            type: 'new',
+            title: '🏠 Головна сторінка — повний редизайн',
+            items: [
+              'Преміум VIP-банер з золотим градієнтом і анімаціями',
+              'Швидка статистика: Баланс / VIP рівень / Серія днів',
+              'Battle Pass промо-банер з анімацією',
+              'Блок "Казино зараз" — Онлайн / Виграшів / Гравців в реальному часі',
+              'Всі міні-ігри (Скачки, Balloon, Quiz, Рулетка Ризику, Колір) додані в Популярні ігри',
+              'Бакара та Відео Покер додані в слайдер ігор',
+            ]
+          },
+          {
+            type: 'new',
+            title: '🎰 Слоти — Premium UI',
+            items: [
+              'Нові барабани з градієнтним фоном і декоративними вогниками',
+              'Золота кнопка КРУТИТИ з shimmer-анімацією',
+              'При виграші — золоте свічення на барабанах (heartbeat анімація)',
+              'Швидкі кнопки ставки: 50 / 100 / 250 / 500 / 1к / MAX',
+              'При великому виграші вилітають монети з екрану (coinFly)',
+            ]
+          },
+          {
+            type: 'new',
+            title: '🔐 Екран входу — повний редизайн',
+            items: [
+              'Плаваючі монети і символи на фоні',
+              'Live джекпот лічильник з реальними даними Firebase',
+              'Анімований progress bar міцності пароля (червоний → золотий)',
+              'Всі елементи входять з плавними анімаціями slideUp',
+              'Enter у полях → автофокус → логін/реєстрація',
+            ]
+          },
+          {
+            type: 'new',
+            title: '💬 Чат — Photo + GIF підтримка',
+            items: [
+              'Кнопка 📎 для відправки фото (до 4 МБ)',
+              'Кнопка GIF — панель з 8 популярними GIF',
+              'Аватарки відображаються поруч з кожним повідомленням',
+              'Свої повідомлення справа (синій акцент), чужі зліва',
+              'Приватні повідомлення теж підтримують фото/GIF',
+            ]
+          },
+          {
+            type: 'new',
+            title: '👤 Профіль — real-time статистика',
+            items: [
+              '8 карток статистики: баланс, найбільший виграш, ігри, ставки, серія, VIP, перемоги в слотах, депозити',
+              'Win Rate бар що анімується при відкритті',
+              'Баланс оновлюється в реальному часі через Firebase',
+              'Всі числа анімуються при зміні значення',
+            ]
+          },
+          {
+            type: 'improve',
+            title: '✨ Глобальні анімації',
+            items: [
+              'coinRain, winShimmer, pulseGlow, slideUp, popIn, heartbeat, float, coinFly',
+              'Всі екрани входять з slideUp .3s ease',
+              'Amount та метод кнопки з bounce ефектом',
+              'Преміум слот-машина з декоративними вогниками',
+            ]
+          },
+          {
+            type: 'improve',
+            title: '🗂️ Очищення меню "Ще"',
+            items: [
+              'Видалено всі ігри з меню "Ще" — вони тепер тільки в розділі Ігри',
+              'Видалено окремий "Чатик" — глобальний чат залишається на Головній',
+              'Меню стало коротшим і зрозумілішим',
+            ]
+          },
+          {
+            type: 'bank',
+            title: '🏦 Картка — тільки Аксіома Банк',
+            items: [
+              'При реєстрації SlotOK картка більше не видається автоматично',
+              'Замість цього пропонується підключити картку Аксіома Банку',
+              'Аксіома — офіційний банк-партнер SlotOK Casino',
+            ]
+          },
+          {
+            type: 'new',
+            title: '💳 Заявки на поповнення — новий дизайн',
+            items: [
+              'Вибір методу: PrivatBank / Monobank / Telegram',
+              'Показ реквізитів одразу після вибору методу',
+              'Секція "Мої заявки" — гравець бачить статус своїх депозитів',
+              'Адмін отримує PM від всіх адмінів (не тільки theivankoo)',
+              'Картка заявки в адмінці показує метод з іконкою',
+            ]
+          },
+          {
+            type: 'fix',
+            title: '🇺🇦 Деросіфікація',
+            items: [
+              '"Russian Roulette" перейменовано на "Рулетка Ризику"',
+              'Питання вікторини про Росію замінено на "Яка столиця України?"',
+            ]
+          },
+        ]
+      },
+      {
         version: '62',
         title: '🚀 Мегаоновлення v62 — 50 нових фіч!',
-        date: Date.now(),
+        date: Date.now() - 7*24*60*60*1000,
         dev: 'SlotOK Team',
         sections: [
           {
@@ -9835,77 +9985,13 @@
             ]
           },
           {
-            type: 'new',
-            title: '💎 Нові системи',
+            type: 'improve',
+            title: '⚡ Покращення',
             items: [
-              'Прогресивний Джекпот — тікер на головній, росте з кожної ставки!',
+              'Прогресивний Джекпот — тікер на головній, росте з кожної ставки',
               'Лотерея — щотижня в неділю о 20:00 розіграш',
-              'Інвест-Пул — вкладай і отримуй 8% щотижня',
-              'Автозбереження — X% від виграшів на окремий рахунок',
               'Watch Mode — спостерігай за іншими гравцями live',
               'Щоденний безкоштовний спін',
-              'Поділитись виграшем — зберегти/надіслати в TG',
-            ]
-          },
-          {
-            type: 'improve',
-            title: '⚡ Покращення інтерфейсу',
-            items: [
-              'Акцент-колір — обери свій: золотий/фіолетовий/синій/зелений...',
-              'Режим стримера — приховати баланс для OBS',
-              'Режим фокусу — прибрати відволікаючі елементи',
-              'Динамічний фон залежно від часу доби',
-              'Статус гравця в профілі (В грі / АФК / Шукаю суперника)',
-              'Графік балансу за 30 ігор на головній',
-              'Календар подій — розклад турнірів і бонусів',
-            ]
-          },
-          {
-            type: 'bank',
-            title: '🔧 Адмін та технічне',
-            items: [
-              'Live Dashboard для адміна (оборот / джекпот / пули)',
-              'Масова розсилка PM всім гравцям',
-              'Боти тепер зʼявляються в Watch Mode live feed',
-              '@SlotOK_DepositBot — виправлено посилання!',
-            ]
-          },
-          {
-            type: 'fix',
-            title: '❓ Правила та інструкції',
-            items: [
-              'Кнопка "Правила" на кожній грі — для нових гравців',
-              'Детальні інструкції для 15+ ігор: виплати, стратегії, механіки',
-              'Popup з красивим дизайном, не заважає грі',
-            ]
-          },
-          {
-            type: 'improve',
-            title: '📱 Структура меню',
-            items: [
-              'Меню "Ще" повністю переписано — чіткі секції',
-              'Теми інтерфейсу тепер ТІЛЬКИ в Налаштуваннях',
-              'Вийти/Видалити акаунт ТІЛЬКИ в Налаштуваннях',
-              'Немає дублікатів — кожна функція на своєму місці',
-            ]
-          },
-          {
-            type: 'fix',
-            title: '✉️ Виправлення ПП',
-            items: [
-              'Повідомлення тепер зчитується — лічильник скидається при відкритті',
-              'Поле "Нік отримувача" та "Повідомлення" розділені',
-              'Боти тепер реально грають і зʼявляються в Live Feed',
-            ]
-          },
-          {
-            type: 'bank',
-            title: '🏆 22 нові досягнення',
-            items: [
-              'Limbo досягнення, Торгівля, ПП, Win Streak',
-              'Блекджек: Спліт, 21, Натуральний BJ',
-              'Fortune Jackpot, Plinko, нові фінансові',
-              'Всього 70+ досягнень в грі!',
             ]
           },
         ]
@@ -19909,7 +19995,8 @@ ${getItemEffectDesc(item)}`, 'success');
 
     function pmSend() {
       const to = document.getElementById('pmToInput')?.value?.trim();
-      const text = document.getElementById('pmMsgInput')?.value?.trim();
+      const msgEl = document.getElementById('pmMsgInput');
+      const text = msgEl?.value?.trim();
       if(!to || !text) return notify('Заповни отримувача і текст', 'error');
       if(to === currentUser) return notify('Не можна писати собі', 'error');
       db.ref('users/'+to).once('value', snap => {
@@ -19919,7 +20006,7 @@ ${getItemEffectDesc(item)}`, 'success');
         db.ref('pm/'+to).push(msg);
         db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
         db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
-        document.getElementById('pmMsgInput').value = '';
+        if(msgEl) msgEl.value = '';
         notify('✉️ Надіслано!', 'success');
         renderPmInbox();
       });
@@ -21603,21 +21690,35 @@ ${getItemEffectDesc(item)}`, 'success');
   </div>
 
   <!-- ══════════════ ПРИВАТНІ ПОВІДОМЛЕННЯ ══════════════ -->
-  <div id="tab-pm" class="screen hidden">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
-      <h2 style="margin:0;color:var(--accent);">✉️ Повідомлення</h2>
+  <div id="tab-pm" class="screen hidden" style="padding:0;padding-bottom:100px;">
+    <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:12px;">
+      <button class="btn-outline" onclick="switchTab('more')" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
+      <h2 style="margin:0;color:#4a9eff;font-family:'Orbitron',monospace;font-size:16px;">✉️ Повідомлення</h2>
     </div>
-    <!-- Compose new message -->
-    <div class="box" style="margin-bottom:14px;">
-      <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📩 Новий лист</div>
-      <input id="pmToInput" placeholder="Нік отримувача" style="margin-bottom:6px;">
-      <input id="pmMsgInput" placeholder="Повідомлення..." style="margin-bottom:6px;">
-      <button class="btn-gold" onclick="pmSend()">📩 Надіслати</button>
+
+    <div style="padding:14px;">
+      <!-- Compose new message -->
+      <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:1.5px solid rgba(74,158,255,.2);border-radius:18px;padding:16px;margin-bottom:14px;">
+        <div style="font-size:11px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📩 Нове повідомлення</div>
+        <div style="position:relative;margin-bottom:10px;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">👤</span>
+          <input id="pmToInput" placeholder="Нікнейм отримувача" style="padding-left:38px;border-color:rgba(74,158,255,.2);background:rgba(74,158,255,.04);">
+        </div>
+        <!-- ВЕЛИКЕ поле для тексту -->
+        <textarea id="pmMsgInput" placeholder="Текст повідомлення..." maxlength="1000"
+          style="width:100%;min-height:90px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box;resize:vertical;line-height:1.5;outline:none;font-family:inherit;transition:border-color .2s;"
+          onfocus="this.style.borderColor='rgba(74,158,255,.4)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+          onkeydown="if(event.key==='Enter'&&event.ctrlKey)pmSend()"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <div style="font-size:10px;color:#444;">Ctrl+Enter — надіслати</div>
+          <button onclick="pmSend()" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 20px;color:#fff;font-weight:800;cursor:pointer;font-size:14px;transition:.15s;">📩 Надіслати</button>
+        </div>
+      </div>
+
+      <!-- Inbox threads -->
+      <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📥 Вхідні</div>
+      <div id="pmInbox"></div>
     </div>
-    <!-- Inbox threads -->
-    <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📥 Вхідні</div>
-    <div id="pmInbox"></div>
   </div>
 
   <!-- ══════════════ ТОРГІВЛЯ (TRADE) ══════════════ -->
