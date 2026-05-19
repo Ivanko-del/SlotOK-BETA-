@@ -1333,20 +1333,64 @@
   <canvas id="liveBgCanvas"></canvas>
 
   <div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity .5s;">
-    <div style="font-size:58px;margin-bottom:16px;animation:float 2s ease-in-out infinite;">🎰</div>
+    <div style="font-size:58px;margin-bottom:16px;">🎰</div>
     <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,#d4af37,#ffdb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px;margin-bottom:8px;">SLOTOK</div>
     <div style="font-size:11px;color:#444;margin-top:4px;letter-spacing:2px;">v69 · Завантаження...</div>
     <div style="width:120px;height:2px;background:#111;border-radius:2px;margin-top:16px;overflow:hidden;">
       <div id="splashBar" style="height:100%;width:0;background:linear-gradient(90deg,#d4af37,#ffdb6a);border-radius:2px;transition:width .4s ease;"></div>
     </div>
   </div>
+
+  <!-- ═══ СПЛЕШ: окремий скрипт, незалежний від Firebase/main ═══ -->
+  <script>
+  (function() {
+    var loader = document.getElementById('loading-overlay');
+    var bar    = document.getElementById('splashBar');
+    if (!loader) return;
+
+    // Прогрес-бар анімація
+    var w = 0;
+    var iv = setInterval(function() {
+      w = Math.min(w + (w < 60 ? 8 : w < 85 ? 3 : 1), 95);
+      if (bar) bar.style.width = w + '%';
+    }, 80);
+
+    function hide() {
+      clearInterval(iv);
+      if (bar) bar.style.width = '100%';
+      loader.style.opacity = '0';
+      setTimeout(function() { loader.style.display = 'none'; }, 500);
+    }
+
+    // Основний таймер — 2 секунди
+    var t1 = setTimeout(hide, 2000);
+
+    // Failsafe 1 — 5 секунд
+    var t2 = setTimeout(function() {
+      if (loader.style.display !== 'none') hide();
+    }, 5000);
+
+    // Failsafe 2 — 10 секунд: жорстке приховування
+    setTimeout(function() {
+      loader.style.display = 'none';
+      loader.style.opacity = '0';
+    }, 10000);
+
+    // Якщо DOM повністю завантажений — прискорюємо
+    document.addEventListener('DOMContentLoaded', function() {
+      clearTimeout(t1);
+      setTimeout(hide, 800);
+    });
+  })();
+  </script>
   
   <div id="toast-container"></div>
   
   <div class="header">
-    <h1>SLOTOK</h1>
+    <h1 onclick="switchTab('home')" style="cursor:pointer;">SLOTOK</h1>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
       <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="openGlobalSearch()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:5px 10px;font-size:15px;color:#888;cursor:pointer;line-height:1;" title="Пошук">🔍</button>
         <div class="header-bal" onclick="switchTab('cashier')"><span class="bal">₴ 0</span></div>
         <div onclick="switchTab('slotiky')" style="background:#1a0a2e;border:1px solid #5a20c0;border-radius:10px;padding:3px 8px;font-size:11px;color:#c9a0ff;cursor:pointer;display:flex;align-items:center;gap:3px;" title="Слотіки">
           <span>🪙</span><span id="headerSlotiky">0</span>
@@ -3018,7 +3062,11 @@
         <button class="btn-outline" onclick="switchTab('contacts')">🤝 Знайомі</button>
         <button class="btn-outline" onclick="switchTab('clans')">🛡️ Клани</button>
         <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки</button>
-        <button class="btn-outline" onclick="switchTab('watchmode')" style="border-color:#ff69b4;color:#ff69b4;">👁️ Watch Mode — дивись гравців live</button>
+        <button class="btn-outline" onclick="switchTab('watchmode')" style="border-color:#ff69b4;color:#ff69b4;">👁️ Watch Mode</button>
+        <button class="btn-outline" onclick="openGlobalSearch()" style="border-color:#d4af37;color:#d4af37;">🔍 Пошук гравців і ігор</button>
+        <button class="btn-outline" onclick="showReferralQR()" style="border-color:#3dd68c;color:#3dd68c;">📲 QR-код реферала</button>
+        <button class="btn-outline" onclick="comparePlayersModal()" style="border-color:#4a9eff;color:#4a9eff;">📊 Порівняти гравців</button>
+        <button class="btn-outline" onclick="showTopDonators()" style="border-color:#d4af37;color:#d4af37;">🏆 Топ донатерів</button>
       </div>
 
       <!-- ── ⚔️ PvP / КОНКУРСИ ── -->
@@ -3052,9 +3100,13 @@
         <button class="btn-outline" onclick="switchTab('autobet')" style="border-color:#3dd68c;color:#3dd68c;">🤖 Автоставки</button>
         <button class="btn-outline" onclick="switchTab('insurance')" style="border-color:#00b4d8;color:#00b4d8;">🛡️ Страховка ставки</button>
         <button class="btn-outline" onclick="switchTab('copytrade')" style="border-color:#c9a0ff;color:#c9a0ff;">👁️ Copy Trade</button>
-        <button class="btn-outline" onclick="switchTab('lottery')" style="border-color:#d4af37;color:#d4af37;">🎟️ Лотерея (неділя 20:00)</button>
-        <button class="btn-outline" onclick="switchTab('investpool')" style="border-color:#3dd68c;color:#3dd68c;">📈 Інвест-Пул казино</button>
-        <button class="btn-outline" onclick="openAutoSaveModal()">🏦 Автозбереження % від виграшів</button>
+        <button class="btn-outline" onclick="switchTab('lottery')" style="border-color:#d4af37;color:#d4af37;">🎟️ Лотерея</button>
+        <button class="btn-outline" onclick="switchTab('investpool')" style="border-color:#3dd68c;color:#3dd68c;">📈 Інвест-Пул</button>
+        <button class="btn-outline" onclick="openAutoSaveModal()">🏦 Автозбереження</button>
+        <button class="btn-outline" onclick="openCryptoSimulator()" style="border-color:#f0c040;color:#f0c040;">📈 Крипто-симулятор</button>
+        <button class="btn-outline" onclick="openP2PLoanModal()" style="border-color:#c9a0ff;color:#c9a0ff;">💸 P2P Позики</button>
+        <button class="btn-outline" onclick="openSessionLimitsModal()" style="border-color:#f39c12;color:#f39c12;">⏰ Сесійні ліміти</button>
+        <button class="btn-outline" onclick="setBreakReminder(30)" style="border-color:#ff9500;color:#ff9500;">⏸️ Нагадування кожні 30хв</button>
       </div>
 
       <!-- ── 🎁 БОНУСИ ── -->
@@ -3065,6 +3117,11 @@
         <button class="btn-outline" onclick="switchTab('hourly')">⏰ Погодинний бонус</button>
         <button class="btn-outline" onclick="switchTab('lootboxes')">📦 Лут-Бокси</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
+        <button class="btn-outline" onclick="openCaseOpeningScreen()" style="border-color:#d4af37;color:#d4af37;">📦 Відкриття кейсів</button>
+        <button class="btn-outline" onclick="openUpgradeSystem()" style="border-color:#ff9500;color:#ff9500;">⬆️ Upgrade предметів</button>
+        <button class="btn-outline" onclick="openCustomTagShop()" style="border-color:#d4af37;color:#d4af37;">🏷️ Магазин тегів</button>
+        <button class="btn-outline" onclick="openProfileEffectShop()" style="border-color:#c9a0ff;color:#c9a0ff;">🎭 Ефекти профілю</button>
+        <button class="btn-outline" onclick="openGiftVIPModal()" style="border-color:#d4af37;color:#d4af37;">🎁 Подарувати VIP</button>
       </div>
 
       <div style="height:80px;"></div>
@@ -3547,7 +3604,23 @@
             <div class="settings-label">Додаток на телефон</div>
           </div>
           <button id="pwaInstallBtn" onclick="installPWA()">📱 Встановити SlotOK як додаток</button>
-          <button onclick="requestPushPermission()" id="pushToggle" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px;color:#aaa;font-size:13px;cursor:pointer;">🔔 Увімкнути push-сповіщення</button>
+          <button onclick="requestPushPermission()" id="pushToggle" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px;color:#aaa;font-size:13px;cursor:pointer;">🔔 Push-сповіщення</button>
+        <button onclick="openChangePasswordModal()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🔑 Змінити пароль</button>
+        <button onclick="exportHistoryCSV()" style="width:100%;background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.2);border-radius:12px;padding:11px;color:#3dd68c;font-size:13px;cursor:pointer;margin-top:8px;">📥 Експорт CSV</button>
+        <button onclick="renderLangSwitcher()" style="width:100%;background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:12px;padding:11px;color:#4a9eff;font-size:13px;cursor:pointer;margin-top:8px;">🌐 Мова / Language</button>
+        <button onclick="openCryptoSimulator()" style="width:100%;background:rgba(255,165,0,.06);border:1px solid rgba(255,165,0,.2);border-radius:12px;padding:11px;color:#f0c040;font-size:13px;cursor:pointer;margin-top:8px;">📈 Крипто-симулятор</button>
+        <button onclick="openP2PLoanModal()" style="width:100%;background:rgba(201,160,255,.06);border:1px solid rgba(201,160,255,.2);border-radius:12px;padding:11px;color:#c9a0ff;font-size:13px;cursor:pointer;margin-top:8px;">💸 P2P Позики</button>
+        <button onclick="openSessionLimitsModal()" style="width:100%;background:rgba(243,156,18,.06);border:1px solid rgba(243,156,18,.2);border-radius:12px;padding:11px;color:#f39c12;font-size:13px;cursor:pointer;margin-top:8px;">⏰ Сесійні ліміти</button>
+        <button onclick="openSoundThemePicker()" style="width:100%;background:rgba(100,200,255,.06);border:1px solid rgba(100,200,255,.2);border-radius:12px;padding:11px;color:#64c8ff;font-size:13px;cursor:pointer;margin-top:8px;">🎵 Звукові теми</button>
+        <button onclick="showWishlist()" style="width:100%;background:rgba(255,105,180,.06);border:1px solid rgba(255,105,180,.2);border-radius:12px;padding:11px;color:#ff69b4;font-size:13px;cursor:pointer;margin-top:8px;">❤️ Список побажань</button>
+        <button onclick="showSecurityLog()" style="width:100%;background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:11px;color:#e74c3c;font-size:13px;cursor:pointer;margin-top:8px;">📋 Журнал безпеки</button>
+        <button onclick="openProfileEffectShop()" style="width:100%;background:rgba(201,160,255,.06);border:1px solid rgba(201,160,255,.2);border-radius:12px;padding:11px;color:#c9a0ff;font-size:13px;cursor:pointer;margin-top:8px;">🎭 Ефекти профілю</button>
+        <button onclick="openCustomTagShop()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🏷️ Купити тег</button>
+        <button onclick="openGiftVIPModal()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🎁 Подарувати VIP</button>
+        <button onclick="comparePlayersModal()" style="width:100%;background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:12px;padding:11px;color:#4a9eff;font-size:13px;cursor:pointer;margin-top:8px;">📊 Порівняти гравців</button>
+        <button onclick="showTopDonators()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🏆 Топ донатерів</button>
+        <div style="height:1px;background:#1a1a1a;margin:12px 0;"></div>
+        <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Онлайн: <span id="onlineTimeDisplay">—</span></div>
         </div>
       </div>
 
@@ -3949,6 +4022,7 @@
         <button class="adm-tab-btn" id="admtb-bots"     onclick="switchAdminTab('bots',this)">🤖 Боти</button>
         <button class="adm-tab-btn" id="admtb-content"  onclick="switchAdminTab('content',this)">📢 Контент</button>
         <button class="adm-tab-btn" id="admtb-finance"  onclick="switchAdminTab('finance',this)">💰 Фінанси</button>
+        <button class="adm-tab-btn" id="admtb-security" onclick="switchAdminTab('security',this)">🛡️ Безпека</button>
       </div>
 
       <!-- ══ TAB: ЗАЯВКИ ══ -->
@@ -4064,10 +4138,11 @@
       <!-- ══ TAB: БОТИ ══ -->
       <div class="adm-panel" id="adm-panel-bots" style="display:none;padding:12px;">
         <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:11px;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🤖 Новий бот</div>
           <input id="botNick" placeholder="Нік бота (напр. Lucky_77)" style="margin-bottom:6px;">
           <input id="botBalance" type="number" placeholder="Початковий баланс (₴)" value="5000" style="margin-bottom:6px;">
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <select id="botAvatar" style="flex:1;background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <select id="botAvatar" style="background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
               <option value="👤">👤 Стандарт</option>
               <option value="🤑">🤑 Грошовий</option>
               <option value="😎">😎 Крутий</option>
@@ -4079,17 +4154,34 @@
               <option value="🐺">🐺 Вовк</option>
               <option value="custom">📷 Свій URL...</option>
             </select>
-            <select id="botActivity" style="flex:1;background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
+            <select id="botActivity" style="background:#222;border:1px solid #444;color:#fff;border-radius:8px;padding:8px;font-size:13px;">
               <option value="active">🟢 Активний</option>
               <option value="passive">⚫ Пасивний</option>
             </select>
           </div>
+          <!-- НОВИЙ: вибір особистості -->
+          <select id="botPersonality" style="width:100%;background:#1a0d20;border:1px solid #5a20c0;color:#c9a0ff;border-radius:8px;padding:8px;font-size:13px;margin-bottom:8px;">
+            <option value="balanced">⚖️ Збалансований (40-60с між іграми, ×0.8-1.5 ставки)</option>
+            <option value="aggressive">🔥 Агресивний (8-20с між іграми, ×1.5-3.0 ставки)</option>
+            <option value="conservative">🛡️ Консервативний (25-60с між іграми, ×0.3-0.8 ставки)</option>
+            <option value="whale">🐋 Кит (5-15с між іграми, ×3.0-8.0 ставки)</option>
+          </select>
           <div id="botAvatarUrlBox" class="hidden" style="margin-bottom:6px;">
             <input id="botAvatarUrl" placeholder="URL аватарки (https://...)">
           </div>
           <button class="btn-gold" onclick="createBot()">🤖 СТВОРИТИ БОТА</button>
         </div>
-        <button class="btn-outline" style="font-size:13px;margin-bottom:8px;" onclick="loadBots()">🔄 Список ботів</button>
+
+        <!-- Керування движком -->
+        <div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:10px;padding:10px;margin-bottom:10px;">
+          <div style="font-size:11px;color:#4a9eff;font-weight:700;margin-bottom:8px;">⚙️ Бот-Движок</div>
+          <div id="botEngineStatus" style="font-size:12px;color:#555;margin-bottom:8px;">Статус: очікування...</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:#3dd68c;color:#3dd68c;" onclick="adminStartBotEngine()">▶ Запустити движок</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:#e74c3c;color:#e74c3c;" onclick="adminStopBotEngine()">⏹ Зупинити</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;" onclick="loadBots()">🔄 Оновити список</button>
+          </div>
+        </div>
         <div id="botList"></div>
       </div><!-- /bots panel -->
 
@@ -4185,8 +4277,82 @@
         </div>
       </div><!-- /finance panel -->
 
-    </div>
-    <!-- БЛЕКДЖЕК -->
+      <!-- ══ SECURITY PANEL ══ -->
+      <div class="adm-panel" id="adm-panel-security" style="display:none;padding:12px;">
+        <div style="font-size:11px;color:#ff6b6b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">🛡️ Безпека та захист</div>
+
+        <!-- Firebase Rules -->
+        <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#d4af37;margin-bottom:6px;">🔐 Firebase Security Rules</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Захист бази даних від несанкціонованого доступу</div>
+          <button onclick="showFirebaseRules()" class="btn-gold" style="font-size:13px;padding:10px;">📋 Показати правила для копіювання</button>
+        </div>
+
+        <!-- 2FA Settings -->
+        <div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#4a9eff;margin-bottom:6px;">🔑 2FA для виводів</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Поріг: <b style="color:#d4af37;">5 000₴</b> — вище цієї суми потрібен код підтвердження</div>
+          <div style="display:flex;gap:8px;">
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:8px 12px;flex:1;text-align:center;">
+              <div style="font-size:9px;color:#555;">Статус 2FA</div>
+              <div style="font-size:13px;font-weight:900;color:#3dd68c;">✅ Активно</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:8px 12px;flex:1;text-align:center;">
+              <div style="font-size:9px;color:#555;">Термін дії коду</div>
+              <div style="font-size:13px;font-weight:900;color:#d4af37;">5 хвилин</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rate Limiting -->
+        <div style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#3dd68c;margin-bottom:6px;">⚡ Rate Limiting</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:8px;">
+              <div style="color:#555;margin-bottom:2px;">Чат</div>
+              <div style="color:#3dd68c;font-weight:700;">4 повідомлення / 10с<br>Cooldown: 2с</div>
+            </div>
+            <div style="background:#0a0a0a;border-radius:8px;padding:8px;">
+              <div style="color:#555;margin-bottom:2px;">Ставки</div>
+              <div style="color:#d4af37;font-weight:700;">Мін. 600мс між ставками</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto cleanup -->
+        <div style="background:rgba(201,160,255,.06);border:1px solid rgba(201,160,255,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#c9a0ff;margin-bottom:6px;">🧹 Автоочищення</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">live_bets: зберігаємо 50+ за 30хв<br>global_chat: зберігаємо 200 повідомлень<br>lobby_chat: зберігаємо 100 повідомлень</div>
+          <button onclick="runCleanup();notify('🧹 Очищення запущено','success')" class="btn-outline" style="border-color:#c9a0ff;color:#c9a0ff;font-size:12px;padding:8px;">🧹 Запустити зараз</button>
+        </div>
+
+        <!-- Shadow Mode -->
+        <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#ff6b6b;margin-bottom:8px;">👁️ Shadow Mode</div>
+          <div style="display:flex;gap:8px;">
+            <input id="shadowNickInput" placeholder="Нік гравця..." style="flex:1;font-size:12px;padding:8px;">
+            <button onclick="enterShadowMode(document.getElementById('shadowNickInput').value.trim())" class="btn-outline" style="border-color:#e74c3c;color:#e74c3c;font-size:12px;padding:8px 12px;">👁️ Увійти</button>
+          </div>
+        </div>
+
+        <!-- Chat Giveaway -->
+        <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#d4af37;margin-bottom:8px;">🎁 Розіграш в чаті</div>
+          <div style="display:flex;gap:8px;">
+            <input id="giveawayAmountInput" type="number" placeholder="Сума ₴..." style="flex:1;font-size:12px;padding:8px;" value="1000">
+            <button onclick="startChatGiveaway(parseInt(document.getElementById('giveawayAmountInput').value))" class="btn-gold" style="font-size:12px;padding:8px 12px;">🎁 Старт!</button>
+          </div>
+        </div>
+
+        <!-- Provably Fair -->
+        <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:12px;">
+          <div style="font-size:13px;font-weight:800;color:#ff6b6b;margin-bottom:6px;">⚖️ Provably Fair</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Dice і Plinko використовують SHA-256 верифікацію результатів</div>
+          <div style="font-size:11px;color:#3dd68c;">✅ Активно для: Dice, Plinko, Crash</div>
+        </div>
+      </div><!-- /security panel -->
+
+    </div><!-- /tab-admin -->
     <div id="tab-blackjack" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
@@ -5278,6 +5444,11 @@
         </div>
       </div>
 
+      <!-- Demo mode -->
+      <div style="text-align:center;margin-top:12px;">
+        <button onclick="startDemoMode()" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 24px;color:#555;font-size:12px;cursor:pointer;transition:.15s;">🎮 Спробувати без реєстрації (Демо)</button>
+      </div>
+
       <!-- Live stats -->
       <div class="auth-stats-row">
         <div class="auth-stat">
@@ -5298,6 +5469,17 @@
 
       <div style="margin-top:14px;font-size:9px;color:#222;text-align:center;">
         🔞 18+ · Грайте відповідально · SlotOK v69
+      </div>
+
+      <!-- DISCLAIMER -->
+      <div style="margin-top:20px;padding:12px 16px;background:rgba(255,255,255,.02);border:1px solid #1a1a1a;border-radius:12px;text-align:center;max-width:380px;width:100%;box-sizing:border-box;">
+        <div style="font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚠️ Важлива інформація</div>
+        <div style="font-size:10px;color:#444;line-height:1.6;">
+          SlotOK — це <b style="color:#666;">розважальна ігрова платформа</b> для дозвілля та розваг.
+          Всі монети, баланси та виграші є <b style="color:#666;">віртуальними</b> і не мають реальної грошової цінності.
+          Жодних реальних грошей тут не задіяно.
+          Платформа не є азартним закладом і не проводить реальних фінансових операцій.
+        </div>
       </div>
 
     </div>
@@ -5386,6 +5568,27 @@
   <div id="daily-bonus-modal" class="full-modal hidden">
     <button class="btn-outline" onclick="closeModal('daily-bonus-modal')" style="width:50px;">⬅</button>
     <div class="daily-bonus-modal-content" id="dailyBonusContent"></div>
+  </div>
+
+  <!-- DISCLAIMER BAR — завжди видима -->
+  <div id="disclaimerBar" style="background:#050505;border-top:1px solid #111;padding:6px 16px;text-align:center;font-size:9px;color:#333;line-height:1.5;">
+    ⚠️ <b style="color:#444;">Розважальна платформа.</b> Всі монети віртуальні · Реальних грошей немає · Не азартна гра
+    <span onclick="document.getElementById('disclaimerFull').style.display='flex'" style="color:#555;cursor:pointer;text-decoration:underline;margin-left:4px;">Детальніше</span>
+  </div>
+
+  <!-- DISCLAIMER MODAL -->
+  <div id="disclaimerFull" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9990;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#0d0d0d;border:1px solid #222;border-radius:20px;padding:24px;max-width:360px;width:100%;">
+      <div style="font-size:22px;text-align:center;margin-bottom:12px;">⚠️</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:#d4af37;text-align:center;margin-bottom:14px;">Важлива інформація</div>
+      <div style="font-size:13px;color:#888;line-height:1.8;margin-bottom:16px;">
+        <b style="color:#aaa;">SlotOK</b> — це виключно <b style="color:#aaa;">розважальна ігрова платформа</b> для дозвілля.<br><br>
+        🪙 Всі монети, бали та "виграші" є <b style="color:#aaa;">повністю віртуальними</b> і не мають жодної реальної грошової цінності.<br><br>
+        🚫 Платформа <b style="color:#aaa;">не є азартним закладом</b>, не проводить реальних фінансових транзакцій і не дозволяє виведення реальних коштів.<br><br>
+        📱 Це соціальна гра для розваги між друзями. Всі операції є умовними і симуляційними.
+      </div>
+      <button onclick="document.getElementById('disclaimerFull').style.display='none'" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;font-size:14px;cursor:pointer;">✅ Зрозуміло</button>
+    </div>
   </div>
 
   <nav class="bottom-nav">
@@ -5673,34 +5876,8 @@
     // ============================================
     // ІНІЦІАЛІЗАЦІЯ
     // ============================================
+    // СПЛЕШ — керується окремим тегом вище
     // ============================================
-    // СПЛЕШ-ЕКРАН — надійне приховування
-    // ============================================
-    (function hideSplash() {
-      const loader = document.getElementById('loading-overlay');
-      const bar = document.getElementById('splashBar');
-      if(!loader) return;
-      // Animate progress bar
-      let w = 0;
-      const iv = setInterval(() => {
-        w = Math.min(w + (w < 60 ? 8 : w < 85 ? 3 : 1), 95);
-        if(bar) bar.style.width = w + '%';
-      }, 80);
-      // Primary: hide after 1.8s
-      const hide = () => {
-        clearInterval(iv);
-        if(bar) bar.style.width = '100%';
-        setTimeout(() => {
-          loader.style.opacity = '0';
-          setTimeout(() => { loader.style.display = 'none'; }, 500);
-        }, 200);
-      };
-      setTimeout(hide, 1800);
-      // Failsafe 1: 4s
-      setTimeout(() => { if(loader.style.opacity !== '0') hide(); }, 4000);
-      // Failsafe 2: 8s — force remove even without transition
-      setTimeout(() => { loader.style.display = 'none'; }, 8000);
-    })();
 
     const firebaseConfig = { 
         apiKey: "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw", 
@@ -5712,9 +5889,40 @@
         appId: "1:1086314476940:web:d3629d2d0fe16f7c1f12a9" 
     };
     
-    try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } 
-    catch(e) { console.error("Firebase init error", e); }
-    const db = firebase.database();
+    let db = null;
+    try {
+      if(typeof firebase === 'undefined') throw new Error('Firebase SDK не завантажився');
+      if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    } catch(e) {
+      console.error('Firebase init error:', e);
+      // Show friendly error but DON'T block the app
+      setTimeout(() => {
+        const authErr = document.getElementById('authError');
+        if(authErr) {
+          authErr.textContent = '⚠️ Немає з\'єднання з сервером. Перевір інтернет і перезавантаж сторінку.';
+          authErr.style.display = 'block';
+        }
+        // Also show on splash if still visible
+        const splashEl = document.querySelector('#loading-overlay div:last-child');
+        if(splashEl) splashEl.textContent = '⚠️ Помилка з\'єднання';
+      }, 2200);
+    }
+
+    // Safe wrapper — щоб не крешитись якщо db = null
+    const safeDb = {
+      ref: (path) => db ? db.ref(path) : {
+        once: () => Promise.reject('no db'),
+        set: () => Promise.reject('no db'),
+        update: () => Promise.reject('no db'),
+        on: () => null, off: () => null, push: () => ({ key: 'offline' }),
+        orderByChild: function() { return this; },
+        equalTo: function() { return this; },
+        limitToLast: function() { return this; },
+        limitToFirst: function() { return this; },
+        endAt: function() { return this; },
+      }
+    };
 
     // ============================================
     // ОСНОВНІ ЗМІННІ
@@ -5752,6 +5960,8 @@
                 loadNotifsFromStorage();
                 updateNotifBadge();
                 loadSettings();
+                if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); }
+                if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
                 if(!window._initDone) {
                   window._initDone = true;
                   setTimeout(initHomeTab, 100);
@@ -5865,6 +6075,8 @@
         if (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true) {
             document.getElementById('adminPanelBtnBox').classList.remove('hidden');
             document.getElementById('adminBadge').classList.remove('hidden');
+            // Автозапуск бот-движка для адміна
+            if(!_botEngine) setTimeout(startBotEngine, 3000);
         } else {
             document.getElementById('adminPanelBtnBox').classList.add('hidden');
             document.getElementById('adminBadge').classList.add('hidden');
@@ -7776,24 +7988,7 @@
     // ═══════════════════════════════════════════
     // 🔔 PUSH NOTIFICATIONS
     // ═══════════════════════════════════════════
-    async function requestPushPermission() {
-      if(!('Notification' in window)) return notify('Браузер не підтримує сповіщення','error');
-      const perm = await Notification.requestPermission();
-      if(perm === 'granted') {
-        notify('🔔 Сповіщення увімкнено!','success');
-        localStorage.setItem('pushEnabled','1');
-        const btn = document.getElementById('pushToggle');
-        if(btn) btn.textContent = '🔔 Сповіщення: УВІМК';
-      } else {
-        notify('Сповіщення заблоковано в браузері','error');
-      }
-    }
-
-    function sendLocalPush(title, body) {
-      if(Notification.permission === 'granted' && localStorage.getItem('pushEnabled')) {
-        new Notification(title, {body, icon:'/favicon.ico'});
-      }
-    }
+    // sendNativeNotif та requestPushPermission визначені нижче (фіча 4)
 
     // ═══════════════════════════════════════════
     // ⚡ ANIMATION SPEED
@@ -7898,21 +8093,8 @@
 
 
     // ═══════════════════════════════════════════
-    // AUTH SCREEN — particles + tab switch + stats
+    // AUTH SCREEN — particles + stats
     // ═══════════════════════════════════════════
-    function switchAuthTab(mode) {
-      const isLogin = mode === 'login';
-      document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
-      document.getElementById('regForm').classList.toggle('hidden', isLogin);
-      document.getElementById('authTabLogin').classList.toggle('active', isLogin);
-      document.getElementById('authTabReg').classList.toggle('active', !isLogin);
-      document.getElementById('authError').style.display = 'none';
-    }
-
-    function showAuthError(msg) {
-      const el = document.getElementById('authError');
-      if(el) { el.textContent = msg; el.style.display = 'block'; }
-    }
 
     function initAuthCanvas() {
       const canvas = document.getElementById('authCanvas');
@@ -8044,10 +8226,6 @@
     }
 
     // Override toggleAuthMode to use new tab switcher
-    function toggleAuthMode(showReg) {
-      switchAuthTab(showReg ? 'reg' : 'login');
-    }
-
     // Init auth screen when shown
     function showAuthScreen() {
       document.getElementById('auth-screen').style.display = 'flex'; setTimeout(initAuthCanvas,50); setTimeout(loadAuthStats,800);
@@ -8299,15 +8477,15 @@
       const text = inp.value.trim();
       if(!text && !chatPendingImage) return;
       if(!currentUser) return;
-      if(text.length > 300) return notify('Повідомлення занадто довге','error');
+      if(text.length > 300) return notify('Повідомлення занадто довге', 'error');
+      if(!checkChatRateLimit()) return;
+      // Giveaway participation
+      if(text === '+' && _activeGiveaway) { participateGiveaway(); inp.value = ''; return; }
       const forbidden = ['http','www','.com','.ua'];
-      if(!chatPendingImage && forbidden.some(w=>text.toLowerCase().includes(w))) return notify('Реклама заборонена','error');
+      if(!chatPendingImage && forbidden.some(w => text.toLowerCase().includes(w))) return notify('Реклама заборонена', 'error');
       const msg = {
-        user: currentUser,
-        text: text || '',
-        ts: Date.now(),
-        avatar: userData.avatar || '👤',
-        avatarUrl: userData.avatarUrl || null,
+        user: currentUser, text: text || '', ts: Date.now(),
+        avatar: userData.avatar || '👤', avatarUrl: userData.avatarUrl || null,
       };
       if(chatPendingImage) msg.imgUrl = chatPendingImage;
       db.ref('global_chat').push(msg);
@@ -8803,48 +8981,108 @@
     }
 
     // ============================================
-    // АВТОРИЗАЦІЯ
+    // АВТОРИЗАЦІЯ — повністю виправлена
     // ============================================
-    function authLogin() { 
-        const n = document.getElementById('loginName').value.trim(); 
-        const p = document.getElementById('loginPass').value; 
-        if(!n || !p) { showAuthError('Введіть нікнейм і пароль'); return notify("Введіть дані", "error"); }
-        const loginBtn = document.getElementById('loginBtn');
-        if(loginBtn) { loginBtn.textContent = '⏳ Перевірка...'; loginBtn.disabled = true; }
-        const resetLoginBtn = ()=>{ if(loginBtn){loginBtn.textContent='УВІЙТИ 🚀';loginBtn.disabled=false;} };
-        db.ref('users/'+n).once('value', s => { 
-            if(s.exists() && s.val().pass == p) { 
-                currentUser=n; localStorage.setItem("royal_online_user",n); startDataSync(); 
-            } else { notify("Невірний логін або пароль", "error"); } 
-        }); 
+    function showAuthError(msg) {
+      const el = document.getElementById('authError');
+      if(!el) return;
+      el.textContent = '⚠️ ' + msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
     }
-    
-    function authRegister() { 
-        const e=document.getElementById('regEmail').value.trim(); 
-        const n=document.getElementById('regName').value.trim(); 
-        const p=document.getElementById('regPass').value; 
-        if(!e||!n||!p) return notify("Заповніть всі поля","error"); 
-        if(p.length<8||n.includes(' ')||n.includes('.')) return notify("Пароль мін 8 симв. Нік без пробілів!","error"); 
-        db.ref('users/'+n).once('value', s => { 
-            if(s.exists()){ notify("Цей нікнейм вже зайнятий","error"); } 
-            else { 
-                const id=Math.floor(Math.random()*900000)+100000; 
-                db.ref('users/'+n).set({
-                    pass:p, email:e, balance:1000, id:id, tag:"Новачок", dailyStreak:0,
-                    luckyGamesLeft: 3,    // перші 3 гри з підвищеним шансом
-                    luckyGamesUsed: 0,
-                    registeredAt: Date.now()
-                }).then(() => { 
-                    notify("🎉 Акаунт створено! Перші 3 гри — підвищений шанс виграшу!","success"); 
-                    toggleAuthMode(false); 
-                }); 
-            } 
-        }); 
+
+    function authLogin() {
+      const n = (document.getElementById('loginName')?.value || '').trim();
+      const p = document.getElementById('loginPass')?.value || '';
+      if(!n) return showAuthError('Введіть нікнейм');
+      if(!p) return showAuthError('Введіть пароль');
+      if(!db) return showAuthError('Немає з\'єднання з сервером. Перевір інтернет.');
+
+      const btn = document.getElementById('loginBtn');
+      const orig = '🚀 УВІЙТИ';
+      if(btn) { btn.textContent = '⏳ Перевірка...'; btn.disabled = true; }
+      const reset = () => { if(btn) { btn.textContent = orig; btn.disabled = false; } };
+
+      try {
+        db.ref('users/' + n).once('value').then(snap => {
+          if(!snap.exists()) { reset(); return showAuthError('Гравця з таким ніком не знайдено'); }
+          const data = snap.val();
+          if(data.banned) { reset(); return showAuthError('Акаунт заблоковано. Зверніться до підтримки.'); }
+          if(String(data.pass) !== String(p)) { reset(); return showAuthError('Невірний пароль'); }
+          if(btn) btn.textContent = '✅ Входимо...';
+          currentUser = n;
+          localStorage.setItem('royal_online_user', n);
+          db.ref('users/' + n + '/lastSeen').set(Date.now());
+          startDataSync();
+        }).catch(err => {
+          reset();
+          showAuthError('Помилка з\'єднання. Перевір інтернет.');
+        });
+      } catch(e) {
+        reset();
+        showAuthError('Помилка: ' + e.message);
+      }
     }
-    
-    function toggleAuthMode(reg) { 
-        document.getElementById('loginForm').classList.toggle('hidden', reg); 
-        document.getElementById('regForm').classList.toggle('hidden', !reg); 
+
+    function authRegister() {
+      const email = (document.getElementById('regEmail')?.value || '').trim();
+      const n     = (document.getElementById('regName')?.value  || '').trim();
+      const p     = document.getElementById('regPass')?.value   || '';
+      const promo = (document.getElementById('regPromo')?.value || '').trim().toUpperCase();
+      if(!n) return showAuthError('Введіть нікнейм');
+      if(n.length < 3)  return showAuthError('Нікнейм мінімум 3 символи');
+      if(n.length > 20) return showAuthError('Нікнейм максимум 20 символів');
+      if(n.includes(' '))  return showAuthError('Нікнейм не може містити пробіли');
+      if(n.includes('.'))  return showAuthError('Нікнейм не може містити крапки');
+      if(!p) return showAuthError('Введіть пароль');
+      if(p.length < 6) return showAuthError('Пароль мінімум 6 символів');
+      if(!db) return showAuthError('Немає з\'єднання з сервером. Перевір інтернет.');
+      const btn = document.getElementById('regBtn');
+      const orig = '✨ СТВОРИТИ АКАУНТ';
+      if(btn) { btn.textContent = '⏳ Реєстрація...'; btn.disabled = true; }
+      const reset = () => { if(btn) { btn.textContent = orig; btn.disabled = false; } };
+      try {
+        db.ref('users/' + n).once('value').then(snap => {
+          if(snap.exists()) { reset(); return showAuthError('Цей нікнейм вже зайнятий — спробуй інший'); }
+          let bonusBalance = 1000, freeSpins = 10, bonusMsg = '';
+          if(promo === 'SLOTOK') { bonusBalance += 500; freeSpins += 5; bonusMsg = ' + промокод: +500₴!'; }
+          else if(promo === 'VIP') { bonusBalance += 2000; bonusMsg = ' + VIP: +2000₴!'; }
+          const newUser = {
+            pass: p, email: email || '', balance: bonusBalance,
+            id: Math.floor(Math.random()*900000)+100000, tag: 'Новачок 🌱', avatar: '👤',
+            dailyStreak: 0, freeSlots: freeSpins, luckyGamesLeft: 3, luckyGamesUsed: 0,
+            registeredAt: Date.now(), lastSeen: Date.now(),
+            totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
+          };
+          if(promo) newUser.usedPromo = promo;
+          return db.ref('users/' + n).set(newUser).then(() => {
+            if(btn) btn.textContent = '✅ Вхід...';
+            notify('🎉 Акаунт створено! Бонус: ' + bonusBalance + '₴ + ' + freeSpins + ' фріспінів!' + bonusMsg, 'success');
+            currentUser = n;
+            localStorage.setItem('royal_online_user', n);
+            db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonusBalance + '₴', date: Date.now() });
+            startDataSync();
+          });
+        }).catch(err => { reset(); showAuthError('Помилка з\'єднання. Перевір інтернет.'); });
+      } catch(e) { reset(); showAuthError('Помилка: ' + e.message); }
+    }
+
+    function toggleAuthMode(reg) {
+      switchAuthTab(reg ? 'reg' : 'login');
+    }
+
+    function switchAuthTab(mode) {
+      const isLogin = mode === 'login';
+      const loginForm = document.getElementById('loginForm');
+      const regForm   = document.getElementById('regForm');
+      const tabLogin  = document.getElementById('authTabLogin');
+      const tabReg    = document.getElementById('authTabReg');
+      const errEl     = document.getElementById('authError');
+      if(loginForm) loginForm.classList.toggle('hidden', !isLogin);
+      if(regForm)   regForm.classList.toggle('hidden', isLogin);
+      if(tabLogin)  tabLogin.classList.toggle('active', isLogin);
+      if(tabReg)    tabReg.classList.toggle('active', !isLogin);
+      if(errEl)     errEl.style.display = 'none';
     }
     
     function setPlayerStatus(status) {
@@ -9803,10 +10041,6 @@
       db.ref('online/'+currentUser).onDisconnect().remove();
     }
 
-    function escapeHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
     function sendLobbyMsg() {
       const input = document.getElementById('lobbyChatInput');
       const txt = input.value.trim();
@@ -10382,110 +10616,1933 @@
     });
 
     function createBot() {
-      const nick    = document.getElementById('botNick').value.trim();
-      const balance = parseInt(document.getElementById('botBalance').value) || 5000;
-      const avSel   = document.getElementById('botAvatar').value;
-      const avUrl   = document.getElementById('botAvatarUrl') ? document.getElementById('botAvatarUrl').value.trim() : '';
-      const activity= document.getElementById('botActivity').value;
+      const nick     = (document.getElementById('botNick')?.value || '').trim();
+      const balance  = parseInt(document.getElementById('botBalance')?.value) || 5000;
+      const avSel    = document.getElementById('botAvatar')?.value || '🤖';
+      const avUrl    = document.getElementById('botAvatarUrl')?.value?.trim() || '';
+      const activity = document.getElementById('botActivity')?.value || 'active';
+      const pers     = document.getElementById('botPersonality')?.value || 'balanced';
 
       if(!nick || nick.length < 2) return notify('Введіть нік бота (мін. 2 символи)', 'error');
-      if(!/^[a-zA-Zа-яА-ЯёЁіІїЇєЄ0-9_]+$/.test(nick)) return notify('Нік може містити лише букви, цифри та _', 'error');
+      if(!/^[a-zA-Zа-яА-ЯіІїЇєЄ0-9_]+$/.test(nick)) return notify('Нік: лише букви, цифри та _', 'error');
 
-      const avatarEmoji = avSel === 'custom' ? '👤' : avSel;
+      const avatarEmoji = avSel === 'custom' ? '🤖' : avSel;
       const avatarUrl   = avSel === 'custom' ? avUrl : null;
 
-      // Створюємо юзера-бота в Firebase
-      db.ref('users/' + nick).set({
-        balance, tag: '', isBot: true, isActive: activity === 'active',
-        createdBy: currentUser, createdAt: Date.now(),
-        regDate: Date.now(), dailyStreak: 0, id: 'BOT_' + Date.now(),
-        avatar: avatarUrl || avatarEmoji,
-        stats: { gamesPlayed: Math.floor(Math.random()*500)+50, biggestWin: Math.floor(Math.random()*5000)+500 },
-        totalWagered: Math.floor(Math.random()*50000)+1000,
+      db.ref('users/' + nick).once('value', snap => {
+        if(snap.exists() && !snap.val().isBot) return notify('Нік вже зайнятий реальним гравцем!', 'error');
+
+        const botData = {
+          balance, tag: '', isBot: true, isActive: activity === 'active',
+          personality: pers,
+          createdBy: currentUser, createdAt: Date.now(),
+          registeredAt: Date.now(), lastSeen: Date.now(),
+          dailyStreak: 0, id: 'BOT_' + Date.now(),
+          avatar: avatarUrl || avatarEmoji,
+          totalGames: Math.floor(Math.random()*500)+50,
+          totalWins:  Math.floor(Math.random()*200)+20,
+          totalWagered: Math.floor(Math.random()*50000)+1000,
+          stats: { gamesPlayed: Math.floor(Math.random()*500)+50, biggestWin: Math.floor(Math.random()*5000)+500 },
+        };
+
+        db.ref('users/' + nick).set(botData).then(() => {
+          if(activity === 'active') {
+            addBotToEngine(nick, botData);
+          }
+          notify('🤖 Бот ' + nick + ' створено! (' + pers + ')', 'success');
+          document.getElementById('botNick').value = '';
+          loadBots();
+        });
+      });
+    }
+
+    // ╔══════════════════════════════════════════════════════╗
+    // ║            БОТ-ДВИЖОК v2 — постійна гра             ║
+    // ╚══════════════════════════════════════════════════════╝
+
+    var BOT_GAMES = [
+      { game:'🎰 Слоти',    minBet:50,  maxBet:2000, rtp:.95 },
+      { game:'🚀 Краш',    minBet:100, maxBet:5000, rtp:.97 },
+      { game:'💣 Майнер',  minBet:100, maxBet:3000, rtp:.96 },
+      { game:'🎲 Dice',    minBet:50,  maxBet:1000, rtp:.99 },
+      { game:'🌀 Limbo',   minBet:100, maxBet:2000, rtp:.96 },
+      { game:'🃏 Блекджек',minBet:200, maxBet:3000, rtp:.995 },
+      { game:'🔻 Plinko',  minBet:100, maxBet:2000, rtp:.98 },
+      { game:'🎡 Рулетка', minBet:100, maxBet:3000, rtp:.973 },
+      { game:'🪙 Coinflip', minBet:200, maxBet:5000, rtp:.98 },
+      { game:'⚽ Спорт',   minBet:100, maxBet:2000, rtp:.94 },
+      { game:'🃏 Бакара',  minBet:300, maxBet:5000, rtp:.989 },
+      { game:'🔫 Рулетка Ризику', minBet:500, maxBet:5000, rtp:.85 },
+      { game:'🏇 Скачки',  minBet:200, maxBet:2000, rtp:.80 },
+    ];
+
+    var BOT_MESSAGES = [
+      'Тільки що зробив x{{mult}} на {{game}}! 🔥', 'Хто грає зараз?',
+      'Виграв {{amount}}₴ за одну ставку 😤', '{{game}} — топ гра!',
+      'Хто ставить на краш разом? 🚀', 'Серія перемог — 4 поспіль 🏆',
+      'Ніхто не зупинить мій стрік 💪', 'Ставлю ва-банк 😅',
+      'Кому пощастить сьогодні — мені чи казино?', 'Ого! Що за ніч 🤑',
+      'Блекджек дав 21 з першої 🃏', 'Майнер — клас коли знаєш де міни',
+      'Вперше граю в {{game}} — сподобалось!', 'Знову програв... але не здамся',
+      'Фортуна любить сміливих!', 'Рекорд побитий: {{amount}}₴!',
+    ];
+
+    var BOT_PERSONALITIES = {
+      aggressive: { betMult:[1.5,3.0], winRate:.42, msgFreq:.45, playInterval:[8,20]  },
+      balanced:   { betMult:[0.8,1.5], winRate:.47, msgFreq:.25, playInterval:[15,40] },
+      conservative:{ betMult:[0.3,0.8],winRate:.52, msgFreq:.15, playInterval:[25,60] },
+      whale:      { betMult:[3.0,8.0], winRate:.40, msgFreq:.5,  playInterval:[5,15]  },
+    };
+
+    let _botEngine = null;
+    let _activeBotData = {}; // nick → {balance, personality, nextPlay}
+
+    function startBotEngine() {
+      if(_botEngine) return; // already running
+      // Load all active bots from Firebase
+      db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
+        const bots = snap.val() || {};
+        Object.entries(bots).forEach(([nick, data]) => {
+          if(data.banned) return;
+          const personalities = Object.keys(BOT_PERSONALITIES);
+          const pers = data.personality || personalities[Math.floor(Math.random()*personalities.length)];
+          const nextDelay = Math.random() * 30000 + 5000;
+          _activeBotData[nick] = {
+            balance: data.balance || 5000,
+            personality: pers,
+            nextPlay: Date.now() + nextDelay,
+            avatarEmoji: data.avatar || '🤖',
+          };
+        });
+        if(Object.keys(_activeBotData).length === 0) return;
+        // Start engine tick every 5 seconds
+        _botEngine = setInterval(botEngineTick, 5000);
+        console.log('🤖 Бот-движок запущено для', Object.keys(_activeBotData).length, 'ботів');
+      });
+    }
+
+    function botEngineTick() {
+      const now = Date.now();
+      Object.entries(_activeBotData).forEach(([nick, bot]) => {
+        if(now < bot.nextPlay) return;
+        botPlayGame(nick, bot);
+      });
+    }
+
+    function botPlayGame(nick, bot) {
+      const pers = BOT_PERSONALITIES[bot.personality] || BOT_PERSONALITIES.balanced;
+      const g = BOT_GAMES[Math.floor(Math.random() * BOT_GAMES.length)];
+
+      // Calculate bet based on personality
+      const betMultiplier = pers.betMult[0] + Math.random() * (pers.betMult[1] - pers.betMult[0]);
+      const baseBet = Math.min(g.maxBet, Math.max(g.minBet, Math.floor(bot.balance * 0.02 * betMultiplier)));
+      const bet = Math.round(baseBet / 50) * 50; // round to 50s
+
+      // Determine outcome
+      const isWin = Math.random() < pers.winRate;
+      const mult = isWin ? parseFloat((Math.random() * (
+        bot.personality === 'whale' ? 8 :
+        bot.personality === 'aggressive' ? 6 : 4
+      ) + 1.1).toFixed(2)) : 0;
+      const pnl = isWin ? Math.floor(bet * mult - bet) : -bet;
+
+      // Update local balance
+      bot.balance = Math.max(200, bot.balance + pnl);
+
+      // Schedule next game
+      const interval = pers.playInterval;
+      bot.nextPlay = Date.now() + (interval[0] + Math.random() * (interval[1] - interval[0])) * 1000;
+
+      // Write to Firebase
+      db.ref('users/' + nick + '/balance').set(bot.balance);
+      db.ref('users/' + nick + '/lastSeen').set(Date.now());
+      db.ref('users/' + nick + '/totalGames').set(firebase.database.ServerValue.increment(1));
+      if(isWin) db.ref('users/' + nick + '/totalWins').set(firebase.database.ServerValue.increment(1));
+      db.ref('users/' + nick + '/totalWagered').set(firebase.database.ServerValue.increment(bet));
+
+      // Live bets feed
+      db.ref('live_bets').push({
+        user: nick, game: g.game, bet, mult: isWin ? mult : 0,
+        pnl, isWin, ts: Date.now(), isBot: true,
       });
 
-      if(activity === 'active') {
-        scheduleBotMessages(nick, avatarEmoji, avatarUrl);
-        scheduleBotGames(nick, balance);
+      // Jackpot contribution (0.5% of all bets)
+      db.ref('casino_stats/jackpot').set(firebase.database.ServerValue.increment(Math.floor(bet * 0.005)));
+
+      // Casino win stats
+      if(!isWin) db.ref('casino_stats/todayWins').set(firebase.database.ServerValue.increment(1));
+
+      // Chat message (random chance)
+      if(Math.random() < pers.msgFreq) {
+        const tpl = BOT_MESSAGES[Math.floor(Math.random() * BOT_MESSAGES.length)];
+        const msg = tpl
+          .replace('{{mult}}', mult)
+          .replace('{{game}}', g.game)
+          .replace('{{amount}}', formatNumber(Math.abs(pnl)));
+        // Post in both global chat and lobby chat
+        const chatMsg = { user: nick, text: msg, ts: Date.now(), avatar: bot.avatarEmoji, isBot: true };
+        if(Math.random() < 0.5) db.ref('global_chat').push(chatMsg);
+        db.ref('lobby_chat').push({ sender: nick, text: msg, time: Date.now(), isBot: true });
       }
 
-      notify('🤖 Бот ' + nick + ' створено!', 'success');
-      document.getElementById('botNick').value = '';
-      loadBots();
+      // Big win announcement
+      if(isWin && pnl > 5000) {
+        db.ref('global_chat').push({
+          user: '🏆 SlotOK',
+          text: `🎉 ${nick} щойно виграв ${formatNumber(pnl)}₴ в ${g.game}! Мультиплікатор ×${mult}`,
+          ts: Date.now(), avatar: '🏆', isBot: true,
+        });
+      }
+
+      // Auto refill if balance too low
+      if(bot.balance < 500) {
+        bot.balance = Math.floor(Math.random() * 8000) + 3000;
+        db.ref('users/' + nick + '/balance').set(bot.balance);
+      }
     }
 
-    const BOT_MESSAGES = [
-      'Тільки що зробив x{{mult}} на слотах! 🎰', 'Хто грає в краш? 🚀',
-      'Удача сьогодні на моєму боці! 💰', 'Ставлю 500 на чорне 🎡',
-      'Ого, виграв {{amount}}₴! 🤑', 'Хто ще в онлайні?',
-      'Монополія — найкраща гра! 🎩', 'Жаль, програв... спробую ще раз',
-      'Блекджек дав мені 21! 🃏', 'Краш злетів до x{{mult}}!',
-      'Майнер — моя улюблена! 💣', 'Рулетка — я вірю в зелений 🟢',
-      '{{amount}}₴ за один спін! 🎰', 'Хто ще ставить на спорт?',
-    ];
+    function addBotToEngine(nick, data) {
+      const personalities = Object.keys(BOT_PERSONALITIES);
+      const pers = data.personality || personalities[Math.floor(Math.random() * personalities.length)];
+      _activeBotData[nick] = {
+        balance: data.balance || 5000,
+        personality: pers,
+        nextPlay: Date.now() + Math.random() * 15000 + 3000,
+        avatarEmoji: data.avatar || '🤖',
+      };
+      if(!_botEngine) _botEngine = setInterval(botEngineTick, 5000);
+    }
+
+    function stopBotEngine() {
+      if(_botEngine) { clearInterval(_botEngine); _botEngine = null; }
+    }
 
     function scheduleBotMessages(nick, avatarEmoji, avatarUrl) {
-      for(let i = 0; i < 4; i++) {
-        setTimeout(() => {
-          const tpl = BOT_MESSAGES[Math.floor(Math.random()*BOT_MESSAGES.length)];
-          const msg = tpl
-            .replace('{{mult}}', (Math.random()*10+1.5).toFixed(1))
-            .replace('{{amount}}', formatNumber((Math.floor(Math.random()*100)+5)*100));
-          db.ref('lobby_chat').push({
-            sender: nick, text: msg, time: Date.now(),
-            isBot: true, avatarEmoji, avatarUrl,
-          });
-        }, (i+1) * (Math.random()*60000 + 30000));
+      // Handled by bot engine
+    }
+
+    function scheduleBotGames(nick, startBalance) {
+      // Handled by bot engine
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    var FIREBASE_SECURITY_RULES = `{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        "balance":    { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "isAdmin":    { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
+        "isBot":      { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
+        "banned":     { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" }
+      }
+    },
+    "global_chat": {
+      ".read":  "auth != null",
+      ".write": "auth != null",
+      "$msg": {
+        ".validate": "newData.child('text').val().length <= 300 && newData.child('user').val().length <= 30"
+      }
+    },
+    "live_bets":        { ".read": "auth != null", ".write": "auth != null" },
+    "deposit_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true || newData.child('user').val() === auth.uid", ".write": "auth != null" },
+    "withdraw_requests":{ ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
+    "pm": {
+      "$user": {
+        ".read":  "$user === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "auth != null"
+      }
+    },
+    "casino_stats":     { ".read": true, ".write": "auth != null" },
+    "leaderboard":      { ".read": true, ".write": "auth != null" },
+    "lobby_chat":       { ".read": "auth != null", ".write": "auth != null" },
+    ".read":  false,
+    ".write": false
+  }
+}`;
+
+    function showFirebaseRules() {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box;';
+      modal.innerHTML = `
+        <div style="max-width:600px;margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-family:'Orbitron',monospace;font-size:16px;color:#d4af37;">🛡️ Firebase Security Rules</div>
+            <button onclick="this.closest('div[style]').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 14px;cursor:pointer;">✕ Закрити</button>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:12px;font-family:monospace;font-size:11px;color:#aaa;white-space:pre-wrap;overflow-x:auto;max-height:60vh;overflow-y:auto;">${FIREBASE_SECURITY_RULES}</div>
+          <button onclick="navigator.clipboard.writeText(FIREBASE_SECURITY_RULES);notify('✅ Rules скопійовано!','success')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:10px;padding:12px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">📋 Копіювати правила</button>
+          <div style="font-size:10px;color:#444;margin-top:8px;text-align:center;">Вставте ці правила в Firebase Console → Realtime Database → Rules</div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 2: Provably Fair — SHA-256 для Dice та Plinko        ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    let _serverSeed   = '';
+    let _clientSeed   = Math.random().toString(36).slice(2, 10);
+    let _nonce        = 0;
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function getProvablyFairResult(min = 1, max = 100) {
+      if(!_serverSeed) _serverSeed = Math.random().toString(36).slice(2, 18);
+      _nonce++;
+      const combined = `${_serverSeed}:${_clientSeed}:${_nonce}`;
+      const hash = await sha256(combined);
+      // Use first 8 hex chars as a number
+      const num = parseInt(hash.slice(0, 8), 16);
+      return min + (num % (max - min + 1));
+    }
+
+    function generateNewClientSeed() {
+      _clientSeed = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      _nonce = 0;
+      notify('🎲 Новий Client Seed: ' + _clientSeed, 'info');
+    }
+
+    function showProvablyFairModal(game, serverSeed, clientSeed, nonce, result) {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:20px;padding:20px;max-width:380px;width:100%;">
+          <div style="font-family:'Orbitron',monospace;font-size:15px;color:#3dd68c;margin-bottom:14px;">🔐 Provably Fair — ${game}</div>
+          <div style="font-size:11px;color:#555;margin-bottom:6px;">Server Seed (hashed):</div>
+          <div style="background:#0a0a0a;border-radius:8px;padding:8px 10px;font-family:monospace;font-size:11px;color:#888;word-break:break-all;margin-bottom:10px;">${serverSeed.slice(0,16)}...${serverSeed.slice(-8)}</div>
+          <div style="font-size:11px;color:#555;margin-bottom:6px;">Client Seed:</div>
+          <div style="background:#0a0a0a;border-radius:8px;padding:8px 10px;font-family:monospace;font-size:12px;color:#d4af37;margin-bottom:10px;">${clientSeed}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;">Nonce</div><div style="font-weight:900;color:#4a9eff;">${nonce}</div></div>
+            <div style="background:#0a0a0a;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;">Результат</div><div style="font-weight:900;color:#3dd68c;">${result}</div></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="generateNewClientSeed();this.closest('div[style]').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.3);border-radius:10px;padding:10px;color:#3dd68c;cursor:pointer;font-size:12px;">🔄 Новий seed</button>
+            <button onclick="this.closest('div[style]').remove()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid #222;border-radius:10px;padding:10px;color:#666;cursor:pointer;font-size:12px;">✕ Закрити</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 3: Rate Limiting — чат і ставки                      ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    const _chatTimes    = [];
+    const CHAT_MAX_MSGS = 4;      // max messages
+    const CHAT_WINDOW   = 10000;  // per 10 seconds
+    const CHAT_COOLDOWN = 2000;   // min 2s between messages
+
+    function checkChatRateLimit() {
+      const now = Date.now();
+      // Remove old entries outside window
+      while(_chatTimes.length && now - _chatTimes[0] > CHAT_WINDOW) _chatTimes.shift();
+      if(_chatTimes.length && now - _chatTimes[_chatTimes.length - 1] < CHAT_COOLDOWN) {
+        const wait = Math.ceil((CHAT_COOLDOWN - (now - _chatTimes[_chatTimes.length - 1])) / 1000);
+        notify(`⏱ Почекай ${wait}с перед наступним повідомленням`, 'error');
+        return false;
+      }
+      if(_chatTimes.length >= CHAT_MAX_MSGS) {
+        notify('🚫 Занадто швидко! Максимум 4 повідомлення за 10 секунд', 'error');
+        return false;
+      }
+      _chatTimes.push(now);
+      return true;
+    }
+
+    const _betTimes   = {};        // gameKey → last bet timestamp
+    const BET_COOLDOWN_MS = 600;   // min 600ms between bets
+
+    function checkBetRateLimit(gameKey) {
+      const now = Date.now();
+      if(_betTimes[gameKey] && now - _betTimes[gameKey] < BET_COOLDOWN_MS) {
+        notify('⚡ Не так швидко! Зачекай трохи', 'error');
+        return false;
+      }
+      _betTimes[gameKey] = now;
+      return true;
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 4: Push Notifications — Firebase FCM                 ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    async function requestPushPermission() {
+      if(!('Notification' in window)) return notify('Браузер не підтримує сповіщення', 'error');
+      const perm = await Notification.requestPermission();
+      if(perm === 'granted') {
+        localStorage.setItem('pushEnabled', '1');
+        notify('🔔 Сповіщення увімкнено!', 'success');
+        sendNativeNotif('🎰 SlotOK', 'Ви підписались на сповіщення! 🎉');
+        // Save FCM token placeholder (real FCM requires service worker)
+        if('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+        db.ref('users/'+currentUser+'/pushEnabled').set(true);
+      } else {
+        notify('❌ Сповіщення заблоковано браузером', 'error');
       }
     }
 
-    // Bot auto-play simulation — shows in live_bets feed
-    const BOT_GAMES = [
-      { game:'🎰 Слоти', emoji:'🎰', minBet:50, maxBet:2000 },
-      { game:'🚀 Краш',  emoji:'🚀', minBet:100, maxBet:5000 },
-      { game:'💣 Майнер',emoji:'💣', minBet:100, maxBet:3000 },
-      { game:'🎲 Dice',  emoji:'🎲', minBet:50,  maxBet:1000 },
-      { game:'🌀 Limbo', emoji:'🌀', minBet:100, maxBet:2000 },
-      { game:'🃏 Блекджек',emoji:'🃏',minBet:200, maxBet:3000 },
-      { game:'🔻 Plinko',emoji:'🔻', minBet:100, maxBet:2000 },
-    ];
+    function sendNativeNotif(title, body, icon = '🎰') {
+      if(Notification.permission !== 'granted') return;
+      if(!localStorage.getItem('pushEnabled')) return;
+      // Only send when tab is hidden
+      if(document.visibilityState === 'visible') return;
+      try { new Notification(title, { body, icon: '/favicon.ico' }); } catch(e) {}
+    }
 
-    function scheduleBotGames(nick, startBalance) {
-      let bal = startBalance;
-      const playCount = Math.floor(Math.random()*8) + 4; // 4-12 ігор
-      for(let i = 0; i < playCount; i++) {
-        setTimeout(() => {
-          const g = BOT_GAMES[Math.floor(Math.random()*BOT_GAMES.length)];
-          const bet = Math.floor(Math.random()*(g.maxBet-g.minBet)+g.minBet);
-          const isWin = Math.random() < 0.47; // 47% win rate
-          const mult = isWin ? (Math.random()*4+1.2).toFixed(2) : 0;
-          const pnl = isWin ? Math.floor(bet * mult - bet) : -bet;
-          bal = Math.max(100, bal + pnl);
+    function sendPushToUser(nick, title, body) {
+      // Store in Firebase — if user has push enabled, they'll get it next time they open the app
+      db.ref('users/'+nick+'/pendingNotifs').push({ title, body, ts: Date.now() });
+    }
 
-          // Update bot balance in Firebase
-          db.ref('users/'+nick+'/balance').set(bal);
+    function checkPendingNotifs() {
+      if(!currentUser) return;
+      db.ref('users/'+currentUser+'/pendingNotifs').once('value', snap => {
+        const notifs = snap.val();
+        if(!notifs) return;
+        Object.entries(notifs).slice(-3).forEach(([key, n]) => {
+          setTimeout(() => sendNativeNotif(n.title, n.body), 500);
+        });
+        // Clear after reading
+        db.ref('users/'+currentUser+'/pendingNotifs').remove();
+      });
+    }
 
-          // Publish to live bets feed
-          db.ref('live_bets').push({
-            user: nick, game: g.game, emoji: g.emoji,
-            bet, mult: isWin ? parseFloat(mult) : 0,
-            pnl, isWin, ts: Date.now(), isBot: true,
-          });
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 5: 2FA для великих виводів                           ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    const WITHDRAW_2FA_THRESHOLD = 5000; // ₴ — поріг для 2FA
+    let _pending2FAWithdraw = null;
+    let _2faCode = null;
+    let _2faExpiry = 0;
 
-          // Occasionally post in chat
-          if(Math.random() < 0.3) {
-            const chatMsg = isWin
-              ? `Щойно виграв ${formatNumber(Math.abs(pnl))}₴ в ${g.game}! ${g.emoji}`
-              : `Нудно... програв у ${g.game} 😅`;
-            db.ref('lobby_chat').push({ sender: nick, text: chatMsg, time: Date.now(), isBot: true });
-          }
-        }, (i+1) * (Math.random()*45000 + 15000)); // 15-60 sec between games
+    function generate2FACode() {
+      _2faCode = String(Math.floor(100000 + Math.random() * 900000));
+      _2faExpiry = Date.now() + 5 * 60 * 1000; // 5 хвилин
+      return _2faCode;
+    }
+
+    function request2FA(withdrawData, onSuccess) {
+      const code = generate2FACode();
+      _pending2FAWithdraw = { data: withdrawData, onSuccess };
+      // Send code via PM (admin will see it too)
+      db.ref('pm/'+currentUser+'/'+db.ref().push().key).set({
+        from: '🔐 SlotOK Security', to: currentUser,
+        text: `🔐 Ваш код підтвердження виводу: **${code}**\n\nСума: ${formatNumber(withdrawData.amount)}₴\n⏱ Дійсний 5 хвилин. Нікому не повідомляйте!`,
+        ts: Date.now()
+      });
+      db.ref('users/'+currentUser+'/pmUnread').set(firebase.database.ServerValue.increment(1));
+      // Show modal
+      show2FAModal(withdrawData.amount);
+      notify('🔐 Код підтвердження надіслано в особисті повідомлення!', 'info');
+    }
+
+    function show2FAModal(amount) {
+      const existing = document.getElementById('modal2FA');
+      if(existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.id = 'modal2FA';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:2px solid rgba(74,158,255,.3);border-radius:20px;padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:42px;margin-bottom:8px;">🔐</div>
+            <div style="font-family:'Orbitron',monospace;font-size:15px;color:#4a9eff;font-weight:900;">Підтвердження виводу</div>
+            <div style="font-size:12px;color:#666;margin-top:6px;">Сума: <b style="color:#d4af37;">${formatNumber(amount)}₴</b></div>
+            <div style="font-size:11px;color:#555;margin-top:4px;">Код надіслано в особисті повідомлення</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <input id="input2FA" type="number" placeholder="Введіть 6-значний код" maxlength="6"
+              style="text-align:center;font-size:22px;letter-spacing:6px;font-weight:900;border-color:rgba(74,158,255,.3);background:rgba(74,158,255,.04);"
+              onkeydown="if(event.key==='Enter')verify2FA()">
+          </div>
+          <div id="err2FA" style="color:#e74c3c;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="verify2FA()" style="flex:1;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:12px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-size:15px;">✅ Підтвердити</button>
+            <button onclick="cancel2FA()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:14px;color:#666;cursor:pointer;font-size:13px;">✕</button>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:10px;color:#333;">Код дійсний 5 хвилин · Не передавайте нікому</div>
+        </div>`;
+      document.body.appendChild(modal);
+      setTimeout(() => document.getElementById('input2FA')?.focus(), 100);
+    }
+
+    function verify2FA() {
+      const entered = document.getElementById('input2FA')?.value?.trim();
+      const errEl = document.getElementById('err2FA');
+      if(!entered) { if(errEl) errEl.textContent = 'Введіть код'; return; }
+      if(Date.now() > _2faExpiry) {
+        if(errEl) errEl.textContent = '❌ Код прострочено. Спробуй ще раз.';
+        _2faCode = null; return;
       }
+      if(entered !== _2faCode) {
+        if(errEl) errEl.textContent = '❌ Невірний код. Залишилось спроб: перевір PM';
+        return;
+      }
+      // Code correct!
+      document.getElementById('modal2FA')?.remove();
+      _2faCode = null;
+      if(_pending2FAWithdraw?.onSuccess) _pending2FAWithdraw.onSuccess();
+      _pending2FAWithdraw = null;
+      notify('✅ Вивід підтверджено!', 'success');
+    }
+
+    function cancel2FA() {
+      document.getElementById('modal2FA')?.remove();
+      _pending2FAWithdraw = null;
+      _2faCode = null;
+      notify('❌ Вивід скасовано', 'info');
+    }
+
+    // Патч submitWithdraw для 2FA
+    const _origSubmitWithdraw = typeof submitWithdraw === 'function' ? submitWithdraw : null;
+    function submitWithdrawWith2FA() {
+      const amtEl = document.getElementById('withdrawAmount') || document.getElementById('customWithdrawAmount');
+      const amount = parseInt(amtEl?.value) || selectedWithdrawAmount || 0;
+      if(amount >= WITHDRAW_2FA_THRESHOLD) {
+        request2FA({ amount }, () => {
+          if(_origSubmitWithdraw) _origSubmitWithdraw();
+          else submitWithdraw_core();
+        });
+      } else {
+        if(_origSubmitWithdraw) _origSubmitWithdraw();
+        else submitWithdraw_core();
+      }
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 6: Provably Fair — Dice і Plinko з seed-перевіркою   ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    async function rollDiceFair(dir) {
+      if(!checkBetRateLimit('dice')) return;
+      const bet = validateBet(document.getElementById('diceBet').value);
+      if(!bet) return;
+      const target = parseInt(document.getElementById('diceSlider').value);
+      const result = await getProvablyFairResult(1, 99);
+      const win = (dir === 'over') ? result > target : result < target;
+      const chance = dir === 'over' ? (99 - target) / 99 : (target - 1) / 99;
+      const mult = parseFloat((0.97 / chance).toFixed(2));
+      const winAmt = Math.floor(bet * mult);
+
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win ? winAmt - bet : -bet));
+      addWager(bet);
+      trackLbStat('wager', bet); trackLbStat('games', 1);
+      publishLiveBet('Dice ⚖️', '🎲', bet, win ? mult : 0);
+      playSound(win ? 'win' : 'loss');
+
+      const resEl = document.getElementById('diceResult');
+      const histEl = document.getElementById('diceHistory');
+      if(resEl) resEl.innerHTML = win
+        ? `<span style="color:var(--green);font-weight:900;">🎲 ${result} — ВИГРАШ! +${formatNumber(winAmt)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`
+        : `<span style="color:var(--red);font-weight:900;">🎲 ${result} — Програш -${formatNumber(bet)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`;
+      if(win) { notify('🎲 ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success'); addToHistory('Dice: +'+winAmt); }
+      else { notify('🎲 ' + result + ' — Програш', 'error'); addToHistory('Dice: -'+bet); }
+      // History dot
+      if(histEl) {
+        const dot = document.createElement('div');
+        dot.className = 'dice-result-dot';
+        dot.style.background = win ? 'var(--green)' : 'var(--red)';
+        dot.textContent = result;
+        histEl.insertBefore(dot, histEl.firstChild);
+        if(histEl.children.length > 20) histEl.removeChild(histEl.lastChild);
+      }
+      updateStreak(win); recordBalanceHistory();
+    }
+
+    async function dropPlinkoFair() {
+      if(!checkBetRateLimit('plinko')) return;
+      const bet = validateBet(document.getElementById('betAmountPlinko').value);
+      if(!bet) return;
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+      addWager(bet); trackQuest('totalGames',1);
+      publishLiveBet('Plinko ⚖️', '🔻', bet, '');
+      playSound('click');
+      const ball = document.getElementById('plinkoBall');
+      if(ball) ball.style.display = 'block';
+      const bucketCount = 7;
+      const fairNum = await getProvablyFairResult(0, 999);
+      const riskWeights = {
+        low:  [0.05,0.15,0.25,0.30,0.25,0.15,0.05],
+        med:  [0.08,0.12,0.20,0.25,0.20,0.12,0.08],
+        high: [0.12,0.08,0.12,0.20,0.12,0.08,0.12]
+      };
+      const w = riskWeights[plinkoRisk] || riskWeights.med;
+      const cum = []; w.reduce((s,v,i) => { cum[i] = s + v; return s + v; }, 0);
+      const r = fairNum / 1000;
+      let bucketIndex = cum.findIndex(c => r < c);
+      if(bucketIndex < 0) bucketIndex = 3;
+      const targetLeft = (bucketIndex * 14) + 7;
+      if(ball) ball.animate([{top:'0',left:'50%'},{top:'100%',left:targetLeft+'%'}], {duration:1200,fill:'forwards',easing:'ease-in'});
+      const mults = {low:[1.5,1.3,1.1,0.6,1.1,1.3,1.5], med:[5,2,1,0.2,1,2,5], high:[20,5,1.5,0,1.5,5,20]};
+      setTimeout(() => {
+        const mult = mults[plinkoRisk][bucketIndex];
+        const win = Math.floor(bet * mult);
+        if(mult > 0) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+        if(win > bet) { playSound('win'); notify(`🔻 +${win}₴ (×${mult}) `, 'success'); addToHistory('Plinko: +'+win); }
+        else { notify(`🔻 ×${mult} — ${win}₴`, mult > 0 ? 'info' : 'error'); addToHistory('Plinko: '+win); }
+        updateStreak(win >= bet); applyAutoSaveOnWin(win); recordBalanceHistory();
+        if(ball) ball.style.display = 'none';
+        // Show verify button
+        notify(`⚖️ <span onclick="showProvablyFairModal('Plinko','${_serverSeed}','${_clientSeed}',${_nonce},${fairNum})" style="cursor:pointer;text-decoration:underline;color:#4a9eff;">Перевірити чесність гри</span>`, 'info');
+      }, 1200);
+    }
+
+    // Override original functions with fair versions
+    // (called from HTML buttons — we patch here so HTML doesn't need changes)
+    window.rollDice = rollDiceFair;
+    window.dropPlinko = dropPlinkoFair;
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 7: Автоочищення live_bets та старих чат-повідомлень  ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    function startAutoCleanup() {
+      // Run every 10 minutes
+      setInterval(runCleanup, 10 * 60 * 1000);
+      // Also run on startup after 30 seconds
+      setTimeout(runCleanup, 30000);
+    }
+
+    async function runCleanup() {
+      const cutoff = Date.now() - 30 * 60 * 1000; // keep last 30 minutes
+      const chatCutoff = Date.now() - 6 * 60 * 60 * 1000; // keep last 6 hours of chat
+      let cleaned = 0;
+
+      // Clean live_bets older than 30 min
+      db.ref('live_bets').orderByChild('ts').endAt(cutoff).once('value', snap => {
+        const data = snap.val();
+        if(!data) return;
+        const keys = Object.keys(data);
+        if(keys.length < 50) return; // keep at least 50 entries
+        const toDelete = keys.slice(0, keys.length - 50);
+        const updates = {};
+        toDelete.forEach(k => { updates['live_bets/' + k] = null; cleaned++; });
+        if(Object.keys(updates).length) db.ref().update(updates);
+      });
+
+      // Clean global_chat older than 6 hours (keep last 200 messages)
+      db.ref('global_chat').orderByChild('ts').once('value', snap => {
+        const data = snap.val();
+        if(!data) return;
+        const entries = Object.entries(data).sort((a,b) => a[1].ts - b[1].ts);
+        if(entries.length <= 200) return;
+        const toDelete = entries.slice(0, entries.length - 200);
+        const updates = {};
+        toDelete.forEach(([k]) => { updates['global_chat/' + k] = null; cleaned++; });
+        if(Object.keys(updates).length) db.ref().update(updates);
+      });
+
+      // Clean lobby_chat keeping last 100
+      db.ref('lobby_chat').orderByChild('time').once('value', snap => {
+        const data = snap.val();
+        if(!data) return;
+        const entries = Object.entries(data).sort((a,b) => (a[1].time||0) - (b[1].time||0));
+        if(entries.length <= 100) return;
+        const toDelete = entries.slice(0, entries.length - 100);
+        const updates = {};
+        toDelete.forEach(([k]) => { updates['lobby_chat/' + k] = null; });
+        if(Object.keys(updates).length) db.ref().update(updates);
+      });
+    }
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ФІЧА 8: Rate limiting вже реалізовано вище                 ║
+    // + Патч validateBet щоб включав rate limit перевірку           ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    const _origValidateBet = validateBet;
+    function validateBetWithRateLimit(val, gameKey) {
+      if(gameKey && !checkBetRateLimit(gameKey)) return null;
+      return _origValidateBet(val);
+    }
+
+    // Старт автоочищення при логіні
+    function startAllBackgroundTasks() {
+      startAutoCleanup();
+      checkPendingNotifs();
+    }
+
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  НОВІ ФУНКЦІЇ: пароль, CSV, пошук, AI, мова, крипто, P2P   ║
+    // ╚══════════════════════════════════════════════════════════════╝
+
+    // 1. ЗМІНА ПАРОЛЯ
+    function openChangePasswordModal() {
+      const m=document.createElement('div');
+      m.id='modalChangePass';
+      m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      m.innerHTML='<div style="background:#111;border:1.5px solid rgba(212,175,55,.2);border-radius:20px;padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;">'
+        +'<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;">🔑 Зміна пароля</div>'
+        +'<input id="cpOld" type="password" placeholder="Поточний пароль" style="margin-bottom:8px;">'
+        +'<input id="cpNew" type="password" placeholder="Новий пароль (мін. 6)" style="margin-bottom:8px;">'
+        +'<input id="cpConf" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">'
+        +'<div id="cpError" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>'
+        +'<div style="display:flex;gap:8px;">'
+        +'<button onclick="doChangePassword()" style="flex:1;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Змінити</button>'
+        +'<button onclick="document.getElementById(\'modalChangePass\').remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:13px;color:#666;cursor:pointer;">✕</button>'
+        +'</div></div>';
+      document.body.appendChild(m);
+    }
+    function doChangePassword() {
+      const old = document.getElementById('cpOld') ? document.getElementById('cpOld').value : '';
+      const nw  = document.getElementById('cpNew')  ? document.getElementById('cpNew').value  : '';
+      const conf= document.getElementById('cpConf') ? document.getElementById('cpConf').value : '';
+      const errEl = document.getElementById('cpError');
+      const showErr = function(e) { if(errEl) errEl.textContent = e; };
+      if(!old) return showErr('Введіть поточний пароль');
+      if(nw.length < 6) return showErr('Мінімум 6 символів');
+      if(nw !== conf) return showErr('Паролі не збігаються');
+      if(String(userData.pass) !== String(old)) return showErr('Поточний пароль невірний');
+      db.ref('users/' + currentUser + '/pass').set(nw).then(function() {
+        userData.pass = nw;
+        notify('✅ Пароль змінено!', 'success');
+        var modal = document.getElementById('modalChangePass');
+        if(modal) modal.remove();
+      }).catch(function() { showErr('Помилка збереження'); });
+    }
+
+    // 2. ЕКСПОРТ CSV
+    function exportHistoryCSV() {
+      if(!db) return notify('Немає зʼєднання', 'error');
+      db.ref('users/' + currentUser + '/history').once('value').then(function(snap) {
+        var data = snap.val();
+        if(!data) return notify('Історія порожня', 'error');
+        var rows = [['Дата', 'Операція']];
+        Object.values(data).sort(function(a,b){return a.date-b.date;}).forEach(function(h) {
+          rows.push([new Date(h.date).toLocaleString('uk-UA'), h.text]);
+        });
+        var csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+        var a = document.createElement('a');
+        a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + csv);
+        a.download = 'slotok_' + currentUser + '_history.csv';
+        a.click();
+        notify('📥 CSV завантажено!', 'success');
+      });
+    }
+
+    // 3. ГЛОБАЛЬНИЙ ПОШУК
+    var _searchDebounce = null;
+    function openGlobalSearch() {
+      var ex = document.getElementById('globalSearchModal');
+      if(ex) { ex.remove(); return; }
+      var m = document.createElement('div');
+      m.id = 'globalSearchModal';
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:9997;padding:16px;overflow-y:auto;';
+      m.innerHTML = '<div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">'
+        + '<div style="position:relative;flex:1;"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;">🔍</span>'
+        + '<input id="globalSearchInput" placeholder="Пошук гравців, ігор..." style="padding-left:40px;font-size:15px;" oninput="onGlobalSearch(this.value)"></div>'
+        + '<button onclick="document.getElementById(\'globalSearchModal\').remove()" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:10px 14px;color:#777;cursor:pointer;">✕</button></div>'
+        + '<div id="searchResults" style="color:#555;text-align:center;padding:30px;font-size:13px;">Введіть запит</div>';
+      document.body.appendChild(m);
+      setTimeout(function() { var el = document.getElementById('globalSearchInput'); if(el) el.focus(); }, 100);
+    }
+    function onGlobalSearch(query) {
+      clearTimeout(_searchDebounce);
+      var res = document.getElementById('searchResults');
+      if(!res) return;
+      if(query.length < 2) { res.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Мін. 2 символи</div>'; return; }
+      _searchDebounce = setTimeout(function() { runGlobalSearch(query); }, 400);
+    }
+    function runGlobalSearch(q) {
+      var res = document.getElementById('searchResults');
+      if(!res) return;
+      var ql = q.toLowerCase();
+      var results = [];
+      var gamesList = [
+        {name:'Слоти 🎰',tab:'slots'},{name:'Краш 🚀',tab:'crash'},{name:'Майнер 💣',tab:'mines'},
+        {name:'Dice 🎲',tab:'dice'},{name:'Plinko 🔻',tab:'plinko'},{name:'Блекджек 🃏',tab:'blackjack'},
+        {name:'Рулетка 🎡',tab:'roulette'},{name:'Coinflip 🪙',tab:'coinflip'},{name:'Hi-Lo 🃏',tab:'hilo'},
+        {name:'Limbo 🌀',tab:'limbo'},{name:'Tower 🗼',tab:'tower'},{name:'Keno 🔢',tab:'keno'},
+        {name:'Скачки 🏇',tab:'horseracing'},{name:'Quiz 🧠',tab:'quiz'},{name:'Balloon 🎈',tab:'balloon'},
+        {name:'Бакара 🃏',tab:'baccarat'},{name:'Відеопокер 🎴',tab:'videpoker'},
+      ];
+      gamesList.filter(function(g){ return g.name.toLowerCase().indexOf(ql) >= 0; }).forEach(function(g) {
+        results.push({type:'Гра', icon:'🎮', name:g.name, action:"switchTab('" + g.tab + "');document.getElementById('globalSearchModal').remove()"});
+      });
+      if(!db) {
+        showSearchResults(results, res);
+        return;
+      }
+      db.ref('users').orderByKey().limitToFirst(100).once('value').then(function(snap) {
+        var users = snap.val() || {};
+        Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !users[entry[0]].isBot && entry[0] !== currentUser; })
+          .forEach(function(entry) {
+            var nick = entry[0], u = entry[1];
+            results.push({type:'Гравець', icon:u.avatar||'👤', name:nick, sub:u.tag||'',
+              action:"openPlayerProfile('" + nick + "');document.getElementById('globalSearchModal').remove()"});
+          });
+        showSearchResults(results, res);
+      });
+    }
+    function showSearchResults(results, res) {
+      if(!results.length) { res.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
+      res.innerHTML = results.slice(0,20).map(function(r) {
+        return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:8px;cursor:pointer;">'
+          + '<div style="width:40px;height:40px;border-radius:10px;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
+          + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:#666;">' + r.sub + '</div>' : '') + '</div>'
+          + '<div style="font-size:9px;color:#444;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px;">' + r.type + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    // 4. РЕАКЦІЇ НА live_bets
+    function addLiveBetReaction(betKey, emoji) {
+      if(!currentUser || !db) return;
+      var path = 'live_bet_reactions/' + betKey + '/' + currentUser;
+      db.ref(path).once('value').then(function(s) {
+        if(s.val() === emoji) db.ref(path).remove();
+        else db.ref(path).set(emoji);
+      });
+      notify(emoji + ' Реакцію додано!', 'success');
+    }
+
+    // 5. AI ПІДКАЗКИ
+    function showAIHint(game) {
+      var hints = {
+        slots:['🎰 Починай з малих ставок, збільшуй при виграшній серії','⭐⭐⭐ дають +5 фріспінів — чекай!','Бонусний раунд — найцінніший режим'],
+        crash:['🚀 Виводи при x1.5-2.0 — найстабільніше','Ніколи не чекай >x10 без авто-виводу','70% крашів до x3.0'],
+        mines:['💣 Відкривай по діагоналі — безпечніше','При 3 мінах — безпечний прибуток до x2.5','Ніколи не стався на всі 24 клітинки'],
+        dice:['🎲 Roll over 50 — 50/50, найпростіша','При 3+ програшах — зменши ставку вдвічі','Martingale: x2 після кожного програшу'],
+        blackjack:['🃏 Завжди стій на 17+','Дублюй при 11 проти 2-10 дилера','Ніколи не бери страховку'],
+        plinko:['🔻 Середній ризик — найкращий ROI','Low ризик — стабільніше','High ризик: шанс x20']
+      };
+      var arr = (hints[game] || ['💡 Ніколи не ставь >5% балансу за раз','📊 Веди статистику','🎯 Вибирай ігри з RTP >95%']);
+      var hint = arr[Math.floor(Math.random() * arr.length)];
+      var el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;background:linear-gradient(135deg,#0a1420,#0d1a30);border:1.5px solid rgba(74,158,255,.3);border-radius:16px;padding:16px;z-index:9000;animation:slideUp .3s ease;';
+      el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px;">'
+        + '<div style="font-size:28px;flex-shrink:0;">🤖</div>'
+        + '<div><div style="font-size:11px;color:#4a9eff;font-weight:700;margin-bottom:4px;">AI Підказка</div>'
+        + '<div style="font-size:13px;color:#ccc;line-height:1.5;">' + hint + '</div></div>'
+        + '<button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:auto;">✕</button></div>';
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 6000);
+    }
+
+    // 6. МОВА UA/EN
+    var _currentLang = localStorage.getItem('slotok_lang') || 'uk';
+    function renderLangSwitcher() {
+      var ex = document.getElementById('langSwitcher');
+      if(ex) { ex.remove(); return; }
+      var el = document.createElement('div');
+      el.id = 'langSwitcher';
+      el.style.cssText = 'position:fixed;top:60px;right:10px;background:#111;border:1px solid #333;border-radius:12px;padding:10px;z-index:5000;animation:popIn .2s ease;min-width:165px;';
+      el.innerHTML = '<div style="font-size:10px;color:#555;margin-bottom:8px;text-align:center;text-transform:uppercase;letter-spacing:1px;">Мова / Language</div>'
+        + '<button onclick="setLanguage(\'uk\')" style="display:block;width:100%;background:' + (_currentLang==='uk'?'rgba(212,175,55,.15)':'rgba(255,255,255,.04)') + ';border:1px solid ' + (_currentLang==='uk'?'#d4af37':'#333') + ';border-radius:8px;padding:9px;color:' + (_currentLang==='uk'?'#d4af37':'#888') + ';cursor:pointer;margin-bottom:6px;font-size:13px;font-weight:' + (_currentLang==='uk'?'800':'400') + ';">🇺🇦 Українська</button>'
+        + '<button onclick="setLanguage(\'en\')" style="display:block;width:100%;background:' + (_currentLang==='en'?'rgba(74,158,255,.15)':'rgba(255,255,255,.04)') + ';border:1px solid ' + (_currentLang==='en'?'#4a9eff':'#333') + ';border-radius:8px;padding:9px;color:' + (_currentLang==='en'?'#4a9eff':'#888') + ';cursor:pointer;font-size:13px;font-weight:' + (_currentLang==='en'?'800':'400') + ';">🇬🇧 English</button>';
+      document.body.appendChild(el);
+    }
+    function setLanguage(lang) {
+      _currentLang = lang;
+      localStorage.setItem('slotok_lang', lang);
+      var ex = document.getElementById('langSwitcher');
+      if(ex) ex.remove();
+      notify(lang === 'en' ? '🌐 Language: English' : '🌐 Мова: Українська', 'info');
+    }
+
+    // 7. КРИПТО-СИМУЛЯТОР
+    var _cryptoPortfolio = JSON.parse(localStorage.getItem('slotok_crypto') || '{}');
+    var CRYPTO_ASSETS = [
+      {sym:'BTC', name:'Bitcoin',  emoji:'₿', base:95000, vol:0.04},
+      {sym:'ETH', name:'Ethereum', emoji:'Ξ', base:3500,  vol:0.06},
+      {sym:'SOL', name:'Solana',   emoji:'◎', base:180,   vol:0.08},
+      {sym:'BNB', name:'BNB',      emoji:'⬡', base:600,   vol:0.05},
+    ];
+    var _cryptoPrices = {};
+    function updateCryptoPrices() {
+      CRYPTO_ASSETS.forEach(function(a) {
+        var last = _cryptoPrices[a.sym] || a.base;
+        _cryptoPrices[a.sym] = Math.max(last * (1 + (Math.random() - 0.48) * a.vol), a.base * 0.3);
+      });
+    }
+    function openCryptoSimulator() {
+      updateCryptoPrices();
+      var m = document.createElement('div');
+      m.id = 'cryptoModal';
+      m.style.cssText = 'position:fixed;inset:0;background:#050505;z-index:9990;overflow-y:auto;padding:16px;padding-bottom:80px;';
+      m.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+        + '<button onclick="document.getElementById(\'cryptoModal\').remove();clearInterval(window._cryptoIv)" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>'
+        + '<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#d4af37;">📈 Крипто-симулятор</div></div>'
+        + '<div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px;margin-bottom:14px;">'
+        + '<div style="font-size:11px;color:#777;margin-bottom:4px;">Портфель (₴ SlotOK)</div>'
+        + '<div style="font-size:24px;font-weight:900;color:#d4af37;" id="cryptoPortfolioVal">₴ 0</div>'
+        + '<div style="font-size:11px;color:#555;margin-top:2px;">Баланс: ₴<span id="cryptoCasBal">' + formatNumber(userData.balance||0) + '</span></div></div>'
+        + '<div id="cryptoAssets"></div>';
+      document.body.appendChild(m);
+      renderCryptoAssets();
+      clearInterval(window._cryptoIv);
+      window._cryptoIv = setInterval(function() { updateCryptoPrices(); renderCryptoAssets(); }, 5000);
+    }
+    function buyCryptoFromBtn(btn) { buyCrypto(btn.dataset.sym, parseInt(btn.dataset.amt)); }
+    function sellCryptoFromBtn(btn) { sellCrypto(btn.dataset.sym); }
+
+    function renderCryptoAssets() {
+      var el = document.getElementById('cryptoAssets');
+      if(!el) return;
+      var pv = 0;
+      Object.keys(_cryptoPortfolio).forEach(function(s) { pv += (_cryptoPortfolio[s]||0) * (_cryptoPrices[s]||0); });
+      var pvel = document.getElementById('cryptoPortfolioVal');
+      if(pvel) pvel.textContent = '₴ ' + formatNumber(Math.round(pv));
+      el.innerHTML = CRYPTO_ASSETS.map(function(a) {
+        var price  = _cryptoPrices[a.sym] || a.base;
+        var owned  = _cryptoPortfolio[a.sym] || 0;
+        var chg    = ((price - a.base) / a.base * 100).toFixed(1);
+        var isPos  = parseFloat(chg) >= 0;
+        var sym    = a.sym;
+        var ownedHtml = owned > 0
+          ? '<div style="font-size:11px;color:#777;margin-bottom:8px;">У портфелі: '
+            + owned.toFixed(6) + ' ' + sym + ' ≈ ₴' + formatNumber(Math.round(owned*price)) + '</div>'
+          : '';
+        var sellBtn = owned > 0
+          ? '<button data-sym="' + sym + '" onclick="sellCryptoFromBtn(this)" '
+            + 'style="flex:1;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.2);'
+            + 'border-radius:8px;padding:8px;color:#e74c3c;cursor:pointer;font-size:12px;font-weight:700;">Продати</button>'
+          : '';
+        return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:10px;">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+          + '<div style="display:flex;align-items:center;gap:10px;">'
+          + '<div style="width:40px;height:40px;border-radius:12px;background:rgba(212,175,55,.1);'
+          + 'display:flex;align-items:center;justify-content:center;font-size:20px;">' + a.emoji + '</div>'
+          + '<div><div style="font-weight:800;">' + sym + '</div>'
+          + '<div style="font-size:10px;color:#555;">' + a.name + '</div></div></div>'
+          + '<div style="text-align:right;">'
+          + '<div style="font-weight:900;font-size:15px;">₴' + formatNumber(Math.round(price)) + '</div>'
+          + '<div style="font-size:11px;color:' + (isPos ? '#3dd68c' : '#e74c3c') + ';">'
+          + (isPos ? '+' : '') + chg + '%</div></div></div>'
+          + ownedHtml
+          + '<div style="display:flex;gap:6px;">'
+          + '<button data-sym="' + sym + '" data-amt="100" onclick="buyCryptoFromBtn(this)" '
+          + 'style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);'
+          + 'border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;font-weight:700;">+100₴</button>'
+          + '<button data-sym="' + sym + '" data-amt="500" onclick="buyCryptoFromBtn(this)" '
+          + 'style="flex:1;background:rgba(61,214,140,.08);border:1px solid rgba(61,214,140,.15);'
+          + 'border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;">+500₴</button>'
+          + sellBtn
+          + '</div></div>';
+      }).join('');
+    }
+
+    function buyCrypto(sym, amount) {
+      if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
+      var price = _cryptoPrices[sym];
+      if(!price) return;
+      var qty = amount / price;
+      _cryptoPortfolio[sym] = (_cryptoPortfolio[sym] || 0) + qty;
+      localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-amount));
+      userData.balance -= amount;
+      notify('✅ Куплено ' + qty.toFixed(6) + ' ' + sym + ' за ₴' + amount, 'success');
+      renderCryptoAssets();
+    }
+    function sellCrypto(sym) {
+      var qty = _cryptoPortfolio[sym];
+      if(!qty) return notify('Немає активу', 'error');
+      var value = Math.round(qty * (_cryptoPrices[sym] || 0));
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(value));
+      userData.balance += value;
+      delete _cryptoPortfolio[sym];
+      localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
+      notify('💰 Продано ' + sym + ' за ₴' + formatNumber(value), 'success');
+      renderCryptoAssets();
+    }
+
+    // 8. P2P ПОЗИКИ
+    function openP2PLoanModal() {
+      var m = document.createElement('div');
+      m.id = 'modalP2PLoan';
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      m.innerHTML = '<div style="max-width:400px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:15px;color:#d4af37;font-weight:900;">💸 P2P Позики</div>'
+        + '<button onclick="document.getElementById(\'modalP2PLoan\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<div style="background:#0d0d0d;border:1px solid rgba(212,175,55,.2);border-radius:14px;padding:14px;margin-bottom:12px;">'
+        + '<div style="font-size:13px;font-weight:800;color:#d4af37;margin-bottom:10px;">📤 Запросити позику</div>'
+        + '<input id="loanFrom" placeholder="Нік кредитора" style="margin-bottom:8px;">'
+        + '<input id="loanAmount" type="number" placeholder="Сума (₴)" style="margin-bottom:8px;">'
+        + '<select id="loanDays" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:8px;font-size:13px;">'
+        + '<option value="1">1 день · 5%</option><option value="3" selected>3 дні · 8%</option>'
+        + '<option value="7">7 днів · 12%</option><option value="14">14 днів · 18%</option></select>'
+        + '<button onclick="requestP2PLoan()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:10px;padding:12px;color:#000;font-weight:900;cursor:pointer;">📩 Надіслати запит</button></div>'
+        + '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:14px;">'
+        + '<div style="font-size:13px;font-weight:800;color:#aaa;margin-bottom:10px;">📋 Мої позики</div>'
+        + '<div id="myLoans" style="font-size:12px;color:#555;">Завантаження...</div></div></div>';
+      document.body.appendChild(m);
+      loadMyLoans();
+    }
+    function requestP2PLoan() {
+      var from = (document.getElementById('loanFrom') ? document.getElementById('loanFrom').value : '').trim();
+      var amount = parseInt(document.getElementById('loanAmount') ? document.getElementById('loanAmount').value : 0) || 0;
+      var days = parseInt(document.getElementById('loanDays') ? document.getElementById('loanDays').value : 3) || 3;
+      var interestMap = {1:5, 3:8, 7:12, 14:18};
+      var interest = interestMap[days] || 8;
+      if(!from || !amount) return notify('Заповни всі поля', 'error');
+      if(amount < 100) return notify('Мін. 100₴', 'error');
+      if(from === currentUser) return notify('Не можна позичати у себе', 'error');
+      db.ref('users/' + from).once('value').then(function(snap) {
+        if(!snap.exists()) return notify('Гравця не знайдено', 'error');
+        var key = db.ref('p2p_loans').push().key;
+        db.ref('p2p_loans/' + key).set({borrower:currentUser, lender:from, amount:amount, interest:interest, days:days, status:'pending', dueDate:Date.now()+days*86400000, createdAt:Date.now()});
+        db.ref('pm/' + from + '/' + db.ref().push().key).set({from:'💸 Позики', to:from, text:'💸 @' + currentUser + ' просить позику ₴' + formatNumber(amount) + ' на ' + days + ' дн (' + interest + '%). ID: ' + key, ts:Date.now()});
+        db.ref('users/' + from + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+        notify('📩 Запит надіслано гравцю ' + from, 'success');
+      });
+    }
+    function repayLoan(key) {
+      db.ref('p2p_loans/' + key).once('value').then(function(snap) {
+        if(!snap.exists()) return;
+        var l = snap.val();
+        var repay = Math.round(l.amount * (1 + l.interest / 100));
+        if(userData.balance < repay) return notify('Потрібно ₴' + formatNumber(repay), 'error');
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-repay));
+        db.ref('users/' + l.lender + '/balance').set(firebase.database.ServerValue.increment(repay));
+        db.ref('p2p_loans/' + key).update({status:'repaid', repaidAt:Date.now()});
+        notify('✅ Повернено ₴' + formatNumber(repay) + ' (з відсотками)', 'success');
+        loadMyLoans();
+      });
+    }
+    function loadMyLoans() {
+      var el = document.getElementById('myLoans');
+      if(!el || !currentUser) return;
+      db.ref('p2p_loans').orderByChild('borrower').equalTo(currentUser).limitToLast(5).once('value').then(function(snap) {
+        var loans = snap.val() || {};
+        var active = Object.entries(loans).filter(function(e){ return e[1].status !== 'repaid'; });
+        if(!active.length) { el.innerHTML = '<div style="color:#444;">Активних позик немає</div>'; return; }
+        el.innerHTML = active.map(function(entry) {
+          var k = entry[0], l = entry[1];
+          var repay = Math.round(l.amount * (1 + l.interest/100));
+          var due = new Date(l.dueDate).toLocaleDateString('uk-UA');
+          return '<div style="background:#111;border-radius:10px;padding:10px;margin-bottom:8px;">'
+            + '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'
+            + '<div><div style="font-weight:700;">₴' + formatNumber(l.amount) + ' · @' + l.lender + '</div><div style="font-size:10px;color:#555;">' + l.interest + '% · до ' + due + '</div></div>'
+            + '<div style="font-size:10px;color:' + (l.status==='active'?'#3dd68c':'#d4af37') + ';font-weight:700;">' + (l.status==='active'?'✅ АКТИВНА':'⏳ Очікує') + '</div></div>'
+            + (l.status === 'active' ? '<button onclick="repayLoan(\'' + k + '\')" style="width:100%;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:12px;">💸 Повернути ₴' + formatNumber(repay) + '</button>' : '')
+            + '</div>';
+        }).join('');
+      });
+    }
+
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  ВЕЛИКИЙ ПАТЧ — 30 нових функцій                           ║
+    // ╚══════════════════════════════════════════════════════════════╝
+
+    // ── TELEGRAM MINI APP ──────────────────────────────────────────
+    function initTelegramMiniApp() {
+      if (typeof window.Telegram === 'undefined' || !window.Telegram.WebApp) return;
+      var tgApp = window.Telegram.WebApp;
+      tgApp.ready();
+      tgApp.expand();
+      tgApp.setHeaderColor('#000000');
+      tgApp.setBackgroundColor('#050505');
+      if (tgApp.initDataUnsafe && tgApp.initDataUnsafe.user) {
+        var tgUser = tgApp.initDataUnsafe.user;
+        notify('✈️ Привіт, ' + (tgUser.first_name || 'Гравець') + '! Telegram MiniApp', 'info');
+      }
+      var btn = tgApp.MainButton;
+      btn.setText('🎰 ГРАТИ');
+      btn.onClick(function() { switchTab('lobby'); });
+    }
+    // Auto-init on load
+    setTimeout(function() { try { initTelegramMiniApp(); } catch(e) {} }, 1000);
+
+    // ── ДЕМО РЕЖИМ (гість без реєстрації) ─────────────────────────
+    var _isDemoMode = false;
+    function startDemoMode() {
+      _isDemoMode = true;
+      currentUser = 'demo_guest_' + Math.floor(Math.random()*9999);
+      userData = {
+        balance: 50000, tag: '🎮 Демо', avatar: '🎮', id: 0,
+        freeSlots: 50, totalGames: 0, totalWins: 0, totalWagered: 0,
+        dailyStreak: 0, isDemo: true,
+      };
+      var authScr = document.getElementById('auth-screen');
+      if (authScr) authScr.classList.add('hidden');
+      updateUI();
+      notify('🎮 Демо-режим! Баланс: ₴50 000 (не зберігається)', 'info');
+      var banner = document.createElement('div');
+      banner.id = 'demoBanner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#1a0040,#2a0060);border-bottom:1px solid #5a20c0;padding:6px 16px;text-align:center;z-index:8000;font-size:11px;color:#c9a0ff;display:flex;justify-content:space-between;align-items:center;';
+      banner.innerHTML = '<span>🎮 ДЕМО-РЕЖИМ · Всі дані скидаються</span><button onclick="document.getElementById(\'demoBanner\').remove();showAuthScreen()" style="background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:6px;padding:4px 10px;color:#000;font-weight:800;cursor:pointer;font-size:11px;">Реєстрація →</button>';
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+
+    // ── FOLLOW СИСТЕМА ─────────────────────────────────────────────
+    function followPlayer(nick) {
+      if (!nick || nick === currentUser || !db) return;
+      db.ref('users/' + currentUser + '/following/' + nick).once('value').then(function(snap) {
+        if (snap.exists()) {
+          db.ref('users/' + currentUser + '/following/' + nick).remove();
+          notify('👤 Відписались від ' + nick, 'info');
+        } else {
+          db.ref('users/' + currentUser + '/following/' + nick).set(Date.now());
+          db.ref('pm/' + nick + '/' + db.ref().push().key).set({
+            from: '👥 Підписки', to: nick,
+            text: '👥 @' + currentUser + ' підписався на вас!', ts: Date.now()
+          });
+          db.ref('users/' + nick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+          notify('✅ Ви підписались на ' + nick, 'success');
+        }
+      });
+    }
+
+    // ── BLOCK ГРАВЦЯ ───────────────────────────────────────────────
+    function blockUser(nick) {
+      if (!nick || nick === currentUser) return;
+      db.ref('users/' + currentUser + '/blocked/' + nick).once('value').then(function(snap) {
+        if (snap.exists()) {
+          db.ref('users/' + currentUser + '/blocked/' + nick).remove();
+          notify('🔓 ' + nick + ' розблоковано', 'info');
+        } else {
+          db.ref('users/' + currentUser + '/blocked/' + nick).set(Date.now());
+          notify('🚫 ' + nick + ' заблоковано. Більше не отримаєш ПМ від нього.', 'success');
+        }
+      });
+    }
+
+    // ── КАРТКА ГРАВЦЯ POPUP ────────────────────────────────────────
+    function showPlayerCard(nick, event) {
+      var existing = document.getElementById('playerCardPopup');
+      if (existing) existing.remove();
+      if (!nick || nick === currentUser) return;
+      db.ref('users/' + nick).once('value').then(function(snap) {
+        if (!snap.exists()) return;
+        var u = snap.val();
+        var card = document.createElement('div');
+        card.id = 'playerCardPopup';
+        var x = event ? Math.min(event.clientX, window.innerWidth - 200) : 50;
+        var y = event ? Math.min(event.clientY, window.innerHeight - 250) : 50;
+        card.style.cssText = 'position:fixed;top:' + y + 'px;left:' + x + 'px;background:#111;border:1.5px solid rgba(212,175,55,.3);border-radius:16px;padding:14px;z-index:9000;width:200px;animation:popIn .2s ease;box-shadow:0 8px 32px rgba(0,0,0,.8);';
+        var avHtml = (u.avatarUrl || (u.avatar && u.avatar.startsWith('http')))
+          ? '<img src="' + (u.avatarUrl || u.avatar) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(212,175,55,.3);">'
+          : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:24px;">' + (u.avatar || '👤') + '</div>';
+        card.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+          + avHtml
+          + '<div><div style="font-weight:800;font-size:13px;">' + nick + '</div>'
+          + '<div style="font-size:10px;color:#666;">' + (u.tag || 'Гравець') + '</div></div></div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:10px;">'
+          + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#d4af37;font-weight:800;">' + formatNumber(u.totalGames||0) + '</div><div style="color:#555;">Ігор</div></div>'
+          + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#3dd68c;font-weight:800;">₴' + formatNumber(u.totalWagered||0) + '</div><div style="color:#555;">Ставок</div></div>'
+          + '</div>'
+          + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+          + '<button onclick="switchTab(\'pm\');document.getElementById(\'pmToInput\').value=\'' + nick + '\';document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:8px;padding:7px;color:#4a9eff;cursor:pointer;font-size:11px;">✉️ ПМ</button>'
+          + '<button onclick="followPlayer(\'' + nick + '\');document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:11px;">👥 Follow</button>'
+          + '<button onclick="blockUser(\'' + nick + '\');document.getElementById(\'playerCardPopup\').remove()" style="background:rgba(231,76,60,.08);border:1px solid #222;border-radius:8px;padding:7px;color:#555;cursor:pointer;font-size:11px;">🚫</button>'
+          + '</div>';
+        document.body.appendChild(card);
+        // Close on outside click
+        setTimeout(function() {
+          document.addEventListener('click', function handler(e) {
+            if (!card.contains(e.target)) { card.remove(); document.removeEventListener('click', handler); }
+          });
+        }, 100);
+      });
+    }
+
+    // ── QR КОД РЕФЕРАЛЬНОГО ───────────────────────────────────────
+    function showReferralQR() {
+      var refCode = currentUser;
+      var url = 'https://slot-ok-beta.vercel.app?ref=' + refCode;
+      var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '&bgcolor=050505&color=d4af37&margin=10';
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = '<div style="background:#111;border:1.5px solid rgba(212,175,55,.3);border-radius:20px;padding:22px;max-width:300px;width:100%;text-align:center;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:15px;color:#d4af37;margin-bottom:14px;font-weight:900;">📲 QR-код реферала</div>'
+        + '<img src="' + qrUrl + '" style="width:200px;height:200px;border-radius:12px;display:block;margin:0 auto 12px;">'
+        + '<div style="font-size:11px;color:#666;margin-bottom:12px;">Відскануй і отримай бонус при реєстрації!</div>'
+        + '<div style="background:#0a0a0a;border-radius:8px;padding:8px;font-size:10px;color:#555;word-break:break-all;margin-bottom:12px;">' + url + '</div>'
+        + '<div style="display:flex;gap:8px;">'
+        + '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + url + '\').then(()=>notify(\'✅ Скопійовано!\',\'success\'))" style="flex:1;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:10px;color:#d4af37;cursor:pointer;font-size:12px;">📋 Копіювати</button>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:10px;padding:10px;color:#666;cursor:pointer;font-size:13px;">✕</button>'
+        + '</div></div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── SHAKE BONUS ────────────────────────────────────────────────
+    var _lastShakeBonus = 0;
+    var _shakeThreshold = 20;
+    var _lastAccel = {x:0,y:0,z:0};
+    function initShakeBonus() {
+      if (!window.DeviceMotionEvent) return;
+      window.addEventListener('devicemotion', function(e) {
+        var acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        var delta = Math.abs(acc.x - _lastAccel.x) + Math.abs(acc.y - _lastAccel.y) + Math.abs(acc.z - _lastAccel.z);
+        _lastAccel = {x: acc.x||0, y: acc.y||0, z: acc.z||0};
+        if (delta > _shakeThreshold && Date.now() - _lastShakeBonus > 3600000) {
+          _lastShakeBonus = Date.now();
+          var bonus = Math.floor(Math.random() * 200) + 50;
+          if (db && currentUser) {
+            db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bonus));
+            notify('📳 Потряс телефон — бонус +' + bonus + '₴! 🎉', 'success');
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          }
+        }
+      });
+    }
+
+    // ── СЕСІЙНІ ЛІМІТИ ─────────────────────────────────────────────
+    var _sessionStart = Date.now();
+    var _sessionSpent = 0;
+    var _sessionLimitTime = 0;
+    var _sessionLimitAmount = 0;
+    function setSessionLimits(maxMinutes, maxAmount) {
+      _sessionLimitTime   = maxMinutes * 60000;
+      _sessionLimitAmount = maxAmount;
+      localStorage.setItem('sessionLimitTime',   maxMinutes);
+      localStorage.setItem('sessionLimitAmount', maxAmount);
+      notify('⏰ Ліміти встановлено: ' + maxMinutes + ' хв · ₴' + formatNumber(maxAmount), 'success');
+    }
+    function checkSessionLimits(betAmount) {
+      if (_sessionLimitTime > 0 && Date.now() - _sessionStart > _sessionLimitTime) {
+        notify('⏰ Досягнуто ліміту часу сесії! Зроби перерву.', 'error');
+        return false;
+      }
+      if (_sessionLimitAmount > 0 && _sessionSpent + betAmount > _sessionLimitAmount) {
+        notify('💸 Досягнуто ліміту суми! Ліміт: ₴' + formatNumber(_sessionLimitAmount), 'error');
+        return false;
+      }
+      _sessionSpent += betAmount;
+      return true;
+    }
+    function openSessionLimitsModal() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = '<div style="background:#111;border:1.5px solid rgba(255,165,0,.2);border-radius:20px;padding:22px;max-width:340px;width:100%;">'
+        + '<div style="font-size:15px;font-weight:900;color:#f39c12;margin-bottom:14px;font-family:Orbitron,monospace;">⏰ Сесійні ліміти</div>'
+        + '<div style="font-size:11px;color:#666;margin-bottom:12px;">Встанови ліміти для відповідальної гри</div>'
+        + '<label style="font-size:11px;color:#888;display:block;margin-bottom:4px;">Максимум хвилин на сесію:</label>'
+        + '<input id="slTime" type="number" placeholder="60" value="' + (localStorage.getItem('sessionLimitTime')||60) + '" style="margin-bottom:10px;">'
+        + '<label style="font-size:11px;color:#888;display:block;margin-bottom:4px;">Максимум витрат за сесію (₴):</label>'
+        + '<input id="slAmount" type="number" placeholder="1000" value="' + (localStorage.getItem('sessionLimitAmount')||1000) + '" style="margin-bottom:14px;">'
+        + '<div style="display:flex;gap:8px;">'
+        + '<button onclick="setSessionLimits(parseInt(document.getElementById(\'slTime\').value)||60,parseInt(document.getElementById(\'slAmount\').value)||1000);this.closest(\'div[style]\').remove()" style="flex:1;background:linear-gradient(135deg,#f39c12,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Зберегти</button>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:13px;color:#666;cursor:pointer;">✕</button>'
+        + '</div></div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── НАГАДУВАННЯ ПРО ПАУЗУ ──────────────────────────────────────
+    var _breakReminderInterval = null;
+    function setBreakReminder(minutes) {
+      clearInterval(_breakReminderInterval);
+      if (!minutes) return;
+      _breakReminderInterval = setInterval(function() {
+        notify('⏸️ Ти граєш вже ' + minutes + ' хвилин. Зроби перерву! 🧘', 'info');
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        sendNativeNotif('⏸️ SlotOK — Перерва', 'Ти граєш вже ' + minutes + ' хвилин. Час відпочити!');
+      }, minutes * 60000);
+      notify('⏰ Нагадування про паузу: кожні ' + minutes + ' хв', 'success');
+    }
+
+    // ── ОНЛАЙН ТАЙМЕР ─────────────────────────────────────────────
+    var _onlineSeconds = parseInt(localStorage.getItem('slotok_online_total') || '0');
+    var _onlineTimer = null;
+    function startOnlineTimer() {
+      _onlineTimer = setInterval(function() {
+        _onlineSeconds++;
+        if (_onlineSeconds % 60 === 0) {
+          localStorage.setItem('slotok_online_total', _onlineSeconds);
+          if (db && currentUser) db.ref('users/' + currentUser + '/onlineSeconds').set(_onlineSeconds);
+          var el = document.getElementById('onlineTimeDisplay');
+          if (el) el.textContent = getOnlineTimeStr();
+        }
+      }, 1000);
+    }
+    function getOnlineTimeStr() {
+      var h = Math.floor(_onlineSeconds / 3600);
+      var m = Math.floor((_onlineSeconds % 3600) / 60);
+      return h + 'г ' + m + 'хв';
+    }
+
+    // ── СПИСОК ПОБАЖАНЬ ────────────────────────────────────────────
+    var _wishlist = JSON.parse(localStorage.getItem('slotok_wishlist') || '[]');
+    function toggleWishlist(item) {
+      var idx = _wishlist.indexOf(item);
+      if (idx >= 0) {
+        _wishlist.splice(idx, 1);
+        notify('💔 Видалено зі списку побажань', 'info');
+      } else {
+        _wishlist.push(item);
+        notify('❤️ Додано до списку побажань!', 'success');
+      }
+      localStorage.setItem('slotok_wishlist', JSON.stringify(_wishlist));
+    }
+    function showWishlist() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      var items = _wishlist.length
+        ? _wishlist.map(function(i) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;margin-bottom:8px;">'
+              + '<span style="font-size:13px;">' + i + '</span>'
+              + '<button onclick="toggleWishlist(\'' + i + '\');this.parentElement.remove()" style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.2);border-radius:6px;padding:4px 10px;color:#e74c3c;cursor:pointer;font-size:11px;">✕</button>'
+              + '</div>';
+          }).join('')
+        : '<div style="color:#555;text-align:center;padding:30px;">Список порожній</div>';
+      modal.innerHTML = '<div style="max-width:380px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:15px;color:#ff69b4;font-weight:900;">❤️ Список побажань</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + items + '</div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── КЛАНОВИЙ ЧАТ ──────────────────────────────────────────────
+    var _clanChatListener = null;
+    function initClanChat(clanId) {
+      if (!clanId) return;
+      var msgEl = document.getElementById('clanChatMessages');
+      if (!msgEl) return;
+      if (_clanChatListener) db.ref('clan_chats/' + clanId).off('value', _clanChatListener);
+      _clanChatListener = db.ref('clan_chats/' + clanId).limitToLast(50).on('value', function(snap) {
+        var msgs = snap.val() || {};
+        msgEl.innerHTML = Object.values(msgs).sort(function(a,b) { return a.ts-b.ts; }).map(function(m) {
+          var isMe = m.user === currentUser;
+          return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
+            + '<div style="font-size:20px;flex-shrink:0;">' + (m.avatar || '👤') + '</div>'
+            + '<div style="background:' + (isMe ? 'rgba(212,175,55,.08)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (isMe ? 'rgba(212,175,55,.15)' : 'rgba(255,255,255,.07)') + ';border-radius:12px;padding:8px 10px;max-width:72%;">'
+            + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + m.user + '</div>'
+            + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
+            + '</div></div>';
+        }).join('');
+        msgEl.scrollTop = msgEl.scrollHeight;
+      });
+    }
+    function sendClanChatMsg(clanId) {
+      var inp = document.getElementById('clanChatInput');
+      var text = inp ? inp.value.trim() : '';
+      if (!text || !clanId) return;
+      db.ref('clan_chats/' + clanId).push({ user: currentUser, text: text, avatar: userData.avatar || '👤', ts: Date.now() });
+      if (inp) inp.value = '';
+    }
+
+    // ── КЛАНОВИЙ БАНК ──────────────────────────────────────────────
+    function depositToClanBank(clanId, amount) {
+      if (!amount || amount < 100) return notify('Мін. 100₴', 'error');
+      if (!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-amount));
+      db.ref('clans/' + clanId + '/bank').set(firebase.database.ServerValue.increment(amount));
+      db.ref('clans/' + clanId + '/bankLog').push({ user: currentUser, amount: amount, ts: Date.now(), type: 'deposit' });
+      notify('🏦 Внесено в клановий банк: ₴' + formatNumber(amount), 'success');
+    }
+
+    // ── ЖУРНАЛ БЕЗПЕКИ ─────────────────────────────────────────────
+    function logSecurityEvent(type, details) {
+      if (!db || !currentUser) return;
+      db.ref('users/' + currentUser + '/securityLog').push({
+        type: type, details: details || '', ts: Date.now(),
+        ua: navigator.userAgent.slice(0, 80)
+      });
+    }
+    function showSecurityLog() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      var inner = '<div style="max-width:420px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:14px;color:#ff6b6b;font-weight:900;">📋 Журнал безпеки</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<div id="securityLogList" style="color:#555;font-size:12px;">Завантаження...</div></div>';
+      modal.innerHTML = inner;
+      document.body.appendChild(modal);
+      db.ref('users/' + currentUser + '/securityLog').limitToLast(20).once('value').then(function(snap) {
+        var el = document.getElementById('securityLogList');
+        if (!el) return;
+        var data = snap.val();
+        if (!data) { el.innerHTML = '<div style="color:#444;text-align:center;padding:20px;">Подій немає</div>'; return; }
+        el.innerHTML = Object.values(data).sort(function(a,b){return b.ts-a.ts;}).map(function(e) {
+          var icons = { login: '🔑', register: '📝', passChange: '🔑', largeWithdraw: '💸', failed_login: '⚠️' };
+          return '<div style="display:flex;gap:10px;padding:10px;background:#0a0a0a;border-radius:10px;margin-bottom:8px;">'
+            + '<div style="font-size:18px;">' + (icons[e.type] || '📋') + '</div>'
+            + '<div><div style="font-size:12px;font-weight:700;">' + e.type + '</div>'
+            + '<div style="font-size:10px;color:#555;">' + new Date(e.ts).toLocaleString('uk-UA') + '</div>'
+            + (e.details ? '<div style="font-size:10px;color:#666;margin-top:2px;">' + e.details + '</div>' : '')
+            + '</div></div>';
+        }).join('');
+      });
+    }
+
+    // ── ТІНЬОВИЙ РЕЖИМ АДМІНА ─────────────────────────────────────
+    var _shadowUser = null;
+    function enterShadowMode(targetNick) {
+      if (!userData.isAdmin && currentUser !== 'theivankoo') return notify('Тільки для адміна', 'error');
+      db.ref('users/' + targetNick).once('value').then(function(snap) {
+        if (!snap.exists()) return notify('Гравця не знайдено', 'error');
+        _shadowUser = currentUser;
+        var data = snap.val();
+        userData = data;
+        var banner = document.createElement('div');
+        banner.id = 'shadowBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#3a0000,#600);border-bottom:2px solid #e74c3c;padding:8px 16px;z-index:9999;display:flex;justify-content:space-between;align-items:center;';
+        banner.innerHTML = '<span style="color:#ff6b6b;font-size:12px;font-weight:800;">👁️ SHADOW: @' + targetNick + '</span>'
+          + '<button onclick="exitShadowMode()" style="background:#e74c3c;border:none;border-radius:6px;padding:4px 12px;color:#fff;cursor:pointer;font-size:11px;font-weight:800;">Вийти</button>';
+        document.body.insertBefore(banner, document.body.firstChild);
+        updateUI();
+        notify('👁️ Shadow режим: @' + targetNick, 'info');
+      });
+    }
+    function exitShadowMode() {
+      if (!_shadowUser) return;
+      var el = document.getElementById('shadowBanner');
+      if (el) el.remove();
+      currentUser = _shadowUser;
+      _shadowUser = null;
+      startDataSync();
+      notify('👁️ Вийшли з Shadow режиму', 'info');
+    }
+
+    // ── АНТИЧІТ ────────────────────────────────────────────────────
+    var _betHistory = [];
+    function antiCheatCheck(game, bet, win) {
+      var now = Date.now();
+      _betHistory.push({ game: game, bet: bet, win: win, ts: now });
+      if (_betHistory.length > 50) _betHistory.shift();
+      var recent = _betHistory.filter(function(b) { return now - b.ts < 60000; });
+      // Check: more than 30 bets per minute
+      if (recent.length > 30) {
+        logSecurityEvent('suspicious_betting', game + ' x' + recent.length + '/min');
+        return true; // suspicious
+      }
+      // Check: impossibly high win rate
+      var wins = recent.filter(function(b) { return b.win > 0; });
+      if (recent.length > 10 && wins.length / recent.length > 0.85) {
+        logSecurityEvent('high_win_rate', Math.round(wins.length/recent.length*100) + '%');
+      }
+      return false;
+    }
+
+    // ── IP ЛОГУВАННЯ ───────────────────────────────────────────────
+    function saveUserIP() {
+      if (!db || !currentUser) return;
+      fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(function(data) {
+        db.ref('users/' + currentUser + '/lastIP').set(data.ip || 'unknown');
+        logSecurityEvent('login', 'IP: ' + (data.ip || 'unknown'));
+      }).catch(function() {
+        logSecurityEvent('login', 'IP: unknown');
+      });
+    }
+
+    // ── ЧАТОВИЙ РОЗІГРАШ ───────────────────────────────────────────
+    var _activeGiveaway = null;
+    function startChatGiveaway(amount) {
+      if (!userData.isAdmin && currentUser !== 'theivankoo') return notify('Тільки для адміна', 'error');
+      if (!amount || amount < 100) return notify('Мін. 100₴', 'error');
+      _activeGiveaway = { amount: amount, participants: {}, startedBy: currentUser, endTime: Date.now() + 30000 };
+      db.ref('global_chat').push({
+        user: '🎰 SlotOK', text: '🎁 РОЗІГРАШ ' + formatNumber(amount) + '₴! Напиши + щоб взяти участь! ⏰ 30 секунд!',
+        ts: Date.now(), avatar: '🏆',
+      });
+      notify('🎁 Розіграш запущено! 30 секунд...', 'info');
+      setTimeout(function() { finishGiveaway(_activeGiveaway); }, 30000);
+    }
+    function participateGiveaway() {
+      if (!_activeGiveaway) return;
+      if (Date.now() > _activeGiveaway.endTime) return notify('Розіграш завершено', 'error');
+      _activeGiveaway.participants[currentUser] = true;
+      notify('✅ Ти в розіграші!', 'success');
+    }
+    function finishGiveaway(g) {
+      if (!g) return;
+      var parts = Object.keys(g.participants);
+      if (!parts.length) {
+        db.ref('global_chat').push({ user: '🎰 SlotOK', text: '😔 Розіграш завершено без учасників', ts: Date.now(), avatar: '🏆' });
+        return;
+      }
+      var winner = parts[Math.floor(Math.random() * parts.length)];
+      db.ref('users/' + winner + '/balance').set(firebase.database.ServerValue.increment(g.amount));
+      db.ref('global_chat').push({
+        user: '🎰 SlotOK',
+        text: '🏆 Переможець розіграшу: @' + winner + ' виграв ' + formatNumber(g.amount) + '₴! 🎉',
+        ts: Date.now(), avatar: '🏆',
+      });
+      notify('🏆 Переможець: @' + winner, 'success');
+      _activeGiveaway = null;
+    }
+
+    // ── ЗВУКОВІ ТЕМИ ───────────────────────────────────────────────
+    var _soundTheme = localStorage.getItem('slotok_sound_theme') || 'default';
+    var SOUND_THEMES = {
+      default: { win: [523,659,784], lose: [200,150], click: [440] },
+      retro:   { win: [220,440,880], lose: [150,100], click: [220] },
+      casino:  { win: [440,554,659,880], lose: [220,196], click: [554] },
+      minimal: { win: [880],         lose: [220],    click: [0] },
+    };
+    function setSoundTheme(theme) {
+      _soundTheme = theme;
+      localStorage.setItem('slotok_sound_theme', theme);
+      notify('🎵 Звукова тема: ' + theme, 'info');
+      playSound('win');
+    }
+    function openSoundThemePicker() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9997;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = '<div style="background:#111;border:1px solid #222;border-radius:18px;padding:20px;max-width:320px;width:100%;">'
+        + '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;">🎵 Звукові теми</div>'
+        + Object.keys(SOUND_THEMES).map(function(t) {
+            return '<div onclick="setSoundTheme(\'' + t + '\');this.closest(\'div[style]\').remove()" style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:' + (t===_soundTheme?'rgba(212,175,55,.12)':'rgba(255,255,255,.04)') + ';border:1px solid ' + (t===_soundTheme?'rgba(212,175,55,.3)':'rgba(255,255,255,.07)') + ';border-radius:10px;margin-bottom:8px;cursor:pointer;">'
+              + '<span style="font-size:14px;color:' + (t===_soundTheme?'#d4af37':'#aaa') + ';">' + ({default:'🔔 Стандартна',retro:'👾 Ретро (8-bit)',casino:'🎰 Казино',minimal:'🔇 Мінімальна'}[t]) + '</span>'
+              + (t===_soundTheme ? '<span style="color:#d4af37;font-size:18px;">✓</span>' : '')
+              + '</div>';
+          }).join('')
+        + '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:rgba(255,255,255,.05);border:1px solid #222;border-radius:10px;padding:11px;color:#666;cursor:pointer;margin-top:6px;">Закрити</button>'
+        + '</div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── КАСТОМНИЙ ТЕГ (купити) ─────────────────────────────────────
+    function openCustomTagShop() {
+      var TAGS = [
+        {tag:'🔥 Вогонь', price:500}, {tag:'💎 Діамант', price:1000}, {tag:'👑 Король', price:2000},
+        {tag:'⚡ Блискавка', price:500}, {tag:'🐉 Дракон', price:3000}, {tag:'🎯 Снайпер', price:750},
+        {tag:'🌊 Хвиля', price:500}, {tag:'🦁 Лев', price:1500}, {tag:'🚀 Ракета', price:800},
+        {tag:'🎭 Маестро', price:2500}, {tag:'🧊 Крижаний', price:600}, {tag:'☠️ Череп', price:700},
+      ];
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      modal.innerHTML = '<div style="max-width:400px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:14px;color:#d4af37;font-weight:900;">🏷️ Магазин тегів</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+        + TAGS.map(function(t) {
+            return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;cursor:pointer;" onclick="buyCustomTag(\'' + t.tag.replace(/'/g,"\\'") + '\',' + t.price + ')">'
+              + '<div style="font-size:20px;margin-bottom:6px;">' + t.tag + '</div>'
+              + '<div style="font-size:11px;color:#d4af37;font-weight:700;">🪙 ' + formatNumber(t.price) + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div></div>';
+      document.body.appendChild(modal);
+    }
+    function buyCustomTag(tag, price) {
+      var slotikyEl = document.getElementById('headerSlotiky');
+      var slotiky = parseInt(slotikyEl ? slotikyEl.textContent : 0) || userData.slotiky || 0;
+      if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙 Слотиків', 'error');
+      db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
+      db.ref('users/' + currentUser + '/tag').set(tag);
+      userData.tag = tag;
+      notify('✅ Тег встановлено: ' + tag, 'success');
+      document.querySelector('div[style] .grid')?.parentElement?.parentElement?.remove();
+    }
+
+    // ── GIFTING VIP ────────────────────────────────────────────────
+    function giftVip(toNick, days) {
+      if (!toNick || !days) return notify('Заповни всі поля', 'error');
+      var cost = days * 100;
+      if (!userData.balance || userData.balance < cost) return notify('Потрібно ₴' + formatNumber(cost), 'error');
+      db.ref('users/' + toNick).once('value').then(function(snap) {
+        if (!snap.exists()) return notify('Гравця не знайдено', 'error');
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-cost));
+        var vipUntil = Date.now() + days * 86400000;
+        db.ref('users/' + toNick + '/vipGiftUntil').set(vipUntil);
+        db.ref('pm/' + toNick + '/' + db.ref().push().key).set({
+          from: '🎁 SlotOK', to: toNick,
+          text: '🎁 @' + currentUser + ' подарував тобі VIP на ' + days + ' днів! Насолоджуйся!',
+          ts: Date.now()
+        });
+        db.ref('users/' + toNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+        notify('🎁 VIP подарований @' + toNick + ' на ' + days + ' днів!', 'success');
+      });
+    }
+    function openGiftVIPModal() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = '<div style="background:#111;border:1.5px solid rgba(212,175,55,.2);border-radius:20px;padding:22px;max-width:340px;width:100%;">'
+        + '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;">🎁 Подарувати VIP</div>'
+        + '<input id="gvNick" placeholder="Нік отримувача" style="margin-bottom:10px;">'
+        + '<select id="gvDays" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:10px;font-size:13px;">'
+        + '<option value="1">1 день — 100₴</option><option value="7">7 днів — 700₴</option>'
+        + '<option value="30">30 днів — 3 000₴</option></select>'
+        + '<div id="gvErr" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>'
+        + '<div style="display:flex;gap:8px;">'
+        + '<button onclick="giftVip(document.getElementById(\'gvNick\').value.trim(),parseInt(document.getElementById(\'gvDays\').value));this.closest(\'div[style]\').remove()" style="flex:1;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;">🎁 Подарувати</button>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:13px;color:#666;cursor:pointer;">✕</button>'
+        + '</div></div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── ТОП ДОНАТЕРІВ ─────────────────────────────────────────────
+    function showTopDonators() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      modal.innerHTML = '<div style="max-width:400px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:14px;color:#d4af37;font-weight:900;">🏆 Топ Донатерів</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<div id="topDonatorsList" style="color:#555;text-align:center;padding:20px;">Завантаження...</div></div>';
+      document.body.appendChild(modal);
+      db.ref('users').orderByChild('totalDeposits').limitToLast(20).once('value').then(function(snap) {
+        var el = document.getElementById('topDonatorsList');
+        if (!el) return;
+        var users = snap.val() || {};
+        var sorted = Object.entries(users).filter(function(e) { return !e[1].isBot && e[1].totalDeposits > 0; })
+          .sort(function(a,b) { return (b[1].totalDeposits||0) - (a[1].totalDeposits||0); }).slice(0,10);
+        if (!sorted.length) { el.innerHTML = '<div style="color:#444;">Даних немає</div>'; return; }
+        var medals = ['🥇','🥈','🥉'];
+        el.innerHTML = sorted.map(function(entry, i) {
+          var u = entry[1];
+          return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:12px;margin-bottom:8px;">'
+            + '<div style="font-size:20px;flex-shrink:0;">' + (medals[i] || '#' + (i+1)) + '</div>'
+            + '<div style="font-size:20px;">' + (u.avatar || '👤') + '</div>'
+            + '<div style="flex:1;"><div style="font-weight:700;">' + entry[0] + '</div><div style="font-size:10px;color:#555;">' + (u.tag || '') + '</div></div>'
+            + '<div style="font-weight:900;color:#d4af37;">₴' + formatNumber(u.totalDeposits||0) + '</div>'
+            + '</div>';
+        }).join('');
+      });
+    }
+
+    // ── CRASH PROVABLY FAIR ────────────────────────────────────────
+    var _crashClientSeed = localStorage.getItem('slotok_crash_seed') || Math.random().toString(36).slice(2);
+    var _crashNonce = parseInt(localStorage.getItem('slotok_crash_nonce') || '0');
+    async function getCrashFairMultiplier() {
+      _crashNonce++;
+      localStorage.setItem('slotok_crash_nonce', _crashNonce);
+      var hash = await sha256(_crashClientSeed + ':' + _crashNonce);
+      var h = parseInt(hash.slice(0, 8), 16);
+      if (h % 33 === 0) return 1.0; // house edge ~3%
+      return Math.max(1.0, parseFloat((1 / (1 - (h % 9999) / 10000) * 0.97).toFixed(2)));
+    }
+    function showCrashSeedModal() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;background:#0d1a30;border:1.5px solid rgba(74,158,255,.3);border-radius:16px;padding:14px;z-index:9000;animation:slideUp .3s ease;';
+      modal.innerHTML = '<div style="font-size:11px;color:#4a9eff;font-weight:700;margin-bottom:8px;">⚖️ Crash Provably Fair</div>'
+        + '<div style="font-size:10px;color:#555;margin-bottom:6px;">Client Seed:</div>'
+        + '<div style="font-family:monospace;font-size:12px;color:#d4af37;word-break:break-all;margin-bottom:8px;">' + _crashClientSeed + '</div>'
+        + '<div style="font-size:10px;color:#555;">Nonce: ' + _crashNonce + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px;">'
+        + '<button onclick="_crashClientSeed=Math.random().toString(36).slice(2);_crashNonce=0;localStorage.setItem(\'slotok_crash_seed\',_crashClientSeed);this.parentElement.parentElement.remove();notify(\'🔄 Новий seed!\',\'info\')" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;">🔄 Новий seed</button>'
+        + '<button onclick="this.parentElement.parentElement.remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:8px;padding:8px;color:#666;cursor:pointer;font-size:12px;">✕</button>'
+        + '</div>';
+      document.body.appendChild(modal);
+    }
+
+    // ── MINES АВТО-ПІДБІР (AI) ─────────────────────────────────────
+    function minesAutoPickSafe(mines, size) {
+      var safe = [];
+      var prob = 1 - mines / (size * size);
+      for (var r = 0; r < size; r++) {
+        for (var c = 0; c < size; c++) {
+          if (Math.random() < prob * 0.6) safe.push({r: r, c: c});
+        }
+      }
+      return safe.slice(0, Math.min(3, safe.length));
+    }
+    function showMinesAIHint() {
+      var mineCount = parseInt(document.getElementById('minesCount')?.value || '3');
+      var hints = minesAutoPickSafe(mineCount, 5);
+      if (!hints.length) return notify('Немає підказок', 'info');
+      notify('🤖 AI: Спробуй клітинки ' + hints.map(function(h) { return '(' + (h.r+1) + ',' + (h.c+1) + ')'; }).join(', '), 'info');
+    }
+
+    // ── KENO АВТО-ПІДБІР ───────────────────────────────────────────
+    function kenoAutoSelect() {
+      var btns = document.querySelectorAll('.keno-num-btn');
+      btns.forEach(function(b) { b.classList.remove('selected'); });
+      var indices = [];
+      while (indices.length < 10) {
+        var r = Math.floor(Math.random() * 80);
+        if (!indices.includes(r)) indices.push(r);
+      }
+      indices.forEach(function(i) { if (btns[i]) btns[i].classList.add('selected'); });
+      notify('🎲 Автовибір: 10 чисел!', 'success');
+    }
+
+    // ── ПОРІВНЯННЯ ГРАВЦІВ ─────────────────────────────────────────
+    function comparePlayersModal() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      modal.innerHTML = '<div style="max-width:400px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:14px;color:#4a9eff;font-weight:900;">📊 Порівняння гравців</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<input id="cmpNick" placeholder="Нік суперника" style="margin-bottom:10px;">'
+        + '<button onclick="doComparePlayers(document.getElementById(\'cmpNick\').value.trim())" style="width:100%;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;margin-bottom:14px;">🔍 Порівняти</button>'
+        + '<div id="cmpResult"></div></div>';
+      document.body.appendChild(modal);
+    }
+    function doComparePlayers(nick) {
+      var el = document.getElementById('cmpResult');
+      if (!el || !nick) return;
+      el.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Завантаження...</div>';
+      db.ref('users/' + nick).once('value').then(function(snap) {
+        if (!snap.exists()) { el.innerHTML = '<div style="color:#e74c3c;text-align:center;">Гравця не знайдено</div>'; return; }
+        var them = snap.val();
+        var me = userData;
+        var stats = [
+          {label:'Ігор', me: me.totalGames||0, them: them.totalGames||0},
+          {label:'Перемог', me: me.totalWins||0, them: them.totalWins||0},
+          {label:'Ставок', me: me.totalWagered||0, them: them.totalWagered||0},
+          {label:'Баланс', me: me.balance||0, them: them.balance||0},
+          {label:'Серія', me: me.dailyStreak||0, them: them.dailyStreak||0},
+        ];
+        el.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:11px;text-align:center;">'
+          + '<div style="color:#d4af37;font-weight:800;">@' + currentUser + '</div><div></div><div style="color:#4a9eff;font-weight:800;">@' + nick + '</div></div>'
+          + stats.map(function(s) {
+              var meWins = s.me >= s.them;
+              return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #111;">'
+                + '<div style="text-align:center;font-weight:' + (meWins?'900':'400') + ';color:' + (meWins?'#d4af37':'#666') + ';">' + formatNumber(s.me) + '</div>'
+                + '<div style="text-align:center;font-size:10px;color:#555;">' + s.label + '</div>'
+                + '<div style="text-align:center;font-weight:' + (!meWins?'900':'400') + ';color:' + (!meWins?'#4a9eff':'#666') + ';">' + formatNumber(s.them) + '</div>'
+                + '</div>';
+            }).join('');
+      });
+    }
+
+    // ── CASE OPENING (КЕЙСИ) ───────────────────────────────────────
+    var CASES = {
+      basic: { name:'Базовий кейс', price:500, items:[
+        {name:'50₴ Бонус', prob:0.40, value:50, emoji:'💵'},
+        {name:'200₴ Бонус', prob:0.25, value:200, emoji:'💰'},
+        {name:'500₴ Бонус', prob:0.15, value:500, emoji:'💎'},
+        {name:'10 Фріспінів', prob:0.10, value:0, extra:'freeSlots', extraVal:10, emoji:'🎟️'},
+        {name:'VIP 1 день', prob:0.07, value:0, extra:'vipGiftUntil', extraVal:86400000, emoji:'👑'},
+        {name:'2000₴ ДЖЕКПОТ', prob:0.03, value:2000, emoji:'🏆'},
+      ]},
+      premium: { name:'Преміум кейс', price:2000, items:[
+        {name:'300₴ Бонус', prob:0.30, value:300, emoji:'💵'},
+        {name:'1000₴ Бонус', prob:0.25, value:1000, emoji:'💰'},
+        {name:'3000₴ Бонус', prob:0.20, value:3000, emoji:'💎'},
+        {name:'25 Фріспінів', prob:0.12, value:0, extra:'freeSlots', extraVal:25, emoji:'🎟️'},
+        {name:'VIP 7 днів', prob:0.08, value:0, extra:'vipGiftUntil', extraVal:604800000, emoji:'👑'},
+        {name:'10000₴ ДЖЕКПОТ', prob:0.05, value:10000, emoji:'🏆'},
+      ]},
+    };
+    function openCase(caseKey) {
+      var c = CASES[caseKey];
+      if (!c) return;
+      if (!userData.balance || userData.balance < c.price) return notify('Потрібно ₴' + formatNumber(c.price), 'error');
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-c.price));
+      userData.balance -= c.price;
+      var r = Math.random(), cumProb = 0;
+      var item = c.items[c.items.length - 1];
+      for (var i = 0; i < c.items.length; i++) {
+        cumProb += c.items[i].prob;
+        if (r < cumProb) { item = c.items[i]; break; }
+      }
+      // Apply reward
+      if (item.value > 0) {
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(item.value));
+        userData.balance += item.value;
+      }
+      if (item.extra === 'freeSlots') {
+        db.ref('users/' + currentUser + '/freeSlots').set(firebase.database.ServerValue.increment(item.extraVal));
+      }
+      if (item.extra === 'vipGiftUntil') {
+        db.ref('users/' + currentUser + '/vipGiftUntil').set(Date.now() + item.extraVal);
+      }
+      // Show result
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = '<div style="background:linear-gradient(135deg,#0d0800,#1a1200);border:2px solid rgba(212,175,55,.4);border-radius:24px;padding:28px;max-width:300px;width:100%;text-align:center;animation:popIn .4s ease;">'
+        + '<div style="font-size:64px;margin-bottom:14px;animation:heartbeat .5s ease 3;">' + item.emoji + '</div>'
+        + '<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:#d4af37;margin-bottom:6px;">ВИГРАШ!</div>'
+        + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">' + item.name + '</div>'
+        + (item.value > 0 ? '<div style="font-size:28px;font-weight:900;color:#3dd68c;margin-bottom:16px;">+₴' + formatNumber(item.value) + '</div>' : '')
+        + '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:14px;color:#000;font-weight:900;cursor:pointer;font-size:15px;">✅ Забрати</button>'
+        + '</div>';
+      document.body.appendChild(modal);
+      if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+      publishLiveBet('Кейс 📦', '📦', c.price, item.value > 0 ? item.value / c.price : 0);
+    }
+    function openCaseOpeningScreen() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:#050505;z-index:9990;overflow-y:auto;padding:16px;padding-bottom:80px;';
+      modal.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+        + '<button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>'
+        + '<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#d4af37;">📦 Відкриття кейсів</div></div>'
+        + Object.entries(CASES).map(function(entry) {
+            var k = entry[0], c = entry[1];
+            return '<div style="background:linear-gradient(135deg,#0d0800,#1a1200);border:1.5px solid rgba(212,175,55,.25);border-radius:18px;padding:18px;margin-bottom:12px;">'
+              + '<div style="font-size:18px;font-weight:900;margin-bottom:4px;">' + c.name + '</div>'
+              + '<div style="font-size:11px;color:#666;margin-bottom:12px;">Натисни щоб відкрити</div>'
+              + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'
+              + c.items.map(function(i) {
+                  return '<div style="background:#111;border-radius:8px;padding:6px 10px;font-size:11px;"><span>' + i.emoji + ' ' + i.name + '</span> <span style="color:#555;">' + Math.round(i.prob*100) + '%</span></div>';
+                }).join('')
+              + '</div>'
+              + '<button onclick="openCase(\'' + k + '\')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:14px;color:#000;font-weight:900;cursor:pointer;font-size:15px;">📦 Відкрити за ₴' + formatNumber(c.price) + '</button>'
+              + '</div>';
+          }).join('');
+      document.body.appendChild(modal);
+    }
+
+    // ── ITEM UPGRADE СИСТЕМА ───────────────────────────────────────
+    function openUpgradeSystem() {
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:#050505;z-index:9990;overflow-y:auto;padding:16px;padding-bottom:80px;';
+      var UPGRADE_ITEMS = [
+        {name:'Бронзова монета', emoji:'🪙', value:100, nextName:'Срібна монета', nextEmoji:'🥈', chance:0.6},
+        {name:'Срібна монета', emoji:'🥈', value:250, nextName:'Золота монета', nextEmoji:'🥇', chance:0.5},
+        {name:'Золота монета', emoji:'🥇', value:600, nextName:'Діамантова монета', nextEmoji:'💎', chance:0.35},
+        {name:'Діамантова монета', emoji:'💎', value:1500, nextName:'Кристальна монета', nextEmoji:'🔮', chance:0.25},
+      ];
+      modal.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+        + '<button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>'
+        + '<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#ff9500;">⬆️ Upgrade</div></div>'
+        + '<div style="background:rgba(255,149,0,.06);border:1px solid rgba(255,149,0,.2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:#888;">Вклади предмет — маєш шанс отримати кращий! При невдачі предмет втрачається.</div>'
+        + UPGRADE_ITEMS.map(function(item) {
+            return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:10px;">'
+              + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+              + '<div style="display:flex;align-items:center;gap:10px;">'
+              + '<div style="font-size:36px;">' + item.emoji + '</div>'
+              + '<div><div style="font-weight:800;">' + item.name + '</div><div style="font-size:10px;color:#555;">Вартість: ₴' + formatNumber(item.value) + '</div></div></div>'
+              + '<div style="font-size:22px;">→</div>'
+              + '<div style="text-align:center;"><div style="font-size:36px;">' + item.nextEmoji + '</div><div style="font-size:11px;color:#3dd68c;font-weight:700;">' + Math.round(item.chance*100) + '% шанс</div></div></div>'
+              + '<button onclick="doUpgrade(\'' + item.name + '\',' + item.value + ',\'' + item.nextName + '\',' + item.chance + ',\'' + item.emoji + '\',\'' + item.nextEmoji + '\')" '
+              + 'style="width:100%;background:linear-gradient(135deg,#ff9500,#f0c040);border:none;border-radius:10px;padding:11px;color:#000;font-weight:900;cursor:pointer;font-size:13px;">⬆️ Апгрейд (-₴' + formatNumber(item.value) + ')</button>'
+              + '</div>';
+          }).join('');
+      document.body.appendChild(modal);
+    }
+    function doUpgrade(fromName, cost, toName, chance, fromEmoji, toEmoji) {
+      if (!userData.balance || userData.balance < cost) return notify('Потрібно ₴' + formatNumber(cost), 'error');
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-cost));
+      userData.balance -= cost;
+      var success = Math.random() < chance;
+      var resultEmoji = success ? toEmoji : '💀';
+      var msg = success ? '⬆️ УСПІХ! Отримано: ' + toEmoji + ' ' + toName : '💀 Невдача! Предмет втрачено';
+      if (success) {
+        var bonus = Math.round(cost * (1 / chance) * 0.9);
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bonus));
+        userData.balance += bonus;
+        if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+        spawnWinCoins(bonus);
+      } else {
+        if (navigator.vibrate) navigator.vibrate(300);
+      }
+      notify(msg + (success ? ' (+₴' + formatNumber(Math.round(cost * (1/chance) * 0.9)) + ')' : ''), success ? 'success' : 'error');
+    }
+
+    // ── ПРОФІЛЬНІ ЕФЕКТИ ───────────────────────────────────────────
+    var PROFILE_EFFECTS = [
+      {id:'gold_glow', name:'Золоте сяйво', emoji:'✨', css:'box-shadow:0 0 20px rgba(212,175,55,.8),0 0 40px rgba(212,175,55,.4);animation:pulseGlow 2s infinite;', price:500},
+      {id:'fire', name:'Вогонь', emoji:'🔥', css:'box-shadow:0 0 20px rgba(255,100,0,.8);animation:heartbeat .8s infinite;', price:750},
+      {id:'ice', name:'Крига', emoji:'❄️', css:'box-shadow:0 0 20px rgba(100,200,255,.8);filter:drop-shadow(0 0 10px #4af);', price:750},
+      {id:'rainbow', name:'Веселка', emoji:'🌈', css:'border:3px solid transparent;background-clip:padding-box;animation:winShimmer 1s infinite;', price:1000},
+      {id:'vip_crown', name:'VIP корона', emoji:'👑', css:'box-shadow:0 0 30px rgba(212,175,55,1);border:3px solid #d4af37;', price:1500},
+    ];
+    function openProfileEffectShop() {
+      var currentEffect = userData.profileEffect || '';
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;overflow-y:auto;padding:16px;';
+      modal.innerHTML = '<div style="max-width:400px;margin:0 auto;">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">'
+        + '<div style="font-family:Orbitron,monospace;font-size:14px;color:#c9a0ff;font-weight:900;">🎭 Ефекти профілю</div>'
+        + '<button onclick="this.closest(\'div[style]\').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 12px;cursor:pointer;">✕</button></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        + PROFILE_EFFECTS.map(function(e) {
+            var owned = currentEffect === e.id;
+            return '<div style="background:#0d0d0d;border:1.5px solid ' + (owned ? 'rgba(212,175,55,.4)' : 'rgba(255,255,255,.07)') + ';border-radius:14px;padding:14px;text-align:center;cursor:pointer;" onclick="buyProfileEffect(\'' + e.id + '\',' + e.price + ')">'
+              + '<div style="font-size:32px;margin-bottom:6px;">' + e.emoji + '</div>'
+              + '<div style="font-size:12px;font-weight:700;margin-bottom:4px;">' + e.name + '</div>'
+              + '<div style="font-size:11px;color:' + (owned ? '#d4af37' : '#666') + ';">' + (owned ? '✅ Активний' : '🪙 ' + formatNumber(e.price)) + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div></div>';
+      document.body.appendChild(modal);
+    }
+    function buyProfileEffect(effectId, price) {
+      var slotiky = userData.slotiky || 0;
+      if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙', 'error');
+      db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
+      db.ref('users/' + currentUser + '/profileEffect').set(effectId);
+      userData.profileEffect = effectId;
+      userData.slotiky = (userData.slotiky||0) - price;
+      notify('✅ Ефект активовано!', 'success');
+    }
+
+    // ── INIT нових функцій при логіні ─────────────────────────────
+    function initAllNewFeatures() {
+      initShakeBonus();
+      startOnlineTimer();
+      saveUserIP();
+      logSecurityEvent('login', '');
+      // Load session limits from storage
+      var lTime = parseInt(localStorage.getItem('sessionLimitTime') || '0');
+      var lAmt  = parseInt(localStorage.getItem('sessionLimitAmount') || '0');
+      if (lTime > 0 || lAmt > 0) setSessionLimits(lTime || 999999, lAmt || 999999);
+    }
+
+
+
+    function adminStartBotEngine() {
+      startBotEngine();
+      setTimeout(() => {
+        const count = Object.keys(_activeBotData).length;
+        const el = document.getElementById('botEngineStatus');
+        if(el) el.innerHTML = `<span style="color:#3dd68c;">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
+        notify('▶ Бот-движок запущено для ' + count + ' ботів', 'success');
+      }, 1500);
+    }
+
+    function adminStopBotEngine() {
+      stopBotEngine();
+      _activeBotData = {};
+      const el = document.getElementById('botEngineStatus');
+      if(el) el.innerHTML = '<span style="color:#e74c3c;">⏹ Зупинено</span>';
+      notify('⏹ Бот-движок зупинено', 'info');
+    }
+
+    function loadBots() {
+      const listEl = document.getElementById('botList');
+      if(!listEl) return;
+      listEl.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Завантаження...</div>';
+      db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
+        const bots = snap.val() || {};
+        const entries = Object.entries(bots);
+        if(!entries.length) { listEl.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Ботів немає</div>'; return; }
+        const persIcons = { aggressive:'🔥', balanced:'⚖️', conservative:'🛡️', whale:'🐋' };
+        listEl.innerHTML = entries.map(([nick, b]) => {
+          const isActive = !!_activeBotData[nick];
+          const persIcon = persIcons[b.personality] || '⚖️';
+          return `<div class="bot-card">
+            <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${b.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (b.avatar||'🤖')}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:13px;">${nick} ${persIcon}</div>
+              <div style="font-size:10px;color:#666;">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:#3dd68c;">● Активний</span>':'<span style="color:#555;">⚫ Стоп</span>'}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+              <button onclick="toggleBot('${nick}')" style="background:${isActive?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isActive?'#e74c3c':'#3dd68c'};border-radius:6px;color:${isActive?'#e74c3c':'#3dd68c'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
+              <button onclick="deleteBot('${nick}')" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
+            </div>
+          </div>`;
+        }).join('');
+        // Engine status
+        const el = document.getElementById('botEngineStatus');
+        const activeCount = Object.keys(_activeBotData).length;
+        if(el) el.innerHTML = _botEngine
+          ? `<span style="color:#3dd68c;">● Запущено</span> — ${activeCount} ботів активні`
+          : `<span style="color:#555;">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
+      });
+    }
+
+    function toggleBot(nick) {
+      if(_activeBotData[nick]) {
+        delete _activeBotData[nick];
+        notify('⏹ Бот ' + nick + ' зупинено', 'info');
+      } else {
+        db.ref('users/' + nick).once('value', snap => {
+          if(snap.exists()) addBotToEngine(nick, snap.val());
+          notify('▶ Бот ' + nick + ' запущено', 'success');
+        });
+      }
+      setTimeout(loadBots, 300);
+    }
+
+    function deleteBot(nick) {
+      if(!confirm('Видалити бота ' + nick + '?')) return;
+      delete _activeBotData[nick];
+      db.ref('users/' + nick).remove();
+      notify('🗑 Бот ' + nick + ' видалено', 'info');
+      setTimeout(loadBots, 500);
     }
 
     function switchAdminTab(tab, el) {
       // Hide ALL panels cleanly
-      ['requests','stats','users','bots','content','finance'].forEach(function(t){
+      ['requests','stats','users','bots','content','finance','security'].forEach(function(t){
         var p = document.getElementById('adm-panel-'+t);
         if(p) { p.style.display = 'none'; }
       });
@@ -10605,33 +12662,6 @@
       });
     }
 
-    function loadBots() {
-  const list = document.getElementById('botList');
-  if(!list) return;
-  list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Завантаження...</div>';
-  db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
-    const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Ботів немає</div>'; return; }
-    list.innerHTML = '';
-    Object.entries(data).forEach(([nick, b]) => {
-      const av = typeof b.avatar === 'string' && b.avatar.length > 4
-        ? '<img src="' + b.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
-        : (b.avatar||'👤');
-      const div = document.createElement('div');
-      div.className = 'bot-card';
-      div.innerHTML =
-        '<div class="bot-avatar">' + av + '</div>' +
-        '<div style="flex:1;">' +
-          '<div style="font-weight:bold;font-size:14px;">' + nick + '</div>' +
-          '<div style="font-size:11px;color:#777;">Баланс: ' + formatNumber(b.balance) + '₴</div>' +
-        '</div>' +
-        '<span class="bot-status ' + (b.isActive?'active':'inactive') + '">' + (b.isActive?'🟢 Активний':'⚫ Пасивний') + '</span>' +
-        '<button onclick="deleteBot(\'' + nick + '\')" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;margin-left:6px;">✕</button>';
-      list.appendChild(div);
-    });
-  });
-}
-
     function sendMassPm() {
       if(!currentUser || !(currentUser==='theivankoo'||userData?.isAdmin)) return;
       const msg = document.getElementById('massPmMsg')?.value?.trim();
@@ -10650,13 +12680,6 @@
         });
       });
     }
-    function deleteBot(nick) {
-      if(!confirm('Видалити бота ' + nick + '?')) return;
-      db.ref('users/' + nick).remove();
-      notify('🗑️ Бота видалено', 'info');
-      loadBots();
-    }
-
     // ===== ONLINE USERS POPUP =====
     function showOnlineUsers() {
       const dropdown = document.getElementById('onlineUsersDropdown');
