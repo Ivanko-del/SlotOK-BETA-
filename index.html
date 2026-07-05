@@ -3426,7 +3426,7 @@
 
     <!-- ===== НАЛАШТУВАННЯ ===== -->
     <div id="tab-settings" class="screen hidden">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="history.back?history.back():switchTab('more')">⬅ Назад</button><h2 style="margin:0;color:var(--accent);">⚙️ Налаштування</h2></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;"><button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('settings')">⬅ Назад</button><h2 style="margin:0;color:var(--accent);">⚙️ Налаштування</h2></div>
 
       <!-- Звук -->
       <div class="settings-section">
@@ -4608,7 +4608,7 @@
 
     <!-- СЛОТІКИ — внутрішня валюта казино -->
     <div id="tab-slotiky" class="screen hidden">
-      <button class="btn-outline" onclick="history.back()||switchTab('more')">⬅ Назад</button>
+      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
 
       <!-- Balance -->
       <div style="background:linear-gradient(135deg,#1a0a2e,#2d1060);border:1px solid #5a20c0;border-radius:20px;padding:20px;margin:12px 0;text-align:center;position:relative;overflow:hidden;">
@@ -5526,10 +5526,20 @@
     <div style="background:#0d1a0d;border:1px solid #1a2a1a;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#aaa;">
       💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.
     </div>
-    <div id="supportChatBox" style="height:340px;overflow-y:auto;background:#0a0a0a;border:1px solid #1a1a1a;margin-bottom:10px;padding:10px;border-radius:12px;"></div>
-    <div style="display:flex; gap:10px;">
-      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
-      <button class="btn-gold" style="width:auto;margin-bottom:0;padding:14px 18px;" onclick="sendSupportMsg()">➤</button>
+    <div id="supportChatBox" style="height:300px;overflow-y:auto;background:#0a0a0a;border:1px solid #1a1a1a;margin-bottom:8px;padding:10px;border-radius:12px;"></div>
+    <!-- Support media preview -->
+    <div id="supportMediaPreview" style="display:none;padding:6px 0;margin-bottom:6px;">
+      <div style="position:relative;display:inline-block;">
+        <img id="supportPreviewImg" style="max-height:70px;border-radius:8px;border:1px solid #222;">
+        <video id="supportPreviewVid" style="display:none;max-height:70px;border-radius:8px;" controls muted></video>
+        <div onclick="clearSupportMedia()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">×</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 12px;font-size:18px;cursor:pointer;flex-shrink:0;" title="Фото / Відео">📎</button>
+      <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
+      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
+      <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
     </div>
     <style>@keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}</style>
   </div>
@@ -5699,8 +5709,8 @@
       <!-- Input row -->
       <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <!-- Image upload btn -->
-        <button class="chat-upload-btn" onclick="document.getElementById('chatImgInput').click()" title="Фото / GIF">📎</button>
-        <input type="file" id="chatImgInput" accept="image/*,.gif" style="display:none;" onchange="handleChatImage(this)">
+        <button class="chat-upload-btn" onclick="document.getElementById('chatImgInput').click()" title="Фото / GIF / Відео">📎</button>
+        <input type="file" id="chatImgInput" accept="image/*,.gif,video/*" style="display:none;" onchange="handleChatImage(this)">
         <!-- GIF button -->
         <button class="chat-upload-btn" onclick="toggleGifPanel()" title="GIF" style="font-size:14px;font-weight:800;color:#4a9eff;background:rgba(74,158,255,.08);border-color:rgba(74,158,255,.2);">GIF</button>
         <!-- Text input -->
@@ -5889,14 +5899,14 @@
     // ============================================
 
     const firebaseConfig = {
-      apiKey:            "AIzaSyB0gJDyr8z2SWPV3Tf73ZRNNPuglxHTCZw",
-      authDomain:        "slotok-web-server.firebaseapp.com",
-      databaseURL:       "https://slotok-web-server-default-rtdb.firebaseio.com",
-      projectId:         "slotok-web-server",
-      storageBucket:     "slotok-web-server.firebasestorage.app",
-      messagingSenderId: "1086314476940",
-      appId:             "1:1086314476940:web:d3629d2d0fe16f7c1f12a9",
-      measurementId:     "G-PP32GNBY2R"
+      apiKey:            "AIzaSyBQelUmnWpgdjV_Y22GBjjZZPxUb85PUuI",
+      authDomain:        "nye-slotok.firebaseapp.com",
+      databaseURL:       "https://nye-slotok-default-rtdb.firebaseio.com",
+      projectId:         "nye-slotok",
+      storageBucket:     "nye-slotok.firebasestorage.app",
+      messagingSenderId: "436174740835",
+      appId:             "1:436174740835:web:b70e8467396e9f983ac756",
+      measurementId:     "G-Y2CQBQDRMQ"
     };
     
     let db = null;
@@ -7770,14 +7780,16 @@
       if(correct) {
         quizCorrect++;
         document.getElementById('quizCorrect').textContent = quizCorrect;
-        const gain = Math.floor(quizBet * 0.5);
+        // Correct: +12% gain (was 20% — now harder to compound)
+        const gain = Math.floor(quizBet * 0.12);
         quizBet += gain;
       } else if(choice >= 0) {
-        quizBet = Math.max(0, Math.floor(quizBet * 0.9));
+        // Wrong: lose 25% (was 10% — bigger penalty)
+        quizBet = Math.max(0, Math.floor(quizBet * 0.75));
       } else {
-        // timeout
-        quizBet = Math.max(0, Math.floor(quizBet * 0.85));
-        notify('⏱ Час вийшов!', 'error');
+        // Timeout: lose 35% (was 15% — much bigger penalty)
+        quizBet = Math.max(0, Math.floor(quizBet * 0.65));
+        notify('⏱ Час вийшов! -35%', 'error');
       }
       document.getElementById('quizPrize').textContent = '₴'+formatNumber(quizBet);
       quizQ++;
@@ -7787,16 +7799,32 @@
     function endQuiz() {
       quizActive = false;
       clearTimeout(quizTimer);
-      if(quizBet > 0) {
+      const originalBet = parseInt(document.getElementById('betAmountQuiz')?.value) || 100;
+      // Stricter cap: max 2.5x (was 4x) — need 10/10 to get anywhere near this
+      quizBet = Math.min(quizBet, Math.floor(originalBet * 2.5));
+      // Only pay out if answered at least 6 correctly (was 0)
+      if(quizBet > originalBet && quizCorrect >= 6) {
+        const profit = quizBet - originalBet;
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(quizBet));
         trackLbStat('wins', quizBet);
-        notify('🧠 Вікторина завершена! +'+formatNumber(quizBet)+'₴ ('+quizCorrect+'/10)', 'success');
-        addToHistory('Quiz: +'+quizBet+' ('+quizCorrect+'/10 правильно)');
+        notify('🧠 '+quizCorrect+'/10 правильно! +'+formatNumber(profit)+'₴', 'success');
+        addToHistory('Quiz: +'+profit+' ('+quizCorrect+'/10)');
         applyAutoSaveOnWin(quizBet); recordBalanceHistory();
+      } else if(quizBet > 0 && quizCorrect >= 4) {
+        // 4-5 correct: get back part of bet
+        const refund = Math.floor(originalBet * 0.5);
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(refund));
+        notify('🧠 '+quizCorrect+'/10 — повернено 50% ставки: +'+formatNumber(refund)+'₴', 'info');
       } else {
-        notify('🧠 Вікторина завершена. Ви нічого не отримали.', 'error');
+        notify('🧠 '+quizCorrect+'/10 — надто мало правильних відповідей. Ставка втрачена!', 'error');
       }
-      document.getElementById('quizQuestion').innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:32px;margin-bottom:8px;">'+(quizCorrect>=7?'🏆':quizCorrect>=5?'✅':'😢')+'</div><div style="font-size:15px;font-weight:700;">'+quizCorrect+'/10 правильно</div><div style="font-size:13px;color:#777;margin-top:4px;">Виграш: ₴'+formatNumber(quizBet)+'</div></div>';
+      const icon = quizCorrect>=8?'🏆':quizCorrect>=6?'✅':quizCorrect>=4?'😐':'😢';
+      document.getElementById('quizQuestion').innerHTML =
+        '<div style="text-align:center;padding:20px;">' +
+        '<div style="font-size:32px;margin-bottom:8px;">'+icon+'</div>' +
+        '<div style="font-size:15px;font-weight:700;">'+quizCorrect+'/10 правильно</div>' +
+        '<div style="font-size:11px;color:#666;margin-top:6px;">Потрібно 6+ для прибутку · 4-5 = повернення 50%</div>' +
+        '</div>';
       document.getElementById('quizOptions').innerHTML = '';
       document.getElementById('quizStartPanel').style.display = 'block';
       document.getElementById('quizTimerWrap').style.display = 'none';
@@ -8247,7 +8275,13 @@
     // ═══════════════════════════════════════════════════════
     // 🏇 HORSE RACING
     // ═══════════════════════════════════════════════════════
-    const HORSES = [{name:'Блискавка',emoji:'🐎',odds:2.1,color:'#e74c3c'},{name:'Магія',emoji:'🦄',odds:3.5,color:'#c9a0ff'},{name:'Буря',emoji:'🐴',odds:5.0,color:'#4a9eff'},{name:'Темний',emoji:'🏇',odds:8.0,color:'#ff9f43'}];
+    const HORSES = [
+      {name:'Блискавка', emoji:'🐎', odds:1.8,  color:'#e74c3c', winChance:0.38},
+      {name:'Магія',     emoji:'🦄', odds:2.8,  color:'#c9a0ff', winChance:0.25},
+      {name:'Буря',      emoji:'🐴', odds:4.2,  color:'#4a9eff', winChance:0.22},
+      {name:'Темний',    emoji:'🏇', odds:6.5,  color:'#ff9f43', winChance:0.15},
+    ];
+    // House edge: sum of (1/odds * winChance) < 1 → casino advantage ~8%
     let hrSelectedHorse = -1, hrBet = 0, hrRacing = false;
 
     function selectHorse(idx, el) {
@@ -8268,50 +8302,48 @@
       addWager(b); trackQuest('totalGames',1); trackLbStat('wager',b); trackLbStat('games',1);
       document.getElementById('hrStartBtn').disabled = true;
       document.getElementById('hrStatus').textContent = '🏇 Гонка почалась!';
-      // Reset bars
       HORSES.forEach((_,i) => { const bar = document.getElementById('hbar'+i); if(bar) bar.style.width='0'; });
-      // Simulate race
+
       const progress = [0,0,0,0];
-      const speeds = HORSES.map((h,i) => {
-        // Winner has better speed — odds-based
-        const baseSpeed = 3 + Math.random()*4;
-        return baseSpeed;
-      });
-      // Predetermine winner (house-biased, not always selected horse)
+      const speeds   = HORSES.map(() => 2.5 + Math.random() * 4);
+
+      // Determine winner by weighted chance (not pure odds-based)
       const rng = Math.random();
-      let winner = 0;
-      if(rng < 0.42) winner = 0; // 42% horse 0 (favorite)
-      else if(rng < 0.70) winner = 1;
-      else if(rng < 0.88) winner = 2;
-      else winner = 3;
-      // Bias winner speed
-      speeds[winner] *= 1.3;
+      let cum = 0, winner = 0;
+      for(let hi = 0; hi < HORSES.length; hi++) {
+        cum += HORSES[hi].winChance;
+        if(rng < cum) { winner = hi; break; }
+        winner = hi;
+      }
+      // Give winner a speed boost so it actually wins the animation
+      speeds[winner] = Math.max(...speeds) * 1.15 + Math.random() * 0.5;
 
       const raceInt = setInterval(() => {
-        let done = false;
         HORSES.forEach((_,i) => {
-          progress[i] += speeds[i] * (0.7 + Math.random()*0.6);
+          progress[i] += speeds[i] * (0.8 + Math.random() * 0.4);
           const bar = document.getElementById('hbar'+i);
           if(bar) bar.style.width = Math.min(progress[i], 100)+'%';
-          if(progress[winner] >= 100) done = true;
         });
-        if(done) {
+        if(progress[winner] >= 100) {
           clearInterval(raceInt);
           hrRacing = false;
           document.getElementById('hrStartBtn').disabled = false;
           const won = winner === hrSelectedHorse;
           if(won) {
-            const winAmt = Math.floor(hrBet * HORSES[winner].odds);
+            // Cap max payout at 8x to prevent abuse on low-odds horses
+            const rawWin = Math.floor(hrBet * HORSES[winner].odds);
+            const winAmt = Math.min(rawWin, hrBet * 8);
             db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
             trackLbStat('wins', winAmt);
-            notify('🏆 '+HORSES[winner].emoji+' виграв! +'+formatNumber(winAmt)+'₴', 'success');
+            notify('🏆 '+HORSES[winner].emoji+' переміг! +'+formatNumber(winAmt)+'₴ (×'+HORSES[winner].odds+')', 'success');
             addToHistory('Гонки: +'+winAmt+' (×'+HORSES[winner].odds+')');
-            document.getElementById('hrStatus').textContent = '🏆 '+HORSES[winner].name+' виграв! +'+formatNumber(winAmt)+'₴';
+            document.getElementById('hrStatus').textContent = '🏆 '+HORSES[winner].name+' переміг! +'+formatNumber(winAmt)+'₴';
             updateStreak(true); applyAutoSaveOnWin(winAmt); recordBalanceHistory();
+            publishLiveBet('Скачки 🏇','🏇', hrBet, HORSES[winner].odds);
           } else {
-            notify('❌ '+HORSES[winner].emoji+' '+HORSES[winner].name+' виграв. Ваш кінь програв.', 'error');
+            notify('❌ '+HORSES[winner].emoji+' '+HORSES[winner].name+' переміг. Твій кінь програв.', 'error');
             addToHistory('Гонки: -'+hrBet);
-            document.getElementById('hrStatus').textContent = '❌ '+HORSES[winner].name+' виграв';
+            document.getElementById('hrStatus').textContent = '❌ '+HORSES[winner].name+' переміг';
             updateStreak(false); tryClaimInsurance(hrBet);
           }
           trackSession(won, hrBet);
@@ -8399,6 +8431,7 @@
     // ═══════════════════════════════════════════════════════
     let globalChatListener = null;
     let chatPendingImage = null;
+    let chatPendingIsVideo = false;
 
     function initChat() {
       const msgsEl = document.getElementById('chatMessages');
@@ -8417,7 +8450,9 @@
             ? `<img src="${m.avatarUrl}" class="chat-msg-avatar-img">`
             : `<div class="chat-msg-avatar-emoji">${m.avatar||'👤'}</div>`;
           const contentHtml = m.imgUrl
-            ? `<img src="${m.imgUrl}" class="chat-img-msg" onclick="window.open('${m.imgUrl}','_blank')">`
+            ? (m.isVideo
+                ? `<video src="${m.imgUrl}" style="max-width:220px;max-height:200px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline onclick="this.requestFullscreen&&this.requestFullscreen()"></video>`
+                : `<img src="${m.imgUrl}" class="chat-img-msg" onclick="window.open('${m.imgUrl}','_blank')">`)
             : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
           const nameBadge = isAdmin ? ' <span style="background:#d4af37;color:#000;font-size:8px;font-weight:900;padding:1px 5px;border-radius:3px;">ADMIN</span>' : '';
           const headerHtml = showHeader
@@ -8447,24 +8482,59 @@
     function handleChatImage(input) {
       const file = input.files[0];
       if(!file) return;
-      if(file.size > 4*1024*1024) { notify('Файл занадто великий (макс 4 МБ)','error'); return; }
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = isVideo ? 25 * 1024 * 1024 : 4 * 1024 * 1024;
+      if(file.size > maxSize) {
+        notify(isVideo ? 'Відео занадто велике (макс 25 МБ)' : 'Фото занадто велике (макс 4 МБ)', 'error');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = e => {
         chatPendingImage = e.target.result;
+        chatPendingIsVideo = isVideo;
         const preview = document.getElementById('chatImagePreview');
         const img = document.getElementById('chatImagePreviewImg');
         if(preview) preview.style.display = 'block';
-        if(img) img.src = chatPendingImage;
+        if(img) {
+          if(isVideo) {
+            img.src = '';
+            img.style.display = 'none';
+            // Show video preview
+            let vidEl = document.getElementById('chatVideoPreview');
+            if(!vidEl) {
+              vidEl = document.createElement('video');
+              vidEl.id = 'chatVideoPreview';
+              vidEl.style.cssText = 'max-height:80px;border-radius:8px;border:1px solid #222;display:block;';
+              vidEl.controls = true;
+              vidEl.muted = true;
+              img.parentElement.appendChild(vidEl);
+            }
+            vidEl.src = e.target.result;
+            vidEl.style.display = 'block';
+          } else {
+            // Hide video preview if exists
+            const vidEl = document.getElementById('chatVideoPreview');
+            if(vidEl) vidEl.style.display = 'none';
+            img.style.display = 'block';
+            img.src = e.target.result;
+            chatPendingIsVideo = false;
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
 
     function clearChatImage() {
       chatPendingImage = null;
+      chatPendingIsVideo = false;
       const preview = document.getElementById('chatImagePreview');
       if(preview) preview.style.display = 'none';
       const input = document.getElementById('chatImgInput');
       if(input) input.value = '';
+      const vidEl = document.getElementById('chatVideoPreview');
+      if(vidEl) { vidEl.src = ''; vidEl.style.display = 'none'; }
+      const img = document.getElementById('chatImagePreviewImg');
+      if(img) img.style.display = 'block';
     }
 
     function toggleGifPanel() {
@@ -8497,7 +8567,10 @@
         user: currentUser, text: text || '', ts: Date.now(),
         avatar: userData.avatar || '👤', avatarUrl: userData.avatarUrl || null,
       };
-      if(chatPendingImage) msg.imgUrl = chatPendingImage;
+      if(chatPendingImage) {
+        msg.imgUrl = chatPendingImage;
+        if(chatPendingIsVideo) msg.isVideo = true;
+      }
       db.ref('global_chat').push(msg);
       inp.value = '';
       clearChatImage();
@@ -9417,9 +9490,50 @@
             box.scrollTop=box.scrollHeight; 
         }); 
     }
-    function sendSupportMsg() { 
-        const t=document.getElementById('supportMsg').value; 
-        if(t){ db.ref('support_chats/'+currentUser).push({text:t,sender:'user',time:Date.now()}); document.getElementById('supportMsg').value=""; } 
+    var _supportPendingMedia = null;
+    var _supportPendingIsVideo = false;
+
+    function handleSupportMedia(input) {
+      const file = input.files[0]; if(!file) return;
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = isVideo ? 25*1024*1024 : 4*1024*1024;
+      if(file.size > maxSize) return notify(isVideo?'Відео макс 25 МБ':'Фото макс 4 МБ','error');
+      const reader = new FileReader();
+      reader.onload = e => {
+        _supportPendingMedia = e.target.result;
+        _supportPendingIsVideo = isVideo;
+        const prev = document.getElementById('supportMediaPreview');
+        const img = document.getElementById('supportPreviewImg');
+        const vid = document.getElementById('supportPreviewVid');
+        if(prev) prev.style.display = 'block';
+        if(isVideo) {
+          if(img) img.style.display = 'none';
+          if(vid) { vid.src = e.target.result; vid.style.display = 'block'; }
+        } else {
+          if(vid) vid.style.display = 'none';
+          if(img) { img.src = e.target.result; img.style.display = 'block'; }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSupportMedia() {
+      _supportPendingMedia = null; _supportPendingIsVideo = false;
+      const prev = document.getElementById('supportMediaPreview');
+      if(prev) prev.style.display = 'none';
+      const inp = document.getElementById('supportFileInput');
+      if(inp) inp.value = '';
+    }
+
+    function sendSupportMsg() {
+      const t = (document.getElementById('supportMsg')?.value || '').trim();
+      if(!t && !_supportPendingMedia) return;
+      const msg = { sender:'user', time: Date.now() };
+      if(t) msg.text = t;
+      if(_supportPendingMedia) { msg.mediaUrl = _supportPendingMedia; if(_supportPendingIsVideo) msg.isVideo = true; }
+      db.ref('support_chats/' + currentUser).push(msg);
+      if(document.getElementById('supportMsg')) document.getElementById('supportMsg').value = '';
+      clearSupportMedia();
     }
     window.openUserProfile = function(name) { 
         if(name===currentUser) return switchTab('profile'); 
@@ -14490,104 +14604,120 @@
     };
 
     function switchTab(id, el) {
-      document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-      const tab = document.getElementById('tab-'+id);
-      if(tab) tab.classList.remove('hidden');
+      try {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        const tab = document.getElementById('tab-' + id);
+        if(tab) {
+          tab.classList.remove('hidden');
+        } else {
+          // Tab not found — go home
+          console.warn('switchTab: tab-' + id + ' not found');
+          const home = document.getElementById('tab-home');
+          if(home) home.classList.remove('hidden');
+        }
+      } catch(e) { console.error('switchTab hide error:', e); }
 
-      // Оновлюємо активний nav-item завжди — навіть якщо el не передано
-      const navItems = document.querySelectorAll('.nav-item');
-      navItems.forEach(n => n.classList.remove('active'));
-      if(el && el.classList && el.classList.contains('nav-item')) {
-        el.classList.add('active');
-      } else {
-        const navIdx = NAV_TAB_MAP[id];
-        if(navIdx !== undefined && navItems[navIdx]) navItems[navIdx].classList.add('active');
-      }
-      // Зупиняємо краш якщо виходимо зі сторінки
-      if(id !== 'crash' && isCrashPlaying) {
-        clearInterval(crashInt);
-        isCrashPlaying = false;
-        crashActiveBet = 0;
-        document.getElementById('crashBtn')?.classList.remove('hidden');
-        document.getElementById('crashCashoutBtn')?.classList.add('hidden');
-      }
-      // Скидаємо бонус-раунд слотів якщо виходимо
-      if(id !== 'slots' && slotBonusRound > 0) {
-        slotBonusRound = 0; slotBonusBet = 0;
-        document.getElementById('bonusRoundBanner')?.classList.add('hidden');
-      }
-      if(id==='chat') initLobbyChat();
-      if(id==='keno') initKeno();
-      if(id==='fortune') { setTimeout(()=>drawFortuneWheel(0), 50); }
-      if(id==='duels') loadDuels();
-      if(id==='tournaments') loadTournaments();
-      if(id==='referrals') initReferrals();
-      if(id==='scratch') { const g=document.getElementById('scratchGrid'); if(!g.children.length) scratchReset(); }
-      if(id==='vip') updateVipUI();
-      if(id==='quests') loadQuests();
-      if(id==='lootboxes') loadLootboxHistory();
-      if(id==='hourly') initHourlyBonus();
-      if(id==='clans') loadClanTab();
-      if(id==='leaderboard') loadLeaderboard('balance', document.querySelector('.lb-tab'));
-      if(id==='gifts') { loadInboxGifts(); }
-      if(id==='monopoly') { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); }
-      if(id==='cardgame') { document.getElementById('cgStartScreen').classList.remove('hidden'); document.getElementById('cgGameScreen').classList.add('hidden'); document.getElementById('cgOnlineLobby').classList.add('hidden'); }
-      if(id==='tower') { towerReset(); setTimeout(()=>{if(document.getElementById('towerStartArea'))document.getElementById('towerStartArea').classList.remove('hidden');},50); }
-      if(id==='hilo') { hiloState=null; document.getElementById('hiloGameArea')?.classList.add('hidden'); }
-      if(id==='dice') { updateDiceUI(); }
-      if(id==='slotiky') { initSlotiky(); }
-      if(id==='achievements') { initAchievementsTab(); checkAchievements('tab',null); }
-      if(id==='battlepass') { initBattlePass(); }
-      if(id==='stats') { initStatsTab(); }
-      if(id==='bank') { initBankTab(); }
-      if(id==='tournaments') { loadTournamentsV2(); loadTourneyStatsBar(); }
-      if(id==='sports') { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); }
-      if(id==='balloon') { /* ready */ }
-      if(id==='horseracing') { /* ready */ }
-      if(id==='colorbet') { renderColorHistory(); }
-      if(id==='chat') { initChat(); }
-      if(id==='affiliate') { initAffiliate(); }
-      if(id==='russianroulette') { updateRRDisplay(); }
-      if(id==='quiz') { /* ready */ }
-      if(id==='cashier') {
-        setTimeout(initDepositPackages, 100); 
-        switchCashierTab('card', document.getElementById('ctb-card')); 
-        setTimeout(()=>{ updateCashierCashbackUI(); renderCardPanel(); }, 300); 
-      }
-      if(id==='monopoly-mp') { loadMpRooms(); }
-      if(id==='notifications') { renderNotifs(); }
-      if(id==='settings') { loadSettings(); }
-      if(id==='home')      { initHomeTab(); updateHomeStats(); }
-      if(id==='baccarat')  { initBaccarat(); }
-      if(id==='videpoker') { initVideoPoker(); }
-      if(id==='seasons')   { renderSeasons(); }
-      if(id==='ranks')     { renderRanks(); }
-      if(id==='halloffame'){ renderHallOfFame(); }
-      if(id==='pm')        { renderPmInbox(); db.ref('users/'+currentUser+'/pmUnread').set(0); }
-      if(id==='weekly')    { renderWeeklyMissions(); }
-      if(id==='themes')    { renderThemeGrid(); }
-      if(id==='coinflip')  { loadCfRooms(); }
-      if(id==='rps')       { loadRpsRooms(); }
-      if(id==='predict')   { loadPdRooms(); }
-      if(id==='limbo')    { updateLimboChance(); }
-      if(id==='mines')    { updateMinesInfo(); }
-      if(id==='roulette')  { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); }
-      if(id==='leaderboard') { loadLeaderboardNew(); }
-      if(id==='copytrade') { loadCtTop(); ctStartLiveFeed(); }
-      if(id==='insurance') { loadInsActive(); loadInsHistory(); }
-      if(id==='autobet')   { /* autobet initializes on start */ }
-      if(id==='trade')     { loadTrade(); db.ref('users/'+currentUser+'/tradeUnread').set(0); }
-      if(id==='admin')     { initAdminPanel(); }
-      if(id==='dragon')    { initDragonTower(); }
-      if(id==='penalty')   { initPenalty(); }
-      if(id==='bowling')   { initBowling(); }
-      if(id==='archery')   { initArchery(); }
-      if(id==='sicbo')     { initSicBo(); }
-      if(id==='cardwar')   { initCardWar(); }
-      if(id==='duckshoot') { initDuckShoot(); }
-      if(id==='lottery')   { loadLottery(); }
-      if(id==='investpool'){ loadInvestPool(); }
-      if(id==='watchmode') { initWatchMode(); }
+      // Update nav
+      try {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(n => n.classList.remove('active'));
+        if(el && el.classList && el.classList.contains('nav-item')) {
+          el.classList.add('active');
+        } else {
+          const navIdx = NAV_TAB_MAP[id];
+          if(navIdx !== undefined && navItems[navIdx]) navItems[navIdx].classList.add('active');
+        }
+      } catch(e) { console.error('switchTab nav error:', e); }
+
+      // Stop crash if leaving
+      try {
+        if(id !== 'crash' && isCrashPlaying) {
+          clearInterval(crashInt); isCrashPlaying = false; crashActiveBet = 0;
+          document.getElementById('crashBtn')?.classList.remove('hidden');
+          document.getElementById('crashCashoutBtn')?.classList.add('hidden');
+        }
+      } catch(e) {}
+
+      // Reset slot bonus if leaving
+      try {
+        if(id !== 'slots' && slotBonusRound > 0) {
+          slotBonusRound = 0; slotBonusBet = 0;
+          document.getElementById('bonusRoundBanner')?.classList.add('hidden');
+        }
+      } catch(e) {}
+
+      // Tab-specific init — each wrapped in try/catch
+      const safe = (fn) => { try { fn(); } catch(e) { console.error('switchTab init error [' + id + ']:', e); } };
+
+      if(id==='chat')         safe(() => { initLobbyChat(); initChat(); });
+      if(id==='keno')         safe(() => initKeno());
+      if(id==='fortune')      safe(() => setTimeout(() => drawFortuneWheel(0), 50));
+      if(id==='duels')        safe(() => loadDuels());
+      if(id==='tournaments')  safe(() => { loadTournaments(); loadTourneyStatsBar(); });
+      if(id==='referrals')    safe(() => initReferrals());
+      if(id==='scratch')      safe(() => { const g = document.getElementById('scratchGrid'); if(g && !g.children.length) scratchReset(); });
+      if(id==='vip')          safe(() => updateVipUI());
+      if(id==='quests')       safe(() => loadQuests());
+      if(id==='lootboxes')    safe(() => loadLootboxHistory());
+      if(id==='hourly')       safe(() => initHourlyBonus());
+      if(id==='clans')        safe(() => loadClanTab());
+      if(id==='leaderboard')  safe(() => { loadLeaderboard('balance', document.querySelector('.lb-tab')); loadLeaderboardNew(); });
+      if(id==='gifts')        safe(() => loadInboxGifts());
+      if(id==='monopoly')     safe(() => { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); });
+      if(id==='cardgame')     safe(() => {
+        document.getElementById('cgStartScreen')?.classList.remove('hidden');
+        document.getElementById('cgGameScreen')?.classList.add('hidden');
+        document.getElementById('cgOnlineLobby')?.classList.add('hidden');
+      });
+      if(id==='tower')        safe(() => { towerReset(); setTimeout(() => { document.getElementById('towerStartArea')?.classList.remove('hidden'); }, 50); });
+      if(id==='hilo')         safe(() => { hiloState = null; document.getElementById('hiloGameArea')?.classList.add('hidden'); });
+      if(id==='dice')         safe(() => updateDiceUI());
+      if(id==='slotiky')      safe(() => initSlotiky());
+      if(id==='achievements') safe(() => { initAchievementsTab(); checkAchievements('tab', null); });
+      if(id==='battlepass')   safe(() => initBattlePass());
+      if(id==='stats')        safe(() => initStatsTab());
+      if(id==='bank')         safe(() => initBankTab());
+      if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
+      if(id==='colorbet')     safe(() => renderColorHistory());
+      if(id==='affiliate')    safe(() => initAffiliate());
+      if(id==='russianroulette') safe(() => updateRRDisplay());
+      if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
+      if(id==='monopoly-mp')  safe(() => loadMpRooms());
+      if(id==='notifications') safe(() => renderNotifs());
+      if(id==='settings')     safe(() => loadSettings());
+      if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); });
+      if(id==='baccarat')     safe(() => initBaccarat());
+      if(id==='videpoker')    safe(() => initVideoPoker());
+      if(id==='seasons')      safe(() => renderSeasons());
+      if(id==='ranks')        safe(() => renderRanks());
+      if(id==='halloffame')   safe(() => renderHallOfFame());
+      if(id==='pm')           safe(() => { renderPmInbox(); db.ref('users/'+currentUser+'/pmUnread').set(0); });
+      if(id==='weekly')       safe(() => renderWeeklyMissions());
+      if(id==='themes')       safe(() => renderThemeGrid());
+      if(id==='coinflip')     safe(() => loadCfRooms());
+      if(id==='rps')          safe(() => loadRpsRooms());
+      if(id==='predict')      safe(() => loadPdRooms());
+      if(id==='limbo')        safe(() => updateLimboChance());
+      if(id==='mines')        safe(() => updateMinesInfo());
+      if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
+      if(id==='copytrade')    safe(() => { loadCtTop(); ctStartLiveFeed(); });
+      if(id==='insurance')    safe(() => { loadInsActive(); loadInsHistory(); });
+      if(id==='trade')        safe(() => { loadTrade(); db.ref('users/'+currentUser+'/tradeUnread').set(0); });
+      if(id==='admin')        safe(() => initAdminPanel());
+      if(id==='dragon')       safe(() => initDragonTower());
+      if(id==='penalty')      safe(() => initPenalty());
+      if(id==='bowling')      safe(() => initBowling());
+      if(id==='archery')      safe(() => initArchery());
+      if(id==='sicbo')        safe(() => initSicBo());
+      if(id==='cardwar')      safe(() => initCardWar());
+      if(id==='duckshoot')    safe(() => initDuckShoot());
+      if(id==='lottery')      safe(() => loadLottery());
+      if(id==='investpool')   safe(() => loadInvestPool());
+      if(id==='watchmode')    safe(() => initWatchMode());
+      if(id==='horseracing')  safe(() => { /* ready */ });
+      if(id==='balloon')      safe(() => { /* ready */ });
+      if(id==='quiz')         safe(() => { /* ready */ });
+      if(id==='profile')      safe(() => updateProfileUI());
     }
 
     function scratchReset() {
@@ -18973,21 +19103,54 @@
       if(!box) return;
 
       if(!supportChatListener) {
-        supportChatListener = db.ref('support_chats/'+currentUser).limitToLast(30).on('child_added', snap => {
+        supportChatListener = db.ref('support_chats/'+currentUser).limitToLast(50).on('child_added', snap => {
           const m = snap.val(); if(!m) return;
           const isMe = m.sender === 'user';
           const isAI = m.sender === 'ai';
           const div = document.createElement('div');
-          div.style.cssText = 'margin-bottom:10px;display:flex;flex-direction:' + (isMe?'row-reverse':'row') + ';gap:8px;align-items:flex-end;';
+          div.style.cssText = 'margin-bottom:10px;display:flex;flex-direction:'+(isMe?'row-reverse':'row')+';gap:8px;align-items:flex-end;animation:slideUp .2s ease;';
+
           const bubble = document.createElement('div');
-          bubble.style.cssText = 'max-width:80%;padding:10px 14px;border-radius:' + (isMe?'16px 16px 4px 16px':'16px 16px 16px 4px') + ';' +
-            'background:' + (isMe?'var(--accent)':isAI?'#0d1a2e':'#1a1a1a') + ';' +
-            'color:' + (isMe?'#000':'#fff') + ';font-size:13px;';
+          bubble.style.cssText = 'max-width:80%;padding:10px 14px;border-radius:'+(isMe?'16px 16px 4px 16px':'16px 16px 16px 4px')+';'
+            +'background:'+(isMe?'rgba(212,175,55,.15)':isAI?'#0d1a2e':'#1a1a1a')+';'
+            +'color:#fff;font-size:13px;border:1px solid '+(isMe?'rgba(212,175,55,.25)':isAI?'rgba(74,158,255,.2)':'#222')+';';
+
           const name = document.createElement('div');
-          name.style.cssText = 'font-size:9px;margin-bottom:4px;color:' + (isAI?'#4a90e2':'#777') + ';font-weight:bold;';
+          name.style.cssText = 'font-size:9px;margin-bottom:4px;color:'+(isAI?'#4a90e2':'#777')+';font-weight:bold;';
           name.textContent = isMe ? 'Ви' : isAI ? '🤖 AI Підтримка' : '👨‍💼 Адміністратор';
           bubble.appendChild(name);
-          bubble.appendChild(document.createTextNode(m.text));
+
+          // Text content
+          if(m.text) {
+            const textNode = document.createElement('div');
+            textNode.style.cssText = 'line-height:1.4;word-break:break-word;';
+            textNode.textContent = m.text;
+            bubble.appendChild(textNode);
+          }
+
+          // Media content (photo/video)
+          if(m.mediaUrl) {
+            if(m.isVideo) {
+              const vid = document.createElement('video');
+              vid.src = m.mediaUrl;
+              vid.style.cssText = 'max-width:200px;max-height:180px;border-radius:10px;display:block;margin-top:6px;cursor:pointer;';
+              vid.controls = true; vid.muted = true; vid.playsInline = true;
+              vid.onclick = () => { vid.requestFullscreen && vid.requestFullscreen(); };
+              bubble.appendChild(vid);
+            } else {
+              const img = document.createElement('img');
+              img.src = m.mediaUrl;
+              img.style.cssText = 'max-width:200px;max-height:180px;border-radius:10px;display:block;margin-top:6px;cursor:pointer;';
+              img.onclick = () => window.open(m.mediaUrl, '_blank');
+              bubble.appendChild(img);
+            }
+          }
+
+          const time = document.createElement('div');
+          time.style.cssText = 'font-size:9px;color:#555;margin-top:4px;text-align:'+(isMe?'right':'left')+';';
+          time.textContent = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
+          bubble.appendChild(time);
+
           div.appendChild(bubble);
           box.appendChild(div);
           box.scrollTop = box.scrollHeight;
@@ -19002,16 +19165,22 @@
       }
     }
 
-    // Override sendSupportMsg with AI auto-reply
+    // Override sendSupportMsg with AI auto-reply + media support
     window.sendSupportMsg = function() {
       const inp = document.getElementById('supportMsg');
       const t = inp ? inp.value.trim() : '';
-      if(!t) return;
-      inp.value = '';
-      db.ref('support_chats/'+currentUser).push({text:t, sender:'user', time:Date.now()});
-
-      // If admin offline → AI responds
-      if(!adminOnlineStatus) {
+      if(!t && !_supportPendingMedia) return;
+      const msg = { sender: 'user', time: Date.now() };
+      if(t) msg.text = t;
+      if(_supportPendingMedia) {
+        msg.mediaUrl = _supportPendingMedia;
+        if(_supportPendingIsVideo) msg.isVideo = true;
+      }
+      if(inp) inp.value = '';
+      clearSupportMedia();
+      db.ref('support_chats/'+currentUser).push(msg);
+      // If admin offline → AI responds (text only)
+      if(!adminOnlineStatus && t) {
         setTimeout(() => aiSupportReply(t), 1200 + Math.random()*1500);
       }
     };
