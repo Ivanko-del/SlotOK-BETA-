@@ -2434,3 +2434,39 @@
   letter-spacing: 2px;
   opacity: .8;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ВИМКНЕНІ ІГРИ — kill-switch адміна
+═══════════════════════════════════════════════════════ */
+.game-card-disabled {
+  filter: grayscale(85%) brightness(.5);
+  pointer-events: none;
+  position: relative;
+}
+.game-card-disabled-admin {
+  position: relative;
+  box-shadow: inset 0 0 0 2px rgba(231,76,60,.5);
+}
+.game-card-disabled-admin .game-disabled-badge {
+  inset: auto;
+  top: 4px; left: 4px; right: 4px; bottom: auto;
+  background: rgba(231,76,60,.85);
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 8px;
+}
+.game-disabled-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  color: #ff8888;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: inherit;
+  z-index: 5;
+  text-align: center;
+  padding: 4px;
+}

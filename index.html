@@ -3172,6 +3172,16 @@
           <div id="gameToggleList"></div>
         </div>
 
+        <!-- Anti-cheat flags -->
+        <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:800;color:#e74c3c;">🚩 Анти-чіт — позначені гравці</div>
+            <button onclick="loadFlaggedPlayers()" style="background:none;border:1px solid #333;border-radius:6px;color:#888;font-size:11px;padding:4px 10px;cursor:pointer;">🔄</button>
+          </div>
+          <div style="font-size:10px;color:#666;margin-bottom:8px;">Автовиявлення: стрибки балансу, надто швидкі ставки, неправдоподібне співвідношення баланс/ставки. Адмін отримує сповіщення в ПМ одразу при спрацюванні.</div>
+          <div id="flaggedPlayersList" style="max-height:280px;overflow-y:auto;"></div>
+        </div>
+
         <!-- Admin action log -->
         <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">

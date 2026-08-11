@@ -84,8 +84,10 @@ function startDataSync() {
         db.ref('users/' + currentUser).on('value', (snapshot) => {
             const data = snapshot.val();
             if(!data) { logout(); return; }
+            const prevBalance = userData ? userData.balance : null;
             userData = data; 
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
+            if(!userData.isBot) antiCheatCheckBalanceJump(prevBalance, userData.balance);
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
             if(!isAdminAcc) {
               db.ref('site_config/maintenance').once('value', mSnap => {
@@ -6268,22 +6270,98 @@ function exitShadowMode() {
 
 // ── АНТИЧІТ ────────────────────────────────────────────────────
 var _betHistory = [];
-function antiCheatCheck(game, bet, win) {
-  var now = Date.now();
-  _betHistory.push({ game: game, bet: bet, win: win, ts: now });
-  if (_betHistory.length > 50) _betHistory.shift();
-  var recent = _betHistory.filter(function(b) { return now - b.ts < 60000; });
-  // Check: more than 30 bets per minute
-  if (recent.length > 30) {
-    logSecurityEvent('suspicious_betting', game + ' x' + recent.length + '/min');
-    return true; // suspicious
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  АНТИ-ЧІТ v2 — реальне виявлення + сповіщення адміну         ║
+// ║                                                                ║
+// ║  Чесно: без бекенду (сайт = статичний HTML + Firebase),      ║
+// ║  неможливо ФІЗИЧНО заборонити комусь відкрити консоль         ║
+// ║  браузера і написати db.ref(...).set(999999) — для цього      ║
+// ║  потрібен сервер, якого тут немає. Що МОЖНА зробити чесно:    ║
+// ║  виявляти підозрілі патерни в реальному часі й одразу         ║
+// ║  сповіщати адміна, щоб він міг забанити/перевірити вручну.    ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+let _antiCheatBetTimestamps = [];
+
+function antiCheatRecordBet(bet) {
+  if(!currentUser) return;
+  const now = Date.now();
+  _antiCheatBetTimestamps.push(now);
+  _antiCheatBetTimestamps = _antiCheatBetTimestamps.filter(t => now - t < 60000);
+  // Людина фізично не встигне усвідомлено зробити 25+ ставок за хвилину
+  // в казино з підтвердженнями/анімаціями — це ознака скрипта/бота
+  if(_antiCheatBetTimestamps.length > 25) {
+    antiCheatFlag('rapid_betting', `${_antiCheatBetTimestamps.length} ставок за 60с`, 'medium');
+    _antiCheatBetTimestamps = []; // не спамити повторно щохвилини
   }
-  // Check: impossibly high win rate
-  var wins = recent.filter(function(b) { return b.win > 0; });
-  if (recent.length > 10 && wins.length / recent.length > 0.85) {
-    logSecurityEvent('high_win_rate', Math.round(wins.length/recent.length*100) + '%');
+  // Персистентний лічильник — переживає перезавантаження сторінки
+  db.ref('users/'+currentUser+'/antiCheat/betCount').transaction(c => (c||0)+1);
+}
+
+function antiCheatCheckBalanceJump(oldBalance, newBalance) {
+  if(oldBalance === null || oldBalance === undefined || !currentUser) return; // перший запуск — нема з чим порівнювати
+  const delta = newBalance - oldBalance;
+  if(delta <= 0) return; // цікавлять лише РАПТОВІ збільшення
+
+  const wagered = userData.totalWagered || 0;
+  const games = userData.totalGames || 0;
+
+  // Великий стрибок балансу при тому що акаунт майже не грав —
+  // класична ознака ручної правки балансу через консоль браузера
+  if(delta > 100000 && games < 5) {
+    antiCheatFlag('balance_jump', `+₴${formatNumber(delta)} за раз, зіграно лише ${games} ігор`, 'high');
+    return;
   }
-  return false;
+  // Баланс сильно переважає над сумою всіх ставок гравця — теж підозріло,
+  // бо в чесній грі баланс не може рости набагато швидше за обіг ставок
+  if(newBalance > 3000000 && wagered < newBalance * 0.02) {
+    antiCheatFlag('balance_implausible', `Баланс ₴${formatNumber(newBalance)} при загальних ставках лише ₴${formatNumber(wagered)}`, 'high');
+  }
+}
+
+function antiCheatFlag(type, details, severity) {
+  if(!currentUser) return;
+  db.ref('anti_cheat_flags/'+currentUser).push({ type, details, severity: severity||'low', ts: Date.now() });
+  db.ref('users/'+currentUser+'/flagged').set(true);
+  db.ref('users/'+currentUser+'/flagReason').set(details);
+  // Реальне сповіщення адміну — не просто мовчазний лог
+  const icon = severity === 'high' ? '🔴' : severity === 'medium' ? '🟠' : '🟡';
+  db.ref('pm/theivankoo/'+db.ref().push().key).set({
+    from: '🚩 Анти-чіт', to: 'theivankoo',
+    text: `${icon} Підозріла активність @${currentUser}\nТип: ${type}\n${details}`,
+    ts: Date.now()
+  });
+  db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
+}
+
+// Список позначених акаунтів для адмін-панелі
+function loadFlaggedPlayers() {
+  const el = document.getElementById('flaggedPlayersList');
+  if(!el) return;
+  el.innerHTML = '<div style="color:#555;text-align:center;padding:14px;">Завантаження...</div>';
+  db.ref('users').orderByChild('flagged').equalTo(true).limitToLast(30).once('value').then(snap => {
+    const users = snap.val() || {};
+    const entries = Object.entries(users);
+    if(!entries.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:14px;">🎉 Немає позначених гравців</div>'; return; }
+    el.innerHTML = entries.map(([nick, u]) => `
+      <div style="background:#0d0d0d;border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:700;font-size:12px;">🚩 ${nick}</span>
+          <button onclick="clearPlayerFlag('${nick}')" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
+        </div>
+        <div style="font-size:10px;color:#888;">${u.flagReason || 'без деталей'}</div>
+        <div style="font-size:10px;color:#555;margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
+      </div>`).join('');
+  });
+}
+
+function clearPlayerFlag(nick) {
+  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  db.ref('users/'+nick+'/flagged').set(false);
+  db.ref('users/'+nick+'/flagReason').set(null);
+  logAdminAction('unflag', `@${nick}`);
+  notify('✅ Позначку знято з '+nick, 'success');
+  loadFlaggedPlayers();
 }
 
 // ── IP ЛОГУВАННЯ ───────────────────────────────────────────────
@@ -8402,6 +8480,7 @@ function setCashbackEnabled(val) {
 }
 
 function addWager(amount) {
+  if(!userData.isBot) antiCheatRecordBet(amount);
   // Progressive jackpot: 0.05% of wager
   try { db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.ceil(amount*0.0005))); } catch(e){}
   const wagered = (userData.totalWagered || 0) + amount;
@@ -8874,14 +8953,65 @@ function startDisabledGamesWatcher() {
   if(!db) return;
   db.ref('site_config/disabledGames').on('value', snap => {
     _disabledGamesCache = snap.val() || {};
+    updateDisabledGameCardsUI();
   });
 }
 
+// Знаходить ВСІ картки ігор по всьому DOM (лобі, каруселі, "Ще") через
+// їхній власний onclick="openGame('id')"/"switchTab('id')" — без потреби
+// вручну редагувати кожну з 30+ карток руками
+function updateDisabledGameCardsUI() {
+  const amAdmin = isAdminUser();
+  const selectors = document.querySelectorAll('[onclick*="openGame("], [onclick*="switchTab("]');
+  selectors.forEach(el => {
+    const match = el.getAttribute('onclick').match(/(?:openGame|switchTab)\('(\w+)'\)/);
+    if(!match) return;
+    const gameId = match[1];
+    if(!ADMIN_TOGGLEABLE_GAMES.some(g => g.id === gameId)) return; // не гра — пропускаємо
+    const isOff = !!_disabledGamesCache[gameId];
+    // Гравцям — повністю заблокована і затемнена картка.
+    // Адміну — тільки позначка "вимкнено", клік лишається робочим (щоб міг зайти й перевірити/увімкнути).
+    el.classList.toggle('game-card-disabled', isOff && !amAdmin);
+    el.classList.toggle('game-card-disabled-admin', isOff && amAdmin);
+    let badge = el.querySelector('.game-disabled-badge');
+    if(isOff && !badge) {
+      badge = document.createElement('div');
+      badge.className = 'game-disabled-badge';
+      badge.textContent = amAdmin ? '🔒 Вимкнено (тільки ти бачиш)' : '🔒 Вимкнено';
+      el.style.position = el.style.position || 'relative';
+      el.appendChild(badge);
+    } else if(!isOff && badge) {
+      badge.remove();
+    }
+  });
+}
+
+function showAdminBypassBanner(gameId) {
+  const existing = document.getElementById('adminBypassBanner');
+  if(existing) existing.remove();
+  const gameName = (ADMIN_TOGGLEABLE_GAMES.find(g => g.id === gameId) || {}).name || gameId;
+  const banner = document.createElement('div');
+  banner.id = 'adminBypassBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#3a0000,#5a0a0a);border-bottom:2px solid #e74c3c;padding:10px 16px;z-index:9997;display:flex;justify-content:space-between;align-items:center;gap:10px;';
+  banner.innerHTML = `
+    <div style="font-size:12px;color:#ff8888;flex:1;">🛠 <b>${gameName}</b> вимкнена для гравців — ти бачиш її, бо ти адмін</div>
+    <button onclick="toggleGameEnabled('${gameId}');document.getElementById('adminBypassBanner').remove();switchTab('lobby')" style="background:#3dd68c;border:none;border-radius:8px;padding:6px 12px;color:#000;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Увімкнути</button>
+    <button onclick="document.getElementById('adminBypassBanner').remove()" style="background:none;border:1px solid #666;border-radius:8px;padding:6px 10px;color:#aaa;font-size:11px;cursor:pointer;">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
 function switchTab(id, el) {
-  // Kill-switch: якщо гру вимкнено адміном — не пускаємо, показуємо причину
-  if(_disabledGamesCache[id] && !isAdminUser()) {
-    notify('🛠 Ця гра тимчасово недоступна (технічні роботи)', 'error');
-    return;
+  // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
+  if(_disabledGamesCache[id]) {
+    if(!isAdminUser()) {
+      notify('🛠 Ця гра тимчасово недоступна (технічні роботи)', 'error');
+      return;
+    } else {
+      // Адмін навмисно пропускається (щоб міг сам перевірити/увімкнути назад),
+      // але це має бути ОЧЕВИДНО, а не тихо — інакше здається що вимкнення не працює
+      setTimeout(() => showAdminBypassBanner(id), 50);
+    }
   }
   try {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -8964,7 +9094,8 @@ function switchTab(id, el) {
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
   if(id==='settings')     safe(() => loadSettings());
-  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); });
+  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); });
+  if(id==='lobby')        safe(() => updateDisabledGameCardsUI());
   if(id==='baccarat')     safe(() => initBaccarat());
   if(id==='videpoker')    safe(() => initVideoPoker());
   if(id==='seasons')      safe(() => renderSeasons());
@@ -18605,7 +18736,7 @@ function loadOnlinePlayersAdmin() {
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}</div>
+          <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
           <div style="font-size:10px;color:#555;">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
         </div>
         <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#888;font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
@@ -18696,6 +18827,7 @@ function initModerationPanel() {
   loadOnlinePlayersAdmin();
   renderGameToggleList();
   loadAdminActionLog();
+  loadFlaggedPlayers();
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
