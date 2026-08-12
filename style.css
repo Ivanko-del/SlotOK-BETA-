@@ -2470,3 +2470,35 @@
   text-align: center;
   padding: 4px;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ЗАМОРОЖЕНА КАРТКА — видима накладка прямо на картці
+═══════════════════════════════════════════════════════ */
+.vcard-frozen-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,20,40,.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border-radius: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 6;
+  animation: fadeInOverlay .3s ease;
+}
+.vcard-frozen-icon {
+  font-size: 40px;
+  filter: drop-shadow(0 0 12px rgba(150,220,255,.5));
+  animation: float 3s ease-in-out infinite;
+}
+.vcard-frozen-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #96dcff;
+  text-shadow: 0 0 8px rgba(150,220,255,.6);
+}

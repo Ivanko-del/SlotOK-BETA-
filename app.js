@@ -2959,8 +2959,13 @@ function toggleVibrate() {
 // ═══════════════════════════════════════════════════════
 // 🅰️ FONT SIZE
 // ═══════════════════════════════════════════════════════
+// Розмір шрифту — раніше міняв лише кореневий rem-розмір, але 95%+ сайту
+// написано з фіксованими px, тому візуально нічого не змінювалось.
+// Правильний підхід для сайту з "px скрізь" — масштабувати всю сторінку
+// через zoom (охоплює текст, відступи, кнопки, все одразу).
+const FONT_SIZE_ZOOM = { 12: 0.86, 14: 1, 16: 1.14, 18: 1.28 };
 function setFontSize(size) {
-  document.documentElement.style.fontSize = size+'px';
+  document.body.style.zoom = FONT_SIZE_ZOOM[size] || 1;
   saveSetting('fontSize', size);
   document.querySelectorAll('.font-size-btn').forEach(b=>b.classList.remove('active'));
   const el = document.getElementById('fs_'+size);
@@ -2968,7 +2973,7 @@ function setFontSize(size) {
 }
 function loadFontSize() {
   const saved = getSetting('fontSize', 14);
-  document.documentElement.style.fontSize = saved+'px';
+  document.body.style.zoom = FONT_SIZE_ZOOM[saved] || 1;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7222,6 +7227,7 @@ document.addEventListener('click', e => {
 function addToWinFeed(game, amount, mult) {
   if(amount < 500) return; // Тільки великі виграші
   trackLbBigWin(amount);
+  addTournamentPoints(game, amount, mult);
   triggerWinReaction(amount, game);
   db.ref('win_feed').push({
     user: currentUser, game, amount, mult: mult||1,
@@ -9101,7 +9107,14 @@ function switchTab(id, el) {
   if(id==='seasons')      safe(() => renderSeasons());
   if(id==='ranks')        safe(() => renderRanks());
   if(id==='halloffame')   safe(() => renderHallOfFame());
-  if(id==='pm')           safe(() => { renderPmInbox(); db.ref('users/'+currentUser+'/pmUnread').set(0); });
+  if(id==='pm')           safe(() => {
+    // Про всяк випадок скидаємо на інбокс — якщо хтось лишив відкритою переписку
+    // і вийшов не через кнопку "назад" всередині чату
+    document.getElementById('pmThreadView')?.classList.add('hidden');
+    document.getElementById('pmInboxView')?.classList.remove('hidden');
+    renderPmInbox();
+    db.ref('users/'+currentUser+'/pmUnread').set(0);
+  });
   if(id==='weekly')       safe(() => renderWeeklyMissions());
   if(id==='themes')       safe(() => renderThemeGrid());
   if(id==='coinflip')     safe(() => loadCfRooms());
@@ -9249,7 +9262,7 @@ function applyAllSettings() {
   });
   // Font size — one system, restored on the button row
   const fs = getSetting('fontSize', 14);
-  document.documentElement.style.fontSize = fs + 'px';
+  document.body.style.zoom = FONT_SIZE_ZOOM[fs] || 1;
   document.querySelectorAll('.font-size-btn').forEach(b=>b.classList.remove('active'));
   const fsBtn = document.getElementById('fs_' + fs);
   if(fsBtn) fsBtn.classList.add('active');
@@ -15613,9 +15626,19 @@ const SLOTIKY_PACKAGES = [
 // ════════════════════════════════════════════════
 
 // ── CARD DATA ──
+// Єдина точка правди: яка картка зараз активна — справжня (Axioma) чи тимчасова партнерська.
+// Раніше багато місць коду перевіряли лише userData.virtualCard напряму, тому CVV/блокування/
+// заморозка мовчки не працювали для більшості гравців (у них саме тимчасова картка).
+function getActiveCard() {
+  if(!userData) return null;
+  if(userData.virtualCard && userData.virtualCard.axiomLinked) return userData.virtualCard;
+  if(userData.tempPartnerCard) return userData.tempPartnerCard;
+  return null;
+}
+
 function getCardData() {
   if(!userData || !currentUser) return null;
-  const card = userData.virtualCard;
+  const card = getActiveCard();
   if(!card || !card.number) return null;
   return card;
 }
@@ -16627,14 +16650,74 @@ function renderPmInbox() {
     list.forEach(([name, msg]) => {
       const div = document.createElement('div');
       div.className = 'pm-thread';
+      div.setAttribute('data-nick', name.toLowerCase());
+      const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
       div.innerHTML = `<div class="pm-avatar">${name[0].toUpperCase()}</div>
-        <div style="flex:1;"><div style="font-weight:bold;font-size:13px;">${name}</div>
-          <div style="font-size:11px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${msg.text}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;">${name}</div>
+          <div style="font-size:11px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${previewText}</div>
         </div>
-        <div style="font-size:10px;color:#444;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>`;
+        <div style="font-size:10px;color:#444;flex-shrink:0;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>`;
       div.onclick = () => openPmThread(name);
       el.appendChild(div);
     });
+  });
+}
+
+// ── Пошук отримувача при наборі (нік або ID) ──────────────────
+let _pmSearchDebounce = null;
+function pmSearchRecipient(query) {
+  clearTimeout(_pmSearchDebounce);
+  const box = document.getElementById('pmRecipientSuggestions');
+  if(!box) return;
+  query = (query || '').trim();
+  if(query.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  _pmSearchDebounce = setTimeout(() => {
+    const isNumeric = /^\d+$/.test(query);
+    const results = [];
+    const done = () => {
+      if(!results.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+      box.classList.remove('hidden');
+      box.innerHTML = results.slice(0, 6).map(nick => `
+        <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#4a9eff;">${nick[0].toUpperCase()}</span>
+          ${nick}
+        </div>`).join('');
+    };
+    if(isNumeric) {
+      db.ref('users').orderByChild('id').equalTo(parseInt(query)).limitToFirst(5).once('value').then(snap => {
+        Object.keys(snap.val() || {}).forEach(n => { if(n !== currentUser) results.push(n); });
+        done();
+      });
+    } else {
+      const q = query.toLowerCase();
+      db.ref('users').orderByKey().startAt(q).endAt(q + '\uf8ff').limitToFirst(8).once('value').then(snap => {
+        Object.keys(snap.val() || {}).forEach(n => { if(n !== currentUser) results.push(n); });
+        done();
+      });
+    }
+  }, 250);
+}
+
+// ── Фільтр списку вхідних за ніком або ID ──────────────────────
+let _pmInboxIdCache = {};
+function filterPmInbox(query) {
+  query = (query || '').trim().toLowerCase();
+  const threads = document.querySelectorAll('#pmInbox .pm-thread');
+  if(!query) { threads.forEach(t => t.style.display = 'flex'); return; }
+
+  if(/^\d+$/.test(query)) {
+    // Пошук за ID — резолвимо в нік через Firebase, потім фільтруємо
+    db.ref('users').orderByChild('id').equalTo(parseInt(query)).limitToFirst(1).once('value').then(snap => {
+      const matchNick = Object.keys(snap.val() || {})[0];
+      threads.forEach(t => {
+        t.style.display = (matchNick && t.getAttribute('data-nick') === matchNick.toLowerCase()) ? 'flex' : 'none';
+      });
+    });
+    return;
+  }
+  threads.forEach(t => {
+    const nick = t.getAttribute('data-nick') || '';
+    t.style.display = nick.includes(query) ? 'flex' : 'none';
   });
 }
 
@@ -16658,33 +16741,39 @@ function pmSend() {
 }
 
 function openPmThread(otherUser) {
-  const screen = document.getElementById('tab-pm');
-  if(!screen) return;
-  let pmPendingImg = null;
-  screen.innerHTML = `
+  const inboxView = document.getElementById('pmInboxView');
+  const threadView = document.getElementById('pmThreadView');
+  if(!threadView) return;
+  // Перемикаємо ВИДИМІСТЬ, а не знищуємо розмітку — інбокс лишається цілим
+  if(inboxView) inboxView.classList.add('hidden');
+  threadView.classList.remove('hidden');
+
+  threadView.innerHTML = `
     <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
-      <button class="btn-outline" onclick="renderPmInboxFull()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
-      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;">${otherUser[0].toUpperCase()}</div>
-      <div>
+      <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${otherUser[0].toUpperCase()}</div>
+      <div style="min-width:0;">
         <div style="font-weight:800;font-size:14px;">${otherUser}</div>
         <div style="font-size:10px;color:#3dd68c;">● Онлайн</div>
       </div>
     </div>
-    <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:#050505;min-height:200px;"></div>
-    <div id="pmImgPreview" style="display:none;padding:6px 14px;background:#0a0a0a;border-top:1px solid #111;">
-      <div style="position:relative;display:inline-block;">
-        <img id="pmImgPreviewImg" style="max-height:70px;border-radius:8px;">
-        <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">×</div>
+    <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:#050505;min-height:0;"></div>
+    <div id="pmImgPreview" style="display:none;padding:6px 14px;background:#0a0a0a;border-top:1px solid #111;flex-shrink:0;">
+      <div style="position:relative;display:inline-block;max-width:90px;">
+        <img id="pmImgPreviewImg" style="max-height:60px;max-width:90px;border-radius:8px;display:block;object-fit:cover;">
+        <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
-    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;">
-      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;font-size:18px;cursor:pointer;">📎</button>
+    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
-      <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;margin:0;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
-      <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;">➤</button>
+      <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;width:auto;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
+      <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
+
   // Listen for messages
-  db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(50).on('value', snap => {
+  if(_pmThreadListener) db.ref('pm/'+currentUser).off('value', _pmThreadListener);
+  _pmThreadListener = db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(50).on('value', snap => {
     const el = document.getElementById('pmThreadMessages');
     if(!el) return;
     const msgs = Object.values(snap.val()||{})
@@ -16695,7 +16784,7 @@ function openPmThread(otherUser) {
       const timeStr = new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
       const contentHtml = m.imgUrl
         ? `<img src="${m.imgUrl}" style="max-width:200px;max-height:180px;border-radius:10px;display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${m.imgUrl}','_blank')">`
-        : `<div style="font-size:14px;line-height:1.4;">${escapeHtml(m.text||'')}</div>`;
+        : `<div style="font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text||'')}</div>`;
       return `<div style="display:flex;flex-direction:${isMe?'row-reverse':'row'};gap:8px;margin-bottom:8px;animation:slideUp .2s ease;">
         <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgba(212,175,55,.2)':'rgba(74,158,255,.2)'};border:1.5px solid ${isMe?'rgba(212,175,55,.3)':'rgba(74,158,255,.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${m.from[0].toUpperCase()}</div>
         <div style="max-width:72%;background:${isMe?'rgba(212,175,55,.08)':'rgba(255,255,255,.05)'};border:1px solid ${isMe?'rgba(212,175,55,.15)':'rgba(255,255,255,.07)'};border-radius:${isMe?'12px 4px 12px 12px':'4px 12px 12px 12px'};padding:8px 10px;">
@@ -16706,6 +16795,17 @@ function openPmThread(otherUser) {
     }).join('');
     el.scrollTop = el.scrollHeight;
   });
+}
+
+let _pmThreadListener = null;
+
+function closePmThread() {
+  if(_pmThreadListener) { db.ref('pm/'+currentUser).off('value', _pmThreadListener); _pmThreadListener = null; }
+  const inboxView = document.getElementById('pmInboxView');
+  const threadView = document.getElementById('pmThreadView');
+  if(threadView) { threadView.classList.add('hidden'); threadView.innerHTML = ''; }
+  if(inboxView) inboxView.classList.remove('hidden');
+  renderPmInbox(); // освіжити список — статуси прочитання могли змінитись
 }
 
 function handlePmImage(input, toUser) {
@@ -16729,11 +16829,8 @@ function clearPmImg() {
   if(input) input.value = '';
 }
 
-function renderPmInboxFull() {
-  const screen = document.getElementById('tab-pm');
-  if(screen) { screen.innerHTML = ''; }
-  switchTab('pm');
-}
+// renderPmInboxFull() — прибрано, замінено на closePmThread() яка просто
+// перемикає видимість підекранів, не знищуючи розмітку інбоксу
 
 function pmReply(to) {
   const text = (document.getElementById('pmReplyInput')?.value||'').trim();
@@ -18156,8 +18253,11 @@ function toggleCvvVisibility() {
   var btn = document.getElementById('cvvToggleBtn');
   var cvvFront = document.getElementById('vcardCvvDisplay');
   var cvvBack  = document.getElementById('vcardCvvBack');
-  var card = userData.virtualCard;
-  if(!card) return notify('Картку ще не активовано', 'error');
+  // Картка може бути або справжня (Axioma), або тимчасова партнерська —
+  // раніше перевірявся лише перший варіант, тому CVV мовчки не працював
+  // для більшості гравців (у них саме тимчасова картка)
+  var card = (userData.virtualCard && userData.virtualCard.axiomLinked) ? userData.virtualCard : userData.tempPartnerCard;
+  if(!card) return notify('Спочатку отримай картку в Касі', 'error');
   var cvv = card.cvv || '***';
   var hidden = cvvFront && cvvFront.textContent === '***';
   if(cvvFront) cvvFront.textContent = hidden ? cvv : '***';
@@ -18370,12 +18470,29 @@ function renderCardPanel() {
     });
   }
 
-  // Freeze status
-  var frozen = card && card.frozen;
+  // Freeze status — перевіряємо ТУ картку що реально активна (справжня або тимчасова)
+  var activeCardForFreeze = isAxioma ? card : (hasTempOnly ? tempCard : null);
+  var frozen = activeCardForFreeze && activeCardForFreeze.frozen;
   var freezeIcon = document.getElementById('cardFreezeIcon');
   var freezeLabel = document.getElementById('cardFreezeLabel');
   if(freezeIcon)  freezeIcon.textContent = frozen ? '🔓' : '🔒';
   if(freezeLabel) freezeLabel.textContent = frozen ? 'Розблок' : 'Блок';
+
+  // Видима крижана накладка ПРЯМО на картці — щоб блокування було очевидним,
+  // а не тільки написом на кнопці
+  var cardRootEl = document.getElementById('vcardEl');
+  var existingOverlay = document.getElementById('vcardFrozenOverlay');
+  if(frozen && cardRootEl) {
+    if(!existingOverlay) {
+      var overlay = document.createElement('div');
+      overlay.id = 'vcardFrozenOverlay';
+      overlay.className = 'vcard-frozen-overlay';
+      overlay.innerHTML = '<div class="vcard-frozen-icon">🔒</div><div class="vcard-frozen-text">ЗАБЛОКОВАНО</div>';
+      cardRootEl.appendChild(overlay);
+    }
+  } else if(existingOverlay) {
+    existingOverlay.remove();
+  }
 }
 
 function renderTransactionList(txs) {
@@ -18446,10 +18563,13 @@ function bankAction(action) {
 }
 
 function toggleCardFreeze() {
-  if(!userData.virtualCard) return notify('Картки немає', 'error');
-  var frozen = userData.virtualCard.frozen;
-  db.ref('users/' + currentUser + '/virtualCard/frozen').set(!frozen);
-  notify(frozen ? '🔓 Картку розблоковано' : '🔒 Картку заблоковано', frozen ? 'success' : 'info');
+  const card = getActiveCard();
+  if(!card) return notify('Спочатку отримай картку в Касі', 'error');
+  const isAxioma = userData.virtualCard && userData.virtualCard.axiomLinked;
+  const path = isAxioma ? 'virtualCard' : 'tempPartnerCard';
+  const frozen = !!card.frozen;
+  db.ref('users/' + currentUser + '/' + path + '/frozen').set(!frozen);
+  notify(frozen ? '🔓 Картку розблоковано' : '🔒 Картку заблоковано — гроші з неї списати не вийде', frozen ? 'success' : 'info');
 }
 
 // ── CARD COLOR PICKER (existing enhanced) ─────────────────────
@@ -18532,7 +18652,7 @@ function checkTempCardExpiry() { /* no-op — renderCardPanel handles this */ }
 // ║  BANNER CAROUSEL — авто-ротація + свайп + крапки            ║
 // ╚══════════════════════════════════════════════════════════════╝
 var _bannerIndex = 0;
-var _bannerCount = 6;
+var _bannerCount = 7;
 var _bannerAutoTimer = null;
 var _bannerTouchStartX = 0;
 var _bannerTouchDeltaX = 0;
@@ -18630,6 +18750,17 @@ function updateBannerDynamicContent() {
   if(rankEl && db && currentUser) {
     db.ref('leaderboard_weekly/' + currentUser + '/rank').once('value').then(function(snap) {
       rankEl.textContent = snap.exists() ? ('#' + snap.val()) : '—';
+    }).catch(function() {});
+  }
+  // Останній результат глобальної рулетки
+  var rouletteEl = document.getElementById('bannerRouletteLast');
+  if(rouletteEl && db) {
+    db.ref('global_roulette/history').limitToLast(1).once('value').then(function(snap) {
+      var vals = Object.values(snap.val() || {});
+      if(!vals.length) { rouletteEl.textContent = '—'; return; }
+      var last = vals[0];
+      var colorDot = last.color === 'red' ? '🔴' : last.color === 'black' ? '⚫' : '🟢';
+      rouletteEl.textContent = colorDot + ' ' + last.number;
     }).catch(function() {});
   }
 }

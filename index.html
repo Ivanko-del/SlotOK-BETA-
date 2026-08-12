@@ -159,7 +159,28 @@
               </div>
             </div>
 
-            <!-- Слайд 5: Крипто-симулятор -->
+            <!-- Слайд 5: Глобальна рулетка -->
+            <div class="banner-slide" style="background:linear-gradient(135deg,#1a0005,#330010,#1a0005);border:1.5px solid rgba(231,76,60,.4);" onclick="switchTab('roulette')">
+              <div class="banner-deco">🎡</div>
+              <div class="banner-inner">
+                <div>
+                  <div class="banner-title" style="color:#ff6b6b;">🎡 ГЛОБАЛЬНА РУЛЕТКА</div>
+                  <div class="banner-sub" style="color:#ff6b6b;">Один спін для всіх онлайн</div>
+                  <div class="banner-desc">Ставки приймаються між раундами • Живий результат для всіх гравців</div>
+                  <div class="banner-pills">
+                    <span class="banner-pill" style="color:#ff6b6b;background:rgba(231,76,60,.1);border-color:rgba(231,76,60,.2);">🔴⚫ Червоне/Чорне ×2</span>
+                    <span class="banner-pill" style="color:#d4af37;background:rgba(212,175,55,.1);border-color:rgba(212,175,55,.2);">🎯 Число ×35</span>
+                  </div>
+                </div>
+                <div class="banner-stat-box" style="border-color:rgba(231,76,60,.3);">
+                  <div class="banner-stat-lbl">Останнє</div>
+                  <div class="banner-stat-val" style="color:#ff6b6b;font-size:20px;" id="bannerRouletteLast">—</div>
+                  <div class="banner-stat-sub" style="color:#888;">Випало</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Слайд 6: Крипто-симулятор -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#1a1000,#332000,#1a1000);border:1.5px solid rgba(240,192,64,.4);" onclick="openCryptoSimulator()">
               <div class="banner-deco">📈</div>
               <div class="banner-inner">
@@ -179,7 +200,7 @@
               </div>
             </div>
 
-            <!-- Слайд 6: Кейси -->
+            <!-- Слайд 7: Кейси -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#1a0010,#330020,#1a0010);border:1.5px solid rgba(255,105,180,.4);" onclick="openCaseOpeningScreen()">
               <div class="banner-deco">📦</div>
               <div class="banner-inner">
@@ -3922,16 +3943,16 @@
     <div id="supportChatBox" style="height:300px;overflow-y:auto;background:#0a0a0a;border:1px solid #1a1a1a;margin-bottom:8px;padding:10px;border-radius:12px;"></div>
     <!-- Support media preview -->
     <div id="supportMediaPreview" style="display:none;padding:6px 0;margin-bottom:6px;">
-      <div style="position:relative;display:inline-block;">
-        <img id="supportPreviewImg" style="max-height:70px;border-radius:8px;border:1px solid #222;">
-        <video id="supportPreviewVid" style="display:none;max-height:70px;border-radius:8px;" controls muted></video>
-        <div onclick="clearSupportMedia()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">×</div>
+      <div style="position:relative;display:inline-block;max-width:90px;">
+        <img id="supportPreviewImg" style="max-height:60px;max-width:90px;border-radius:8px;border:1px solid #222;display:block;object-fit:cover;">
+        <video id="supportPreviewVid" style="display:none;max-height:60px;max-width:90px;border-radius:8px;" controls muted></video>
+        <div onclick="clearSupportMedia()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 12px;font-size:18px;cursor:pointer;flex-shrink:0;" title="Фото / Відео">📎</button>
+      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
       <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
-      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
+      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;width:auto;min-width:0;text-align:left;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
       <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
     </div>
   </div>
@@ -4536,29 +4557,42 @@
       <h2 style="margin:0;color:#4a9eff;font-family:'Orbitron',monospace;font-size:16px;">✉️ Повідомлення</h2>
     </div>
 
-    <div style="padding:14px;">
-      <!-- Compose new message -->
-      <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:1.5px solid rgba(74,158,255,.2);border-radius:18px;padding:16px;margin-bottom:14px;">
-        <div style="font-size:11px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📩 Нове повідомлення</div>
-        <div style="position:relative;margin-bottom:10px;">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">👤</span>
-          <input id="pmToInput" placeholder="Нікнейм отримувача" style="padding-left:38px;border-color:rgba(74,158,255,.2);background:rgba(74,158,255,.04);">
+    <!-- ═══ ІНБОКС (список чатів + нове повідомлення) ═══ -->
+    <div id="pmInboxView">
+      <div style="padding:14px;">
+        <!-- Compose new message -->
+        <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:1.5px solid rgba(74,158,255,.2);border-radius:18px;padding:16px;margin-bottom:14px;">
+          <div style="font-size:11px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📩 Нове повідомлення</div>
+          <div style="position:relative;margin-bottom:4px;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">👤</span>
+            <input id="pmToInput" placeholder="Нік або ID отримувача" style="padding-left:38px;border-color:rgba(74,158,255,.2);background:rgba(74,158,255,.04);" oninput="pmSearchRecipient(this.value)" onfocus="pmSearchRecipient(this.value)">
+          </div>
+          <div id="pmRecipientSuggestions" class="hidden" style="background:#0a0d18;border:1px solid rgba(74,158,255,.25);border-radius:10px;margin:-2px 0 10px;max-height:160px;overflow-y:auto;"></div>
+          <!-- ВЕЛИКЕ поле для тексту -->
+          <textarea id="pmMsgInput" placeholder="Текст повідомлення..." maxlength="1000"
+            style="width:auto;min-width:0;min-height:90px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box;resize:vertical;line-height:1.5;outline:none;font-family:inherit;transition:border-color .2s;text-align:left;"
+            onfocus="this.style.borderColor='rgba(74,158,255,.4)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+            onkeydown="if(event.key==='Enter'&&event.ctrlKey)pmSend()"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <div style="font-size:10px;color:#444;">Ctrl+Enter — надіслати</div>
+            <button onclick="pmSend()" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 20px;color:#fff;font-weight:800;cursor:pointer;font-size:14px;transition:.15s;">📩 Надіслати</button>
+          </div>
         </div>
-        <!-- ВЕЛИКЕ поле для тексту -->
-        <textarea id="pmMsgInput" placeholder="Текст повідомлення..." maxlength="1000"
-          style="width:100%;min-height:90px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box;resize:vertical;line-height:1.5;outline:none;font-family:inherit;transition:border-color .2s;"
-          onfocus="this.style.borderColor='rgba(74,158,255,.4)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-          onkeydown="if(event.key==='Enter'&&event.ctrlKey)pmSend()"></textarea>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-          <div style="font-size:10px;color:#444;">Ctrl+Enter — надіслати</div>
-          <button onclick="pmSend()" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 20px;color:#fff;font-weight:800;cursor:pointer;font-size:14px;transition:.15s;">📩 Надіслати</button>
-        </div>
-      </div>
 
-      <!-- Inbox threads -->
-      <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📥 Вхідні</div>
-      <div id="pmInbox"></div>
+        <!-- Пошук по вхідних -->
+        <div style="position:relative;margin-bottom:12px;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;color:#555;">🔍</span>
+          <input id="pmInboxSearch" placeholder="Пошук за ніком або ID..." style="padding-left:36px;font-size:13px;" oninput="filterPmInbox(this.value)">
+        </div>
+
+        <!-- Inbox threads -->
+        <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📥 Вхідні</div>
+        <div id="pmInbox"></div>
+      </div>
     </div>
+
+    <!-- ═══ ОКРЕМА ПЕРЕПИСКА (заповнюється openPmThread, перемикається видимістю — НЕ знищує інбокс) ═══ -->
+    <div id="pmThreadView" class="hidden" style="display:flex;flex-direction:column;height:calc(100vh - 60px);"></div>
   </div>
 
   <!-- ══════════════ ТОРГІВЛЯ (TRADE) ══════════════ -->
