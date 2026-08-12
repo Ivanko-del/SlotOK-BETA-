@@ -3952,7 +3952,7 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
       <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
-      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;width:auto;min-width:0;text-align:left;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
+      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;min-width:0;text-align:left;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
       <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
     </div>
   </div>
@@ -4570,7 +4570,7 @@
           <div id="pmRecipientSuggestions" class="hidden" style="background:#0a0d18;border:1px solid rgba(74,158,255,.25);border-radius:10px;margin:-2px 0 10px;max-height:160px;overflow-y:auto;"></div>
           <!-- ВЕЛИКЕ поле для тексту -->
           <textarea id="pmMsgInput" placeholder="Текст повідомлення..." maxlength="1000"
-            style="width:auto;min-width:0;min-height:90px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box;resize:vertical;line-height:1.5;outline:none;font-family:inherit;transition:border-color .2s;text-align:left;"
+            style="width:100%;min-height:90px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box;resize:vertical;line-height:1.5;outline:none;font-family:inherit;transition:border-color .2s;text-align:left;"
             onfocus="this.style.borderColor='rgba(74,158,255,.4)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
             onkeydown="if(event.key==='Enter'&&event.ctrlKey)pmSend()"></textarea>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">

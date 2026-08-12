@@ -16767,7 +16767,7 @@ function openPmThread(otherUser) {
     <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
-      <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;width:auto;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
+      <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
       <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
 
