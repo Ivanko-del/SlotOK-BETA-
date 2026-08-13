@@ -1978,6 +1978,14 @@
         <div id="clanTasksList"></div>
         <div class="section-header">👥 Учасники</div>
         <div id="clanMembersList"></div>
+
+        <div class="section-header">💬 Чат клану</div>
+        <div id="clanChatMessages" style="height:220px;overflow-y:auto;background:#0a0a0a;border:1px solid #222;border-radius:10px;padding:10px;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:6px;">
+          <input id="clanChatInput" placeholder="Повідомлення..." style="flex:1;" maxlength="300" onkeydown="if(event.key==='Enter')sendClanChatMsg(userData.clanId)">
+          <button class="btn-gold" style="padding:0 16px;" onclick="sendClanChatMsg(userData.clanId)">➤</button>
+        </div>
+
         <button id="leaveClanBtn" class="btn-red" style="margin-top:10px;" onclick="leaveClan()">🚪 Покинути клан</button>
       </div>
     </div>
@@ -2194,6 +2202,18 @@
       <div id="mpGameScreen" class="hidden">
         <!-- Інфобар усіх гравців -->
         <div id="mpPlayersInfoBar" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;scrollbar-width:none;"></div>
+
+        <!-- Я / Суперник -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <div style="flex:1;background:#111;border:1px solid #222;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:10px;color:#777;">👤 Ви</div>
+            <div id="mpPlayerMoney" style="font-size:14px;font-weight:bold;color:var(--green);">0₴</div>
+          </div>
+          <div style="flex:1;background:#111;border:1px solid #222;border-radius:8px;padding:8px;text-align:center;">
+            <div id="mpOpponentLabel" style="font-size:10px;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">👤 Суперник</div>
+            <div id="mpOpponentMoney" style="font-size:14px;font-weight:bold;color:#ccc;">0₴</div>
+          </div>
+        </div>
 
         <div class="mono-board-wrap" id="mpBoardWrap" style="margin-bottom:8px;">
           <div class="mono-board" id="mpBoard"></div>
@@ -2854,6 +2874,21 @@
           </div>
         </div>
         <div id="withdrawRequestsList">
+          <div style="color:#555;text-align:center;padding:20px;font-size:13px;">⏳ Завантаження...</div>
+        </div>
+
+        <!-- Divider -->
+        <div style="border-top:1px solid #1a1a1a;margin:12px 0;"></div>
+
+        <!-- Password reset requests -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;color:#c9a0ff;">🔑 Відновлення паролів</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="pwrLiveIndicator" style="width:8px;height:8px;border-radius:50%;background:#555;"></div>
+            <span style="font-size:10px;color:#555;" id="pwrLiveStatus">очікування</span>
+          </div>
+        </div>
+        <div id="pwrRequestsList">
           <div style="color:#555;text-align:center;padding:20px;font-size:13px;">⏳ Завантаження...</div>
         </div>
 
@@ -3827,6 +3862,9 @@
           <button class="auth-btn-main" onclick="authLogin()" id="loginBtn" style="font-size:16px;padding:16px;">
             🚀 УВІЙТИ
           </button>
+          <div style="text-align:center;margin-top:8px;">
+            <span onclick="openPasswordRecovery()" style="color:#777;font-size:12px;cursor:pointer;text-decoration:underline;">Забули пароль?</span>
+          </div>
           <div class="auth-divider">або</div>
           <div style="text-align:center;font-size:12px;color:#555;">
             Немає акаунту?
@@ -3854,6 +3892,21 @@
           <!-- Password strength -->
           <div id="passStrengthBar" style="height:3px;border-radius:2px;background:#1a1a1a;margin:-8px 0 10px;overflow:hidden;">
             <div id="passStrengthFill" style="height:100%;width:0;transition:.3s;background:#e74c3c;border-radius:2px;"></div>
+          </div>
+          <!-- Контрольне питання (для відновлення пароля) -->
+          <div class="auth-input-group">
+            <span class="auth-input-icon">❓</span>
+            <select class="auth-input" id="regSecQuestion" style="appearance:auto;">
+              <option value="pet">Кличка вашого першого улюбленця?</option>
+              <option value="city">Місто, де ви народились?</option>
+              <option value="school">Назва вашої школи?</option>
+              <option value="friend">Ім'я найкращого друга дитинства?</option>
+              <option value="book">Улюблена книга/фільм?</option>
+            </select>
+          </div>
+          <div class="auth-input-group">
+            <span class="auth-input-icon">🔑</span>
+            <input class="auth-input" id="regSecAnswer" placeholder="Відповідь (для відновлення пароля)">
           </div>
           <div class="auth-promo-row auth-input-group">
             <span class="auth-input-icon">🎟️</span>

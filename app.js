@@ -104,7 +104,8 @@ function startDataSync() {
               });
             }
             document.getElementById('auth-screen').classList.add('hidden');
-            updateUI(); 
+            stopAuthStatsListeners();
+            updateUI();
             loadContacts(); 
             checkAdmin();
             checkDailyBonus();
@@ -2332,6 +2333,11 @@ function initAuthCanvas() {
   draw();
 }
 
+let _authJackpotListener = null;
+function stopAuthStatsListeners() {
+  if(_authJackpotListener) { db.ref('casino_stats/jackpot').off('value', _authJackpotListener); _authJackpotListener = null; }
+  stopAuthCoins();
+}
 function loadAuthStats() {
   db.ref('users').once('value', snap => {
     const users = snap.val()||{};
@@ -2346,11 +2352,13 @@ function loadAuthStats() {
     if(el3) el3.textContent = '₴'+formatNumber(Math.max(paid, 1500000));
   });
   // Real jackpot
-  db.ref('casino_stats/jackpot').on('value', snap => {
+  if(_authJackpotListener) db.ref('casino_stats/jackpot').off('value', _authJackpotListener);
+  _authJackpotListener = snap => {
     const j = snap.val() || 850000;
     const el = document.getElementById('authJackpot');
     if(el) el.textContent = '₴ ' + formatNumber(j);
-  });
+  };
+  db.ref('casino_stats/jackpot').on('value', _authJackpotListener);
   // Floating coins in bg
   initAuthCoins();
   // Password strength listener
@@ -2370,11 +2378,13 @@ function loadAuthStats() {
   });
 }
 
+let _authCoinsInterval = null;
 function initAuthCoins() {
   const container = document.getElementById('authCoins');
   if(!container) return;
+  if(_authCoinsInterval) clearInterval(_authCoinsInterval);
   const symbols = ['🪙','💎','🎰','⭐','🃏','🎲','🔔','🍒'];
-  setInterval(() => {
+  _authCoinsInterval = setInterval(() => {
     if(container.children.length > 14) return;
     const el = document.createElement('div');
     el.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-30px;font-size:${16+Math.random()*14}px;animation:coinRain ${5+Math.random()*8}s linear forwards;pointer-events:none;`;
@@ -2382,6 +2392,9 @@ function initAuthCoins() {
     container.appendChild(el);
     setTimeout(()=>el.remove(), 14000);
   }, 800);
+}
+function stopAuthCoins() {
+  if(_authCoinsInterval) { clearInterval(_authCoinsInterval); _authCoinsInterval = null; }
 }
 
 function spawnWinCoins(amount) {
@@ -2404,7 +2417,7 @@ function spawnWinCoins(amount) {
 // Override toggleAuthMode to use new tab switcher
 // Init auth screen when shown
 function showAuthScreen() {
-  document.getElementById('auth-screen').style.display = 'flex'; setTimeout(initAuthCanvas,50); setTimeout(loadAuthStats,800);
+  document.getElementById('auth-screen').style.display = 'flex';
   setTimeout(initAuthCanvas, 50);
   setTimeout(loadAuthStats, 800);
 }
@@ -3248,11 +3261,13 @@ function authLogin() {
   });
 }
 
-function authRegister() {
-  const email = (document.getElementById('regEmail')?.value || '').trim();
-  const n     = (document.getElementById('regName')?.value  || '').trim();
-  const p     = (document.getElementById('regPass')?.value  || '');
-  const promo = (document.getElementById('regPromo')?.value || '').trim().toUpperCase();
+async function authRegister() {
+  const email    = (document.getElementById('regEmail')?.value || '').trim();
+  const n        = (document.getElementById('regName')?.value  || '').trim();
+  const p        = (document.getElementById('regPass')?.value  || '');
+  const promo    = (document.getElementById('regPromo')?.value || '').trim().toUpperCase();
+  const secQ     = document.getElementById('regSecQuestion')?.value || '';
+  const secA     = (document.getElementById('regSecAnswer')?.value || '').trim();
 
   // Validation
   if(!n)             return showAuthError('Введіть нікнейм');
@@ -3261,6 +3276,7 @@ function authRegister() {
   if(n.includes(' ')) return showAuthError('Нікнейм не може містити пробіли');
   if(!p)             return showAuthError('Введіть пароль');
   if(p.length < 6)   return showAuthError('Пароль мінімум 6 символів');
+  if(!secA)          return showAuthError('Введіть відповідь на контрольне питання (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
 
   const btn = document.getElementById('regBtn');
@@ -3268,6 +3284,8 @@ function authRegister() {
   const reset = () => { if(btn) { btn.textContent = '✨ СТВОРИТИ АКАУНТ'; btn.disabled = false; } };
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
+
+  const secAnswerHash = await sha256(secA.toLowerCase());
 
   // Step 1: check if nick is taken
   db.ref('users/' + n).once('value', snap => {
@@ -3284,6 +3302,7 @@ function authRegister() {
 
     const newUser = {
       pass: p, email: email || '',
+      securityQuestion: secQ, securityAnswerHash: secAnswerHash,
       balance: bonus, freeSlots: spins,
       id: Math.floor(Math.random() * 900000) + 100000,
       tag: 'Новачок 🌱', avatar: '👤',
@@ -3323,6 +3342,148 @@ function authRegister() {
     reset();
     console.error('Register check error:', err);
     showAuthError('❌ Firebase помилка: ' + (err.message || err.code || 'невідома'));
+  });
+}
+
+// ============================================================
+// ВІДНОВЛЕННЯ ПАРОЛЯ
+// ============================================================
+const SECURITY_QUESTIONS = {
+  pet:    "Кличка вашого першого улюбленця?",
+  city:   "Місто, де ви народились?",
+  school: "Назва вашої школи?",
+  friend: "Ім'я найкращого друга дитинства?",
+  book:   "Улюблена книга/фільм?"
+};
+
+function openPasswordRecovery() {
+  const existing = document.getElementById('pwrModal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'pwrModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.innerHTML = `
+    <div style="max-width:380px;width:100%;background:#111;border:1px solid #262626;border-radius:16px;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-family:'Orbitron',monospace;font-size:15px;color:#d4af37;">🔑 Відновлення пароля</div>
+        <button onclick="document.getElementById('pwrModal').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:4px 10px;cursor:pointer;">✕</button>
+      </div>
+      <div id="pwrBody"></div>
+    </div>`;
+  document.body.appendChild(modal);
+  pwrShowStep1();
+}
+
+function pwrShowStep1() {
+  const body = document.getElementById('pwrBody');
+  if(!body) return;
+  body.innerHTML = `
+    <div style="font-size:12px;color:#888;margin-bottom:10px;">Введіть свій нікнейм, щоб почати відновлення.</div>
+    <input class="auth-input" id="pwrNick" placeholder="Нікнейм" style="margin-bottom:10px;">
+    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <button class="auth-btn-main" onclick="pwrLookup()">Далі →</button>`;
+}
+
+function pwrErr(msg) {
+  const el = document.getElementById('pwrErr');
+  if(el) { el.textContent = '⚠️ ' + msg; el.style.display = 'block'; }
+}
+
+function pwrLookup() {
+  const nick = (document.getElementById('pwrNick')?.value || '').trim();
+  if(!nick) return pwrErr('Введіть нікнейм');
+  db.ref('users/' + nick).once('value', snap => {
+    if(!snap.exists()) return pwrErr('Гравця не знайдено');
+    const data = snap.val();
+    if(data.securityQuestion && data.securityAnswerHash) {
+      pwrShowQuestion(nick, data.securityQuestion);
+    } else {
+      pwrShowTelegramFallback(nick);
+    }
+  }, () => pwrErr('Помилка звʼязку з базою'));
+}
+
+function pwrShowQuestion(nick, qKey) {
+  const body = document.getElementById('pwrBody');
+  if(!body) return;
+  const qText = SECURITY_QUESTIONS[qKey] || 'Контрольне питання';
+  body.innerHTML = `
+    <div style="font-size:12px;color:#888;margin-bottom:10px;">${qText}</div>
+    <input class="auth-input" id="pwrAnswer" placeholder="Відповідь" style="margin-bottom:10px;">
+    <input class="auth-input" id="pwrNewPass" type="password" placeholder="Новий пароль (мін 6 символів)" style="margin-bottom:10px;">
+    <input class="auth-input" id="pwrNewPass2" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">
+    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <button class="auth-btn-main" onclick="pwrVerifyAndReset('${nick}')">Змінити пароль</button>
+    <div style="text-align:center;margin-top:10px;">
+      <span onclick="pwrShowTelegramFallback('${nick}')" style="color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Не пам'ятаю відповідь</span>
+    </div>`;
+}
+
+async function pwrVerifyAndReset(nick) {
+  const answer = (document.getElementById('pwrAnswer')?.value || '').trim();
+  const p1 = document.getElementById('pwrNewPass')?.value || '';
+  const p2 = document.getElementById('pwrNewPass2')?.value || '';
+  if(!answer) return pwrErr('Введіть відповідь');
+  if(p1.length < 6) return pwrErr('Пароль мінімум 6 символів');
+  if(p1 !== p2) return pwrErr('Паролі не збігаються');
+
+  const hash = await sha256(answer.toLowerCase());
+  db.ref('users/' + nick + '/securityAnswerHash').once('value', snap => {
+    if(snap.val() !== hash) return pwrErr('Невірна відповідь');
+    db.ref('users/' + nick + '/pass').set(p1).then(() => {
+      document.getElementById('pwrModal')?.remove();
+      notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
+      const loginName = document.getElementById('loginName');
+      if(loginName) loginName.value = nick;
+    }).catch(() => pwrErr('Помилка запису. Спробуйте ще.'));
+  }, () => pwrErr('Помилка звʼязку з базою'));
+}
+
+function pwrShowTelegramFallback(nick) {
+  const body = document.getElementById('pwrBody');
+  if(!body) return;
+  body.innerHTML = `
+    <div style="font-size:12px;color:#888;margin-bottom:12px;line-height:1.5;">
+      Автоматичне відновлення недоступне для цього акаунту. Подайте заявку — адміністратор перевірить вас у Telegram і скине пароль вручну.
+    </div>
+    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="pwrTgStatus" style="color:#3dd68c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram('${nick}')">✈️ Подати заявку через Telegram</button>`;
+}
+
+function pwrRequestViaTelegram(nick) {
+  const btn = document.getElementById('pwrTgBtn');
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Надсилаємо...'; }
+  const reqId = nick + '_' + Date.now();
+  db.ref('password_reset_requests/' + reqId).set({
+    user: nick, status: 'pending', time: Date.now()
+  }).then(() => {
+    db.ref('pm/theivankoo/' + db.ref().push().key).set({
+      from: '📥 Система', to: 'theivankoo',
+      text: `🔑 Заявка на відновлення пароля від @${nick}. Перевірте особу через Telegram і скиньте пароль в адмін-панелі.`,
+      ts: Date.now()
+    });
+    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
+    db.ref('users').orderByChild('isAdmin').equalTo(true).limitToFirst(5).once('value', snap => {
+      const admins = snap.val() || {};
+      Object.keys(admins).forEach(admNick => {
+        if(admNick === 'theivankoo') return;
+        db.ref('pm/' + admNick + '/' + db.ref().push().key).set({
+          from: '📥 Система', to: admNick,
+          text: `🔑 Заявка на відновлення пароля від @${nick}`,
+          ts: Date.now()
+        });
+        db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+      });
+    });
+    const tgUrl = `https://t.me/${TG_BOT_USERNAME}?start=reset_${nick}`;
+    window.open(tgUrl, '_blank');
+    const status = document.getElementById('pwrTgStatus');
+    if(status) { status.textContent = '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.'; status.style.display = 'block'; }
+    if(btn) { btn.textContent = '✅ Заявку подано'; }
+  }).catch(() => {
+    pwrErr('Не вдалось подати заявку. Спробуйте ще.');
+    if(btn) { btn.disabled = false; btn.textContent = '✈️ Подати заявку через Telegram'; }
   });
 }
 
@@ -5250,6 +5411,7 @@ var FIREBASE_SECURITY_RULES = `{
 "live_bets":        { ".read": "auth != null", ".write": "auth != null" },
 "deposit_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true || newData.child('user').val() === auth.uid", ".write": "auth != null" },
 "withdraw_requests":{ ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
+"password_reset_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
 "pm": {
   "$user": {
     ".read":  "$user === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
@@ -7648,7 +7810,7 @@ function sendAdminSupportReply() {
 
 // ── ADMIN PANEL INIT (called once per open) ──
 let _adminInitialized = false;
-let _depListener = null, _wdListener = null;
+let _depListener = null, _wdListener = null, _pwrListener = null;
 
 
 
@@ -7702,13 +7864,51 @@ function renderWithdrawCard(id, req) {
   </div>`;
 }
 
+function renderPwrCard(id, req) {
+  const ago = Math.floor((Date.now()-req.time)/60000);
+  const agoStr = ago<1?'щойно':ago<60?ago+'хв тому':Math.floor(ago/60)+'г тому';
+  return `<div class="req-card" id="pwrcard-${id}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="req-card-user">👤 ${req.user}</div>
+        <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
+      </div>
+    </div>
+    <div class="req-actions">
+      <button class="req-approve" onclick="approvePasswordReset('${id}','${req.user}')">🔑 Скинути пароль</button>
+      <button class="req-reject"  onclick="rejectPasswordReset('${id}')">❌ Відхилити</button>
+    </div>
+  </div>`;
+}
+
+function approvePasswordReset(id, user) {
+  const tempPass = Math.random().toString(36).slice(2, 10);
+  db.ref('users/' + user + '/pass').set(tempPass).then(() => {
+    db.ref('password_reset_requests/' + id).update({ status: 'done', approvedAt: Date.now(), approvedBy: currentUser });
+    db.ref('pm/' + user + '/' + db.ref().push().key).set({
+      from: '🔑 SlotOK', to: user,
+      text: `🔑 Ваш пароль скинуто адміністратором. Новий тимчасовий пароль: ${tempPass}\nБудь ласка, увійдіть і одразу змініть його в налаштуваннях.`,
+      ts: Date.now()
+    });
+    db.ref('users/' + user + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+    notify('✅ Пароль для ' + user + ' скинуто, надіслано в ПП', 'success');
+  }).catch(() => notify('Помилка скидання пароля', 'error'));
+}
+
+function rejectPasswordReset(id) {
+  db.ref('password_reset_requests/' + id).update({ status: 'rejected', rejectedAt: Date.now() });
+}
+
 function startAdminRequestListeners() {
   var depEl  = document.getElementById('depositRequestsList');
   var wdEl   = document.getElementById('withdrawRequestsList');
+  var pwrEl  = document.getElementById('pwrRequestsList');
   var depInd = document.getElementById('depLiveIndicator');
   var wdInd  = document.getElementById('wdLiveIndicator');
+  var pwrInd = document.getElementById('pwrLiveIndicator');
   var depSt  = document.getElementById('depLiveStatus');
   var wdSt   = document.getElementById('wdLiveStatus');
+  var pwrSt  = document.getElementById('pwrLiveStatus');
 
   // DEPOSITS — read all, filter client-side (no index needed)
   if(depEl) {
@@ -7745,18 +7945,38 @@ function startAdminRequestListeners() {
       updateRequestBadge();
     });
   }
+
+  // PASSWORD RESETS
+  if(pwrEl) {
+    pwrEl.innerHTML = '<div class="req-empty">⏳ Завантаження...</div>';
+    if(_pwrListener) { db.ref('password_reset_requests').off('value', _pwrListener); _pwrListener = null; }
+    _pwrListener = db.ref('password_reset_requests').limitToLast(200).on('value', function(snap) {
+      var all = snap.val() || {};
+      if(pwrInd) pwrInd.style.background = '#c9a0ff';
+      if(pwrSt)  pwrSt.textContent = 'live ●';
+      var pending = Object.entries(all)
+        .filter(function(e){ return e[1].status === 'pending'; })
+        .sort(function(a,b){ return (b[1].time||0)-(a[1].time||0); });
+      pwrEl.innerHTML = pending.length
+        ? pending.map(function(e){ return renderPwrCard(e[0], e[1]); }).join('')
+        : '<div class="req-empty">✅ Заявок на відновлення немає</div>';
+      updateRequestBadge();
+    });
+  }
 }
 function loadDepositRequests() { startAdminRequestListeners(); }
 
 function updateRequestBadge() {
   var depEl = document.getElementById('depositRequestsList');
   var wdEl  = document.getElementById('withdrawRequestsList');
+  var pwrEl = document.getElementById('pwrRequestsList');
   var badge = document.getElementById('adminRequestsBadge');
   var pendingBadge = document.getElementById('adminPendingBadge');
   if(!badge) return;
   var depCount = depEl ? depEl.querySelectorAll('.req-card.deposit').length : 0;
   var wdCount  = wdEl  ? wdEl.querySelectorAll('.req-card.withdraw').length : 0;
-  var total = depCount + wdCount;
+  var pwrCount = pwrEl ? pwrEl.querySelectorAll('.req-card').length : 0;
+  var total = depCount + wdCount + pwrCount;
   if(total > 0) {
     badge.textContent = total;
     badge.style.display = 'inline';
@@ -7862,6 +8082,7 @@ function leaveClan() {
   const clanId = userData.clanId;
   db.ref('clans/' + clanId + '/members/' + currentUser).remove();
   db.ref('users/' + currentUser + '/clanId').remove();
+  if (_clanChatListener) { db.ref('clan_chats/' + clanId).off('value', _clanChatListener); _clanChatListener = null; }
   notify('Ви покинули клан', 'info');
   loadClanTab();
 }
@@ -7917,6 +8138,7 @@ function loadMyClan(clanId) {
       '</div>';
     }).join('');
   });
+  initClanChat(clanId);
 }
 
 // Трекінг вагера для клану
@@ -19375,7 +19597,6 @@ function startChessVsAi(difficulty) {
   };
   document.getElementById('chessSetupPanel')?.classList.add('hidden');
   document.getElementById('chessGameArea')?.classList.remove('hidden');
-  document.getElementById('chessPvpArea')?.classList.add('hidden');
   chessUpdateStatusLine('🎮 Твій хід (граєш білими)');
   renderChessBoard();
 }
