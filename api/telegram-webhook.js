@@ -42,7 +42,10 @@ async function tg(method, payload) {
 
 module.exports = async (req, res) => {
   // Reject anything that isn't actually from Telegram before doing any real work.
-  if (req.headers["x-telegram-bot-api-secret-token"] !== process.env.WEBHOOK_SECRET) {
+  // Fail closed: if WEBHOOK_SECRET isn't configured, reject everything rather than
+  // let "both sides undefined" accidentally compare as equal.
+  const expectedSecret = process.env.WEBHOOK_SECRET;
+  if (!expectedSecret || req.headers["x-telegram-bot-api-secret-token"] !== expectedSecret) {
     res.status(401).end();
     return;
   }
