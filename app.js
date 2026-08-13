@@ -1121,7 +1121,7 @@ function grRenderBets(bets) {
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:16px;">${colorEmoji}</div>
         <div>
-          <div style="font-size:13px;font-weight:700;">${b.user}${isMe?' <span style="color:var(--accent);font-size:10px;">(Ти)</span>':''}</div>
+          <div style="font-size:13px;font-weight:700;">${escapeHtml(b.user)}${isMe?' <span style="color:var(--accent);font-size:10px;">(Ти)</span>':''}</div>
           <div style="font-size:11px;color:var(--sub);">${colorName} · ×${mult}</div>
         </div>
       </div>
@@ -2092,7 +2092,7 @@ function runFraudCheck() {
     if(!suspicious.length) { container.innerHTML='<div style="color:#3dd68c;text-align:center;padding:14px;">✅ Підозрілих гравців не знайдено</div>'; return; }
     container.innerHTML = suspicious.map(s=>`
       <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:10px;margin-bottom:6px;">
-        <div style="font-size:12px;font-weight:700;color:#ff6b6b;">⚠️ ${s.user}</div>
+        <div style="font-size:12px;font-weight:700;color:#ff6b6b;">⚠️ ${escapeHtml(s.user)}</div>
         <div style="font-size:10px;color:#777;">Причина: ${s.reason}</div>
         <div style="font-size:10px;color:#555;">Баланс: ₴${formatNumber(s.balance||0)}</div>
         <button class="btn-red" style="padding:6px 12px;font-size:11px;margin-top:6px;" onclick="admBanUser('${s.user}',this)">🚫 Заблокувати</button>
@@ -2607,7 +2607,7 @@ function initChat() {
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
       const nameBadge = isAdmin ? ' <span style="background:#d4af37;color:#000;font-size:8px;font-weight:900;padding:1px 5px;border-radius:3px;">ADMIN</span>' : '';
       const headerHtml = showHeader
-        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${m.user}${nameBadge}</div>`
+        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${escapeHtml(m.user)}${nameBadge}</div>`
         : '';
       return `<div class="chat-msg" style="flex-direction:${isMe?'row-reverse':'row'};${!showHeader?'padding-top:2px;':''}">
         ${showHeader ? avatarHtml : `<div style="width:32px;flex-shrink:0;"></div>`}
@@ -3221,7 +3221,7 @@ function showAuthError(msg) {
   el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }
 
-function authLogin() {
+async function authLogin() {
   const n = (document.getElementById('loginName')?.value || '').trim();
   const p = (document.getElementById('loginPass')?.value || '');
   if(!n) return showAuthError('Введіть нікнейм');
@@ -3234,12 +3234,21 @@ function authLogin() {
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 10000);
 
+  const pHash = await sha256(p);
+
   db.ref('users/' + n).once('value', snap => {
     clearTimeout(timeout);
     if(!snap.exists()) { reset(); return showAuthError('❌ Гравця "' + n + '" не знайдено'); }
     const data = snap.val();
     if(data.banned) { reset(); return showAuthError('🚫 Акаунт заблоковано' + (data.banReason ? ': ' + data.banReason : '')); }
-    if(String(data.pass) !== String(p)) { reset(); return showAuthError('❌ Невірний пароль'); }
+    const storedPass = String(data.pass);
+    const hashMatches = storedPass === pHash;
+    const legacyPlaintextMatches = !hashMatches && storedPass === String(p);
+    if(!hashMatches && !legacyPlaintextMatches) { reset(); return showAuthError('❌ Невірний пароль'); }
+    if(legacyPlaintextMatches) {
+      // Непомітно мігруємо старий акаунт з відкритого пароля на хеш
+      db.ref('users/' + n + '/pass').set(pHash);
+    }
     const isAdminAcc = n.toLowerCase() === 'theivankoo' || data.isAdmin === true;
     db.ref('site_config/maintenance').once('value', mSnap => {
       if(mSnap.val() && !isAdminAcc) {
@@ -3274,6 +3283,7 @@ async function authRegister() {
   if(n.length < 3)   return showAuthError('Нікнейм мінімум 3 символи');
   if(n.length > 20)  return showAuthError('Нікнейм максимум 20 символів');
   if(n.includes(' ')) return showAuthError('Нікнейм не може містити пробіли');
+  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return showAuthError('Нікнейм може містити лише літери, цифри, "_" та "-"');
   if(!p)             return showAuthError('Введіть пароль');
   if(p.length < 6)   return showAuthError('Пароль мінімум 6 символів');
   if(!secA)          return showAuthError('Введіть відповідь на контрольне питання (потрібна для відновлення пароля)');
@@ -3286,6 +3296,7 @@ async function authRegister() {
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
 
   const secAnswerHash = await sha256(secA.toLowerCase());
+  const passHash = await sha256(p);
 
   // Step 1: check if nick is taken
   db.ref('users/' + n).once('value', snap => {
@@ -3301,7 +3312,7 @@ async function authRegister() {
     else if(promo === 'VIP') { bonus += 2000; bonusMsg = ' +2000₴ VIP!'; }
 
     const newUser = {
-      pass: p, email: email || '',
+      pass: passHash, email: email || '',
       securityQuestion: secQ, securityAnswerHash: secAnswerHash,
       balance: bonus, freeSlots: spins,
       id: Math.floor(Math.random() * 900000) + 100000,
@@ -3428,9 +3439,10 @@ async function pwrVerifyAndReset(nick) {
   if(p1 !== p2) return pwrErr('Паролі не збігаються');
 
   const hash = await sha256(answer.toLowerCase());
+  const newPassHash = await sha256(p1);
   db.ref('users/' + nick + '/securityAnswerHash').once('value', snap => {
     if(snap.val() !== hash) return pwrErr('Невірна відповідь');
-    db.ref('users/' + nick + '/pass').set(p1).then(() => {
+    db.ref('users/' + nick + '/pass').set(newPassHash).then(() => {
       document.getElementById('pwrModal')?.remove();
       notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
       const loginName = document.getElementById('loginName');
@@ -3789,7 +3801,7 @@ function openHistoryModal() {
     const c=document.getElementById('historyList'); c.innerHTML="Завантаження...";
     db.ref('users/'+currentUser+'/history').limitToLast(20).once('value', s=>{ 
         c.innerHTML=""; 
-        if(s.val()) Object.values(s.val()).reverse().forEach(i=>{ c.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #333;color:#ccc;">${i.text}</div>`; }); 
+        if(s.val()) Object.values(s.val()).reverse().forEach(i=>{ c.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #333;color:#ccc;">${escapeHtml(i.text||'')}</div>`; });
         else c.innerHTML="<div style='padding:10px;color:#777;'>Порожньо</div>"; 
     }); 
 }
@@ -5862,7 +5874,7 @@ function startAllBackgroundTasks() {
 // ╚══════════════════════════════════════════════════════════════╝
 
 // 1. ЗМІНА ПАРОЛЯ
-function doChangePassword() {
+async function doChangePassword() {
   const old  = document.getElementById('cpOld')?.value || '';
   const nw   = document.getElementById('cpNew')?.value || '';
   const conf = document.getElementById('cpConf')?.value || '';
@@ -5871,9 +5883,12 @@ function doChangePassword() {
   if(!old) return showErr('Введіть поточний пароль');
   if(nw.length < 6) return showErr('Мінімум 6 символів');
   if(nw !== conf) return showErr('Паролі не збігаються');
-  if(String(userData.pass) !== String(old)) return showErr('Поточний пароль невірний');
-  db.ref('users/' + currentUser + '/pass').set(nw).then(() => {
-    userData.pass = nw;
+  const oldHash = await sha256(old);
+  const storedPass = String(userData.pass);
+  if(storedPass !== oldHash && storedPass !== String(old)) return showErr('Поточний пароль невірний');
+  const nwHash = await sha256(nw);
+  db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
+    userData.pass = nwHash;
     notify('✅ Пароль змінено!', 'success');
     closeModal('changepass');
     // Also close old-style if exists
@@ -6386,7 +6401,7 @@ function initClanChat(clanId) {
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
         + '<div style="font-size:20px;flex-shrink:0;">' + (m.avatar || '👤') + '</div>'
         + '<div style="background:' + (isMe ? 'rgba(212,175,55,.08)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (isMe ? 'rgba(212,175,55,.15)' : 'rgba(255,255,255,.07)') + ';border-radius:12px;padding:8px 10px;max-width:72%;">'
-        + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + m.user + '</div>'
+        + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
         + '</div></div>';
     }).join('');
@@ -7778,10 +7793,10 @@ function loadSupportThreads() {
       const lastMsg = Object.values(msgs).pop();
       list.innerHTML += `<div class="support-thread" onclick="openAdminSupport('${user}')">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <b>${user}</b>
+          <b>${escapeHtml(user)}</b>
           ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
         </div>
-        <div style="color:#777;font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${lastMsg.text}</div>
+        <div style="color:#777;font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(lastMsg.text||'')}</div>
       </div>`;
     });
   });
@@ -7795,7 +7810,7 @@ function openAdminSupport(user) {
   chat.innerHTML = '';
   db.ref('support_chats/'+user).limitToLast(30).on('child_added', snap => {
     const m = snap.val();
-    chat.innerHTML += `<div style="margin-bottom:8px;padding:8px 12px;background:${m.sender==='user'?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${m.sender==='user'?'0':'auto'}">${m.sender==='admin'?'[Підтримка] ':''}${m.text}</div>`;
+    chat.innerHTML += `<div style="margin-bottom:8px;padding:8px 12px;background:${m.sender==='user'?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${m.sender==='user'?'0':'auto'}">${m.sender==='admin'?'[Підтримка] ':''}${escapeHtml(m.text||'')}</div>`;
     chat.scrollTop = chat.scrollHeight;
   });
   openTabModal('admin-support-modal');
@@ -7831,7 +7846,7 @@ function renderDepositCard(id, req) {
   return `<div class="req-card deposit" id="depcard-${id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <div class="req-card-user">👤 ${req.user}</div>
+        <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
         <div class="req-card-meta">ID: ${req.userId||'—'} • ${methodIcon} ${methodName}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
@@ -7851,7 +7866,7 @@ function renderWithdrawCard(id, req) {
   return `<div class="req-card withdraw" id="wdcard-${id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <div class="req-card-user">👤 ${req.user}</div>
+        <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
         <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:monospace;font-size:11px;">${req.card||'—'}</span></div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
@@ -7870,7 +7885,7 @@ function renderPwrCard(id, req) {
   return `<div class="req-card" id="pwrcard-${id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <div class="req-card-user">👤 ${req.user}</div>
+        <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
     </div>
@@ -7881,9 +7896,10 @@ function renderPwrCard(id, req) {
   </div>`;
 }
 
-function approvePasswordReset(id, user) {
+async function approvePasswordReset(id, user) {
   const tempPass = Math.random().toString(36).slice(2, 10);
-  db.ref('users/' + user + '/pass').set(tempPass).then(() => {
+  const tempPassHash = await sha256(tempPass);
+  db.ref('users/' + user + '/pass').set(tempPassHash).then(() => {
     db.ref('password_reset_requests/' + id).update({ status: 'done', approvedAt: Date.now(), approvedBy: currentUser });
     db.ref('pm/' + user + '/' + db.ref().push().key).set({
       from: '🔑 SlotOK', to: user,
@@ -13716,7 +13732,7 @@ function ctStartLiveFeed() {
     row.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="font-size:18px;">${b.gameEmoji||'🎰'}</div>
-        <div><div style="font-size:13px;font-weight:700;">${b.user}${isFollowed?' 👁️':''}</div><div style="font-size:11px;color:var(--sub);">${b.game||'Гра'} · ${b.detail||''}</div></div>
+        <div><div style="font-size:13px;font-weight:700;">${escapeHtml(b.user)}${isFollowed?' 👁️':''}</div><div style="font-size:11px;color:var(--sub);">${escapeHtml(b.game||'Гра')} · ${escapeHtml(b.detail||'')}</div></div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:13px;font-weight:700;color:var(--accent);">₴${formatNumber(b.amount)}</div>
@@ -16888,8 +16904,8 @@ function renderPmInbox() {
       div.className = 'pm-thread';
       div.setAttribute('data-nick', name.toLowerCase());
       const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
-      div.innerHTML = `<div class="pm-avatar">${name[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;">${name}</div>
+      div.innerHTML = `<div class="pm-avatar">${escapeHtml(name[0].toUpperCase())}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;">${escapeHtml(name)}</div>
           <div style="font-size:11px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${previewText}</div>
         </div>
         <div style="font-size:10px;color:#444;flex-shrink:0;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>`;
@@ -16987,9 +17003,9 @@ function openPmThread(otherUser) {
   threadView.innerHTML = `
     <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
-      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${otherUser[0].toUpperCase()}</div>
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
       <div style="min-width:0;">
-        <div style="font-weight:800;font-size:14px;">${otherUser}</div>
+        <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
         <div style="font-size:10px;color:#3dd68c;">● Онлайн</div>
       </div>
     </div>
@@ -17181,7 +17197,7 @@ function renderActivityFeed() {
     el.innerHTML = items.map(item => `
       <div class="feed-item">
         <div style="font-size:20px;">🎰</div>
-        <div style="flex:1;"><b style="color:var(--accent);">${item.user}</b> виграв <b style="color:var(--green);">+₴${formatNumber(item.amount)}</b> у ${item.game}</div>
+        <div style="flex:1;"><b style="color:var(--accent);">${escapeHtml(item.user)}</b> виграв <b style="color:var(--green);">+₴${formatNumber(item.amount)}</b> у ${escapeHtml(item.game||'')}</div>
         <div style="font-size:10px;color:#444;">${getRelativeTime(item.time)}</div>
       </div>`).join('') || '<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Поки немає великих виграшів</div>';
   });
@@ -17241,12 +17257,12 @@ function loadTrade() {
       el.innerHTML = pending.map(([id,t])=>`
         <div style="background:linear-gradient(135deg,#1a1200,#0d0900);border:1px solid rgba(255,159,67,.3);border-radius:14px;padding:14px;margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="font-weight:bold;color:#ff9f43;">👤 ${t.from}</div>
+            <div style="font-weight:bold;color:#ff9f43;">👤 ${escapeHtml(t.from)}</div>
             <div style="font-size:11px;color:#555;">${new Date(t.ts).toLocaleDateString('uk-UA')}</div>
           </div>
           <div style="font-size:13px;color:#aaa;margin-bottom:6px;">📤 Пропонує: <span style="color:#4cd964;font-weight:bold;">${formatNumber(t.offer)} ₴</span></div>
           <div style="font-size:13px;color:#aaa;margin-bottom:6px;">💰 Просить: <span style="color:var(--accent);font-weight:bold;">${t.ask>0?formatNumber(t.ask)+' ₴':'нічого'}</span></div>
-          ${t.comment?`<div style="font-size:12px;color:#777;margin-bottom:8px;">💬 ${t.comment}</div>`:''}
+          ${t.comment?`<div style="font-size:12px;color:#777;margin-bottom:8px;">💬 ${escapeHtml(t.comment)}</div>`:''}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
             <button class="btn-gold" onclick="acceptTrade('${id}','${t.from}',${t.offer},${t.ask})">✅ Прийняти</button>
             <button class="btn-outline" onclick="declineTrade('${id}','${t.from}',${t.offer})" style="border-color:#ff6b6b;color:#ff6b6b;">❌ Відхилити</button>
@@ -20298,7 +20314,7 @@ function renderFriendsFeed() {
           <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#4a9eff;flex-shrink:0;">${w.user[0].toUpperCase()}</div>
             <div style="flex:1;min-width:0;font-size:12px;">
-              <b>${w.user}</b> виграв <b style="color:#3dd68c;">₴${formatNumber(w.amount)}</b> в ${w.game}
+              <b>${escapeHtml(w.user)}</b> виграв <b style="color:#3dd68c;">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
             </div>
             <div style="font-size:10px;color:#555;flex-shrink:0;">${timeAgoShort(w.time)}</div>
           </div>`).join('')}
