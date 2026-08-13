@@ -472,6 +472,18 @@ function copyDepRequisites() {
     .catch(() => notify(req,'info'));
 }
 
+// Fire-and-forget push to the Telegram bot so admin gets an actionable
+// notification immediately, without waiting for the player to open the bot.
+function notifyBot(type, id) {
+  try {
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, id }),
+    }).catch(() => {});
+  } catch(e) {}
+}
+
 function submitDepositRequest() {
   const customInput = document.getElementById('customDepAmount');
   let amount = selectedDepAmount;
@@ -494,6 +506,7 @@ function submitDepositRequest() {
     status: 'pending',
     time: Date.now()
   }).then(() => {
+    notifyBot('deposit', reqId);
     // Notify admin via PM
     db.ref('pm/theivankoo/' + db.ref().push().key).set({
       from: '📥 Система', to: 'theivankoo',
@@ -628,8 +641,8 @@ function submitWithdraw() {
         card: card,
         status: 'pending',
         time: Date.now()
-    });
-    
+    }).then(() => notifyBot('withdraw', requestId));
+
     db.ref('users/' + currentUser + '/withdraws/' + requestId).set({
         amount: amount,
         method: selectedWithdrawMethod,
@@ -3470,6 +3483,7 @@ function pwrRequestViaTelegram(nick) {
   db.ref('password_reset_requests/' + reqId).set({
     user: nick, status: 'pending', time: Date.now()
   }).then(() => {
+    notifyBot('reset', reqId);
     db.ref('pm/theivankoo/' + db.ref().push().key).set({
       from: '📥 Система', to: 'theivankoo',
       text: `🔑 Заявка на відновлення пароля від @${nick}. Перевірте особу через Telegram і скиньте пароль в адмін-панелі.`,

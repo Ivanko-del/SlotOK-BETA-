@@ -1,0 +1,92 @@
+// ============================================================
+// SlotOK — push an actionable Telegram notification to the admin
+// the moment a deposit/withdraw/password-reset request is created,
+// instead of waiting for the player to open the bot.
+//
+// Called from the app (submitDepositRequest / submitWithdraw /
+// pwrRequestViaTelegram) right after the request is written to
+// Firebase. Body: { type: 'deposit'|'withdraw'|'reset', id }.
+//
+// The request is re-read from Firebase by id here — we never trust
+// amounts/usernames passed in the POST body, only the id, so a
+// forged call can at most trigger a notification for a request
+// that's genuinely sitting pending in the DB (nothing worse than
+// what direct DB access already allows in this app).
+// ============================================================
+
+const { dbGet } = require("../lib/firebase");
+const { sendMessage } = require("../lib/telegram");
+
+const PATHS = {
+  deposit: "deposit_requests",
+  withdraw: "withdraw_requests",
+  reset: "password_reset_requests",
+};
+
+module.exports = async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(405).end();
+    return;
+  }
+
+  try {
+    const { type, id } = req.body || {};
+    const path = PATHS[type];
+    if (!path || !id) {
+      res.status(400).end();
+      return;
+    }
+
+    const req_ = await dbGet(`${path}/${id}`);
+    if (!req_ || req_.status !== "pending") {
+      res.status(200).end(); // nothing to notify, quietly succeed
+      return;
+    }
+
+    const adminChatId = await dbGet("bot_config/adminChatId");
+    if (!adminChatId) {
+      res.status(200).end();
+      return;
+    }
+
+    if (type === "deposit") {
+      await sendMessage(
+        adminChatId,
+        `💰 <b>Нова заявка на поповнення</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}`,
+        { reply_markup: buttons("dep", id) }
+      );
+    } else if (type === "withdraw") {
+      await sendMessage(
+        adminChatId,
+        `💸 <b>Нова заявка на вивід</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}\n💳 ${esc(req_.card || "—")}`,
+        { reply_markup: buttons("wd", id) }
+      );
+    } else if (type === "reset") {
+      await sendMessage(
+        adminChatId,
+        `🔑 <b>Запит на відновлення пароля</b>\n👤 ${esc(req_.user)}`,
+        { reply_markup: buttons("pwr", id) }
+      );
+    }
+
+    res.status(200).end();
+  } catch (err) {
+    console.error("notify error", err);
+    res.status(200).end();
+  }
+};
+
+function esc(s) {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buttons(domain, id) {
+  return {
+    inline_keyboard: [
+      [
+        { text: "✅ Підтвердити", callback_data: `${domain}:approve:${id}` },
+        { text: "❌ Відхилити", callback_data: `${domain}:reject:${id}` },
+      ],
+    ],
+  };
+}
