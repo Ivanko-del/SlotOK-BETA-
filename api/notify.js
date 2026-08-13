@@ -30,7 +30,24 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { type, id } = req.body || {};
+    const { type, id, user } = req.body || {};
+
+    if (type === "support") {
+      if (!id || !user) { res.status(400).end(); return; }
+      const msg = await dbGet(`support_chats/${user}/${id}`);
+      if (!msg || msg.sender !== "user") { res.status(200).end(); return; }
+      const adminChatId = await dbGet("bot_config/adminChatId");
+      if (!adminChatId) { res.status(200).end(); return; }
+
+      const preview = msg.mediaUrl
+        ? (msg.isVideo ? "[відео — переглянь в адмінці на сайті]" : "[фото — переглянь в адмінці на сайті]")
+        : esc(msg.text || "");
+      // Формат навмисно стабільний — по ньому парситься відповідь адміна (reply в Telegram)
+      await sendMessage(adminChatId, `💬 Гравець ${esc(user)} (підтримка):\n${preview}`);
+      res.status(200).end();
+      return;
+    }
+
     const path = PATHS[type];
     if (!path || !id) {
       res.status(400).end();

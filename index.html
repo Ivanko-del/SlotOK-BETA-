@@ -1876,7 +1876,7 @@
         <button class="btn-outline" onclick="switchTab('gifts')">🎀 Подарунки гравцям <span id="giftsBadge" class="tab-badge hidden">!</span></button>
         <button class="btn-outline" onclick="switchTab('contacts')">🤝 Знайомі</button>
         <button class="btn-outline" onclick="switchTab('clans')">🛡️ Клани</button>
-        <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки</button>
+        <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки <span class="htbadge hidden" id="supportUnreadBadge" style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;">0</span></button>
         <button class="btn-outline" onclick="switchTab('watchmode')" style="border-color:#ff69b4;color:#ff69b4;">👁️ Watch Mode</button>
         <button class="btn-outline" onclick="openGlobalSearch()" style="border-color:#d4af37;color:#d4af37;">🔍 Пошук гравців і ігор</button>
         <button class="btn-outline" onclick="showReferralQR()" style="border-color:#3dd68c;color:#3dd68c;">📲 QR-код реферала</button>
@@ -3684,7 +3684,7 @@
       <h2 id="admSupportTitle" style="color:var(--accent);">Чат підтримки</h2>
       <div id="admSupportChat" style="height:320px;overflow-y:auto;background:#111;border:1px solid #333;margin-bottom:10px;padding:10px;border-radius:8px;"></div>
       <div style="display:flex;gap:8px;">
-        <input id="admSupportReply" placeholder="Відповідь..." style="margin:0;">
+        <input id="admSupportReply" placeholder="Відповідь..." style="margin:0;" onkeydown="if(event.key==='Enter')sendAdminSupportReply()">
         <button class="btn-gold" style="width:auto;margin:0;" onclick="sendAdminSupportReply()">➤</button>
       </div>
     </div>
@@ -3996,7 +3996,7 @@
         <div id="supportAdminStatus" style="font-size:11px;color:#4a90e2;margin-top:2px;">🤖 AI Підтримка активна</div>
       </div>
     </div>
-    <div style="background:#0d1a0d;border:1px solid #1a2a1a;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#aaa;">
+    <div id="supportInfoBanner" style="background:#0d1a0d;border:1px solid #1a2a1a;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#aaa;">
       💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.
     </div>
     <div id="supportChatBox" style="height:300px;overflow-y:auto;background:#0a0a0a;border:1px solid #1a1a1a;margin-bottom:8px;padding:10px;border-radius:12px;"></div>
@@ -4011,7 +4011,7 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
       <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
-      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;min-width:0;text-align:left;" onkeypress="if(event.key==='Enter')sendSupportMsg()">
+      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;min-width:0;text-align:left;" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendSupportMsg()">
       <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
     </div>
   </div>

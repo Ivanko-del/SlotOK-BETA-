@@ -56,6 +56,13 @@ async function handleMessage(msg) {
   const adminChatId = await dbGet("bot_config/adminChatId");
   const isAdmin = adminChatId && String(chatId) === String(adminChatId);
 
+  // Admin replying (Telegram "Reply") to a forwarded support message —
+  // route the text straight into that player's support chat.
+  if (isAdmin && msg.reply_to_message) {
+    const routed = await routeSupportReply(msg);
+    if (routed) return;
+  }
+
   if (text.startsWith("/start")) return handleStart(chatId, text, fromUser, adminChatId);
 
   if (isAdmin && text.startsWith("/")) return handleAdminCommand(chatId, text);
@@ -65,6 +72,30 @@ async function handleMessage(msg) {
     await sendMessage(adminChatId, `✉️ Повідомлення від ${esc(fromUser)} (chat ${chatId}):\n${esc(text)}`);
     await sendMessage(chatId, "✅ Передано адміністратору, очікуй відповіді.");
   }
+}
+
+const SUPPORT_TAG_RE = /^💬 Гравець (\S+) \(підтримка\):/;
+
+// Returns true if this admin message was a reply to a forwarded support
+// notification and has been routed into that player's chat.
+async function routeSupportReply(msg) {
+  const original = msg.reply_to_message.text || "";
+  const m = original.match(SUPPORT_TAG_RE);
+  if (!m) return false;
+  const nick = m[1];
+  const replyText = (msg.text || "").trim();
+  if (!replyText) return false;
+
+  const exists = await dbGet(`users/${nick}`);
+  if (!exists) {
+    await sendMessage(msg.chat.id, `❌ Гравця «${esc(nick)}» вже не існує.`);
+    return true;
+  }
+
+  await dbPush(`support_chats/${nick}`, { text: replyText, sender: "admin", time: Date.now() });
+  await dbIncrement(`users/${nick}/supportUnread`, 1);
+  await sendMessage(msg.chat.id, `✅ Надіслано ${esc(nick)}`);
+  return true;
 }
 
 async function handleSetAdmin(chatId, text) {
@@ -81,7 +112,7 @@ async function handleSetAdmin(chatId, text) {
   await dbSet("bot_config/adminChatId", chatId);
   await sendMessage(
     chatId,
-    "✅ Тебе призначено адміністратором бота SlotOK.\n\nСюди приходитимуть заявки з кнопками підтвердження. Команди: /pending /user &lt;нік&gt; /stats /ban &lt;нік&gt; [причина] /unban &lt;нік&gt; /credit &lt;нік&gt; &lt;сума&gt;"
+    "✅ Тебе призначено адміністратором бота SlotOK.\n\nСюди приходитимуть заявки з кнопками підтвердження і повідомлення з чату підтримки (відповідай на них через Reply в Telegram — піде прямо гравцю). Команди: /help"
   );
 }
 
@@ -131,7 +162,7 @@ async function handleAdminCommand(chatId, text) {
   if (cmd === "/help" || cmd === "/admin") {
     return sendMessage(
       chatId,
-      "🛠 Команди адміна:\n/pending — заявки, що очікують\n/user &lt;нік&gt; — інфо про гравця\n/stats — загальна статистика\n/ban &lt;нік&gt; [причина] — заблокувати\n/unban &lt;нік&gt; — розблокувати\n/credit &lt;нік&gt; &lt;сума&gt; — нарахувати/списати баланс (від'ємне число — списати)"
+      "🛠 Команди адміна:\n/pending — заявки, що очікують\n/user &lt;нік&gt; — інфо про гравця\n/stats — загальна статистика\n/ban &lt;нік&gt; [причина] — заблокувати\n/unban &lt;нік&gt; — розблокувати\n/credit &lt;нік&gt; &lt;сума&gt; — нарахувати/списати баланс (від'ємне число — списати)\n\n💬 Чат підтримки: кожне повідомлення гравця приходить сюди окремо — просто натисни Reply на ньому в Telegram і напиши відповідь, вона піде прямо гравцю на сайт."
     );
   }
 }

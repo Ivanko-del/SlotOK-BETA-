@@ -129,6 +129,7 @@ function startDataSync() {
               setTimeout(checkPendingBetsOnStartup, 3000);
               setTimeout(listenForIncomingDuels, 2000);
               setTimeout(watchPmUnread, 1500);
+              setTimeout(watchSupportUnread, 1500);
               setTimeout(watchTradeUnread, 1800);
               setTimeout(initV62Features, 2200);
               setTimeout(renderActivityFeed, 2000);
@@ -474,12 +475,12 @@ function copyDepRequisites() {
 
 // Fire-and-forget push to the Telegram bot so admin gets an actionable
 // notification immediately, without waiting for the player to open the bot.
-function notifyBot(type, id) {
+function notifyBot(type, id, extra) {
   try {
     fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, id }),
+      body: JSON.stringify(Object.assign({ type, id }, extra)),
     }).catch(() => {});
   } catch(e) {}
 }
@@ -7255,6 +7256,7 @@ function switchAdminTab(tab, el) {
   if(tab==='requests'){ startAdminRequestListeners(); }
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e){} }
   if(tab==='bots')    { try{loadBots();}catch(e){} }
+  if(tab==='content') { try{loadSupportThreads();}catch(e){} }
   if(tab==='finance') { try{loadRTPSettings();}catch(e){} }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
 }
@@ -7797,44 +7799,70 @@ function deletePromo(code) {
   loadPromos();
 }
 
+let _supportThreadsListener = null;
 function loadSupportThreads() {
-  db.ref('support_chats').once('value', snap => {
+  const list = document.getElementById('supportThreadsList');
+  if(!list) return;
+  if(_supportThreadsListener) { db.ref('support_chats').off('value', _supportThreadsListener); _supportThreadsListener = null; }
+  _supportThreadsListener = db.ref('support_chats').on('value', snap => {
     const data = snap.val();
-    const list = document.getElementById('supportThreadsList');
     if(!data) { list.innerHTML='<div style="color:#777;font-size:13px;">Немає чатів</div>'; return; }
-    list.innerHTML = '';
-    Object.entries(data).forEach(([user, msgs]) => {
-      const lastMsg = Object.values(msgs).pop();
-      list.innerHTML += `<div class="support-thread" onclick="openAdminSupport('${user}')">
+    const threads = Object.entries(data)
+      .map(([user, msgs]) => [user, Object.values(msgs).pop()])
+      .filter(([,lastMsg]) => lastMsg)
+      .sort((a,b) => (b[1].time||0) - (a[1].time||0));
+    list.innerHTML = threads.map(([user, lastMsg]) => {
+      const preview = lastMsg.mediaUrl ? (lastMsg.isVideo ? '🎥 Відео' : '📷 Фото') : (lastMsg.text||'');
+      const isActive = user === admSupportUser;
+      return `<div class="support-thread" style="${isActive?'border-color:var(--accent);':''}" onclick="openAdminSupport('${user}')">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <b>${escapeHtml(user)}</b>
           ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
         </div>
-        <div style="color:#777;font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(lastMsg.text||'')}</div>
+        <div style="color:#777;font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
       </div>`;
-    });
+    }).join('');
   });
 }
 
 let admSupportUser = null;
+let _admSupportListener = null;
+let _admSupportListenerUser = null;
 function openAdminSupport(user) {
   admSupportUser = user;
   document.getElementById('admSupportTitle').textContent = 'Чат з ' + user;
   const chat = document.getElementById('admSupportChat');
   chat.innerHTML = '';
-  db.ref('support_chats/'+user).limitToLast(30).on('child_added', snap => {
+  if(_admSupportListener) { db.ref('support_chats/'+_admSupportListenerUser).off('child_added', _admSupportListener); _admSupportListener = null; }
+  _admSupportListenerUser = user;
+  _admSupportListener = db.ref('support_chats/'+user).limitToLast(30).on('child_added', snap => {
     const m = snap.val();
-    chat.innerHTML += `<div style="margin-bottom:8px;padding:8px 12px;background:${m.sender==='user'?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${m.sender==='user'?'0':'auto'}">${m.sender==='admin'?'[Підтримка] ':''}${escapeHtml(m.text||'')}</div>`;
+    const isUser = m.sender === 'user';
+    const timeStr = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
+    const senderLabel = m.sender==='admin' ? '[Підтримка] ' : m.sender==='ai' ? '[AI] ' : '';
+    let mediaHtml = '';
+    if(m.mediaUrl) {
+      mediaHtml = m.isVideo
+        ? `<video src="${m.mediaUrl}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;" controls muted playsinline></video>`
+        : `<img src="${m.mediaUrl}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;" onclick="window.open('${m.mediaUrl}','_blank')">`;
+    }
+    const div = document.createElement('div');
+    div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
+    div.innerHTML = `${m.text ? senderLabel + escapeHtml(m.text) : (senderLabel ? senderLabel : '')}${mediaHtml}<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:4px;">${timeStr}</div>`;
+    chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
   });
   openTabModal('admin-support-modal');
+  setTimeout(() => document.getElementById('admSupportReply')?.focus(), 100);
 }
 
 function sendAdminSupportReply() {
-  const txt = document.getElementById('admSupportReply').value.trim();
+  const inp = document.getElementById('admSupportReply');
+  const txt = inp.value.trim();
   if(!txt || !admSupportUser) return;
+  inp.value = '';
   db.ref('support_chats/'+admSupportUser).push({text:txt, sender:'admin', time:Date.now()});
-  document.getElementById('admSupportReply').value = '';
+  db.ref('users/'+admSupportUser+'/supportUnread').set(firebase.database.ServerValue.increment(1));
 }
 
 // ── ADMIN PANEL INIT (called once per open) ──
@@ -13885,17 +13913,27 @@ let supportChatListener = null;
 let adminOnlineStatus = false;
 
 let _aiSupportInited = false;
+function updateSupportStatusUI() {
+  const statusEl = document.getElementById('supportAdminStatus');
+  if(statusEl) {
+    statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
+    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : '#4a90e2';
+  }
+  const banner = document.getElementById('supportInfoBanner');
+  if(banner) {
+    banner.innerHTML = adminOnlineStatus
+      ? '💡 Адміністратор зараз онлайн і відповідає особисто.'
+      : '💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.';
+  }
+}
+
 function initAiSupport() {
   if(_aiSupportInited) return;
   _aiSupportInited = true;
   db.ref('online').on('value', snap => {
     const onlineUsers = snap.val() || {};
     adminOnlineStatus = Object.keys(onlineUsers).some(u => u.toLowerCase() === 'theivankoo');
-    const statusEl = document.getElementById('supportAdminStatus');
-    if(statusEl) {
-      statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
-      statusEl.style.color = adminOnlineStatus ? 'var(--green)' : '#4a90e2';
-    }
+    updateSupportStatusUI();
   });
 }
 
@@ -13903,6 +13941,8 @@ function openSupportModal() {
   openTabModal('support-modal');
   initAiSupport();
   initSupportChat();
+  updateSupportStatusUI();
+  if(currentUser) db.ref('users/'+currentUser+'/supportUnread').set(0);
 }
 
 function initSupportChat() {
@@ -13991,43 +14031,63 @@ function sendSupportMsg() {
   }
   if(inp) inp.value = '';
   clearSupportMedia();
-  db.ref('support_chats/'+currentUser).push(msg);
+  db.ref('support_chats/'+currentUser).push(msg).then(ref => {
+    notifyBot('support', ref.key, { user: currentUser });
+  });
   // Якщо адмін офлайн — відповідає AI (тільки на текстові повідомлення)
   if(!adminOnlineStatus && t) {
     setTimeout(() => aiSupportReply(t), 900 + Math.random()*900);
   } else if(adminOnlineStatus) {
-    // Сповіщаємо адміна про нове звернення
-    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(0)); // no-op keep key warm
     notify('✉️ Повідомлення надіслано адміністратору', 'info');
   }
 }
 
 // ── FAQ-бот на ключових словах — працює миттєво, без зовнішніх API ──
 const SUPPORT_FAQ = [
-  { keys: ['поповн','депозит','закинут','внест','вклад'],
+  { keys: ['поповн','депозит','закинут','внест','вклад','поповнити'],
     reply: '💳 Поповнення: перейди в Каса → Поповнення, обери суму й спосіб (PrivatBank/Monobank/Telegram). Після переказу натисни «Подати заявку» — адмін зарахує кошти протягом 1-24 год. Мінімум 50₴.' },
-  { keys: ['вивід','вивести','зняти','виплат','кешаут'],
+  { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ прийде код підтвердження в особисті повідомлення (натисни «Показати код» прямо у вікні виводу — нікуди переходити не треба). Заявки обробляються протягом 1-24 год.' },
   { keys: ['vip','віп','рівен','статус гравц'],
     reply: '👑 VIP програма: рівень залежить від суми твоїх ставок (Iron → Bronze → Silver → Gold → Platinum → Diamond → Master → Supreme). Вищий рівень = більший кешбек і множник на щоденний бонус. Деталі в Профіль → VIP Статус.' },
-  { keys: ['бонус','фріспін','подарун'],
+  { keys: ['бонус','фріспін','подарун','промокод','промо код'],
     reply: '🎁 Бонуси: щоденний бонус росте кожен день серії (до 7 днів), є ще погодинний бонус і бонус за реєстрацію. Всі активні бонуси — в розділі «Ще» → Бонуси та Магазин.' },
-  { keys: ['пароль','акаунт','логін','увійт','зареєстр'],
-    reply: '🔑 З акаунтом: пароль можна змінити в Налаштування → Змінити пароль. Якщо не можеш увійти — перевір правильність ніку (регістр не важливий) і пароля. Проблеми з реєстрацією — опиши детальніше, покличу адміна.' },
+  { keys: ['забув пароль','забула пароль','втратив пароль','не пам\'ятаю пароль','скинь пароль','скинути пароль','відновити пароль','відновлення пароля'],
+    reply: '🔑 Відновлення пароля: на екрані входу натисни «Забули пароль?» — там можна відповісти на контрольне питання (якщо задавав при реєстрації) або подати заявку через Telegram-бота, і адміністратор скине пароль вручну.' },
+  { keys: ['пароль','акаунт','логін','увійт','зареєстр','не можу зайти','не заходить'],
+    reply: '🔑 З акаунтом: пароль можна змінити в Налаштування → Змінити пароль. Забув пароль — на екрані входу є кнопка «Забули пароль?». Проблеми зі входом — перевір правильність ніку (регістр не важливий) і опиши детальніше, покличу адміна.' },
+  { keys: ['заблокован','забанен','бан ','мене забанили','розблокуй'],
+    reply: '🚫 Заблокований акаунт: опиши, будь ласка, свій нікнейм і що сталось — передам адміністратору на перевірку. Самостійно розблокувати акаунт я не можу.' },
   { keys: ['слот','крутит','барабан'],
     reply: '🎰 Слоти: онлайн в розділі Казино → Слоти. Є безкоштовні спіни (нараховуються при реєстрації й іноді в бонусах) і бонусний раунд на комбінації 🎰🎰🎰.' },
   { keys: ['краш','crash'],
     reply: '🚀 Краш: став ставку, множник росте — забери виграш до того як «крашнеться». Є Provably Fair перевірка чесності результату прямо в грі.' },
   { keys: ['блекджек','blackjack','21'],
     reply: '🃏 Блекджек: класичні правила, дилер добирає до 17+. Доступні Double, Split (на парах) і Страховка (коли у дилера туз). Split тепер повністю працює — обидві руки розігруються послідовно.' },
+  { keys: ['рулетк','roulette'],
+    reply: '🎡 Рулетка: став на колір, число чи сектор — колесо крутиться в реальному часі. Правила й коефіцієнти виплат — прямо на екрані гри.' },
+  { keys: ['кості','дайс','dice','кубик'],
+    reply: '🎲 Dice: обери діапазон і напрямок (більше/менше), рушій Provably Fair — можна перевірити чесність кожного результату.' },
+  { keys: ['шахи','chess'],
+    reply: '♟️ Шахи: грай проти AI (3 рівні складності) або проти живого гравця (PvP з реальною ставкою) — обидва режими в розділі Казино → Шахи.' },
+  { keys: ['клан','clan'],
+    reply: '🛡️ Клани: створити (500₴) або вступити — розділ «Ще» → Клани. Є спільний банк, тижневі завдання й клановий чат.' },
   { keys: ['рефера','запрос','партнер'],
     reply: '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Афілейт. Отримуєш відсоток з кожної ставки запрошеного гравця довічно.' },
-  { keys: ['баг','глюк','не працю','зависа','помилк','лаг'],
+  { keys: ['баг','глюк','не працю','зависа','помилк','лаг','зламал'],
     reply: '🐞 Дякую що повідомив про проблему! Опиши детальніше що саме сталось (яка гра/екран, що очікував побачити) — передам адміністратору для перевірки.' },
   { keys: ['комісі','відсоток каз','edge'],
     reply: '📊 Комісія казино закладена в коефіцієнти кожної гри (зазвичай 3-8%, вказано в правилах гри). PvP ігри (Coinflip, RPS, Predict) мають фіксовану комісію 5% з виграшу.' },
   { keys: ['карт','skin','скін'],
     reply: '🎨 Картка: в Каса → Моя картка можна перевернути (натисни), скопіювати номер, і обрати один із 26 скінів у розділі 🎨.' },
+  { keys: ['правил','18+','вік','вікові обмеж'],
+    reply: '📜 Правила: реєструючись, гравець підтверджує вік 18+. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
+  { keys: ['людин','оператор','живу людину','справжн','адміністратор','з адміном','покличт','з людиною'],
+    reply: '👨‍💼 Звʼязатись з адміністратором: якщо він зараз онлайн — повідомлення підуть напряму йому. Якщо офлайн — просто опиши питання, воно передасться адміну і він відповість тут, щойно зможе.' },
+  { keys: ['привіт','вітаю','добрий день','доброго дня','здоров'],
+    reply: '👋 Привіт! Питай про поповнення, вивід, бонуси, VIP чи будь-яку гру — відповім одразу.' },
+  { keys: ['дяк','дякую','спасибі','thanks'],
+    reply: '🙌 Нема за що! Якщо виникнуть ще питання — я тут.' },
 ];
 
 async function aiSupportReply(userMsg) {
@@ -14041,7 +14101,14 @@ async function aiSupportReply(userMsg) {
   await new Promise(r => setTimeout(r, 500 + Math.random()*700)); // природня затримка "друку"
 
   const lower = userMsg.toLowerCase();
-  const match = SUPPORT_FAQ.find(f => f.keys.some(k => lower.includes(k)));
+  // Рахуємо збіги для кожної теми й беремо найкращу, а не першу-ліпшу —
+  // так повідомлення з кількома словами потрапляють у найточнішу тему.
+  let best = null, bestScore = 0;
+  for(const f of SUPPORT_FAQ) {
+    const score = f.keys.reduce((n,k) => n + (lower.includes(k) ? 1 : 0), 0);
+    if(score > bestScore) { bestScore = score; best = f; }
+  }
+  const match = best;
   let reply;
   let needsAdmin = false;
   if(match) {
@@ -14272,37 +14339,6 @@ function initAchievementsTab() {
       }).join('')
     }</div>`;
   });
-}
-
-// ============================================================
-// DAILY CLEANUP: чат підтримки + сповіщення (раз на день)
-// ============================================================
-function runDailyCleanup() {
-  const CLEANUP_KEY = 'slotok_last_cleanup';
-  const now = Date.now();
-  const lastClean = parseInt(localStorage.getItem(CLEANUP_KEY)||'0');
-  const ONE_DAY = 24*60*60*1000;
-  if(now - lastClean < ONE_DAY) return; // Already cleaned today
-
-  // Clear all support chats (admin-level: each user's chat)
-  db.ref('support_chats').once('value', snap => {
-    const all = snap.val() || {};
-    const promises = Object.keys(all).map(uid => db.ref('support_chats/'+uid).remove());
-    Promise.all(promises).then(() => console.log('Support chats cleared'));
-  });
-
-  // Clear notifications from Firebase
-  db.ref('notifications').remove();
-
-  // Clear local notifications
-  try {
-    localStorage.removeItem('slotok_notifs');
-    allNotifs = [];
-    updateNotifBadge();
-  } catch(e) {}
-
-  localStorage.setItem(CLEANUP_KEY, String(now));
-  console.log('Daily cleanup done');
 }
 
 
@@ -18441,6 +18477,18 @@ function initV62Features() {
 }
 
 // ── PM BADGE watcher ──
+function watchSupportUnread() {
+  if(!currentUser) return;
+  db.ref('users/'+currentUser+'/supportUnread').on('value', snap => {
+    const count = snap.val() || 0;
+    const badge = document.getElementById('supportUnreadBadge');
+    if(badge) {
+      badge.textContent = count > 0 ? count : '';
+      badge.classList.toggle('hidden', count === 0);
+    }
+  });
+}
+
 function watchPmUnread() {
   if(!currentUser) return;
   db.ref('users/'+currentUser+'/pmUnread').on('value', snap => {
