@@ -19,6 +19,7 @@
 
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
+const { completeLink, unlink } = require("../lib/telegram-linking");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -104,6 +105,24 @@ async function handleMessage(msg) {
 
   if (text === "/menu") return sendQuickMenu(chatId);
 
+  if (text.startsWith("/link")) {
+    const token = text.slice("/link".length).trim();
+    if (!token) return sendMessage(chatId, "Використання: /link <код>");
+    const result = await completeLink(chatId, token);
+    if (result.ok) {
+      await sendMessage(chatId, `✅ Акаунт «${esc(result.nick)}» прив'язано!`);
+      return sendQuickMenu(chatId);
+    }
+    if (result.reason === "expired") return sendMessage(chatId, "❌ Код протух (діє 10 хв). Згенеруй новий на сайті.");
+    return sendMessage(chatId, "❌ Невірний код.");
+  }
+
+  if (text === "/unlink") {
+    const nick = await unlink(chatId);
+    if (!nick) return sendMessage(chatId, "Акаунт не був прив'язаний.");
+    return sendMessage(chatId, `✅ Акаунт «${esc(nick)}» відв'язано.`, { reply_markup: { remove_keyboard: true } });
+  }
+
   if (isAdmin && text.startsWith("/")) return handleAdminCommand(chatId, text);
 
   // Anything else: relay to admin (basic 2-way contact)
@@ -177,6 +196,17 @@ async function handleStart(chatId, text, fromUser, adminChatId) {
       chatId,
       `🔑 Запит на відновлення пароля для акаунту «${esc(nick)}».\n\nНапиши тут щось, що підтвердить що це твій акаунт. Адміністратор перевірить і скине пароль — новий пароль прийде тобі в приватні повідомлення в самому застосунку SlotOK.`
     );
+  } else if (payload.startsWith("link_")) {
+    const token = payload.slice("link_".length);
+    const result = await completeLink(chatId, token);
+    if (result.ok) {
+      await sendMessage(chatId, `✅ Акаунт «${esc(result.nick)}» прив'язано! Тепер сюди приходитимуть сповіщення про заявки, повідомлення й виграші.`);
+      await sendQuickMenu(chatId);
+    } else if (result.reason === "expired") {
+      await sendMessage(chatId, "❌ Код прив'язки протух (діє 10 хв). Згенеруй новий на сайті.");
+    } else {
+      await sendMessage(chatId, "❌ Невірний код прив'язки. Згенеруй новий на сайті.");
+    }
   } else {
     await sendMessage(
       chatId,
