@@ -19,7 +19,7 @@
 
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
-const { completeLink, unlink } = require("../lib/telegram-linking");
+const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -124,6 +124,8 @@ async function handleMessage(msg) {
   }
 
   if (isAdmin && text.startsWith("/")) return handleAdminCommand(chatId, text);
+
+  if (await handlePlayerCommand(chatId, text)) return;
 
   // Anything else: relay to admin (basic 2-way contact)
   if (adminChatId && !isAdmin) {
@@ -329,6 +331,53 @@ async function cmdCredit(chatId, arg) {
     chatId,
     `${amount >= 0 ? "✅" : "➖"} ${esc(nick)}: ${amount >= 0 ? "+" : ""}${amount}₴. Новий баланс: ${newBalance}₴`
   );
+}
+
+async function cmdPlayerBalance(chatId, nick) {
+  const u = await dbGet(`users/${nick}`);
+  return sendMessage(chatId, `💰 Баланс: ${(u && u.balance) || 0}₴`);
+}
+
+async function cmdPlayerHistory(chatId, nick) {
+  const hist = (await dbGet(`users/${nick}/history`)) || {};
+  const entries = Object.values(hist).sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 10);
+  if (!entries.length) return sendMessage(chatId, "Історія порожня.");
+  const text = "📊 <b>Останні операції:</b>\n" + entries.map((e) => `• ${esc(e.text || "")}`).join("\n");
+  return sendMessage(chatId, text);
+}
+
+async function cmdPlayerMe(chatId, nick) {
+  const u = await dbGet(`users/${nick}`);
+  if (!u) return sendMessage(chatId, "Акаунт не знайдено.");
+  const text =
+    `🔗 <b>${esc(nick)}</b>\n` +
+    `💰 Баланс: ${u.balance || 0}₴\n` +
+    `📅 Реєстрація: ${u.registeredAt ? new Date(u.registeredAt).toLocaleString("uk-UA") : "—"}\n` +
+    `🎮 Ігор: ${u.totalGames || 0}`;
+  return sendMessage(chatId, text);
+}
+
+function cmdPlayerHelp(chatId) {
+  return sendMessage(
+    chatId,
+    "🤖 <b>Команди:</b>\n💰 /balance — баланс\n📊 /history — останні операції\n🔗 /me — інфо про акаунт\n📥 /deposit — поповнити\n📤 /withdraw — вивести\n/cancel — скасувати поточну дію\n/unlink — відв'язати акаунт\n/menu — показати меню"
+  );
+}
+
+async function handlePlayerCommand(chatId, rawText) {
+  const text = BUTTON_COMMANDS[rawText] || rawText;
+  if (!["/balance", "/history", "/me", "/help"].includes(text)) return false;
+
+  const nick = await resolveNick(chatId);
+  if (!nick) {
+    await sendMessage(chatId, "❌ Акаунт не прив'язано. Прив'яжи через кнопку на сайті або /link <код>.");
+    return true;
+  }
+  if (text === "/balance") await cmdPlayerBalance(chatId, nick);
+  else if (text === "/history") await cmdPlayerHistory(chatId, nick);
+  else if (text === "/me") await cmdPlayerMe(chatId, nick);
+  else if (text === "/help") await cmdPlayerHelp(chatId);
+  return true;
 }
 
 // ============================================================
