@@ -18,7 +18,44 @@
 // ============================================================
 
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
-const { sendMessage, editMessageText, answerCallbackQuery } = require("../lib/telegram");
+const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
+
+const QUICK_KEYBOARD = {
+  reply_markup: {
+    keyboard: [
+      ["💰 Баланс", "📊 Історія"],
+      ["📥 Поповнити", "📤 Вивести"],
+      ["🔗 Мій акаунт", "❓ Допомога"],
+    ],
+    resize_keyboard: true,
+  },
+};
+
+const BUTTON_COMMANDS = {
+  "💰 Баланс": "/balance",
+  "📊 Історія": "/history",
+  "📥 Поповнити": "/deposit",
+  "📤 Вивести": "/withdraw",
+  "🔗 Мій акаунт": "/me",
+  "❓ Допомога": "/help",
+};
+
+const PLAYER_COMMANDS = [
+  { command: "balance", description: "Баланс акаунту" },
+  { command: "history", description: "Останні операції" },
+  { command: "me", description: "Інфо про акаунт" },
+  { command: "deposit", description: "Поповнити баланс" },
+  { command: "withdraw", description: "Вивести кошти" },
+  { command: "link", description: "Прив'язати акаунт SlotOK" },
+  { command: "unlink", description: "Відв'язати акаунт" },
+  { command: "menu", description: "Показати меню швидких дій" },
+  { command: "cancel", description: "Скасувати поточну дію" },
+  { command: "help", description: "Список команд" },
+];
+
+function sendQuickMenu(chatId) {
+  return sendMessage(chatId, "Меню швидких дій 👇", QUICK_KEYBOARD);
+}
 
 module.exports = async (req, res) => {
   const expectedSecret = process.env.WEBHOOK_SECRET;
@@ -65,6 +102,8 @@ async function handleMessage(msg) {
 
   if (text.startsWith("/start")) return handleStart(chatId, text, fromUser, adminChatId);
 
+  if (text === "/menu") return sendQuickMenu(chatId);
+
   if (isAdmin && text.startsWith("/")) return handleAdminCommand(chatId, text);
 
   // Anything else: relay to admin (basic 2-way contact)
@@ -110,6 +149,7 @@ async function handleSetAdmin(chatId, text) {
     return;
   }
   await dbSet("bot_config/adminChatId", chatId);
+  await setMyCommands(PLAYER_COMMANDS);
   await sendMessage(
     chatId,
     "✅ Тебе призначено адміністратором бота SlotOK.\n\nСюди приходитимуть заявки з кнопками підтвердження і повідомлення з чату підтримки (відповідай на них через Reply в Telegram — піде прямо гравцю). Команди: /help"
