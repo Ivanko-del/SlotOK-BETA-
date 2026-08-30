@@ -557,6 +557,43 @@ function openTelegramBot() {
   notify(`✈️ Telegram бот відкривається. ID: ${userId}`, 'info');
 }
 
+function linkTelegram() {
+  const token = String(Math.floor(100000 + Math.random() * 900000));
+  db.ref('telegram_link_tokens/' + token).set({ nick: currentUser, createdAt: Date.now() });
+  document.getElementById('tgLinkCode').textContent = token;
+  document.getElementById('tgLinkOpenBtn').onclick = () => {
+    window.open(`https://t.me/${TG_BOT_USERNAME}?start=link_${token}`, '_blank');
+  };
+  document.getElementById('tgLinkModal').classList.remove('hidden');
+}
+
+function unlinkTelegram() {
+  db.ref('users/' + currentUser + '/telegramChatId').once('value', snap => {
+    const chatId = snap.val();
+    db.ref('users/' + currentUser + '/telegramChatId').remove();
+    if (chatId) db.ref('telegram_links/' + chatId).remove();
+    notify('Telegram відв\'язано', 'info');
+  });
+}
+
+function initTelegramLinkStatus() {
+  if (!currentUser) return;
+  db.ref('users/' + currentUser + '/telegramChatId').on('value', snap => {
+    const statusEl = document.getElementById('tgLinkStatus');
+    const btnEl = document.getElementById('tgLinkBtn');
+    if (!statusEl || !btnEl) return;
+    if (snap.val()) {
+      statusEl.textContent = 'Прив\'язано ✅';
+      btnEl.textContent = 'Відв\'язати';
+      btnEl.onclick = unlinkTelegram;
+    } else {
+      statusEl.textContent = 'Не прив\'язано';
+      btnEl.textContent = 'Прив\'язати';
+      btnEl.onclick = linkTelegram;
+    }
+  });
+}
+
 function loadMyDeposits() {
   const list = document.getElementById('myDepositsList');
   if(!list || !currentUser) return;
@@ -16518,6 +16555,7 @@ function seedChangelogIfAdmin() {
 
 checkRefParam();
 setTimeout(loadSavedLang, 500);
+initTelegramLinkStatus();
 
 
   
