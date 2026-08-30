@@ -481,6 +481,8 @@ async function actOnPasswordReset(action, id) {
 async function notifyPlayer(user, text) {
   const key = await dbPush(`pm/${user}`, { from: "🏦 SlotOK", to: user, text, ts: Date.now() });
   await dbIncrement(`users/${user}/pmUnread`, 1);
+  const chatId = await dbGet(`users/${user}/telegramChatId`);
+  if (chatId) await sendMessage(chatId, text);
   return key;
 }
 
