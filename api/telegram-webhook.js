@@ -20,6 +20,7 @@
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
+const { startDeposit, startWithdraw, handleMoneyFlowReply } = require("../lib/telegram-money-flow");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -366,9 +367,13 @@ function cmdPlayerHelp(chatId) {
 
 async function handlePlayerCommand(chatId, rawText) {
   const text = BUTTON_COMMANDS[rawText] || rawText;
-  if (!["/balance", "/history", "/me", "/help"].includes(text)) return false;
 
-  const nick = await resolveNick(chatId);
+  const nickForFlow = await resolveNick(chatId);
+  if (nickForFlow && (await handleMoneyFlowReply(chatId, nickForFlow, text))) return true;
+
+  if (!["/balance", "/history", "/me", "/help", "/deposit", "/withdraw"].includes(text)) return false;
+
+  const nick = nickForFlow;
   if (!nick) {
     await sendMessage(chatId, "❌ Акаунт не прив'язано. Прив'яжи через кнопку на сайті або /link <код>.");
     return true;
@@ -377,6 +382,8 @@ async function handlePlayerCommand(chatId, rawText) {
   else if (text === "/history") await cmdPlayerHistory(chatId, nick);
   else if (text === "/me") await cmdPlayerMe(chatId, nick);
   else if (text === "/help") await cmdPlayerHelp(chatId);
+  else if (text === "/deposit") await startDeposit(chatId, nick);
+  else if (text === "/withdraw") await startWithdraw(chatId, nick);
   return true;
 }
 
