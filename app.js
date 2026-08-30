@@ -866,6 +866,9 @@ function finishSlots(bet) {
       if(win > 0) {
         consumeLuckyGame();
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+        if (win >= bet * 20) {
+          notifyBot('player-ping', null, { to: currentUser, kind: 'bigwin', ref: { amount: win, game: 'Slots' } });
+        }
         playSound(win > bet*10 ? 'bonus' : 'win');
         if(resultEl) resultEl.innerHTML = `<span style="color:var(--green);">🎰 +${formatNumber(win)} ₴${slotBonusRound>0?' (×'+slotBonusMult+')':''}</span>`;
         notify(`🎰 WIN: +${formatNumber(win)} ₴`, 'success');
@@ -7351,7 +7354,13 @@ function adminGiveAllBonus() {
       batch['users/'+u+'/balance'] = (users[u].balance||0)+amt;
       batch['pm/'+u+'/'+Date.now()+'_'+u] = {from:'🎁 SlotOK',to:u,text:'🎁 Бонус від адміна: +'+amt+'₴!',ts:Date.now()};
     });
-    db.ref().update(batch).then(function(){ notify('🎁 Бонус '+amt+'₴ видано!','success'); });
+    db.ref().update(batch).then(function(){
+      Object.keys(users).forEach(function(u){
+        if(users[u].isBot) return;
+        notifyBot('player-ping', null, { to: u, kind: 'bonus', ref: { amount: amt } });
+      });
+      notify('🎁 Бонус '+amt+'₴ видано!','success');
+    });
   });
 }
 function adminForceJackpot() {
@@ -7363,6 +7372,7 @@ function adminForceJackpot() {
     db.ref('users/'+winner+'/balance').set(firebase.database.ServerValue.increment(amt));
     db.ref('jackpot/amount').set(0);
     db.ref('pm/'+winner+'/'+db.ref().push().key).set({from:'🎰 Jackpot',to:winner,text:'🎰 ДЖЕКПОТ! Вам нараховано ₴'+formatNumber(amt)+'!',ts:Date.now()});
+    notifyBot('player-ping', null, { to: winner, kind: 'jackpot', ref: { amount: amt } });
     db.ref('global_chat').push({user:'🎰 SlotOK',msg:'🎰 ДЖЕКПОТ! @'+winner+' виграв ₴'+formatNumber(amt)+'!',ts:Date.now()});
     notify('🎰 Джекпот '+formatNumber(amt)+'₴ → '+winner,'success');
   });
