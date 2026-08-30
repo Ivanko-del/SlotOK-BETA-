@@ -30,7 +30,31 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { type, id, user } = req.body || {};
+    const { type, id, user, to, kind, ref } = req.body || {};
+
+    if (type === "player-ping") {
+      if (!to || !kind) { res.status(400).end(); return; }
+      const chatId = await dbGet(`users/${to}/telegramChatId`);
+      if (!chatId) { res.status(200).end(); return; }
+
+      let text = null;
+      if (kind === "pm" && ref && ref.from) {
+        text = `📩 Нове повідомлення від ${esc(ref.from)}`;
+      } else if (kind === "clan-chat" && ref && ref.user) {
+        text = `👥 ${esc(ref.user)} в клан-чаті: ${esc(ref.text || "")}`;
+      } else if (kind === "bigwin" && ref && typeof ref.amount === "number") {
+        text = `🎉 Великий виграш: +${ref.amount}₴ (${esc(ref.game || "гра")})!`;
+      } else if (kind === "jackpot" && ref && typeof ref.amount === "number") {
+        text = `🎰 ДЖЕКПОТ! Нараховано ₴${ref.amount}!`;
+      } else if (kind === "bonus" && ref && typeof ref.amount === "number") {
+        text = `🎁 Бонус: +${ref.amount}₴!`;
+      }
+      if (!text) { res.status(200).end(); return; }
+
+      await sendMessage(chatId, text);
+      res.status(200).end();
+      return;
+    }
 
     if (type === "support") {
       if (!id || !user) { res.status(400).end(); return; }
