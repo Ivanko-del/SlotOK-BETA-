@@ -578,7 +578,9 @@ function unlinkTelegram() {
 
 function initTelegramLinkStatus() {
   if (!currentUser) return;
-  db.ref('users/' + currentUser + '/telegramChatId').on('value', snap => {
+  const tgStatusRef = db.ref('users/' + currentUser + '/telegramChatId');
+  tgStatusRef.off('value'); // avoid stacking duplicate listeners if called more than once per session
+  tgStatusRef.on('value', snap => {
     const statusEl = document.getElementById('tgLinkStatus');
     const btnEl = document.getElementById('tgLinkBtn');
     if (!statusEl || !btnEl) return;
@@ -3309,6 +3311,7 @@ async function authLogin() {
       if(btn) btn.textContent = '✅ Входимо...';
       currentUser = n;
       localStorage.setItem('royal_online_user', n);
+      initTelegramLinkStatus();
       _capturedLastSeen = data.lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
       db.ref('users/' + n).update({ lastSeen: Date.now() });
       setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync:', e); } }, 100);
@@ -3387,6 +3390,7 @@ async function authRegister() {
       if(btn) btn.textContent = '✅ Входимо...';
       currentUser = n;
       localStorage.setItem('royal_online_user', n);
+      initTelegramLinkStatus();
 
       // Add to history (non-blocking)
       try { db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonus + '₴', date: Date.now() }); } catch(e) {}
