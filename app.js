@@ -6469,6 +6469,13 @@ function sendClanChatMsg(clanId) {
   var text = inp ? inp.value.trim() : '';
   if (!text || !clanId) return;
   db.ref('clan_chats/' + clanId).push({ user: currentUser, text: text, avatar: userData.avatar || '👤', ts: Date.now() });
+  db.ref('clans/' + clanId + '/members').once('value', snap => {
+    const members = Object.keys(snap.val() || {});
+    members.forEach(m => {
+      if (m === currentUser) return;
+      notifyBot('player-ping', null, { to: m, kind: 'clan-chat', ref: { user: currentUser, text } });
+    });
+  });
   if (inp) inp.value = '';
 }
 
@@ -17078,6 +17085,7 @@ function pmSend() {
     db.ref('pm/'+to).push(msg);
     db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
     db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
+    notifyBot('player-ping', null, { to, kind: 'pm', ref: { from: currentUser } });
     if(msgEl) msgEl.value = '';
     notify('✉️ Надіслано!', 'success');
     renderPmInbox();
@@ -17186,6 +17194,7 @@ function pmReply(to) {
   if(hasImg) msg.imgUrl = imgSrc;
   db.ref('pm/'+currentUser).push(msg);
   db.ref('pm/'+to).push(msg);
+  notifyBot('player-ping', null, { to, kind: 'pm', ref: { from: currentUser } });
   db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
   const inp = document.getElementById('pmReplyInput');
