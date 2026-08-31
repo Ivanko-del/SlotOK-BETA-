@@ -37,11 +37,15 @@ module.exports = async (req, res) => {
       const chatId = await dbGet(`users/${to}/telegramChatId`);
       if (!chatId) { res.status(200).end(); return; }
 
+      // pm/clan-chat carry no body text: this endpoint is unauthenticated, so
+      // echoing sender/message from the POST body would let anyone impersonate
+      // any sender through the bot. A content-free ping is enough — the actual
+      // message is in the app.
       let text = null;
-      if (kind === "pm" && ref && ref.from) {
-        text = `📩 Нове повідомлення від ${esc(ref.from)}`;
-      } else if (kind === "clan-chat" && ref && ref.user) {
-        text = `👥 ${esc(ref.user)} в клан-чаті: ${esc(ref.text || "")}`;
+      if (kind === "pm") {
+        text = "📩 Нове повідомлення в особистих!";
+      } else if (kind === "clan-chat") {
+        text = "👥 Нове повідомлення в клан-чаті!";
       } else if (kind === "bigwin" && ref && typeof ref.amount === "number") {
         text = `🎉 Великий виграш: +${ref.amount}₴ (${esc(ref.game || "гра")})!`;
       } else if (kind === "jackpot" && ref && typeof ref.amount === "number") {

@@ -6476,7 +6476,7 @@ function sendClanChatMsg(clanId) {
     const members = Object.keys(snap.val() || {});
     members.forEach(m => {
       if (m === currentUser) return;
-      notifyBot('player-ping', null, { to: m, kind: 'clan-chat', ref: { user: currentUser, text } });
+      notifyBot('player-ping', null, { to: m, kind: 'clan-chat' });
     });
   });
   if (inp) inp.value = '';
@@ -17095,7 +17095,7 @@ function pmSend() {
     db.ref('pm/'+to).push(msg);
     db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
     db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
-    notifyBot('player-ping', null, { to, kind: 'pm', ref: { from: currentUser } });
+    notifyBot('player-ping', null, { to, kind: 'pm' });
     if(msgEl) msgEl.value = '';
     notify('✉️ Надіслано!', 'success');
     renderPmInbox();
@@ -17204,7 +17204,7 @@ function pmReply(to) {
   if(hasImg) msg.imgUrl = imgSrc;
   db.ref('pm/'+currentUser).push(msg);
   db.ref('pm/'+to).push(msg);
-  notifyBot('player-ping', null, { to, kind: 'pm', ref: { from: currentUser } });
+  notifyBot('player-ping', null, { to, kind: 'pm' });
   db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
   const inp = document.getElementById('pmReplyInput');

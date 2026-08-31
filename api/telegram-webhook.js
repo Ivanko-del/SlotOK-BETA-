@@ -104,7 +104,15 @@ async function handleMessage(msg) {
 
   if (text.startsWith("/start")) return handleStart(chatId, text, fromUser, adminChatId);
 
-  if (text === "/menu") return sendQuickMenu(chatId);
+  if (text === "/menu") {
+    // handleSetAdmin only ever runs once, before launch — register the native
+    // "/" menu from here instead, guarded so it fires a single time.
+    if (!(await dbGet("bot_config/commandsSet"))) {
+      await setMyCommands(PLAYER_COMMANDS);
+      await dbSet("bot_config/commandsSet", true);
+    }
+    return sendQuickMenu(chatId);
+  }
 
   if (text.startsWith("/link")) {
     const token = text.slice("/link".length).trim();
@@ -155,6 +163,8 @@ async function routeSupportReply(msg) {
 
   await dbPush(`support_chats/${nick}`, { text: replyText, sender: "admin", time: Date.now() });
   await dbIncrement(`users/${nick}/supportUnread`, 1);
+  const playerChatId = await dbGet(`users/${nick}/telegramChatId`);
+  if (playerChatId) await sendMessage(playerChatId, `💬 Відповідь підтримки:\n${esc(replyText)}`);
   await sendMessage(msg.chat.id, `✅ Надіслано ${esc(nick)}`);
   return true;
 }
@@ -213,7 +223,8 @@ async function handleStart(chatId, text, fromUser, adminChatId) {
   } else {
     await sendMessage(
       chatId,
-      "👋 Привіт! Це бот SlotOK. Скористайся кнопкою «Поповнити» чи «Забули пароль?» у застосунку — вона відкриє мене з потрібними деталями."
+      "👋 Привіт! Це бот SlotOK. Скористайся кнопкою «Поповнити» чи «Забули пароль?» у застосунку — вона відкриє мене з потрібними деталями.",
+      QUICK_KEYBOARD
     );
   }
 }
