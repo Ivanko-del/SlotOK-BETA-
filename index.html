@@ -231,7 +231,7 @@
         <div id="friendsFeedWidget" class="hidden anim-cascade" style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.12);border-radius:16px;padding:14px;margin-bottom:12px;"></div>
 
         <!-- Щоденний бонус banner -->
-        <div id="dailyBonusBanner" class="hidden" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation:popIn .4s ease;" onclick="openDailyBonus()">
+        <div id="dailyBonusBanner" class="hidden anim-cascade anim-press" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation-delay:.02s;" onclick="openDailyBonus()">
           <div>
             <div style="font-size:15px;font-weight:900;color:var(--green);">🎁 Щоденний бонус готовий!</div>
             <div style="font-size:11px;color:#aaa;margin-top:2px;">Натисни щоб забрати нагороду</div>
@@ -240,10 +240,10 @@
         </div>
 
         <!-- Axiom Bank widget -->
-        <div id="homeAxiomWidget" style="margin-bottom:12px;"></div>
+        <div id="homeAxiomWidget" class="anim-cascade" style="margin-bottom:12px;animation-delay:.04s;"></div>
 
         <!-- VIP + Battle Pass mini progress -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;">
+        <div class="anim-cascade" style="background:var(--box);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;animation-delay:.06s;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <span style="font-size:11px;color:#777;">👑 VIP: <b id="homeVipLabel" style="color:var(--accent);">Bronze</b></span>
             <span id="homeVipPct" style="font-size:11px;color:#777;">0%</span>
@@ -261,58 +261,58 @@
         </div>
 
         <!-- Live лента виграшів -->
-        <div style="background:linear-gradient(90deg,rgba(231,76,60,.06),rgba(0,0,0,0));border:1px solid rgba(231,76,60,.15);border-radius:10px;padding:8px 12px;margin-bottom:12px;overflow:hidden;display:flex;align-items:center;gap:8px;">
+        <div class="anim-cascade" style="background:linear-gradient(90deg,rgba(231,76,60,.06),rgba(0,0,0,0));border:1px solid rgba(231,76,60,.15);border-radius:10px;padding:8px 12px;margin-bottom:12px;overflow:hidden;display:flex;align-items:center;gap:8px;animation-delay:.08s;">
           <span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;flex-shrink:0;animation:heartbeat 2s infinite;letter-spacing:.5px;">LIVE</span>
           <span id="winTicker" style="font-size:12px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         </div>
 
         <!-- Quick stats row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
-          <div style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
+        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;animation-delay:.1s;">
+          <div class="anim-press" style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
             <div style="font-size:15px;font-weight:900;color:#3dd68c;" id="homeStatBalance">₴0</div>
             <div style="font-size:9px;color:#555;margin-top:2px;">Баланс</div>
           </div>
-          <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('vip')">
+          <div class="anim-press" style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('vip')">
             <div style="font-size:15px;font-weight:900;color:#d4af37;" id="homeStatVip">—</div>
             <div style="font-size:9px;color:#555;margin-top:2px;">VIP рівень</div>
           </div>
-          <div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="openDailyBonus()">
+          <div class="anim-press" style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="openDailyBonus()">
             <div style="font-size:15px;font-weight:900;color:#4a9eff;" id="homeStatStreak">0🔥</div>
             <div style="font-size:9px;color:#555;margin-top:2px;">Серія днів</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
-          <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
+        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;animation-delay:.12s;">
+          <div class="anim-press" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
             <div style="font-size:15px;font-weight:900;color:#eee;" id="homeStatBets">0</div>
             <div style="font-size:9px;color:#555;margin-top:2px;">Всього ставок</div>
           </div>
-          <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
+          <div class="anim-press" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;" onclick="switchTab('stats')">
             <div style="font-size:15px;font-weight:900;color:#eee;" id="homeStatWins">₴0</div>
             <div style="font-size:9px;color:#555;margin-top:2px;">Всього виграно</div>
           </div>
         </div>
 
         <!-- 4 банери -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;animation-delay:.14s;">
+          <div class="anim-press" onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">⚽</div>
             <div style="font-size:24px;margin-bottom:5px;">⚽</div>
             <div style="font-size:13px;font-weight:800;color:#3dd68c;">Спортбетинг</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Live ставки</div>
           </div>
-          <div onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+          <div class="anim-press" onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🎁</div>
             <div style="font-size:24px;margin-bottom:5px;">🎁</div>
             <div style="font-size:13px;font-weight:800;color:#d4af37;">Бонус дня</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Щоденна нагорода</div>
           </div>
-          <div onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+          <div class="anim-press" onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">👑</div>
             <div style="font-size:24px;margin-bottom:5px;">👑</div>
             <div style="font-size:13px;font-weight:800;color:#c17eea;">VIP Клуб</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">14 рівнів • Cashback</div>
           </div>
-          <div onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:.15s;">
+          <div class="anim-press" onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🏆</div>
             <div style="font-size:24px;margin-bottom:5px;">🏆</div>
             <div style="font-size:13px;font-weight:800;color:#f39c12;">Турніри</div>
@@ -349,7 +349,7 @@
         </div>
 
         <!-- Battle Pass промо -->
-        <div style="background:linear-gradient(135deg,#0a0020,#1a0040,#0a0020);border:1.5px solid rgba(138,43,226,.4);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;" onclick="switchTab('battlepass')">
+        <div class="anim-cascade anim-press" style="background:linear-gradient(135deg,#0a0020,#1a0040,#0a0020);border:1.5px solid rgba(138,43,226,.4);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;animation-delay:.16s;" onclick="switchTab('battlepass')">
           <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(138,43,226,.8),transparent);"></div>
           <div style="position:absolute;right:-10px;top:-10px;font-size:80px;opacity:.08;">🎫</div>
           <div style="display:flex;align-items:center;gap:12px;">
@@ -366,7 +366,7 @@
         </div>
 
         <!-- Статистика казино онлайн -->
-        <div style="background:#070707;border:1px solid #111;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+        <div class="anim-cascade" style="background:#070707;border:1px solid #111;border-radius:14px;padding:12px 14px;margin-bottom:12px;animation-delay:.18s;">
           <div style="font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Казино зараз</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
             <div style="text-align:center;">
@@ -385,11 +385,11 @@
         </div>
 
         <!-- Активність + Графік -->
-        <div style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.1);border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+        <div class="anim-cascade" style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.1);border-radius:14px;padding:12px 14px;margin-bottom:12px;animation-delay:.2s;">
           <div style="font-size:11px;font-weight:700;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚡ Активність</div>
           <div id="activityFeed"></div>
         </div>
-        <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="switchTab('stats')">
+        <div class="anim-cascade anim-press" style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;animation-delay:.22s;" onclick="switchTab('stats')">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="font-size:13px;font-weight:700;color:#aaa;">📈 Графік балансу</div>
             <div style="font-size:11px;color:#555;">30 ігор →</div>
@@ -398,7 +398,7 @@
         </div>
 
         <!-- Календар подій -->
-        <div style="background:linear-gradient(135deg,#0d0520,#1a0535);border:1px solid rgba(138,43,226,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;" onclick="openEventCalendar()">
+        <div class="anim-cascade anim-press" style="background:linear-gradient(135deg,#0d0520,#1a0535);border:1px solid rgba(138,43,226,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;animation-delay:.24s;" onclick="openEventCalendar()">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:13px;font-weight:700;color:#c9a0ff;">📆 Календар подій</div>
             <div style="font-size:10px;color:#c9a0ff;background:rgba(138,43,226,.15);padding:3px 8px;border-radius:8px;" id="nextEventLabel">Завантаження...</div>
@@ -407,7 +407,7 @@
         </div>
 
         <!-- Останнє оновлення -->
-        <div style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:14px;cursor:pointer;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
+        <div class="anim-cascade anim-press" style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:14px;cursor:pointer;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="font-size:11px;font-weight:700;color:#4cd964;text-transform:uppercase;letter-spacing:1px;">🔄 Останнє оновлення</div>
             <div style="font-size:10px;color:#333;">Всі →</div>
@@ -416,9 +416,9 @@
         </div>
 
         <!-- CTA -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <button class="btn-gold" onclick="switchTab('cashier')" style="font-size:14px;">💳 Поповнити</button>
-          <button class="btn-outline" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
+        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;animation-delay:.28s;">
+          <button class="btn-gold anim-press" onclick="switchTab('cashier')" style="font-size:14px;">💳 Поповнити</button>
+          <button class="btn-outline anim-press" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
         </div>
       </div>
       <!-- === ЧАТ панель === -->
@@ -1867,6 +1867,12 @@
 
     <!-- ЩЕ -->
     <div id="tab-more" class="screen hidden">
+
+      <!-- ── ⚙️ СИСТЕМА ── -->
+      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">⚙️ Система</div>
+      <div class="box" style="padding:8px;">
+        <button class="btn-outline" onclick="switchTab('settings')">⚙️ Налаштування</button>
+      </div>
 
       <!-- ── 👥 СОЦІАЛЬНЕ ── -->
       <div style="font-size:10px;color:#4a9eff;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">👥 Соціальне</div>
@@ -4114,7 +4120,6 @@
       <span id="notifNavBadge" class="nav-notif-dot hidden"></span>
     </div>
     <div class="nav-item" onclick="switchTab('profile', this)"><span class="icon">👤</span><span>Профіль</span></div>
-    <div class="nav-item" onclick="switchTab('settings', this)"><span class="icon">⚙️</span><span>Налашт.</span></div>
     <div class="nav-item" onclick="switchTab('more', this)"><span class="icon">☰</span><span>Ще</span></div>
   </nav>
 

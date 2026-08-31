@@ -91,7 +91,7 @@
 
     /* NAV & MODALS */
     .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(6,5,12,.95); border-top: 1px solid rgba(255,255,255,.06); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); } 
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--sub); font-size: 9px; font-weight:700; letter-spacing:.5px; width: 14%; height: 54px; cursor: pointer; border-radius: 14px; transition: .18s; -webkit-tap-highlight-color: transparent; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--sub); font-size: 9px; font-weight:700; letter-spacing:.5px; width: 16%; height: 54px; cursor: pointer; border-radius: 14px; transition: .18s; -webkit-tap-highlight-color: transparent; }
     .nav-item span.icon { font-size: 20px; margin-bottom: 3px; line-height:1; } 
     .nav-item.active { color: var(--accent); background: rgba(212,175,55,.1); }
     
@@ -2202,7 +2202,10 @@
   position: relative;
   overflow: hidden;
   border-radius: 20px;
+  transition: transform .15s cubic-bezier(.4,0,.2,1), filter .15s;
+  -webkit-tap-highlight-color: transparent;
 }
+.banner-slide:active { transform: scale(.98); filter: brightness(.92); }
 .banner-deco {
   position: absolute; top: -20px; right: -20px;
   font-size: 110px; opacity: .06; pointer-events: none;
@@ -2211,6 +2214,13 @@
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+}
+.banner-slide::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.08) 45%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmerSweep 4.5s ease-in-out infinite;
 }
 .banner-inner {
   display: flex; justify-content: space-between; align-items: flex-start;

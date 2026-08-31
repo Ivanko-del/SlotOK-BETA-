@@ -9281,20 +9281,20 @@ function claimQuest(questId, pathSuffix, reward) {
 const _origSwitchTab = switchTab;
 // Яка nav-кнопка відповідає якому табу
 const NAV_TAB_MAP = {
-  home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:6,
+  home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:5,
   slots:1, roulette:1, crash:1, mines:1, fortune:1, poker:1, blackjack:1,
   scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
   cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1, duels:1,
-  tournaments:6, referrals:6, vip:6, quests:6, lootboxes:6,
-  hourly:6, clans:6, leaderboard:6, gifts:6, slotiky:6,
-  achievements:6, battlepass:6, stats:6, bank:6, admin:4,
+  tournaments:5, referrals:5, vip:5, quests:5, lootboxes:5,
+  hourly:5, clans:5, leaderboard:5, gifts:5, slotiky:5,
+  achievements:5, battlepass:5, stats:5, bank:5, admin:4,
   baccarat:1, videpoker:1,
-  seasons:6, ranks:6, halloffame:6, pm:6, weekly:6, themes:5,
+  seasons:5, ranks:5, halloffame:5, pm:5, weekly:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, penalty:1, bowling:1, archery:1, sicbo:1, cardwar:1, duckshoot:1,
-  balloon:1, russianroulette:1, quiz:6, horseracing:1, colorbet:1, chat:6, affiliate:6,
-  autobet:6, insurance:6, copytrade:6, trade:6,
-  lottery:6, investpool:6, watchmode:6,
+  balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5, affiliate:5,
+  autobet:5, insurance:5, copytrade:5, trade:5,
+  lottery:5, investpool:5, watchmode:5,
 };
 
 // Кеш вимкнених ігор — оновлюється в реальному часі, дозволяє
