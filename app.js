@@ -94,7 +94,8 @@ function startDataSync() {
               // справжнє попереднє значення (ще ніхто нічого не перезаписав).
               if(_capturedLastSeen === undefined) _capturedLastSeen = data.lastSeen || null;
             }
-            userData = data; 
+            userData = data;
+            syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
             if(!userData.isBot) antiCheatCheckBalanceJump(prevBalance, userData.balance);
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
@@ -8393,6 +8394,17 @@ function loadMyClan(clanId) {
         : '';
     }
 
+    const tier = getClanBankTier(c.bank || 0);
+    const nextTier = CLAN_BANK_TIERS.slice().reverse().find(t => t.min > (c.bank || 0));
+    const perkEl = document.getElementById('clanPerkSection');
+    if(perkEl) {
+      perkEl.innerHTML = '<div class="section-header">💎 Кланові перки</div>' +
+        '<div class="box" style="padding:10px;">' +
+          '<div style="font-size:13px;">' + tier.label + ': <b style="color:var(--accent);">+' + (tier.cashback*100).toFixed(2) + '%</b> кешбеку для всіх учасників' + (tier.min>=25000?' + колір тегу/банера':'') + (tier.min>=100000?' + знижка 50% на створення клану':tier.min>=25000?' + знижка 25% на створення клану':'') + '</div>' +
+          (nextTier ? '<div style="font-size:11px;color:#777;margin-top:4px;">До наступного тіру: ' + formatNumber(nextTier.min - (c.bank||0)) + '₴</div>' : '<div style="font-size:11px;color:var(--green);margin-top:4px;">Максимальний тір!</div>') +
+        '</div>';
+    }
+
     const mList = document.getElementById('clanMembersList');
     mList.innerHTML = '';
     members.forEach(name => {
@@ -8450,6 +8462,34 @@ function trackClanWager(amount) {
   const week = getWeekStr();
   db.ref('clans/' + userData.clanId + '/weekly/' + week + '/wager').transaction(v => (v||0) + amount);
   db.ref('clans/' + userData.clanId + '/weekly/' + week + '/games').transaction(v => (v||0) + 1);
+}
+
+// Тіри кланового банку -> бонус кешбеку для всіх учасників
+const CLAN_BANK_TIERS = [
+  { min: 100000, cashback: 0.005, label: 'Тір 3', tag: 'gold-animated' },
+  { min: 25000,  cashback: 0.0025, label: 'Тір 2', tag: 'gold' },
+  { min: 5000,   cashback: 0.001, label: 'Тір 1', tag: 'green' },
+  { min: 0,      cashback: 0,     label: 'Без тіру', tag: 'none' }
+];
+function getClanBankTier(bank) {
+  return CLAN_BANK_TIERS.find(t => (bank || 0) >= t.min);
+}
+
+var clanCashbackBonus = 0;
+var _clanBankListener = null;
+var _clanBankListenerClanId = null;
+function syncClanBankListener() {
+  const clanId = userData && userData.clanId;
+  if(clanId === _clanBankListenerClanId) return;
+  if(_clanBankListener && _clanBankListenerClanId) {
+    db.ref('clans/' + _clanBankListenerClanId + '/bank').off('value', _clanBankListener);
+  }
+  _clanBankListenerClanId = clanId || null;
+  clanCashbackBonus = 0;
+  if(!clanId) return;
+  _clanBankListener = db.ref('clans/' + clanId + '/bank').on('value', snap => {
+    clanCashbackBonus = getClanBankTier(snap.val() || 0).cashback;
+  });
 }
 
 // ============================================
@@ -9037,7 +9077,7 @@ function addWager(amount) {
   // Cashback (only if enabled by user)
   if(vip.cashback > 0 && getCashbackEnabled()) {
     // Raw cashback for this bet
-    const rawCashback = Math.floor(amount * vip.cashback);
+    const rawCashback = Math.floor(amount * (vip.cashback + clanCashbackBonus));
     // Clamp per-bet
     const betCashback = Math.min(rawCashback, CASHBACK_MAX_PER_BET);
     if(betCashback > 0) {
@@ -9113,7 +9153,7 @@ function updateCashierCashbackUI() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div>
         <div style="font-size:15px;font-weight:bold;color:var(--green);">💰 Кешбек</div>
-        <div style="font-size:10px;color:#555;margin-top:2px;">${vip.icon} ${vip.name} • ${(vip.cashback*100).toFixed(1)}% з ставки</div>
+        <div style="font-size:10px;color:#555;margin-top:2px;">${vip.icon} ${vip.name} • ${((vip.cashback+clanCashbackBonus)*100).toFixed(2)}% з ставки${clanCashbackBonus>0?' (+клан)':''}</div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
         <span style="font-size:11px;color:#777;">${enabled?'Увімкнено':'Вимкнено'}</span>
