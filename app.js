@@ -8147,7 +8147,8 @@ function createClan() {
   db.ref('users/' + currentUser).update({ balance: firebase.database.ServerValue.increment(-500), clanId });
   db.ref('clans/' + clanId).set({
     name, tag, desc, leader: currentUser,
-    bank: 0, members: { [currentUser]: { role: 'leader', joined: Date.now() } },
+    bank: 0, privacy: 'open',
+    members: { [currentUser]: { role: 'leader', joined: Date.now() } },
     created: Date.now(), weekWager: 0
   });
   addToHistory('Створено клан ' + name + ': -500₴');
@@ -8200,9 +8201,11 @@ function leaveClan() {
 }
 
 function loadMyClan(clanId) {
+  const week = getWeekStr();
   db.ref('clans/' + clanId).once('value', snap => {
     const c = snap.val();
     if(!c) { leaveClan(); return; }
+    const wk = (c.weekly && c.weekly[week]) || { wager: 0, games: 0 };
     const banner = document.getElementById('myClanBanner');
     const members = c.members ? Object.keys(c.members) : [];
     banner.innerHTML =
@@ -8215,7 +8218,7 @@ function loadMyClan(clanId) {
       '<div class="clan-stats">' +
         '<div class="clan-stat"><div class="clan-stat-v">' + members.length + '</div><div class="clan-stat-l">Учасників</div></div>' +
         '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(c.bank||0) + '₴</div><div class="clan-stat-l">Банк клану</div></div>' +
-        '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(c.weekWager||0) + '₴</div><div class="clan-stat-l">Ставки/тиж</div></div>' +
+        '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(wk.wager||0) + '₴</div><div class="clan-stat-l">Ставки/тиж</div></div>' +
       '</div>' +
       '<div style="display:flex;gap:6px;margin-top:8px;">' +
         '<input id="clanBankDepositInput" type="number" min="100" placeholder="Сума (мін. 100₴)" style="flex:1;min-width:0;margin:0;">' +
@@ -8229,20 +8232,22 @@ function loadMyClan(clanId) {
       mList.innerHTML += '<div class="clan-member-row">' +
         '<div class="clan-member-avatar">' + (name===currentUser?'🙋':'👤') + '</div>' +
         '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + name + '</div></div>' +
-        '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':'🛡️ Учасник') + '</span>' +
+        '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
       '</div>';
     });
 
     const tList = document.getElementById('clanTasksList');
+    const paid = (c.weekly && c.weekly[week] && c.weekly[week].paid) || {};
     const CLAN_TASKS = [
-      { goal: 5000,  label: 'Поставити 5 000₴ спільно',  reward: 500,  key: 'weekWager' },
-      { goal: 25000, label: 'Поставити 25 000₴ спільно', reward: 2000, key: 'weekWager' },
-      { goal: members.length * 3, label: 'Кожен грає 3 ігри (' + (members.length*3) + ' разів)', reward: 1000, key: 'weekGames' }
+      { id: 'wager5k',  goal: 5000,  label: 'Поставити 5 000₴ спільно',  reward: 500,  key: 'wager' },
+      { id: 'wager25k', goal: 25000, label: 'Поставити 25 000₴ спільно', reward: 2000, key: 'wager' },
+      { id: 'games3pp', goal: members.length * 3, label: 'Кожен грає 3 ігри (' + (members.length*3) + ' разів)', reward: 1000, key: 'games' }
     ];
     tList.innerHTML = CLAN_TASKS.map(t => {
-      const prog = Math.min(t.goal, c[t.key] || 0);
+      const prog = Math.min(t.goal, wk[t.key] || 0);
       const pct  = Math.min(100, (prog/t.goal)*100);
       const done = prog >= t.goal;
+      const isPaid = !!paid[t.id];
       return '<div class="clan-task ' + (done?'done':'') + '">' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
           '<span style="font-size:13px;">' + t.label + '</span>' +
@@ -8250,7 +8255,7 @@ function loadMyClan(clanId) {
         '</div>' +
         '<div class="quest-prog-bar"><div class="quest-prog-fill" style="width:' + pct + '%"></div></div>' +
         '<div style="font-size:11px;color:#777;">' + formatNumber(prog) + ' / ' + formatNumber(t.goal) + '</div>' +
-        (done ? '<div style="color:var(--green);font-size:12px;margin-top:4px;">✅ Виконано!</div>' : '') +
+        (isPaid ? '<div style="color:var(--green);font-size:12px;margin-top:4px;">✅ Виконано і виплачено</div>' : '') +
       '</div>';
     }).join('');
   });
@@ -8260,8 +8265,9 @@ function loadMyClan(clanId) {
 // Трекінг вагера для клану
 function trackClanWager(amount) {
   if(!userData.clanId) return;
-  db.ref('clans/' + userData.clanId + '/weekWager').transaction(v => (v||0) + amount);
-  db.ref('clans/' + userData.clanId + '/weekGames').transaction(v => (v||0) + 1);
+  const week = getWeekStr();
+  db.ref('clans/' + userData.clanId + '/weekly/' + week + '/wager').transaction(v => (v||0) + amount);
+  db.ref('clans/' + userData.clanId + '/weekly/' + week + '/games').transaction(v => (v||0) + 1);
 }
 
 // ============================================
