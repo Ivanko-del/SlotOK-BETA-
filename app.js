@@ -8306,6 +8306,41 @@ function leaveClan() {
   });
 }
 
+const CLAN_TASK_DEFS = [
+  { id: 'wager5k',  goal: 5000,  reward: 500,  key: 'wager' },
+  { id: 'wager25k', goal: 25000, reward: 2000, key: 'wager' },
+  { id: 'games3pp', goal: 0 /* computed per-clan */, reward: 1000, key: 'games' }
+];
+
+function claimClanTask(clanId, taskId) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    const myRole = c.members[currentUser] && c.members[currentUser].role;
+    if(myRole !== 'leader' && myRole !== 'officer') return notify('Тільки лідер або офіцер', 'error');
+    const week = getWeekStr();
+    const wk = (c.weekly && c.weekly[week]) || { wager: 0, games: 0 };
+    const members = Object.keys(c.members || {});
+    const def = CLAN_TASK_DEFS.find(t => t.id === taskId);
+    if(!def) return;
+    const goal = taskId === 'games3pp' ? members.length * 3 : def.goal;
+    const already = wk.paid && wk.paid[taskId];
+    if(already) return notify('Вже виплачено цього тижня', 'info');
+    if((wk[def.key] || 0) < goal) return notify('Завдання ще не виконано', 'error');
+    if((c.bank || 0) < def.reward) return notify('Недостатньо в банку клану', 'error');
+
+    const share = Math.floor(def.reward / members.length);
+    const updates = {
+      ['bank']: firebase.database.ServerValue.increment(-def.reward),
+      ['weekly/' + week + '/paid/' + taskId]: true
+    };
+    db.ref('clans/' + clanId).update(updates);
+    members.forEach(uid => db.ref('users/' + uid + '/balance').set(firebase.database.ServerValue.increment(share)));
+    notify('🎁 Нагороду виплачено: +' + share + '₴ кожному учаснику', 'success');
+    loadMyClan(clanId);
+  });
+}
+
 function loadMyClan(clanId) {
   const week = getWeekStr();
   db.ref('clans/' + clanId).once('value', snap => {
@@ -8398,7 +8433,11 @@ function loadMyClan(clanId) {
         '</div>' +
         '<div class="quest-prog-bar"><div class="quest-prog-fill" style="width:' + pct + '%"></div></div>' +
         '<div style="font-size:11px;color:#777;">' + formatNumber(prog) + ' / ' + formatNumber(t.goal) + '</div>' +
-        (isPaid ? '<div style="color:var(--green);font-size:12px;margin-top:4px;">✅ Виконано і виплачено</div>' : '') +
+        (isPaid ? '<div style="color:var(--green);font-size:12px;margin-top:4px;">✅ Виконано і виплачено</div>' :
+          done ? (isLeaderOrOfficer
+            ? '<button class="btn-gold" style="width:auto;padding:4px 12px;font-size:11px;margin-top:6px;" onclick="claimClanTask(\'' + clanId + '\',\'' + t.id + '\')">🎁 Забрати нагороду</button>'
+            : '<div style="color:#777;font-size:12px;margin-top:4px;">⏳ Очікує на лідера/офіцера</div>')
+          : '') +
       '</div>';
     }).join('');
   });
