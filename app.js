@@ -254,7 +254,7 @@ function notify(msg, type='info') {
       try {
         const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}');
         if(s.notifs === false) return;
-      } catch(e) {}
+      } catch(e) { console.warn(e); }
     }
     const c = document.getElementById('toast-container');
     if(!c) return;
@@ -268,7 +268,7 @@ function notify(msg, type='info') {
 function playSound(type) { 
     try {
         // Check settings - getSetting may not be available yet, use localStorage directly
-        try { const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}'); if(s.sounds===false) return; } catch(e){}
+        try { const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}'); if(s.sounds===false) return; } catch(e) { console.warn(e); }
         if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
         const o = audioCtx.createOscillator();
@@ -316,7 +316,7 @@ function playSound(type) {
                 oi.start(t+i*0.1); oi.stop(t+i*0.1+0.15);
             });
         }
-    } catch(e) {}
+    } catch(e) { console.warn(e); }
 }
 
 function validateBet(amount) { 
@@ -333,7 +333,7 @@ function recordBalanceHistory() {
   db.ref('users/'+currentUser+'/balanceHistory').push(userData.balance||0);
 }
 function addToHistory(msg) {
-    try { db.ref(`users/${currentUser}/history`).push({text: msg, date: Date.now()}); } catch(e){}
+    try { db.ref(`users/${currentUser}/history`).push({text: msg, date: Date.now()}); } catch(e) { console.warn(e); }
     // increment totalGames for rank tracking
     if(msg.includes('+') || msg.includes('-')) {
       db.ref('users/'+currentUser+'/totalGames').set(firebase.database.ServerValue.increment(1));
@@ -482,7 +482,7 @@ function notifyBot(type, id, extra) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.assign({ type, id }, extra)),
     }).catch(() => {});
-  } catch(e) {}
+  } catch(e) { console.warn(e); }
 }
 
 function submitDepositRequest() {
@@ -2640,6 +2640,18 @@ let globalChatListener = null;
 let chatPendingImage = null;
 let chatPendingIsVideo = false;
 
+// Delegated click handler for chat media, bound once — avoids putting
+// user-controlled URLs inside inline onclick="" JS strings (XSS via quote breakout).
+if (!window._chatMediaClickBound) {
+  window._chatMediaClickBound = true;
+  document.addEventListener('click', e => {
+    const openImg = e.target.closest('[data-open-img]');
+    if (openImg) { window.open(openImg.getAttribute('data-open-img'), '_blank'); return; }
+    const vid = e.target.closest('[data-fullscreen-toggle]');
+    if (vid && vid.requestFullscreen) vid.requestFullscreen();
+  });
+}
+
 function initChat() {
   const msgsEl = document.getElementById('chatMessages');
   if(!msgsEl) return;
@@ -2654,12 +2666,12 @@ function initChat() {
       const showHeader = m.user !== prevUser;
       prevUser = m.user;
       const avatarHtml = m.avatarUrl
-        ? `<img src="${m.avatarUrl}" class="chat-msg-avatar-img">`
-        : `<div class="chat-msg-avatar-emoji">${m.avatar||'👤'}</div>`;
+        ? `<img src="${escapeHtml(m.avatarUrl)}" class="chat-msg-avatar-img">`
+        : `<div class="chat-msg-avatar-emoji">${escapeHtml(m.avatar||'👤')}</div>`;
       const contentHtml = m.imgUrl
         ? (m.isVideo
-            ? `<video src="${m.imgUrl}" style="max-width:220px;max-height:200px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline onclick="this.requestFullscreen&&this.requestFullscreen()"></video>`
-            : `<img src="${m.imgUrl}" class="chat-img-msg" onclick="window.open('${m.imgUrl}','_blank')">`)
+            ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
+            : `<img src="${escapeHtml(m.imgUrl)}" class="chat-img-msg" data-open-img="${escapeHtml(m.imgUrl)}">`)
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
       const nameBadge = isAdmin ? ' <span style="background:#d4af37;color:#000;font-size:8px;font-weight:900;padding:1px 5px;border-radius:3px;">ADMIN</span>' : '';
       const headerHtml = showHeader
@@ -2683,7 +2695,7 @@ function initChat() {
 }
 
 function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function handleChatImage(input) {
@@ -3176,7 +3188,7 @@ function toggleAutoSpin(inputId, playFn, maxSpins) {
   const doSpin = () => {
     if(!autoSpinActive || autoSpinCount <= 0) { autoSpinActive=false; return; }
     autoSpinCount--;
-    try { playFn(); } catch(e){}
+    try { playFn(); } catch(e) { console.warn(e); }
     setTimeout(doSpin, 2000);
   };
   doSpin();
@@ -3396,7 +3408,7 @@ async function authRegister() {
       initTelegramLinkStatus();
 
       // Add to history (non-blocking)
-      try { db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonus + '₴', date: Date.now() }); } catch(e) {}
+      try { db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonus + '₴', date: Date.now() }); } catch(e) { console.warn(e); }
 
       notify('🎉 Вітаємо! Бонус: ' + bonus + '₴ + ' + spins + ' фріспінів!' + bonusMsg, 'success');
 
@@ -3727,7 +3739,7 @@ function checkAutoWipeOnLoad() {
                 localStorage.setItem('slotok_lastAutoWipe', String(Date.now()));
             }
         }
-    } catch(e) {}
+    } catch(e) { console.warn(e); }
 }
 
 function wipeEconomy_auto() {
@@ -5634,7 +5646,7 @@ function sendNativeNotif(title, body, icon = '🎰') {
   if(!localStorage.getItem('pushEnabled')) return;
   // Only send when tab is hidden
   if(document.visibilityState === 'visible') return;
-  try { new Notification(title, { body, icon: '/favicon.ico' }); } catch(e) {}
+  try { new Notification(title, { body, icon: '/favicon.ico' }); } catch(e) { console.warn(e); }
 }
 
 function sendPushToUser(nick, title, body) {
@@ -6257,7 +6269,7 @@ function initTelegramMiniApp() {
   btn.onClick(function() { switchTab('lobby'); });
 }
 // Auto-init on load
-setTimeout(function() { try { initTelegramMiniApp(); } catch(e) {} }, 1000);
+setTimeout(function() { try { initTelegramMiniApp(); } catch(e) { console.warn(e); } }, 1000);
 
 // ── ДЕМО РЕЖИМ (гість без реєстрації) ─────────────────────────
 var _isDemoMode = false;
@@ -6417,6 +6429,7 @@ function setBreakReminder(minutes) {
 var _onlineSeconds = parseInt(localStorage.getItem('slotok_online_total') || '0');
 var _onlineTimer = null;
 function startOnlineTimer() {
+  if (_onlineTimer) clearInterval(_onlineTimer);
   _onlineTimer = setInterval(function() {
     _onlineSeconds++;
     if (_onlineSeconds % 60 === 0) {
@@ -6458,7 +6471,7 @@ function initClanChat(clanId) {
     msgEl.innerHTML = Object.values(msgs).sort(function(a,b) { return a.ts-b.ts; }).map(function(m) {
       var isMe = m.user === currentUser;
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
-        + '<div style="font-size:20px;flex-shrink:0;">' + (m.avatar || '👤') + '</div>'
+        + '<div style="font-size:20px;flex-shrink:0;">' + escapeHtml(m.avatar || '👤') + '</div>'
         + '<div style="background:' + (isMe ? 'rgba(212,175,55,.08)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (isMe ? 'rgba(212,175,55,.15)' : 'rgba(255,255,255,.07)') + ';border-radius:12px;padding:8px 10px;max-width:72%;">'
         + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
@@ -7305,10 +7318,10 @@ function switchAdminTab(tab, el) {
   if(panel) { panel.style.display = 'block'; }
   if(el) el.classList.add('active');
   if(tab==='requests'){ startAdminRequestListeners(); }
-  if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e){} }
-  if(tab==='bots')    { try{loadBots();}catch(e){} }
-  if(tab==='content') { try{loadSupportThreads();}catch(e){} }
-  if(tab==='finance') { try{loadRTPSettings();}catch(e){} }
+  if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
+  if(tab==='bots')    { try{loadBots();}catch(e) { console.warn(e); } }
+  if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
+  if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
@@ -8834,13 +8847,13 @@ function getCashbackEnabled() {
   try { return localStorage.getItem('cashback_enabled') !== 'false'; } catch(e) { return true; }
 }
 function setCashbackEnabled(val) {
-  try { localStorage.setItem('cashback_enabled', val ? 'true' : 'false'); } catch(e) {}
+  try { localStorage.setItem('cashback_enabled', val ? 'true' : 'false'); } catch(e) { console.warn(e); }
 }
 
 function addWager(amount) {
   if(!userData.isBot) antiCheatRecordBet(amount);
   // Progressive jackpot: 0.05% of wager
-  try { db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.ceil(amount*0.0005))); } catch(e){}
+  try { db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.ceil(amount*0.0005))); } catch(e) { console.warn(e); }
   const wagered = (userData.totalWagered || 0) + amount;
   const vip = getVipLevel(wagered);
   const prevVip = getVipLevel(userData.totalWagered || 0);
@@ -9403,7 +9416,7 @@ function switchTab(id, el) {
       document.getElementById('crashBtn')?.classList.remove('hidden');
       document.getElementById('crashCashoutBtn')?.classList.add('hidden');
     }
-  } catch(e) {}
+  } catch(e) { console.warn(e); }
 
   // Reset slot bonus if leaving
   try {
@@ -9411,7 +9424,7 @@ function switchTab(id, el) {
       slotBonusRound = 0; slotBonusBet = 0;
       document.getElementById('bonusRoundBanner')?.classList.add('hidden');
     }
-  } catch(e) {}
+  } catch(e) { console.warn(e); }
 
   // Tab-specific init — each wrapped in try/catch
   const safe = (fn) => { try { fn(); } catch(e) { console.error('switchTab init error [' + id + ']:', e); } };
@@ -9814,7 +9827,7 @@ function applyLang(lang) {
   // Bet slip
   const bsTitle = document.querySelector('#betSlipModal .bs-title'); if(bsTitle) bsTitle.textContent = T.bet_slip_title;
   // Save lang for page reload
-  try { localStorage.setItem('slotok_lang', lang); } catch(e) {}
+  try { localStorage.setItem('slotok_lang', lang); } catch(e) { console.warn(e); }
 }
 
 function loadSavedLang() {
@@ -9824,7 +9837,7 @@ function loadSavedLang() {
     const langBtn = document.getElementById('lang-'+saved);
     if(langBtn) { document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active')); langBtn.classList.add('active'); }
     if(saved !== 'uk') applyLang(saved);
-  } catch(e) {}
+  } catch(e) { console.warn(e); }
 }
 
 // Звуки - поважати налаштування (пряма заміна функції)
@@ -9841,7 +9854,7 @@ function pushNotif(type, icon, title, text, colorClass) {
   const notif = { id, type, icon, title, text, colorClass: colorClass||'', time: Date.now(), read: false };
   allNotifs.unshift(notif);
   if(allNotifs.length > 100) allNotifs = allNotifs.slice(0, 100);
-  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e) { console.warn(e); }
   updateNotifBadge();
 }
 
@@ -9888,14 +9901,14 @@ function renderNotifs() {
 function readNotif(id) {
   const n = allNotifs.find(x => x.id === id);
   if(n) n.read = true;
-  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e) { console.warn(e); }
   updateNotifBadge();
   renderNotifs();
 }
 
 function markAllNotifsRead() {
   allNotifs.forEach(n => n.read = true);
-  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e){}
+  try { localStorage.setItem('slotok_notifs', JSON.stringify(allNotifs.slice(0, 50))); } catch(e) { console.warn(e); }
   updateNotifBadge();
   renderNotifs();
 }
@@ -10619,7 +10632,7 @@ function joinMpRoom2(roomId, bet) {
 }
 
 function listenMpRoom2(roomId) {
-  if(mpListener) { try { db.ref('mp_rooms/' + roomId).off('value', mpListener); } catch(e){} }
+  if(mpListener) { try { db.ref('mp_rooms/' + roomId).off('value', mpListener); } catch(e) { console.warn(e); } }
   mpListener = db.ref('mp_rooms/' + roomId).on('value', snap => {
     const r = snap.val(); if(!r) return;
     if(r.status === 'cancelled') { notify('Кімнату скасовано', 'error'); resetMpUI(); return; }
@@ -11233,7 +11246,7 @@ function createCardRoom() {
 function cancelCardRoom(roomId, bet) {
   db.ref('card_rooms/' + roomId).update({ status: 'cancelled' });
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bet));
-  if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e){} cgListener = null; }
+  if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e) { console.warn(e); } cgListener = null; }
   cgRoomId = null;
   notify('❌ Кімнату скасовано, ставку повернено', 'info');
   loadCardRooms();
@@ -11272,7 +11285,7 @@ function joinCardRoom(roomId, bet) {
 }
 
 function listenCardRoom(roomId) {
-  if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e){} cgListener = null; }
+  if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e) { console.warn(e); } cgListener = null; }
   cgListener = db.ref('card_rooms/'+roomId).on('value', snap => {
     const r = snap.val(); if(!r) return;
     if(r.status === 'cancelled') {
@@ -11394,7 +11407,7 @@ async function fetchRates() {
   updateCurrencyDisplay();
 
   // Save rates to localStorage as cache
-  try { localStorage.setItem('slotok_rates', JSON.stringify({ rates: currencyRates, ts: ratesLastFetch })); } catch(e){}
+  try { localStorage.setItem('slotok_rates', JSON.stringify({ rates: currencyRates, ts: ratesLastFetch })); } catch(e) { console.warn(e); }
 }
 
 function loadCachedRates() {
@@ -11404,7 +11417,7 @@ function loadCachedRates() {
       Object.assign(currencyRates, cached.rates);
       return true;
     }
-  } catch(e){}
+  } catch(e) { console.warn(e); }
   return false;
 }
 
@@ -12556,7 +12569,7 @@ function startLiveTracker(match) {
         clearInterval(liveTrackerTimer);
         settleMatchBets(match, { homeScore:match.liveScore?.home||0, awayScore:match.liveScore?.away||0, isFinished:true });
       }
-    } catch(e) {}
+    } catch(e) { console.warn(e); }
   }, 60000);
 }
 
@@ -14327,7 +14340,7 @@ function checkAchievements(trigger, value) {
         owned[a.id] = { unlockedAt: Date.now(), xp: a.xp };
         totalXP += a.xp;
       }
-    } catch(e) {}
+    } catch(e) { console.warn(e); }
   });
 
   if(newOnes.length) {
@@ -15494,7 +15507,7 @@ function startBgMusic() {
 
 function stopBgMusic() {
   bgMusicRunning = false;
-  bgMusicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  bgMusicNodes.forEach(n => { try { n.stop(); } catch(e) { console.warn(e); } });
   bgMusicNodes = [];
 }
 
@@ -15571,7 +15584,7 @@ function initBgMusicFromSettings() {
   try {
     const s = JSON.parse(localStorage.getItem('slotok_settings')||'{}');
     if(s.music === true) setTimeout(startBgMusic, 1500);
-  } catch(e) {}
+  } catch(e) { console.warn(e); }
 }
 
 
@@ -18431,7 +18444,7 @@ function setBgPhoto(input) {
   reader.onload = function(e) {
     var url = e.target.result;
     document.body.style.background = 'url('+url+') center/cover fixed';
-    try{ localStorage.setItem('slotok_bg_type','photo'); localStorage.setItem('slotok_bg_photo', url); }catch(ex){}
+    try{ localStorage.setItem('slotok_bg_type','photo'); localStorage.setItem('slotok_bg_photo', url); }catch(ex) { console.warn(ex); }
     var preview = document.getElementById('bgPhotoPreview');
     var img = document.getElementById('bgPhotoImg');
     if(preview) preview.style.display = 'block';
