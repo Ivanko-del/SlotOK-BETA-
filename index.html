@@ -1988,8 +1988,8 @@
         <div class="section-header">💬 Чат клану</div>
         <div id="clanChatMessages" style="height:220px;overflow-y:auto;background:#0a0a0a;border:1px solid #222;border-radius:10px;padding:10px;margin-bottom:8px;"></div>
         <div style="display:flex;gap:6px;">
-          <input id="clanChatInput" placeholder="Повідомлення..." style="flex:1;" maxlength="300" onkeydown="if(event.key==='Enter')sendClanChatMsg(userData.clanId)">
-          <button class="btn-gold" style="padding:0 16px;" onclick="sendClanChatMsg(userData.clanId)">➤</button>
+          <input id="clanChatInput" placeholder="Повідомлення..." style="flex:1;min-width:0;" maxlength="300" onkeydown="if(event.key==='Enter')sendClanChatMsg(userData.clanId)">
+          <button class="btn-gold" style="width:auto;flex-shrink:0;padding:0 16px;" onclick="sendClanChatMsg(userData.clanId)">➤</button>
         </div>
 
         <button id="leaveClanBtn" class="btn-red" style="margin-top:10px;" onclick="leaveClan()">🚪 Покинути клан</button>
@@ -4038,7 +4038,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
+      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
       <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
       <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;min-width:0;text-align:left;" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendSupportMsg()">
       <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
@@ -4214,7 +4214,7 @@
         <!-- Text input -->
         <input class="chat-input" id="chatInput" placeholder="Написати повідомлення..." maxlength="300" style="flex:1;margin:0;"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendChatMsg()">
-        <button onclick="sendChatMsg()" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;flex-shrink:0;transition:.15s;">➤</button>
+        <button onclick="sendChatMsg()" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;transition:.15s;">➤</button>
       </div>
 
       <!-- GIF panel -->

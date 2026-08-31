@@ -6483,6 +6483,9 @@ function depositToClanBank(clanId, amount) {
   db.ref('clans/' + clanId + '/bank').set(firebase.database.ServerValue.increment(amount));
   db.ref('clans/' + clanId + '/bankLog').push({ user: currentUser, amount: amount, ts: Date.now(), type: 'deposit' });
   notify('🏦 Внесено в клановий банк: ₴' + formatNumber(amount), 'success');
+  const inp = document.getElementById('clanBankDepositInput');
+  if (inp) inp.value = '';
+  loadMyClan(clanId);
 }
 
 // ── ЖУРНАЛ БЕЗПЕКИ ─────────────────────────────────────────────
@@ -8213,6 +8216,10 @@ function loadMyClan(clanId) {
         '<div class="clan-stat"><div class="clan-stat-v">' + members.length + '</div><div class="clan-stat-l">Учасників</div></div>' +
         '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(c.bank||0) + '₴</div><div class="clan-stat-l">Банк клану</div></div>' +
         '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(c.weekWager||0) + '₴</div><div class="clan-stat-l">Ставки/тиж</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px;">' +
+        '<input id="clanBankDepositInput" type="number" min="100" placeholder="Сума (мін. 100₴)" style="flex:1;min-width:0;margin:0;">' +
+        '<button class="btn-gold" style="width:auto;flex-shrink:0;padding:0 16px;" onclick="depositToClanBank(\'' + clanId + '\', parseInt(document.getElementById(\'clanBankDepositInput\').value))">🏦 Внести</button>' +
       '</div>';
 
     const mList = document.getElementById('clanMembersList');
@@ -17120,10 +17127,10 @@ function openPmThread(otherUser) {
       </div>
     </div>
     <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;flex-shrink:0;line-height:1;">📎</button>
+      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
       <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
-      <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;flex-shrink:0;line-height:1;">➤</button>
+      <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
 
   // Listen for messages
