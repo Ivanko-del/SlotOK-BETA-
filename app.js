@@ -8172,7 +8172,7 @@ function loadPublicClans() {
           '<span style="color:#777;font-size:12px;">' + memberCount + ' гравців</span>' +
         '</div>' +
         '<div style="color:#777;font-size:12px;margin:6px 0;">' + (c.desc||'') + '</div>' +
-        '<button class="btn-green" style="padding:8px;font-size:12px;" onclick="joinClan(\'' + id + '\')">➕ Вступити</button>' +
+        '<button class="btn-green" style="padding:8px;font-size:12px;" onclick="joinClan(\'' + id + '\')">' + (c.privacy === 'private' ? '📩 Подати заявку' : '➕ Вступити') + '</button>' +
       '</div>';
     });
   });
@@ -8183,10 +8183,46 @@ function joinClan(clanId) {
   db.ref('clans/' + clanId).once('value', snap => {
     const c = snap.val();
     if(!c) return notify('Клан не знайдено', 'error');
+    if(c.privacy === 'private') {
+      db.ref('clans/' + clanId + '/joinRequests/' + currentUser).set({ name: currentUser, ts: Date.now() });
+      notify('📩 Заявку надіслано, очікуйте на підтвердження', 'success');
+      return;
+    }
     db.ref('clans/' + clanId + '/members/' + currentUser).set({ role: 'member', joined: Date.now() });
     db.ref('users/' + currentUser).update({ clanId });
     notify('🛡️ Ви вступили до клану ' + c.name, 'success');
     loadClanTab();
+  });
+}
+
+function toggleClanPrivacy(clanId) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    const role = c.members[currentUser] && c.members[currentUser].role;
+    if(role !== 'leader' && role !== 'officer') return notify('Тільки лідер або офіцер', 'error');
+    const next = c.privacy === 'private' ? 'open' : 'private';
+    db.ref('clans/' + clanId + '/privacy').set(next);
+    notify(next === 'private' ? '🔒 Клан тепер приватний' : '🌐 Клан тепер відкритий', 'info');
+    loadMyClan(clanId);
+  });
+}
+
+function respondToJoinRequest(clanId, uid, accept) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    const role = c.members[currentUser] && c.members[currentUser].role;
+    if(role !== 'leader' && role !== 'officer') return notify('Тільки лідер або офіцер', 'error');
+    if(accept) {
+      db.ref('clans/' + clanId + '/members/' + uid).set({ role: 'member', joined: Date.now() });
+      db.ref('users/' + uid).update({ clanId });
+      notify('✅ ' + uid + ' прийнято до клану', 'success');
+    } else {
+      notify('❌ Заявку від ' + uid + ' відхилено', 'info');
+    }
+    db.ref('clans/' + clanId + '/joinRequests/' + uid).remove();
+    loadMyClan(clanId);
   });
 }
 
@@ -8224,6 +8260,30 @@ function loadMyClan(clanId) {
         '<input id="clanBankDepositInput" type="number" min="100" placeholder="Сума (мін. 100₴)" style="flex:1;min-width:0;margin:0;">' +
         '<button class="btn-gold" style="width:auto;flex-shrink:0;padding:0 16px;" onclick="depositToClanBank(\'' + clanId + '\', parseInt(document.getElementById(\'clanBankDepositInput\').value))">🏦 Внести</button>' +
       '</div>';
+
+    const myRole = c.members[currentUser] && c.members[currentUser].role || 'member';
+    const isLeaderOrOfficer = myRole === 'leader' || myRole === 'officer';
+
+    const privacyEl = document.getElementById('clanPrivacySection');
+    if(privacyEl) {
+      privacyEl.innerHTML = isLeaderOrOfficer
+        ? '<button class="btn-outline" style="margin:8px 0;" onclick="toggleClanPrivacy(\'' + clanId + '\')">' +
+            (c.privacy === 'private' ? '🔒 Приватний — натисни щоб відкрити' : '🌐 Відкритий — натисни щоб зробити приватним') +
+          '</button>'
+        : '';
+    }
+
+    const reqEl = document.getElementById('clanJoinRequestsSection');
+    if(reqEl) {
+      const reqs = c.joinRequests ? Object.keys(c.joinRequests) : [];
+      reqEl.innerHTML = (isLeaderOrOfficer && reqs.length)
+        ? '<div class="section-header">📩 Заявки на вступ (' + reqs.length + ')</div>' +
+          reqs.map(uid => '<div class="clan-member-row"><div style="flex:1;">' + uid + '</div>' +
+            '<button class="btn-green" style="width:auto;padding:4px 10px;font-size:11px;" onclick="respondToJoinRequest(\'' + clanId + '\',\'' + uid + '\',true)">✅</button>' +
+            '<button class="btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin-left:4px;" onclick="respondToJoinRequest(\'' + clanId + '\',\'' + uid + '\',false)">❌</button>' +
+          '</div>').join('')
+        : '';
+    }
 
     const mList = document.getElementById('clanMembersList');
     mList.innerHTML = '';
