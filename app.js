@@ -8226,14 +8226,84 @@ function respondToJoinRequest(clanId, uid, accept) {
   });
 }
 
+function promoteOfficer(clanId, uid) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    if(c.leader !== currentUser) return notify('Тільки лідер', 'error');
+    const targetRole = c.members[uid] && c.members[uid].role;
+    if(!targetRole) return;
+    if(targetRole === 'officer') {
+      // Transfer leadership: target becomes leader, caller becomes officer.
+      db.ref('clans/' + clanId).update({
+        leader: uid,
+        ['members/' + uid + '/role']: 'leader',
+        ['members/' + currentUser + '/role']: 'officer'
+      });
+      notify('👑 Лідерство передано ' + uid, 'success');
+    } else {
+      db.ref('clans/' + clanId + '/members/' + uid + '/role').set('officer');
+      notify('🎖️ ' + uid + ' підвищено до офіцера', 'success');
+    }
+    loadMyClan(clanId);
+  });
+}
+
+function demoteOfficer(clanId, uid) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    if(c.leader !== currentUser) return notify('Тільки лідер', 'error');
+    db.ref('clans/' + clanId + '/members/' + uid + '/role').set('member');
+    notify('🛡️ ' + uid + ' понижено до учасника', 'info');
+    loadMyClan(clanId);
+  });
+}
+
+function kickMember(clanId, uid) {
+  if(uid === currentUser) return;
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    const myRole = c.members[currentUser] && c.members[currentUser].role;
+    const targetRole = c.members[uid] && c.members[uid].role;
+    if(myRole !== 'leader' && myRole !== 'officer') return notify('Немає прав', 'error');
+    if(targetRole === 'leader' || (targetRole === 'officer' && myRole !== 'leader')) return notify('Немає прав кікнути цього гравця', 'error');
+    if(!confirm('Кікнути ' + uid + ' з клану?')) return;
+    db.ref('clans/' + clanId + '/members/' + uid).remove();
+    db.ref('users/' + uid + '/clanId').remove();
+    notify('👢 ' + uid + ' виключено з клану', 'info');
+    loadMyClan(clanId);
+  });
+}
+
+function disbandClan(clanId) {
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    if(c.leader !== currentUser) return notify('Тільки лідер', 'error');
+    if(!confirm('Розпустити клан "' + c.name + '"? Це незворотньо, банк клану (' + formatNumber(c.bank||0) + '₴) буде втрачено.')) return;
+    const members = c.members ? Object.keys(c.members) : [];
+    members.forEach(uid => db.ref('users/' + uid + '/clanId').remove());
+    db.ref('clans/' + clanId).remove();
+    notify('Клан розпущено', 'info');
+    loadClanTab();
+  });
+}
+
 function leaveClan() {
   if(!userData.clanId) return;
   const clanId = userData.clanId;
-  db.ref('clans/' + clanId + '/members/' + currentUser).remove();
-  db.ref('users/' + currentUser + '/clanId').remove();
-  if (_clanChatListener) { db.ref('clan_chats/' + clanId).off('value', _clanChatListener); _clanChatListener = null; }
-  notify('Ви покинули клан', 'info');
-  loadClanTab();
+  db.ref('clans/' + clanId + '/leader').once('value', snap => {
+    if(snap.val() === currentUser) {
+      return notify('Лідер не може покинути клан — передай лідерство (👑 на офіцері) або розпусти клан', 'error');
+    }
+    db.ref('clans/' + clanId + '/members/' + currentUser).remove();
+    db.ref('users/' + currentUser + '/clanId').remove();
+    if (_clanChatListener) { db.ref('clan_chats/' + clanId).off('value', _clanChatListener); _clanChatListener = null; }
+    notify('Ви покинули клан', 'info');
+    loadClanTab();
+  });
 }
 
 function loadMyClan(clanId) {
@@ -8260,6 +8330,9 @@ function loadMyClan(clanId) {
         '<input id="clanBankDepositInput" type="number" min="100" placeholder="Сума (мін. 100₴)" style="flex:1;min-width:0;margin:0;">' +
         '<button class="btn-gold" style="width:auto;flex-shrink:0;padding:0 16px;" onclick="depositToClanBank(\'' + clanId + '\', parseInt(document.getElementById(\'clanBankDepositInput\').value))">🏦 Внести</button>' +
       '</div>';
+    if(c.leader === currentUser) {
+      banner.innerHTML += '<button class="btn-outline" style="width:auto;margin-top:8px;color:#e74c3c;" onclick="disbandClan(\'' + clanId + '\')">💥 Розпустити клан</button>';
+    }
 
     const myRole = c.members[currentUser] && c.members[currentUser].role || 'member';
     const isLeaderOrOfficer = myRole === 'leader' || myRole === 'officer';
@@ -8289,10 +8362,20 @@ function loadMyClan(clanId) {
     mList.innerHTML = '';
     members.forEach(name => {
       const role = c.members[name] && c.members[name].role || 'member';
+      const iAmLeader = myRole === 'leader';
+      const canKick = isLeaderOrOfficer && name !== currentUser && role !== 'leader' && !(role === 'officer' && !iAmLeader);
+      const canPromoteDemote = iAmLeader && name !== currentUser && role !== 'leader';
       mList.innerHTML += '<div class="clan-member-row">' +
         '<div class="clan-member-avatar">' + (name===currentUser?'🙋':'👤') + '</div>' +
         '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + name + '</div></div>' +
         '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
+        (canPromoteDemote ?
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +
+            (role==='member' ? 'promoteOfficer' : 'demoteOfficer') + '(\'' + clanId + '\',\'' + name + '\')">' +
+            (role==='member' ? '⬆️' : '⬇️') + '</button>' : '') +
+        (canKick ?
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',\'' + name + '\')">👢</button>'
+          : '') +
       '</div>';
     });
 
