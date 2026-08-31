@@ -6486,6 +6486,7 @@ function depositToClanBank(clanId, amount) {
   notify('🏦 Внесено в клановий банк: ₴' + formatNumber(amount), 'success');
   const inp = document.getElementById('clanBankDepositInput');
   if (inp) inp.value = '';
+  recalcClanScore(clanId);
   loadMyClan(clanId);
 }
 
@@ -8126,6 +8127,7 @@ function rejectDeposit(id, user) {
 // ===== КЛАНИ =====
 // ============================================
 function loadClanTab() {
+  loadClanLeague();
   const clanId = userData.clanId;
   if(clanId) {
     document.getElementById('noClanSection').classList.add('hidden');
@@ -8338,6 +8340,7 @@ function claimClanTask(clanId, taskId) {
     db.ref('clans/' + clanId).update(updates);
     members.forEach(uid => db.ref('users/' + uid + '/balance').set(firebase.database.ServerValue.increment(share)));
     notify('🎁 Нагороду виплачено: +' + share + '₴ кожному учаснику', 'success');
+    recalcClanScore(clanId);
     loadMyClan(clanId);
   });
 }
@@ -8462,6 +8465,7 @@ function trackClanWager(amount) {
   const week = getWeekStr();
   db.ref('clans/' + userData.clanId + '/weekly/' + week + '/wager').transaction(v => (v||0) + amount);
   db.ref('clans/' + userData.clanId + '/weekly/' + week + '/games').transaction(v => (v||0) + 1);
+  recalcClanScore(userData.clanId);
 }
 
 // Тіри кланового банку -> бонус кешбеку для всіх учасників
@@ -8473,6 +8477,35 @@ const CLAN_BANK_TIERS = [
 ];
 function getClanBankTier(bank) {
   return CLAN_BANK_TIERS.find(t => (bank || 0) >= t.min);
+}
+
+function recalcClanScore(clanId) {
+  const week = getWeekStr();
+  db.ref('clans/' + clanId).once('value', snap => {
+    const c = snap.val();
+    if(!c) return;
+    const wager = (c.weekly && c.weekly[week] && c.weekly[week].wager) || 0;
+    const score = (c.bank || 0) + wager * 3;
+    db.ref('clans/' + clanId + '/score').set(score);
+  });
+}
+
+function loadClanLeague() {
+  const el = document.getElementById('clanLeagueList');
+  if(!el) return;
+  db.ref('clans').orderByChild('score').limitToLast(20).once('value', snap => {
+    const data = snap.val();
+    if(!data) { el.innerHTML = '<div style="color:#777;font-size:13px;padding:10px 0;text-align:center;">Ліга поки порожня</div>'; return; }
+    const ranked = Object.entries(data).sort((a,b) => (b[1].score||0) - (a[1].score||0));
+    el.innerHTML = ranked.map(([id, c], i) => {
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':('#'+(i+1));
+      return '<div class="clan-member-row">' +
+        '<div style="width:28px;text-align:center;font-weight:bold;">' + medal + '</div>' +
+        '<div style="flex:1;"><span style="color:var(--green);">[' + c.tag + ']</span> ' + c.name + '</div>' +
+        '<div style="font-weight:bold;color:var(--accent);">' + formatNumber(c.score||0) + '</div>' +
+      '</div>';
+    }).join('');
+  });
 }
 
 var clanCashbackBonus = 0;
