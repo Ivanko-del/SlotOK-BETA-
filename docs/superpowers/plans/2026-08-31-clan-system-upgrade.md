@@ -463,20 +463,25 @@ with:
 ```js
     members.forEach(name => {
       const role = c.members[name] && c.members[name].role || 'member';
-      const canManage = isLeaderOrOfficer && name !== currentUser && !(role === 'officer' && myRole !== 'leader') && role !== 'leader';
+      const iAmLeader = myRole === 'leader';
+      const canKick = isLeaderOrOfficer && name !== currentUser && role !== 'leader' && !(role === 'officer' && !iAmLeader);
+      const canPromoteDemote = iAmLeader && name !== currentUser && role !== 'leader';
       mList.innerHTML += '<div class="clan-member-row">' +
         '<div class="clan-member-avatar">' + (name===currentUser?'🙋':'👤') + '</div>' +
         '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + name + '</div></div>' +
         '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
-        (canManage ?
+        (canPromoteDemote ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +
             (role==='member' ? 'promoteOfficer' : 'demoteOfficer') + '(\'' + clanId + '\',\'' + name + '\')">' +
-            (role==='member' ? '⬆️' : '⬇️') + '</button>' +
+            (role==='member' ? '⬆️' : '⬇️') + '</button>' : '') +
+        (canKick ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',\'' + name + '\')">👢</button>'
           : '') +
       '</div>';
     });
 ```
+
+Rationale for this change vs. the original draft: the spec's permission table (design doc, "Roles & permissions") grants promote/demote to the Leader only, but kick to both Leader and Officer (Officer excluded from kicking the Leader or other Officers). The original draft's single `canManage` flag gated both actions together, which would have rendered working-looking promote/demote buttons for Officers that `promoteOfficer`/`demoteOfficer` (Task 3 Step 1) then silently reject with a "Тільки лідер" error — a real UI/permission mismatch, not just a style nit. Split into `canKick` (Leader+Officer, spec's kick rule) and `canPromoteDemote` (Leader only) so the rendered UI matches what the functions actually allow.
 
 Note: `myRole` and `isLeaderOrOfficer` are already computed earlier in the function (Task 2, Step 5) — this step just uses them.
 
@@ -494,9 +499,9 @@ Run: `node --check app.js` — expect exit 0.
 
 - [ ] **Step 5: Playwright verification**
 
-Extend the stub store with a second, `officer`-role member and a third `member`-role member. As the leader (`currentUser`), call `loadClanTab()` and assert the officer's and member's rows each render exactly one promote/demote and one kick button (`👢`), and the leader's own row renders neither. Then switch `currentUser`'s role in the stub to `'member'`, reload, and assert no action buttons render for anyone. Then call `kickMember('testclan','somemember')` as leader against the stub and assert `window.__writes` contains a `remove` on `clans/testclan/members/somemember` and on `users/somemember/clanId`.
+Extend the stub store with a second, `officer`-role member and a third `member`-role member. As the leader (`currentUser`), call `loadClanTab()` and assert the officer's and member's rows each render exactly one promote/demote (⬆️/⬇️) button and one kick (`👢`) button, and the leader's own row renders neither. Then switch `currentUser`'s role in the stub to `'officer'` (keep the same two other members), reload, and assert: the plain member's row still renders a kick button but **no** promote/demote button; the other officer's row renders neither kick nor promote/demote (an Officer cannot manage another Officer). Then switch `currentUser`'s role in the stub to `'member'`, reload, and assert no action buttons render for anyone. Finally, back as leader, call `kickMember('testclan','somemember')` against the stub and assert `window.__writes` contains a `remove` on `clans/testclan/members/somemember` and on `users/somemember/clanId`.
 
-Expected: all three assertions pass, `ERRORS` is `[]`.
+Expected: all four assertions pass, `ERRORS` is `[]`.
 
 - [ ] **Step 6: Commit**
 
