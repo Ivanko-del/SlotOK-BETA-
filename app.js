@@ -8170,8 +8170,8 @@ function loadPublicClans() {
       const memberCount = c.members ? Object.keys(c.members).length : 1;
       list.innerHTML += '<div class="clan-banner member" style="margin-bottom:8px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + c.tag + ']</span>' +
-          '<span class="clan-name" style="font-size:16px;margin-left:8px;">' + c.name + '</span></div>' +
+          '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + escapeHtml(c.tag) + ']</span>' +
+          '<span class="clan-name" style="font-size:16px;margin-left:8px;">' + escapeHtml(c.name) + '</span></div>' +
           '<span style="color:#777;font-size:12px;">' + memberCount + ' гравців</span>' +
         '</div>' +
         '<div style="color:#777;font-size:12px;margin:6px 0;">' + (c.desc||'') + '</div>' +
@@ -8217,15 +8217,27 @@ function respondToJoinRequest(clanId, uid, accept) {
     if(!c) return;
     const role = c.members[currentUser] && c.members[currentUser].role;
     if(role !== 'leader' && role !== 'officer') return notify('Тільки лідер або офіцер', 'error');
+    const finish = () => {
+      db.ref('clans/' + clanId + '/joinRequests/' + uid).remove();
+      loadMyClan(clanId);
+    };
     if(accept) {
-      db.ref('clans/' + clanId + '/members/' + uid).set({ role: 'member', joined: Date.now() });
-      db.ref('users/' + uid).update({ clanId });
-      notify('✅ ' + uid + ' прийнято до клану', 'success');
+      db.ref('users/' + uid + '/clanId').once('value', clanIdSnap => {
+        const existingClanId = clanIdSnap.val();
+        if(existingClanId && existingClanId !== clanId) {
+          notify('❌ ' + uid + ' вже вступив до іншого клану', 'info');
+          finish();
+          return;
+        }
+        db.ref('clans/' + clanId + '/members/' + uid).set({ role: 'member', joined: Date.now() });
+        db.ref('users/' + uid).update({ clanId });
+        notify('✅ ' + uid + ' прийнято до клану', 'success');
+        finish();
+      });
     } else {
       notify('❌ Заявку від ' + uid + ' відхилено', 'info');
+      finish();
     }
-    db.ref('clans/' + clanId + '/joinRequests/' + uid).remove();
-    loadMyClan(clanId);
   });
 }
 
@@ -8355,8 +8367,8 @@ function loadMyClan(clanId) {
     const members = c.members ? Object.keys(c.members) : [];
     banner.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-        '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + c.tag + ']</span>' +
-        '<span class="clan-name" style="font-size:18px;margin-left:8px;">' + c.name + '</span></div>' +
+        '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + escapeHtml(c.tag) + ']</span>' +
+        '<span class="clan-name" style="font-size:18px;margin-left:8px;">' + escapeHtml(c.name) + '</span></div>' +
         '<span style="font-size:20px;">' + (c.leader===currentUser?'👑':'') + '</span>' +
       '</div>' +
       '<div style="color:#aaa;font-size:13px;margin-bottom:10px;">' + (c.desc||'') + '</div>' +
@@ -8423,6 +8435,9 @@ function loadMyClan(clanId) {
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +
             (role==='member' ? 'promoteOfficer' : 'demoteOfficer') + '(\'' + clanId + '\',\'' + name + '\')">' +
             (role==='member' ? '⬆️' : '⬇️') + '</button>' : '') +
+        (canPromoteDemote && role==='officer' ?
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;" onclick="promoteOfficer(\'' + clanId + '\',\'' + name + '\')">👑</button>'
+          : '') +
         (canKick ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',\'' + name + '\')">👢</button>'
           : '') +
@@ -8476,16 +8491,16 @@ const CLAN_BANK_TIERS = [
   { min: 0,      cashback: 0,     label: 'Без тіру', tag: 'none' }
 ];
 function getClanBankTier(bank) {
-  return CLAN_BANK_TIERS.find(t => (bank || 0) >= t.min);
+  return CLAN_BANK_TIERS.find(t => (bank || 0) >= t.min) || CLAN_BANK_TIERS[CLAN_BANK_TIERS.length - 1];
 }
 
 function recalcClanScore(clanId) {
   const week = getWeekStr();
-  db.ref('clans/' + clanId).once('value', snap => {
-    const c = snap.val();
-    if(!c) return;
-    const wager = (c.weekly && c.weekly[week] && c.weekly[week].wager) || 0;
-    const score = (c.bank || 0) + wager * 3;
+  Promise.all([
+    db.ref('clans/' + clanId + '/bank').once('value'),
+    db.ref('clans/' + clanId + '/weekly/' + week + '/wager').once('value')
+  ]).then(([bankSnap, wagerSnap]) => {
+    const score = (bankSnap.val() || 0) + (wagerSnap.val() || 0) * 3;
     db.ref('clans/' + clanId + '/score').set(score);
   });
 }
@@ -8501,7 +8516,7 @@ function loadClanLeague() {
       const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':('#'+(i+1));
       return '<div class="clan-member-row">' +
         '<div style="width:28px;text-align:center;font-weight:bold;">' + medal + '</div>' +
-        '<div style="flex:1;"><span style="color:var(--green);">[' + c.tag + ']</span> ' + c.name + '</div>' +
+        '<div style="flex:1;"><span style="color:var(--green);">[' + escapeHtml(c.tag) + ']</span> ' + escapeHtml(c.name) + '</div>' +
         '<div style="font-weight:bold;color:var(--accent);">' + formatNumber(c.score||0) + '</div>' +
       '</div>';
     }).join('');
@@ -9108,7 +9123,7 @@ function addWager(amount) {
   const updates = { totalWagered: wagered };
 
   // Cashback (only if enabled by user)
-  if(vip.cashback > 0 && getCashbackEnabled()) {
+  if((vip.cashback + clanCashbackBonus) > 0 && getCashbackEnabled()) {
     // Raw cashback for this bet
     const rawCashback = Math.floor(amount * (vip.cashback + clanCashbackBonus));
     // Clamp per-bet
