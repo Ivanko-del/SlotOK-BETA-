@@ -116,7 +116,7 @@ async function handleMessage(msg) {
 
   if (text.startsWith("/link")) {
     const token = text.slice("/link".length).trim();
-    if (!token) return sendMessage(chatId, "Використання: /link <код>");
+    if (!token) return sendMessage(chatId, "Використання: /link &lt;код&gt;");
     const result = await completeLink(chatId, token);
     if (result.ok) {
       await sendMessage(chatId, `✅ Акаунт «${esc(result.nick)}» прив'язано!`);
@@ -386,7 +386,7 @@ async function handlePlayerCommand(chatId, rawText) {
 
   const nick = nickForFlow;
   if (!nick) {
-    await sendMessage(chatId, "❌ Акаунт не прив'язано. Прив'яжи через кнопку на сайті або /link <код>.");
+    await sendMessage(chatId, "❌ Акаунт не прив'язано. Прив'яжи через кнопку на сайті або /link &lt;код&gt;.");
     return true;
   }
   if (text === "/balance") await cmdPlayerBalance(chatId, nick);
