@@ -2075,26 +2075,6 @@ function updateSessionBar() {
 }
 
 // ═══════════════════════════════════════════
-// 🎁 RETURN BONUS (3+ день відсутності)
-// ═══════════════════════════════════════════
-function checkReturnBonus() {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser+'/lastLoginTs').once('value', snap => {
-    const last = snap.val()||0;
-    const daysSince = (Date.now()-last)/(1000*3600*24);
-    db.ref('users/'+currentUser+'/lastLoginTs').set(Date.now());
-    if(daysSince >= 3 && last > 0) {
-      const bonus = daysSince >= 7 ? 500 : daysSince >= 5 ? 300 : 150;
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bonus));
-      db.ref('users/'+currentUser+'/history').push({text:'🎁 Бонус повернення: +'+bonus+'₴', date:Date.now()});
-      setTimeout(()=>{
-        notify('🎁 Ласкаво просимо назад! Бонус повернення: +'+bonus+'₴', 'success');
-      }, 2000);
-    }
-  });
-}
-
-// ═══════════════════════════════════════════
 // 📦 DEPOSIT PACKAGES
 // ═══════════════════════════════════════════
 function initDepositPackages() {
@@ -20254,13 +20234,13 @@ function playWinSting(tier) {
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
-// ║  "МИ СКУЧИЛИ" — win-back для гравців що не заходили 2+ дні   ║
+// ║  "МИ СКУЧИЛИ" — win-back для гравців що не заходили 14+ днів ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 function checkWelcomeBack() {
   if(!currentUser || _capturedLastSeen === undefined || _capturedLastSeen === null) return;
   const daysSince = Math.floor((Date.now() - _capturedLastSeen) / 86400000);
-  if(daysSince < 2) return;
+  if(daysSince < 14) return;
   // Не показуємо частіше разу на день навіть при повторних вхід-виходах того ж дня
   const todayKey = new Date().toDateString();
   if(localStorage.getItem('welcomeBackShown') === todayKey) return;
