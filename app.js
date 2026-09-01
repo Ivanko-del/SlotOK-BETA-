@@ -3797,7 +3797,8 @@ function formatCardInput(inp) {
       const users = snap.val() || {};
       let found = null;
       Object.entries(users).forEach(([name, data]) => {
-        if(data.virtualCard && data.virtualCard.number && data.virtualCard.number.replace(/\s/g,'') === val) found = name;
+        const num = (data.virtualCard && data.virtualCard.number) || (data.tempPartnerCard && data.tempPartnerCard.number);
+        if(num && num.replace(/\s/g,'') === val) found = name;
       });
       if(info) { info.textContent = found ? ('✅ Отримувач: ' + found) : '❌ Картку не знайдено'; info.style.color = found ? '#4cd964' : '#ff3b30'; }
     });
@@ -3814,7 +3815,7 @@ function sendMoney() {
   if(!rawCard || rawCard.length !== 16) return notify('Введіть номер картки (16 цифр)', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
 
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Відправляємо...'; }
   const resetBtn = () => { if(btn) { btn.disabled = false; btn.textContent = 'НАДІСЛАТИ'; } };
@@ -3823,11 +3824,13 @@ function sendMoney() {
     const users = snap.val() || {};
     let recipientName = null;
     Object.entries(users).forEach(([name, data]) => {
-      if(data.virtualCard && data.virtualCard.number && data.virtualCard.number.replace(/\s/g,'') === rawCard) recipientName = name;
+      const num = (data.virtualCard && data.virtualCard.number) || (data.tempPartnerCard && data.tempPartnerCard.number);
+      if(num && num.replace(/\s/g,'') === rawCard) recipientName = name;
     });
     if(!recipientName) { resetBtn(); return notify('❌ Картку не знайдено в SlotOK Bank', 'error'); }
     if(recipientName === currentUser) { resetBtn(); return notify('❌ Не можна переказати самому собі', 'error'); }
-    if(users[recipientName]?.virtualCard?.frozen) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
+    const recipient = users[recipientName] || {};
+    if((recipient.virtualCard && recipient.virtualCard.frozen) || (recipient.tempPartnerCard && recipient.tempPartnerCard.frozen)) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
     const formattedCard = rawCard.replace(/(.{4})(?=.)/g,'$1 ');
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
@@ -3837,7 +3840,8 @@ function sendMoney() {
 
     // Transactions log both sides
     addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
-    db.ref('users/'+recipientName+'/cardTx').push({ dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: (userData.virtualCard ? userData.virtualCard.number : ''), ts: Date.now() });
+    const myCardNum = (userData.virtualCard && userData.virtualCard.number) || (userData.tempPartnerCard && userData.tempPartnerCard.number) || '';
+    db.ref('users/'+recipientName+'/cardTx').push({ dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum, ts: Date.now() });
 
     playSound('win');
     notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
