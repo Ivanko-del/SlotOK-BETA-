@@ -18573,19 +18573,81 @@ function openCardColorPicker() {
     {id:'pastel',   name:'Пастель',    accent:'#ffc8e6', prev:'linear-gradient(135deg,#2a1f2e,#3a2a40)'},
     {id:'xmas',     name:'Новий рік',  accent:'#ffd700', prev:'linear-gradient(135deg,#0a1a0a,#1a0505)'},
     {id:'ukraine',  name:'Україна',    accent:'#ffd700', prev:'linear-gradient(180deg,#0057b7 50%,#ffd700 50%)'},
+    // Класика (нові)
+    {id:'silver',   name:'Срібло',     accent:'#c8c8d2', prev:'linear-gradient(135deg,#1a1a1c,#3a3a3e)'},
+    {id:'bronze',   name:'Бронза',     accent:'#cd7f32', prev:'linear-gradient(135deg,#1f1206,#4a2e12)'},
+    {id:'obsidian', name:'Обсидіан',   accent:'#a050e0', prev:'linear-gradient(150deg,#050208,#180a2a)'},
+    {id:'steel',    name:'Сталь',      accent:'#8caac8', prev:'linear-gradient(135deg,#0d1218,#2a3642)'},
+    {id:'ivory',    name:'Слонова кістка', accent:'#3a3020', prev:'linear-gradient(160deg,#efe9dd,#f8f4ea)'},
+    {id:'charcoal', name:'Вугілля',    accent:'#ddd',    prev:'linear-gradient(135deg,#0a0a0a,#232323)'},
+    {id:'chrome',   name:'Хром',       accent:'#dcdce6', prev:'linear-gradient(120deg,#2c2c30,#dcdce6)'},
+    // Самоцвіти (нові)
+    {id:'ruby',     name:'Рубін',      accent:'#dc143c', prev:'linear-gradient(135deg,#1a0004,#4a0012)'},
+    {id:'topaz',    name:'Топаз',      accent:'#ffc440', prev:'linear-gradient(135deg,#1f1600,#4a3800)'},
+    {id:'opal',     name:'Опал',       accent:'#e6ccff', prev:'linear-gradient(120deg,#1a1a2a,#dcc8ff)'},
+    {id:'garnet',   name:'Гранат',     accent:'#8c1e2d', prev:'linear-gradient(135deg,#1a0505,#3a0a10)'},
+    {id:'turquoise',name:'Бірюза',     accent:'#40e0d0', prev:'linear-gradient(135deg,#001a1a,#003d3d)'},
+    {id:'citrine',  name:'Цитрин',     accent:'#ffa528', prev:'linear-gradient(135deg,#1a1200,#4a3200)'},
+    {id:'peridot',  name:'Перидот',    accent:'#b4dc3c', prev:'linear-gradient(135deg,#0f1a00,#2a3d00)'},
+    // Стихії (нові)
+    {id:'thunder',  name:'Грім',       accent:'#8c8cff', prev:'linear-gradient(135deg,#050510,#1a1a4a)'},
+    {id:'earth',    name:'Земля',      accent:'#96aa50', prev:'linear-gradient(135deg,#0f1005,#2a2a10)'},
+    {id:'volcano',  name:'Вулкан',     accent:'#ff5000', prev:'linear-gradient(160deg,#0a0000,#4a0a00)'},
+    {id:'blizzard', name:'Хуртовина',  accent:'#c8e6ff', prev:'linear-gradient(150deg,#0a1420,#2a4a6a)'},
+    {id:'tsunami',  name:'Цунамі',     accent:'#3c96dc', prev:'linear-gradient(150deg,#00080f,#003250)'},
+    {id:'solar',    name:'Сонце',      accent:'#ffb428', prev:'linear-gradient(135deg,#1a0e00,#4a2800)'},
+    {id:'void',     name:'Порожнеча', accent:'#a064dc', prev:'linear-gradient(150deg,#000,#150022)'},
+    // Космос і футуризм (нові)
+    {id:'nebula',   name:'Туманність', accent:'#c850ff', prev:'linear-gradient(135deg,#0a0018,#3a0050)'},
+    {id:'matrix',   name:'Матриця',    accent:'#00ff50', prev:'linear-gradient(160deg,#000800,#003300)'},
+    {id:'synthwave',name:'Синтвейв',   accent:'#ff2ea6', prev:'linear-gradient(120deg,#1a0028,#ff2ea6)'},
+    {id:'aurora',   name:'Аврора',     accent:'#00ff9c', prev:'linear-gradient(120deg,#001a12,#00ff9c)'},
+    {id:'plasma',   name:'Плазма',     accent:'#ff2ecc', prev:'linear-gradient(120deg,#1a0018,#ff2ecc)'},
+    {id:'quantum',  name:'Квант',      accent:'#50b4ff', prev:'linear-gradient(135deg,#000a1a,#0050a0)'},
+    // Текстури (нові)
+    {id:'wood',     name:'Дерево',     accent:'#a06e3c', prev:'linear-gradient(100deg,#1f1206,#3a2410)'},
+    {id:'concrete', name:'Бетон',      accent:'#a0a0a0', prev:'linear-gradient(135deg,#141414,#2e2e2e)'},
+    {id:'velvet',   name:'Оксамит',    accent:'#a01478', prev:'linear-gradient(135deg,#12000f,#3a0028)'},
+    {id:'silk',     name:'Шовк',       accent:'#c8beDC', prev:'linear-gradient(120deg,#1e1a24,#3a3244)'},
+    {id:'brushedmetal', name:'Шліфований метал', accent:'#d2d2dc', prev:'linear-gradient(95deg,#26262a,#3e3e44)'},
+    {id:'camo',     name:'Камуфляж',   accent:'#788c50', prev:'linear-gradient(120deg,#0f1a0a,#2a3318)'},
+    // Особливі (нові)
+    {id:'halloween',name:'Гелловін',   accent:'#ff8200', prev:'linear-gradient(135deg,#0a0000,#3a1500)'},
+    {id:'valentine',name:'Валентинка', accent:'#ff3c6e', prev:'linear-gradient(135deg,#1a0008,#4a001a)'},
+    {id:'easter',   name:'Великдень',  accent:'#ffd8e8', prev:'linear-gradient(120deg,#1a1420,#ffd8e8)'},
+    {id:'autumn',   name:'Осінь',      accent:'#ff8c28', prev:'linear-gradient(135deg,#1a0d00,#4a2400)'},
+    {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
+    {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
+    {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
   ];
+  var CATEGORIES = [
+    { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
+    { name:'💎 Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },
+    { name:'🌪️ Стихії', ids:['fire','ice','mint','storm','sunset','thunder','earth','volcano','blizzard','tsunami','solar','void'] },
+    { name:'🚀 Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
+    { name:'🪨 Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
+    { name:'🎉 Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
+  ];
+  var byId = {};
+  SKINS.forEach(function(s) { byId[s.id] = s; });
   var current = (userData.virtualCard && userData.virtualCard.skin)
     || (userData.tempPartnerCard && userData.tempPartnerCard.skin)
     || userData.pendingCardSkin || 'gold';
+  function swatchHtml(s) {
+    var active = current === s.id;
+    return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgba(255,255,255,.08)') + ';color:' + s.accent + ';">' +
+      (active ? '<div class="skin-swatch-check">✓</div>' : '') +
+      '<div style="font-size:10px;font-weight:700;margin-top:26px;color:' + s.accent + ';text-shadow:0 1px 3px rgba(0,0,0,.8);">' + s.name + '</div>' +
+      '</div>';
+  }
   var html = modalCloseBtn('cardskin') +
     '<div style="font-family:Orbitron,monospace;font-size:13px;color:#d4af37;margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
-    '<div style="font-size:11px;color:#555;margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:60vh;overflow-y:auto;">' +
-    SKINS.map(function(s) {
-      var active = current === s.id;
-      return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgba(255,255,255,.08)') + ';color:' + s.accent + ';">' +
-        (active ? '<div class="skin-swatch-check">✓</div>' : '') +
-        '<div style="font-size:10px;font-weight:700;margin-top:26px;color:' + s.accent + ';text-shadow:0 1px 3px rgba(0,0,0,.8);">' + s.name + '</div>' +
+    '<div style="font-size:11px;color:#555;margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + CATEGORIES.length + ' категоріях</div>' +
+    '<div style="max-height:64vh;overflow-y:auto;">' +
+    CATEGORIES.map(function(cat) {
+      return '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
+        cat.ids.filter(function(id){ return byId[id]; }).map(function(id){ return swatchHtml(byId[id]); }).join('') +
         '</div>';
     }).join('') +
     '</div>';

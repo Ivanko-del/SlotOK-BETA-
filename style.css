@@ -2486,6 +2486,65 @@
 .vcard-skin-minimal .vcard-chip { filter: brightness(.7); }
 
 /* ═══════════════════════════════════════════════════════
+   40 НОВИХ СКІНІВ КАРТКИ (27-66) — по категоріях, той самий
+   паттерн: 4-стопний градієнт, що зациклюється, легка hologram-
+   анімація зсуву, тематична обвідка/світіння.
+═══════════════════════════════════════════════════════ */
+
+/* ── Класика (+7) ── */
+.vcard-skin-silver .vcard-front { background: linear-gradient(135deg,#1a1a1c,#3a3a3e,#232326,#1a1a1c); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(200,200,210,.4); box-shadow:0 0 22px rgba(200,200,210,.12); }
+.vcard-skin-bronze .vcard-front { background: linear-gradient(135deg,#1f1206,#4a2e12,#2a1a08,#1f1206); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(205,127,50,.4); box-shadow:0 0 22px rgba(205,127,50,.14); }
+.vcard-skin-obsidian .vcard-front { background: linear-gradient(150deg,#050208,#180a2a,#0a0512,#050208); background-size:300% 300%; animation:hologram 7s ease infinite; border:1px solid rgba(120,60,200,.3); box-shadow:0 0 24px rgba(90,30,160,.16); }
+.vcard-skin-steel .vcard-front { background: linear-gradient(135deg,#0d1218,#2a3642,#161c22,#0d1218); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(140,170,200,.35); box-shadow:0 0 20px rgba(140,170,200,.1); }
+.vcard-skin-ivory .vcard-front { background: linear-gradient(160deg,#efe9dd,#f8f4ea,#efe9dd); border:1px solid rgba(0,0,0,.12); box-shadow:0 0 18px rgba(255,250,235,.12); }
+.vcard-skin-ivory .vcard-bank-name, .vcard-skin-ivory .vcard-number, .vcard-skin-ivory .vcard-value, .vcard-skin-ivory .vcard-label, .vcard-skin-ivory .vcard-holder-row { color:#2a2418 !important; text-shadow:none; }
+.vcard-skin-charcoal .vcard-front { background: linear-gradient(135deg,#0a0a0a,#232323,#141414,#0a0a0a); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(255,255,255,.1); box-shadow:0 0 18px rgba(0,0,0,.4); }
+.vcard-skin-chrome .vcard-front { background: linear-gradient(120deg,#2c2c30,#dcdce6,#5a5a62,#dcdce6,#2c2c30); background-size:300% 300%; animation:hologram 5.5s ease infinite; border:1px solid rgba(220,220,230,.5); box-shadow:0 0 24px rgba(220,220,230,.18); }
+
+/* ── Самоцвіти (+7) ── */
+.vcard-skin-ruby .vcard-front { background: linear-gradient(135deg,#1a0004,#4a0012,#2a0008,#1a0004); background-size:300% 300%; animation:hologram 6.1s ease infinite; border:1px solid rgba(220,20,60,.4); box-shadow:0 0 24px rgba(220,20,60,.16); }
+.vcard-skin-topaz .vcard-front { background: linear-gradient(135deg,#1f1600,#4a3800,#2a2200,#1f1600); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(255,196,64,.4); box-shadow:0 0 22px rgba(255,196,64,.16); }
+.vcard-skin-opal .vcard-front { background: linear-gradient(120deg,#1a1a2a,#dcc8ff,#c8f0ff,#ffd8ec,#1a1a2a); background-size:300% 300%; animation:hologram 8s ease infinite; border:1px solid rgba(230,220,255,.4); box-shadow:0 0 24px rgba(230,220,255,.18); }
+.vcard-skin-garnet .vcard-front { background: linear-gradient(135deg,#1a0505,#3a0a10,#26080a,#1a0505); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(140,30,45,.4); box-shadow:0 0 20px rgba(140,30,45,.14); }
+.vcard-skin-turquoise .vcard-front { background: linear-gradient(135deg,#001a1a,#003d3d,#002626,#001a1a); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(64,224,208,.4); box-shadow:0 0 22px rgba(64,224,208,.16); }
+.vcard-skin-citrine .vcard-front { background: linear-gradient(135deg,#1a1200,#4a3200,#2a2000,#1a1200); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(255,165,40,.4); box-shadow:0 0 20px rgba(255,165,40,.14); }
+.vcard-skin-peridot .vcard-front { background: linear-gradient(135deg,#0f1a00,#2a3d00,#1a2600,#0f1a00); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(180,220,60,.4); box-shadow:0 0 20px rgba(180,220,60,.14); }
+
+/* ── Стихії (+7) ── */
+.vcard-skin-thunder .vcard-front { background: linear-gradient(135deg,#050510,#1a1a4a,#0a0a26,#050510); background-size:300% 300%; animation:hologram 5.8s ease infinite; border:1px solid rgba(140,140,255,.4); box-shadow:0 0 24px rgba(140,140,255,.18); }
+.vcard-skin-earth .vcard-front { background: linear-gradient(135deg,#0f1005,#2a2a10,#1a1a0a,#0f1005); background-size:300% 300%; animation:hologram 6.8s ease infinite; border:1px solid rgba(150,170,80,.35); box-shadow:0 0 18px rgba(150,170,80,.12); }
+.vcard-skin-volcano .vcard-front { background: linear-gradient(160deg,#0a0000,#4a0a00,#1a0500,#0a0000); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(255,80,0,.4); box-shadow:0 0 26px rgba(255,80,0,.2); }
+.vcard-skin-blizzard .vcard-front { background: linear-gradient(150deg,#0a1420,#2a4a6a,#153048,#0a1420); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(200,230,255,.4); box-shadow:0 0 22px rgba(200,230,255,.16); }
+.vcard-skin-tsunami .vcard-front { background: linear-gradient(150deg,#00080f,#003250,#001a30,#00080f); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(60,150,220,.4); box-shadow:0 0 22px rgba(60,150,220,.16); }
+.vcard-skin-solar .vcard-front { background: linear-gradient(135deg,#1a0e00,#4a2800,#2a1600,#1a0e00); background-size:300% 300%; animation:hologram 5.6s ease infinite; border:1px solid rgba(255,180,40,.45); box-shadow:0 0 26px rgba(255,180,40,.2); }
+.vcard-skin-void .vcard-front { background: linear-gradient(150deg,#000,#150022,#080012,#000); background-size:300% 300%; animation:hologram 7.4s ease infinite; border:1px solid rgba(80,20,140,.35); box-shadow:0 0 24px rgba(80,20,140,.16); }
+
+/* ── Космос і футуризм (+6) ── */
+.vcard-skin-nebula .vcard-front { background: linear-gradient(135deg,#0a0018,#3a0050,#1a0030,#0a0018); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(200,80,255,.4); box-shadow:0 0 26px rgba(200,80,255,.2); }
+.vcard-skin-matrix .vcard-front { background: linear-gradient(160deg,#000800,#003300,#001a00,#000800); background-size:300% 300%; animation:hologram 5.4s ease infinite; border:1px solid rgba(0,255,80,.45); box-shadow:0 0 24px rgba(0,255,80,.2); }
+.vcard-skin-synthwave .vcard-front { background: linear-gradient(120deg,#1a0028,#ff2ea6,#2e2eff,#1a0028); background-size:300% 300%; animation:hologram 6s ease infinite; border:1px solid rgba(255,46,166,.4); box-shadow:0 0 26px rgba(255,46,166,.2); }
+.vcard-skin-aurora .vcard-front { background: linear-gradient(120deg,#001a12,#00ff9c,#0050ff,#001a12); background-size:300% 300%; animation:hologram 7.2s ease infinite; border:1px solid rgba(0,255,156,.4); box-shadow:0 0 26px rgba(0,255,156,.18); }
+.vcard-skin-plasma .vcard-front { background: linear-gradient(120deg,#1a0018,#ff2ecc,#6a2eff,#1a0018); background-size:300% 300%; animation:hologram 5.7s ease infinite; border:1px solid rgba(255,46,204,.4); box-shadow:0 0 26px rgba(255,46,204,.2); }
+.vcard-skin-quantum .vcard-front { background: linear-gradient(135deg,#000a1a,#0050a0,#002a5a,#000a1a); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(80,180,255,.4); box-shadow:0 0 26px rgba(80,180,255,.2); }
+
+/* ── Текстури (+6) ── */
+.vcard-skin-wood .vcard-front { background: linear-gradient(100deg,#1f1206,#3a2410,#2a1a0a,#1f1206,#3a2410); background-size:300% 300%; animation:hologram 6.8s ease infinite; border:1px solid rgba(160,110,60,.4); box-shadow:0 0 18px rgba(160,110,60,.12); }
+.vcard-skin-concrete .vcard-front { background: linear-gradient(135deg,#141414,#2e2e2e,#1c1c1c,#141414); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(160,160,160,.3); box-shadow:0 0 16px rgba(160,160,160,.1); }
+.vcard-skin-velvet .vcard-front { background: linear-gradient(135deg,#12000f,#3a0028,#20001a,#12000f); background-size:300% 300%; animation:hologram 7s ease infinite; border:1px solid rgba(160,20,120,.4); box-shadow:0 0 22px rgba(160,20,120,.16); }
+.vcard-skin-silk .vcard-front { background: linear-gradient(120deg,#1e1a24,#3a3244,#241f2c,#1e1a24); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(200,190,220,.3); box-shadow:0 0 18px rgba(200,190,220,.12); }
+.vcard-skin-brushedmetal .vcard-front { background: linear-gradient(95deg,#26262a,#3e3e44,#2a2a2e,#3e3e44,#26262a); background-size:300% 300%; animation:hologram 6.1s ease infinite; border:1px solid rgba(210,210,220,.35); box-shadow:0 0 18px rgba(210,210,220,.12); }
+.vcard-skin-camo .vcard-front { background: linear-gradient(120deg,#0f1a0a,#2a3318,#141f10,#0f1a0a); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(120,140,80,.35); box-shadow:0 0 16px rgba(120,140,80,.1); }
+
+/* ── Особливі (+7) ── */
+.vcard-skin-halloween .vcard-front { background: linear-gradient(135deg,#0a0000,#3a1500,#150800,#0a0000); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(255,130,0,.4); box-shadow:0 0 24px rgba(255,130,0,.18); }
+.vcard-skin-valentine .vcard-front { background: linear-gradient(135deg,#1a0008,#4a001a,#2a000f,#1a0008); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(255,60,110,.4); box-shadow:0 0 24px rgba(255,60,110,.18); }
+.vcard-skin-easter .vcard-front { background: linear-gradient(120deg,#1a1420,#ffd8e8,#d8f0ff,#e8ffd8,#1a1420); background-size:300% 300%; animation:hologram 7.6s ease infinite; border:1px solid rgba(255,216,232,.4); box-shadow:0 0 20px rgba(255,216,232,.16); }
+.vcard-skin-autumn .vcard-front { background: linear-gradient(135deg,#1a0d00,#4a2400,#2a1500,#1a0d00); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(255,140,40,.4); box-shadow:0 0 22px rgba(255,140,40,.16); }
+.vcard-skin-spring .vcard-front { background: linear-gradient(135deg,#001a08,#0d3d1a,#062610,#001a08); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(255,150,200,.35); box-shadow:0 0 20px rgba(120,220,150,.16); }
+.vcard-skin-diamondelite .vcard-front { background: linear-gradient(115deg,#0a0a0f,#e8e8f5,#4a4a5a,#e8e8f5,#0a0a0f); background-size:300% 300%; animation:hologram 5.2s ease infinite; border:1.5px solid rgba(232,232,245,.55); box-shadow:0 0 30px rgba(232,232,245,.22); }
+.vcard-skin-midnight .vcard-front { background: linear-gradient(160deg,#000005,#050518,#02020c,#000005); background-size:300% 300%; animation:hologram 7.8s ease infinite; border:1px solid rgba(60,60,120,.35); box-shadow:0 0 20px rgba(40,40,100,.16); }
+
+/* ═══════════════════════════════════════════════════════
    ШАХИ
 ═══════════════════════════════════════════════════════ */
 .chess-board-wrap {
