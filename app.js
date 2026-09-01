@@ -9641,6 +9641,27 @@ function showAdminBypassBanner(gameId) {
   document.body.appendChild(banner);
 }
 
+// Легкий 3D-тілт для ігрових карток на десктопі (мишка + hover) —
+// на тач-екранах і при prefers-reduced-motion не активується взагалі
+(function initTilt3D() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var SEL = '.game-card, .game-thumb';
+  var current = null;
+  function reset(elm) { if (elm) elm.style.transform = ''; }
+  document.addEventListener('pointermove', function(e) {
+    var el = e.target.closest ? e.target.closest(SEL) : null;
+    if (el !== current) { reset(current); current = el; }
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    var px = (e.clientX - r.left) / r.width;
+    var py = (e.clientY - r.top) / r.height;
+    var rx = (0.5 - py) * 8, ry = (px - 0.5) * 8;
+    el.style.transform = 'perspective(700px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateZ(2px)';
+  }, { passive: true });
+  document.addEventListener('pointerleave', function() { reset(current); current = null; }, true);
+})();
+
 function switchTab(id, el) {
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
@@ -9656,13 +9677,20 @@ function switchTab(id, el) {
   try {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     const tab = document.getElementById('tab-' + id);
+    const shown = tab || document.getElementById('tab-home');
     if(tab) {
       tab.classList.remove('hidden');
     } else {
       // Tab not found — go home
       console.warn('switchTab: tab-' + id + ' not found');
-      const home = document.getElementById('tab-home');
-      if(home) home.classList.remove('hidden');
+      if(shown) shown.classList.remove('hidden');
+    }
+    // Плавна поява екрана (той самий cascadeIn, що й у карток) —
+    // retrigger вимагає видалити клас і форсувати reflow перед повторним додаванням
+    if(shown) {
+      shown.classList.remove('screen-enter');
+      void shown.offsetWidth;
+      shown.classList.add('screen-enter');
     }
   } catch(e) { console.error('switchTab hide error:', e); }
 
