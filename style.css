@@ -1834,6 +1834,25 @@
   width: 100%;
   perspective: 1000px;
   margin-bottom: 8px;
+  position: relative;
+}
+.vcard-scene::before {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width: 90%; max-width: 340px; height: 160px;
+  transform: translate(-50%,-50%);
+  background: radial-gradient(ellipse, rgba(212,175,55,.22), transparent 70%);
+  filter: blur(18px);
+  z-index: -1;
+  animation: pulseGlow 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.vcard-front::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.16) 40%, transparent 55%);
+  background-size: 250% 250%;
+  animation: shimmerSweep 5s ease-in-out infinite;
 }
 .vcard-wrap {
   width: 100%;
@@ -1921,13 +1940,14 @@
 .bank-action-btn {
   background: linear-gradient(135deg, #111, #0d0d0d);
   border: 1px solid rgba(255,255,255,.07);
-  border-radius: 14px;
+  border-radius: var(--r-sm);
   padding: 12px 6px;
   text-align: center;
   cursor: pointer;
-  transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  transition: all .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--bevel), var(--elev-1);
 }
 .bank-action-btn::before {
   content: '';
@@ -1948,11 +1968,12 @@
 .card-balance-block {
   background: linear-gradient(135deg, #061a08, #0a2810);
   border: 1.5px solid rgba(61,214,140,.2);
-  border-radius: 18px;
+  border-radius: var(--r-md);
   padding: 18px;
   margin-bottom: 14px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--bevel), var(--elev-1);
 }
 .card-balance-block::before {
   content: '₴';

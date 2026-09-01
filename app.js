@@ -244,14 +244,14 @@ function isAdminUser() {
 
 // Плавний перелік числа замість миттєвої підміни тексту — для головних
 // лічильників (баланс/ставки/виграші), щоб зміна значення відчувалась "живою"
-function animateNumberText(el, target, prefix) {
+function animateNumberText(el, target, prefix, suffix) {
   if(!el) return;
-  prefix = prefix || '';
+  prefix = prefix || ''; suffix = suffix || '';
   target = Number(target) || 0;
   const prevRaw = parseFloat(el.dataset.rawVal);
   const start = isNaN(prevRaw) ? target : prevRaw;
   if(Math.abs(target - start) < 0.5 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    el.textContent = prefix + formatNumber(target);
+    el.textContent = prefix + formatNumber(target) + suffix;
     el.dataset.rawVal = target;
     return;
   }
@@ -259,7 +259,7 @@ function animateNumberText(el, target, prefix) {
   (function step(now) {
     const p = Math.min(1, (now - t0) / dur);
     const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = prefix + formatNumber(start + (target - start) * eased);
+    el.textContent = prefix + formatNumber(start + (target - start) * eased) + suffix;
     if(p < 1) requestAnimationFrame(step); else el.dataset.rawVal = target;
   })(t0);
 }
@@ -19163,7 +19163,7 @@ function renderCardPanel() {
   if(balEl) {
     var old = parseFloat(balEl.dataset.prev || bal);
     balEl.dataset.prev = bal;
-    balEl.textContent = formatNumber(bal) + ' ₴';
+    animateNumberText(balEl, bal, '', ' ₴');
     if(old !== bal) {
       var change = bal - old;
       var changeEl = document.getElementById('balanceChange');
