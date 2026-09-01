@@ -207,7 +207,7 @@ function updateUI() {
     const hb = document.getElementById('homeStatBalance');
     const hv = document.getElementById('homeStatVip');
     const hs = document.getElementById('homeStatStreak');
-    if(hb) hb.textContent = '₴' + formatNumber(userData.balance||0);
+    if(hb) animateNumberText(hb, userData.balance||0, '₴');
     if(hs) hs.textContent = (userData.dailyStreak||0) + '🔥';
     const vipLevel = getVipLevel ? getVipLevel(userData.totalWagered||0) : null;
     if(hv) hv.textContent = vipLevel ? vipLevel.name : 'Немає';
@@ -240,6 +240,28 @@ function checkAdmin() {
 
 function isAdminUser() {
   return !!(currentUser && (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true));
+}
+
+// Плавний перелік числа замість миттєвої підміни тексту — для головних
+// лічильників (баланс/ставки/виграші), щоб зміна значення відчувалась "живою"
+function animateNumberText(el, target, prefix) {
+  if(!el) return;
+  prefix = prefix || '';
+  target = Number(target) || 0;
+  const prevRaw = parseFloat(el.dataset.rawVal);
+  const start = isNaN(prevRaw) ? target : prevRaw;
+  if(Math.abs(target - start) < 0.5 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = prefix + formatNumber(target);
+    el.dataset.rawVal = target;
+    return;
+  }
+  const dur = 500, t0 = performance.now();
+  (function step(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = prefix + formatNumber(start + (target - start) * eased);
+    if(p < 1) requestAnimationFrame(step); else el.dataset.rawVal = target;
+  })(t0);
 }
 
 function formatNumber(num) {
@@ -14530,8 +14552,8 @@ function updateHomeStats() {
   const statVip  = document.getElementById('homeStatVip');
   const jackEl   = document.getElementById('homeJackpot');
   if(statBets && userData) {
-    statBets.textContent = userData.totalBets ? formatNumber(userData.totalBets) : '0';
-    statWins.textContent = userData.totalWins ? formatNumber(userData.totalWins) : '0';
+    animateNumberText(statBets, userData.totalBets||0, '');
+    animateNumberText(statWins, userData.totalWins||0, '₴');
   }
   // VIP level
   if(statVip && userData) {
@@ -14540,7 +14562,7 @@ function updateHomeStats() {
     const VIP_REQ    = [0,1000,5000,20000,50000,100000,250000,500000];
     let vipLevel = 0;
     for(let i=_VIP_LEVEL_NAMES.length-1;i>=0;i--) { if(wager>=VIP_REQ[i]){vipLevel=i;break;} }
-    statVip.textContent = VIP_LEVELS[vipLevel];
+    statVip.textContent = _VIP_LEVEL_NAMES[vipLevel];
   }
   // Random jackpot
   if(jackEl) {

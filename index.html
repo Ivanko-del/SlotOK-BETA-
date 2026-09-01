@@ -243,20 +243,21 @@
         <div id="homeAxiomWidget" class="anim-cascade" style="margin-bottom:12px;animation-delay:.04s;"></div>
 
         <!-- VIP + Battle Pass mini progress -->
-        <div class="anim-cascade" style="background:var(--box);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;animation-delay:.06s;">
+        <div class="section-header" style="margin-top:0;">👤 Твій прогрес</div>
+        <div class="anim-cascade" style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:12px;animation-delay:.06s;box-shadow:var(--bevel),var(--elev-1);">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <span style="font-size:11px;color:#777;">👑 VIP: <b id="homeVipLabel" style="color:var(--accent);">Bronze</b></span>
             <span id="homeVipPct" style="font-size:11px;color:#777;">0%</span>
           </div>
-          <div style="height:6px;background:var(--input);border-radius:6px;overflow:hidden;margin-bottom:10px;">
-            <div id="homeVipBar" style="height:100%;width:0%;border-radius:6px;transition:width .3s;"></div>
+          <div style="height:7px;background:var(--input);border-radius:6px;overflow:hidden;margin-bottom:10px;box-shadow:inset 0 2px 4px rgba(0,0,0,.5);">
+            <div id="homeVipBar" class="progress-fill-shimmer" style="height:100%;width:0%;border-radius:6px;transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <span style="font-size:11px;color:#777;">🎫 Battle Pass</span>
             <span id="homeBpPct" style="font-size:11px;color:#777;">Lv0</span>
           </div>
-          <div style="height:6px;background:var(--input);border-radius:6px;overflow:hidden;">
-            <div id="homeBpBar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#5a20c0,#c9a0ff);transition:width .3s;"></div>
+          <div style="height:7px;background:var(--input);border-radius:6px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.5);">
+            <div id="homeBpBar" class="progress-fill-shimmer" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#5a20c0,#c9a0ff);transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
           </div>
         </div>
 
@@ -293,26 +294,27 @@
         </div>
 
         <!-- 4 банери -->
+        <div class="section-header">⚡ Швидкі дії</div>
         <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;animation-delay:.14s;">
-          <div class="anim-press" onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
+          <div class="anim-press" onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">⚽</div>
             <div style="font-size:24px;margin-bottom:5px;">⚽</div>
             <div style="font-size:13px;font-weight:800;color:#3dd68c;">Спортбетинг</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Live ставки</div>
           </div>
-          <div class="anim-press" onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
+          <div class="anim-press" onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🎁</div>
             <div style="font-size:24px;margin-bottom:5px;">🎁</div>
             <div style="font-size:13px;font-weight:800;color:#d4af37;">Бонус дня</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">Щоденна нагорода</div>
           </div>
-          <div class="anim-press" onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
+          <div class="anim-press" onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">👑</div>
             <div style="font-size:24px;margin-bottom:5px;">👑</div>
             <div style="font-size:13px;font-weight:800;color:#c17eea;">VIP Клуб</div>
             <div style="font-size:10px;color:#555;margin-top:2px;">14 рівнів • Cashback</div>
           </div>
-          <div class="anim-press" onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,filter .15s;">
+          <div class="anim-press" onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
             <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🏆</div>
             <div style="font-size:24px;margin-bottom:5px;">🏆</div>
             <div style="font-size:13px;font-weight:800;color:#f39c12;">Турніри</div>
