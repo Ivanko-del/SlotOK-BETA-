@@ -3767,6 +3767,8 @@ function formatCardInput(inp) {
 }
 
 function sendMoney() {
+  const btn = document.getElementById('sendMoneyBtn');
+  if(btn && btn.disabled) return; // запобігаємо подвійному кліку
   const rawCard = (document.getElementById('transferToCard') || {value:''}).value.replace(/\s/g,'');
   const a = parseInt(document.getElementById('transferAmount').value);
   if(!rawCard || rawCard.length !== 16) return notify('Введіть номер картки (16 цифр)', 'error');
@@ -3774,15 +3776,18 @@ function sendMoney() {
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
   if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
 
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Відправляємо...'; }
+  const resetBtn = () => { if(btn) { btn.disabled = false; btn.textContent = 'НАДІСЛАТИ'; } };
+
   db.ref('users').once('value', snap => {
     const users = snap.val() || {};
     let recipientName = null;
     Object.entries(users).forEach(([name, data]) => {
       if(data.virtualCard && data.virtualCard.number && data.virtualCard.number.replace(/\s/g,'') === rawCard) recipientName = name;
     });
-    if(!recipientName) return notify('❌ Картку не знайдено в SlotOK Bank', 'error');
-    if(recipientName === currentUser) return notify('❌ Не можна переказати самому собі', 'error');
-    if(users[recipientName]?.virtualCard?.frozen) return notify('❌ Картка отримувача заблокована', 'error');
+    if(!recipientName) { resetBtn(); return notify('❌ Картку не знайдено в SlotOK Bank', 'error'); }
+    if(recipientName === currentUser) { resetBtn(); return notify('❌ Не можна переказати самому собі', 'error'); }
+    if(users[recipientName]?.virtualCard?.frozen) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
     const formattedCard = rawCard.replace(/(.{4})(?=.)/g,'$1 ');
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
@@ -3797,6 +3802,7 @@ function sendMoney() {
     playSound('win');
     notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
     closeTabModal('transfer-modal');
+    resetBtn();
     const inp = document.getElementById('transferToCard'); if(inp) inp.value = '';
     const info = document.getElementById('transferRecipientInfo'); if(info) info.textContent = '';
     document.getElementById('transferAmount').value = '';

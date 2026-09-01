@@ -1872,6 +1872,7 @@
       <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">⚙️ Система</div>
       <div class="box" style="padding:8px;">
         <button class="btn-outline" onclick="switchTab('settings')">⚙️ Налаштування</button>
+        <button class="btn-outline" onclick="openTabModal('updates-modal')">📜 Оновлення</button>
       </div>
 
       <!-- ── 👥 СОЦІАЛЬНЕ ── -->
@@ -4061,7 +4062,7 @@
     <input id="transferToCard" placeholder="4874 XXXX XXXX XXXX" maxlength="19" oninput="formatCardInput(this)" style="font-family:'Courier New',monospace;letter-spacing:2px;font-size:16px;text-align:center;">
     <div id="transferRecipientInfo" style="font-size:11px;color:#555;min-height:20px;margin-bottom:4px;text-align:center;"></div>
     <input id="transferAmount" type="number" placeholder="Сума переказу (мін. 10 ₴)">
-    <button class="btn-gold" onclick="sendMoney()">НАДІСЛАТИ</button>
+    <button class="btn-gold" id="sendMoneyBtn" onclick="sendMoney()">НАДІСЛАТИ</button>
   </div>
 
   <div id="promo-modal" class="full-modal hidden">
@@ -4075,6 +4076,31 @@
     <button class="btn-outline" onclick="closeTabModal('history-modal')" style="width:50px;">⬅</button>
     <h2>📜 Історія Транзакцій</h2>
     <div id="historyList" style="background:#111; border-radius:8px; border:1px solid #333;"></div>
+  </div>
+
+  <div id="updates-modal" class="full-modal hidden">
+    <button class="btn-outline" onclick="closeTabModal('updates-modal')" style="width:50px;">⬅</button>
+    <h2>📜 Оновлення</h2>
+    <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">🛡️ Система кланів (повний реліз)</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Ролі Лідер/Офіцер/Учасник з підвищенням, пониженням і кіком. Відкриті та приватні клани із заявками на вступ. Щотижневі завдання клану з виплатами з банку клану, розподіленими між учасниками. Рівні банку клану з бонусами — кешбек, косметика, знижка на створення. Ліга кланів за комбінованим рейтингом банку й активності.</div>
+    </div>
+    <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">🏠 Домашній екран та навігація</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Оновлений дизайн головного екрана з анімаціями. Навігацію скорочено до 6 основних пунктів для зручності.</div>
+    </div>
+    <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">✈️ Прив'язка Telegram-акаунту</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Тепер можна прив'язати Telegram до свого профілю.</div>
+    </div>
+    <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">👋 Період "давно не заходив"</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Поріг привітання "з поверненням" змінено з 2 днів на 14 днів.</div>
+    </div>
+    <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">🐞 Виправлення дрібних багів</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Виправлено відображення поля вводу в чаті. Виправлено відображення балансу банку клану.</div>
+    </div>
   </div>
 
   <div id="view-user-modal" class="full-modal hidden" onclick="closeTabModal('view-user-modal')">
