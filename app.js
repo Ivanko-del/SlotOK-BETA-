@@ -128,7 +128,6 @@ function startDataSync() {
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
               setTimeout(checkPendingBetsOnStartup, 3000);
-              setTimeout(listenForIncomingDuels, 2000);
               setTimeout(watchPmUnread, 1500);
               setTimeout(watchSupportUnread, 1500);
               setTimeout(watchTradeUnread, 1800);
@@ -342,13 +341,17 @@ function playSound(type) {
     } catch(e) { console.warn(e); }
 }
 
-function validateBet(amount) { 
-    const bet = Math.abs(parseInt(amount)); 
-    if(isNaN(bet) || bet <= 0 || bet > MAX_BET || userData.balance < bet) { 
-        notify("Недостатньо коштів або невірна сума!", "error"); 
-        return false; 
-    } 
-    return bet; 
+function validateBet(amount) {
+    if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) {
+        notify('🔒 Картка заблокована — розблокуй її в Касі', 'error');
+        return false;
+    }
+    const bet = Math.abs(parseInt(amount));
+    if(isNaN(bet) || bet <= 0 || bet > MAX_BET || userData.balance < bet) {
+        notify("Недостатньо коштів або невірна сума!", "error");
+        return false;
+    }
+    return bet;
 }
 
 function recordBalanceHistory() {
@@ -1477,7 +1480,7 @@ function cashoutCrash() {
     trackLbStat('wins', w); trackLbStat('profit', w - b);
     notify(`🚀 Виведено: +${w} ₴`, "success"); 
     addToHistory(`Crash: +${w} (x${mult})`);
-    updateStreak(true); trackSession(true, b); applyAutoSaveOnWin(w); recordBalanceHistory();
+    updateStreak(true); trackSession(true, b); recordBalanceHistory();
     document.getElementById('crashBtn').classList.remove('hidden'); 
     document.getElementById('crashCashoutBtn').classList.add('hidden'); 
 }
@@ -1685,7 +1688,6 @@ function clickMineCell(idx, el) {
             }
         }
         addToHistory('Mines: -'+minesBet);
-        tryClaimInsurance(minesBet);
         setTimeout(() => {
             document.getElementById('minesSetupArea').classList.remove('hidden');
             document.getElementById('minesCashoutBtn').classList.add('hidden');
@@ -1783,7 +1785,7 @@ function dropPlinko() {
     if(win>bet){ playSound('win'); notify('🔻 +'+win+'₴ (×'+mult+')', 'success'); addToHistory('Plinko: +'+win); trackLbStat('wins',win); }
     else { notify('🔻 ×'+mult+'  ₴'+win, mult>0?'info':'error'); addToHistory('Plinko: '+win); }
     updateStreak(win>=bet);
-    applyAutoSaveOnWin(win); recordBalanceHistory(); tryClaimInsurance(bet-win);
+    recordBalanceHistory();
     ball.style.display='none';
     trackSession(win>=bet, bet);
   }, 1200);
@@ -1850,7 +1852,7 @@ function cashBalloon() {
   trackLbStat('wins', win); trackLbStat('profit', win - balloonBet);
   notify('🎈 +'+formatNumber(win)+'₴ (×'+balloonMult.toFixed(2)+')', 'success');
   addToHistory('Balloon: +'+win+' (×'+balloonMult.toFixed(2)+')');
-  applyAutoSaveOnWin(win); recordBalanceHistory();
+  recordBalanceHistory();
   triggerWinReaction(win, 'Balloon');
   resetBalloon();
 }
@@ -1937,7 +1939,7 @@ function walkAwayRR() {
   trackLbStat('wins', win); trackLbStat('profit', win-rrBet);
   notify('💰 Вийшли з ×'+mult.toFixed(2)+' = +'+formatNumber(win)+'₴', 'success');
   addToHistory('RR: +'+win+' (×'+mult.toFixed(2)+')');
-  applyAutoSaveOnWin(win); recordBalanceHistory();
+  recordBalanceHistory();
   rrSurvived = 0; rrActive = false;
   document.getElementById('rrSurvivedCount').textContent = 0;
   document.getElementById('rrWalkBtn').disabled = true;
@@ -2045,7 +2047,7 @@ function endQuiz() {
     trackLbStat('wins', quizBet);
     notify('🧠 '+quizCorrect+'/10 правильно! +'+formatNumber(profit)+'₴', 'success');
     addToHistory('Quiz: +'+profit+' ('+quizCorrect+'/10)');
-    applyAutoSaveOnWin(quizBet); recordBalanceHistory();
+    recordBalanceHistory();
   } else if(quizBet > 0 && quizCorrect >= 4) {
     // 4-5 correct: get back part of bet
     const refund = Math.floor(originalBet * 0.5);
@@ -2566,13 +2568,13 @@ function startHorseRace() {
         notify('🏆 '+HORSES[winner].emoji+' переміг! +'+formatNumber(winAmt)+'₴ (×'+HORSES[winner].odds+')', 'success');
         addToHistory('Гонки: +'+winAmt+' (×'+HORSES[winner].odds+')');
         document.getElementById('hrStatus').textContent = '🏆 '+HORSES[winner].name+' переміг! +'+formatNumber(winAmt)+'₴';
-        updateStreak(true); applyAutoSaveOnWin(winAmt); recordBalanceHistory();
+        updateStreak(true); recordBalanceHistory();
         publishLiveBet('Скачки 🏇','🏇', hrBet, HORSES[winner].odds);
       } else {
         notify('❌ '+HORSES[winner].emoji+' '+HORSES[winner].name+' переміг. Твій кінь програв.', 'error');
         addToHistory('Гонки: -'+hrBet);
         document.getElementById('hrStatus').textContent = '❌ '+HORSES[winner].name+' переміг';
-        updateStreak(false); tryClaimInsurance(hrBet);
+        updateStreak(false);
       }
       trackSession(won, hrBet);
     }
@@ -2632,10 +2634,10 @@ function spinColorWheel() {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w));
         notify('🎨 +'+formatNumber(w)+'₴ (×'+mult+')', 'success');
         addToHistory('ColorBet: +'+w+' ('+result+')');
-        trackLbStat('wins',w); updateStreak(true); applyAutoSaveOnWin(w);
+        trackLbStat('wins',w); updateStreak(true);
       } else {
         notify('🎨 Випало '+(result==='red'?'Червоний':result==='green'?'Зелений':'Білий')+'. Програш!','error');
-        addToHistory('ColorBet: -'+b); updateStreak(false); tryClaimInsurance(b);
+        addToHistory('ColorBet: -'+b); updateStreak(false);
       }
       trackSession(won, b);
       document.getElementById('colorSpinBtn').disabled = false;
@@ -3783,7 +3785,7 @@ function wipeEconomy_auto() {
 // ============================================
 // ІНШІ ФУНКЦІЇ
 // ============================================
-function openGame(g) { switchTab(g); }
+function openGame(g) { trackRecentGame(g); switchTab(g); }
 function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
@@ -4187,7 +4189,6 @@ function bjSettleSplitRound(profit1, profit2) {
     if(totalProfit >= 1000) addToWinFeed('Blackjack', totalProfit, totalProfit/(bjBet+bjSplitBet));
   }
   addToHistory('Blackjack Split: ' + (totalProfit>=0?'+':'') + totalProfit);
-  if(totalProfit < 0) tryClaimInsurance(bjBet + bjSplitBet);
   updateStreak(totalProfit >= 0); recordBalanceHistory();
   bjSplitActive = false; bjPlayingHand2 = false;
   const sa = document.getElementById('bjSplitArea'); if(sa) sa.classList.add('hidden');
@@ -4249,7 +4250,6 @@ function bjEnd(result) {
   } else {
     playSound('loss');
     addToHistory(`Blackjack: -${bjBet}`);
-    tryClaimInsurance(bjBet);
   }
 }
 
@@ -5890,7 +5890,7 @@ async function dropPlinkoFair() {
     if(mult > 0) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     if(win > bet) { playSound('win'); notify(`🔻 +${win}₴ (×${mult}) `, 'success'); addToHistory('Plinko: +'+win); }
     else { notify(`🔻 ×${mult} — ${win}₴`, mult > 0 ? 'info' : 'error'); addToHistory('Plinko: '+win); }
-    updateStreak(win >= bet); applyAutoSaveOnWin(win); recordBalanceHistory();
+    updateStreak(win >= bet); recordBalanceHistory();
     if(ball) ball.style.display = 'none';
     // Show verify button
     notify(`⚖️ <span onclick="showProvablyFairModal('Plinko','${_serverSeed}','${_clientSeed}',${_nonce},${fairNum})" style="cursor:pointer;text-decoration:underline;color:#4a9eff;">Перевірити чесність гри</span>`, 'info');
@@ -6053,7 +6053,7 @@ function runGlobalSearch(q) {
     {name:'Скачки 🏇',tab:'horseracing'},{name:'Quiz 🧠',tab:'quiz'},{name:'Balloon 🎈',tab:'balloon'},
     {name:'Бакара 🃏',tab:'baccarat'},{name:'Відеопокер 🎴',tab:'videpoker'},
   ];
-  gamesList.filter(function(g){ return g.name.toLowerCase().indexOf(ql) >= 0; }).forEach(function(g) {
+  gamesList.filter(function(g){ return g.name.toLowerCase().indexOf(ql) >= 0 || g.tab.toLowerCase().indexOf(ql) >= 0; }).forEach(function(g) {
     results.push({type:'Гра', icon:'🎮', name:g.name, action:"switchTab('" + g.tab + "');document.getElementById('globalSearchModal').remove()"});
   });
   if(!db) {
@@ -6202,6 +6202,7 @@ function renderCryptoAssets() {
 }
 
 function buyCrypto(sym, amount) {
+  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
   if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
   var price = _cryptoPrices[sym];
   if(!price) return;
@@ -6225,58 +6226,6 @@ function sellCrypto(sym) {
   renderCryptoAssets();
 }
 
-// 8. P2P ПОЗИКИ
-function requestP2PLoan() {
-  var from = (document.getElementById('loanFrom') ? document.getElementById('loanFrom').value : '').trim();
-  var amount = parseInt(document.getElementById('loanAmount') ? document.getElementById('loanAmount').value : 0) || 0;
-  var days = parseInt(document.getElementById('loanDays') ? document.getElementById('loanDays').value : 3) || 3;
-  var interestMap = {1:5, 3:8, 7:12, 14:18};
-  var interest = interestMap[days] || 8;
-  if(!from || !amount) return notify('Заповни всі поля', 'error');
-  if(amount < 100) return notify('Мін. 100₴', 'error');
-  if(from === currentUser) return notify('Не можна позичати у себе', 'error');
-  db.ref('users/' + from).once('value').then(function(snap) {
-    if(!snap.exists()) return notify('Гравця не знайдено', 'error');
-    var key = db.ref('p2p_loans').push().key;
-    db.ref('p2p_loans/' + key).set({borrower:currentUser, lender:from, amount:amount, interest:interest, days:days, status:'pending', dueDate:Date.now()+days*86400000, createdAt:Date.now()});
-    db.ref('pm/' + from + '/' + db.ref().push().key).set({from:'💸 Позики', to:from, text:'💸 @' + currentUser + ' просить позику ₴' + formatNumber(amount) + ' на ' + days + ' дн (' + interest + '%). ID: ' + key, ts:Date.now()});
-    db.ref('users/' + from + '/pmUnread').set(firebase.database.ServerValue.increment(1));
-    notify('📩 Запит надіслано гравцю ' + from, 'success');
-  });
-}
-function repayLoan(key) {
-  db.ref('p2p_loans/' + key).once('value').then(function(snap) {
-    if(!snap.exists()) return;
-    var l = snap.val();
-    var repay = Math.round(l.amount * (1 + l.interest / 100));
-    if(userData.balance < repay) return notify('Потрібно ₴' + formatNumber(repay), 'error');
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-repay));
-    db.ref('users/' + l.lender + '/balance').set(firebase.database.ServerValue.increment(repay));
-    db.ref('p2p_loans/' + key).update({status:'repaid', repaidAt:Date.now()});
-    notify('✅ Повернено ₴' + formatNumber(repay) + ' (з відсотками)', 'success');
-    loadMyLoans();
-  });
-}
-function loadMyLoans() {
-  var el = document.getElementById('myLoans');
-  if(!el || !currentUser) return;
-  db.ref('p2p_loans').orderByChild('borrower').equalTo(currentUser).limitToLast(5).once('value').then(function(snap) {
-    var loans = snap.val() || {};
-    var active = Object.entries(loans).filter(function(e){ return e[1].status !== 'repaid'; });
-    if(!active.length) { el.innerHTML = '<div style="color:#444;">Активних позик немає</div>'; return; }
-    el.innerHTML = active.map(function(entry) {
-      var k = entry[0], l = entry[1];
-      var repay = Math.round(l.amount * (1 + l.interest/100));
-      var due = new Date(l.dueDate).toLocaleDateString('uk-UA');
-      return '<div style="background:#111;border-radius:10px;padding:10px;margin-bottom:8px;">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'
-        + '<div><div style="font-weight:700;">₴' + formatNumber(l.amount) + ' · @' + l.lender + '</div><div style="font-size:10px;color:#555;">' + l.interest + '% · до ' + due + '</div></div>'
-        + '<div style="font-size:10px;color:' + (l.status==='active'?'#3dd68c':'#d4af37') + ';font-weight:700;">' + (l.status==='active'?'✅ АКТИВНА':'⏳ Очікує') + '</div></div>'
-        + (l.status === 'active' ? '<button onclick="repayLoan(\'' + k + '\')" style="width:100%;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:12px;">💸 Повернути ₴' + formatNumber(repay) + '</button>' : '')
-        + '</div>';
-    }).join('');
-  });
-}
 
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -6419,43 +6368,6 @@ function initShakeBonus() {
   });
 }
 
-// ── СЕСІЙНІ ЛІМІТИ ─────────────────────────────────────────────
-var _sessionStart = Date.now();
-var _sessionSpent = 0;
-var _sessionLimitTime = 0;
-var _sessionLimitAmount = 0;
-function setSessionLimits(maxMinutes, maxAmount) {
-  _sessionLimitTime   = maxMinutes * 60000;
-  _sessionLimitAmount = maxAmount;
-  localStorage.setItem('sessionLimitTime',   maxMinutes);
-  localStorage.setItem('sessionLimitAmount', maxAmount);
-  notify('⏰ Ліміти встановлено: ' + maxMinutes + ' хв · ₴' + formatNumber(maxAmount), 'success');
-}
-function checkSessionLimits(betAmount) {
-  if (_sessionLimitTime > 0 && Date.now() - _sessionStart > _sessionLimitTime) {
-    notify('⏰ Досягнуто ліміту часу сесії! Зроби перерву.', 'error');
-    return false;
-  }
-  if (_sessionLimitAmount > 0 && _sessionSpent + betAmount > _sessionLimitAmount) {
-    notify('💸 Досягнуто ліміту суми! Ліміт: ₴' + formatNumber(_sessionLimitAmount), 'error');
-    return false;
-  }
-  _sessionSpent += betAmount;
-  return true;
-}
-// ── НАГАДУВАННЯ ПРО ПАУЗУ ──────────────────────────────────────
-var _breakReminderInterval = null;
-function setBreakReminder(minutes) {
-  clearInterval(_breakReminderInterval);
-  if (!minutes) return;
-  _breakReminderInterval = setInterval(function() {
-    notify('⏸️ Ти граєш вже ' + minutes + ' хвилин. Зроби перерву! 🧘', 'info');
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    sendNativeNotif('⏸️ SlotOK — Перерва', 'Ти граєш вже ' + minutes + ' хвилин. Час відпочити!');
-  }, minutes * 60000);
-  notify('⏰ Нагадування про паузу: кожні ' + minutes + ' хв', 'success');
-}
-
 // ── ОНЛАЙН ТАЙМЕР ─────────────────────────────────────────────
 var _onlineSeconds = parseInt(localStorage.getItem('slotok_online_total') || '0');
 var _onlineTimer = null;
@@ -6501,8 +6413,15 @@ function initClanChat(clanId) {
     var msgs = snap.val() || {};
     msgEl.innerHTML = Object.values(msgs).sort(function(a,b) { return a.ts-b.ts; }).map(function(m) {
       var isMe = m.user === currentUser;
+      // Старі повідомлення зберігали весь userData.avatar як є (могло бути base64-фото,
+      // до ~80к символів) — підтримуємо і новий формат (avatarEmoji/avatarUrl), і legacy.
+      var avatarUrl = m.avatarUrl || (typeof m.avatar === 'string' && m.avatar.length > 10 ? m.avatar : null);
+      var avatarEmoji = m.avatarEmoji || (typeof m.avatar === 'string' && m.avatar.length <= 4 ? m.avatar : '👤');
+      var avHtml = avatarUrl
+        ? '<img src="' + escapeHtml(avatarUrl) + '" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.replaceWith(document.createTextNode(\'👤\'))">'
+        : escapeHtml(avatarEmoji);
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
-        + '<div style="font-size:20px;flex-shrink:0;">' + escapeHtml(m.avatar || '👤') + '</div>'
+        + '<div style="font-size:20px;flex-shrink:0;">' + avHtml + '</div>'
         + '<div style="background:' + (isMe ? 'rgba(212,175,55,.08)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (isMe ? 'rgba(212,175,55,.15)' : 'rgba(255,255,255,.07)') + ';border-radius:12px;padding:8px 10px;max-width:72%;">'
         + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
@@ -6515,7 +6434,11 @@ function sendClanChatMsg(clanId) {
   var inp = document.getElementById('clanChatInput');
   var text = inp ? inp.value.trim() : '';
   if (!text || !clanId) return;
-  db.ref('clan_chats/' + clanId).push({ user: currentUser, text: text, avatar: userData.avatar || '👤', ts: Date.now() });
+  db.ref('clan_chats/' + clanId).push({
+    user: currentUser, text: text, ts: Date.now(),
+    avatarEmoji: typeof userData.avatar === 'string' && userData.avatar.length <= 4 ? userData.avatar : '👤',
+    avatarUrl: typeof userData.avatar === 'string' && userData.avatar.length > 10 ? userData.avatar : null,
+  });
   db.ref('clans/' + clanId + '/members').once('value', snap => {
     const members = Object.keys(snap.val() || {});
     members.forEach(m => {
@@ -6852,62 +6775,6 @@ function doComparePlayers(nick) {
   });
 }
 
-// ── CASE OPENING (КЕЙСИ) ───────────────────────────────────────
-var CASES = {
-  basic: { name:'Базовий кейс', price:500, items:[
-    {name:'50₴ Бонус', prob:0.40, value:50, emoji:'💵'},
-    {name:'200₴ Бонус', prob:0.25, value:200, emoji:'💰'},
-    {name:'500₴ Бонус', prob:0.15, value:500, emoji:'💎'},
-    {name:'10 Фріспінів', prob:0.10, value:0, extra:'freeSlots', extraVal:10, emoji:'🎟️'},
-    {name:'VIP 1 день', prob:0.07, value:0, extra:'vipGiftUntil', extraVal:86400000, emoji:'👑'},
-    {name:'2000₴ ДЖЕКПОТ', prob:0.03, value:2000, emoji:'🏆'},
-  ]},
-  premium: { name:'Преміум кейс', price:2000, items:[
-    {name:'300₴ Бонус', prob:0.30, value:300, emoji:'💵'},
-    {name:'1000₴ Бонус', prob:0.25, value:1000, emoji:'💰'},
-    {name:'3000₴ Бонус', prob:0.20, value:3000, emoji:'💎'},
-    {name:'25 Фріспінів', prob:0.12, value:0, extra:'freeSlots', extraVal:25, emoji:'🎟️'},
-    {name:'VIP 7 днів', prob:0.08, value:0, extra:'vipGiftUntil', extraVal:604800000, emoji:'👑'},
-    {name:'10000₴ ДЖЕКПОТ', prob:0.05, value:10000, emoji:'🏆'},
-  ]},
-};
-function openCase(caseKey) {
-  var c = CASES[caseKey];
-  if (!c) return;
-  if (!userData.balance || userData.balance < c.price) return notify('Потрібно ₴' + formatNumber(c.price), 'error');
-  db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-c.price));
-  userData.balance -= c.price;
-  var r = Math.random(), cumProb = 0;
-  var item = c.items[c.items.length - 1];
-  for (var i = 0; i < c.items.length; i++) {
-    cumProb += c.items[i].prob;
-    if (r < cumProb) { item = c.items[i]; break; }
-  }
-  // Apply reward
-  if (item.value > 0) {
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(item.value));
-    userData.balance += item.value;
-  }
-  if (item.extra === 'freeSlots') {
-    db.ref('users/' + currentUser + '/freeSlots').set(firebase.database.ServerValue.increment(item.extraVal));
-  }
-  if (item.extra === 'vipGiftUntil') {
-    db.ref('users/' + currentUser + '/vipGiftUntil').set(Date.now() + item.extraVal);
-  }
-  // Show result
-  var modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
-  modal.innerHTML = '<div style="background:linear-gradient(135deg,#0d0800,#1a1200);border:2px solid rgba(212,175,55,.4);border-radius:24px;padding:28px;max-width:300px;width:100%;text-align:center;animation:popIn .4s ease;">'
-    + '<div style="font-size:64px;margin-bottom:14px;animation:heartbeat .5s ease 3;">' + item.emoji + '</div>'
-    + '<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:#d4af37;margin-bottom:6px;">ВИГРАШ!</div>'
-    + '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">' + item.name + '</div>'
-    + (item.value > 0 ? '<div style="font-size:28px;font-weight:900;color:#3dd68c;margin-bottom:16px;">+₴' + formatNumber(item.value) + '</div>' : '')
-    + '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:14px;color:#000;font-weight:900;cursor:pointer;font-size:15px;">✅ Забрати</button>'
-    + '</div>';
-  document.body.appendChild(modal);
-  if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
-  publishLiveBet('Кейс 📦', '📦', c.price, item.value > 0 ? item.value / c.price : 0);
-}
 // ── ITEM UPGRADE СИСТЕМА ───────────────────────────────────────
 function doUpgrade(fromName, cost, toName, chance, fromEmoji, toEmoji) {
   if (!userData.balance || userData.balance < cost) return notify('Потрібно ₴' + formatNumber(cost), 'error');
@@ -7014,19 +6881,6 @@ function openChangePasswordModal() {
   );
 }
 
-function openSessionLimitsModal() {
-  openModal('sessionlimits',
-    modalCloseBtn('sessionlimits') +
-    '<div style="font-size:15px;font-weight:900;color:#f39c12;margin-bottom:6px;font-family:Orbitron,monospace;padding-right:36px;">⏰ Сесійні ліміти</div>' +
-    '<div style="font-size:11px;color:#666;margin-bottom:14px;">Встанови ліміти для відповідальної гри</div>' +
-    '<label style="font-size:11px;color:#888;display:block;margin-bottom:4px;">Максимум хвилин на сесію:</label>' +
-    '<input id="slTime" type="number" placeholder="60" value="' + (localStorage.getItem('sessionLimitTime')||60) + '" style="margin-bottom:10px;">' +
-    '<label style="font-size:11px;color:#888;display:block;margin-bottom:4px;">Максимум витрат за сесію (₴):</label>' +
-    '<input id="slAmount" type="number" placeholder="1000" value="' + (localStorage.getItem('sessionLimitAmount')||1000) + '" style="margin-bottom:14px;">' +
-    '<button onclick="setSessionLimits(parseInt(document.getElementById(\'slTime\').value)||60,parseInt(document.getElementById(\'slAmount\').value)||1000);closeModal(\'sessionlimits\')" style="width:100%;background:linear-gradient(135deg,#f39c12,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Зберегти</button>'
-  );
-}
-
 function openGiftVIPModal() {
   openModal('giftvip',
     modalCloseBtn('giftvip') +
@@ -7125,23 +6979,6 @@ function showReferralQR() {
   );
 }
 
-function openP2PLoanModal() {
-  openModal('p2ploan',
-    modalCloseBtn('p2ploan') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">💸 P2P Позики</div>' +
-    '<input id="loanFrom" placeholder="Нік кредитора" style="margin-bottom:8px;">' +
-    '<input id="loanAmount" type="number" placeholder="Сума (₴)" style="margin-bottom:8px;">' +
-    '<select id="loanDays" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:12px;font-size:13px;">' +
-    '<option value="1">1 день · 5%</option><option value="3" selected>3 дні · 8%</option>' +
-    '<option value="7">7 днів · 12%</option><option value="14">14 днів · 18%</option></select>' +
-    '<button onclick="requestP2PLoan();closeModal(\'p2ploan\')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:10px;padding:12px;color:#000;font-weight:900;cursor:pointer;margin-bottom:12px;">📩 Надіслати запит</button>' +
-    '<div style="font-size:13px;font-weight:800;color:#aaa;margin-bottom:8px;">📋 Мої активні позики</div>' +
-    '<div id="myLoans" style="font-size:12px;color:#555;">Завантаження...</div>',
-    {fullscreen: false}
-  );
-  loadMyLoans();
-}
-
 function openCryptoSimulator() {
   updateCryptoPrices();
   openModal('crypto',
@@ -7160,23 +6997,6 @@ function openCryptoSimulator() {
   window._cryptoIv = setInterval(function() {
     updateCryptoPrices(); renderCryptoAssets();
   }, 5000);
-}
-
-function openCaseOpeningScreen() {
-  var html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
-    +'<button onclick="closeModal(\'caseopening\')" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>'
-    +'<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#d4af37;">📦 Кейси</div></div>'
-    + Object.entries(CASES).map(function(entry) {
-        var k=entry[0],c=entry[1];
-        return '<div style="background:linear-gradient(135deg,#0d0800,#1a1200);border:1.5px solid rgba(212,175,55,.25);border-radius:18px;padding:18px;margin-bottom:12px;">'
-          +'<div style="font-size:18px;font-weight:900;margin-bottom:8px;">'+c.name+'</div>'
-          +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">'
-          +c.items.map(function(i){return '<div style="background:#111;border-radius:8px;padding:5px 8px;font-size:11px;">'+i.emoji+' '+i.name+' <span style="color:#555;">'+Math.round(i.prob*100)+'%</span></div>';}).join('')
-          +'</div>'
-          +'<button onclick="openCase(\''+k+'\')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">📦 Відкрити — ₴'+formatNumber(c.price)+'</button>'
-          +'</div>';
-      }).join('');
-  openModal('caseopening', html, {fullscreen: true});
 }
 
 function openUpgradeSystem() {
@@ -7261,10 +7081,6 @@ function initAllNewFeatures() {
   startOnlineTimer();
   saveUserIP();
   logSecurityEvent('login', '');
-  // Load session limits from storage
-  var lTime = parseInt(localStorage.getItem('sessionLimitTime') || '0');
-  var lAmt  = parseInt(localStorage.getItem('sessionLimitAmount') || '0');
-  if (lTime > 0 || lAmt > 0) setSessionLimits(lTime || 999999, lAmt || 999999);
 }
 
 
@@ -7610,135 +7426,6 @@ function addContactByName(name) {
 }
 
 // ============================================
-// ДУЕЛІ
-// ============================================
-let activeDuelId = null;
-
-function acceptDuel() {
-  const id = window._incomingDuelId;
-  if(!id) return;
-  respondDuel(id, 'accept');
-  closeTabModal('duel-incoming-modal');
-}
-function declineDuel() {
-  const id = window._incomingDuelId;
-  if(!id) return;
-  respondDuel(id, 'decline');
-  closeTabModal('duel-incoming-modal');
-}
-
-function createDuel() {
-  const target = document.getElementById('duelTarget').value.trim();
-  const amount = parseInt(document.getElementById('duelAmount').value);
-  if(!target || target === currentUser) return notify('Невірний суперник', 'error');
-  if(!amount || amount < 50) return notify('Мін. ставка 50₴', 'error');
-  if(userData.balance < amount) return notify('Недостатньо коштів', 'error');
-
-  db.ref('users/'+target).once('value', snap => {
-    if(!snap.exists()) return notify('Гравця не знайдено', 'error');
-    const duelId = currentUser + '_' + Date.now();
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amount));
-    db.ref('duels/'+duelId).set({
-      challenger: currentUser, target, amount, status: 'pending', time: Date.now()
-    });
-    notify(`⚔️ Виклик надіслано ${target}!`, 'success');
-    document.getElementById('duelTarget').value = '';
-    document.getElementById('duelAmount').value = '';
-  });
-}
-
-function listenForIncomingDuels() {
-  if(!currentUser) return;
-  db.ref('duels').orderByChild('target').equalTo(currentUser).on('value', snap => {
-    const data = snap.val() || {};
-    Object.entries(data).forEach(([id, d]) => {
-      if(d.status === 'pending' && !d._notified) {
-        db.ref('duels/' + id + '/_notified').set(true);
-        window._incomingDuelId = id;
-        const el = document.getElementById('duelIncomingInfo');
-        if(el) el.innerHTML = `<b style="color:var(--accent)">${d.challenger}</b> викликає вас на дуель!<br>Ставка: <b style="color:var(--green)">${formatNumber(d.amount)} ₴</b>`;
-        openTabModal('duel-incoming-modal');
-      }
-    });
-  });
-}
-
-function loadDuels() {
-  // Активні дуелі
-  db.ref('duels').orderByChild('status').equalTo('pending').limitToLast(10).once('value', snap => {
-    const data = snap.val();
-    const list = document.getElementById('duelsList');
-    if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;">Немає активних дуелей</div>'; return; }
-    list.innerHTML = '';
-    Object.entries(data).forEach(([id, d]) => {
-      const isTarget = d.target === currentUser;
-      const isChallenger = d.challenger === currentUser;
-      list.innerHTML += `<div class="duel-card">
-        <div class="duel-players">
-          <div><div style="font-weight:bold;color:var(--accent);">${d.challenger}</div><div style="font-size:11px;color:#777;">Challenger</div></div>
-          <div class="duel-vs">VS</div>
-          <div><div style="font-weight:bold;color:#4a9eff;">${d.target}</div><div style="font-size:11px;color:#777;">Target</div></div>
-        </div>
-        <div style="text-align:center;margin-top:8px;">
-          <span style="color:var(--accent);font-weight:bold;">${d.amount} ₴</span>
-          ${isTarget ? `<button class="btn-green" style="padding:6px 12px;width:auto;margin-left:10px;font-size:12px;" onclick="respondDuel('${id}','accept')">✅ Прийняти</button><button class="btn-red" style="padding:6px 12px;width:auto;margin-left:5px;font-size:12px;" onclick="respondDuel('${id}','decline')">❌</button>` : ''}
-          ${isChallenger ? `<button class="btn-outline" style="padding:6px 12px;width:auto;margin-left:10px;font-size:12px;" onclick="cancelDuel('${id}')">Скасувати</button>` : ''}
-        </div>
-      </div>`;
-    });
-  });
-}
-
-function respondDuel(id, action) {
-  if(action === 'decline') {
-    db.ref('duels/'+id).once('value', snap => {
-      const d = snap.val();
-      if(!d || d.status !== 'pending') return;
-      db.ref('duels/'+id).update({status:'declined'});
-      db.ref('users/'+d.challenger+'/balance').set(firebase.database.ServerValue.increment(d.amount));
-      notify('Дуель відхилено', 'info'); loadDuels();
-    });
-    return;
-  }
-  // Прийняття дуелі — атомарний claim, щоб не можна було
-  // натиснути "Прийняти" двічі (подвійне списання ставки)
-  db.ref('duels/'+id+'/status').transaction(current => {
-    if(current === 'pending') return 'resolving';
-    return;
-  }, (err, committed, snapshot) => {
-    if(!committed) { notify('Ця дуель вже недоступна', 'error'); loadDuels(); return; }
-    const d = snapshot.val();
-    if(!d) return;
-    if(userData.balance < d.amount) {
-      // Відкат — повертаємо статус, щоб дуель залишилась доступною
-      db.ref('duels/'+id+'/status').set('pending');
-      return notify('Недостатньо коштів', 'error');
-    }
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-d.amount));
-    const winner = Math.random() > 0.5 ? d.challenger : d.target;
-    const loser = winner === d.challenger ? d.target : d.challenger;
-    const prize = Math.floor(d.amount * 1.9); // 5% комісія казино
-    db.ref('users/'+winner+'/balance').set(firebase.database.ServerValue.increment(prize));
-    db.ref('duels/'+id).update({status:'done', winner, time_end: Date.now()});
-    db.ref('lobby_chat').push({system:true, text:`⚔️ Дуель: ${d.challenger} vs ${d.target} — переміг ${winner}! (+${prize}₴)`, time:Date.now()});
-    notify(winner===currentUser ? `🏆 Ви виграли дуель! +${prize}₴` : `😔 Ви програли дуель`, winner===currentUser?'success':'error');
-    addToHistory(`Duel vs ${loser}: ${winner===currentUser?'+'+prize:'-'+d.amount}`);
-    loadDuels();
-  });
-}
-
-function cancelDuel(id) {
-  db.ref('duels/'+id).once('value', snap => {
-    const d = snap.val();
-    if(d && d.challenger === currentUser) {
-      db.ref('duels/'+id).update({status:'cancelled'});
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(d.amount));
-      notify('Дуель скасовано', 'info'); loadDuels();
-    }
-  });
-}
-
-// ============================================
 // ТУРНІРИ
 // ============================================
 function loadTournaments() {
@@ -7851,10 +7538,6 @@ function loadAdminStats() {
     if(el) el.textContent = total;
     const el2 = document.getElementById('statTotalBalance');
     if(el2) el2.textContent = '₴'+formatNumber(Math.floor(totalBal));
-  });
-  db.ref('pvp_coinflip').orderByChild('status').equalTo('open').once('value', snap => {
-    const el = document.getElementById('statActiveDuels');
-    if(el) el.textContent = Object.keys(snap.val()||{}).length;
   });
   db.ref('withdraw_requests').orderByChild('status').equalTo('pending').once('value', snap => {
     const el = document.getElementById('statPendingWithdraws');
@@ -8620,6 +8303,7 @@ function sendGift() {
   const message   = document.getElementById('giftMessage').value.trim();
   if(!recipient) return notify('Введіть нік отримувача', 'error');
   if(recipient === currentUser) return notify('Не можна надсилати собі 😄', 'error');
+  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
   const gift = GIFT_CATALOG[selectedGiftType];
   if(userData.balance < gift.price) return notify('Недостатньо коштів', 'error');
 
@@ -9617,7 +9301,7 @@ const NAV_TAB_MAP = {
   home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:5,
   slots:1, roulette:1, crash:1, mines:1, fortune:1, poker:1, blackjack:1,
   scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
-  cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1, duels:1,
+  cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1,
   tournaments:5, referrals:5, vip:5, quests:5, lootboxes:5,
   hourly:5, clans:5, leaderboard:5, gifts:5, slotiky:5,
   achievements:5, battlepass:5, stats:5, bank:5, admin:4,
@@ -9667,6 +9351,28 @@ function updateDisabledGameCardsUI() {
     } else if(!isOff && badge) {
       badge.remove();
     }
+  });
+}
+
+// Додає сердечко "Улюблене" на кожну картку гри в лобі — знаходить картки так само,
+// як updateDisabledGameCardsUI(), щоб не залежати від того, скільки їх намальовано в HTML
+function renderFavoriteHearts() {
+  document.querySelectorAll('.casino-game-card').forEach(el => {
+    const match = (el.getAttribute('onclick') || '').match(/(?:openGame|switchTab)\('(\w+)'\)/);
+    if(!match) return;
+    const gameId = match[1];
+    let heart = el.querySelector('.fav-heart-btn');
+    if(!heart) {
+      heart = document.createElement('div');
+      heart.className = 'fav-heart-btn';
+      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));';
+      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this); this.textContent = this.classList.contains('active') ? '❤️' : '🤍';`);
+      el.style.position = el.style.position || 'relative';
+      el.appendChild(heart);
+    }
+    const isFav = favoriteGames.includes(gameId);
+    heart.classList.toggle('active', isFav);
+    heart.textContent = isFav ? '❤️' : '🤍';
   });
 }
 
@@ -9773,7 +9479,6 @@ function switchTab(id, el) {
   if(id==='chat')         safe(() => { initLobbyChat(); initChat(); });
   if(id==='keno')         safe(() => initKeno());
   if(id==='fortune')      safe(() => setTimeout(() => drawFortuneWheel(0), 50));
-  if(id==='duels')        safe(() => loadDuels());
   if(id==='tournaments')  safe(() => { loadTournaments(); loadTourneyStatsBar(); });
   if(id==='referrals')    safe(() => initReferrals());
   if(id==='scratch')      safe(() => { const g = document.getElementById('scratchGrid'); if(g && !g.children.length) scratchReset(); });
@@ -9797,7 +9502,6 @@ function switchTab(id, el) {
   if(id==='achievements') safe(() => { initAchievementsTab(); checkAchievements('tab', null); });
   if(id==='battlepass')   safe(() => initBattlePass());
   if(id==='stats')        safe(() => initStatsTab());
-  if(id==='bank')         safe(() => initBankTab());
   if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
   if(id==='colorbet')     safe(() => renderColorHistory());
   if(id==='affiliate')    safe(() => initAffiliate());
@@ -9806,8 +9510,8 @@ function switchTab(id, el) {
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
   if(id==='settings')     safe(() => loadSettings());
-  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); });
-  if(id==='lobby')        safe(() => updateDisabledGameCardsUI());
+  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); renderFavoriteHearts(); });
+  if(id==='lobby')        safe(() => { updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='baccarat')     safe(() => initBaccarat());
   if(id==='videpoker')    safe(() => initVideoPoker());
   if(id==='seasons')      safe(() => renderSeasons());
@@ -9829,8 +9533,6 @@ function switchTab(id, el) {
   if(id==='limbo')        safe(() => updateLimboChance());
   if(id==='mines')        safe(() => updateMinesInfo());
   if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
-  if(id==='copytrade')    safe(() => { loadCtTop(); ctStartLiveFeed(); });
-  if(id==='insurance')    safe(() => { loadInsActive(); loadInsHistory(); });
   if(id==='trade')        safe(() => { loadTrade(); db.ref('users/'+currentUser+'/tradeUnread').set(0); });
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
@@ -13811,401 +13513,6 @@ function trackLbBigWin(amount) {
   db.ref(`users/${currentUser}/stats/biggestWin`).transaction(current => Math.max(current||0, amount));
 }
 
-// ╔══════════════════════════════════════════════════════════════╗
-// ║              🤖  АВТОСТАВКИ                                 ║
-// ╚══════════════════════════════════════════════════════════════╝
-let abRunning = false;
-let abTimer   = null;
-let abGame    = 'roulette';
-let abColor   = 'red';
-let abCashout = 2.0;
-let abMartOn  = false;
-let abCurrentBet = 0;
-let abBaseBet    = 0;
-let abStats = { rounds:0, won:0, lost:0 };
-
-function selectAbGame(game, el) {
-  abGame = game;
-  ['roulette','crash'].forEach(g => {
-    const btn = document.getElementById('abgame-'+g);
-    if(!btn) return;
-    btn.style.border = g===game ? '2px solid '+(g==='roulette'?'rgba(240,64,96,.7)':'rgba(212,175,55,.5)') : '2px solid var(--border)';
-    btn.style.opacity = g===game ? '1' : '0.6';
-  });
-  document.getElementById('abRouletteOpts').classList.toggle('hidden', game!=='roulette');
-  document.getElementById('abCrashOpts').classList.toggle('hidden', game!=='crash');
-}
-
-function selectAbColor(color, el) {
-  abColor = color;
-  ['red','black','green'].forEach(c => {
-    const btn = document.getElementById('abcolor-'+c);
-    if(btn) {
-      btn.style.borderWidth = c===color ? '2px' : '1px';
-      btn.style.opacity = c===color ? '1' : '0.6';
-    }
-  });
-}
-
-function setAbCashout(v) {
-  abCashout = v;
-  document.getElementById('abCashoutInput') && (document.getElementById('abCashoutInput').value = v);
-}
-
-function toggleAbMart() {
-  abMartOn = !abMartOn;
-  const toggle = document.getElementById('abMartToggle');
-  const thumb  = document.getElementById('abMartThumb');
-  const opts   = document.getElementById('abMartOptions');
-  if(toggle) toggle.style.background = abMartOn ? 'var(--green)' : 'var(--border)';
-  if(thumb)  thumb.style.left = abMartOn ? '20px' : '2px';
-  if(thumb)  thumb.style.background = abMartOn ? '#fff' : '#666';
-  if(opts)   opts.classList.toggle('hidden', !abMartOn);
-}
-
-function startAutobet() {
-  if(!currentUser) return notify('Увійди в акаунт','error');
-  const bet = parseInt(document.getElementById('abBetAmount').value);
-  if(!bet || bet < 1) return notify('Введи суму ставки','error');
-  if(abGame === 'roulette' && !abColor) return notify('Обери колір','error');
-  abBaseBet = bet;
-  abCurrentBet = bet;
-  abStats = { rounds:0, won:0, lost:0 };
-  abRunning = true;
-  document.getElementById('abStartBtn').classList.add('hidden');
-  document.getElementById('abStopBtn').classList.remove('hidden');
-  document.getElementById('abSettingsBox').style.opacity = '0.5';
-  document.getElementById('abSettingsBox').style.pointerEvents = 'none';
-  document.getElementById('abStatusIcon').textContent = '▶️';
-  document.getElementById('abStatusText').textContent = 'Автоставки запущені';
-  document.getElementById('abStatusText').style.color = 'var(--green)';
-  const logEl = document.getElementById('abLog');
-  if(logEl) logEl.innerHTML = '';
-  abRunNextRound();
-}
-
-function stopAutobet() {
-  abRunning = false;
-  if(abTimer) clearTimeout(abTimer);
-  abTimer = null;
-  document.getElementById('abStartBtn').classList.remove('hidden');
-  document.getElementById('abStopBtn').classList.add('hidden');
-  document.getElementById('abSettingsBox').style.opacity = '';
-  document.getElementById('abSettingsBox').style.pointerEvents = '';
-  document.getElementById('abStatusIcon').textContent = '⏸️';
-  document.getElementById('abStatusText').textContent = 'Автоставки зупинені';
-  document.getElementById('abStatusText').style.color = 'var(--sub)';
-  notify('⏹ Автоставки зупинено','info');
-}
-
-function abRunNextRound() {
-  if(!abRunning) return;
-  const maxRounds = parseInt(document.getElementById('abRoundsInput').value) || 0;
-  const stopLoss  = parseFloat(document.getElementById('abStopLoss').value) || 0;
-  const stopWin   = parseFloat(document.getElementById('abStopWin').value) || 0;
-  const netProfit = abStats.won - abStats.lost;
-  // Перевірки зупинки
-  if(maxRounds > 0 && abStats.rounds >= maxRounds) { stopAutobet(); notify(`✅ Завершено ${abStats.rounds} раундів`,'success'); return; }
-  if(stopLoss > 0 && abStats.lost >= stopLoss) { stopAutobet(); notify(`🛑 Стоп-програш: -₴${formatNumber(abStats.lost)}`,'error'); return; }
-  if(stopWin > 0 && netProfit >= stopWin) { stopAutobet(); notify(`🎯 Ціль досягнута: +₴${formatNumber(netProfit)}`,'success'); return; }
-  if((userData.balance||0) < abCurrentBet) { stopAutobet(); notify('💸 Недостатньо коштів','error'); return; }
-
-  // Виконати раунд
-  if(abGame === 'roulette') abPlayRoulette();
-  else abPlayCrash();
-}
-
-function abPlayRoulette() {
-  const bet = abCurrentBet;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  addWager(bet);
-  trackQuest('rouletteBets',1); trackQuest('totalGames',1); trackQuest('weekWager',bet);
-  db.ref('users/'+currentUser+'/rouletteBets').set(firebase.database.ServerValue.increment(1));
-  trackLbStat('wager', bet); trackLbStat('games', 1);
-
-  const idx = Math.floor(Math.random() * GR_WHEEL_NUMS.length);
-  const winNum = GR_WHEEL_NUMS[idx];
-  const winColor = GR_WHEEL_COLORS(winNum);
-  const won = winColor === abColor;
-  const mult = winColor === 'green' ? 14 : 2;
-  const payout = won ? Math.floor(bet * mult) : 0;
-  if(won) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-
-  abStats.rounds++;
-  if(won) { abStats.won += payout - bet; } else { abStats.lost += bet; }
-  updateAbStats();
-  abAddLog(abStats.rounds, won, bet, payout, winNum, winColor);
-  trackLbStat(won?'wins':'loss', won?payout-bet:bet);
-  if(won) { trackLbStat('wins', payout); }
-
-  if(abMartOn && !won) {
-    const mult2 = parseFloat(document.getElementById('abMartMult').value)||2;
-    abCurrentBet = Math.floor(abCurrentBet * mult2);
-  } else { abCurrentBet = abBaseBet; }
-
-  abTimer = setTimeout(abRunNextRound, 1800);
-}
-
-function abPlayCrash() {
-  const bet = abCurrentBet;
-  const targetCashout = parseFloat(document.getElementById('abCashoutInput').value) || abCashout;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  addWager(bet);
-  trackQuest('totalGames',1); trackQuest('weekWager',bet);
-  trackLbStat('wager',bet); trackLbStat('games',1);
-
-  // Симулюємо краш
-  const crashPoint = Math.max(1.0, (Math.random()<0.03) ? 1.0 : +((-1/Math.log(Math.random()))*0.99).toFixed(2));
-  const won = crashPoint >= targetCashout;
-  const payout = won ? Math.floor(bet * targetCashout) : 0;
-  if(won) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-
-  abStats.rounds++;
-  if(won) { abStats.won += payout - bet; } else { abStats.lost += bet; }
-  updateAbStats();
-  abAddLog(abStats.rounds, won, bet, payout, '×'+crashPoint.toFixed(2), won?'crash-win':'crash-loss');
-  if(won) trackLbStat('wins',payout);
-
-  if(abMartOn && !won) {
-    const m = parseFloat(document.getElementById('abMartMult').value)||2;
-    abCurrentBet = Math.floor(abCurrentBet * m);
-  } else { abCurrentBet = abBaseBet; }
-
-  abTimer = setTimeout(abRunNextRound, 1800);
-}
-
-function updateAbStats() {
-  document.getElementById('abRoundsDone') && (document.getElementById('abRoundsDone').textContent = abStats.rounds);
-  document.getElementById('abTotalWon')   && (document.getElementById('abTotalWon').textContent = '₴'+formatNumber(Math.floor(abStats.won)));
-  document.getElementById('abTotalLost')  && (document.getElementById('abTotalLost').textContent = '₴'+formatNumber(Math.floor(abStats.lost)));
-}
-
-function abAddLog(round, won, bet, payout, result, color) {
-  const logEl = document.getElementById('abLog'); if(!logEl) return;
-  const colorEmoji = color==='red'?'🔴':color==='green'?'🟢':color==='black'?'⚫':color==='crash-win'?'🚀':'💥';
-  const row = document.createElement('div');
-  row.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:4px;background:${won?'rgba(61,214,140,.06)':'rgba(240,64,96,.06)'};border:1px solid ${won?'rgba(61,214,140,.2)':'rgba(240,64,96,.2)'};border-radius:10px;`;
-  row.innerHTML = `<div style="font-size:12px;color:var(--sub);">#${round} ${colorEmoji} ${result}</div><div style="font-size:13px;font-weight:700;color:${won?'var(--green)':'var(--red)'};">${won?'+₴'+formatNumber(payout-bet):'-₴'+formatNumber(bet)}</div>`;
-  logEl.insertBefore(row, logEl.firstChild);
-  if(logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
-}
-
-// ╔══════════════════════════════════════════════════════════════╗
-// ║              🛡️  СТРАХОВКА СТАВОК                          ║
-// ╚══════════════════════════════════════════════════════════════╝
-const INS_PACKAGES = {
-  basic:    { pct:10, comp:0.25, uses:1, label:'Базова' },
-  standard: { pct:15, comp:0.50, uses:1, label:'Стандарт' },
-  premium:  { pct:25, comp:0.75, uses:3, label:'Преміум' },
-};
-let insSelectedPackage = 'standard';
-
-function selectInsPackage(pkg, el) {
-  insSelectedPackage = pkg;
-  ['basic','standard','premium'].forEach(p => {
-    const btn = document.getElementById('ins-'+p);
-    if(!btn) return;
-    const sel = p===pkg;
-    if(p==='standard') btn.style.border = sel?'2px solid var(--accent)':'2px solid rgba(212,175,55,.35)';
-    else if(p==='premium') btn.style.border = sel?'2px solid #c9a0ff':'2px solid rgba(138,43,226,.3)';
-    else btn.style.border = sel?'2px solid #aaa':'2px solid var(--border)';
-    btn.style.transform = sel?'scale(1.02)':'scale(1)';
-  });
-  updateInsCalc();
-}
-
-function updateInsCalc() {
-  const bet = parseFloat(document.getElementById('insBetAmount').value)||0;
-  const calcEl = document.getElementById('insCalc');
-  if(!calcEl) return;
-  if(!bet) { calcEl.style.display='none'; return; }
-  calcEl.style.display = '';
-  const pkg = INS_PACKAGES[insSelectedPackage];
-  const cost = Math.floor(bet * pkg.pct / 100);
-  const comp = Math.floor(bet * pkg.comp);
-  document.getElementById('insCostDisplay') && (document.getElementById('insCostDisplay').textContent = '₴'+formatNumber(cost));
-  document.getElementById('insCompDisplay') && (document.getElementById('insCompDisplay').textContent = '₴'+formatNumber(comp));
-}
-
-function buyInsurance() {
-  if(!currentUser) return notify('Увійди в акаунт','error');
-  const bet = parseFloat(document.getElementById('insBetAmount').value);
-  if(!bet || bet<10) return notify('Введи суму ставки','error');
-  const pkg = INS_PACKAGES[insSelectedPackage];
-  const cost = Math.floor(bet*pkg.pct/100);
-  if((userData.balance||0) < cost) return notify('Недостатньо коштів','error');
-  const insurance = { package:insSelectedPackage, betAmount:bet, compensation:Math.floor(bet*pkg.comp), usesLeft:pkg.uses, cost, ts:Date.now(), status:'active', label:pkg.label };
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-cost));
-  db.ref('users/'+currentUser+'/insurance').push(insurance).then(() => {
-    notify(`🛡️ Страховку "${pkg.label}" куплено за ₴${formatNumber(cost)}!`,'success');
-    loadInsActive(); loadInsHistory();
-  });
-}
-
-function loadInsActive() {
-  const box = document.getElementById('insActiveBox');
-  const listEl = document.getElementById('insActiveList');
-  if(!box||!listEl) return;
-  db.ref('users/'+currentUser+'/insurance').orderByChild('status').equalTo('active').once('value', snap => {
-    const data = snap.val();
-    if(!data) { box.style.display='none'; return; }
-    box.style.display = '';
-    const items = Object.values(data);
-    listEl.innerHTML = items.map(ins => `
-      <div style="background:linear-gradient(135deg,rgba(0,119,182,.08),rgba(0,180,216,.04));border:1px solid rgba(0,180,216,.25);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:13px;font-weight:700;">🛡️ ${ins.label}</div>
-          <div style="font-size:11px;color:var(--sub);">Ставка: ₴${formatNumber(ins.betAmount)} · Компенсація: ₴${formatNumber(ins.compensation)}</div>
-          <div style="font-size:11px;color:var(--green);">Залишилось використань: ${ins.usesLeft}</div>
-        </div>
-      </div>`).join('');
-  });
-}
-
-function loadInsHistory() {
-  const el = document.getElementById('insHistory'); if(!el) return;
-  db.ref('users/'+currentUser+'/insurance').limitToLast(10).once('value', snap => {
-    const data = snap.val();
-    if(!data) { el.innerHTML='<div style="text-align:center;color:var(--sub);font-size:12px;padding:12px;">Немає даних</div>'; return; }
-    const items = Object.values(data).reverse();
-    el.innerHTML = items.map(ins => {
-      const sc = ins.status==='active'?'var(--green)':ins.status==='used'?'var(--accent)':'var(--red)';
-      const st = ins.status==='active'?'✅ Активна':ins.status==='used'?'💰 Використана':'❌ Не використана';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--box);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">
-        <div><div style="font-size:13px;font-weight:700;">${ins.label||'Страховка'}</div><div style="font-size:10px;color:var(--sub);">₴${formatNumber(ins.betAmount)} · Куплено: ${new Date(ins.ts).toLocaleDateString('uk-UA')}</div></div>
-        <div style="font-size:12px;font-weight:700;color:${sc};">${st}</div>
-      </div>`;
-    }).join('');
-  });
-}
-
-// Виплата страховки (викликається при програші з будь-якої гри)
-function tryClaimInsurance(lossAmount) {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser+'/insurance').orderByChild('status').equalTo('active').once('value', snap => {
-    const data = snap.val(); if(!data) return;
-    const entries = Object.entries(data);
-    if(!entries.length) return;
-    const [insId, ins] = entries[0];
-    if(lossAmount > ins.betAmount * 1.5) return; // тільки якщо програш близький до застрахованої суми
-    const comp = ins.compensation;
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(comp));
-    const newUses = ins.usesLeft - 1;
-    db.ref('users/'+currentUser+'/insurance/'+insId).update({ usesLeft:newUses, status:newUses>0?'active':'used' });
-    notify(`🛡️ Страховка спрацювала! Повернуто ₴${formatNumber(comp)}`, 'success');
-  });
-}
-
-// ╔══════════════════════════════════════════════════════════════╗
-// ║              👁️  COPY TRADE                                 ║
-// ╚══════════════════════════════════════════════════════════════╝
-let ctFollowing = {};
-let ctLiveListener = null;
-
-function switchCtTab(tab) {
-  ['top','follow','live'].forEach(t => {
-    const btn = document.getElementById('ct-tab-'+t);
-    const panel = document.getElementById('ct-panel-'+t);
-    if(btn) { btn.style.background = t===tab?'rgba(212,175,55,.15)':'transparent'; btn.style.color = t===tab?'var(--accent)':'var(--sub)'; }
-    if(panel) panel.classList.toggle('hidden', t!==tab);
-  });
-  if(tab==='top')    loadCtTop();
-  if(tab==='follow') loadCtFollow();
-  if(tab==='live')   ctStartLiveFeed();
-}
-
-function loadCtTop() {
-  const el = document.getElementById('ctTopList'); if(!el) return;
-  el.innerHTML = '<div style="text-align:center;color:var(--sub);padding:20px;">⏳</div>';
-  db.ref('users').once('value', snap => {
-    const data = snap.val()||{};
-    let arr = Object.entries(data).map(([name,d]) => ({
-      name, wins: d.totalWins||0, wager: d.totalWager||0,
-      games: d['stats.gamesPlayed']||d.stats?.gamesPlayed||0,
-      bigwin: d.stats?.biggestWin||0, avatar: d.avatar,
-      winRate: d.totalWins&&d.totalWager ? ((d.totalWins/d.totalWager)*100).toFixed(1) : '0'
-    })).filter(u=>u.wager>1000 && u.name!==currentUser).sort((a,b)=>b.wins-a.wins).slice(0,15);
-
-    if(!arr.length) { el.innerHTML='<div style="text-align:center;color:var(--sub);padding:30px;">Немає гравців</div>'; return; }
-    el.innerHTML = arr.map((u,i) => {
-      const av = u.avatar&&u.avatar.length>20 ? `<img src="${u.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>`;
-      const isFollowing = ctFollowing[u.name];
-      return `<div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:700;color:var(--sub);min-width:24px;">${i+1}.</div>
-          ${av}
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:700;">${u.name}</div>
-            <div style="font-size:11px;color:var(--sub);">Виграли: <b style="color:var(--green);">₴${formatNumber(u.wins)}</b> · ROI: <b style="color:var(--accent);">${u.winRate}%</b></div>
-          </div>
-          <button onclick="toggleFollow('${u.name}')" id="ct-follow-${u.name}" style="padding:8px 12px;background:${isFollowing?'rgba(240,64,96,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isFollowing?'rgba(240,64,96,.4)':'rgba(61,214,140,.4)'};border-radius:10px;color:${isFollowing?'var(--red)':'var(--green)'};font-size:12px;font-weight:700;cursor:pointer;">
-            ${isFollowing?'❌ Відписатись':'👁️ Слідкувати'}
-          </button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--input);border-radius:10px;padding:8px;">
-          <div style="text-align:center;"><div style="font-size:11px;color:var(--sub);">Ставки</div><div style="font-size:12px;font-weight:700;">₴${formatNumber(u.wager)}</div></div>
-          <div style="text-align:center;"><div style="font-size:11px;color:var(--sub);">Найбільший</div><div style="font-size:12px;font-weight:700;">₴${formatNumber(u.bigwin)}</div></div>
-          <div style="text-align:center;"><div style="font-size:11px;color:var(--sub);">ROI</div><div style="font-size:12px;font-weight:700;color:var(--accent);">${u.winRate}%</div></div>
-        </div>
-      </div>`;
-    }).join('');
-  });
-}
-
-function toggleFollow(name) {
-  if(ctFollowing[name]) {
-    delete ctFollowing[name];
-    notify(`👁️ Відписався від ${name}`,'info');
-  } else {
-    ctFollowing[name] = true;
-    notify(`✅ Слідкуєш за ${name}! Ставки будуть копіюватись.`,'success');
-  }
-  const btn = document.getElementById('ct-follow-'+name);
-  if(btn) { btn.style.background = ctFollowing[name]?'rgba(240,64,96,.15)':'rgba(61,214,140,.15)'; btn.textContent = ctFollowing[name]?'❌ Відписатись':'👁️ Слідкувати'; }
-}
-
-function loadCtFollow() {
-  const el = document.getElementById('ctFollowList'); if(!el) return;
-  if(!Object.keys(ctFollowing).length) { el.innerHTML='<div style="text-align:center;color:var(--sub);padding:20px;font-size:13px;">Ти ще нікого не копіюєш.<br>Перейди на вкладку ⭐ Топ і обери гравців.</div>'; return; }
-  el.innerHTML = Object.keys(ctFollowing).map(name => `
-    <div style="background:var(--box);border:1px solid rgba(61,214,140,.2);border-radius:14px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:16px;">👁️</div><div style="font-size:14px;font-weight:700;">${name}</div></div>
-      <button onclick="toggleFollow('${name}');loadCtFollow();" style="padding:6px 12px;background:rgba(240,64,96,.15);border:1px solid rgba(240,64,96,.4);border-radius:10px;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;">❌</button>
-    </div>`).join('');
-}
-
-function ctStartLiveFeed() {
-  const el = document.getElementById('ctLiveFeed'); if(!el) return;
-  if(ctLiveListener) db.ref('live_bets').off();
-  el.innerHTML = '';
-  ctLiveListener = db.ref('live_bets').limitToLast(20).on('child_added', snap => {
-    const b = snap.val(); if(!b) return;
-    const isFollowed = ctFollowing[b.user];
-    const row = document.createElement('div');
-    row.style.cssText = `padding:10px 12px;background:${isFollowed?'rgba(212,175,55,.08)':'var(--box)'};border:1px solid ${isFollowed?'rgba(212,175,55,.3)':'var(--border)'};border-radius:12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;`;
-    row.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:18px;">${b.gameEmoji||'🎰'}</div>
-        <div><div style="font-size:13px;font-weight:700;">${escapeHtml(b.user)}${isFollowed?' 👁️':''}</div><div style="font-size:11px;color:var(--sub);">${escapeHtml(b.game||'Гра')} · ${escapeHtml(b.detail||'')}</div></div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:13px;font-weight:700;color:var(--accent);">₴${formatNumber(b.amount)}</div>
-        ${isFollowed?`<button onclick="copyBet('${b.user}',${b.amount},'${b.game}','${b.detail||''}')" style="font-size:10px;padding:4px 8px;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);border-radius:8px;color:var(--accent);cursor:pointer;margin-top:2px;">📋 Копіювати</button>`:''}
-      </div>`;
-    el.insertBefore(row, el.firstChild);
-    if(el.children.length > 30) el.removeChild(el.lastChild);
-  });
-}
-
-function copyBet(fromUser, amount, game, detail) {
-  const maxBet = parseFloat(document.getElementById('ctMaxBet').value)||amount;
-  const pct = (parseFloat(document.getElementById('ctPct').value)||100)/100;
-  const myBet = Math.min(Math.floor(amount*pct), maxBet);
-  if((userData.balance||0) < myBet) return notify('Недостатньо коштів','error');
-  notify(`📋 Копіюю ставку ${fromUser}: ₴${formatNumber(myBet)} у ${game}`,'info');
-  // Для рулетки — копіюємо колір, для краша — каш-аут
-}
-
 // Публікуємо ставки в live_bets для Copy Trade
 function publishLiveBet(game, emoji, amount, detail) {
   if(!currentUser) return;
@@ -14288,7 +13595,6 @@ function playLimbo() {
           playSound('loss');
           if(msgEl) msgEl.innerHTML = `<span style="color:var(--red);">❌ Результат ×${finalVal} < ціль ×${target} · -₴${formatNumber(bet)}</span>`;
           addToHistory(`Limbo ×${target}: -${bet}`);
-          tryClaimInsurance(bet);
         }
         // Add to history strip
         const hist = document.getElementById('limboHistory');
@@ -16140,6 +15446,7 @@ function addBpXP(amount) {
 
 function buyVipBattlePass() {
   const cost = 500; // slotiky
+  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;
@@ -16626,31 +15933,6 @@ function renderTxItem(tx) {
     <div class="bank-tx-amount ${tx.dir==='in'?'plus':'minus'}">${sign}${formatNumber(tx.amount)} ₴</div>
   </div>`;
 }
-// ── BANK TAB ──
-function initBankTab() {
-  if(!userData || !currentUser) return;
-  const greet = document.getElementById('bankGreeting');
-  const hour  = new Date().getHours();
-  const time  = hour < 12 ? 'Доброго ранку' : hour < 18 ? 'Добрий день' : 'Добрий вечір';
-  if(greet) greet.textContent = `${time}, ${currentUser}!`;
-
-  const totalBal = document.getElementById('bankTotalBalance');
-  const cardBal  = document.getElementById('bankCardBal');
-  const casBal   = document.getElementById('bankCasinoBal');
-  const cbAmt    = document.getElementById('bankCashbackAmt');
-  const slot     = document.getElementById('bankSlotiky');
-
-  const bal = userData.balance || 0;
-  if(totalBal) totalBal.textContent = formatNumber(bal) + ' ₴';
-  if(cardBal)  cardBal.textContent  = formatNumber(bal) + ' ₴';
-  if(casBal)   casBal.textContent   = formatNumber(bal) + ' ₴';
-  if(cbAmt)    cbAmt.textContent    = formatNumber(userData.cashbackPending||0) + ' ₴';
-  if(slot)     slot.textContent     = (userData.slotiky||0);
-
-  renderBankTransactionList('all');
-  renderBankAxiomBanner();
-}
-
 let bankTxFilter = 'all';
 function filterBankTx(filter, btn) {
   bankTxFilter = filter;
@@ -16970,8 +16252,6 @@ function triggerWinEffect(amount) {
 function triggerWinReaction(amount, gameName) {
   if(amount < 500) return;
   triggerWinEffect(amount);
-  // Auto-save hook
-  if(amount > 0) applyAutoSaveOnWin(amount);
   // Jackpot contribution
   if(amount > 0) db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.floor(amount*0.001)));
   // Share button on big wins
@@ -18107,7 +17387,6 @@ function pickDragonCell(row, col) {
     document.getElementById('dragonCashoutBtn').classList.add('hidden');
     document.getElementById('dragonSetup').classList.remove('hidden');
     notify('🐉 Дракон! Програш!', 'error');
-    tryClaimInsurance(dragonState.bet);
     checkAchievements('game', null);
   } else {
     // Safe
@@ -18161,7 +17440,7 @@ function shootPenalty(zone) {
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
     userData.balance = (userData.balance||0) + payout;
     updateUI(); triggerWinReaction(payout,'Penalty Kick');
-  } else tryClaimInsurance(bet);
+  }
   addToHistory(`⚽ Penalty: ${win?'+₴'+formatNumber(payout):'Промах'}`);
   const log = document.getElementById('penaltyLog');
   if(log) log.innerHTML = `<div class="mono-log-item ${win?'success':'error'}">${win?'⚽ ГОЛ! +₴'+formatNumber(payout):'🧤 Заблоковано — ₴'+formatNumber(bet)}</div>` + log.innerHTML;
@@ -18203,7 +17482,7 @@ function throwBowl() {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
       userData.balance=(userData.balance||0)+payout; updateUI();
       if(strike) triggerWinReaction(payout,'Bowling');
-    } else tryClaimInsurance(bet);
+    }
     addToHistory(`🎳 Bowling: ${knocked}/10 кеглів → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}`);
     const log = document.getElementById('bowlingLog');
     if(log) log.innerHTML = `<div class="mono-log-item ${payout>0?'success':'error'}">${label} → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}</div>` + log.innerHTML;
@@ -18243,7 +17522,7 @@ function shootArchery() {
     if(win) {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
       userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Archery');
-    } else tryClaimInsurance(bet);
+    }
     addToHistory(`🎯 Archery: ${win?'+₴'+formatNumber(payout):'Промах'}`);
     const log = document.getElementById('archeryLog');
     if(log) log.innerHTML = `<div class="mono-log-item ${win?'success':'error'}">${win?'🎯 +₴'+formatNumber(payout):'💨 Промах -₴'+formatNumber(bet)}</div>` + log.innerHTML;
@@ -18295,7 +17574,7 @@ function rollSicBo() {
     if(win) {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
       userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Sic Bo');
-    } else tryClaimInsurance(bet);
+    }
     addToHistory(`🎲 Sic Bo: ${win?'+₴'+formatNumber(payout):'−₴'+formatNumber(bet)}`);
     const log=document.getElementById('sicboLog');
     if(log) log.innerHTML=`<div class="mono-log-item ${win?'success':'error'}">${label} → ${win?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}</div>`+log.innerHTML;
@@ -18334,7 +17613,7 @@ function playCardWar() {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
       userData.balance=(userData.balance||0)+payout; updateUI();
       if(p.rank>d.rank) triggerWinReaction(payout,'Card War');
-    } else tryClaimInsurance(bet);
+    }
     addToHistory(`⚔️ Card War: ${cardStr(p)} vs ${cardStr(d)} → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}`);
     const log=document.getElementById('cwLog');
     if(log) log.innerHTML=`<div class="mono-log-item ${p.rank>=d.rank?'success':'error'}">${cardStr(p)} vs ${cardStr(d)} — ${label}</div>`+log.innerHTML;
@@ -18388,7 +17667,6 @@ function missedDuck() {
   document.getElementById('duckArea').innerHTML='<div style="font-size:48px;text-align:center;width:100%;">🦆💨</div>';
   document.getElementById('duckResult').textContent='Пропустив! Гра закінчена!';
   document.getElementById('duckResult').style.color='#ff6b6b';
-  tryClaimInsurance(duckState.bet);
   addToHistory(`🦆 Duck Shoot: Програш на ${duckState.duckIndex}/${duckState.totalDucks}`);
   document.getElementById('duckBtn').textContent='🦆 ПОЧАТИ ЗНОВУ';
   document.getElementById('duckBtn').onclick=startDuckShoot;
@@ -18529,47 +17807,6 @@ function initWatchMode() {
     feedEl.insertBefore(div,feedEl.firstChild);
     if(feedEl.children.length>20) feedEl.removeChild(feedEl.lastChild);
   });
-}
-
-// ══════════════════════════════════════════════════════
-// 🏦 AUTO-SAVE SYSTEM
-// ══════════════════════════════════════════════════════
-let autoSavePct = 5;
-function openAutoSaveModal() {
-  openTabModal('autoSaveModal');
-  const saved=userData.autoSaveBalance||0;
-  document.getElementById('autoSaveBalance').textContent='₴'+formatNumber(saved);
-  const pct=userData.autoSavePct||5;
-  autoSavePct=pct;
-  document.querySelectorAll('.as-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('as-'+pct)?.classList.add('active');
-}
-function setAutoSave(pct) {
-  autoSavePct=pct;
-  document.querySelectorAll('[id^="as-"]').forEach(b=>b.classList.remove('active'));
-  document.getElementById('as-'+pct)?.classList.add('active');
-  db.ref('users/'+currentUser+'/autoSavePct').set(pct);
-  userData.autoSavePct=pct;
-  notify(`💾 Автозбереження: ${pct}% від виграшів`,'success');
-}
-function applyAutoSaveOnWin(winAmount) {
-  const pct=userData.autoSavePct||0;
-  if(!pct || winAmount<=0) return;
-  const saveAmt=Math.floor(winAmount*pct/100);
-  if(saveAmt<1) return;
-  db.ref('users/'+currentUser+'/autoSaveBalance').set(firebase.database.ServerValue.increment(saveAmt));
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-saveAmt));
-  userData.autoSaveBalance=(userData.autoSaveBalance||0)+saveAmt;
-  userData.balance-=saveAmt;
-}
-function withdrawAutoSave() {
-  const amt=userData.autoSaveBalance||0;
-  if(amt<1) return notify('Рахунок заощаджень порожній','error');
-  db.ref('users/'+currentUser+'/autoSaveBalance').set(0);
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(amt));
-  userData.autoSaveBalance=0; userData.balance+=amt; updateUI();
-  notify('💸 Виведено ₴'+formatNumber(amt)+' із заощаджень','success');
-  closeTabModal('autoSaveModal');
 }
 
 // ══════════════════════════════════════════════════════
@@ -20231,7 +19468,6 @@ function chessHandleGameEnd(status) {
     } else {
       trackLbStat('profit', -chessGame.bet);
       updateStreak(false);
-      tryClaimInsurance(chessGame.bet);
     }
     recordBalanceHistory();
     addToHistory('Шахи vs AI: ' + (isDraw ? 'нічия' : playerWon ? '+'+(Math.floor(chessGame.bet*(CHESS_AI_PAYOUT[chessGame.aiDifficulty]||2))-chessGame.bet) : '-'+chessGame.bet));

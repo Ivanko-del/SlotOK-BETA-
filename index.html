@@ -201,7 +201,7 @@
             </div>
 
             <!-- Слайд 7: Кейси -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,#1a0010,#330020,#1a0010);border:1.5px solid rgba(255,105,180,.4);" onclick="openCaseOpeningScreen()">
+            <div class="banner-slide" style="background:linear-gradient(135deg,#1a0010,#330020,#1a0010);border:1.5px solid rgba(255,105,180,.4);" onclick="switchTab('lootboxes')">
               <div class="banner-deco">📦</div>
               <div class="banner-inner">
                 <div>
@@ -1419,92 +1419,6 @@
       </div><!-- /cashier-panel-markets -->
     </div>
 
-    <!-- ╔══════════════════════════════════════════╗ -->
-    <!-- ║           BANK TAB (tab-bank)            ║ -->
-    <!-- ╚══════════════════════════════════════════╝ -->
-    <div id="tab-bank" class="screen hidden" style="padding:0;background:var(--bg);min-height:100vh;">
-
-      <!-- Bank header -->
-      <div style="background:linear-gradient(135deg,#0a1400,#1a2e00,#2d4a00);padding:20px 15px 60px;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2220%22 cy=%2220%22 r=%2240%22 fill=%22rgba(255,255,255,0.02)%22/><circle cx=%2280%22 cy=%2280%22 r=%2260%22 fill=%22rgba(255,255,255,0.01)%22/></svg>');"></div>
-        <div style="position:relative;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase;">🏦 SlotOK Bank</div>
-            <div style="font-size:22px;font-weight:900;color:#fff;margin-top:2px;" id="bankGreeting">Привіт!</div>
-          </div>
-          <div onclick="switchTab('cashier')" style="background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 14px;font-size:12px;color:#fff;cursor:pointer;">💳 Картка</div>
-        </div>
-        <!-- Balance card -->
-        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:18px;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Загальний баланс</div>
-          <div style="font-size:34px;font-weight:900;color:#fff;" id="bankTotalBalance">0 ₴</div>
-          <div style="display:flex;gap:20px;margin-top:8px;font-size:11px;color:rgba(255,255,255,0.5);">
-            <span>💳 На картці: <span id="bankCardBal" style="color:#4cd964;">0 ₴</span></span>
-            <span>🎰 Казино: <span id="bankCasinoBal" style="color:var(--accent);">0 ₴</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick actions row -->
-      <div style="background:var(--bg);border-radius:24px 24px 0 0;margin-top:-24px;padding:20px 15px 0;position:relative;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-          <div onclick="bankAction('topup')" style="text-align:center;cursor:pointer;flex:1;">
-            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a4020,#27ae60);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(39,174,96,0.4);">💳</div>
-            <div style="font-size:10px;color:#777;">Поповнити</div>
-          </div>
-          <div onclick="bankAction('withdraw')" style="text-align:center;cursor:pointer;flex:1;">
-            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a05,#cc4400);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(204,68,0,0.4);">💸</div>
-            <div style="font-size:10px;color:#777;">Вивід</div>
-          </div>
-          <div onclick="bankAction('transfer')" style="text-align:center;cursor:pointer;flex:1;">
-            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#0a0a2e,#2244aa);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(34,68,170,0.4);">↗️</div>
-            <div style="font-size:10px;color:#777;">Переказ</div>
-          </div>
-          <div onclick="bankAction('buySlotyky')" style="text-align:center;cursor:pointer;flex:1;">
-            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a2e,#6a20c0);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(106,32,192,0.4);">🪙</div>
-            <div style="font-size:10px;color:#777;">Слотіки</div>
-          </div>
-          <div onclick="bankAction('casino')" style="text-align:center;cursor:pointer;flex:1;">
-            <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a0a00,var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 6px;box-shadow:0 4px 15px rgba(212,175,55,0.3);">🎰</div>
-            <div style="font-size:10px;color:#777;">Казино</div>
-          </div>
-        </div>
-
-        <!-- Cashback & Bonuses row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-          <div onclick="switchCashierTabAndGo('cashback')" style="background:linear-gradient(135deg,#0a1a0a,#111);border:1px solid #1a3a1a;border-radius:14px;padding:14px;cursor:pointer;">
-            <div style="font-size:18px;margin-bottom:4px;">💰</div>
-            <div style="font-size:11px;color:#3a7a3a;">Накопичений кешбек</div>
-            <div style="font-size:18px;font-weight:bold;color:var(--green);margin-top:3px;" id="bankCashbackAmt">0 ₴</div>
-          </div>
-          <div onclick="switchTab('slotiky')" style="background:linear-gradient(135deg,#0a0a1a,#111);border:1px solid #1a1a3a;border-radius:14px;padding:14px;cursor:pointer;">
-            <div style="font-size:18px;margin-bottom:4px;">🪙</div>
-            <div style="font-size:11px;color:#3a3a7a;">Слотіки</div>
-            <div style="font-size:18px;font-weight:bold;color:#c9a0ff;margin-top:3px;" id="bankSlotiky">0</div>
-          </div>
-        </div>
-
-        <!-- Axiom Bank Banner -->
-        <div id="bankAxiomBanner" style="margin-bottom:16px;"></div>
-
-        <!-- Transactions -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:80px;">
-          <div style="padding:14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:13px;font-weight:bold;">📋 Виписка по рахунку</div>
-            <div style="display:flex;gap:6px;">
-              <button onclick="filterBankTx('all',this)" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:bold;cursor:pointer;">Всі</button>
-              <button onclick="filterBankTx('in',this)" style="background:var(--input);color:#aaa;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;">Надходження</button>
-              <button onclick="filterBankTx('out',this)" style="background:var(--input);color:#aaa;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;">Витрати</button>
-            </div>
-          </div>
-          <div id="bankTransactionList" style="max-height:400px;overflow-y:auto;">
-            <div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /tab-bank -->
-
     <!-- TOWER CLIMB -->
     <div id="tab-tower" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
@@ -1896,7 +1810,6 @@
       <!-- ── ⚔️ PvP / КОНКУРСИ ── -->
       <div style="font-size:10px;color:#ff6b6b;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">⚔️ PvP та Конкурси</div>
       <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('duels')" style="border-color:#ff6b6b;color:#ff6b6b;">⚔️ Дуелі</button>
         <button class="btn-outline" onclick="switchTab('tournaments')">🏆 Турніри</button>
         <button class="btn-outline" onclick="switchTab('leaderboard')">📊 Рейтинги (День/Тиждень/Місяць)</button>
         <button class="btn-outline" onclick="switchTab('referrals')">👥 Реферали</button>
@@ -1905,8 +1818,6 @@
       <!-- ── 🏆 ПРОГРЕС ── -->
       <div style="font-size:10px;color:#d4af37;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">🏆 Прогрес та Нагороди</div>
       <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('vip')" style="border-color:#d4af37;color:#d4af37;">👑 VIP Статус</button>
-        <button class="btn-outline" onclick="switchTab('battlepass')" style="border-color:#5a20c0;color:#c9a0ff;">🎫 Battle Pass</button>
         <button class="btn-outline" onclick="switchTab('affiliate')" style="border-color:var(--accent);color:var(--accent);">🤝 Афілейт</button>
         <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
         <button class="btn-outline" onclick="switchTab('seasons')" style="border-color:#5c6ef8;color:#7c8eff;">🌟 Сезони</button>
@@ -1914,23 +1825,15 @@
         <button class="btn-outline" onclick="switchTab('halloffame')" style="border-color:#d4af37;color:#d4af37;">🥇 Зал Слави</button>
         <button class="btn-outline" onclick="switchTab('quests')">📋 Завдання <span id="questsBadge" class="tab-badge hidden">!</span></button>
         <button class="btn-outline" onclick="switchTab('weekly')">📅 Тижневі місії</button>
-        <button class="btn-outline" onclick="switchTab('stats')">📊 Моя статистика</button>
       </div>
+      <div style="font-size:10px;color:#666;padding:0 4px 8px;">VIP, Battle Pass і статистику дивись на Головній — там вони вже під рукою.</div>
 
       <!-- ── 💰 ФІНАНСИ ── -->
       <div style="font-size:10px;color:#3dd68c;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">💰 Фінансові інструменти</div>
       <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('bank')" style="border-color:#27ae60;color:#4cd964;">🏦 SlotOK Bank</button>
-        <button class="btn-outline" onclick="switchTab('autobet')" style="border-color:#3dd68c;color:#3dd68c;">🤖 Автоставки</button>
-        <button class="btn-outline" onclick="switchTab('insurance')" style="border-color:#00b4d8;color:#00b4d8;">🛡️ Страховка ставки</button>
-        <button class="btn-outline" onclick="switchTab('copytrade')" style="border-color:#c9a0ff;color:#c9a0ff;">👁️ Copy Trade</button>
         <button class="btn-outline" onclick="switchTab('lottery')" style="border-color:#d4af37;color:#d4af37;">🎟️ Лотерея</button>
         <button class="btn-outline" onclick="switchTab('investpool')" style="border-color:#3dd68c;color:#3dd68c;">📈 Інвест-Пул</button>
-        <button class="btn-outline" onclick="openAutoSaveModal()">🏦 Автозбереження</button>
         <button class="btn-outline" onclick="openCryptoSimulator()" style="border-color:#f0c040;color:#f0c040;">📈 Крипто-симулятор</button>
-        <button class="btn-outline" onclick="openP2PLoanModal()" style="border-color:#c9a0ff;color:#c9a0ff;">💸 P2P Позики</button>
-        <button class="btn-outline" onclick="openSessionLimitsModal()" style="border-color:#f39c12;color:#f39c12;">⏰ Сесійні ліміти</button>
-        <button class="btn-outline" onclick="setBreakReminder(30)" style="border-color:#ff9500;color:#ff9500;">⏸️ Нагадування кожні 30хв</button>
       </div>
 
       <!-- ── 🎁 БОНУСИ ── -->
@@ -1941,7 +1844,7 @@
         <button class="btn-outline" onclick="switchTab('hourly')">⏰ Погодинний бонус</button>
         <button class="btn-outline" onclick="switchTab('lootboxes')">📦 Лут-Бокси</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
-        <button class="btn-outline" onclick="openCaseOpeningScreen()" style="border-color:#d4af37;color:#d4af37;">📦 Відкриття кейсів</button>
+        <button class="btn-outline" onclick="switchTab('lootboxes')" style="border-color:#d4af37;color:#d4af37;">📦 Відкриття кейсів</button>
         <button class="btn-outline" onclick="openUpgradeSystem()" style="border-color:#ff9500;color:#ff9500;">⬆️ Upgrade предметів</button>
         <button class="btn-outline" onclick="openCustomTagShop()" style="border-color:#d4af37;color:#d4af37;">🏷️ Магазин тегів</button>
         <button class="btn-outline" onclick="openProfileEffectShop()" style="border-color:#c9a0ff;color:#c9a0ff;">🎭 Ефекти профілю</button>
@@ -2467,11 +2370,9 @@
         <div style="font-size:10px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">🔐 Безпека та акаунт</div>
         <button onclick="openChangePasswordModal()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🔑 Змінити пароль</button>
         <button onclick="showSecurityLog()" style="width:100%;background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:11px;color:#e74c3c;font-size:13px;cursor:pointer;margin-top:8px;">📋 Журнал безпеки</button>
-        <button onclick="openSessionLimitsModal()" style="width:100%;background:rgba(243,156,18,.06);border:1px solid rgba(243,156,18,.2);border-radius:12px;padding:11px;color:#f39c12;font-size:13px;cursor:pointer;margin-top:8px;">⏰ Сесійні ліміти</button>
 
         <div style="font-size:10px;color:#3dd68c;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">💰 Фінанси</div>
         <button onclick="openCryptoSimulator()" style="width:100%;background:rgba(255,165,0,.06);border:1px solid rgba(255,165,0,.2);border-radius:12px;padding:11px;color:#f0c040;font-size:13px;cursor:pointer;margin-top:8px;">📈 Крипто-симулятор</button>
-        <button onclick="openP2PLoanModal()" style="width:100%;background:rgba(201,160,255,.06);border:1px solid rgba(201,160,255,.2);border-radius:12px;padding:11px;color:#c9a0ff;font-size:13px;cursor:pointer;margin-top:8px;">💸 P2P Позики</button>
         <button onclick="exportHistoryCSV()" style="width:100%;background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.2);border-radius:12px;padding:11px;color:#3dd68c;font-size:13px;cursor:pointer;margin-top:8px;">📥 Експорт історії CSV</button>
 
         <div style="font-size:10px;color:#c9a0ff;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">🎨 Персоналізація</div>
@@ -2963,7 +2864,6 @@
         <div class="admin-stat-grid" id="casinoStats">
           <div class="admin-stat"><div class="admin-stat-val" id="statTotalUsers">—</div><div class="admin-stat-label">Гравців</div></div>
           <div class="admin-stat"><div class="admin-stat-val" id="statTotalBalance">—</div><div class="admin-stat-label">Грошей в грі</div></div>
-          <div class="admin-stat"><div class="admin-stat-val" id="statActiveDuels">—</div><div class="admin-stat-label">Дуелей</div></div>
           <div class="admin-stat"><div class="admin-stat-val" id="statPendingWithdraws">—</div><div class="admin-stat-label">Виводів</div></div>
         </div>
         <button class="btn-outline" style="font-size:13px;" onclick="loadAdminStats()">🔄 Оновити статистику</button>
@@ -3491,21 +3391,6 @@
     <!-- ЧАТ ЛОБІ -->
     <!-- chat moved to home sub-tab -->
 
-    <!-- ДУЕЛІ -->
-    <div id="tab-duels" class="screen hidden">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('more')">⬅ Назад</button><h2 style="margin:0;color:var(--accent);">⚔️ Дуелі</h2></div>
-      <div class="box">
-        <div style="color:#aaa;font-size:13px;margin-bottom:10px;">Виклич гравця — переможець забирає все!</div>
-        <input id="duelTarget" placeholder="Нік суперника">
-        <input id="duelAmount" type="number" placeholder="Ставка (₴)">
-        <button class="btn-red" onclick="createDuel()">⚔️ КИНУТИ ВИКЛИК</button>
-      </div>
-      <div class="section-header">Активні дуелі</div>
-      <div id="duelsList" style="color:#777;font-size:13px;">Немає активних дуелей</div>
-      <div class="section-header">Мої виклики</div>
-      <div id="myDuelsList" style="color:#777;font-size:13px;">Немає</div>
-    </div>
-
     <!-- ТУРНІРИ -->
     <!-- ТУРНІРИ — повна система -->
     <div id="tab-tournaments" class="screen hidden" style="padding:0;">
@@ -3724,17 +3609,6 @@
       <div style="display:flex;gap:8px;">
         <input id="admSupportReply" placeholder="Відповідь..." style="margin:0;" onkeydown="if(event.key==='Enter')sendAdminSupportReply()">
         <button class="btn-gold" style="width:auto;margin:0;" onclick="sendAdminSupportReply()">➤</button>
-      </div>
-    </div>
-
-    <!-- ДУЕЛЬ — вхідний виклик -->
-    <div id="duel-incoming-modal" class="full-modal hidden">
-      <div style="margin-top:30vh;text-align:center;">
-        <div style="font-size:60px;margin-bottom:15px;">⚔️</div>
-        <h2 style="color:var(--red);">Вас викликали на дуель!</h2>
-        <div id="duelIncomingInfo" style="color:#aaa;margin-bottom:25px;font-size:15px;line-height:1.6;"></div>
-        <button class="btn-green" style="margin-bottom:10px;" onclick="acceptDuel()">✅ ПРИЙНЯТИ</button>
-        <button class="btn-outline" onclick="declineDuel()">❌ Відхилити</button>
       </div>
     </div>
 
@@ -5104,9 +4978,9 @@
       <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
       <h2 style="margin:0;color:#ff69b4;">👁️ Watch Mode</h2>
     </div>
-    <div style="font-size:13px;color:#777;margin-bottom:14px;">Дивись як гравці грають в реальному часі з Live Feed</div>
+    <div style="font-size:13px;color:#777;margin-bottom:14px;">Живий зріз казино: хто зараз найактивніше грає і що виграють/програють інші гравці в реальному часі. Це не персональне спостереження за одним гравцем — тут немає кнопки "увімкнути", просто відкрий вкладку й дивись.</div>
     <!-- Online players to watch -->
-    <div style="font-size:11px;color:#ff69b4;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🟢 Зараз грають</div>
+    <div style="font-size:11px;color:#ff69b4;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🟢 Найактивніші зараз (за к-стю ставок)</div>
     <div id="watchPlayerList" style="margin-bottom:14px;"></div>
     <!-- Live game feed -->
     <div style="font-size:11px;color:#ff69b4;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">📡 Live стрічка ставок</div>
@@ -5132,151 +5006,6 @@
   <!-- ══════════════════════════════════════════════════════
        🪙 COINFLIP PVP
   ══════════════════════════════════════════════════════ -->
-  <!-- ══════════════════════════════════════════════════════
-       🤖 АВТОСТАВКИ
-  ══════════════════════════════════════════════════════ -->
-  <div id="tab-autobet" class="screen hidden" style="padding:16px;padding-bottom:100px;">
-    <button onclick="switchTab('more')" style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;margin-bottom:16px;">⬅ Назад</button>
-    <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent);margin-bottom:4px;">🤖 АВТОСТАВКИ</div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:18px;">Задай параметри — бот грає за тебе</div>
-    <div id="abStatusBox" style="background:var(--box);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px;text-align:center;">
-      <div id="abStatusIcon" style="font-size:40px;margin-bottom:8px;">⏸️</div>
-      <div id="abStatusText" style="font-size:14px;font-weight:700;color:var(--sub);">Автоставки зупинені</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;">
-        <div style="background:var(--input);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:18px;font-weight:900;" id="abRoundsDone">0</div><div style="font-size:10px;color:var(--sub);">Раундів</div></div>
-        <div style="background:var(--input);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:18px;font-weight:900;color:var(--green);" id="abTotalWon">₴0</div><div style="font-size:10px;color:var(--sub);">Виграно</div></div>
-        <div style="background:var(--input);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:18px;font-weight:900;color:var(--red);" id="abTotalLost">₴0</div><div style="font-size:10px;color:var(--sub);">Програно</div></div>
-      </div>
-    </div>
-    <div id="abSettingsBox" style="background:var(--box);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;transition:opacity .2s;">
-      <div class="section-header" style="margin-top:0;">🎮 Гра</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div id="abgame-roulette" onclick="selectAbGame('roulette',this)" style="background:linear-gradient(135deg,#3d0808,#7a1010);border:2px solid rgba(240,64,96,.5);border-radius:14px;padding:12px;text-align:center;cursor:pointer;"><div style="font-size:22px;">🎡</div><div style="font-size:12px;font-weight:700;color:#ff6060;margin-top:4px;">Рулетка</div></div>
-        <div id="abgame-crash" onclick="selectAbGame('crash',this)" style="background:var(--input);border:2px solid var(--border);border-radius:14px;padding:12px;text-align:center;cursor:pointer;"><div style="font-size:22px;">🚀</div><div style="font-size:12px;font-weight:700;color:var(--sub);margin-top:4px;">Краш</div></div>
-      </div>
-      <div id="abRouletteOpts">
-        <div class="section-header">🎨 Колір</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div id="abcolor-red"   onclick="selectAbColor('red',this)"   style="background:rgba(180,40,40,.15);border:2px solid rgba(240,64,96,.3);border-radius:12px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#ff6060;">🔴</div>
-          <div id="abcolor-black" onclick="selectAbColor('black',this)" style="background:var(--input);border:2px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#ccc;">⚫</div>
-          <div id="abcolor-green" onclick="selectAbColor('green',this)" style="background:rgba(40,160,60,.1);border:2px solid rgba(60,200,100,.2);border-radius:12px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--green);">🟢</div>
-        </div>
-      </div>
-      <div id="abCrashOpts" class="hidden">
-        <div class="section-header">📈 Каш-аут</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
-          <div onclick="setAbCashout(1.5)" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">×1.5</div>
-          <div onclick="setAbCashout(2.0)" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">×2.0</div>
-          <div onclick="setAbCashout(3.0)" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">×3.0</div>
-          <div onclick="setAbCashout(5.0)" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">×5.0</div>
-        </div>
-        <input type="number" id="abCashoutInput" placeholder="Свій множник" step="0.1" min="1.1" style="margin-bottom:8px;">
-      </div>
-      <div class="section-header">💵 Ставка</div>
-      <input type="number" id="abBetAmount" placeholder="Сума ставки..." min="10" style="margin-bottom:8px;">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;">
-        <div onclick="document.getElementById('abBetAmount').value=100"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴100</div>
-        <div onclick="document.getElementById('abBetAmount').value=500"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴500</div>
-        <div onclick="document.getElementById('abBetAmount').value=1000" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1к</div>
-        <div onclick="document.getElementById('abBetAmount').value=5000" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴5к</div>
-      </div>
-      <div class="section-header">🔢 Кількість раундів</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;">
-        <div onclick="document.getElementById('abRoundsInput').value=10"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">10</div>
-        <div onclick="document.getElementById('abRoundsInput').value=25"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">25</div>
-        <div onclick="document.getElementById('abRoundsInput').value=50"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">50</div>
-        <div onclick="document.getElementById('abRoundsInput').value=100" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">100</div>
-      </div>
-      <input type="number" id="abRoundsInput" placeholder="Кількість (0 = нескінченно)" min="0" style="margin-bottom:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div><div class="section-header" style="margin-top:0;">🛑 Стоп-програш</div><input type="number" id="abStopLoss" placeholder="Макс. програш (₴)"></div>
-        <div><div class="section-header" style="margin-top:0;">🎯 Стоп-виграш</div><input type="number" id="abStopWin" placeholder="Ціль (₴)"></div>
-      </div>
-      <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:14px;padding:12px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div><div style="font-size:13px;font-weight:700;color:var(--accent);">📐 Мартингейл</div><div style="font-size:11px;color:var(--sub);">При програші множити ставку</div></div>
-          <div id="abMartToggle" onclick="toggleAbMart()" style="width:42px;height:24px;background:var(--border);border-radius:12px;cursor:pointer;position:relative;transition:.2s;"><div id="abMartThumb" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#666;border-radius:50%;transition:.2s;"></div></div>
-        </div>
-        <div id="abMartOptions" class="hidden"><input type="number" id="abMartMult" placeholder="Множник (напр. 2.0)" step="0.1" min="1.1" max="10" value="2.0"><div style="font-size:10px;color:var(--sub);margin-top:4px;">⚠️ Встановіть стоп-програш!</div></div>
-      </div>
-    </div>
-    <button id="abStartBtn" onclick="startAutobet()" class="btn-gold" style="font-size:15px;font-weight:900;font-family:'Orbitron',monospace;padding:16px;letter-spacing:1px;">▶ ЗАПУСТИТИ АВТОСТАВКИ</button>
-    <button id="abStopBtn" onclick="stopAutobet()" class="hidden" style="width:100%;padding:16px;background:rgba(240,64,96,.15);border:1px solid rgba(240,64,96,.4);border-radius:14px;color:var(--red);font-size:15px;font-weight:900;font-family:'Orbitron',monospace;cursor:pointer;margin-top:10px;">⏹ ЗУПИНИТИ</button>
-    <div style="margin-top:18px;"><div class="section-header">📋 Лог</div><div id="abLog" style="max-height:300px;overflow-y:auto;scrollbar-width:thin;"><div style="text-align:center;color:var(--sub);font-size:12px;padding:16px;">Не запущено</div></div></div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════
-       🛡️ СТРАХОВКА
-  ══════════════════════════════════════════════════════ -->
-  <div id="tab-insurance" class="screen hidden" style="padding:16px;padding-bottom:100px;">
-    <button onclick="switchTab('more')" style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;margin-bottom:16px;">⬅ Назад</button>
-    <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent);margin-bottom:4px;">🛡️ СТРАХОВКА</div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:20px;">Захисти ставку — компенсація при програші</div>
-    <div style="background:linear-gradient(135deg,rgba(0,119,182,.1),rgba(0,180,216,.05));border:1px solid rgba(0,180,216,.25);border-radius:20px;padding:18px;margin-bottom:18px;">
-      <div style="font-size:14px;font-weight:800;color:#00b4d8;margin-bottom:12px;">Як це працює?</div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;background:rgba(0,180,216,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">1</div><div style="font-size:13px;">Купуєш страховку до гри (+15% від ставки)</div></div>
-        <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;background:rgba(0,180,216,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">2</div><div style="font-size:13px;">Граєш як зазвичай у будь-якій грі</div></div>
-        <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;background:rgba(61,214,140,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✓</div><div style="font-size:13px;color:var(--green);">Виграш — отримуєш повний виграш</div></div>
-        <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;background:rgba(240,64,96,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✗</div><div style="font-size:13px;color:var(--red);">Програш — повертається <b style="color:var(--accent);">50%</b> ставки</div></div>
-      </div>
-    </div>
-    <div style="background:var(--box);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;">
-      <div class="section-header" style="margin-top:0;">📦 Пакет</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
-        <div id="ins-basic" onclick="selectInsPackage('basic',this)" style="background:var(--input);border:2px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:14px;font-weight:700;">🥉 Базова</div><div style="font-size:12px;color:var(--sub);">1 ставка · 25%</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:var(--accent);">+10%</div></div></div>
-        <div id="ins-standard" onclick="selectInsPackage('standard',this)" style="background:linear-gradient(135deg,rgba(212,175,55,.08),transparent);border:2px solid rgba(212,175,55,.35);border-radius:16px;padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:14px;font-weight:700;color:var(--accent);">🥇 Стандарт <span style="background:var(--accent);color:#000;font-size:9px;padding:2px 6px;border-radius:6px;">POPULAR</span></div><div style="font-size:12px;color:var(--sub);">1 ставка · 50%</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:var(--accent);">+15%</div></div></div>
-        <div id="ins-premium" onclick="selectInsPackage('premium',this)" style="background:linear-gradient(135deg,rgba(138,43,226,.1),transparent);border:2px solid rgba(138,43,226,.3);border-radius:16px;padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:14px;font-weight:700;color:#c9a0ff;">💎 Преміум</div><div style="font-size:12px;color:var(--sub);">3 ставки · 75%</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:#c9a0ff;">+25%</div></div></div>
-      </div>
-      <div class="section-header">💵 Сума ставки</div>
-      <input type="number" id="insBetAmount" placeholder="Скільки будеш ставити?" oninput="updateInsCalc()">
-      <div id="insCalc" style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:14px;padding:14px;margin-top:10px;display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="text-align:center;"><div style="font-size:11px;color:var(--sub);">Вартість</div><div style="font-size:18px;font-weight:900;color:var(--accent);" id="insCostDisplay">₴0</div></div>
-          <div style="text-align:center;"><div style="font-size:11px;color:var(--sub);">Компенсація</div><div style="font-size:18px;font-weight:900;color:var(--green);" id="insCompDisplay">₴0</div></div>
-        </div>
-      </div>
-    </div>
-    <button onclick="buyInsurance()" class="btn-gold" style="font-size:15px;font-weight:900;font-family:'Orbitron',monospace;padding:16px;">🛡️ КУПИТИ СТРАХОВКУ</button>
-    <div id="insActiveBox" style="margin-top:16px;display:none;"><div class="section-header">✅ Активна</div><div id="insActiveList"></div></div>
-    <div style="margin-top:18px;"><div class="section-header">📋 Історія</div><div id="insHistory"><div style="text-align:center;color:var(--sub);font-size:12px;padding:12px;">Немає даних</div></div></div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════
-       👁️ COPY TRADE
-  ══════════════════════════════════════════════════════ -->
-  <div id="tab-copytrade" class="screen hidden" style="padding:16px;padding-bottom:100px;">
-    <button onclick="switchTab('more')" style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;margin-bottom:16px;">⬅ Назад</button>
-    <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent);margin-bottom:4px;">👁️ COPY TRADE</div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:20px;">Копіюй ставки топ-гравців</div>
-    <div style="display:flex;gap:4px;background:var(--box);border-radius:14px;padding:4px;margin-bottom:16px;border:1px solid var(--border);">
-      <div id="ct-tab-top"    onclick="switchCtTab('top')"    style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:rgba(212,175,55,.15);color:var(--accent);">⭐ Топ</div>
-      <div id="ct-tab-follow" onclick="switchCtTab('follow')" style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--sub);">👥 Мої</div>
-      <div id="ct-tab-live"   onclick="switchCtTab('live')"   style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--sub);">🔴 Live</div>
-    </div>
-    <div id="ct-panel-top"><div id="ctTopList"><div style="text-align:center;color:var(--sub);padding:30px;font-size:13px;">⏳ Завантаження...</div></div></div>
-    <div id="ct-panel-follow" class="hidden">
-      <div id="ctFollowList"><div style="text-align:center;color:var(--sub);padding:20px;font-size:13px;">Ти ще нікого не копіюєш</div></div>
-      <div style="margin-top:14px;"><div class="section-header">⚙️ Налаштування</div>
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;">
-        <div style="font-size:12px;color:var(--sub);margin-bottom:8px;">Макс. ставка за раунд</div>
-        <input type="number" id="ctMaxBet" placeholder="Ліміт (₴)" style="margin-bottom:10px;">
-        <div style="font-size:12px;color:var(--sub);margin-bottom:8px;">% від ставки гравця</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;">
-          <div onclick="document.getElementById('ctPct').value=25"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">25%</div>
-          <div onclick="document.getElementById('ctPct').value=50"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">50%</div>
-          <div onclick="document.getElementById('ctPct').value=75"  style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">75%</div>
-          <div onclick="document.getElementById('ctPct').value=100" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">100%</div>
-        </div>
-        <input type="number" id="ctPct" placeholder="%" min="1" max="500" value="100">
-      </div></div>
-    </div>
-    <div id="ct-panel-live" class="hidden">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><div style="width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse2 1s infinite;"></div><div style="font-size:12px;color:var(--red);font-weight:700;">LIVE</div></div>
-      <div id="ctLiveFeed" style="max-height:400px;overflow-y:auto;scrollbar-width:thin;"><div style="text-align:center;color:var(--sub);padding:20px;font-size:13px;">Завантаження...</div></div>
-    </div>
-  </div>
-
   <!-- ══════════════ COINFLIP ══════════════ -->
   <div id="tab-coinflip" class="screen hidden">
     <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
@@ -5464,29 +5193,6 @@
     <div style="font-size:11px;color:#444;text-align:center;margin-top:8px;line-height:1.7;">
       Переказ миттєвий · Без комісії<br>
       Кошти спільні між SlotOK та Аксіомою
-    </div>
-  </div>
-
-  <!-- ══ AUTO-SAVE MODAL ══ -->
-  <div id="autoSaveModal" class="full-modal hidden">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-      <button class="btn-outline" onclick="closeTabModal('autoSaveModal')" style="width:44px;padding:10px;">⬅</button>
-      <h2 style="margin:0;">🏦 Автозбереження</h2>
-    </div>
-    <div style="background:linear-gradient(135deg,#001a0a,#000d05);border:2px solid rgba(61,214,140,.3);border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;">
-      <div style="font-size:32px;font-weight:900;color:#3dd68c;" id="autoSaveBalance">₴0</div>
-      <div style="font-size:12px;color:#555;margin-top:4px;">Накоплено на рахунку заощаджень</div>
-    </div>
-    <div class="box">
-      <div style="font-size:11px;color:#3dd68c;font-weight:700;text-transform:uppercase;margin-bottom:8px;">⚙️ Відсоток автозбереження</div>
-      <div style="font-size:13px;color:#aaa;margin-bottom:10px;">Від кожного виграшу X% автоматично йде на рахунок заощаджень (не можна витратити в грі)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-        <button class="btn-outline" onclick="setAutoSave(0)" id="as-0" style="font-size:12px;">0%</button>
-        <button class="btn-outline as-btn active" onclick="setAutoSave(5)" id="as-5" style="font-size:12px;">5%</button>
-        <button class="btn-outline" onclick="setAutoSave(10)" id="as-10" style="font-size:12px;">10%</button>
-        <button class="btn-outline" onclick="setAutoSave(20)" id="as-20" style="font-size:12px;">20%</button>
-      </div>
-      <button class="btn-gold" onclick="withdrawAutoSave()">💸 Вивести заощадження</button>
     </div>
   </div>
 
