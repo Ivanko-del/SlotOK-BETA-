@@ -18326,7 +18326,7 @@ function renderCardPanel() {
     if(holderEl) holderEl.textContent = (currentUser || 'USER').toUpperCase();
     if(expiryEl) expiryEl.textContent = card.expiry || '01/28';
     if(sigEl)    sigEl.textContent    = (currentUser || 'USER').toUpperCase();
-    if(cardElRoot) cardElRoot.className = 'vcard vcard-skin-' + (card.skin || userData.pendingCardSkin || 'gold');
+    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (card.skin || userData.pendingCardSkin || 'gold'); applyCardPhotoBg(cardElRoot, card.skin, card.customPhotoUrl || userData.pendingCardPhotoUrl); }
 
   } else if(hasTempOnly) {
     // ═══ STATE 2: Temp Partner Card is the MAIN card ═══
@@ -18338,7 +18338,7 @@ function renderCardPanel() {
     if(expiryEl) expiryEl.textContent = new Date(tempCard.expiresAt).toLocaleDateString('uk-UA',{month:'2-digit',year:'2-digit'}).replace('.','/');
     if(sigEl)    sigEl.textContent    = (currentUser || 'USER').toUpperCase();
     // Respect chosen skin — same visual customization as a real card
-    if(cardElRoot) cardElRoot.className = 'vcard vcard-skin-' + (tempCard.skin || userData.pendingCardSkin || 'sapphire');
+    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (tempCard.skin || userData.pendingCardSkin || 'sapphire'); applyCardPhotoBg(cardElRoot, tempCard.skin, tempCard.customPhotoUrl || userData.pendingCardPhotoUrl); }
     // CVV for temp card
     var cvvFront = document.getElementById('vcardCvvDisplay');
     var cvvBack  = document.getElementById('vcardCvvBack');
@@ -18353,7 +18353,7 @@ function renderCardPanel() {
     if(holderEl) holderEl.textContent = (currentUser || 'USER').toUpperCase();
     if(expiryEl) expiryEl.textContent = '—/—';
     if(sigEl)    sigEl.textContent    = '—';
-    if(cardElRoot) cardElRoot.className = 'vcard vcard-skin-' + (userData.pendingCardSkin || 'gold');
+    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (userData.pendingCardSkin || 'gold'); applyCardPhotoBg(cardElRoot, userData.pendingCardSkin, userData.pendingCardPhotoUrl); }
   }
 
   // ── Below-card action block ──
@@ -18619,6 +18619,29 @@ function openCardColorPicker() {
     {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
     {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
     {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
+    // Меми (тягнуться напряму з i.imgflip.com)
+    {id:'meme-drake',            name:'Drake',           accent:'#fff', prev:"url('https://i.imgflip.com/30b1gx.jpg') center/cover"},
+    {id:'meme-distracted',       name:'Хлопець і дівчина', accent:'#fff', prev:"url('https://i.imgflip.com/1ur9b0.jpg') center/cover"},
+    {id:'meme-womancat',         name:'Жінка й кіт',     accent:'#fff', prev:"url('https://i.imgflip.com/345v97.jpg') center/cover"},
+    {id:'meme-twobuttons',       name:'Дві кнопки',      accent:'#fff', prev:"url('https://i.imgflip.com/1g8my4.jpg') center/cover"},
+    {id:'meme-changemymind',     name:'Переконай мене',  accent:'#fff', prev:"url('https://i.imgflip.com/24y43o.jpg') center/cover"},
+    {id:'meme-successkid',       name:'Success Kid',     accent:'#fff', prev:"url('https://i.imgflip.com/1bhk.jpg') center/cover"},
+    {id:'meme-doge',             name:'Doge',            accent:'#fff', prev:"url('https://i.imgflip.com/4t0m5.jpg') center/cover"},
+    {id:'meme-thisisfine',       name:'This is Fine',    accent:'#fff', prev:"url('https://i.imgflip.com/wxica.jpg') center/cover"},
+    {id:'meme-stonks',           name:'Stonks',          accent:'#fff', prev:"url('https://i.imgflip.com/3si4.jpg') center/cover"},
+    {id:'meme-rollsafe',         name:'Roll Safe',       accent:'#fff', prev:"url('https://i.imgflip.com/1h7in3.jpg') center/cover"},
+    {id:'meme-pikachu',          name:'Здивований Пікачу', accent:'#fff', prev:"url('https://i.imgflip.com/2kbn1e.jpg') center/cover"},
+    {id:'meme-disastergirl',     name:'Disaster Girl',   accent:'#fff', prev:"url('https://i.imgflip.com/23ls.jpg') center/cover"},
+    {id:'meme-grumpycat',        name:'Grumpy Cat',      accent:'#fff', prev:"url('https://i.imgflip.com/8p0a.jpg') center/cover"},
+    {id:'meme-expandingbrain',   name:'Галактичний мозок', accent:'#fff', prev:"url('https://i.imgflip.com/1jwhww.jpg') center/cover"},
+    {id:'meme-onedoesnotsimply', name:'One Does Not Simply', accent:'#fff', prev:"url('https://i.imgflip.com/1bij.jpg') center/cover"},
+    {id:'meme-ancientaliens',    name:'Древні прибульці', accent:'#fff', prev:"url('https://i.imgflip.com/26am.jpg') center/cover"},
+    {id:'meme-dicaprio',         name:'ДіКапріо',        accent:'#fff', prev:"url('https://i.imgflip.com/39t1o.jpg') center/cover"},
+    {id:'meme-pigeon',           name:'Це голуб?',       accent:'#fff', prev:"url('https://i.imgflip.com/1o00in.jpg') center/cover"},
+    {id:'meme-batman',           name:'Бетмен ляпас',    accent:'#fff', prev:"url('https://i.imgflip.com/9ehk.jpg') center/cover"},
+    {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
+    {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
+    {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
   ];
   var CATEGORIES = [
     { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
@@ -18627,6 +18650,7 @@ function openCardColorPicker() {
     { name:'🚀 Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
     { name:'🪨 Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
     { name:'🎉 Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
+    { name:'🎭 Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
@@ -18640,10 +18664,16 @@ function openCardColorPicker() {
       '<div style="font-size:10px;font-weight:700;margin-top:26px;color:' + s.accent + ';text-shadow:0 1px 3px rgba(0,0,0,.8);">' + s.name + '</div>' +
       '</div>';
   }
+  var uploadActive = current === 'custom-photo';
   var html = modalCloseBtn('cardskin') +
     '<div style="font-family:Orbitron,monospace;font-size:13px;color:#d4af37;margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
-    '<div style="font-size:11px;color:#555;margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + CATEGORIES.length + ' категоріях</div>' +
-    '<div style="max-height:64vh;overflow-y:auto;">' +
+    '<div style="font-size:11px;color:#555;margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
+    '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📷 Персональне</div>' +
+    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(212,175,55,.03));border:1.5px dashed rgba(212,175,55,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:#d4af37;margin-bottom:6px;">' +
+    (uploadActive ? '<div class="skin-swatch-check">✓</div>' : '') +
+    '<div style="font-size:20px;">📷</div><div style="font-size:11px;font-weight:700;">Завантажити своє фото</div>' +
+    '</div>' +
+    '<div style="max-height:60vh;overflow-y:auto;">' +
     CATEGORIES.map(function(cat) {
       return '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
@@ -18654,9 +18684,75 @@ function openCardColorPicker() {
   openModal('cardskin', html);
 }
 
+// Показує/прибирає особисте фото поверх скіна — inline style, бо це унікальні
+// дані користувача (не спільний CSS-клас, як решта скінів)
+function applyCardPhotoBg(el, skin, photoUrl) {
+  if(!el) return;
+  if(skin === 'custom-photo' && photoUrl) {
+    el.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url(' + photoUrl + ')';
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+  } else {
+    el.style.backgroundImage = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+  }
+}
+
+function uploadCustomCardPhoto() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = function() {
+    var file = input.files && input.files[0];
+    if(!file) return;
+    if(file.size > 8 * 1024 * 1024) return notify('Фото завелике (макс 8МБ)', 'error');
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        // Стискаємо до розумного розміру перед збереженням у Firebase
+        var maxW = 500;
+        var scale = Math.min(1, maxW / img.width);
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+        var cardEl = document.getElementById('vcardEl');
+        if(cardEl) { cardEl.className = 'vcard vcard-skin-custom-photo'; applyCardPhotoBg(cardEl, 'custom-photo', dataUrl); }
+
+        if(userData.virtualCard && userData.virtualCard.axiomLinked) {
+          userData.virtualCard.skin = 'custom-photo';
+          userData.virtualCard.customPhotoUrl = dataUrl;
+          db.ref('users/' + currentUser + '/virtualCard/skin').set('custom-photo');
+          db.ref('users/' + currentUser + '/virtualCard/customPhotoUrl').set(dataUrl);
+        } else if(userData.tempPartnerCard) {
+          userData.tempPartnerCard.skin = 'custom-photo';
+          userData.tempPartnerCard.customPhotoUrl = dataUrl;
+          db.ref('users/' + currentUser + '/tempPartnerCard/skin').set('custom-photo');
+          db.ref('users/' + currentUser + '/tempPartnerCard/customPhotoUrl').set(dataUrl);
+        } else {
+          userData.pendingCardSkin = 'custom-photo';
+          userData.pendingCardPhotoUrl = dataUrl;
+          db.ref('users/' + currentUser + '/pendingCardSkin').set('custom-photo');
+          db.ref('users/' + currentUser + '/pendingCardPhotoUrl').set(dataUrl);
+        }
+        notify('📷 Фото застосовано як скін картки!', 'success');
+        closeModal('cardskin');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
 function applyCardSkin(skinId) {
   var cardEl = document.getElementById('vcardEl');
-  if(cardEl) cardEl.className = 'vcard vcard-skin-' + skinId;
+  if(cardEl) { cardEl.className = 'vcard vcard-skin-' + skinId; applyCardPhotoBg(cardEl, skinId, null); }
   if(userData.virtualCard && userData.virtualCard.axiomLinked) {
     userData.virtualCard.skin = skinId;
     db.ref('users/' + currentUser + '/virtualCard/skin').set(skinId);

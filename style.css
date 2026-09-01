@@ -2507,6 +2507,48 @@
 .vcard-skin-minimal .vcard-chip { filter: brightness(.7); }
 
 /* ═══════════════════════════════════════════════════════
+   МЕМИ — картинки тягнуться напряму з i.imgflip.com (перевірені
+   робочі посилання), затемнення зверху тримає текст картки
+   читабельним поверх будь-якого зображення. Плюс "своє фото" —
+   рендериться окремо через applyCardSkin()/style.backgroundImage,
+   бо це унікальні дані користувача, а не спільний CSS-клас.
+═══════════════════════════════════════════════════════ */
+.vcard-skin-meme-drake .vcard-front            { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/30b1gx.jpg') center/cover; }
+.vcard-skin-meme-distracted .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1ur9b0.jpg') center/cover; }
+.vcard-skin-meme-womancat .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/345v97.jpg') center/cover; }
+.vcard-skin-meme-twobuttons .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1g8my4.jpg') center/cover; }
+.vcard-skin-meme-changemymind .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/24y43o.jpg') center/cover; }
+.vcard-skin-meme-successkid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bhk.jpg') center/cover; }
+.vcard-skin-meme-doge .vcard-front             { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4t0m5.jpg') center/cover; }
+.vcard-skin-meme-thisisfine .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/wxica.jpg') center/cover; }
+.vcard-skin-meme-stonks .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/3si4.jpg') center/cover; }
+.vcard-skin-meme-rollsafe .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1h7in3.jpg') center/cover; }
+.vcard-skin-meme-pikachu .vcard-front          { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2kbn1e.jpg') center/cover; }
+.vcard-skin-meme-disastergirl .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/23ls.jpg') center/cover; }
+.vcard-skin-meme-grumpycat .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/8p0a.jpg') center/cover; }
+.vcard-skin-meme-expandingbrain .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1jwhww.jpg') center/cover; }
+.vcard-skin-meme-onedoesnotsimply .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bij.jpg') center/cover; }
+.vcard-skin-meme-ancientaliens .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/26am.jpg') center/cover; }
+.vcard-skin-meme-dicaprio .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/39t1o.jpg') center/cover; }
+.vcard-skin-meme-pigeon .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1o00in.jpg') center/cover; }
+.vcard-skin-meme-batman .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/9ehk.jpg') center/cover; }
+.vcard-skin-meme-spongebob .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1otk96.jpg') center/cover; }
+.vcard-skin-meme-sadpablo .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1c1uej.jpg') center/cover; }
+.vcard-skin-meme-hidethepain .vcard-front      { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/gk5el.jpg') center/cover; }
+.vcard-skin-meme-drake .vcard-front, .vcard-skin-meme-distracted .vcard-front, .vcard-skin-meme-womancat .vcard-front,
+.vcard-skin-meme-twobuttons .vcard-front, .vcard-skin-meme-changemymind .vcard-front, .vcard-skin-meme-successkid .vcard-front,
+.vcard-skin-meme-doge .vcard-front, .vcard-skin-meme-thisisfine .vcard-front, .vcard-skin-meme-stonks .vcard-front,
+.vcard-skin-meme-rollsafe .vcard-front, .vcard-skin-meme-pikachu .vcard-front, .vcard-skin-meme-disastergirl .vcard-front,
+.vcard-skin-meme-grumpycat .vcard-front, .vcard-skin-meme-expandingbrain .vcard-front, .vcard-skin-meme-onedoesnotsimply .vcard-front,
+.vcard-skin-meme-ancientaliens .vcard-front, .vcard-skin-meme-dicaprio .vcard-front, .vcard-skin-meme-pigeon .vcard-front,
+.vcard-skin-meme-batman .vcard-front, .vcard-skin-meme-spongebob .vcard-front, .vcard-skin-meme-sadpablo .vcard-front,
+.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-custom-photo .vcard-front {
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 22px rgba(255,255,255,.1);
+}
+.vcard-skin-custom-photo .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), #1a1a1a center/cover; background-blend-mode: normal; }
+
+/* ═══════════════════════════════════════════════════════
    40 НОВИХ СКІНІВ КАРТКИ (27-66) — по категоріях, той самий
    паттерн: 4-стопний градієнт, що зациклюється, легка hologram-
    анімація зсуву, тематична обвідка/світіння.
