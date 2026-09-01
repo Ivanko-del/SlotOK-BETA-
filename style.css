@@ -1849,10 +1849,27 @@
 }
 .vcard-front::after {
   content: '';
-  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.16) 40%, transparent 55%);
-  background-size: 250% 250%;
-  animation: shimmerSweep 5s ease-in-out infinite;
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  background: linear-gradient(112deg, transparent 22%, rgba(255,255,255,.1) 40%, rgba(255,255,255,.65) 48%, rgba(210,225,255,.45) 50%, rgba(255,255,255,.65) 52%, rgba(255,255,255,.1) 60%, transparent 78%);
+  background-size: 280% 280%;
+  animation: shimmerSweep 3.2s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+/* Друга рухома "іскра" — блукає по картці незалежно від смуги-блиску вище,
+   щоб скін відчувався живим, а не просто пофарбованим прямокутником */
+.vcard-front::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  background: radial-gradient(circle 70px at 50% 50%, rgba(255,255,255,.55), transparent 70%);
+  animation: cardSparkleRoam 5.5s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes cardSparkleRoam {
+  0%   { background-position: 10% 20%; opacity: .25; }
+  25%  { opacity: .75; }
+  50%  { background-position: 85% 65%; opacity: .3; }
+  75%  { opacity: .7; }
+  100% { background-position: 10% 20%; opacity: .25; }
 }
 .vcard-wrap {
   width: 100%;
@@ -2153,8 +2170,10 @@
 /* 7. Marble — мармур */
 .vcard-skin-marble .vcard-front {
   background:
-    radial-gradient(ellipse at 20% 30%, rgba(255,255,255,.06) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.04) 0%, transparent 45%),
+    linear-gradient(35deg, transparent 46%, rgba(255,255,255,.18) 49%, rgba(255,255,255,.05) 51%, transparent 54%),
+    linear-gradient(-20deg, transparent 62%, rgba(255,255,255,.12) 65%, transparent 68%),
+    radial-gradient(ellipse at 20% 30%, rgba(255,255,255,.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.07) 0%, transparent 45%),
     linear-gradient(160deg, #1a1a22, #26262e, #1a1a22);
   border: 1px solid rgba(255,255,255,.15);
   box-shadow: 0 0 24px rgba(255,255,255,.05);
@@ -2421,13 +2440,15 @@
 /* 21. Leopard — леопардовий принт */
 .vcard-skin-leopard .vcard-front {
   background:
-    radial-gradient(ellipse 8px 6px at 15% 20%, rgba(30,15,0,.5) 40%, transparent 41%),
-    radial-gradient(ellipse 7px 5px at 45% 55%, rgba(30,15,0,.5) 40%, transparent 41%),
-    radial-gradient(ellipse 6px 8px at 75% 25%, rgba(30,15,0,.5) 40%, transparent 41%),
-    radial-gradient(ellipse 8px 6px at 25% 75%, rgba(30,15,0,.5) 40%, transparent 41%),
-    radial-gradient(ellipse 6px 6px at 85% 70%, rgba(30,15,0,.5) 40%, transparent 41%),
-    radial-gradient(ellipse 7px 5px at 60% 85%, rgba(30,15,0,.5) 40%, transparent 41%),
-    linear-gradient(150deg, #3a2410, #4a3018, #3a2410);
+    radial-gradient(ellipse 18px 14px at 15% 20%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 16px 12px at 45% 50%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 14px 18px at 78% 22%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 17px 13px at 22% 75%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 15px 15px at 85% 68%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 16px 12px at 58% 88%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 12px 10px at 62% 38%, transparent 55%, rgba(20,10,0,.8) 58%, transparent 72%),
+    radial-gradient(ellipse 13px 11px at 8% 55%, transparent 55%, rgba(20,10,0,.8) 58%, transparent 72%),
+    linear-gradient(150deg, #a86a2c, #c88838, #a86a2c);
   border: 1px solid rgba(200,150,80,.4);
   box-shadow: 0 0 24px rgba(150,100,40,.18);
 }
@@ -2528,12 +2549,43 @@
 .vcard-skin-quantum .vcard-front { background: linear-gradient(135deg,#000a1a,#0050a0,#002a5a,#000a1a); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(80,180,255,.4); box-shadow:0 0 26px rgba(80,180,255,.2); }
 
 /* ── Текстури (+6) ── */
-.vcard-skin-wood .vcard-front { background: linear-gradient(100deg,#1f1206,#3a2410,#2a1a0a,#1f1206,#3a2410); background-size:300% 300%; animation:hologram 6.8s ease infinite; border:1px solid rgba(160,110,60,.4); box-shadow:0 0 18px rgba(160,110,60,.12); }
-.vcard-skin-concrete .vcard-front { background: linear-gradient(135deg,#141414,#2e2e2e,#1c1c1c,#141414); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(160,160,160,.3); box-shadow:0 0 16px rgba(160,160,160,.1); }
+.vcard-skin-wood .vcard-front {
+  background:
+    repeating-linear-gradient(95deg, rgba(0,0,0,.14) 0, rgba(0,0,0,.14) 2px, transparent 2px, transparent 9px),
+    repeating-linear-gradient(95deg, rgba(255,200,140,.05) 0, rgba(255,200,140,.05) 1px, transparent 1px, transparent 14px),
+    linear-gradient(100deg,#1f1206,#3a2410,#2a1a0a,#1f1206,#3a2410);
+  background-size: 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.8s ease infinite;
+  border: 1px solid rgba(160,110,60,.4); box-shadow: 0 0 18px rgba(160,110,60,.12);
+}
+.vcard-skin-concrete .vcard-front {
+  background:
+    radial-gradient(circle at 12% 22%, rgba(0,0,0,.25) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 62% 14%, rgba(255,255,255,.08) 1px, transparent 1.1px),
+    radial-gradient(circle at 38% 68%, rgba(0,0,0,.22) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 84% 58%, rgba(255,255,255,.07) 1px, transparent 1.1px),
+    radial-gradient(circle at 22% 88%, rgba(0,0,0,.2) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 72% 82%, rgba(255,255,255,.06) 1px, transparent 1.1px),
+    linear-gradient(135deg,#141414,#2e2e2e,#1c1c1c,#141414);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.7s ease infinite;
+  border: 1px solid rgba(160,160,160,.3); box-shadow: 0 0 16px rgba(160,160,160,.1);
+}
 .vcard-skin-velvet .vcard-front { background: linear-gradient(135deg,#12000f,#3a0028,#20001a,#12000f); background-size:300% 300%; animation:hologram 7s ease infinite; border:1px solid rgba(160,20,120,.4); box-shadow:0 0 22px rgba(160,20,120,.16); }
 .vcard-skin-silk .vcard-front { background: linear-gradient(120deg,#1e1a24,#3a3244,#241f2c,#1e1a24); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(200,190,220,.3); box-shadow:0 0 18px rgba(200,190,220,.12); }
 .vcard-skin-brushedmetal .vcard-front { background: linear-gradient(95deg,#26262a,#3e3e44,#2a2a2e,#3e3e44,#26262a); background-size:300% 300%; animation:hologram 6.1s ease infinite; border:1px solid rgba(210,210,220,.35); box-shadow:0 0 18px rgba(210,210,220,.12); }
-.vcard-skin-camo .vcard-front { background: linear-gradient(120deg,#0f1a0a,#2a3318,#141f10,#0f1a0a); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(120,140,80,.35); box-shadow:0 0 16px rgba(120,140,80,.1); }
+.vcard-skin-camo .vcard-front {
+  background:
+    radial-gradient(ellipse 34px 22px at 18% 28%, rgba(10,20,5,.55) 55%, transparent 60%),
+    radial-gradient(ellipse 26px 30px at 55% 15%, rgba(60,70,30,.5) 55%, transparent 60%),
+    radial-gradient(ellipse 30px 20px at 78% 45%, rgba(10,20,5,.5) 55%, transparent 60%),
+    radial-gradient(ellipse 22px 26px at 30% 70%, rgba(60,70,30,.45) 55%, transparent 60%),
+    radial-gradient(ellipse 28px 24px at 68% 82%, rgba(10,20,5,.5) 55%, transparent 60%),
+    linear-gradient(120deg,#0f1a0a,#2a3318,#141f10,#0f1a0a);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.9s ease infinite;
+  border: 1px solid rgba(120,140,80,.35); box-shadow: 0 0 16px rgba(120,140,80,.1);
+}
 
 /* ── Особливі (+7) ── */
 .vcard-skin-halloween .vcard-front { background: linear-gradient(135deg,#0a0000,#3a1500,#150800,#0a0000); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(255,130,0,.4); box-shadow:0 0 24px rgba(255,130,0,.18); }
