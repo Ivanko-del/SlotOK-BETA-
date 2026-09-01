@@ -767,10 +767,15 @@ function spinSlots() {
     playSound('click');
     const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
     const sym = ["🍒", "🍋", "7️", "💎", "🔔", "🎰", "⭐", "🃏"];
+    reels.forEach(r => { if(r) r.classList.remove('landed'); if(r) r.classList.add('spinning'); });
     let count = 0;
     let spinInterval = setInterval(() => {
         reels.forEach((r,i) => {
-          setTimeout(() => { r.textContent = sym[Math.floor(Math.random()*sym.length)]; }, i * 60);
+          setTimeout(() => {
+            if(!r) return;
+            r.textContent = sym[Math.floor(Math.random()*sym.length)];
+            r.classList.remove('flip-tick'); void r.offsetWidth; r.classList.add('flip-tick');
+          }, i * 60);
         });
         count++;
         if(count > 18) { clearInterval(spinInterval); finishSlots(b); }
@@ -821,11 +826,17 @@ function finishSlots(bet) {
     const winLine = document.getElementById('slotsWinLine');
     const resultEl = document.getElementById('slotsResult');
 
-    // Staggered reveal
-    setTimeout(()=>{ if(r1) r1.textContent = res[0]; }, 0);
-    setTimeout(()=>{ if(r2) r2.textContent = res[1]; }, 150);
+    // Staggered reveal — кожен барабан "приземляється" окремо (зупинка спіну + відскок)
+    const landReel = (el, symbol) => {
+      if(!el) return;
+      el.classList.remove('spinning');
+      el.textContent = symbol;
+      el.classList.remove('landed'); void el.offsetWidth; el.classList.add('landed');
+    };
+    setTimeout(()=>{ landReel(r1, res[0]); }, 0);
+    setTimeout(()=>{ landReel(r2, res[1]); }, 150);
     setTimeout(()=>{
-      if(r3) r3.textContent = res[2];
+      landReel(r3, res[2]);
 
       // Win line animation
       if(win > 0) {
@@ -878,6 +889,13 @@ function finishSlots(bet) {
         checkAchievements('win', win);
         slotBonusWins += win;
         spawnWinCoins(win);
+        if(res.every(s=>s==='7️')) {
+          spawnWinCoins(win); // джекпот — подвійний дощ монет
+          const flash = document.createElement('div');
+          flash.className = 'jackpot-flash';
+          document.body.appendChild(flash);
+          setTimeout(()=>flash.remove(), 900);
+        }
         // Premium reel winner glow
         ['r1','r2','r3'].forEach(id=>{ const r=document.getElementById(id); if(r){r.classList.add('winner'); setTimeout(()=>r.classList.remove('winner'),1500);} });
         // Achievements

@@ -1465,11 +1465,35 @@
       background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);
       z-index:1; pointer-events:none;
     }
+    .slot-reel-premium-row { perspective:400px; }
     .slot-reel-premium.spinning { animation:reelSpin .1s linear infinite; }
+    .slot-reel-premium.flip-tick { animation:reelFlip .18s cubic-bezier(.4,0,.2,1); }
+    .slot-reel-premium.landed { animation:reelLand .4s cubic-bezier(.34,1.56,.64,1); }
     .slot-reel-premium.winner {
       border-color:#d4af37;
       box-shadow:0 0 24px rgba(212,175,55,.6), inset 0 0 16px rgba(212,175,55,.1);
       animation:heartbeat .5s ease 3;
+    }
+    @keyframes reelFlip {
+      0%   { transform:rotateX(0deg); }
+      45%  { transform:rotateX(92deg); filter:brightness(.5); }
+      55%  { transform:rotateX(-92deg); filter:brightness(.5); }
+      100% { transform:rotateX(0deg); }
+    }
+    @keyframes reelLand {
+      0%   { transform:translateY(-6px) scale(1.04); }
+      55%  { transform:translateY(3px) scale(.98); }
+      100% { transform:translateY(0) scale(1); }
+    }
+    .jackpot-flash {
+      position:fixed; inset:0; z-index:9990; pointer-events:none;
+      background:radial-gradient(ellipse 60% 40% at 50% 40%, rgba(212,175,55,.35), transparent 70%);
+      animation:jackpotFlash .9s ease-out forwards;
+    }
+    @keyframes jackpotFlash {
+      0%   { opacity:0; }
+      15%  { opacity:1; }
+      100% { opacity:0; }
     }
     .btn-spin-premium {
       width:100%; padding:18px;
