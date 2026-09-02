@@ -481,23 +481,23 @@ const DEPOSIT_METHOD_NAMES = {
 };
 let selectedDepMethod = 'privat';
 
-const DEPOSIT_LOADING_STEPS = [
+const BANK_LOADING_STEPS = [
   'Перевірка реквізитів...', 'З’єднання з банком...', 'Підтвердження транзакції...',
   'Шифрування даних...', 'Синхронізація балансу...', 'Перевірка на шахрайство...'
 ];
 
-// Brief bank-app-style "processing" screen before the receipt — a different
-// random sequence/duration each time so it doesn't feel like a canned delay.
-function showDepositLoading(amount, method, reqId) {
+// Brief bank-app-style "processing" screen — a different random sequence/
+// duration each time so it doesn't feel like a canned delay — then calls onDone.
+function showBankProcessing(accent, onDone) {
   document.getElementById('depReceiptModal')?.remove();
-  const steps = [...DEPOSIT_LOADING_STEPS].sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
+  const steps = [...BANK_LOADING_STEPS].sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
   const modal = document.createElement('div');
   modal.id = 'depReceiptModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.innerHTML = `
     <style>@keyframes depSpin{to{transform:rotate(360deg)}}</style>
-    <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:22px;padding:36px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
-      <div style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(61,214,140,.2);border-top-color:#3dd68c;margin:0 auto 18px;animation:depSpin .8s linear infinite;"></div>
+    <div style="background:#111;border:1.5px solid ${accent}4d;border-radius:22px;padding:36px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+      <div style="width:48px;height:48px;border-radius:50%;border:3px solid ${accent}33;border-top-color:${accent};margin:0 auto 18px;animation:depSpin .8s linear infinite;"></div>
       <div id="depLoadingText" style="font-size:13px;color:#aaa;min-height:18px;">${steps[0]}</div>
     </div>`;
   document.body.appendChild(modal);
@@ -509,37 +509,49 @@ function showDepositLoading(amount, method, reqId) {
     if(el && steps[i]) el.textContent = steps[i];
   }, stepMs);
   const totalMs = steps.length * stepMs + 300 + Math.random() * 400;
-  setTimeout(() => {
-    clearInterval(iv);
-    showDepositReceipt(amount, method, reqId);
-  }, totalMs);
+  setTimeout(() => { clearInterval(iv); onDone(); }, totalMs);
 }
 
-// Bank-app-style success receipt shown after a deposit request is submitted.
-function showDepositReceipt(amount, method, reqId) {
+// Bank-app-style success receipt shown after a deposit/withdraw request is submitted.
+function showBankReceipt({ sign, amount, accent, title, subtitle, rows }) {
   document.getElementById('depReceiptModal')?.remove();
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
   const modal = document.createElement('div');
   modal.id = 'depReceiptModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+  const rowsHtml = rows.map(([k, v]) => `<div style="display:flex;justify-content:space-between;"><span>${k}</span><span style="color:#ccc;font-weight:600;">${v}</span></div>`).join('');
   modal.innerHTML = `
-    <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:22px;padding:28px 20px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,214,140,.12);border:2px solid #3dd68c;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:#3dd68c;">✓</div>
-      <div style="font-size:16px;font-weight:800;color:#eee;margin-bottom:4px;">Заявку прийнято</div>
-      <div style="font-size:12px;color:#666;margin-bottom:18px;">Очікуйте підтвердження адміністратора</div>
-      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:#3dd68c;margin-bottom:18px;">+${amount}₴</div>
+    <div style="background:#111;border:1.5px solid ${accent}4d;border-radius:22px;padding:28px 20px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+      <div style="width:64px;height:64px;border-radius:50%;background:${accent}1f;border:2px solid ${accent};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:${accent};">✓</div>
+      <div style="font-size:16px;font-weight:800;color:#eee;margin-bottom:4px;">${title}</div>
+      <div style="font-size:12px;color:#666;margin-bottom:18px;">${subtitle}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount}₴</div>
       <div style="background:#0a0a0a;border-radius:12px;padding:12px 14px;text-align:left;font-size:12px;color:#888;display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-        <div style="display:flex;justify-content:space-between;"><span>Спосіб</span><span style="color:#ccc;font-weight:600;">${DEPOSIT_METHOD_NAMES[method] || method}</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>ID транзакції</span><span style="color:#ccc;font-family:monospace;">${reqId.slice(-10)}</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>Дата</span><span style="color:#ccc;">${dateStr}</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>Статус</span><span style="color:#f5b700;font-weight:600;">Обробка</span></div>
+        ${rowsHtml}
       </div>
-      <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:rgba(61,214,140,.12);border:1px solid rgba(61,214,140,.3);border-radius:12px;padding:12px;color:#3dd68c;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
-      <div style="font-size:10px;color:#444;line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${now.getFullYear()} SlotOK. Усі права захищено.</div>
+      <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:${accent}1f;border:1px solid ${accent}4d;border-radius:12px;padding:12px;color:${accent};cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
+      <div style="font-size:10px;color:#444;line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+function showDepositLoading(amount, method, reqId) {
+  showBankProcessing('#3dd68c', () => showDepositReceipt(amount, method, reqId));
+}
+
+function showDepositReceipt(amount, method, reqId) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+  showBankReceipt({
+    sign: '+', amount, accent: '#3dd68c',
+    title: 'Заявку прийнято', subtitle: 'Очікуйте підтвердження адміністратора',
+    rows: [
+      ['Спосіб', DEPOSIT_METHOD_NAMES[method] || method],
+      ['ID транзакції', `<span style="font-family:monospace;">${reqId.slice(-10)}</span>`],
+      ['Дата', dateStr],
+      ['Статус', '<span style="color:#f5b700;">Обробка</span>']
+    ]
+  });
 }
 
 function selectDepMethod(method, el) {
@@ -790,11 +802,38 @@ function submitWithdraw() {
     // Notify admin
     db.ref('pm/theivankoo/'+db.ref().push().key).set({from:'📤 Система', to:'theivankoo', text:`💸 Нова заявка на вивід від @${currentUser}: ${amount}₴ (${selectedWithdrawMethod})`, ts:Date.now()});
     db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    notify(`✅ Заявку на вивід ${amount}₴ прийнято! Обробка 1-24 год.`, 'success');
-    
+    showWithdrawLoading(amount, selectedWithdrawMethod, card, requestId);
+
     document.getElementById('withdrawCard').value = '';
     document.getElementById('withdrawAmount').value = '';
     loadMyWithdraws();
+}
+
+const WITHDRAW_METHOD_NAMES = { privat: 'PrivatBank', mono: 'Monobank', card: 'Visa/Mastercard', usdt: 'USDT (TRC20)' };
+
+function maskDest(dest) {
+  if(dest.length <= 8) return dest;
+  return dest.slice(0, 4) + '••••' + dest.slice(-4);
+}
+
+function showWithdrawLoading(amount, method, dest, reqId) {
+  showBankProcessing('#e74c3c', () => showWithdrawReceipt(amount, method, dest, reqId));
+}
+
+function showWithdrawReceipt(amount, method, dest, reqId) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+  showBankReceipt({
+    sign: '-', amount, accent: '#e74c3c',
+    title: 'Заявку на вивід прийнято', subtitle: 'Кошти надійдуть протягом 1-24 год',
+    rows: [
+      ['Спосіб', WITHDRAW_METHOD_NAMES[method] || method],
+      ['Отримувач', `<span style="font-family:monospace;">${maskDest(dest)}</span>`],
+      ['ID транзакції', `<span style="font-family:monospace;">${reqId.slice(-10)}</span>`],
+      ['Дата', dateStr],
+      ['Статус', '<span style="color:#f5b700;">Обробка</span>']
+    ]
+  });
 }
 
 function loadMyWithdraws() {
