@@ -836,19 +836,22 @@
     .vcard-skin-galaxy .vcard-front  { background: linear-gradient(135deg, #000010 0%, #0a004a 30%, #300080 60%, #7000b0 100%); }
     .vcard-skin-galaxy .vcard-back   { background: linear-gradient(135deg, #7000b0 0%, #300080 50%, #0a004a 100%); }
 
-    /* Card front elements */
+    /* Card front elements — реалістичний EMV-чип: сітка контактів, а не хрест */
     .vcard-chip {
-      width: 42px; height: 32px; background: linear-gradient(135deg, #d4af37, #ffdb4d, #a0820c);
+      width: 42px; height: 32px;
+      background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0, rgba(0,0,0,.22) 1px, transparent 1px, transparent 14px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0, rgba(0,0,0,.18) 1px, transparent 1px, transparent 10px),
+        linear-gradient(135deg, #f4d78a, #d4af37 40%, #ffdb4d 60%, #a0820c);
       border-radius: 6px; margin-bottom: 16px; position: relative;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 2px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,0.3);
     }
-    .vcard-chip::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:rgba(0,0,0,0.2); }
-    .vcard-chip::after  { content:''; position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(0,0,0,0.2); }
     .vcard-contactless { position:absolute; top:20px; right:24px; font-size:22px; opacity:0.8; }
-    .vcard-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight:bold; letter-spacing: 3px; color: rgba(255,255,255,0.95); text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 14px; }
+    /* Емборсований (тиснений) друк, як на справжній картці — світла грань зверху, тінь знизу */
+    .vcard-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight:bold; letter-spacing: 3px; color: rgba(255,255,255,0.95); text-shadow: 0 1px 0 rgba(255,255,255,.25), 0 -1px 1px rgba(0,0,0,.6), 0 2px 3px rgba(0,0,0,.5); margin-bottom: 14px; }
     .vcard-holder-row { display:flex; justify-content:space-between; align-items:flex-end; }
     .vcard-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing: 1px; }
-    .vcard-value { font-size: 13px; font-weight:bold; color: rgba(255,255,255,0.9); letter-spacing:1px; }
+    .vcard-value { font-size: 13px; font-weight:bold; color: rgba(255,255,255,0.9); letter-spacing:1px; text-shadow: 0 1px 0 rgba(255,255,255,.2), 0 -1px 1px rgba(0,0,0,.55); }
     .vcard-logo { position:absolute; bottom:18px; right:24px; display:flex; gap:-6px; }
     .vcard-logo .c1, .vcard-logo .c2 { width:30px; height:30px; border-radius:50%; opacity:0.9; }
     .vcard-logo .c1 { background:#eb001b; }
@@ -1893,29 +1896,35 @@
   animation: pulseGlow 4s ease-in-out infinite;
   pointer-events: none;
 }
+/* Тонка амбієнтна смуга блиску — набагато слабша й повільніша, ніж раніше:
+   реалізм тепер несе інтерактивне світло нижче, це лише фоновий "живий" штрих */
 .vcard-front::after {
   content: '';
   position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
-  background: linear-gradient(112deg, transparent 22%, rgba(255,255,255,.1) 40%, rgba(255,255,255,.65) 48%, rgba(210,225,255,.45) 50%, rgba(255,255,255,.65) 52%, rgba(255,255,255,.1) 60%, transparent 78%);
+  background: linear-gradient(112deg, transparent 30%, rgba(255,255,255,.05) 45%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.05) 55%, transparent 70%);
   background-size: 280% 280%;
-  animation: shimmerSweep 3.2s ease-in-out infinite;
+  animation: shimmerSweep 9s ease-in-out infinite;
   mix-blend-mode: overlay;
 }
-/* Друга рухома "іскра" — блукає по картці незалежно від смуги-блиску вище,
-   щоб скін відчувався живим, а не просто пофарбованим прямокутником */
+/* Інтерактивне "дзеркальне" світло — позиція задається JS через --lx/--ly
+   залежно від нахилу картки (тач-драг або рух миші), як справжній відблиск
+   на пластику/металі, а не по колу заскриптована анімація */
 .vcard-front::before {
   content: '';
-  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
-  background: radial-gradient(circle 70px at 50% 50%, rgba(255,255,255,.55), transparent 70%);
-  animation: cardSparkleRoam 5.5s ease-in-out infinite;
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+  background: radial-gradient(circle 160px at var(--lx, 28%) var(--ly, 18%), rgba(255,255,255,.5), rgba(255,255,255,.08) 45%, transparent 70%);
+  opacity: var(--light-op, .55);
   mix-blend-mode: overlay;
 }
-@keyframes cardSparkleRoam {
-  0%   { background-position: 10% 20%; opacity: .25; }
-  25%  { opacity: .75; }
-  50%  { background-position: 85% 65%; opacity: .3; }
-  75%  { opacity: .7; }
-  100% { background-position: 10% 20%; opacity: .25; }
+/* Дрібне зерно поверх картки — прибирає "векторний" вигляд, додає
+   відчуття реального матеріалу (ледь помітне, не заважає читанню) */
+.vcard-front, .vcard-back {
+  position: relative;
+}
+.vcard-front::-webkit-scrollbar { display: none; }
+.vcard-grain { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4; opacity: .05; mix-blend-mode: overlay;
+  background-image: radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);
+  background-size: 3px 3px;
 }
 .vcard-wrap {
   width: 100%;
@@ -1924,12 +1933,22 @@
   height: 210px;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.22,1,.36,1);
   cursor: pointer;
   border-radius: 20px;
   touch-action: pan-y;
 }
 .vcard-wrap.flipped { transform: rotateY(180deg); }
+/* Ребро картки — тонкий темний "зріз" збоку, щоб картка читалась як
+   товстий фізичний об'єкт, а не пласка наклейка */
+.vcard-wrap::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 20px;
+  transform: translateZ(-3px) translate(3px, 4px);
+  background: rgba(0,0,0,.55);
+  filter: blur(1px);
+  z-index: -1;
+}
 .vcard-front, .vcard-back {
   position: absolute; inset: 0;
   backface-visibility: hidden;
@@ -1939,12 +1958,6 @@
   box-sizing: border-box;
 }
 .vcard-back { transform: rotateY(180deg); }
-
-/* 3D tilt on hover (desktop) */
-.vcard-wrap:not(.flipped):hover {
-  transform: rotateY(-5deg) rotateX(3deg) scale(1.02);
-  box-shadow: 20px 20px 40px rgba(0,0,0,.5);
-}
 
 /* Holographic shimmer */
 @keyframes hologram {
@@ -1958,19 +1971,6 @@
   animation: hologram 6s ease infinite;
   border: 1px solid rgba(212,175,55,.4);
   box-shadow: 0 0 30px rgba(212,175,55,.15), inset 0 1px 0 rgba(212,175,55,.2);
-}
-.vcard-front::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,.05) 50%, transparent 60%);
-  border-radius: 20px;
-  animation: cardShine 4s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes cardShine {
-  0%,100% { opacity: 0; transform: translateX(-100%); }
-  40%     { opacity: 1; }
-  50%     { opacity: 0; transform: translateX(200%); }
 }
 
 /* Temp partner card */

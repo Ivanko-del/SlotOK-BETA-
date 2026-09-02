@@ -1150,6 +1150,7 @@
             <div class="vcard vcard-skin-gold" id="vcardEl">
               <!-- FRONT -->
               <div class="vcard-front">
+                <div class="vcard-grain"></div>
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
                   <div class="vcard-bank-name" id="vcardBankName">SlotOK Bank</div>
                   <div id="vcardBadgeArea"></div>
@@ -1310,6 +1311,10 @@
           <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="depMethodBtns">
             <div class="wm-btn selected" id="depm-privat" onclick="selectDepMethod('privat',this)">🟢 PrivatBank</div>
             <div class="wm-btn" id="depm-mono" onclick="selectDepMethod('mono',this)">🐈 Monobank</div>
+            <div class="wm-btn" id="depm-card" onclick="selectDepMethod('card',this)">💳 Visa/Mastercard</div>
+            <div class="wm-btn" id="depm-applepay" onclick="selectDepMethod('applepay',this)">🍎 Apple Pay</div>
+            <div class="wm-btn" id="depm-googlepay" onclick="selectDepMethod('googlepay',this)">🔵 Google Pay</div>
+            <div class="wm-btn" id="depm-usdt" onclick="selectDepMethod('usdt',this)">₮ USDT</div>
             <div class="wm-btn" id="depm-tg" onclick="selectDepMethod('telegram',this)">✈️ Telegram</div>
           </div>
 
@@ -1354,6 +1359,7 @@
         <div class="withdraw-method">
           <div class="wm-btn selected" id="wm-privat" onclick="selectWithdrawMethod('privat', this)">🟢 PrivatBank</div>
           <div class="wm-btn" id="wm-mono" onclick="selectWithdrawMethod('mono', this)">🐈 Monobank</div>
+          <div class="wm-btn" id="wm-card" onclick="selectWithdrawMethod('card', this)">💳 Visa/MC</div>
           <div class="wm-btn" id="wm-usdt" onclick="selectWithdrawMethod('usdt', this)">₮ USDT</div>
         </div>
         <input id="withdrawCard" placeholder="Номер картки / USDT адреса">
@@ -4414,6 +4420,7 @@
     <div class="withdraw-method" style="margin-bottom:12px;">
       <div class="wm-btn selected" id="cwm-privat" onclick="selectWithdrawMethod('privat',this)">🟢 PrivatBank</div>
       <div class="wm-btn" id="cwm-mono" onclick="selectWithdrawMethod('mono',this)">🐈 Monobank</div>
+      <div class="wm-btn" id="cwm-card" onclick="selectWithdrawMethod('card',this)">💳 Visa/MC</div>
       <div class="wm-btn" id="cwm-usdt" onclick="selectWithdrawMethod('usdt',this)">₮ USDT</div>
     </div>
     <input id="cwdCardNum" placeholder="Номер картки / адреса" style="margin-bottom:8px;">

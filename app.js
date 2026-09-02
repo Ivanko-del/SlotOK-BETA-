@@ -467,9 +467,13 @@ function claimDailyBonus(amount) {
 // РЕКВІЗИТИ ДЛЯ ПОПОВНЕННЯ (заміни на свої!)
 // ============================================
 const DEPOSIT_REQUISITES = {
-  privat:   '5168 7450 XXXX XXXX — Іван І.',
-  mono:     '5375 4141 XXXX XXXX — Іван І.',
-  telegram: 'Напиши боту @SlotOK_DepositBot свій ID та суму'
+  privat:     '5168 7450 XXXX XXXX — Іван І.',
+  mono:       '5375 4141 XXXX XXXX — Іван І.',
+  card:       'Visa/Mastercard будь-якого банку — введіть номер картки, термін дії та CVV на захищеній сторінці оплати',
+  applepay:   'Apple Pay — натисніть «Поповнити», підтвердіть оплату Face ID/Touch ID',
+  googlepay:  'Google Pay — натисніть «Поповнити», підтвердіть оплату відбитком пальця або кодом',
+  usdt:       'USDT (TRC20): TQn9Y2khEsLJW1ChVWFMSMeRDow5oJgVGw — вкажіть свій ID у коментарі до перекладу',
+  telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
 let selectedDepMethod = 'privat';
 
@@ -671,8 +675,10 @@ function selectWithdrawMethod(method, el) {
         cardInput.placeholder = 'USDT TRC20 адреса';
     } else if(method === 'privat') {
         cardInput.placeholder = 'Номер картки PrivatBank';
-    } else {
+    } else if(method === 'mono') {
         cardInput.placeholder = 'Номер картки Monobank';
+    } else {
+        cardInput.placeholder = 'Номер картки Visa/Mastercard';
     }
 }
 
@@ -18198,6 +18204,25 @@ var _cardTouchStart = null;
 var _cardTouchMoved = false;
 var _cardTiltInterval = null;
 
+// Світло-відблиск (--lx/--ly на .vcard-front) рахуємо з того ж кута нахилу,
+// яким крутимо картку — світло "рухається" по картці протилежно нахилу,
+// саме так реальний пластик/метал відбиває фіксоване джерело світла зверху
+function _updateCardLight(dx, dy) {
+  var front = document.querySelector('#vcardEl .vcard-front');
+  if(!front) return;
+  var lx = 50 - (dx / 15) * 40; // dx∈[-15,15] → lx∈[10,90]
+  var ly = 50 - (dy / 10) * 45; // dy∈[-10,10] → ly∈[5,95]
+  front.style.setProperty('--lx', lx + '%');
+  front.style.setProperty('--ly', ly + '%');
+  front.style.setProperty('--light-op', String(Math.min(1, .45 + (Math.abs(dx) + Math.abs(dy)) / 30)));
+}
+function _resetCardLight() {
+  var front = document.querySelector('#vcardEl .vcard-front');
+  if(!front) return;
+  front.style.removeProperty('--lx');
+  front.style.removeProperty('--ly');
+  front.style.removeProperty('--light-op');
+}
 function handleCardTouchStart(e) {
   var t = e.touches[0];
   _cardTouchStart = { x: t.clientX, y: t.clientY };
@@ -18221,6 +18246,7 @@ function handleCardTouchMove(e) {
   dy = Math.max(-10, Math.min(10, dy));
   wrap.style.transition = 'transform 0.1s';
   wrap.style.transform = 'rotateY(' + dx + 'deg) rotateX(' + dy + 'deg)';
+  _updateCardLight(dx, dy);
 }
 function handleCardTouchEnd(e) {
   _cardTouchStart = null;
@@ -18229,7 +18255,32 @@ function handleCardTouchEnd(e) {
   if(!wrap || wrap.classList.contains('flipped')) return;
   wrap.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.2,1)';
   wrap.style.transform = '';
+  _resetCardLight();
 }
+// Desktop — той самий трюк через мишу, замість статичного CSS :hover нахилу
+(function initCardMouseTilt() {
+  if(!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  document.addEventListener('DOMContentLoaded', function() {
+    var wrap = document.getElementById('vcardWrap');
+    if(!wrap) return;
+    wrap.addEventListener('mousemove', function(e) {
+      if(wrap.classList.contains('flipped')) return;
+      var r = wrap.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width;
+      var py = (e.clientY - r.top) / r.height;
+      var dx = (px - 0.5) * 24;
+      var dy = (0.5 - py) * 16;
+      wrap.style.transition = 'transform 0.08s linear';
+      wrap.style.transform = 'scale(1.015) rotateY(' + dx + 'deg) rotateX(' + dy + 'deg)';
+      _updateCardLight(dx, dy);
+    });
+    wrap.addEventListener('mouseleave', function() {
+      wrap.style.transition = 'transform 0.5s cubic-bezier(0.22,1,.36,1)';
+      wrap.style.transform = '';
+      _resetCardLight();
+    });
+  });
+})();
 
 function flipCard() {
   var wrap = document.getElementById('vcardWrap');
