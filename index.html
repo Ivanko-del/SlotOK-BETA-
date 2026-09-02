@@ -2786,9 +2786,9 @@
     <!-- АДМІН -->
     <div id="tab-admin" class="screen hidden" style="padding:0 0 100px;">
       <!-- Admin header -->
-      <div style="background:linear-gradient(135deg,#1a0a00,#2d1500);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(212,175,55,.3);">
+      <div style="background:linear-gradient(135deg,#1a0a00,#2d1500);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(212,175,55,.3);box-shadow:0 8px 20px -10px rgba(0,0,0,.7);">
         <button onclick="switchTab('profile')" style="background:none;border:none;color:#d4af37;font-size:20px;cursor:pointer;padding:0;">⬅</button>
-        <div style="font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:#d4af37;">⚙️ АДМІН-ПАНЕЛЬ</div>
+        <div style="font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:#d4af37;text-shadow:0 0 16px rgba(212,175,55,.35);">⚙️ АДМІН-ПАНЕЛЬ</div>
         <div style="font-size:11px;color:#777;" id="adminPendingBadge"></div>
       </div>
 
@@ -2860,19 +2860,19 @@
             <button onclick="refreshAdminDash()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:4px 10px;font-size:11px;cursor:pointer;">🔄</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;">
+            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;box-shadow:var(--bevel),var(--elev-1);">
               <div style="font-size:10px;color:#555;">Оборот 24г</div>
               <div style="font-size:16px;font-weight:900;color:var(--accent);" id="adminTurnover24h">—</div>
             </div>
-            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;">
+            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;box-shadow:var(--bevel),var(--elev-1);">
               <div style="font-size:10px;color:#555;">Джекпот</div>
               <div style="font-size:16px;font-weight:900;color:#d4af37;" id="adminJackpotLive">—</div>
             </div>
-            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;">
+            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;box-shadow:var(--bevel),var(--elev-1);">
               <div style="font-size:10px;color:#555;">Інвест-Пул</div>
               <div style="font-size:16px;font-weight:900;color:#c9a0ff;" id="adminPoolLive">—</div>
             </div>
-            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;">
+            <div style="background:var(--box);border-radius:10px;padding:10px;text-align:center;box-shadow:var(--bevel),var(--elev-1);">
               <div style="font-size:10px;color:#555;">Лотерея</div>
               <div style="font-size:16px;font-weight:900;color:#3dd68c;" id="adminLotteryLive">—</div>
             </div>
