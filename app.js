@@ -9549,6 +9549,27 @@ function showAdminBypassBanner(gameId) {
   document.addEventListener('pointerleave', function() { reset(current); current = null; }, true);
 })();
 
+// Parallax depth on the lobby hero banner — glow drifts slower than the icon,
+// giving a layered 3D feel from cursor movement. Desktop-only, same gate as tilt3D.
+(function initHeroParallax() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const banner = document.getElementById('casinoHeroBanner');
+  const glow = document.getElementById('heroParallaxGlow');
+  const icon = document.getElementById('heroParallaxIcon');
+  if (!banner || !glow || !icon) return;
+  banner.addEventListener('pointermove', function(e) {
+    const r = banner.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    glow.style.transform = 'translate(' + (px * 24) + 'px,' + (py * 24) + 'px)';
+    icon.style.transform = 'translate(' + (px * 46) + 'px,' + (py * 46) + 'px)';
+  }, { passive: true });
+  banner.addEventListener('pointerleave', function() {
+    glow.style.transform = ''; icon.style.transform = '';
+  });
+})();
+
 function switchTab(id, el) {
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
