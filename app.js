@@ -742,6 +742,13 @@ function selectCustomAmount() {
 // ============================================
 // ВИВІД КОШТІВ
 // ============================================
+function selectWithdrawAmount(amount, el) {
+    document.querySelectorAll('#withdrawAmountGrid .amount-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    const val = amount === 'max' ? Math.floor(userData?.balance || 0) : amount;
+    document.getElementById('withdrawAmount').value = val;
+}
+
 function selectWithdrawMethod(method, el) {
     selectedWithdrawMethod = method;
     document.querySelectorAll('.wm-btn').forEach(b => b.classList.remove('selected'));

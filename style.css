@@ -1706,6 +1706,14 @@
 
     /* Deposit panel: amount/method chips use the gold-chip language (scoped, doesn't touch shared .amount-btn/.wm-btn base) */
     #cashier-panel-deposit .amount-btn { font-weight:800; }
+    #cashier-panel-withdraw .amount-btn { font-weight:800; }
+    #cashier-panel-withdraw .amount-btn.selected {
+      background: linear-gradient(155deg,#8af0c4,var(--green) 45%,#0f6b45) !important;
+      border-color: transparent !important;
+      color:#062015 !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.22), 0 8px 24px -8px rgba(61,214,140,.5) !important;
+    }
+
     #cashier-panel-deposit .amount-btn.selected {
       background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c) !important;
       border-color: transparent !important;
@@ -2036,6 +2044,10 @@
   background: radial-gradient(circle at center, rgba(212,175,55,.08), transparent 70%);
   opacity: 0;
   transition: opacity .2s;
+}
+.bank-action-btn:hover {
+  border-color: rgba(212,175,55,.25);
+  box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft);
 }
 .bank-action-btn:active {
   transform: scale(.88);
