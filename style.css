@@ -588,20 +588,26 @@
     /* ===== КЛАНИ ===== */
     .clan-banner { border-radius: var(--r-md); padding: 18px; margin-bottom: 15px; position: relative; overflow: hidden; box-shadow: var(--bevel), var(--elev-1); }
     .clan-banner.none   { background: linear-gradient(135deg,#111,#1a1a1a); border: 1px dashed #444; }
-    .clan-banner.member { background: linear-gradient(135deg,#0d1a0d,#1a2d1a); border: 1px solid var(--green); }
+    .clan-banner.member { background: linear-gradient(135deg,#0d1a0d,#1a2d1a); border: 1px solid var(--green); animation: clanGlowBreathe 5s ease-in-out infinite; }
+    @keyframes clanGlowBreathe {
+      0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 28px -16px var(--green); }
+      50%     { box-shadow: var(--bevel), var(--elev-1), 0 0 50px -14px var(--green); }
+    }
+    @media (prefers-reduced-motion: reduce) { .clan-banner.member { animation: none; } }
     .clan-name   { font-size: 22px; font-weight: 900; }
     .clan-tag    { font-size: 11px; color: #777; margin-top: 3px; }
     .clan-stats  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
-    .clan-stat   { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px 6px; text-align: center; }
+    .clan-stat   { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px 6px; text-align: center; box-shadow: inset 0 2px 6px rgba(0,0,0,.35); }
     .clan-stat-v { font-size: 18px; font-weight: bold; color: var(--accent); }
     .clan-stat-l { font-size: 10px; color: #777; margin-top: 2px; }
-    .clan-member-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: #111; border-radius: var(--r-sm); margin-bottom: 6px; border: 1px solid #222; box-shadow: var(--bevel), var(--elev-1); }
+    .clan-member-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: #111; border-radius: var(--r-sm); margin-bottom: 6px; border: 1px solid #222; box-shadow: var(--bevel), var(--elev-1); transition: box-shadow .15s, border-color .15s; }
+    .clan-member-row:hover { border-color: rgba(212,175,55,.25); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
     .clan-member-avatar { width: 36px; height: 36px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     .clan-role   { font-size: 10px; padding: 2px 7px; border-radius: 8px; margin-left: auto; }
     .clan-role.leader  { background: rgba(212,175,55,0.2); color: var(--accent); }
     .clan-role.member  { background: rgba(76,217,100,0.15); color: var(--green); }
-    .clan-task   { background: #111; border: 1px solid #222; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-    .clan-task.done { border-color: var(--green); }
+    .clan-task   { background: #111; border: 1px solid #222; border-radius: var(--r-sm); padding: 12px; margin-bottom: 8px; box-shadow: var(--bevel), var(--elev-1); transition: border-color .15s, box-shadow .15s; }
+    .clan-task.done { border-color: var(--green); box-shadow: var(--bevel), var(--elev-1), 0 0 24px -16px var(--green); }
     /* ===== ЛІДЕРБОРД ===== */
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
     .lb-tab  { padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; background: #1a1a1a; border: 1px solid #333; color: #777; white-space: nowrap; box-shadow: var(--bevel); transition: transform .12s; }
