@@ -9283,20 +9283,116 @@ function openLootbox(type) {
   const prize = rollLootbox(cfg);
   const win = Math.floor(cfg.price * prize.mult);
 
-  // Анімація відкриття
   const resultScreen = document.getElementById('lootboxResultScreen');
+  // Reparent to <body> so position:fixed is relative to the viewport, not
+  // the .screen ancestor — .screen-enter's transform animation otherwise
+  // turns it into a containing block and traps the fixed overlay in-flow.
+  if (resultScreen.parentElement !== document.body) document.body.appendChild(resultScreen);
   resultScreen.classList.remove('hidden');
   document.getElementById('lbOpenEmoji').textContent = cfg.icon;
-  document.getElementById('lbWinAmount').textContent = '+' + win + ' ₴';
-  document.getElementById('lbWinAmount').style.color = prize.mult >= 5 ? 'var(--green)' : 'var(--accent)';
-  document.getElementById('lbWinType').textContent = `${cfg.name} • ${prize.label}`;
+  ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.add('hidden'));
 
-  // Нараховуємо виграш
+  const reveal = () => {
+    const amtEl = document.getElementById('lbWinAmount');
+    amtEl.textContent = '+' + win + ' ₴';
+    amtEl.style.color = prize.mult >= 5 ? 'var(--green)' : 'var(--accent)';
+    document.getElementById('lbWinType').textContent = `${cfg.name} • ${prize.label}`;
+    ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+    playSound(prize.mult >= 2 ? 'win' : 'click');
+  };
+  playCaseOpen3D(cfg.color, reveal);
+
+  // Нараховуємо виграш (не чекає на візуальну анімацію)
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
   db.ref('users/' + currentUser + '/lootboxHistory').push({ type, win, price: cfg.price, time: Date.now() });
   addToHistory(`LootBox ${cfg.name}: +${win} ₴`);
-  playSound(prize.mult >= 2 ? 'win' : 'click');
   loadLootboxHistory();
+}
+
+let _threeLoadPromise = null;
+function loadThreeJS() {
+  if (window.THREE) return Promise.resolve();
+  if (_threeLoadPromise) return _threeLoadPromise;
+  _threeLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/three@0.160.0/build/three.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('three.js failed to load'));
+    document.head.appendChild(s);
+  });
+  return _threeLoadPromise;
+}
+
+function supports3DCaseOpen() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  } catch(e) { return false; }
+}
+
+// Spins a rotating 3D case in the reveal overlay (color-matched to the box
+// rarity), then bursts and hands off to reveal(). Falls straight through to
+// reveal() on reduced-motion, no WebGL, or if the three.js CDN fails to load
+// — the prize/balance logic in openLootbox never depends on this running.
+function playCaseOpen3D(color, reveal) {
+  if (!supports3DCaseOpen()) { reveal(); return; }
+  const canvas = document.getElementById('lbCaseCanvas');
+  const emoji = document.getElementById('lbOpenEmoji');
+  loadThreeJS().then(() => {
+    const THREE = window.THREE;
+    canvas.classList.remove('hidden');
+    emoji.classList.add('hidden');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(220, 220, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, 4.2);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const key = new THREE.DirectionalLight(0xffffff, 1.2);
+    key.position.set(2, 3, 4);
+    scene.add(key);
+    const rim = new THREE.PointLight(color, 1.5, 10);
+    rim.position.set(-2, -1, 2);
+    scene.add(rim);
+    const material = new THREE.MeshStandardMaterial({ color, metalness: .6, roughness: .25, emissive: color, emissiveIntensity: .15 });
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), material);
+    scene.add(box);
+
+    const spinMs = 1500, t0 = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - t0) / spinMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      box.rotation.y = eased * Math.PI * 2 * 4;
+      box.rotation.x = Math.sin(t * Math.PI) * 0.4;
+      const s = 1 + Math.sin(t * Math.PI) * .08;
+      box.scale.set(s, s, s);
+      renderer.render(scene, camera);
+      if (t < 1) requestAnimationFrame(tick); else burst();
+    }
+    function burst() {
+      const tb0 = performance.now(), burstMs = 260;
+      material.transparent = true;
+      (function step(now) {
+        const t = Math.min(1, (now - tb0) / burstMs);
+        const s = 1 + t * 1.6;
+        box.scale.set(s, s, s);
+        material.opacity = 1 - t;
+        renderer.render(scene, camera);
+        if (t < 1) requestAnimationFrame(step); else finish();
+      })(tb0);
+    }
+    function finish() {
+      renderer.dispose();
+      box.geometry.dispose();
+      material.dispose();
+      canvas.classList.add('hidden');
+      emoji.classList.remove('hidden');
+      reveal();
+    }
+    requestAnimationFrame(tick);
+  }).catch(() => reveal());
 }
 
 function closeLootboxResult() {

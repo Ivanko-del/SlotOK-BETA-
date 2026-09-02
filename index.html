@@ -2734,10 +2734,11 @@
 
       <div id="lootboxResultScreen" class="hidden">
         <div class="lootbox-reward-screen">
+          <canvas id="lbCaseCanvas" class="hidden"></canvas>
           <div id="lbOpenEmoji" class="lootbox-open-anim">📦</div>
-          <div id="lbWinAmount" class="lootbox-win-amount">+500 ₴</div>
-          <div id="lbWinType" class="lootbox-win-type">Звичайний ящик</div>
-          <button class="btn-gold" onclick="closeLootboxResult()">🎉 ЗАБРАТИ</button>
+          <div id="lbWinAmount" class="lootbox-win-amount hidden">+500 ₴</div>
+          <div id="lbWinType" class="lootbox-win-type hidden">Звичайний ящик</div>
+          <button id="lbClaimBtn" class="btn-gold hidden" onclick="closeLootboxResult()">🎉 ЗАБРАТИ</button>
         </div>
       </div>
 
