@@ -9533,7 +9533,7 @@ function showAdminBypassBanner(gameId) {
 (function initTilt3D() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var SEL = '.game-card, .game-thumb';
+  var SEL = '.game-card, .game-thumb, .casino-game-card';
   var current = null;
   function reset(elm) { if (elm) elm.style.transform = ''; }
   document.addEventListener('pointermove', function(e) {
@@ -9544,7 +9544,7 @@ function showAdminBypassBanner(gameId) {
     var px = (e.clientX - r.left) / r.width;
     var py = (e.clientY - r.top) / r.height;
     var rx = (0.5 - py) * 8, ry = (px - 0.5) * 8;
-    el.style.transform = 'perspective(700px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateZ(2px)';
+    el.style.transform = 'perspective(700px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-3px) translateZ(2px)';
   }, { passive: true });
   document.addEventListener('pointerleave', function() { reset(current); current = null; }, true);
 })();

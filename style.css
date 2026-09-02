@@ -54,6 +54,7 @@
     .games-scroll::-webkit-scrollbar { display:none; }
     .game-thumb { min-width: 82px; height: 90px; background: linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,0) 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 5px; transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; -webkit-tap-highlight-color:transparent; box-shadow: var(--bevel), var(--elev-1); }
     .game-thumb:active { transform: scale(.92) translateY(1px); filter:brightness(.8); box-shadow: var(--bevel), 0 4px 10px -6px rgba(0,0,0,.5); }
+    .game-thumb:hover, .game-card:hover { border-color: rgba(212,175,55,.35); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
     .game-thumb span.icon { font-size: 30px; line-height:1; }
     .game-thumb span.label { font-size: 10px; color: var(--sub); font-weight:700; }
 
@@ -375,7 +376,6 @@
        CASINO LOBBY v2
     ═══════════════════════════════════════ */
     .casino-hero-banner { background: linear-gradient(135deg,#1a0800,#0d0500,#1a1000); border:1px solid rgba(212,175,55,0.3); border-radius:14px; padding:18px; margin-bottom:14px; position:relative; overflow:hidden; display:flex; align-items:center; }
-    .casino-hero-banner::before { content:'🎰'; position:absolute; right:-10px; top:50%; transform:translateY(-50%); font-size:80px; opacity:0.12; pointer-events:none; }
     .casino-hero-content { position:relative; z-index:1; }
     .casino-hero-label { font-size:10px; color:var(--accent); font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
     .casino-hero-title { font-size:26px; font-weight:900; color:#fff; line-height:1.1; margin-bottom:6px; }
@@ -992,7 +992,7 @@
     .casino-game-card:hover {
       transform: translateY(-3px);
       border-color: rgba(212,175,55,.4);
-      box-shadow: var(--bevel), 0 8px 24px rgba(0,0,0,.5), 0 0 16px rgba(212,175,55,.08);
+      box-shadow: var(--bevel), 0 8px 24px rgba(0,0,0,.5), var(--glow-accent-soft);
     }
     .casino-game-card:active { transform: scale(.92); filter:brightness(.75); }
     .casino-game-card-img {
