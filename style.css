@@ -141,15 +141,24 @@
     .amount-btn.selected { border-color: #229ED9; color: #229ED9; background: rgba(34, 158, 217, 0.1); }
 
     /* ВИВІД */
-    .withdraw-box { background: linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,0) 45%), linear-gradient(135deg, #1a2a1a, #0d1a0d); border: 1px solid var(--green); border-radius: var(--r-md); padding: 20px; margin-bottom: 15px; box-shadow: var(--bevel), var(--elev-1); }
-    .withdraw-title { color: var(--green); font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+    .withdraw-box { position: relative; overflow: hidden; background: linear-gradient(160deg, rgba(61,214,140,.08), rgba(255,255,255,0) 45%), var(--box); border: 1px solid rgba(61,214,140,.35); border-radius: var(--r-lg); padding: 20px; margin-bottom: 15px; box-shadow: var(--bevel), var(--elev-2), 0 0 32px -18px rgba(61,214,140,.55); }
+    .withdraw-title { color: var(--green); font-size: 16px; font-weight: bold; margin-bottom: 14px; text-shadow: 0 0 16px rgba(61,214,140,.35); }
     .withdraw-method { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .wm-btn { background: #222; border: 1px solid #333; border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: #aaa; cursor: pointer; box-shadow: var(--bevel), var(--elev-1); }
     .wm-btn.selected { border-color: var(--green); color: var(--green); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -3px 6px rgba(0,0,0,.2), 0 8px 22px -8px rgba(61,214,140,.4); }
-    .pending-withdraw { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), #1a1a1a; border: 1px solid #333; border-radius: var(--r-md); padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--bevel), var(--elev-1); }
-    .pw-status { font-size: 11px; padding: 3px 8px; border-radius: var(--r-sm); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-    .pw-pending { background: rgba(212,175,55,0.2); color: var(--accent); }
-    .pw-done { background: rgba(76,217,100,0.2); color: var(--green); }
+    /* Withdraw-panel-specific method chips (scoped so the shared deposit-panel .wm-btn base rule stays untouched) */
+    .withdraw-method .wm-btn { flex: 1; text-align: center; transition: transform .14s var(--ease-tactile), box-shadow .14s ease, background .15s ease, color .15s ease, border-color .15s ease; }
+    .withdraw-method .wm-btn:active { transform: scale(.94); }
+    .withdraw-method .wm-btn.selected { background: linear-gradient(155deg,#8af0c4,var(--green) 45%,#0f6b45); border-color: transparent; color: #062015; font-weight: 800; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.22), 0 10px 24px -8px rgba(61,214,140,.5); }
+    .withdraws-history-box { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; margin-bottom: 15px; box-shadow: var(--bevel), var(--elev-1); }
+    .withdraw-quick-actions { display: flex; gap: 8px; }
+    .withdraw-quick-actions .btn-outline { margin-bottom: 0; }
+    .pending-withdraw { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), #1a1a1a; border: 1px solid #333; border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--bevel), var(--elev-1); }
+    .pw-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 4px rgba(0,0,0,.25); }
+    .pw-status { font-size: 11px; padding: 4px 10px; border-radius: 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 2px 6px rgba(0,0,0,.25); font-weight:700; white-space:nowrap; }
+    .pw-pending { background: rgba(212,175,55,0.16); color: var(--accent); border: 1px solid rgba(212,175,55,.3); }
+    .pw-done { background: rgba(76,217,100,0.16); color: var(--green); border: 1px solid rgba(76,217,100,.3); }
+    .pw-rejected { background: rgba(240,64,96,0.16); color: #f04060; border: 1px solid rgba(240,64,96,.3); }
 
     /* ЩОДЕННИЙ БОНУС */
     .daily-bonus-modal-content { padding: 20px; text-align: center; }
@@ -201,12 +210,26 @@
     /* old chat-box replaced below */
 
     /* ===== CASHIER TABS ===== */
-    .cashier-tab-btn { flex:1;padding:10px;background:none;border:none;color:#777;font-size:12px;font-weight:bold;cursor:pointer;border-radius:var(--r-sm);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, color .15s; }
-    .cashier-tab-btn:active { transform:scale(.96); }
-    .cashier-tab-btn.active { background:var(--accent);color:#000;box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.22), 0 8px 20px -8px rgba(212,175,55,.45); }
+    /* Каса — ковзний "pill" рейл замість плоских кнопок-перемикачів */
+    .cashier-tabs-rail { position:relative; display:flex; gap:0; background:var(--box); border-radius:16px; padding:4px; margin-bottom:14px; border:1px solid var(--border); box-shadow:var(--bevel), var(--elev-1); }
+    .cashier-tab-slider {
+      position:absolute; top:4px; left:4px; height:calc(100% - 8px); width:calc(20% - 4.8px);
+      border-radius:13px;
+      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5);
+      transition: transform .32s cubic-bezier(.22,1,.36,1);
+      pointer-events:none;
+    }
+    .cashier-tab-btn { position:relative; z-index:1; flex:1; padding:10px 2px; background:none; border:none; color:#777; font-size:11px; font-weight:bold; cursor:pointer; border-radius:13px; transition:transform .14s var(--ease-tactile), color .2s; display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .cashier-tab-btn span { font-size:9px; letter-spacing:.2px; }
+    .cashier-tab-btn:active { transform:scale(.94); }
+    .cashier-tab-btn.active { color:#241800; }
     .chart-period-btn { padding:4px 10px;background:var(--input);border:1px solid var(--border);color:#777;border-radius:var(--r-sm);font-size:11px;cursor:pointer;box-shadow: var(--bevel);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, border-color .15s, color .15s; }
     .chart-period-btn:active { transform:scale(.94); }
     .chart-period-btn.active { background:var(--accent);color:#000;border-color:var(--accent);box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 4px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.4); }
+    .chart-currency-chip { width:auto;flex:0 0 auto;margin-bottom:0;padding:6px 12px;background:var(--input);border:1px solid var(--border);color:#aaa;border-radius:20px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow: var(--bevel);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, border-color .15s, color .15s; }
+    .chart-currency-chip:active { transform:scale(.92); }
+    .chart-currency-chip.active { background:linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);color:#241800;border-color:var(--accent);box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5); }
 
     /* ===== SPORT BETTING v2 — REAL ===== */
     .match-card { background:var(--box);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
@@ -1158,21 +1181,35 @@
 
     /* DEPOSIT PACKAGES */
     .dep-package {
-      background: linear-gradient(135deg, #111, #181818);
-      border: 2px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      padding: 14px;
+      background: linear-gradient(160deg, rgba(255,255,255,.045), rgba(255,255,255,0) 45%), linear-gradient(150deg, #14130c, #0c0c0c);
+      border: 1.5px solid rgba(255,255,255,.09);
+      border-radius: var(--r-md);
+      padding: 14px 12px;
+      text-align: center;
       cursor: pointer;
-      transition: all .2s;
+      transition: transform .16s var(--ease-tactile), box-shadow .16s ease, border-color .16s ease;
       position: relative;
       overflow: hidden;
+      box-shadow: var(--bevel), var(--elev-1);
     }
-    .dep-package.popular { border-color: var(--accent); }
-    .dep-package.popular::before { content:'Популярний'; position:absolute; top:8px; right:8px; background:var(--accent); color:#000; font-size:8px; font-weight:800; padding:2px 7px; border-radius:4px; }
-    .dep-package:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
-    .dep-package-amount { font-size:22px; font-weight:900; color:var(--accent); font-family:'Orbitron',monospace; }
-    .dep-package-bonus { font-size:11px; color:#3dd68c; font-weight:700; margin-top:3px; }
-    .dep-package-total { font-size:10px; color:#555; margin-top:2px; }
+    .dep-package:active { transform: scale(.96) translateY(1px); filter: brightness(.92); }
+    .dep-package.popular {
+      border-color: rgba(212,175,55,.55);
+      box-shadow: var(--bevel), var(--elev-1), 0 0 24px -6px rgba(212,175,55,.4);
+    }
+    .dep-package.popular::before {
+      content:'★ Популярний'; position:absolute; top:0; right:0;
+      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);
+      color:#241800; font-size:8px; font-weight:800; letter-spacing:.3px;
+      padding:3px 9px 3px 11px; border-radius:0 0 0 10px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+    }
+    .dep-package-icon { font-size:19px; margin-bottom:4px; opacity:.9; }
+    .dep-package-amount { font-size:23px; font-weight:900; color:#fff; font-family:'Orbitron',monospace; letter-spacing:.3px; }
+    .dep-package-bonus { font-size:11px; color:#3dd68c; font-weight:800; margin-top:5px; background:rgba(61,214,140,.12); border-radius:7px; padding:2px 7px; display:inline-block; }
+    .dep-package-bonus.none { color:#555; background:none; padding:0; font-weight:600; }
+    .dep-package-total { font-size:10px; color:#666; margin-top:6px; }
+    .dep-package-label { font-size:9px; color:#777; margin-top:3px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
 
     /* LIVE WALLPAPER */
     .live-wallpaper-btn {
@@ -1646,6 +1683,15 @@
     }
     .wm-btn:active { transform:scale(.92) !important; }
 
+    /* Deposit panel: amount/method chips use the gold-chip language (scoped, doesn't touch shared .amount-btn/.wm-btn base) */
+    #cashier-panel-deposit .amount-btn { font-weight:800; }
+    #cashier-panel-deposit .amount-btn.selected {
+      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c) !important;
+      border-color: transparent !important;
+      color:#241800 !important;
+    }
+    #depMethodBtns .wm-btn { flex:1; min-width:100px; text-align:center; font-weight:700; }
+
     /* Game tab back button */
     .game-back-btn {
       display:inline-flex; align-items:center; gap:6px;
@@ -1978,7 +2024,8 @@
   border-color: rgba(212,175,55,.3);
 }
 .bank-action-btn:active::before { opacity: 1; }
-.ba-icon { font-size: 22px; margin-bottom: 4px; }
+.ba-icon { font-size: 20px; margin: 0 auto 6px; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform .2s var(--ease-tactile); }
+.bank-action-btn:active .ba-icon { transform: scale(.88); }
 .ba-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: .3px; }
 
 /* Balance block premium */
@@ -2096,19 +2143,28 @@
   border-bottom: 1px solid rgba(255,255,255,.04);
   animation: slideUp .2s ease both;
 }
+.tx-item:last-child { border-bottom: none; }
 .tx-icon {
-  width: 38px; height: 38px; border-radius: 12px;
+  width: 38px; height: 38px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
+  font-size: 16px; flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.25);
 }
-.tx-icon.in  { background: rgba(61,214,140,.12); }
-.tx-icon.out { background: rgba(231,76,60,.1); }
+.tx-icon.in  { background: radial-gradient(circle, rgba(61,214,140,.28), rgba(61,214,140,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), inset 0 -2px 4px rgba(0,0,0,.2), 0 0 14px -4px rgba(61,214,140,.55); }
+.tx-icon.out { background: radial-gradient(circle, rgba(231,76,60,.24), rgba(231,76,60,.04)); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.2), 0 0 14px -4px rgba(231,76,60,.45); }
 .tx-icon.neutral { background: rgba(255,255,255,.06); }
-.tx-label { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-label { font-size: 13px; font-weight: 600; color: #ccc; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-sub   { font-size: 10px; color: #555; margin-top: 2px; }
-.tx-amount { font-size: 14px; font-weight: 900; flex-shrink: 0; }
-.tx-amount.in  { color: #3dd68c; }
+.tx-amount { font-size: 14px; font-weight: 900; flex-shrink: 0; font-family: 'Orbitron', monospace; }
+.tx-amount.in  { color: #3dd68c; text-shadow: 0 0 10px rgba(61,214,140,.3); }
 .tx-amount.out { color: #e74c3c; }
+
+/* Card recent-transactions wrapper */
+.card-tx-box { background: linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,0) 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; box-shadow: var(--bevel), var(--elev-1); }
+.card-tx-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-tx-box-title { font-size: 12px; font-weight: 800; color: var(--accent); font-family: 'Orbitron', monospace; letter-spacing: .3px; }
+.card-tx-all-btn { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; color: #888; font-size: 11px; cursor: pointer; transition: transform .14s var(--ease-tactile), background .15s, color .15s, border-color .15s; }
+.card-tx-all-btn:active { transform: scale(.93); background: rgba(212,175,55,.12); color: var(--accent); border-color: rgba(212,175,55,.3); }
 
 /* ═══════════════════════════════════════════════════════
    КАРТКА — 14 РІЗНОМАНІТНИХ СКІНІВ З ТЕКСТУРАМИ

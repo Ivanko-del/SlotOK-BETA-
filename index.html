@@ -1132,13 +1132,14 @@
 
     <!-- КАСА (оновлена) -->
     <div id="tab-cashier" class="screen hidden">
-      <!-- Cashier sub-tabs -->
-      <div style="display:flex;gap:0;background:var(--box);border-radius:14px;padding:4px;margin-bottom:14px;border:1px solid var(--border);">
-        <button class="cashier-tab-btn active" id="ctb-card" onclick="switchCashierTab('card',this)">💳 Моя картка</button>
-        <button class="cashier-tab-btn" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">⬆️ Поповнення</button>
-        <button class="cashier-tab-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">💸 Вивід</button>
-        <button class="cashier-tab-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">💰 Кешбек</button>
-        <button class="cashier-tab-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">📊 Ринок</button>
+      <!-- Cashier sub-tabs — ковзний "pill" індикатор замість плоских активних кнопок -->
+      <div class="cashier-tabs-rail" id="cashierTabsRail">
+        <div class="cashier-tab-slider" id="cashierTabSlider"></div>
+        <button class="cashier-tab-btn active" id="ctb-card" onclick="switchCashierTab('card',this)">💳 <span>Картка</span></button>
+        <button class="cashier-tab-btn" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">⬆️ <span>Поповнення</span></button>
+        <button class="cashier-tab-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">💸 <span>Вивід</span></button>
+        <button class="cashier-tab-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">💰 <span>Кешбек</span></button>
+        <button class="cashier-tab-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">📊 <span>Ринок</span></button>
       </div>
 
       <!-- CARD PANEL -->
@@ -1208,9 +1209,9 @@
 
         <!-- Quick controls row -->
         <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button onclick="toggleCvvVisibility()" style="flex:1;background:#111;border:1px solid #222;border-radius:12px;color:#aaa;font-size:12px;padding:11px;" id="cvvToggleBtn">👁 CVV</button>
-          <button onclick="copyCardNumberFlash()" style="flex:1;background:#111;border:1px solid #222;border-radius:12px;color:#aaa;font-size:12px;padding:11px;">📋 Копіювати</button>
-          <button onclick="openCardColorPicker()" style="background:#111;border:1px solid rgba(212,175,55,.2);border-radius:12px;color:#d4af37;font-size:12px;padding:11px 14px;">🎨</button>
+          <button onclick="toggleCvvVisibility()" style="flex:1;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,0) 45%),#111;border:1px solid #222;border-radius:var(--r-sm);color:#aaa;font-size:12px;padding:11px;box-shadow:var(--bevel),var(--elev-1);" id="cvvToggleBtn">👁 CVV</button>
+          <button onclick="copyCardNumberFlash()" style="flex:1;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,0) 45%),#111;border:1px solid #222;border-radius:var(--r-sm);color:#aaa;font-size:12px;padding:11px;box-shadow:var(--bevel),var(--elev-1);">📋 Копіювати</button>
+          <button onclick="openCardColorPicker()" style="background:linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);border:1px solid rgba(212,175,55,.4);border-radius:var(--r-sm);color:#241800;font-size:12px;padding:11px 14px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 4px rgba(0,0,0,.25),0 8px 20px -8px rgba(212,175,55,.5);">🎨</button>
         </div>
 
         <!-- Axiom Bank link button -->
@@ -1235,37 +1236,37 @@
         <!-- Action grid -->
         <div class="bank-action-grid">
           <div class="bank-action-btn" onclick="bankAction('topup')">
-            <div class="ba-icon">💳</div><div class="ba-label">Поповнити</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(61,214,140,.22),rgba(61,214,140,.05));">💳</div><div class="ba-label">Поповнити</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('withdraw')">
-            <div class="ba-icon">💸</div><div class="ba-label">Зняти</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(231,76,60,.22),rgba(231,76,60,.05));">💸</div><div class="ba-label">Зняти</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('transfer')">
-            <div class="ba-icon">↗️</div><div class="ba-label">Переказ</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(74,158,255,.22),rgba(74,158,255,.05));">↗️</div><div class="ba-label">Переказ</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('buySlotyky')">
-            <div class="ba-icon">🪙</div><div class="ba-label">Слотіки</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(212,175,55,.22),rgba(212,175,55,.05));">🪙</div><div class="ba-label">Слотіки</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('skinShop')">
-            <div class="ba-icon">🎨</div><div class="ba-label">Скін</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(201,160,255,.22),rgba(201,160,255,.05));">🎨</div><div class="ba-label">Скін</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('freeze')">
-            <div class="ba-icon" id="cardFreezeIcon">🔒</div>
+            <div class="ba-icon" id="cardFreezeIcon" style="background:radial-gradient(circle,rgba(255,255,255,.14),rgba(255,255,255,.03));">🔒</div>
             <div class="ba-label" id="cardFreezeLabel">Блок</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('cashback')">
-            <div class="ba-icon">💰</div><div class="ba-label">Кешбек</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(212,175,55,.22),rgba(212,175,55,.05));">💰</div><div class="ba-label">Кешбек</div>
           </div>
           <div class="bank-action-btn" onclick="bankAction('casino')">
-            <div class="ba-icon">🎰</div><div class="ba-label">Казино</div>
+            <div class="ba-icon" style="background:radial-gradient(circle,rgba(255,105,180,.22),rgba(255,105,180,.05));">🎰</div><div class="ba-label">Казино</div>
           </div>
         </div>
 
         <!-- Recent transactions -->
-        <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:18px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-size:13px;font-weight:800;color:#d4af37;font-family:'Orbitron',monospace;font-size:12px;">📋 Останні операції</div>
-            <button onclick="showAllTransactions()" style="background:none;border:1px solid #222;border-radius:6px;padding:4px 12px;color:#555;font-size:11px;cursor:pointer;">Всі →</button>
+        <div class="card-tx-box">
+          <div class="card-tx-box-header">
+            <div class="card-tx-box-title">📋 Останні операції</div>
+            <button onclick="showAllTransactions()" class="card-tx-all-btn">Всі →</button>
           </div>
           <div id="cardTransactionsList"><div style="color:#444;font-size:12px;text-align:center;padding:16px;">Немає операцій</div></div>
         </div>
@@ -1276,16 +1277,16 @@
 
         <!-- Deposit packages -->
         <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:8px;letter-spacing:.5px;">🎁 Пакети поповнення з бонусом</div>
-        <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+        <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"></div>
 
         <!-- Main deposit box -->
-        <div style="background:linear-gradient(135deg,#0d1a0d,#101a10);border:1.5px solid rgba(61,214,140,.25);border-radius:var(--r-md);padding:18px;margin-bottom:14px;box-shadow:var(--bevel),var(--elev-1);">
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%),linear-gradient(135deg,#0d1a0d,#101a10);border:1.5px solid rgba(61,214,140,.25);border-radius:var(--r-lg);padding:18px;margin-bottom:14px;box-shadow:var(--bevel),var(--elev-1);">
           <div style="font-size:15px;font-weight:800;color:#3dd68c;margin-bottom:4px;">💳 Подати заявку на поповнення</div>
-          <div style="font-size:12px;color:#555;margin-bottom:14px;">Обери суму → натисни «Подати» → адмін зарахує кошти</div>
+          <div style="font-size:12px;color:#666;margin-bottom:14px;">Обери суму → натисни «Подати» → адмін зарахує кошти</div>
 
           <!-- User ID display -->
-          <div style="background:rgba(0,0,0,0.35);border:1px solid #1a3a1a;border-radius:var(--r-sm);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:inset 0 2px 6px rgba(0,0,0,.4);">
-            <span style="font-size:12px;color:#555;">Ваш ID для переказу:</span>
+          <div style="background:rgba(0,0,0,0.35);border:1px solid #1a3a1a;border-radius:var(--r-sm);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--bevel),inset 0 2px 6px rgba(0,0,0,.4);">
+            <span style="font-size:12px;color:#666;">Ваш ID для переказу:</span>
             <span id="cashierUserId" style="color:#3dd68c;font-weight:900;font-size:18px;letter-spacing:1px;">—</span>
           </div>
 
@@ -1305,18 +1306,18 @@
           </div>
 
           <!-- Payment method -->
-          <div style="font-size:11px;color:#555;margin-bottom:6px;font-weight:700;text-transform:uppercase;">Спосіб оплати:</div>
+          <div style="font-size:11px;color:#666;margin-bottom:6px;font-weight:700;text-transform:uppercase;">Спосіб оплати:</div>
           <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="depMethodBtns">
-            <div class="wm-btn selected" id="depm-privat" onclick="selectDepMethod('privat',this)" style="color:#3dd68c;border-color:#3dd68c;">🟢 PrivatBank</div>
+            <div class="wm-btn selected" id="depm-privat" onclick="selectDepMethod('privat',this)">🟢 PrivatBank</div>
             <div class="wm-btn" id="depm-mono" onclick="selectDepMethod('mono',this)">🐈 Monobank</div>
             <div class="wm-btn" id="depm-tg" onclick="selectDepMethod('telegram',this)">✈️ Telegram</div>
           </div>
 
           <!-- Реквізити адміна (показуються після вибору методу) -->
-          <div id="depRequisitesBox" style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:12px;margin-bottom:12px;display:none;">
+          <div id="depRequisitesBox" style="background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,0) 45%),rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.25);border-radius:var(--r-md);padding:12px;margin-bottom:12px;display:none;box-shadow:var(--bevel),var(--elev-1);">
             <div style="font-size:11px;color:#d4af37;font-weight:700;margin-bottom:6px;">📋 Реквізити для переказу:</div>
             <div id="depRequisitesText" style="font-size:14px;color:#fff;font-weight:700;letter-spacing:.5px;word-break:break-all;"></div>
-            <button onclick="copyDepRequisites()" style="background:none;border:1px solid #333;border-radius:6px;color:#777;font-size:11px;padding:4px 10px;cursor:pointer;margin-top:8px;width:auto;">📋 Копіювати</button>
+            <button onclick="copyDepRequisites()" style="background:rgba(255,255,255,.04);border:1px solid #333;border-radius:8px;color:#999;font-size:11px;padding:5px 12px;cursor:pointer;margin-top:8px;width:auto;box-shadow:var(--bevel);">📋 Копіювати</button>
           </div>
 
           <button class="btn-green" onclick="submitDepositRequest()" id="depSubmitBtn" style="font-size:15px;font-weight:800;letter-spacing:.5px;">
@@ -1326,7 +1327,7 @@
         </div>
 
         <!-- Telegram bot shortcut -->
-        <div class="tg-deposit-box" style="padding:14px;">
+        <div class="tg-deposit-box" style="padding:16px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <div class="tg-logo" style="font-size:28px;margin:0;">✈️</div>
             <div>
@@ -1361,12 +1362,12 @@
       </div>
 
       <!-- Мої заявки на вивід -->
-      <div id="myWithdrawsBox">
-        <div class="section-header">Мої заявки на вивід</div>
+      <div id="myWithdrawsBox" class="withdraws-history-box">
+        <div class="section-header" style="margin-top:0;">Мої заявки на вивід</div>
         <div id="myWithdrawsList" style="color:#777; font-size:13px; padding:10px 0;">Немає заявок</div>
       </div>
 
-      <div style="display:flex; gap:8px;">
+      <div class="withdraw-quick-actions">
         <button class="btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openTabModal('transfer-modal')">💸 Переказ</button>
         <button class="btn-outline" onclick="openTabModal('promo-modal')">🎁 Промокод</button>
       </div>
@@ -1375,21 +1376,21 @@
       <!-- CASHBACK PANEL -->
       <div id="cashier-panel-cashback" class="hidden">
         <div id="cashierCashbackPanel" style="padding:4px 0;">
-          <div style="text-align:center;color:#555;padding:20px;">Завантаження...</div>
+          <div style="text-align:center;color:#555;padding:20px;">⏳ Завантаження...</div>
         </div>
       </div><!-- /cashier-panel-cashback -->
 
       <!-- MARKETS PANEL -->
       <div id="cashier-panel-markets" class="hidden">
         <!-- Currency selector -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
           <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:10px;">💱 Відображення балансу</div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;" id="marketsMiniFiatGrid"></div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="marketsMinicryptoGrid"></div>
         </div>
 
         <!-- Chart selector -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <div style="font-size:13px;font-weight:bold;color:var(--accent);">📈 Графік</div>
             <div style="display:flex;gap:4px;">
@@ -1399,8 +1400,8 @@
             </div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="chartCurrencySelector"></div>
-          <canvas id="currencyChartCanvas" width="360" height="200" style="width:100%;height:200px;border-radius:8px;background:#0a0a0a;"></canvas>
-          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#555;">
+          <canvas id="currencyChartCanvas" width="360" height="200" style="width:100%;height:200px;border-radius:var(--r-sm);background:#0a0a0a;box-shadow: inset 0 4px 14px rgba(0,0,0,.7);"></canvas>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#555;">
             <span id="chartLow">Min: —</span>
             <span id="chartSymbol" style="color:var(--accent);font-weight:bold;">BTC/UAH</span>
             <span id="chartHigh">Max: —</span>
@@ -1408,10 +1409,10 @@
         </div>
 
         <!-- Live rate table -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
           <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:13px;font-weight:bold;">📊 Актуальний курс до ₴</div>
-            <button onclick="fetchRates().then(()=>{buildMarketsPage();buildRatesList();})" style="background:var(--input);border:1px solid var(--border);color:#aaa;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;">🔄</button>
+            <button onclick="fetchRates().then(()=>{buildMarketsPage();buildRatesList();})" style="background:var(--input);border:1px solid var(--border);color:#aaa;border-radius:var(--r-sm);padding:4px 10px;font-size:11px;cursor:pointer;box-shadow:var(--bevel);transition:transform .14s var(--ease-tactile);">🔄</button>
           </div>
           <div id="marketsRateTable"></div>
           <div id="marketsRateTs" style="font-size:10px;color:#333;padding:6px 14px 10px;text-align:right;"></div>

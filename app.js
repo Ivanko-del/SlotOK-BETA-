@@ -631,15 +631,14 @@ function loadMyDeposits() {
     const entries = Object.entries(data).sort((a,b) => (b[1].time||0)-(a[1].time||0));
     list.innerHTML = entries.map(([id, d]) => {
       const date = new Date(d.time).toLocaleString('uk-UA');
-      const statusClass = d.status === 'done' ? 'pw-done' : d.status === 'rejected' ? '' : 'pw-pending';
+      const statusClass = d.status === 'done' ? 'pw-done' : d.status === 'rejected' ? 'pw-rejected' : 'pw-pending';
       const statusText = d.status === 'done' ? '✅ Зараховано' : d.status === 'rejected' ? '❌ Відхилено' : '⏳ Очікує';
-      const statusColor = d.status === 'done' ? '#3dd68c' : d.status === 'rejected' ? '#f04060' : '#d4af37';
       return `<div class="pending-withdraw">
         <div>
-          <div style="font-weight:bold;font-size:14px;">+${d.amount} ₴</div>
-          <div style="color:#777;font-size:11px;">${d.method||'—'} • ${date}</div>
+          <div style="font-weight:900;font-size:15px;color:#fff;">+₴${formatNumber(d.amount)}</div>
+          <div style="color:#777;font-size:11px;margin-top:2px;">${d.method||'—'} • ${date}</div>
         </div>
-        <span class="pw-status" style="background:${statusColor}22;color:${statusColor};border-radius:8px;padding:3px 8px;font-size:11px;">${statusText}</span>
+        <span class="pw-status ${statusClass}">${statusText}</span>
       </div>`;
     }).join('');
   });
@@ -738,13 +737,16 @@ function loadMyWithdraws() {
         list.innerHTML = '';
         Object.entries(data).reverse().forEach(([id, w]) => {
             const date = new Date(w.time).toLocaleDateString('uk-UA');
-            const statusClass = w.status === 'done' ? 'pw-done' : 'pw-pending';
-            const statusText = w.status === 'done' ? '✅ Виконано' : '⏳ Обробляється';
+            const statusClass = w.status === 'done' ? 'pw-done' : w.status === 'rejected' ? 'pw-rejected' : 'pw-pending';
+            const statusText = w.status === 'done' ? '✅ Виконано' : w.status === 'rejected' ? '❌ Відхилено' : '⏳ Обробляється';
+            const statusIcon = w.status === 'done' ? '✅' : w.status === 'rejected' ? '❌' : '⏳';
+            const iconBg = w.status === 'done' ? 'rgba(76,217,100,.22),rgba(76,217,100,.05)' : w.status === 'rejected' ? 'rgba(240,64,96,.22),rgba(240,64,96,.05)' : 'rgba(212,175,55,.22),rgba(212,175,55,.05)';
             list.innerHTML += `
                 <div class="pending-withdraw">
-                    <div>
-                        <div style="font-weight:bold;">${w.amount} ₴</div>
-                        <div style="color:#777; font-size:11px;">${w.method} • ${date}</div>
+                    <div class="pw-icon" style="background:radial-gradient(circle,${iconBg});">${statusIcon}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:800; font-family:'Orbitron',monospace; font-size:14px;">${w.amount} ₴</div>
+                        <div style="color:#777; font-size:11px; margin-top:2px;">${w.method} • ${date}</div>
                     </div>
                     <span class="pw-status ${statusClass}">${statusText}</span>
                 </div>
@@ -2124,19 +2126,20 @@ function initDepositPackages() {
   const pkg = document.getElementById('depositPackages');
   if(!pkg) return;
   const packages = [
-    {amount:200, bonus:0, label:'Старт'},
-    {amount:500, bonus:50, label:'Базовий'},
-    {amount:1000, bonus:200, label:'Стандарт', popular:true},
-    {amount:2500, bonus:625, label:'Великий'},
-    {amount:5000, bonus:1500, label:'VIP'},
-    {amount:10000, bonus:4000, label:'Хайроллер'},
+    {amount:200, bonus:0, label:'Старт', icon:'🔹'},
+    {amount:500, bonus:50, label:'Базовий', icon:'🔸'},
+    {amount:1000, bonus:200, label:'Стандарт', icon:'⭐', popular:true},
+    {amount:2500, bonus:625, label:'Великий', icon:'💎'},
+    {amount:5000, bonus:1500, label:'VIP', icon:'👑'},
+    {amount:10000, bonus:4000, label:'Хайроллер', icon:'🚀'},
   ];
   pkg.innerHTML = packages.map(p=>`
     <div class="dep-package${p.popular?' popular':''}" onclick="selectDepPackage(${p.amount},${p.bonus})">
+      <div class="dep-package-icon">${p.icon}</div>
       <div class="dep-package-amount">₴${formatNumber(p.amount)}</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">+₴'+formatNumber(p.bonus)+' бонус</div>':'<div class="dep-package-bonus" style="color:#555;">Без бонусу</div>'}
+      ${p.bonus>0?'<div class="dep-package-bonus">+₴'+formatNumber(p.bonus)+' бонус</div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
       <div class="dep-package-total">${p.bonus>0?'Разом: ₴'+formatNumber(p.amount+p.bonus):'Тільки депозит'}</div>
-      <div style="font-size:9px;color:#777;margin-top:4px;">${p.label}</div>
+      <div class="dep-package-label">${p.label}</div>
     </div>
   `).join('');
 }
@@ -8928,42 +8931,66 @@ function updateCashierCashbackUI() {
   const weekStart = userData.cashbackWeekStart || Date.now();
   const daysLeft  = Math.max(0, Math.ceil((7*24*3600000 - (Date.now()-weekStart)) / 86400000));
   const weekLeft  = Math.max(0, CASHBACK_MAX_PER_WEEK - weekUsed);
-  const vip = getVipLevel(userData.totalWagered||0);
+  const wagered = userData.totalWagered || 0;
+  const vip = getVipLevel(wagered);
   const enabled = getCashbackEnabled();
+  const hasNext = vip.index < VIP_LEVELS.length - 1;
+  const nextVip = VIP_LEVELS[Math.min(vip.index + 1, VIP_LEVELS.length - 1)];
+  const tierPct = hasNext ? Math.min(100, Math.max(0, ((wagered - vip.min) / (nextVip.min - vip.min)) * 100)) : 100;
 
   el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div>
-        <div style="font-size:15px;font-weight:bold;color:var(--green);">💰 Кешбек</div>
-        <div style="font-size:10px;color:#555;margin-top:2px;">${vip.icon} ${vip.name} • ${((vip.cashback+clanCashbackBonus)*100).toFixed(2)}% з ставки${clanCashbackBonus>0?' (+клан)':''}</div>
+    <div style="position:relative;overflow:hidden;border-radius:var(--r-lg);padding:16px;margin-bottom:12px;
+      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:30px;line-height:1;">${vip.icon}</div>
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#241800;">${vip.name}</div>
+            <div style="font-size:10px;color:rgba(36,24,0,.65);font-weight:bold;">${((vip.cashback+clanCashbackBonus)*100).toFixed(2)}% з кожної ставки${clanCashbackBonus>0?' (+клан)':''}</div>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <span style="font-size:10px;color:rgba(36,24,0,.65);font-weight:bold;">${enabled?'Увімк.':'Вимк.'}</span>
+          <div class="toggle-switch" style="width:40px;height:22px;"><input type="checkbox" ${enabled?'checked':''} onchange="toggleCashback(this)"><div class="toggle-slider"></div></div>
+        </label>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <span style="font-size:11px;color:#777;">${enabled?'Увімкнено':'Вимкнено'}</span>
-        <div class="toggle-switch" style="width:40px;height:22px;"><input type="checkbox" ${enabled?'checked':''} onchange="toggleCashback(this)"><div class="toggle-slider"></div></div>
-      </label>
     </div>
+
+    <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#777;margin-bottom:6px;">
+        <span>${vip.icon} ${vip.name}</span>
+        <span>${hasNext ? nextVip.icon + ' ' + nextVip.name : '🏆 Максимальний рівень'}</span>
+      </div>
+      <div style="height:8px;background:#0a0a0a;border-radius:6px;overflow:hidden;box-shadow: inset 0 2px 4px rgba(0,0,0,.6);">
+        <div class="progress-fill-shimmer" style="height:100%;width:${tierPct}%;border-radius:6px;background:linear-gradient(90deg,#8a6d1f,var(--accent));transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
+      </div>
+      ${hasNext ? `<div style="text-align:right;font-size:9px;color:#555;margin-top:5px;">до ${nextVip.name}: ${formatNumber(Math.max(0,nextVip.min-wagered))} ₴ ставок</div>` : ''}
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-      <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
         <div style="font-size:9px;color:#555;margin-bottom:3px;">Накопичено</div>
         <div style="font-size:18px;font-weight:900;color:var(--green);">${formatNumber(pending)}₴</div>
       </div>
-      <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
         <div style="font-size:9px;color:#555;margin-bottom:3px;">Тижн. ліміт</div>
         <div style="font-size:18px;font-weight:900;color:var(--accent);">${formatNumber(weekLeft)}₴</div>
       </div>
-      <div style="background:#0a0a0a;border-radius:10px;padding:10px;text-align:center;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
         <div style="font-size:9px;color:#555;margin-bottom:3px;">Скидання</div>
         <div style="font-size:18px;font-weight:900;color:#777;">${daysLeft}д</div>
       </div>
     </div>
-    <div style="background:#050a05;border:1px solid #0d2a0d;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#555;">
+    <div style="background:#050a05;border:1px solid #0d2a0d;border-radius:var(--r-sm);padding:10px;margin-bottom:12px;font-size:11px;color:#555;">
       ℹ️ Ліміт: <b style="color:var(--green);">${CASHBACK_MAX_PER_BET}₴</b>/ставка • <b style="color:var(--green);">${formatNumber(CASHBACK_MAX_PER_WEEK)}₴</b>/тиждень • Мінімум виплати: <b style="color:var(--accent);">2 000₴</b>
     </div>
     <button class="btn-green" onclick="claimCashback()" ${pending<=0?'disabled style="opacity:0.5;"':''}>
       💰 ЗАБРАТИ ${formatNumber(pending)} ₴
     </button>
-    <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;">
-      Всього отримано: ${formatNumber(userData.cashbackTotalClaimed||0)} ₴
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 12px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);box-shadow:var(--bevel);">
+      <span style="font-size:10px;color:#555;">Всього отримано кешбеку</span>
+      <span style="font-size:14px;font-weight:900;color:var(--green);">${formatNumber(userData.cashbackTotalClaimed||0)} ₴</span>
     </div>`;
 }
 
@@ -11694,8 +11721,17 @@ window.formatNumber = function(num) {
 // ===== CASHIER SUB-TABS =====
 // ============================================================
 function switchCashierTab(tab, el) {
+  const rail = document.getElementById('cashierTabsRail');
+  const btns = rail ? Array.from(rail.querySelectorAll('.cashier-tab-btn')) : [];
   document.querySelectorAll('.cashier-tab-btn').forEach(b => b.classList.remove('active'));
-  if(el) el.classList.add('active');
+  const activeBtn = el || btns.find(b => b.id === 'ctb-' + tab);
+  if(activeBtn) activeBtn.classList.add('active');
+  // Ковзний індикатор — переїжджає під активну кнопку замість плоскої заливки
+  const slider = document.getElementById('cashierTabSlider');
+  if(slider && activeBtn) {
+    const idx = btns.indexOf(activeBtn);
+    if(idx >= 0) slider.style.transform = 'translateX(' + (idx * 100) + '%)';
+  }
   // Show/hide ALL cashier panels — включаючи нову 'card'
   ['card','deposit','withdraw','cashback','markets'].forEach(t => {
     const p = document.getElementById('cashier-panel-' + t);
@@ -11720,8 +11756,8 @@ function buildMarketsPage() {
       ? (uahRate >= 1 ? uahRate.toFixed(2)+'₴' : uahRate.toFixed(6)+'₴') : '...';
     const isActive = cur.code === currentCurrency;
     const btn = document.createElement('div');
-    btn.style.cssText = 'padding:8px 4px;background:' + (isActive?'rgba(212,175,55,0.15)':'var(--input)') +
-      ';border:2px solid '+(isActive?'var(--accent)':'var(--border)')+';border-radius:10px;text-align:center;cursor:pointer;transition:all 0.15s;';
+    btn.className = 'currency-btn' + (isActive ? ' active' : '');
+    btn.style.padding = '8px 4px';
     btn.innerHTML = '<div style="font-size:18px;">' + cur.flag + '</div>' +
       '<div style="font-size:10px;font-weight:bold;color:'+(isActive?'var(--accent)':'#bbb')+';">' + cur.code + '</div>' +
       '<div style="font-size:9px;color:#555;">' + rStr + '</div>';
@@ -11755,15 +11791,16 @@ function buildMarketsRateTable() {
     const color = cryptoColors[cur.code] || 'var(--accent)';
     // Mock 24h change (in real life you'd store prev price)
     const change = ((Math.random()-0.48)*6).toFixed(2);
-    const changeColor = parseFloat(change) >= 0 ? 'var(--green)' : 'var(--red)';
+    const isUp = parseFloat(change) >= 0;
+    const changeColor = isUp ? 'var(--green)' : 'var(--red)';
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;padding:10px 14px;' + (i%2?'background:#080808;':'background:#0a0a0a;');
+    row.style.cssText = 'display:flex;align-items:center;padding:11px 14px;transition:background .15s;' + (i%2?'background:rgba(255,255,255,.015);':'background:transparent;');
     row.innerHTML =
       '<span style="font-size:22px;margin-right:10px;">' + cur.flag + '</span>' +
       '<div style="flex:1;"><div style="font-size:13px;font-weight:bold;">' + cur.code + '</div><div style="font-size:10px;color:#555;">' + cur.name + '</div></div>' +
       '<div style="text-align:right;">' +
         '<div style="font-size:15px;font-weight:900;color:' + color + ';">' + fmt + ' ₴</div>' +
-        '<div style="font-size:10px;color:' + changeColor + ';">' + (parseFloat(change)>=0?'+':'') + change + '%</div>' +
+        '<div style="font-size:10px;font-weight:bold;color:' + changeColor + ';display:flex;align-items:center;justify-content:flex-end;gap:2px;">' + (isUp?'▲':'▼') + ' ' + Math.abs(change) + '%</div>' +
       '</div>';
     tbl.appendChild(row);
   });
@@ -11777,9 +11814,7 @@ function buildChartSelector() {
     const cur = CURRENCIES[code]; if(!cur) return;
     const active = (window._chartCurrency || 'BTC') === code;
     const btn = document.createElement('button');
-    btn.style.cssText = 'padding:6px 12px;background:' + (active?'var(--accent)':'var(--input)') +
-      ';border:1px solid '+(active?'var(--accent)':'var(--border)')+';color:'+(active?'#000':'#aaa')+
-      ';border-radius:20px;font-size:12px;font-weight:bold;cursor:pointer;';
+    btn.className = 'chart-currency-chip' + (active ? ' active' : '');
     btn.textContent = cur.flag + ' ' + code;
     btn.onclick = () => {
       window._chartCurrency = code;
