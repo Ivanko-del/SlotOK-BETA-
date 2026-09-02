@@ -521,6 +521,19 @@
     .vip-card.silver { background: linear-gradient(135deg, #111, #1a1a1a); border: 1px solid var(--silver-c); }
     .vip-card.gold { background: linear-gradient(135deg, #1a1500, #2d2400); border: 1px solid var(--gold-c); }
     .vip-card.platinum { background: linear-gradient(135deg, #0d0d12, #1a1a22); border: 1px solid var(--plat); }
+    /* The hero "current tier" card breathes a glow in its own tier color —
+       the tier list below stays calm so this one reads as the focal point. */
+    #vipCurrentCard.bronze   { animation: vipGlowBronze 4s ease-in-out infinite; }
+    #vipCurrentCard.silver   { animation: vipGlowSilver 4s ease-in-out infinite; }
+    #vipCurrentCard.gold     { animation: vipGlowGold 4s ease-in-out infinite; }
+    #vipCurrentCard.platinum { animation: vipGlowPlat 4s ease-in-out infinite; }
+    @keyframes vipGlowBronze { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--bronze); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--bronze); } }
+    @keyframes vipGlowSilver { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--silver-c); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--silver-c); } }
+    @keyframes vipGlowGold   { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--gold-c); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--gold-c); } }
+    @keyframes vipGlowPlat   { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--plat); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--plat); } }
+    @media (prefers-reduced-motion: reduce) {
+      #vipCurrentCard.bronze, #vipCurrentCard.silver, #vipCurrentCard.gold, #vipCurrentCard.platinum { animation: none; }
+    }
     .vip-perk { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
     .vip-perk-icon { font-size: 18px; min-width: 25px; }
     .cashback-toast { background: linear-gradient(135deg, #0d2a0d, #1a4a1a); border-left-color: var(--green) !important; }
@@ -1607,6 +1620,7 @@
       border:1px solid rgba(255,255,255,.07);
       border-radius:16px; padding:14px; text-align:center;
       transition:.2s; position:relative; overflow:hidden;
+      box-shadow: var(--bevel), var(--elev-1);
     }
     .prof-stat-card::before {
       content:''; position:absolute;
@@ -1614,7 +1628,7 @@
       background:radial-gradient(circle at center,rgba(212,175,55,.04),transparent 60%);
       pointer-events:none;
     }
-    .prof-stat-card:hover { border-color:rgba(212,175,55,.2); transform:translateY(-2px); }
+    .prof-stat-card:hover { border-color:rgba(212,175,55,.2); transform:translateY(-2px); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
     .prof-stat-val {
       font-size:22px; font-weight:900;
       font-family:'Orbitron',monospace;

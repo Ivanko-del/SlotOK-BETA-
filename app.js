@@ -174,18 +174,20 @@ function updateUI() {
         requestAnimationFrame(()=>{ e.style.animation = 'popIn .3s ease'; e.textContent = val; });
       }
     };
-    ps('profStatBalance', '₴' + formatNumber(userData.balance || 0));
-    ps('profStatBigWin',  '₴' + formatNumber(userData.stats?.biggestWin || userData.maxWin || 0));
+    // Numeric stats get a live count-up tween instead of an instant swap
+    const pn = (el, target, prefix, suffix) => animateNumberText(document.getElementById(el), target, prefix, suffix);
+    pn('profStatBalance', userData.balance || 0, '₴');
+    pn('profStatBigWin',  userData.stats?.biggestWin || userData.maxWin || 0, '₴');
     const gamesPlayed = userData.stats?.gamesPlayed || userData.totalGames || 0;
     const gamesWon    = userData.stats?.gamesWon    || userData.totalWins  || 0;
-    ps('profStatGames', gamesPlayed);
-    ps('profStatWager', '₴' + formatNumber(userData.totalWagered || userData.totalWager || 0));
+    pn('profStatGames', gamesPlayed, '');
+    pn('profStatWager', userData.totalWagered || userData.totalWager || 0, '₴');
     ps('profStatStreak', (userData.dailyStreak || 0) + '🔥');
-    ps('profStatSlotsWins', userData.slotsPlayed || 0);
-    ps('profStatDeposits', '₴' + formatNumber(userData.totalDeposits || 0));
+    pn('profStatSlotsWins', userData.slotsPlayed || 0, '');
+    pn('profStatDeposits', userData.totalDeposits || 0, '₴');
     // Win rate
     const wr = gamesPlayed > 0 ? Math.round((gamesWon/gamesPlayed)*100) : 0;
-    ps('profWinRate', wr + '%');
+    pn('profWinRate', wr, '', '%');
     const bar = document.getElementById('profWinRateBar');
     if(bar) setTimeout(()=>{ bar.style.width = Math.min(wr,100)+'%'; }, 300);
     const vip = getVipLevel ? getVipLevel(userData.totalWagered || 0) : null;
@@ -194,9 +196,7 @@ function updateUI() {
     if(!window._profileBalanceListener) {
       window._profileBalanceListener = true;
       db.ref('users/'+currentUser+'/balance').on('value', snap => {
-        const bal = snap.val() || 0;
-        const e = document.getElementById('profStatBalance');
-        if(e) { e.style.animation='none'; requestAnimationFrame(()=>{ e.style.animation='popIn .3s ease'; e.textContent='₴'+formatNumber(bal); }); }
+        pn('profStatBalance', snap.val() || 0, '₴');
       });
     }
     updateVipUI();
@@ -9127,7 +9127,7 @@ function updateVipUI() {
   if(!card) return;
   card.className = `vip-card ${vip.class}`;
   document.getElementById('vipLevelName').textContent = `${vip.icon} ${vip.name}`;
-  document.getElementById('vipWagered').textContent = formatNumber(wagered) + ' ₴';
+  animateNumberText(document.getElementById('vipWagered'), wagered, '', ' ₴');
 
   const fill = document.getElementById('vipProgressFill');
   if(vip.index < VIP_LEVELS.length - 1) {
