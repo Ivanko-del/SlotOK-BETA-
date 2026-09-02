@@ -2443,6 +2443,8 @@
 .banner-deco {
   position: absolute; top: -20px; right: -20px;
   font-size: 110px; opacity: .06; pointer-events: none;
+  transition: transform .5s var(--ease-premium);
+  will-change: transform;
 }
 .banner-slide::before {
   content: '';
@@ -3042,8 +3044,9 @@
 }
 
 /* Кнопки — легкий тактильний відгук на будь-якому елементі з цим класом */
-.anim-press { transition: transform .12s cubic-bezier(.4,0,.2,1); }
+.anim-press { transition: transform .12s cubic-bezier(.4,0,.2,1), box-shadow .15s; }
 .anim-press:active { transform: scale(.93); }
+#tab-home .anim-press:hover { box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
 
 /* Картки — плавна поява каскадом */
 @keyframes cascadeIn {

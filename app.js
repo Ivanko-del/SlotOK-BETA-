@@ -9673,6 +9673,28 @@ function showAdminBypassBanner(gameId) {
   });
 })();
 
+// Same cursor-depth trick for the home-screen promo carousel — one listener
+// on the carousel, delegated to whichever slide is under the pointer.
+(function initBannerParallax() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const carousel = document.getElementById('bannerCarousel');
+  if (!carousel) return;
+  let current = null;
+  function reset(deco) { if (deco) deco.style.transform = ''; }
+  carousel.addEventListener('pointermove', function(e) {
+    const slide = e.target.closest ? e.target.closest('.banner-slide') : null;
+    const deco = slide ? slide.querySelector('.banner-deco') : null;
+    if (deco !== current) { reset(current); current = deco; }
+    if (!slide || !deco) return;
+    const r = slide.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    deco.style.transform = 'translate(' + (px * 20) + 'px,' + (py * 20) + 'px)';
+  }, { passive: true });
+  carousel.addEventListener('pointerleave', function() { reset(current); current = null; });
+})();
+
 function switchTab(id, el) {
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
