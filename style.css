@@ -2535,6 +2535,19 @@
 .vcard-skin-meme-spongebob .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1otk96.jpg') center/cover; }
 .vcard-skin-meme-sadpablo .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1c1uej.jpg') center/cover; }
 .vcard-skin-meme-hidethepain .vcard-front      { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/gk5el.jpg') center/cover; }
+/* Свіжі меми — "молодіжний" тренд-набір */
+.vcard-skin-meme-67kid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/a9fxer.jpg') center/cover; }
+.vcard-skin-meme-skibidi .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover; }
+.vcard-skin-meme-tralalero .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9p82jm.jpg') center/cover; }
+.vcard-skin-meme-bombardiro .vcard-front  { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover; }
+.vcard-skin-meme-tungtung .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover; }
+.vcard-skin-meme-chimpanzini .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover; }
+.vcard-skin-meme-gigachad .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover; }
+.vcard-skin-meme-sigma .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/5imrkq.jpg') center/cover; }
+.vcard-skin-meme-chillguy .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9au02y.jpg') center/cover; }
+.vcard-skin-meme-ohio .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/46e43q.jpg') center/cover; }
+.vcard-skin-meme-npc .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/2k0qad.jpg') center/cover; }
+.vcard-skin-meme-rizzler .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/93etli.jpg') center/cover; }
 .vcard-skin-meme-drake .vcard-front, .vcard-skin-meme-distracted .vcard-front, .vcard-skin-meme-womancat .vcard-front,
 .vcard-skin-meme-twobuttons .vcard-front, .vcard-skin-meme-changemymind .vcard-front, .vcard-skin-meme-successkid .vcard-front,
 .vcard-skin-meme-doge .vcard-front, .vcard-skin-meme-thisisfine .vcard-front, .vcard-skin-meme-stonks .vcard-front,
@@ -2542,7 +2555,11 @@
 .vcard-skin-meme-grumpycat .vcard-front, .vcard-skin-meme-expandingbrain .vcard-front, .vcard-skin-meme-onedoesnotsimply .vcard-front,
 .vcard-skin-meme-ancientaliens .vcard-front, .vcard-skin-meme-dicaprio .vcard-front, .vcard-skin-meme-pigeon .vcard-front,
 .vcard-skin-meme-batman .vcard-front, .vcard-skin-meme-spongebob .vcard-front, .vcard-skin-meme-sadpablo .vcard-front,
-.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-custom-photo .vcard-front {
+.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-meme-67kid .vcard-front, .vcard-skin-meme-skibidi .vcard-front,
+.vcard-skin-meme-tralalero .vcard-front, .vcard-skin-meme-bombardiro .vcard-front, .vcard-skin-meme-tungtung .vcard-front,
+.vcard-skin-meme-chimpanzini .vcard-front, .vcard-skin-meme-gigachad .vcard-front, .vcard-skin-meme-sigma .vcard-front,
+.vcard-skin-meme-chillguy .vcard-front, .vcard-skin-meme-ohio .vcard-front, .vcard-skin-meme-npc .vcard-front,
+.vcard-skin-meme-rizzler .vcard-front, .vcard-skin-custom-photo .vcard-front {
   border: 1px solid rgba(255,255,255,.25);
   box-shadow: 0 0 22px rgba(255,255,255,.1);
 }

@@ -18642,6 +18642,19 @@ function openCardColorPicker() {
     {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
     {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
     {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
+    // Свіжі "молодіжні" тренд-меми
+    {id:'meme-67kid',       name:'6-7',               accent:'#fff', prev:"url('https://i.imgflip.com/4/a9fxer.jpg') center/cover"},
+    {id:'meme-skibidi',     name:'Skibidi Toilet',    accent:'#fff', prev:"url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover"},
+    {id:'meme-tralalero',   name:'Tralalero Tralala', accent:'#fff', prev:"url('https://i.imgflip.com/4/9p82jm.jpg') center/cover"},
+    {id:'meme-bombardiro',  name:'Bombardiro Crocodilo', accent:'#fff', prev:"url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover"},
+    {id:'meme-tungtung',    name:'Tung Tung Sahur',   accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover"},
+    {id:'meme-chimpanzini', name:'Chimpanzini Bananini', accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover"},
+    {id:'meme-gigachad',    name:'Gigachad',          accent:'#fff', prev:"url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover"},
+    {id:'meme-sigma',       name:'Sigma',             accent:'#fff', prev:"url('https://i.imgflip.com/4/5imrkq.jpg') center/cover"},
+    {id:'meme-chillguy',    name:'Chill Guy',         accent:'#fff', prev:"url('https://i.imgflip.com/4/9au02y.jpg') center/cover"},
+    {id:'meme-ohio',        name:'Ohio',              accent:'#fff', prev:"url('https://i.imgflip.com/4/46e43q.jpg') center/cover"},
+    {id:'meme-npc',         name:'NPC',               accent:'#fff', prev:"url('https://i.imgflip.com/4/2k0qad.jpg') center/cover"},
+    {id:'meme-rizzler',     name:'Rizzler',           accent:'#fff', prev:"url('https://i.imgflip.com/4/93etli.jpg') center/cover"},
   ];
   var CATEGORIES = [
     { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
@@ -18651,6 +18664,7 @@ function openCardColorPicker() {
     { name:'🪨 Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
     { name:'🎉 Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
     { name:'🎭 Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
+    { name:'🔥 Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
@@ -18688,14 +18702,21 @@ function openCardColorPicker() {
 // дані користувача (не спільний CSS-клас, як решта скінів)
 function applyCardPhotoBg(el, skin, photoUrl) {
   if(!el) return;
+  // #vcardEl — це зовнішня обгортка з .vcard-front І .vcard-back дітьми (для
+  // фліпу картки). Раніше фон ставився на неї саму — тому просвічувався лише
+  // крізь .vcard-back (у якого немає власного opaque background), а лицьова
+  // сторона лишалась поверх зі своїм стандартним фоном. Треба ставити саме
+  // на .vcard-front.
+  var front = el.classList && el.classList.contains('vcard-front') ? el : el.querySelector('.vcard-front');
+  if(!front) return;
   if(skin === 'custom-photo' && photoUrl) {
-    el.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url(' + photoUrl + ')';
-    el.style.backgroundSize = 'cover';
-    el.style.backgroundPosition = 'center';
+    front.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url(' + photoUrl + ')';
+    front.style.backgroundSize = 'cover';
+    front.style.backgroundPosition = 'center';
   } else {
-    el.style.backgroundImage = '';
-    el.style.backgroundSize = '';
-    el.style.backgroundPosition = '';
+    front.style.backgroundImage = '';
+    front.style.backgroundSize = '';
+    front.style.backgroundPosition = '';
   }
 }
 
