@@ -481,6 +481,40 @@ const DEPOSIT_METHOD_NAMES = {
 };
 let selectedDepMethod = 'privat';
 
+const DEPOSIT_LOADING_STEPS = [
+  'Перевірка реквізитів...', 'З’єднання з банком...', 'Підтвердження транзакції...',
+  'Шифрування даних...', 'Синхронізація балансу...', 'Перевірка на шахрайство...'
+];
+
+// Brief bank-app-style "processing" screen before the receipt — a different
+// random sequence/duration each time so it doesn't feel like a canned delay.
+function showDepositLoading(amount, method, reqId) {
+  document.getElementById('depReceiptModal')?.remove();
+  const steps = [...DEPOSIT_LOADING_STEPS].sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
+  const modal = document.createElement('div');
+  modal.id = 'depReceiptModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.innerHTML = `
+    <style>@keyframes depSpin{to{transform:rotate(360deg)}}</style>
+    <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:22px;padding:36px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+      <div style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(61,214,140,.2);border-top-color:#3dd68c;margin:0 auto 18px;animation:depSpin .8s linear infinite;"></div>
+      <div id="depLoadingText" style="font-size:13px;color:#aaa;min-height:18px;">${steps[0]}</div>
+    </div>`;
+  document.body.appendChild(modal);
+  let i = 0;
+  const stepMs = 350 + Math.random() * 300;
+  const iv = setInterval(() => {
+    i++;
+    const el = document.getElementById('depLoadingText');
+    if(el && steps[i]) el.textContent = steps[i];
+  }, stepMs);
+  const totalMs = steps.length * stepMs + 300 + Math.random() * 400;
+  setTimeout(() => {
+    clearInterval(iv);
+    showDepositReceipt(amount, method, reqId);
+  }, totalMs);
+}
+
 // Bank-app-style success receipt shown after a deposit request is submitted.
 function showDepositReceipt(amount, method, reqId) {
   document.getElementById('depReceiptModal')?.remove();
@@ -589,7 +623,7 @@ function submitDepositRequest() {
         db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
       });
     });
-    showDepositReceipt(amount, selectedDepMethod || 'privat', reqId);
+    showDepositLoading(amount, selectedDepMethod || 'privat', reqId);
     if(btn) { btn.disabled = false; btn.textContent = '✅ Подати заявку на поповнення'; }
     // Reset selection
     selectedDepAmount = 0;
