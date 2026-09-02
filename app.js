@@ -475,7 +475,38 @@ const DEPOSIT_REQUISITES = {
   usdt:       'USDT (TRC20): TQn9Y2khEsLJW1ChVWFMSMeRDow5oJgVGw — вкажіть свій ID у коментарі до перекладу',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
+const DEPOSIT_METHOD_NAMES = {
+  privat: 'PrivatBank', mono: 'Monobank', card: 'Visa/Mastercard',
+  applepay: 'Apple Pay', googlepay: 'Google Pay', usdt: 'USDT (TRC20)', telegram: 'Telegram'
+};
 let selectedDepMethod = 'privat';
+
+// Bank-app-style success receipt shown after a deposit request is submitted.
+function showDepositReceipt(amount, method, reqId) {
+  document.getElementById('depReceiptModal')?.remove();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+  const modal = document.createElement('div');
+  modal.id = 'depReceiptModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+  modal.innerHTML = `
+    <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:22px;padding:28px 20px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,214,140,.12);border:2px solid #3dd68c;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:#3dd68c;">✓</div>
+      <div style="font-size:16px;font-weight:800;color:#eee;margin-bottom:4px;">Заявку прийнято</div>
+      <div style="font-size:12px;color:#666;margin-bottom:18px;">Очікуйте підтвердження адміністратора</div>
+      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:#3dd68c;margin-bottom:18px;">+${amount}₴</div>
+      <div style="background:#0a0a0a;border-radius:12px;padding:12px 14px;text-align:left;font-size:12px;color:#888;display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;"><span>Спосіб</span><span style="color:#ccc;font-weight:600;">${DEPOSIT_METHOD_NAMES[method] || method}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>ID транзакції</span><span style="color:#ccc;font-family:monospace;">${reqId.slice(-10)}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Дата</span><span style="color:#ccc;">${dateStr}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Статус</span><span style="color:#f5b700;font-weight:600;">Обробка</span></div>
+      </div>
+      <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:rgba(61,214,140,.12);border:1px solid rgba(61,214,140,.3);border-radius:12px;padding:12px;color:#3dd68c;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
+      <div style="font-size:10px;color:#444;line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${now.getFullYear()} SlotOK. Усі права захищено.</div>
+    </div>`;
+  document.body.appendChild(modal);
+}
 
 function selectDepMethod(method, el) {
   selectedDepMethod = method;
@@ -558,7 +589,7 @@ function submitDepositRequest() {
         db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
       });
     });
-    notify(`✅ Заявку на ${amount}₴ подано! Очікуйте підтвердження адміна.`, 'success');
+    showDepositReceipt(amount, selectedDepMethod || 'privat', reqId);
     if(btn) { btn.disabled = false; btn.textContent = '✅ Подати заявку на поповнення'; }
     // Reset selection
     selectedDepAmount = 0;
