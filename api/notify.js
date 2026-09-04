@@ -52,6 +52,10 @@ module.exports = async (req, res) => {
         text = `🎰 ДЖЕКПОТ! Нараховано ₴${ref.amount}!`;
       } else if (kind === "bonus" && ref && typeof ref.amount === "number") {
         text = `🎁 Бонус: +${ref.amount}₴!`;
+      } else if (kind === "vipup" && ref && ref.name) {
+        text = `🎉 VIP підвищено до ${esc(ref.icon || "")} ${esc(ref.name)}!`;
+      } else if (kind === "bplevel" && ref && ref.level) {
+        text = `🎫 Battle Pass: рівень ${ref.level}!`;
       }
       if (!text) { res.status(200).end(); return; }
 

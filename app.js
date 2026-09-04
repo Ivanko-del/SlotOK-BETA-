@@ -9005,6 +9005,7 @@ function addWager(amount) {
   // VIP level up
   if(vip.index > prevVip.index) {
     setTimeout(() => notify(`🎉 VIP підвищено до ${vip.icon} ${vip.name}!`, 'success'), 700);
+    notifyBot('player-ping', null, { to: currentUser, kind: 'vipup', ref: { name: vip.name, icon: vip.icon } });
   }
   db.ref('users/' + currentUser).update(updates);
   // Battle Pass XP: 1 XP per 100₴ wagered
@@ -15532,6 +15533,28 @@ function initBgMusicFromSettings() {
 const BP_XP_PER_LEVEL = 1000;
 const BP_MAX_LEVEL    = 50;
 
+// Seasons are pure date math (no server cron needed) — every client computes the
+// same season number from a fixed epoch, so a season "ends" for everyone at the
+// same instant without a scheduled job. Progress from a finished season is
+// lazily wiped the next time the player earns XP (see addBpXP), same pattern
+// already used for the weekly cashback limit reset.
+const BP_SEASON_EPOCH = Date.UTC(2026, 0, 1);
+const BP_SEASON_DAYS  = 30;
+
+function getBpSeasonInfo() {
+  const len = BP_SEASON_DAYS * 86400000;
+  const num = Math.floor((Date.now() - BP_SEASON_EPOCH) / len) + 1;
+  const endsAt = BP_SEASON_EPOCH + num * len;
+  return { num, endsAt };
+}
+
+function formatBpTimeLeft(ms) {
+  if(ms <= 0) return 'закінчується...';
+  const days  = Math.floor(ms / 86400000);
+  const hours = Math.floor((ms % 86400000) / 3600000);
+  return days > 0 ? `${days}д ${hours}г` : `${hours}г ${Math.floor((ms%3600000)/60000)}хв`;
+}
+
 // 50 levels of rewards
 const BP_REWARDS = [
   // lv: level, free: free reward, vip: vip-only reward
@@ -15544,7 +15567,7 @@ const BP_REWARDS = [
   {lv:7,  free:{icon:'💰',label:'3 000 ₴',type:'balance',val:3000},        vip:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000}},
   {lv:8,  free:{icon:'📦',label:'Лут-бокс',type:'lootbox',val:1},          vip:{icon:'🪙',label:'4 Слотіки',type:'slotiky',val:4}},
   {lv:9,  free:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000},        vip:{icon:'🚀',label:'VIP Буст 3д',type:'vipBoost',val:3}},
-  {lv:10, free:{icon:'🎡',label:'3 Прокрутки',type:'freeFortune',val:3},   vip:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000}},
+  {lv:10, free:{icon:'🎡',label:'3 Прокрутки',type:'freeFortune',val:3},   vip:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000}, milestone:true},
   {lv:11, free:{icon:'💰',label:'7 000 ₴',type:'balance',val:7000},        vip:{icon:'🪙',label:'5 Слотіків',type:'slotiky',val:5}},
   {lv:12, free:{icon:'🎟️',label:'10 Спінів',type:'freeSlots',val:10},      vip:{icon:'💰',label:'15 000 ₴',type:'balance',val:15000}},
   {lv:13, free:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000},      vip:{icon:'🪙',label:'6 Слотіків',type:'slotiky',val:6}},
@@ -15554,7 +15577,7 @@ const BP_REWARDS = [
   {lv:17, free:{icon:'💰',label:'20 000 ₴',type:'balance',val:20000},      vip:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000}},
   {lv:18, free:{icon:'🎟️',label:'15 Спінів',type:'freeSlots',val:15},      vip:{icon:'🪙',label:'10 Слотіків',type:'slotiky',val:10}},
   {lv:19, free:{icon:'💰',label:'25 000 ₴',type:'balance',val:25000},      vip:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000}},
-  {lv:20, free:{icon:'🎡',label:'5 Прокрут.',type:'freeFortune',val:5},    vip:{icon:'🪙',label:'12 Слотіків',type:'slotiky',val:12}},
+  {lv:20, free:{icon:'🎡',label:'5 Прокрут.',type:'freeFortune',val:5},    vip:{icon:'🦈',label:'Значок "Акула"',type:'cosmetic',val:'badge_shark'}, milestone:true},
   {lv:21, free:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000},      vip:{icon:'💰',label:'50 000 ₴',type:'balance',val:50000}},
   {lv:22, free:{icon:'🎟️',label:'20 Спінів',type:'freeSlots',val:20},      vip:{icon:'🪙',label:'15 Слотіків',type:'slotiky',val:15}},
   {lv:23, free:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000},      vip:{icon:'💰',label:'70 000 ₴',type:'balance',val:70000}},
@@ -15564,7 +15587,7 @@ const BP_REWARDS = [
   {lv:27, free:{icon:'💰',label:'60 000 ₴',type:'balance',val:60000},      vip:{icon:'💰',label:'120 000 ₴',type:'balance',val:120000}},
   {lv:28, free:{icon:'🎡',label:'7 Прокрут.',type:'freeFortune',val:7},    vip:{icon:'🪙',label:'22 Слотіки',type:'slotiky',val:22}},
   {lv:29, free:{icon:'💰',label:'75 000 ₴',type:'balance',val:75000},      vip:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000}},
-  {lv:30, free:{icon:'💡',label:'5 Підказок',type:'minesHints',val:5},     vip:{icon:'🪙',label:'25 Слотіків',type:'slotiky',val:25}},
+  {lv:30, free:{icon:'💡',label:'5 Підказок',type:'minesHints',val:5},     vip:{icon:'🔥',label:'Вогняний аватар',type:'cosmetic',val:'avatar_fire'}, milestone:true},
   {lv:31, free:{icon:'💰',label:'90 000 ₴',type:'balance',val:90000},      vip:{icon:'💰',label:'180 000 ₴',type:'balance',val:180000}},
   {lv:32, free:{icon:'🎟️',label:'30 Спінів',type:'freeSlots',val:30},      vip:{icon:'🪙',label:'28 Слотіків',type:'slotiky',val:28}},
   {lv:33, free:{icon:'💰',label:'100 000 ₴',type:'balance',val:100000},    vip:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000}},
@@ -15574,7 +15597,7 @@ const BP_REWARDS = [
   {lv:37, free:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000},    vip:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000}},
   {lv:38, free:{icon:'🎟️',label:'40 Спінів',type:'freeSlots',val:40},      vip:{icon:'🪙',label:'40 Слотіків',type:'slotiky',val:40}},
   {lv:39, free:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000},    vip:{icon:'💰',label:'400 000 ₴',type:'balance',val:400000}},
-  {lv:40, free:{icon:'💡',label:'10 Підказок',type:'minesHints',val:10},   vip:{icon:'🪙',label:'50 Слотіків',type:'slotiky',val:50}},
+  {lv:40, free:{icon:'💡',label:'10 Підказок',type:'minesHints',val:10},   vip:{icon:'🐉',label:'Значок "Дракон"',type:'cosmetic',val:'badge_dragon'}, milestone:true},
   {lv:41, free:{icon:'💰',label:'250 000 ₴',type:'balance',val:250000},    vip:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000}},
   {lv:42, free:{icon:'🎟️',label:'50 Спінів',type:'freeSlots',val:50},      vip:{icon:'🪙',label:'55 Слотіків',type:'slotiky',val:55}},
   {lv:43, free:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000},    vip:{icon:'💰',label:'600 000 ₴',type:'balance',val:600000}},
@@ -15584,18 +15607,26 @@ const BP_REWARDS = [
   {lv:47, free:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000},    vip:{icon:'💰',label:'1 000 000 ₴',type:'balance',val:1000000}},
   {lv:48, free:{icon:'🎟️',label:'75 Спінів',type:'freeSlots',val:75},      vip:{icon:'🪙',label:'80 Слотіків',type:'slotiky',val:80}},
   {lv:49, free:{icon:'💰',label:'750 000 ₴',type:'balance',val:750000},    vip:{icon:'💰',label:'1 500 000 ₴',type:'balance',val:1500000}},
-  {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'💎',label:'100 Слотіків',type:'slotiky',val:100}},
+  {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'🔱',label:'Рамка "Supreme"',type:'cosmetic',val:'name_frame'}, milestone:true},
 ];
 
 function getBpData() {
+  const season = getBpSeasonInfo();
+  // undefined bpSeason = pre-season data from before this feature existed —
+  // grandfathered into the current season instead of being wiped on sight.
+  const stale = userData.bpSeason != null && userData.bpSeason !== season.num;
   return {
-    xp:       userData.bpXP        || 0,
-    level:    userData.bpLevel     || 0,
-    isVip:    userData.bpVip       || false,
-    claimed:  userData.bpClaimed   || {},
+    season:   season.num,
+    seasonEndsAt: season.endsAt,
+    stale,
+    xp:       stale ? 0     : (userData.bpXP      || 0),
+    level:    stale ? 0     : (userData.bpLevel    || 0),
+    isVip:    stale ? false : (userData.bpVip      || false),
+    claimed:  stale ? {}    : (userData.bpClaimed  || {}),
   };
 }
 
+let _bpTimerInterval = null;
 function initBattlePass() {
   if(!userData || !currentUser) return;  // userData ще не завантажено
   const bp = getBpData();
@@ -15608,6 +15639,18 @@ function initBattlePass() {
   document.getElementById('bpXP').textContent     = xp % xpNext;
   document.getElementById('bpXPNext').textContent = xpNext;
   document.getElementById('bpProgressBar').style.width = pct + '%';
+
+  const seasonNumEl = document.getElementById('bpSeasonNum');
+  if(seasonNumEl) seasonNumEl.textContent = bp.season;
+  const timerEl = document.getElementById('bpSeasonTimer');
+  if(timerEl) {
+    timerEl.textContent = formatBpTimeLeft(bp.seasonEndsAt - Date.now());
+    clearInterval(_bpTimerInterval);
+    _bpTimerInterval = setInterval(() => {
+      if(!document.getElementById('bpSeasonTimer')) return clearInterval(_bpTimerInterval);
+      timerEl.textContent = formatBpTimeLeft(bp.seasonEndsAt - Date.now());
+    }, 60000);
+  }
 
   const badge = document.getElementById('bpVipBadge');
   if(badge) {
@@ -15633,8 +15676,10 @@ function renderBattlePassTrack(bp) {
       const claimedV  = claimed['v'+row.lv];
       const isVip     = bp.isVip;
       const isCurrent = level + 1 === row.lv;
+      const cardClass = isCurrent ? 'bp-node-current' : row.milestone ? 'bp-node-milestone' : '';
 
-      return `<div style="flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;border:2px solid ${isCurrent?'var(--accent)':unlocked?'#3a3a3a':'#1a1a1a'};">
+      return `<div class="${cardClass}" style="position:relative;flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;border:2px solid ${isCurrent?'var(--accent)':row.milestone?'#c9a0ff':unlocked?'#3a3a3a':'#1a1a1a'};">
+        ${row.milestone ? `<div style="position:absolute;top:-1px;right:-1px;background:#c9a0ff;color:#1a0840;font-size:9px;font-weight:900;padding:2px 5px;border-radius:0 10px 0 8px;z-index:1;">🏅</div>` : ''}
         <!-- Level label -->
         <div style="background:${isCurrent?'rgba(212,175,55,0.2)':'#0a0a0a'};padding:4px 0;text-align:center;font-size:10px;font-weight:bold;color:${isCurrent?'var(--accent)':'#555'};">
           Рівень ${row.lv}
@@ -15645,7 +15690,7 @@ function renderBattlePassTrack(bp) {
           <div style="font-size:9px;color:#c9a0ff;text-align:center;line-height:1.3;">${row.vip.label}</div>
           ${unlocked && isVip ? (claimedV
             ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
-            : `<button onclick="claimBpReward(${row.lv},'v')" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'v')" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
             : (isVip ? `<div style="font-size:9px;color:#333;">🔒</div>` : `<div style="font-size:9px;color:#5a20c0;">👑 VIP</div>`)}
         </div>
         <!-- Free reward -->
@@ -15654,7 +15699,7 @@ function renderBattlePassTrack(bp) {
           <div style="font-size:9px;color:#aaa;text-align:center;line-height:1.3;">${row.free.label}</div>
           ${unlocked ? (claimedF
             ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
-            : `<button onclick="claimBpReward(${row.lv},'f')" style="background:linear-gradient(135deg,#1a5a20,#27ae60);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'f')" style="background:linear-gradient(135deg,#1a5a20,#27ae60);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
             : `<div style="font-size:9px;color:#333;">🔒</div>`}
         </div>
       </div>`;
@@ -15703,6 +15748,11 @@ function claimBpReward(lv, track) {
   if(reward.type === 'lootbox') {
     updates.lootboxes = (userData.lootboxes||0) + reward.val;
   }
+  if(reward.type === 'cosmetic') {
+    const items = userData.slotikyItems || {};
+    items[reward.val] = { boughtAt: Date.now(), expires: null };
+    updates.slotikyItems = items;
+  }
 
   db.ref('users/'+currentUser).update(updates);
   playSound('bonus');
@@ -15719,6 +15769,11 @@ function addBpXP(amount) {
   const newLevel = Math.min(Math.floor(newXP / BP_XP_PER_LEVEL), BP_MAX_LEVEL);
   const updates  = { bpXP: newXP };
 
+  // Roll into the new season: bp.xp/level/claimed/isVip already read as 0/empty/false
+  // above when stale, so this just persists that reset instead of leaving last
+  // season's claimed rewards and VIP pass sitting in the DB under the new season number.
+  if(bp.stale) { updates.bpSeason = bp.season; updates.bpClaimed = {}; updates.bpVip = false; }
+
   if(newLevel > bp.level) {
     updates.bpLevel = newLevel;
     // Notify level up
@@ -15730,6 +15785,7 @@ function addBpXP(amount) {
       playSound('bonus');
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
     }, 500);
+    notifyBot('player-ping', null, { to: currentUser, kind: 'bplevel', ref: { level: newLevel } });
   }
 
   db.ref('users/'+currentUser).update(updates);
@@ -15746,7 +15802,8 @@ function buyVipBattlePass() {
     slotiky: (userData.slotiky||0) - cost,
     bpVip:   true,
     bpVipBoughtAt: Date.now(),
-    bpVipMethod:   'slotiky'
+    bpVipMethod:   'slotiky',
+    bpSeason: getBpSeasonInfo().num, // VIP pass only lasts the current season
   });
   playSound('bonus');
   notify('👑 VIP Battle Pass активовано! Тепер ви отримуєте подвійний XP!', 'success');
@@ -15755,7 +15812,7 @@ function buyVipBattlePass() {
 
 // Admin can grant VIP BP in cashier
 function adminGrantVipBp(username) {
-  db.ref('users/'+username).update({ bpVip: true, bpVipBoughtAt: Date.now(), bpVipMethod: 'admin' });
+  db.ref('users/'+username).update({ bpVip: true, bpVipBoughtAt: Date.now(), bpVipMethod: 'admin', bpSeason: getBpSeasonInfo().num });
   notify(`✅ VIP Battle Pass видано гравцю ${username}`, 'success');
 }
 
@@ -19215,7 +19272,7 @@ function resetBannerAutoRotate() {
 function updateBannerDynamicContent() {
   // Battle Pass рівень
   var bpEl = document.getElementById('bannerBpLevel');
-  if(bpEl) bpEl.textContent = userData.battlePassLevel || 1;
+  if(bpEl) bpEl.textContent = (userData.bpLevel || 0) + 1;
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);

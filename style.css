@@ -1461,6 +1461,18 @@
       0%,100%{ box-shadow:0 0 8px rgba(212,175,55,.3); }
       50%    { box-shadow:0 0 28px rgba(212,175,55,.9), 0 0 60px rgba(212,175,55,.3); }
     }
+    /* Battle Pass track: current-level glow, milestone shimmer, claim-button pulse */
+    @keyframes bpGlow {
+      0%,100%{ box-shadow:0 0 6px rgba(201,160,255,.4); }
+      50%    { box-shadow:0 0 22px rgba(201,160,255,.9), 0 0 44px rgba(201,160,255,.35); }
+    }
+    @keyframes bpClaimPulse {
+      0%,100%{ transform:scale(1); }
+      50%    { transform:scale(1.08); }
+    }
+    .bp-node-current   { animation: bpGlow 1.8s ease-in-out infinite; }
+    .bp-node-milestone { box-shadow: 0 0 14px rgba(201,160,255,.25); }
+    .bp-claim-pulse     { animation: bpClaimPulse 1.1s ease-in-out infinite; }
     /* Slide up entry */
     @keyframes slideUp {
       from{ transform:translateY(30px); opacity:0; }

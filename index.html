@@ -3530,7 +3530,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:20px;font-weight:900;color:#c9a0ff;">🎫 Battle Pass</div>
-            <div style="font-size:10px;color:#6040a0;margin-top:2px;">Сезон 1 • 50 рівнів</div>
+            <div style="font-size:10px;color:#6040a0;margin-top:2px;">Сезон <span id="bpSeasonNum">1</span> • 50 рівнів • ⏳ <span id="bpSeasonTimer">—</span></div>
           </div>
           <div id="bpVipBadge" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border-radius:12px;padding:6px 12px;font-size:11px;font-weight:bold;color:#fff;">FREE</div>
         </div>
@@ -4118,7 +4118,7 @@
     <!-- ═══════════════════════════════════ -->
     <!-- TAB: GLOBAL CHAT                    -->
     <!-- ═══════════════════════════════════ -->
-    <div id="tab-chat" class="screen hidden" style="display:flex;flex-direction:column;height:100vh;padding:0;padding-bottom:60px;">
+    <div id="tab-chat" class="screen hidden" style="display:flex;flex-direction:column;position:fixed;inset:0;z-index:10;padding:0;padding-bottom:60px;">
       <!-- Header -->
       <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <button class="btn-outline" style="width:auto;padding:6px 12px;margin:0;font-size:13px;" onclick="switchTab('more')">⬅</button>

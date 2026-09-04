@@ -20,7 +20,7 @@
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
-const { startDeposit, startWithdraw, handleMoneyFlowReply } = require("../lib/telegram-money-flow");
+const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -46,6 +46,10 @@ const PLAYER_COMMANDS = [
   { command: "balance", description: "Баланс акаунту" },
   { command: "history", description: "Останні операції" },
   { command: "me", description: "Інфо про акаунт" },
+  { command: "vip", description: "Мій VIP рівень" },
+  { command: "ref", description: "Реферальне посилання" },
+  { command: "top", description: "Топ гравців за ставками" },
+  { command: "promo", description: "Активувати промокод" },
   { command: "deposit", description: "Поповнити баланс" },
   { command: "withdraw", description: "Вивести кошти" },
   { command: "link", description: "Прив'язати акаунт SlotOK" },
@@ -54,6 +58,35 @@ const PLAYER_COMMANDS = [
   { command: "cancel", description: "Скасувати поточну дію" },
   { command: "help", description: "Список команд" },
 ];
+
+// Kept in sync by eye with the VIP_LEVELS table in app.js (name/icon/min only —
+// the bot just needs to say which tier a player is in, not the perks table).
+const VIP_LEVELS = [
+  { name: "Iron", icon: "⚙️", min: 0 },
+  { name: "Bronze", icon: "🥉", min: 1000 },
+  { name: "Silver", icon: "🥈", min: 5000 },
+  { name: "Gold", icon: "🥇", min: 20000 },
+  { name: "Emerald", icon: "💚", min: 60000 },
+  { name: "Sapphire", icon: "💙", min: 150000 },
+  { name: "Ruby", icon: "❤️", min: 350000 },
+  { name: "Platinum", icon: "💎", min: 700000 },
+  { name: "Master", icon: "🔮", min: 1500000 },
+  { name: "Elite", icon: "⭐", min: 3000000 },
+  { name: "Diamond", icon: "💠", min: 7000000 },
+  { name: "Legend", icon: "🌟", min: 15000000 },
+  { name: "Mythic", icon: "🔱", min: 35000000 },
+  { name: "Supreme", icon: "👑", min: 100000000 },
+];
+
+function vipLevelFor(wagered) {
+  let level = VIP_LEVELS[0], index = 0;
+  for (let i = 0; i < VIP_LEVELS.length; i++) {
+    if (wagered >= VIP_LEVELS[i].min) { level = VIP_LEVELS[i]; index = i; }
+  }
+  return { ...level, index, next: VIP_LEVELS[index + 1] || null };
+}
+
+const SITE_URL = "https://slot-ok-beta.vercel.app";
 
 function sendQuickMenu(chatId) {
   return sendMessage(chatId, "Меню швидких дій 👇", QUICK_KEYBOARD);
@@ -105,12 +138,7 @@ async function handleMessage(msg) {
   if (text.startsWith("/start")) return handleStart(chatId, text, fromUser, adminChatId);
 
   if (text === "/menu") {
-    // handleSetAdmin only ever runs once, before launch — register the native
-    // "/" menu from here instead, guarded so it fires a single time.
-    if (!(await dbGet("bot_config/commandsSet"))) {
-      await setMyCommands(PLAYER_COMMANDS);
-      await dbSet("bot_config/commandsSet", true);
-    }
+    await setMyCommands(PLAYER_COMMANDS); // cheap + idempotent, keeps the native "/" list in sync with PLAYER_COMMANDS
     return sendQuickMenu(chatId);
   }
 
@@ -130,6 +158,12 @@ async function handleMessage(msg) {
     const nick = await unlink(chatId);
     if (!nick) return sendMessage(chatId, "Акаунт не був прив'язаний.");
     return sendMessage(chatId, `✅ Акаунт «${esc(nick)}» відв'язано.`, { reply_markup: { remove_keyboard: true } });
+  }
+
+  if (text === "/cancel") {
+    const hadState = await getState(chatId);
+    if (hadState) await clearState(chatId);
+    return sendMessage(chatId, hadState ? "Скасовано." : "Немає активної дії для скасування.", { reply_markup: { remove_keyboard: true } });
   }
 
   if (isAdmin && text.startsWith("/")) return handleAdminCommand(chatId, text);
@@ -369,10 +403,62 @@ async function cmdPlayerMe(chatId, nick) {
   return sendMessage(chatId, text);
 }
 
+async function cmdPlayerVip(chatId, nick) {
+  const u = await dbGet(`users/${nick}`);
+  const wagered = (u && u.totalWagered) || 0;
+  const vip = vipLevelFor(wagered);
+  let text = `${vip.icon} <b>${vip.name}</b>\n💵 Ставок зроблено: ${wagered.toLocaleString("uk-UA")}₴`;
+  if (vip.next) {
+    text += `\n📈 До ${vip.next.icon} ${vip.next.name}: ще ${(vip.next.min - wagered).toLocaleString("uk-UA")}₴`;
+  } else {
+    text += `\n🏆 Це максимальний рівень!`;
+  }
+  return sendMessage(chatId, text);
+}
+
+async function cmdPlayerRef(chatId, nick) {
+  const u = (await dbGet(`users/${nick}`)) || {};
+  const text =
+    `🤝 <b>Реферальне посилання</b>\n${SITE_URL}?ref=${encodeURIComponent(nick)}\n\n` +
+    `💰 Зароблено з рефералів: ${(u.referralEarnings || 0).toLocaleString("uk-UA")}₴`;
+  return sendMessage(chatId, text);
+}
+
+async function cmdPlayerPromo(chatId, nick, code) {
+  const upper = (code || "").trim().toUpperCase();
+  if (!upper) return sendMessage(chatId, "Використання: /promo &lt;код&gt;");
+  const promo = await dbGet(`promos/${upper}`);
+  if (!promo) return sendMessage(chatId, "❌ Невірний промокод.");
+  const already = await dbGet(`promo_redemptions/${upper}/${nick}`);
+  if (already) return sendMessage(chatId, "❌ Ти вже активував цей промокод.");
+  const redemptions = (await dbGet(`promo_redemptions/${upper}`)) || {};
+  if (Object.keys(redemptions).length >= (promo.uses || 1)) return sendMessage(chatId, "❌ Ліміт активацій цього промокоду вичерпано.");
+
+  await dbSet(`promo_redemptions/${upper}/${nick}`, { time: Date.now() });
+  const newBalance = await dbIncrement(`users/${nick}/balance`, promo.value);
+  await dbPush(`users/${nick}/history`, { text: `🎟️ Промокод ${upper}: +${promo.value}₴`, date: Date.now() });
+  return sendMessage(chatId, `🎟️ Промокод активовано! +${promo.value}₴. Баланс: ${newBalance}₴`);
+}
+
+async function cmdPlayerTop(chatId) {
+  const users = (await dbGet("users")) || {};
+  const top = Object.entries(users)
+    .map(([nick, u]) => ({ nick, wagered: u.totalWagered || 0 }))
+    .filter((u) => u.wagered > 0)
+    .sort((a, b) => b.wagered - a.wagered)
+    .slice(0, 5);
+  if (!top.length) return sendMessage(chatId, "Поки що немає даних для топу.");
+  const medals = ["🥇", "🥈", "🥉", "4.", "5."];
+  const text =
+    "🏆 <b>Топ гравців за ставками</b>\n\n" +
+    top.map((u, i) => `${medals[i]} ${esc(u.nick)} — ${u.wagered.toLocaleString("uk-UA")}₴`).join("\n");
+  return sendMessage(chatId, text);
+}
+
 function cmdPlayerHelp(chatId) {
   return sendMessage(
     chatId,
-    "🤖 <b>Команди:</b>\n💰 /balance — баланс\n📊 /history — останні операції\n🔗 /me — інфо про акаунт\n📥 /deposit — поповнити\n📤 /withdraw — вивести\n/cancel — скасувати поточну дію\n/unlink — відв'язати акаунт\n/menu — показати меню"
+    "🤖 <b>Команди:</b>\n💰 /balance — баланс\n📊 /history — останні операції\n🔗 /me — інфо про акаунт\n👑 /vip — мій VIP рівень\n🤝 /ref — реферальне посилання\n🏆 /top — топ гравців\n🎟️ /promo &lt;код&gt; — активувати промокод\n📥 /deposit — поповнити\n📤 /withdraw — вивести\n/cancel — скасувати поточну дію\n/unlink — відв'язати акаунт\n/menu — показати меню"
   );
 }
 
@@ -382,16 +468,22 @@ async function handlePlayerCommand(chatId, rawText) {
   const nickForFlow = await resolveNick(chatId);
   if (nickForFlow && (await handleMoneyFlowReply(chatId, nickForFlow, text))) return true;
 
-  if (!["/balance", "/history", "/me", "/help", "/deposit", "/withdraw"].includes(text)) return false;
+  if (text === "/top") { await cmdPlayerTop(chatId); return true; }
+
+  const isPromo = text.startsWith("/promo");
+  if (!isPromo && !["/balance", "/history", "/me", "/vip", "/ref", "/help", "/deposit", "/withdraw"].includes(text)) return false;
 
   const nick = nickForFlow;
   if (!nick) {
     await sendMessage(chatId, "❌ Акаунт не прив'язано. Прив'яжи через кнопку на сайті або /link &lt;код&gt;.");
     return true;
   }
-  if (text === "/balance") await cmdPlayerBalance(chatId, nick);
+  if (isPromo) await cmdPlayerPromo(chatId, nick, text.slice("/promo".length));
+  else if (text === "/balance") await cmdPlayerBalance(chatId, nick);
   else if (text === "/history") await cmdPlayerHistory(chatId, nick);
   else if (text === "/me") await cmdPlayerMe(chatId, nick);
+  else if (text === "/vip") await cmdPlayerVip(chatId, nick);
+  else if (text === "/ref") await cmdPlayerRef(chatId, nick);
   else if (text === "/help") await cmdPlayerHelp(chatId);
   else if (text === "/deposit") await startDeposit(chatId, nick);
   else if (text === "/withdraw") await startWithdraw(chatId, nick);
