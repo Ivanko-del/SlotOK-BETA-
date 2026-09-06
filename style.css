@@ -849,18 +849,6 @@
     /* SKIN: default gold */
     .vcard-skin-gold .vcard-front { background: linear-gradient(135deg, #1a0d00 0%, #3d2200 40%, #6b3d00 70%, #d4af37 100%); }
     .vcard-skin-gold .vcard-back  { background: linear-gradient(135deg, #d4af37 0%, #6b3d00 40%, #3d2200 100%); }
-    .vcard-skin-black .vcard-front { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2d2d2d 100%); }
-    .vcard-skin-black .vcard-back  { background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); }
-    .vcard-skin-blue .vcard-front  { background: linear-gradient(135deg, #0a0a2e 0%, #1a1a5e 50%, #2244aa 100%); }
-    .vcard-skin-blue .vcard-back   { background: linear-gradient(135deg, #2244aa 0%, #1a1a5e 100%); }
-    .vcard-skin-red .vcard-front   { background: linear-gradient(135deg, #1a0505 0%, #5c0a0a 50%, #cc1a1a 100%); }
-    .vcard-skin-red .vcard-back    { background: linear-gradient(135deg, #cc1a1a 0%, #5c0a0a 100%); }
-    .vcard-skin-green .vcard-front { background: linear-gradient(135deg, #001a00 0%, #0a3d14 50%, #1a7a2a 100%); }
-    .vcard-skin-green .vcard-back  { background: linear-gradient(135deg, #1a7a2a 0%, #0a3d14 100%); }
-    .vcard-skin-purple .vcard-front{ background: linear-gradient(135deg, #0d0520 0%, #2d0d60 50%, #6a20c0 100%); }
-    .vcard-skin-purple .vcard-back { background: linear-gradient(135deg, #6a20c0 0%, #2d0d60 100%); }
-    .vcard-skin-titanium .vcard-front{ background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 30%, #8a8a8a 60%, #c0c0c0 100%); }
-    .vcard-skin-titanium .vcard-back { background: linear-gradient(135deg, #c0c0c0 0%, #8a8a8a 50%, #3a3a3a 100%); }
     .vcard-skin-galaxy .vcard-front  { background: linear-gradient(135deg, #000010 0%, #0a004a 30%, #300080 60%, #7000b0 100%); }
     .vcard-skin-galaxy .vcard-back   { background: linear-gradient(135deg, #7000b0 0%, #300080 50%, #0a004a 100%); }
 
@@ -928,7 +916,7 @@
       0%   { background-position: -300% center; }
       100% { background-position: 300% center; }
     }
-    .vcard-skin-titanium .vcard-front, .vcard-skin-galaxy .vcard-front {
+    .vcard-skin-galaxy .vcard-front {
       background-size: 200% auto;
       animation: cardShimmer 4s linear infinite;
     }

@@ -1868,6 +1868,12 @@
         <button class="btn-outline" onclick="openGiftVIPModal()" style="border-color:#d4af37;color:#d4af37;">🎁 Подарувати VIP</button>
       </div>
 
+      <!-- ── ❤️ ПІДТРИМКА ПРОЄКТУ ── -->
+      <div style="font-size:10px;color:#d4af37;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">❤️ Підтримка проєкту</div>
+      <div class="box" style="padding:8px;">
+        <a class="btn-gold" style="display:block;text-align:center;text-decoration:none;" href="https://send.monobank.ua/jar/3iLuXEs9Uz" target="_blank" rel="noopener">💜 Задонатити на оновлення SlotOK</a>
+      </div>
+
       <div style="height:80px;"></div>
     </div>
 
@@ -2088,7 +2094,7 @@
 
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <button class="btn-gold" id="monoRollBtn" onclick="monoRoll()" style="flex:2;">🎲 КИНУТИ КУБИКИ</button>
-          <button class="btn-green" id="monoBuyBtn" onclick="monoBuy()" style="flex:1;" disabled>🏠 Купити</button>
+          <button class="btn-green" id="monoBuyBtn" style="flex:1;" disabled>🏠 Купити</button>
           <button class="btn-red" id="monoPassBtn" onclick="monoPass()" style="flex:1;" disabled>⏭ Пас</button>
         </div>
 
@@ -3976,6 +3982,10 @@
     <button class="btn-outline" onclick="closeTabModal('updates-modal')" style="width:50px;">⬅</button>
     <h2>📜 Оновлення</h2>
     <div class="box" style="padding:14px;">
+      <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">🧹 Велике чищення коду + 2 виправлені баги</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5;">Прибрано ~800 рядків мертвого коду: стару версію мультиплеєрної Монополії, недосяжний магазин скінів картки та ще півтора десятка невикористовуваних функцій. Виправлено баг подвійного трекінгу ставки в "Колесі Фортуни" та баг, через який бонусний скін за 30-денний стрік входу не застосовувався візуально. Додано кнопку підтримки проєкту донатом.</div>
+    </div>
+    <div class="box" style="padding:14px;">
       <div style="font-weight:800;color:var(--accent);margin-bottom:4px;">🎨 40 нових скінів картки</div>
       <div style="font-size:13px;color:var(--sub);line-height:1.5;">Пікер скінів у Касі тепер має 66 дизайнів у 6 категоріях: Класика, Самоцвіти, Стихії, Космос і футуризм, Текстури, Особливі. Кожен скін — з легкою анімацією переливання.</div>
     </div>
@@ -4451,14 +4461,6 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;" id="slotikyPackagesGrid"></div>
     <div style="font-size:10px;color:#555;text-align:center;">1 Слотік = 50 ₴ • Списується з балансу гравця</div>
-  </div>
-
-  <!-- Card Skin Shop -->
-  <div id="cardSkinModal" class="full-modal hidden">
-    <button class="btn-outline" onclick="closeTabModal('cardSkinModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
-    <h2>🎨 Скіни картки</h2>
-    <div style="font-size:11px;color:#555;margin-bottom:14px;">Натисни щоб одягнути. Преміум за Слотіки 🪙</div>
-    <div class="skin-grid" id="skinShopGrid"></div>
   </div>
 
   <!-- All Transactions Modal -->

@@ -64,7 +64,6 @@ const safeDb = {
 // ============================================
 let currentUser = null; 
 let userData = {}; 
-let currentRouletteBet = null;
 let selectedWithdrawMethod = 'privat';
 let selectedDepAmount = 0;
 const MAX_BET = 1000000; 
@@ -1075,11 +1074,6 @@ function togglePaytable() {
   const el = document.getElementById('slotsPaytable');
   if(el) el.classList.toggle('hidden');
 }
-
-// --- Рулетка ---
-// LEGACY (unused, kept for compatibility)
-function selectRouletteBet(c, e){ currentRouletteBet = c; }
-function spinRoulette(){ notify('Використовуй Global Roulette!','info'); }
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║              🎡  GLOBAL ROULETTE  —  v58                   ║
@@ -2330,15 +2324,6 @@ function saveRTPSettings() {
   db.ref('admin_settings/rtp').set(data).then(()=>notify('✅ RTP збережено','success'));
 }
 
-function getCasinoRTP(game) {
-  // Cached globally after admin sets it
-  return new Promise(resolve => {
-    db.ref('admin_settings/rtp/'+game).once('value', snap => {
-      resolve(snap.val()||96);
-    });
-  });
-}
-
 // ═══════════════════════════════════════════
 // 📱 PWA INSTALL
 // ═══════════════════════════════════════════
@@ -3053,63 +3038,8 @@ function searchGames(query) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 📊 BETTING STRATEGIES (for autobet)
-// ═══════════════════════════════════════════════════════
-let strategyState = { type:'flat', baseBet:100, current:100, wins:0, losses:0 };
-
-function getNextBet(won) {
-  const s = strategyState;
-  s.wins += won?1:0; s.losses += won?0:1;
-  if(s.type === 'flat') return s.baseBet;
-  if(s.type === 'martingale') {
-    if(won) { s.current=s.baseBet; return s.baseBet; }
-    const next = s.current*2;
-    s.current=next; return next;
-  }
-  if(s.type === 'dalembert') {
-    if(won) { s.current=Math.max(s.baseBet,s.current-s.baseBet); }
-    else { s.current+=s.baseBet; }
-    return s.current;
-  }
-  if(s.type === 'fibonacci') {
-    const fib = [1,1,2,3,5,8,13,21,34,55,89];
-    const idx = Math.min(s.losses, fib.length-1);
-    if(won && s.losses>0) s.losses=Math.max(0,s.losses-2); else if(!won) s.losses++;
-    return s.baseBet * fib[Math.min(s.losses,fib.length-1)];
-  }
-  return s.baseBet;
-}
-
-function setStrategy(type) {
-  strategyState.type = type;
-  strategyState.current = strategyState.baseBet;
-  strategyState.wins = 0; strategyState.losses = 0;
-  document.querySelectorAll('.strategy-card').forEach(c=>c.classList.remove('selected'));
-  const el = document.getElementById('strat_'+type);
-  if(el) el.classList.add('selected');
-  notify('Стратегія: '+type,'info');
-}
-
-// ═══════════════════════════════════════════════════════
 // 💰 RAKEBACK
 // ═══════════════════════════════════════════════════════
-function updateRakebackDisplay() {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser).once('value', snap => {
-    const data = snap.val()||{};
-    const wager = data.totalWager||0;
-    const rakeback = Math.floor(wager * 0.005); // 0.5% rakeback
-    const nextTier = Math.ceil(wager/10000)*10000;
-    const progress = (wager%10000)/10000*100;
-    const el1 = document.getElementById('rakebackAmount');
-    const el2 = document.getElementById('rakebackBar');
-    const el3 = document.getElementById('rakebackNext');
-    if(el1) el1.textContent = '₴'+formatNumber(rakeback);
-    if(el2) el2.style.width = progress+'%';
-    if(el3) el3.textContent = '₴'+formatNumber(nextTier-wager)+' до наступного рівня';
-  });
-}
-
 function claimRakeback() {
   db.ref('users/'+currentUser).once('value', snap => {
     const data = snap.val()||{};
@@ -3136,20 +3066,6 @@ function saveRGLimits() {
   rgLimits.session = parseInt(document.getElementById('rgSessionLimit')?.value||0);
   localStorage.setItem('slotok_rg', JSON.stringify(rgLimits));
   notify('✅ Ліміти збережено','success');
-}
-
-function checkRGLimits(loss) {
-  sessionLossTotal += loss;
-  if(rgLimits.loss > 0 && sessionLossTotal >= rgLimits.loss) {
-    const warn = document.getElementById('rgLossWarn');
-    if(warn) warn.style.display = 'block';
-    notify('⚠️ Ви досягли ліміту програшів (₴'+rgLimits.loss+'). Зробіть перерву!','error');
-  }
-  // Session time check
-  const elapsed = Math.floor((Date.now()-sessionStart)/60000);
-  if(rgLimits.session > 0 && elapsed >= rgLimits.session) {
-    notify('⏰ Час вашої ігрової сесії вийшов ('+rgLimits.session+' хв). Зробіть перерву!','error');
-  }
 }
 
 function selfExclude(days) {
@@ -3184,12 +3100,6 @@ function vibrateOnWin(amount) {
   else navigator.vibrate(50);
 }
 
-function toggleVibrate() {
-  const current = localStorage.getItem('slotok_vibrate');
-  if(current) { localStorage.removeItem('slotok_vibrate'); notify('📵 Вібрація вимкнена','info'); }
-  else { localStorage.setItem('slotok_vibrate','1'); notify('📳 Вібрація увімкнена','success'); navigator.vibrate?navigator.vibrate(100):null; }
-}
-
 // ═══════════════════════════════════════════════════════
 // 🅰️ FONT SIZE
 // ═══════════════════════════════════════════════════════
@@ -3211,21 +3121,6 @@ function loadFontSize() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 📊 HOT/COLD NUMBERS (Keno / Roulette)
-// ═══════════════════════════════════════════════════════
-let kenoHistory = JSON.parse(localStorage.getItem('slotok_keno_hist')||'[]');
-
-function updateKenoHotCold() {
-  const freq = {};
-  kenoHistory.forEach(nums => nums.forEach(n=>{ freq[n]=(freq[n]||0)+1; }));
-  const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-  const hot = sorted.slice(0,3).map(e=>e[0]);
-  const cold = sorted.slice(-3).map(e=>e[0]);
-  const el = document.getElementById('kenoHotCold');
-  if(el) el.innerHTML = '<span style="font-size:10px;color:#555;">🔥 Гарячі: '+hot.join(', ')+'  ❄️ Холодні: '+cold.join(', ')+'</span>';
-}
-
-// ═══════════════════════════════════════════════════════
 // ⚡ TURBO MODE (speed up all game animations)
 // ═══════════════════════════════════════════════════════
 let turboMode = false;
@@ -3235,106 +3130,6 @@ function toggleTurbo() {
   if(turboMode) document.documentElement.style.setProperty('--game-speed','0.3s');
   else document.documentElement.style.setProperty('--game-speed','1s');
   notify(turboMode?'⚡ Турбо режим УВІМК':'⚡ Турбо режим ВИМК','info');
-}
-
-// ═══════════════════════════════════════════════════════
-// 💎 VIP PROGRESS
-// ═══════════════════════════════════════════════════════
-const VIP_TIERS = [{name:'Bronze',min:0,color:'#cd7f32'},{name:'Silver',min:5000,color:'#aaa'},{name:'Gold',min:25000,color:'#d4af37'},{name:'Platinum',min:100000,color:'#4a9eff'},{name:'Diamond',min:500000,color:'#c9a0ff'}];
-
-function getVIPTier(wager) {
-  let tier = VIP_TIERS[0];
-  VIP_TIERS.forEach(t=>{ if(wager>=t.min) tier=t; });
-  return tier;
-}
-
-function updateVIPDisplay() {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser+'/totalWager').once('value', snap => {
-    const wager = snap.val()||0;
-    const tier = getVIPTier(wager);
-    const tierIdx = VIP_TIERS.indexOf(tier);
-    const nextTier = VIP_TIERS[Math.min(tierIdx+1, VIP_TIERS.length-1)];
-    const progress = nextTier.min > tier.min ? Math.min(100,(wager-tier.min)/(nextTier.min-tier.min)*100) : 100;
-    const label = document.getElementById('vipTierLabel');
-    const bar = document.getElementById('vipBar');
-    const next = document.getElementById('vipNextLabel');
-    if(label) { label.textContent=tier.name; label.style.color=tier.color; }
-    if(bar) { bar.style.width=progress+'%'; bar.style.background='linear-gradient(90deg,'+tier.color+','+nextTier.color+')'; }
-    if(next) next.textContent = 'До '+nextTier.name+': ₴'+formatNumber(Math.max(0,nextTier.min-wager));
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-// 📈 BALANCE TREND SPARKLINE
-// ═══════════════════════════════════════════════════════
-function drawBalanceSparkline(canvasId, data) {
-  const canvas = document.getElementById(canvasId);
-  if(!canvas || !data || data.length < 2) return;
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const min = Math.min(...data), max = Math.max(...data);
-  const range = max-min || 1;
-  ctx.clearRect(0,0,w,h);
-  ctx.beginPath();
-  data.forEach((v,i) => {
-    const x = (i/(data.length-1))*w;
-    const y = h - ((v-min)/range*(h-4)+2);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  const trend = data[data.length-1] >= data[0];
-  ctx.strokeStyle = trend ? '#3dd68c' : '#ff6b6b';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-}
-
-// ═══════════════════════════════════════════════════════
-// 🎰 REAL SLOTS REEL ANIMATION
-// ═══════════════════════════════════════════════════════
-const SLOT_SYMBOLS = ['🍒','🍋','🍊','🍇','💎','7️⃣','⭐','🎰','🔔','🃏'];
-
-function spinReel(reelEl, finalSymbol, delay) {
-  return new Promise(resolve => {
-    const inner = reelEl.querySelector('.slot-reel-inner');
-    if(!inner) { resolve(); return; }
-    // Build random symbols above
-    const symbols = [];
-    for(let i=0;i<8;i++) symbols.push(SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]);
-    symbols.push(finalSymbol);
-    inner.innerHTML = symbols.map(s=>`<div class="slot-reel-symbol">${s}</div>`).join('');
-    inner.style.transition = 'none';
-    inner.style.top = '0px';
-    const totalHeight = 90 * symbols.length;
-    const finalPos = -(totalHeight - 90);
-    setTimeout(() => {
-      inner.style.transition = 'top '+(0.8+delay*0.15)+'s cubic-bezier(.22,1,.36,1)';
-      inner.style.top = finalPos+'px';
-      setTimeout(resolve, (0.8+delay*0.15)*1000+100);
-    }, 50);
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-// 🔄 AUTO-SPIN for slots
-// ═══════════════════════════════════════════════════════
-let autoSpinActive = false, autoSpinCount = 0;
-
-function toggleAutoSpin(inputId, playFn, maxSpins) {
-  if(autoSpinActive) {
-    autoSpinActive = false;
-    notify('⏹ Авто-спін зупинено','info');
-    return;
-  }
-  autoSpinActive = true;
-  autoSpinCount = parseInt(maxSpins)||10;
-  notify('▶ Авто-спін: '+autoSpinCount+' разів','success');
-  const doSpin = () => {
-    if(!autoSpinActive || autoSpinCount <= 0) { autoSpinActive=false; return; }
-    autoSpinCount--;
-    try { playFn(); } catch(e) { console.warn(e); }
-    setTimeout(doSpin, 2000);
-  };
-  doSpin();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3394,22 +3189,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
-// ═══════════════════════════════════════════════════════
-// 🎁 PROMO CODE CHECK on register
-// ═══════════════════════════════════════════════════════
-const PROMO_CODES = { 'SLOTOK100':500, 'VIP2024':1000, 'WELCOME':250, 'BONUS50':150 };
-
-function checkPromoCode(code, username) {
-  const upper = (code||'').trim().toUpperCase();
-  if(!upper) return;
-  const bonus = PROMO_CODES[upper];
-  if(bonus) {
-    db.ref('users/'+username+'/balance').set(firebase.database.ServerValue.increment(bonus));
-    db.ref('users/'+username+'/history').push({text:'🎟️ Промокод '+upper+': +'+bonus+'₴', date:Date.now()});
-    setTimeout(()=>notify('🎟️ Промокод активовано! +₴'+bonus,'success'), 1500);
-  }
-}
 
 // ============================================
 // РЕЙТИНГ
@@ -4621,8 +4400,6 @@ function spinFortune() {
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
   addWager(b);
   trackLbStat('wager', b); trackLbStat('games', 1);
-  publishLiveBet('Double','🔴', b, '');
-  trackLbStat('wager', b); trackLbStat('games', 1);
   publishLiveBet('Колесо','🎡', b, '');
   fortuneSpinning = true;
   document.getElementById('fortuneBtn').disabled = true;
@@ -5612,14 +5389,6 @@ function stopBotEngine() {
   if(_botEngine) { clearInterval(_botEngine); _botEngine = null; }
 }
 
-function scheduleBotMessages(nick, avatarEmoji, avatarUrl) {
-  // Handled by bot engine
-}
-
-function scheduleBotGames(nick, startBalance) {
-  // Handled by bot engine
-}
-
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -6074,16 +5843,6 @@ async function runCleanup() {
   });
 }
 
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  ФІЧА 8: Rate limiting вже реалізовано вище                 ║
-// + Патч validateBet щоб включав rate limit перевірку           ║
-// ╚══════════════════════════════════════════════════════════════╝
-const _origValidateBet = validateBet;
-function validateBetWithRateLimit(val, gameKey) {
-  if(gameKey && !checkBetRateLimit(gameKey)) return null;
-  return _origValidateBet(val);
-}
-
 // Старт автоочищення при логіні
 function startAllBackgroundTasks() {
   startAutoCleanup();
@@ -6234,27 +5993,6 @@ function showAIHint(game) {
     + '<button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:auto;">✕</button></div>';
   document.body.appendChild(el);
   setTimeout(function() { el.remove(); }, 6000);
-}
-
-// 6. МОВА UA/EN
-var _currentLang = localStorage.getItem('slotok_lang') || 'uk';
-function renderLangSwitcher() {
-  var ex = document.getElementById('langSwitcher');
-  if(ex) { ex.remove(); return; }
-  var el = document.createElement('div');
-  el.id = 'langSwitcher';
-  el.style.cssText = 'position:fixed;top:60px;right:10px;background:#111;border:1px solid #333;border-radius:12px;padding:10px;z-index:5000;animation:popIn .2s ease;min-width:165px;';
-  el.innerHTML = '<div style="font-size:10px;color:#555;margin-bottom:8px;text-align:center;text-transform:uppercase;letter-spacing:1px;">Мова / Language</div>'
-    + '<button onclick="setLanguage(\'uk\')" style="display:block;width:100%;background:' + (_currentLang==='uk'?'rgba(212,175,55,.15)':'rgba(255,255,255,.04)') + ';border:1px solid ' + (_currentLang==='uk'?'#d4af37':'#333') + ';border-radius:8px;padding:9px;color:' + (_currentLang==='uk'?'#d4af37':'#888') + ';cursor:pointer;margin-bottom:6px;font-size:13px;font-weight:' + (_currentLang==='uk'?'800':'400') + ';">🇺🇦 Українська</button>'
-    + '<button onclick="setLanguage(\'en\')" style="display:block;width:100%;background:' + (_currentLang==='en'?'rgba(74,158,255,.15)':'rgba(255,255,255,.04)') + ';border:1px solid ' + (_currentLang==='en'?'#4a9eff':'#333') + ';border-radius:8px;padding:9px;color:' + (_currentLang==='en'?'#4a9eff':'#888') + ';cursor:pointer;font-size:13px;font-weight:' + (_currentLang==='en'?'800':'400') + ';">🇬🇧 English</button>';
-  document.body.appendChild(el);
-}
-function setLanguage(lang) {
-  _currentLang = lang;
-  localStorage.setItem('slotok_lang', lang);
-  var ex = document.getElementById('langSwitcher');
-  if(ex) ex.remove();
-  notify(lang === 'en' ? '🌐 Language: English' : '🌐 Мова: Українська', 'info');
 }
 
 // 7. КРИПТО-СИМУЛЯТОР
@@ -8875,13 +8613,6 @@ function monoSpecialCard(who) {
   if(monoState.aiMoney <= 0) monoGameOver('player');
 }
 
-function monoUpdateMoneyUI() {
-  if(!monoState) return;
-  const pm = document.getElementById('monoPlayerMoney');
-  const am = document.getElementById('monoAiMoney');
-  if(pm) pm.textContent = formatNumber(monoState.playerMoney||0) + '₴';
-  if(am) am.textContent = formatNumber(monoState.aiMoney||0) + '₴';
-}
 
 function surrenderMonopoly() {
   if(!monoState || monoState.gameOver) return;
@@ -9790,7 +9521,7 @@ function switchTab(id, el) {
   if(id==='colorbet')     safe(() => renderColorHistory());
   if(id==='affiliate')    safe(() => initAffiliate());
   if(id==='russianroulette') safe(() => updateRRDisplay());
-  if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); checkTempCardExpiry(); }, 300); });
+  if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
   if(id==='settings')     safe(() => loadSettings());
@@ -9859,26 +9590,6 @@ function monoPass() {
   if(passBtn) passBtn.disabled = true;
   monoLog('⏭ Ви пропустили купівлю', 'info');
   setTimeout(monoAiTurn, 500);
-}
-
-function monoBuy() {
-  if(!monoState || !monoState.canBuy) return;
-  const prop = monoState.canBuyProp;
-  if(!prop) return;
-  const price = prop.price || 200;
-  if((monoState.playerMoney || 0) < price) { monoLog('💸 Недостатньо коштів!', 'warn'); return; }
-  monoState.playerMoney -= price;
-  monoState.owned = monoState.owned || {};
-  monoState.owned[prop.id] = 'player';
-  monoState.canBuy = false;
-  monoState.canBuyProp = null;
-  const buyBtn  = document.getElementById('monoBuyBtn');
-  const passBtn = document.getElementById('monoPassBtn');
-  if(buyBtn)  { buyBtn.disabled = true; }
-  if(passBtn) { passBtn.disabled = true; }
-  monoLog('🏠 Ви купили ' + (prop.name||'нерухомість') + ' за ' + price + '₴', 'success');
-  monoUpdateMoneyUI();
-  setTimeout(monoAiTurn, 700);
 }
 
 // ============================================
@@ -10309,418 +10020,19 @@ window.notify = function(msg, type) {
 
 // ============================================
 // ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ =====
+// (реалізація нижче, "МОНОПОЛІЯ МП: 2-4 ГРАВЦІ" —
+//  стара 1v1-версія видалена як мертвий код, її window.* перевизначення
+//  повністю затінювали ці функції)
 // ============================================
 let mpRoomId  = null;
 let mpIsHost  = false;
-let mpState   = null;
 let mpListener = null;
 
-function createMpRoom() {
-  const bet = parseInt(document.getElementById('mpBetInput').value) || 500;
-  if(bet < 100) return notify('Мінімальна ставка 100₴', 'error');
-  if(userData.balance < bet) return notify('Недостатньо коштів', 'error');
-
-  db.ref('users/' + currentUser).update({ balance: firebase.database.ServerValue.increment(-bet) });
-
-  const roomId = 'mp_' + currentUser + '_' + Date.now();
-  mpRoomId = roomId;
-  mpIsHost = true;
-
-  db.ref('mp_rooms/' + roomId).set({
-    host: currentUser, guest: null, bet,
-    status: 'waiting', created: Date.now(),
-    state: {
-      hostMoney: 3000, guestMoney: 3000,
-      hostPos: 0, guestPos: 0,
-      props: {}, turn: 'host',
-      jailHost: 0, jailGuest: 0,
-      gameOver: false
-    }
-  });
-
-  showMpWaitScreen(roomId, bet);
-  listenMpRoom(roomId);
-}
-
-function showMpWaitScreen(roomId, bet) {
-  document.getElementById('mpLobbyScreen').classList.add('hidden');
-  document.getElementById('mpWaitScreen').classList.remove('hidden');
-  document.getElementById('mpWaitInfo').textContent = 'Кімната: ' + roomId + ' • Ставка: ' + bet + '₴';
-  document.getElementById('mpWaitPlayers').innerHTML =
-    '<div class="mp-player-slot filled">🧑 ' + currentUser + '<br><small>Хост</small></div>' +
-    '<div class="mp-player-slot empty">❓ Очікування...<br><small>Гість</small></div>';
-}
-
-function loadMpRooms() {
-  db.ref('mp_rooms').orderByChild('status').equalTo('waiting').limitToLast(10).once('value', snap => {
-    const list = document.getElementById('mpRoomsList');
-    if(!list) return;
-    const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>'; return; }
-    list.innerHTML = '';
-    Object.entries(data).forEach(([id, r]) => {
-      if(r.host === currentUser) return; // не показуємо свою
-      list.innerHTML += '<div class="mp-room-card waiting">' +
-        '<div class="mp-room-header">' +
-          '<span style="font-weight:bold;">🧑 ' + r.host + '</span>' +
-          '<span class="mp-status-badge mp-waiting">⏳ Чекає</span>' +
-        '</div>' +
-        '<div style="color:#777;font-size:12px;margin-bottom:8px;">Ставка: <b style="color:var(--accent);">' + r.bet + '₴</b></div>' +
-        '<button class="btn-gold" style="padding:10px;" onclick="joinMpRoom(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button>' +
-      '</div>';
-    });
-    if(!list.innerHTML) list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>';
-  });
-}
-
-function joinMpRoom(roomId, bet) {
-  if(userData.balance < bet) return notify('Недостатньо коштів: потрібно ' + bet + '₴', 'error');
-  db.ref('mp_rooms/' + roomId + '/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
-    return;
-  }, (err, committed) => {
-    if(!committed) { notify('Кімната вже зайнята', 'error'); loadMpRooms(); return; }
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
-    mpRoomId = roomId;
-    mpIsHost = false;
-    db.ref('mp_rooms/' + roomId).update({ guest: currentUser, status: 'playing' });
-    listenMpRoom(roomId);
-  });
-}
-
-function cancelMpRoom() {
-  if(!mpRoomId) return;
-  db.ref('mp_rooms/' + mpRoomId + '/state/hostMoney').once('value', snap => {
-    // повернути ставку
-    db.ref('mp_rooms/' + mpRoomId).once('value', s => {
-      const r = s.val();
-      if(r) db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(r.bet));
-    });
-  });
-  db.ref('mp_rooms/' + mpRoomId).update({ status: 'cancelled' });
-  if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
-  mpRoomId = null;
-  document.getElementById('mpWaitScreen').classList.add('hidden');
-  document.getElementById('mpLobbyScreen').classList.remove('hidden');
-}
-
-function listenMpRoom(roomId) {
-  if(mpListener) db.ref('mp_rooms/' + roomId).off('value', mpListener);
-  mpListener = db.ref('mp_rooms/' + roomId).on('value', snap => {
-    const r = snap.val();
-    if(!r) return;
-    if(r.status === 'cancelled') {
-      notify('Кімнату скасовано', 'error');
-      resetMpUI(); return;
-    }
-    if(r.status === 'playing' && document.getElementById('mpGameScreen').classList.contains('hidden')) {
-      startMpGame(r);
-    }
-    if(r.status === 'playing') {
-      mpState = r.state;
-      renderMpBoard();
-      updateMpInfo(r);
-      updateMpTurnUI(r);
-    }
-    if(r.status === 'finished') {
-      handleMpFinished(r);
-    }
-  });
-}
-
-function startMpGame(r) {
-  document.getElementById('mpWaitScreen').classList.add('hidden');
-  document.getElementById('mpLobbyScreen').classList.add('hidden');
-  document.getElementById('mpGameScreen').classList.remove('hidden');
-  const opponentName = mpIsHost ? r.guest : r.host;
-  const lbl = document.getElementById('mpOpponentLabel');
-  if(lbl) lbl.textContent = '👤 ' + opponentName;
-  const mpLog = document.getElementById('mpLog');
-  if(mpLog) mpLog.innerHTML = '<div class="mono-log-item info">🎩 Гра почалась! ' + (mpIsHost ? 'Ваш хід.' : 'Хід суперника.') + '</div>';
-}
-
-function isMyMpTurn(r) {
-  return (mpIsHost && r.state.turn === 'host') || (!mpIsHost && r.state.turn === 'guest');
-}
-
-function updateMpTurnUI(r) {
-  const myTurn = isMyMpTurn(r);
-  const rollBtn = document.getElementById('mpRollBtn');
-  const infoEl  = document.getElementById('mpTurnInfo');
-  if(rollBtn) rollBtn.disabled = !myTurn || r.state.gameOver;
-  if(infoEl) {
-    infoEl.textContent = myTurn ? '⚡ Ваш хід!' : '⏳ Хід суперника...';
-    infoEl.style.color = myTurn ? 'var(--green)' : '#777';
-  }
-}
-
-function updateMpInfo(r) {
-  const s = r.state;
-  const myMoney  = mpIsHost ? s.hostMoney  : s.guestMoney;
-  const oppMoney = mpIsHost ? s.guestMoney : s.hostMoney;
-  const pm = document.getElementById('mpPlayerMoney');
-  const om = document.getElementById('mpOpponentMoney');
-  if(pm) pm.textContent = myMoney + '₴';
-  if(om) om.textContent = oppMoney + '₴';
-}
-
-function mpRoll() {
-  if(!mpRoomId || !mpState) return;
-  db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
-    const r = snap.val();
-    if(!r || !isMyMpTurn(r) || r.state.gameOver) return;
-
-    const d1 = monoRollDie(), d2 = monoRollDie();
-    const die1 = document.getElementById('mpDie1');
-    const die2 = document.getElementById('mpDie2');
-    if(die1) { die1.classList.add('rolling'); die1.textContent = DICE_EMOJI[d1]; }
-    if(die2) { die2.classList.add('rolling'); die2.textContent = DICE_EMOJI[d2]; }
-    setTimeout(() => { if(die1) die1.classList.remove('rolling'); if(die2) die2.classList.remove('rolling'); }, 500);
-
-    const steps = d1 + d2;
-    const st = Object.assign({}, r.state);
-    const myKey  = mpIsHost ? 'hostPos'   : 'guestPos';
-    const myMon  = mpIsHost ? 'hostMoney'  : 'guestMoney';
-    const jailKey= mpIsHost ? 'jailHost'   : 'jailGuest';
-
-    mpAddLog('🎲 ' + (mpIsHost ? r.host : r.guest) + ' кидає: ' + d1 + '+' + d2 + '=' + steps);
-
-    if(st[jailKey] > 0) {
-      st[jailKey]--;
-      st.turn = mpIsHost ? 'guest' : 'host';
-      db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
-      return;
-    }
-
-    const oldPos = st[myKey];
-    st[myKey] = (st[myKey] + steps) % 40;
-    if(st[myKey] < oldPos) { st[myMon] += 200; mpAddLog('🏁 Пройшов GO +200₴'); }
-
-    // Landing logic
-    const cell = MONO_CELLS[st[myKey]];
-    if(cell) {
-      if(cell.pos === 30) {
-        st[myKey] = 10; st[jailKey] = 2;
-        mpAddLog('👮 У в\'язницю!');
-        st.turn = mpIsHost ? 'guest' : 'host';
-      } else if(cell.type === 'tax') {
-        const tax = cell.pos === 4 ? 100 : 150;
-        st[myMon] -= tax;
-        mpAddLog('💸 Податок -' + tax + '₴');
-        if(st[myMon] <= 0) { finishMpGame(mpIsHost ? 'guest' : 'host', r.bet); return; }
-        st.turn = mpIsHost ? 'guest' : 'host';
-      } else if(cell.type === 'special') {
-        const bonus = [100, -75, 50, 150, -50, 200][Math.floor(Math.random()*6)];
-        st[myMon] += bonus;
-        mpAddLog('🃏 Шанс: ' + (bonus>0?'+':'') + bonus + '₴');
-        if(st[myMon] <= 0) { finishMpGame(mpIsHost ? 'guest' : 'host', r.bet); return; }
-        st.turn = mpIsHost ? 'guest' : 'host';
-      } else if((cell.type === 'prop' || cell.type === 'station') && cell.price) {
-        const propsObj = st.props || {};
-        const owner = propsObj[cell.pos];
-        if(!owner) {
-          // Гравець має вибір: купити або пропустити — зберігаємо pendingBuy
-          st.pendingBuy = { pos: cell.pos, price: cell.price, label: cell.label, buyer: mpIsHost ? 'host' : 'guest' };
-          mpAddLog('🏠 ' + cell.label.replace('\n',' ') + ' — вільна (' + cell.price + '₴). Купити або пас.');
-          const buyBtn = document.getElementById('mpBuyBtn');
-          const passBtn = document.getElementById('mpPassBtn');
-          if(buyBtn) { buyBtn.disabled = false; buyBtn.onclick = () => mpDoBuy(); }
-          if(passBtn){ passBtn.disabled = false; passBtn.onclick = () => mpDoPass(); }
-        } else {
-          const oppKey = mpIsHost ? 'guest' : 'host';
-          const oppMon = mpIsHost ? 'guestMoney' : 'hostMoney';
-          const isOwnedByMe = (mpIsHost && owner === 'host') || (!mpIsHost && owner === 'guest');
-          if(!isOwnedByMe) {
-            const rent = cell.rent || 25;
-            st[myMon] -= rent; st[oppMon] += rent;
-            mpAddLog('💸 Рента: -' + rent + '₴');
-            if(st[myMon] <= 0) { finishMpGame(owner, r.bet); return; }
-          } else {
-            mpAddLog('✅ Ваша власність');
-          }
-          st.turn = mpIsHost ? 'guest' : 'host';
-        }
-      } else {
-        st.turn = mpIsHost ? 'guest' : 'host';
-      }
-    } else {
-      st.turn = mpIsHost ? 'guest' : 'host';
-    }
-
-    db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
-  });
-}
-
-function mpDoBuy() {
-  db.ref('mp_rooms/' + mpRoomId + '/state').once('value', snap => {
-    const st = Object.assign({}, snap.val());
-    if(!st.pendingBuy) return;
-    const pb = st.pendingBuy;
-    const myMon = mpIsHost ? 'hostMoney' : 'guestMoney';
-    if(st[myMon] < pb.price) { notify('Недостатньо коштів!', 'error'); mpDoPass(); return; }
-    st[myMon] -= pb.price;
-    if(!st.props) st.props = {};
-    st.props[pb.pos] = mpIsHost ? 'host' : 'guest';
-    st.pendingBuy = null;
-    st.turn = mpIsHost ? 'guest' : 'host';
-    mpAddLog('✅ Куплено: ' + pb.label.replace('\n',' '));
-    document.getElementById('mpBuyBtn').disabled = true;
-    document.getElementById('mpPassBtn').disabled = true;
-    db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
-  });
-}
-
-function mpDoPass() {
-  db.ref('mp_rooms/' + mpRoomId + '/state').once('value', snap => {
-    const st = Object.assign({}, snap.val());
-    st.pendingBuy = null;
-    st.turn = mpIsHost ? 'guest' : 'host';
-    mpAddLog('⏭ Пропущено');
-    const buyBtn = document.getElementById('mpBuyBtn');
-    const passBtn= document.getElementById('mpPassBtn');
-    if(buyBtn)  buyBtn.disabled = true;
-    if(passBtn) passBtn.disabled= true;
-    db.ref('mp_rooms/' + mpRoomId + '/state').update(st);
-  });
-}
-
-function mpPass() { mpDoPass(); }
-function mpBuy()  { mpDoBuy(); }
-
-function finishMpGame(winnerRole, bet) {
-  const winnerName = winnerRole === 'host'
-    ? db.ref('mp_rooms/' + mpRoomId).once('value', snap => snap.val().host)
-    : null;
-  db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
-    const r = snap.val();
-    const winner = winnerRole === 'host' ? r.host : r.guest;
-    db.ref('mp_rooms/' + mpRoomId).update({ status: 'finished', winner });
-    // Нараховуємо переможцю
-    const prize = Math.floor(bet * 1.9);
-    db.ref('users/' + winner + '/balance').set(firebase.database.ServerValue.increment(prize));
-    addToHistory('МП Монополія ' + (winner===currentUser?'+'+prize:'-'+bet) + '₴');
-  });
-}
-
-function handleMpFinished(r) {
-  const isWin = r.winner === currentUser;
-  const prize = Math.floor(r.bet * 1.9);
-  mpAddLog(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + prize + '₴' : '💀 ' + r.winner + ' переміг', isWin ? 'good' : 'bad');
-  if(isWin) { playSound('win'); notify('🎩 МП Монополія: +' + prize + '₴!', 'success'); }
-  else { notify('😔 ' + r.winner + ' переміг у МП Монополії', 'error'); }
-  const rollBtn = document.getElementById('mpRollBtn');
-  if(rollBtn) rollBtn.disabled = true;
-  if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
-  setTimeout(resetMpUI, 3500);
-}
-
-function surrenderMp() {
-  if(!mpRoomId) return;
-  if(confirm('Здатись? Ви програєте ставку.')) {
-    db.ref('mp_rooms/' + mpRoomId).once('value', snap => {
-      const r = snap.val();
-      const winner = mpIsHost ? r.guest : r.host;
-      if(winner) finishMpGame(mpIsHost ? 'guest' : 'host', r.bet);
-    });
-  }
-}
-
 function resetMpUI() {
-  mpRoomId = null; mpIsHost = false; mpState = null;
+  mpRoomId = null; mpIsHost = false;
   document.getElementById('mpGameScreen').classList.add('hidden');
   document.getElementById('mpWaitScreen').classList.add('hidden');
   document.getElementById('mpLobbyScreen').classList.remove('hidden');
-}
-
-function mpAddLog(text, cls) {
-  const log = document.getElementById('mpLog');
-  if(!log) return;
-  const item = document.createElement('div');
-  item.className = 'mono-log-item ' + (cls||'');
-  item.textContent = text;
-  log.appendChild(item);
-  log.scrollTop = log.scrollHeight;
-}
-
-function renderMpBoard() {
-  if(!mpState) return;
-  const board = document.getElementById('mpBoard');
-  if(!board) return;
-
-  // Build grid same as solo
-  board.innerHTML = '';
-  board.style.display = 'grid';
-  board.style.gridTemplateColumns = '1fr repeat(9,1fr) 1fr';
-  board.style.gridTemplateRows = '1fr repeat(9,1fr) 1fr';
-
-  const grid = Array.from({length:11}, () => Array(11).fill(null));
-  MONO_CELLS.forEach(cell => { const [c,r] = cellGridPos(cell.pos); grid[r][c] = cell; });
-
-  for(let r = 0; r < 11; r++) {
-    for(let c = 0; c < 11; c++) {
-      if(r >= 1 && r <= 9 && c >= 1 && c <= 9) {
-        if(r === 1 && c === 1) {
-          const ctr = document.createElement('div');
-          ctr.className = 'mono-center';
-          ctr.style.gridColumn = '2 / 11';
-          ctr.style.gridRow = '2 / 11';
-          ctr.innerHTML = '<div style="font-size:14px;letter-spacing:1px;">МОНОПОЛІЯ</div><div style="font-size:30px;">🎩</div><div style="font-size:10px;color:#555;margin-top:5px;">МП режим</div>';
-          board.appendChild(ctr);
-        }
-        continue;
-      }
-      const cell = grid[r][c];
-      const div = document.createElement('div');
-      if(!cell) { div.style.cssText='background:transparent;border:none;'; board.appendChild(div); continue; }
-
-      let stripeClass = '';
-      if(cell.pos>=1&&cell.pos<=9)  stripeClass='prop-top';
-      if(cell.pos>=11&&cell.pos<=19) stripeClass='prop-right';
-      if(cell.pos>=21&&cell.pos<=29) stripeClass='prop-bottom';
-      if(cell.pos>=31&&cell.pos<=39) stripeClass='prop-left';
-
-      const propsObj = mpState.props || {};
-      let ownerClass = '';
-      if(propsObj[cell.pos] === 'host')  ownerClass = mpIsHost ? 'owned-me' : 'owned-ai';
-      if(propsObj[cell.pos] === 'guest') ownerClass = mpIsHost ? 'owned-ai' : 'owned-me';
-
-      div.className = 'mono-cell ' + (cell.type==='corner'?'corner':'') + ' ' + stripeClass + ' ' + ownerClass;
-      if(cell.color) div.style.borderColor = MONO_COLORS[cell.color]||'#999';
-
-      const cornerIcons = {0:'🏁',10:'⛓️',20:'🌳',30:'👮'};
-      if(cell.type==='corner') div.innerHTML='<span style="font-size:12px;">'+(cornerIcons[cell.pos]||'')+'</span><span style="font-size:8px;white-space:pre-line;">'+cell.label+'</span>';
-      else if(cell.type==='prop') div.innerHTML='<span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span><span class="cell-price">'+cell.price+'₴</span>';
-      else if(cell.type==='station') div.innerHTML='<span style="font-size:11px;">🚂</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
-      else if(cell.type==='utility') div.innerHTML='<span style="font-size:13px;">'+(cell.icon||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
-      else if(cell.type==='special') div.innerHTML='<span style="font-size:15px;">'+(cell.icon||'?')+'</span>';
-      else if(cell.type==='tax') div.innerHTML='<span style="font-size:11px;">'+(cell.icon||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';
-
-      board.appendChild(div);
-    }
-  }
-  placeMpPlayers();
-}
-
-function placeMpPlayers() {
-  document.querySelectorAll('#mpBoardWrap .mono-player').forEach(e => e.remove());
-  if(!mpState) return;
-  const wrap = document.getElementById('mpBoardWrap');
-  if(!wrap) return;
-  const cellW = wrap.offsetWidth / 11;
-  const myPos  = mpIsHost ? mpState.hostPos  : mpState.guestPos;
-  const oppPos = mpIsHost ? mpState.guestPos : mpState.hostPos;
-  [
-    { pos: myPos,  color:'#4CD964', offset:0 },
-    { pos: oppPos, color:'#FF3B30', offset:7 }
-  ].forEach(p => {
-    const [col, row] = cellGridPos(p.pos);
-    const el = document.createElement('div');
-    el.className = 'mono-player';
-    el.style.background = p.color;
-    el.style.left = (col * cellW + p.offset + 1) + 'px';
-    el.style.top  = (row * cellW + 2) + 'px';
-    wrap.appendChild(el);
-  });
 }
 
 
@@ -15968,18 +15280,6 @@ function initStatsTab() {
 // ╚══════════════════════════════════════════════════════════╝
 // ============================================================
 
-// ── CARD SKINS CATALOG ──
-const CARD_SKINS = [
-  { id:'gold',     name:'Gold',      cls:'vcard-skin-gold',     price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
-  { id:'black',    name:'Black',     cls:'vcard-skin-black',    price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
-  { id:'blue',     name:'Navy Blue', cls:'vcard-skin-blue',     price:0,   slotiky:0,  unlock:'default', desc:'За замовчуванням' },
-  { id:'red',      name:'Ruby Red',  cls:'vcard-skin-red',      price:0,   slotiky:5,  unlock:'slotiky', desc:'5 🪙' },
-  { id:'green',    name:'Emerald',   cls:'vcard-skin-green',    price:0,   slotiky:5,  unlock:'slotiky', desc:'5 🪙' },
-  { id:'purple',   name:'Royal Purple',cls:'vcard-skin-purple', price:0,   slotiky:8,  unlock:'slotiky', desc:'8 🪙' },
-  { id:'titanium', name:'Titanium',  cls:'vcard-skin-titanium', price:0,   slotiky:15, unlock:'slotiky', desc:'15 🪙' },
-  { id:'galaxy',   name:'Galaxy',    cls:'vcard-skin-galaxy',   price:0,   slotiky:25, unlock:'slotiky', desc:'25 🪙' },
-];
-
 const SLOTIKY_PACKAGES = [
   { count:1,   price:50,   label:'Стартер',  bonus:'' },
   { count:5,   price:230,  label:'Базовий',  bonus:'+1 🎁' },
@@ -16010,12 +15310,6 @@ function getCardData() {
   const card = getActiveCard();
   if(!card || !card.number) return null;
   return card;
-}
-
-function getUserCardOrGenerate() {
-  const card = userData?.virtualCard;
-  if(card && card.number) return card;
-  return null;
 }
 
 // ── Onboard via Axiom code ──
@@ -16181,69 +15475,6 @@ function purchaseSlotikyPackage(count, price) {
   notify(`🪙 Придбано ${count} Слотіків!`, 'success');
 }
 
-// ── CARD SKIN SHOP ──
-function renderCardSkinShop() {
-  const grid = document.getElementById('skinShopGrid');
-  if(!grid) return;
-  const card = getCardData();
-  const owned = card ? (card.ownedSkins || ['gold','black','blue']) : ['gold','black','blue'];
-  const active = card ? (card.skin || 'gold') : 'gold';
-
-  const gradients = {
-    gold:     'linear-gradient(135deg,#1a0d00,#6b3d00,#d4af37)',
-    black:    'linear-gradient(135deg,#0a0a0a,#2d2d2d)',
-    blue:     'linear-gradient(135deg,#0a0a2e,#2244aa)',
-    red:      'linear-gradient(135deg,#1a0505,#cc1a1a)',
-    green:    'linear-gradient(135deg,#001a00,#1a7a2a)',
-    purple:   'linear-gradient(135deg,#0d0520,#6a20c0)',
-    titanium: 'linear-gradient(135deg,#1a1a1a,#c0c0c0)',
-    galaxy:   'linear-gradient(135deg,#000010,#7000b0)',
-  };
-
-  grid.innerHTML = CARD_SKINS.map(skin => {
-    const isOwned  = owned.includes(skin.id);
-    const isActive = skin.id === active;
-    return `<div class="skin-item ${isActive?'active':''} ${!isOwned?'locked':''}"
-      onclick="${isOwned ? `applySkin('${skin.id}')` : `buySkin('${skin.id}',${skin.slotiky})`}"
-      style="border-color:${isActive?'var(--accent)':'transparent'};">
-      <div class="skin-preview" style="background:${gradients[skin.id]||'#111'};">
-        <span>${skin.name}</span>
-        ${isActive?'<span style="position:absolute;top:6px;right:8px;font-size:16px;">✓</span>':''}
-      </div>
-      <div class="skin-info">
-        <span style="font-size:11px;color:#aaa;">${skin.name}</span>
-        <span style="font-size:10px;color:${isOwned?'var(--green)':'#c9a0ff'};">
-          ${isActive?'Активний':isOwned?'Встановити':skin.desc}
-        </span>
-      </div>
-      ${!isOwned?`<div class="skin-locked-overlay">🔒</div>`:''}
-    </div>`;
-  }).join('');
-}
-
-function applySkin(skinId) {
-  db.ref('users/'+currentUser+'/virtualCard/skin').set(skinId);
-  notify('🎨 Скін змінено!', 'success');
-  setTimeout(()=>{ renderCardPanel(); renderCardSkinShop(); }, 300);
-}
-
-function buySkin(skinId, price) {
-  if((userData.slotiky||0) < price) {
-    notify(`❌ Потрібно ${price} 🪙. У вас: ${userData.slotiky||0}`, 'error');
-    return;
-  }
-  const card = getCardData();
-  const owned = card ? [...(card.ownedSkins||['gold','black','blue']), skinId] : ['gold','black','blue', skinId];
-  db.ref('users/'+currentUser).update({
-    slotiky: (userData.slotiky||0) - price,
-    'virtualCard/ownedSkins': owned,
-    'virtualCard/skin': skinId,
-  });
-  playSound('win');
-  notify(`🎨 Скін "${CARD_SKINS.find(s=>s.id===skinId)?.name}" куплено і встановлено!`, 'success');
-  setTimeout(()=>{ renderCardPanel(); renderCardSkinShop(); }, 300);
-}
-
 // ── CARD TRANSACTIONS ──
 function addCardTransaction(direction, amount, title, subtitle) {
   if(!currentUser) return;
@@ -16331,9 +15562,7 @@ function doAxiomTransfer() {
   const bal = userData.balance || 0;
   if(axiomTxDir === 'toAxiom') {
     if(amt > bal) return notify('Недостатньо коштів у Casino', 'error');
-    // Both apps share same Firebase balance — same user, same balance
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-0)); // no-op
-    // Actually just record a transaction note (balance stays the same as they share it)
+    // Both apps share same Firebase balance — record a transaction note only
     db.ref('users/'+currentUser+'/cardTx').push({ title:'Переказ → Аксіома Банк', amount: amt, dir:'out', icon:'🏦', ts: Date.now() });
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amt));
     // Write to Axiom namespace so Axiom Bank sees it
@@ -17258,12 +16487,6 @@ function renderThemeGrid() {
     </div>`).join('');
 }
 
-// ── PATCH: triggerWinReaction у всіх іграх ──
-// Patch addToWinFeed to also trigger visual effect
-const _origAddToWinFeed = addToWinFeed;
-// Don't redefine — instead we'll patch at the call sites via wrapping
-// (already done via triggerWinReaction calls in bac/vp)
-
 // ── LOGIN STREAK EXTENDED: 7d = x2, 30d = skin ──
 function checkStreakBonus(streak) {
   if(streak === 7) {
@@ -17271,12 +16494,8 @@ function checkStreakBonus(streak) {
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(500));
   }
   if(streak === 30) {
-    notify('🌟 30 днів поспіль! Ексклюзивний скін розблоковано!', 'success');
-    db.ref('users/'+currentUser+'/virtualCard/ownedSkins').once('value', snap => {
-      const skins = snap.val() || ['gold'];
-      if(!skins.includes('titanium')) skins.push('titanium');
-      db.ref('users/'+currentUser+'/virtualCard/ownedSkins').set(skins);
-    });
+    notify('🌟 30 днів поспіль! Скін картки "Titanium" застосовано!', 'success');
+    applyCardSkin('titanium');
   }
 }
 
@@ -17996,7 +17215,8 @@ function spawnDuck() {
   area.innerHTML='';
   area.appendChild(duck);
   document.getElementById('duckProgress').textContent=`Качка ${duckState.duckIndex+1}/${duckState.totalDucks} • Множник: x${duckState.mult.toFixed(2)}`;
-  const flyTimer=setTimeout(()=>{ if(duckState.active && duckState.duckIndex===duckState.duckIndex) missedDuck(); },1800);
+  const spawnedIndex=duckState.duckIndex;
+  const flyTimer=setTimeout(()=>{ if(duckState.active && duckState.duckIndex===spawnedIndex) missedDuck(); },1800);
   duck._timer=flyTimer;
 }
 function shootDuck() {
@@ -19184,7 +18404,6 @@ function applyCardSkin(skinId) {
 
 // Термін дії тимчасової картки тепер перевіряється всередині renderCardPanel()
 // (щоб не показувати нагадування двічі). Функція лишена для сумісності зі старими викликами.
-function checkTempCardExpiry() { /* no-op — renderCardPanel handles this */ }
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  BANNER CAROUSEL — авто-ротація + свайп + крапки            ║

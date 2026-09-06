@@ -18,7 +18,7 @@
 // ============================================================
 
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
-const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands } = require("../lib/telegram");
+const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 
@@ -595,6 +595,3 @@ async function sha256(message) {
   return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function esc(s) {
-  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}

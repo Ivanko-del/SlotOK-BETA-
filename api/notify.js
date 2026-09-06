@@ -15,7 +15,7 @@
 // ============================================================
 
 const { dbGet } = require("../lib/firebase");
-const { sendMessage } = require("../lib/telegram");
+const { sendMessage, esc } = require("../lib/telegram");
 
 const PATHS = {
   deposit: "deposit_requests",
@@ -124,10 +124,6 @@ module.exports = async (req, res) => {
     res.status(200).end();
   }
 };
-
-function esc(s) {
-  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function buttons(domain, id) {
   return {
