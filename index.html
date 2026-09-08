@@ -3191,9 +3191,10 @@
 
         <!-- Per-game kill switch -->
         <div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:800;color:#4a9eff;margin-bottom:8px;">🎮 Керування іграми</div>
+          <div style="font-size:13px;font-weight:800;color:#4a9eff;margin-bottom:8px;">🎮 Керування іграми (усі ігри сайту)</div>
           <div style="font-size:11px;color:#666;margin-bottom:8px;">Вимкнена гра покаже гравцям повідомлення замість запуску</div>
-          <div id="gameToggleList"></div>
+          <input id="gameToggleFilter" placeholder="🔍 Пошук гри..." oninput="filterGameToggleList(this.value)" style="margin-bottom:8px;font-size:12px;padding:9px 12px;min-height:auto;">
+          <div id="gameToggleList" style="max-height:360px;overflow-y:auto;"></div>
         </div>
 
         <!-- Anti-cheat flags -->
@@ -4619,8 +4620,12 @@
       </div>
     </div>
 
-    <!-- ═══ ОКРЕМА ПЕРЕПИСКА (заповнюється openPmThread, перемикається видимістю — НЕ знищує інбокс) ═══ -->
-    <div id="pmThreadView" class="hidden" style="display:flex;flex-direction:column;height:calc(100vh - 60px);"></div>
+    <!-- ═══ ОКРЕМА ПЕРЕПИСКА (заповнюється openPmThread, перемикається видимістю — НЕ знищує інбокс) ═══
+         Фіксований на весь екран (position:fixed через .pm-thread-fullscreen), а не звичайний
+         блок у потоці сторінки — тому поле вводу внизу завжди приклеєне до низу екрана,
+         а не "спливає" разом зі скролом сторінки чи ховається під динамічною адресною
+         панеллю мобільного браузера. ═══ -->
+    <div id="pmThreadView" class="pm-thread-fullscreen hidden"></div>
   </div>
 
   <!-- ══════════════ ТОРГІВЛЯ (TRADE) ══════════════ -->

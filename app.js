@@ -1535,9 +1535,16 @@ function startChests(){
 
 // --- Краш ---
 let crashInt; let isCrashPlaying = false; let crashActiveBet = 0;
-function startCrash() { 
-    const b = validateBet(document.getElementById('betAmountCrash').value); 
+function startCrash() {
+    // Без цього захисту швидкий повторний клік по "Старт" міг запустити ще один
+    // setInterval поверх активного раунду: старий крашInt губився (перезаписувався
+    // цим глобальним "crashInt"), лишався жити вічно й нескінченно накручував
+    // множник у DOM — наступний "Забрати" читав це шалене число й нараховував
+    // величезну виплату. Простий guard на вхід прибирає весь клас багу.
+    if(isCrashPlaying) return;
+    const b = validateBet(document.getElementById('betAmountCrash').value);
     if(!b) return;
+    if(crashInt) { clearInterval(crashInt); crashInt = null; }
     crashActiveBet = b;  // зберігаємо ставку — не читаємо input під час гри
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
     addWager(b);
@@ -1567,9 +1574,9 @@ function startCrash() {
         if(autoCashoutTarget > 1 && m >= autoCashoutTarget && isCrashPlaying) {
           cashoutCrash(); return;
         }
-        if(m >= crashPoint){ 
-            clearInterval(crashInt); 
-            isCrashPlaying = false; 
+        if(m >= crashPoint){
+            clearInterval(crashInt); crashInt = null;
+            isCrashPlaying = false;
             notify("💥 КРАШ на " + m.toFixed(2) + "x!", "error");
             updateStreak(false); trackSession(false, crashActiveBet);
             document.getElementById('crashDisplay').style.color = "red";
@@ -1583,7 +1590,7 @@ function startCrash() {
 function cashoutCrash() { 
     if(!isCrashPlaying) return;
     isCrashPlaying = false;  // скидаємо ОДРАЗУ щоб запобігти подвійному кліку
-    clearInterval(crashInt); 
+    clearInterval(crashInt); crashInt = null;
     const b = crashActiveBet;  // читаємо збережену ставку, не input
     const mult = parseFloat(document.getElementById('crashDisplay').textContent);
     const w = Math.floor(b * mult); 
@@ -16394,10 +16401,12 @@ function pmSend() {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
     const msg = { from:currentUser, to, text, ts:Date.now() };
     db.ref('pm/'+currentUser).push(msg);
-    db.ref('pm/'+to).push(msg);
+    const toRef = db.ref('pm/'+to).push(msg);
     db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
     db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
-    notifyBot('player-ping', null, { to, kind: 'pm' });
+    // Передаємо id повідомлення (не сам текст!) — сервер сам підтягне текст із
+    // Firebase за цим id, щоб у Telegram-боті одразу було видно зміст ПП.
+    notifyBot('player-ping', null, { to, kind: 'pm', ref: { id: toRef.key } });
     if(msgEl) msgEl.value = '';
     notify('✉️ Надіслано!', 'success');
     renderPmInbox();
@@ -16428,7 +16437,7 @@ function openPmThread(otherUser) {
         <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
-    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
       <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
@@ -16505,8 +16514,8 @@ function pmReply(to) {
   const msg = { from:currentUser, to, text: text||'', ts:Date.now() };
   if(hasImg) msg.imgUrl = imgSrc;
   db.ref('pm/'+currentUser).push(msg);
-  db.ref('pm/'+to).push(msg);
-  notifyBot('player-ping', null, { to, kind: 'pm' });
+  const toRef = db.ref('pm/'+to).push(msg);
+  notifyBot('player-ping', null, { to, kind: 'pm', ref: { id: toRef.key } });
   db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
   const inp = document.getElementById('pmReplyInput');
@@ -17002,12 +17011,18 @@ function renderDragonGrid() {
   }
 }
 function startDragonTower() {
-  const bet = parseInt(document.getElementById('dragonBet').value) || 0;
-  if(!validateBet(bet)) return;
+  const bet = validateBet(document.getElementById('dragonBet').value);
+  if(!bet) return;
+  // ставка раніше НЕ списувалась з балансу тут — гравець міг натиснути
+  // "Старт", одразу забрати (mult=1, рівень=0) і отримати гроші нізвідки,
+  // навіть не вибравши жодного яйця. Списуємо баланс так само, як інші ігри.
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   dragonState = { active:true, level:0, bet, dragons:dragonState.dragons, cols:dragonState.cols, mult:1 };
   addWager(bet);
   document.getElementById('dragonSetup').classList.add('hidden');
-  document.getElementById('dragonCashoutBtn').classList.remove('hidden');
+  // Кешаут доступний лише після першого безпечного вибору (як у Tower Climb) —
+  // без цього кешаут одразу після старту повертав би ставку без жодного ризику.
+  document.getElementById('dragonCashoutBtn').classList.add('hidden');
   document.getElementById('dragonLevel').textContent = '0';
   document.getElementById('dragonMult').textContent = 'x1.00';
   document.getElementById('dragonCashout').textContent = '₴'+formatNumber(bet);
@@ -17055,13 +17070,16 @@ function pickDragonCell(row, col) {
     document.getElementById('dragonLevel').textContent = dragonState.level;
     document.getElementById('dragonMult').textContent = 'x'+dragonState.mult;
     document.getElementById('dragonCashout').textContent = '₴'+formatNumber(cashout);
+    document.getElementById('dragonCashoutBtn').classList.remove('hidden');
     if(dragonState.level >= 8) { cashoutDragon(); return; }
     renderDragonGrid();
     notify(`✅ Безпечно! Рівень ${dragonState.level} | x${dragonState.mult}`, 'success');
   }
 }
 function cashoutDragon() {
-  if(!dragonState.active) return;
+  // level 0 = жодного яйця ще не вибрано — виводити нічого, це б лише
+  // повертало ставку без ризику (кнопка кешауту й так прихована до цього моменту)
+  if(!dragonState.active || dragonState.level <= 0) return;
   const payout = Math.floor(dragonState.bet * dragonState.mult);
   dragonState.active = false;
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -18746,25 +18764,47 @@ function savePlayerNotes() {
 }
 
 // ── KILL-SWITCH ДЛЯ ІГОР ──
+// Повний список усіх ігор сайту (синхронізовано з картками "Всі ігри" в лобі) —
+// раніше тут було лише 9 ігор і решту адмін не міг вимкнути з панелі модерації.
 const ADMIN_TOGGLEABLE_GAMES = [
-  {id:'slots', name:'🎰 Слоти'}, {id:'crash', name:'🚀 Краш'}, {id:'mines', name:'💣 Міни'},
-  {id:'blackjack', name:'🃏 Блекджек'}, {id:'roulette', name:'🎡 Рулетка'}, {id:'plinko', name:'🔻 Plinko'},
-  {id:'dice', name:'🎲 Dice'}, {id:'coinflip', name:'🪙 Coinflip'}, {id:'chess', name:'♟️ Шахи'},
+  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash Aviator'}, {id:'mines', name:'💣 Mines'},
+  {id:'blackjack', name:'🃏 Blackjack'}, {id:'plinko', name:'🔻 Plinko'}, {id:'dice', name:'🎲 Dice Roll'},
+  {id:'fortune', name:'🎡 Колесо Фортуни'}, {id:'poker', name:'♠️ Video Poker'}, {id:'hilo', name:'🃏 Hi-Lo Cards'},
+  {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'tower', name:'🗼 Tower Climb'},
+  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
+  {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
+  {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
+  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'}, {id:'penalty', name:'⚽ Penalty Kick'},
+  {id:'bowling', name:'🎳 Bowling'}, {id:'archery', name:'🎯 Archery'}, {id:'sicbo', name:'🎲 Sic Bo'},
+  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'}, {id:'duckshoot', name:'🦆 Duck Shoot'},
+  {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
+  {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
 ];
 
+let _gameToggleDisabledCache = {};
 function renderGameToggleList() {
   const el = document.getElementById('gameToggleList');
   if(!el) return;
   db.ref('site_config/disabledGames').once('value').then(snap => {
-    const disabled = snap.val() || {};
-    el.innerHTML = ADMIN_TOGGLEABLE_GAMES.map(g => {
-      const isOff = !!disabled[g.id];
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
-        <span style="font-size:12px;">${g.name}</span>
-        <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isOff?'#e74c3c':'#3dd68c'};border-radius:8px;padding:4px 12px;color:${isOff?'#e74c3c':'#3dd68c'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
-      </div>`;
-    }).join('');
+    _gameToggleDisabledCache = snap.val() || {};
+    filterGameToggleList(document.getElementById('gameToggleFilter')?.value || '');
   });
+}
+
+function filterGameToggleList(query) {
+  const el = document.getElementById('gameToggleList');
+  if(!el) return;
+  const q = (query || '').trim().toLowerCase();
+  const disabled = _gameToggleDisabledCache;
+  const list = q ? ADMIN_TOGGLEABLE_GAMES.filter(g => g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) : ADMIN_TOGGLEABLE_GAMES;
+  if(!list.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:10px;font-size:12px;">Нічого не знайдено</div>'; return; }
+  el.innerHTML = list.map(g => {
+    const isOff = !!disabled[g.id];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
+      <span style="font-size:12px;">${g.name}</span>
+      <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isOff?'#e74c3c':'#3dd68c'};border-radius:8px;padding:4px 12px;color:${isOff?'#e74c3c':'#3dd68c'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
+    </div>`;
+  }).join('');
 }
 
 function toggleGameEnabled(gameId) {

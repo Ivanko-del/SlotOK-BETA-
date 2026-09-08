@@ -38,12 +38,21 @@ module.exports = async (req, res) => {
       if (!chatId) { res.status(200).end(); return; }
 
       // pm/clan-chat carry no body text: this endpoint is unauthenticated, so
-      // echoing sender/message from the POST body would let anyone impersonate
-      // any sender through the bot. A content-free ping is enough — the actual
-      // message is in the app.
+      // trusting sender/message text straight from the POST body would let
+      // anyone impersonate any sender through the bot. Instead, for "pm" we
+      // only trust a message id and re-read the real message server-side —
+      // same pattern as the "support" branch below — so the bot shows the
+      // actual content without opening an impersonation hole.
       let text = null;
       if (kind === "pm") {
         text = "📩 Нове повідомлення в особистих!";
+        if (ref && ref.id) {
+          const msg = await dbGet(`pm/${to}/${ref.id}`);
+          if (msg && msg.to === to) {
+            const preview = msg.imgUrl ? "[фото — переглянь в застосунку]" : esc(msg.text || "");
+            text = `✉️ <b>Нове повідомлення від ${esc(msg.from || "гравця")}</b>\n${preview}`;
+          }
+        }
       } else if (kind === "clan-chat") {
         text = "👥 Нове повідомлення в клан-чаті!";
       } else if (kind === "bigwin" && ref && typeof ref.amount === "number") {
