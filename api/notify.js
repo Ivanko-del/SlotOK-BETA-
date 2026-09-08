@@ -89,6 +89,32 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (type === "withdraw-2fa") {
+      // Реальне 2FA: код/кнопка йдуть у ВЛАСНИЙ Telegram гравця, а не в те саме
+      // вікно сайту, звідки подано заявку — це і є другий, окремий канал.
+      // Підтвердження обробляється тапом по кнопці в telegram-webhook.js
+      // (callback_data "wd2fa:..."), не тут — тут лише надсилаємо повідомлення.
+      if (!id) { res.status(400).end(); return; }
+      const r = await dbGet(`withdraw_requests/${id}`);
+      if (!r || r.status !== "pending_2fa") { res.status(200).end(); return; }
+      const chatId = await dbGet(`users/${r.user}/telegramChatId`);
+      if (!chatId) { res.status(200).end(); return; }
+      await sendMessage(
+        chatId,
+        `🔐 <b>Підтвердження виводу</b>\n💵 Сума: ${r.amount}₴ · ${esc(r.method || "—")}\n\nЦе точно ти щойно запросив вивід на сайті? Підтверди нижче — після цього заявку побачить адміністратор.`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: "✅ Так, це я — підтвердити", callback_data: `wd2fa:confirm:${id}` },
+              { text: "❌ Це не я — скасувати", callback_data: `wd2fa:cancel:${id}` },
+            ]],
+          },
+        }
+      );
+      res.status(200).end();
+      return;
+    }
+
     const path = PATHS[type];
     if (!path || !id) {
       res.status(400).end();
