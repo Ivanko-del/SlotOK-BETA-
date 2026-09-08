@@ -2572,6 +2572,7 @@ let _authJackpotListener = null;
 function stopAuthStatsListeners() {
   if(_authJackpotListener) { db.ref('casino_stats/jackpot').off('value', _authJackpotListener); _authJackpotListener = null; }
   stopAuthCoins();
+  stopAuthWinTicker();
 }
 function loadAuthStats() {
   db.ref('users').once('value', snap => {
@@ -2596,6 +2597,8 @@ function loadAuthStats() {
   db.ref('casino_stats/jackpot').on('value', _authJackpotListener);
   // Floating coins in bg
   initAuthCoins();
+  // Live win ticker
+  initAuthWinTicker();
   // Password strength listener
   const passInput = document.getElementById('regPass');
   if(passInput) passInput.addEventListener('input', e => {
@@ -2630,6 +2633,37 @@ function initAuthCoins() {
 }
 function stopAuthCoins() {
   if(_authCoinsInterval) { clearInterval(_authCoinsInterval); _authCoinsInterval = null; }
+}
+
+// Жива стрічка останніх великих виграшів на екрані входу — той самий
+// "win_feed", що й на головній (addToWinFeed), лише в горизонтальній
+// бігучій стрічці, як #rateTicker. Показуємо ще до логіну, щоб екран
+// не виглядав мертвим/статичним.
+const AUTH_WIN_TICKER_GAME_EMOJI = { 'Слоти':'🎰','Slots':'🎰','Краш':'🚀','Crash':'🚀','Mines':'💣','Roulette':'🎡','Рулетка':'🎡','Blackjack':'🃏','Блекджек':'🃏','Plinko':'🔻','Dice':'🎲','Fortune':'🎡','Hi-Lo':'🃏','Limbo':'🌀','Poker':'♠️','Balloon':'🎈','Dragon Tower':'🐉','Шахи':'♟️' };
+let _authWinTickerListener = null;
+function initAuthWinTicker() {
+  const inner = document.getElementById('authWinTickerInner');
+  if(!inner) return;
+  if(_authWinTickerListener) db.ref('win_feed').off('value', _authWinTickerListener);
+  _authWinTickerListener = snap => {
+    const data = snap.val() || {};
+    const items = Object.values(data).sort((a,b) => b.time - a.time).slice(0, 10);
+    if(!items.length) {
+      inner.innerHTML = '<span class="auth-win-ticker-item">🎰 Приєднуйся першим — і саме твій виграш зʼявиться тут!</span>'.repeat(2);
+      return;
+    }
+    const renderItem = it => {
+      const emoji = AUTH_WIN_TICKER_GAME_EMOJI[it.game] || '🎰';
+      return `<span class="auth-win-ticker-item">${emoji} <span class="awt-user">${escapeHtml(it.user||'Гравець')}</span> виграв <b>+₴${formatNumber(it.amount)}</b> у ${escapeHtml(it.game||'')}</span>`;
+    };
+    // Дублюємо список двічі підряд — так tickerScroll (0% → -50%) закільцьовується без "стрибка"
+    const html = items.map(renderItem).join('') + items.map(renderItem).join('');
+    inner.innerHTML = html;
+  };
+  db.ref('win_feed').orderByChild('time').limitToLast(10).on('value', _authWinTickerListener);
+}
+function stopAuthWinTicker() {
+  if(_authWinTickerListener) { db.ref('win_feed').off('value', _authWinTickerListener); _authWinTickerListener = null; }
 }
 
 function spawnWinCoins(amount) {
@@ -3551,12 +3585,23 @@ function switchAuthTab(mode) {
   const regForm   = document.getElementById('regForm');
   const tabLogin  = document.getElementById('authTabLogin');
   const tabReg    = document.getElementById('authTabReg');
+  const tabsWrap  = document.getElementById('authTabs');
   const errEl     = document.getElementById('authError');
   if(loginForm) loginForm.classList.toggle('hidden', !isLogin);
   if(regForm)   regForm.classList.toggle('hidden', isLogin);
   if(tabLogin)  tabLogin.classList.toggle('active', isLogin);
   if(tabReg)    tabReg.classList.toggle('active', !isLogin);
+  if(tabsWrap)  tabsWrap.classList.toggle('reg-active', !isLogin);
   if(errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+}
+
+// 👁 Показати/приховати пароль на екрані входу й реєстрації
+function toggleAuthPassVisibility(inputId, btnEl) {
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const shown = inp.type === 'text';
+  inp.type = shown ? 'password' : 'text';
+  if(btnEl) btnEl.textContent = shown ? '👁' : '🙈';
 }
 
 function setPlayerStatus(status) {
@@ -13445,6 +13490,58 @@ const SUPPORT_FAQ = [
     reply: '🎲 Dice: обери діапазон і напрямок (більше/менше), рушій Provably Fair — можна перевірити чесність кожного результату.' },
   { keys: ['шахи','chess'],
     reply: '♟️ Шахи: грай проти AI (3 рівні складності) або проти живого гравця (PvP з реальною ставкою) — обидва режими в розділі Казино → Шахи.' },
+  { keys: ['спорт','ставк на матч','футбол ставк','баскетбол ставк','sportbet','sport betting','лайв ставк'],
+    reply: '⚽ Спортивні ставки: розділ Казино → Спортбетинг — реальні матчі (футбол, баскетбол та інші) з live-коефіцієнтами. Постав на переможця/нічию, стеж за рахунком прямо на екрані, виплата — автоматично після завершення матчу.' },
+  { keys: ['монополі','monopoly'],
+    reply: '🎩 Монополія: постав ставку (від 100₴) і грай проти AI на класичному ігровому полі — купуй вулиці, будуй будинки, розоряй суперника. Виграш залежить від того, хто збанкрутує першим.' },
+  { keys: ['дурень','карти дурень','гра в дурня','war карти'],
+    reply: '🃏 Дурень: класична карткова гра проти AI (або іншого гравця) — постав ставку, козир визначається автоматично. Хто перший скидає всі карти, той забирає банк.' },
+  { keys: ['tower climb','tower','вежа','підйом по вежі'],
+    reply: '🗼 Tower Climb: постав ставку і піднімайся поверх за поверхом, обираючи безпечну клітинку — кожен рівень збільшує множник. Забирай виграш у будь-який момент або йди далі на свій ризик.' },
+  { keys: ['hi-lo','hilo','більше менше карт','вище нижче карт'],
+    reply: '🃏 Hi-Lo: постав ставку, вгадуй чи наступна карта буде вищою чи нижчою за поточну — кожна правильна відповідь підвищує множник у x1.5. Забирай накопичене у будь-який момент.' },
+  { keys: ['sic bo','сік бо','три кубики'],
+    reply: '🎲 Sic Bo: кидаються три кубики — став на «Велике/Мале», конкретну суму або трипл (усі три однакові = x24). Класична азійська гра, миттєвий результат.' },
+  { keys: ['card war','карти війна','війна карт'],
+    reply: '⚔️ Card War: твоя карта проти карти дилера — вища виграє x2, нічия повертає ставку. Просто, швидко, без зайвих правил.' },
+  { keys: ['duck shoot','качк','стріляти по качках'],
+    reply: '🦆 Duck Shoot: стріляй по качках, що пролітають — кожне влучання підвищує множник (x1.2). Схибив хоч раз — гра закінчена, а збив усіх 10 — забираєш максимальний виграш.' },
+  { keys: ['bowling','боулінг','кеглі'],
+    reply: '🎳 Bowling: обери силу кидка і кидай — страйк дає x10, спер x3. Результат залежить і від сили, і трохи від удачі.' },
+  { keys: ['archery','стрільба з лука','лучник'],
+    reply: '🎯 Archery: обери рівень ризику (шанс/множник) і стріляй — влучання дає виплату за обраним множником, промах забирає ставку.' },
+  { keys: ['penalty','пенальті','пробити пенальті'],
+    reply: '⚽ Penalty Kick: обери зону удару — якщо воротар вгадав інший кут, це гол і виграш x3. Просто і швидко.' },
+  { keys: ['balloon','кульк','лопнути кульку'],
+    reply: '🎈 Balloon Pop: постав ставку і чекай — множник росте з кожною секундою, але кулька може лопнути будь-якої миті. Встигни забрати виграш до вибуху!' },
+  { keys: ['horse racing','скачки','перегони коней','кінні перегони'],
+    reply: '🏇 Horse Racing: обери коня з 4 і постав на нього — переможець визначається шансами кожного коня (до x8). Дивись перегони в реальному часі прямо на екрані.' },
+  { keys: ['color bet','кольорова ставк','ставка на колір'],
+    reply: '🎨 Color Bet: постав на червоний, білий чи зелений — колесо крутиться і показує результат. Червоний/зелений — x2, білий (рідкісний) — x14.' },
+  { keys: ['кено','keno'],
+    reply: '🔢 Keno: обери від 1 до 10 чисел з 40, натисни «Грати» — тягнеться 20 випадкових чисел, виплата залежить від кількості влучань і скільки чисел ти обрав.' },
+  { keys: ['скретч','scratch','скретч-картк'],
+    reply: '🎟️ Скретч-картки: купи картку і стирай клітинки — три однакові символи дають виграш (💎 x20, 💰 x5, ⭐ x3).' },
+  { keys: ['бакара','baccarat'],
+    reply: '🃏 Бакара: класична гра Гравець проти Банкіра — постав на те, хто набере ближче до 9 (або на нічию, x8). Карти роздаються автоматично за стандартними правилами.' },
+  { keys: ['double гра','double game','дабл гра'],
+    reply: '🎰 Double: постав на колір і крути — просте й швидке колесо з двома основними кольорами та рідкісним джекпотним сектором.' },
+  { keys: ['dragon tower','дракон тавер','вежа дракона'],
+    reply: '🐉 Dragon Tower: постав ставку, обери складність (кількість колонок/драконів) і піднімайся рівень за рівнем, обираючи безпечне яйце. Дракон — програш, кешаут у будь-який момент — забираєш накопичене.' },
+  { keys: ['battle pass','баттлпас','бойовий пропуск','боевой пропуск'],
+    reply: '🎫 Battle Pass: сезонна система нагород — заробляєш XP граючи в будь-які ігри, піднімаєш рівні й відкриваєш нагороди. VIP Battle Pass дає більше й швидше. Розділ «Ще» → Battle Pass.' },
+  { keys: ['досягнен','ачівк','achievement'],
+    reply: '🏆 Досягнення: розділ «Ще» → Досягнення — 50+ завдань за різні дії в іграх (перший виграш, джекпот, серії перемог тощо), кожне дає XP.' },
+  { keys: ['топ гравц','рейтинг гравц','leaderboard','лідерборд'],
+    reply: '📊 Рейтинг гравців: розділ «Ще» → Рейтинг — топи за ставками, виграшами й активністю за різні періоди. Найкращі місця дають додаткові нагороди.' },
+  { keys: ['подарун гравцю','надіслати подарунок','подарувати гроші'],
+    reply: '🎁 Подарунки: можна надіслати частину балансу іншому гравцю прямо з його профілю чи чату — кнопка «Подарувати». Ліміти й комісія показані перед відправкою.' },
+  { keys: ['мут','замучен','забанили в чаті','правила чату','спам чат'],
+    reply: '💬 Правила чату: без спаму, реклами, образ і читерських порад. За порушення — тимчасовий мут. Якщо вважаєш мут помилковим, опиши ситуацію — передам адміну на перевірку.' },
+  { keys: ['гроші списались а не зарахувал','платіж завис','оплата пройшла а грошей нема','гроші не прийшли'],
+    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на поповнення обробляються до 24 год — кошти зарахують після перевірки платежу. Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
+  { keys: ['баланс не оновлюється','не бачу баланс','баланс завис','вилетіло з гри'],
+    reply: '🔄 Якщо баланс не оновлюється або гру "вибило" — спробуй оновити сторінку (стан гри й баланс зберігаються на сервері, нічого не втрачається). Якщо після оновлення проблема лишається, опиши деталі — передам адміну.' },
   { keys: ['мінер','mines','сапер'],
     reply: '💣 Mines: обери кількість мін на полі 5×5 і відкривай клітинки — множник росте з кожною безпечною клітинкою. Забирай виграш у будь-який момент до того, як натрапиш на міну.' },
   { keys: ['лімбо','limbo'],
