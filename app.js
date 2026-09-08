@@ -768,24 +768,34 @@ function selectWithdrawMethod(method, el) {
 function submitWithdraw() {
     const card = document.getElementById('withdrawCard').value.trim();
     const amount = parseInt(document.getElementById('withdrawAmount').value);
-    
+
     if(!card) return notify("Введіть реквізити для виводу", "error");
     if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
     if(userData.balance < amount) return notify("Недостатньо коштів", "error");
-    
+
     // Перевірка на pending заявки
     if(userData.pendingWithdraw) {
         return notify("У вас вже є активна заявка на вивід. Дочекайтесь її обробки.", "error");
     }
-    
+
+    // Великі суми — реальне 2FA: підтвердження тапом у Telegram гравця
+    // (webhook перевіряє, що це саме його chatId), а не код, видимий у
+    // тому ж вікні браузера, звідки подано заявку.
+    const needs2FA = amount >= WITHDRAW_2FA_THRESHOLD;
+    if(needs2FA && !userData.telegramChatId) {
+        notify('🔐 Для виводу від '+formatNumber(WITHDRAW_2FA_THRESHOLD)+'₴ потрібно прив’язати Telegram (Профіль → Сповіщення) — звідти прийде підтвердження.', 'error');
+        return;
+    }
+
     const requestId = `${currentUser}_${Date.now()}`;
-    
+    const status = needs2FA ? 'pending_2fa' : 'pending';
+
     // Заморозити гроші
     db.ref('users/' + currentUser).update({
         balance: firebase.database.ServerValue.increment(-amount),
         pendingWithdraw: true
     });
-    
+
     // Зберегти заявку
     db.ref('withdraw_requests/' + requestId).set({
         user: currentUser,
@@ -793,22 +803,30 @@ function submitWithdraw() {
         amount: amount,
         method: selectedWithdrawMethod,
         card: card,
-        status: 'pending',
+        status: status,
         time: Date.now()
-    }).then(() => notifyBot('withdraw', requestId));
+    }).then(() => notifyBot(needs2FA ? 'withdraw-2fa' : 'withdraw', requestId));
 
     db.ref('users/' + currentUser + '/withdraws/' + requestId).set({
         amount: amount,
         method: selectedWithdrawMethod,
-        status: 'pending',
+        status: status,
         time: Date.now()
     });
-    
-    addToHistory(`Заявка на вивід: -${amount} ₴ (обробляється)`);
-    // Notify admin
-    db.ref('pm/theivankoo/'+db.ref().push().key).set({from:'📤 Система', to:'theivankoo', text:`💸 Нова заявка на вивід від @${currentUser}: ${amount}₴ (${selectedWithdrawMethod})`, ts:Date.now()});
-    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    showWithdrawLoading(amount, selectedWithdrawMethod, card, requestId);
+
+    addToHistory(needs2FA ? `Заявка на вивід: -${amount} ₴ (очікує підтвердження в Telegram)` : `Заявка на вивід: -${amount} ₴ (обробляється)`);
+    // Адміна повідомляємо одразу лише для заявок БЕЗ 2FA — підтверджені 2FA-заявки
+    // сам webhook сповістить адміна, щойно гравець тапне "Підтвердити" в Telegram.
+    if(!needs2FA) {
+        db.ref('pm/theivankoo/'+db.ref().push().key).set({from:'📤 Система', to:'theivankoo', text:`💸 Нова заявка на вивід від @${currentUser}: ${amount}₴ (${selectedWithdrawMethod})`, ts:Date.now()});
+        db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
+    }
+
+    if(needs2FA) {
+        showWithdraw2FAWait(amount, requestId);
+    } else {
+        showWithdrawLoading(amount, selectedWithdrawMethod, card, requestId);
+    }
 
     document.getElementById('withdrawCard').value = '';
     document.getElementById('withdrawAmount').value = '';
@@ -853,10 +871,12 @@ function loadMyWithdraws() {
         list.innerHTML = '';
         Object.entries(data).reverse().forEach(([id, w]) => {
             const date = new Date(w.time).toLocaleDateString('uk-UA');
-            const statusClass = w.status === 'done' ? 'pw-done' : w.status === 'rejected' ? 'pw-rejected' : 'pw-pending';
-            const statusText = w.status === 'done' ? '✅ Виконано' : w.status === 'rejected' ? '❌ Відхилено' : '⏳ Обробляється';
-            const statusIcon = w.status === 'done' ? '✅' : w.status === 'rejected' ? '❌' : '⏳';
-            const iconBg = w.status === 'done' ? 'rgba(76,217,100,.22),rgba(76,217,100,.05)' : w.status === 'rejected' ? 'rgba(240,64,96,.22),rgba(240,64,96,.05)' : 'rgba(212,175,55,.22),rgba(212,175,55,.05)';
+            const isBad = w.status === 'rejected' || w.status === 'cancelled';
+            const statusClass = w.status === 'done' ? 'pw-done' : isBad ? 'pw-rejected' : 'pw-pending';
+            const statusText = w.status === 'done' ? '✅ Виконано' : w.status === 'rejected' ? '❌ Відхилено'
+              : w.status === 'cancelled' ? '❌ Скасовано в Telegram' : w.status === 'pending_2fa' ? '🔐 Очікує підтвердження в Telegram' : '⏳ Обробляється';
+            const statusIcon = w.status === 'done' ? '✅' : isBad ? '❌' : w.status === 'pending_2fa' ? '🔐' : '⏳';
+            const iconBg = w.status === 'done' ? 'rgba(76,217,100,.22),rgba(76,217,100,.05)' : isBad ? 'rgba(240,64,96,.22),rgba(240,64,96,.05)' : 'rgba(212,175,55,.22),rgba(212,175,55,.05)';
             list.innerHTML += `
                 <div class="pending-withdraw">
                     <div class="pw-icon" style="background:radial-gradient(circle,${iconBg});">${statusIcon}</div>
@@ -5620,125 +5640,73 @@ function checkPendingNotifs() {
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 5: 2FA для великих виводів                           ║
+// ║  Раніше цей "2FA" був суто косметичний: код генерувався тут ж ║
+// ║  у браузері, писався у ПП (яке той самий браузер вільно      ║
+// ║  читає напряму з Firebase) і мав кнопку "показати" прямо в   ║
+// ║  тому ж вікні — тобто нічого насправді не перевіряв.         ║
+// ║  Тепер підтвердження — це тап по кнопці у ВЛАСНОМУ Telegram  ║
+// ║  гравця: код на бекенді (api/notify.js) ніколи не генерується ║
+// ║  й не зберігається в клієнтській базі — просто інлайн-кнопки ║
+// ║  "confirm"/"cancel", а справжня перевірка — чий саме chatId   ║
+// ║  Telegram доставив у наш webhook (api/telegram-webhook.js).  ║
 // ╚══════════════════════════════════════════════════════════════╝
 const WITHDRAW_2FA_THRESHOLD = 5000; // ₴ — поріг для 2FA
-let _pending2FAWithdraw = null;
-let _2faCode = null;
-let _2faExpiry = 0;
+let _wd2faListener = null, _wd2faListenerId = null;
 
-function generate2FACode() {
-  _2faCode = String(Math.floor(100000 + Math.random() * 900000));
-  _2faExpiry = Date.now() + 5 * 60 * 1000; // 5 хвилин
-  return _2faCode;
-}
-
-function request2FA(withdrawData, onSuccess) {
-  const code = generate2FACode();
-  _pending2FAWithdraw = { data: withdrawData, onSuccess };
-  // Send code via PM (admin will see it too)
-  db.ref('pm/'+currentUser+'/'+db.ref().push().key).set({
-    from: '🔐 SlotOK Security', to: currentUser,
-    text: `🔐 Ваш код підтвердження виводу: **${code}**\n\nСума: ${formatNumber(withdrawData.amount)}₴\n⏱ Дійсний 5 хвилин. Нікому не повідомляйте!`,
-    ts: Date.now()
-  });
-  db.ref('users/'+currentUser+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  // Show modal
-  show2FAModal(withdrawData.amount);
-  notify('🔐 Код підтвердження надіслано в особисті повідомлення!', 'info');
-}
-
-function show2FAModal(amount) {
+function showWithdraw2FAWait(amount, requestId) {
   const existing = document.getElementById('modal2FA');
   if(existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'modal2FA';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.innerHTML = `
-    <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:2px solid rgba(74,158,255,.3);border-radius:20px;padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;">
-      <div style="text-align:center;margin-bottom:16px;">
-        <div style="font-size:42px;margin-bottom:8px;">🔐</div>
-        <div style="font-family:'Orbitron',monospace;font-size:15px;color:#4a9eff;font-weight:900;">Підтвердження виводу</div>
-        <div style="font-size:12px;color:#666;margin-top:6px;">Сума: <b style="color:#d4af37;">${formatNumber(amount)}₴</b></div>
-        <div style="font-size:11px;color:#555;margin-top:4px;">Код також продубльовано в особисті повідомлення</div>
+    <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:2px solid rgba(74,158,255,.3);border-radius:20px;padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;text-align:center;">
+      <div id="wd2faIcon" style="font-size:42px;margin-bottom:8px;animation:pulse2 1.5s ease infinite;">🔐</div>
+      <div style="font-family:'Orbitron',monospace;font-size:15px;color:#4a9eff;font-weight:900;">Підтвердь вивід у Telegram</div>
+      <div style="font-size:12px;color:#666;margin-top:6px;">Сума: <b style="color:#d4af37;">${formatNumber(amount)}₴</b></div>
+      <div id="wd2faMsg" style="font-size:13px;color:#aaa;margin-top:14px;line-height:1.5;">Ми надіслали повідомлення у твій Telegram із кнопками «Підтвердити» / «Скасувати». Відкрий бота і натисни потрібну.</div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button onclick="notifyBot('withdraw-2fa', '${requestId}');notify('🔄 Надіслано ще раз','info')" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:12px;padding:12px;color:#4a9eff;font-weight:700;cursor:pointer;font-size:13px;">🔄 Надіслати ще раз</button>
+        <button onclick="closeWithdraw2FAWait()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:12px;color:#666;cursor:pointer;font-size:13px;">Закрити</button>
       </div>
-
-      <!-- Код видно прямо тут — не треба нікуди переходити -->
-      <div id="inline2FACodeBox" style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.25);border-radius:12px;padding:12px;margin-bottom:14px;text-align:center;cursor:pointer;" onclick="reveal2FACode()">
-        <div style="font-size:10px;color:#3dd68c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">👁 Твій код підтвердження</div>
-        <div id="inline2FACodeValue" style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;letter-spacing:8px;color:#3dd68c;filter:blur(6px);transition:filter .2s;user-select:none;">••••••</div>
-        <div style="font-size:10px;color:#555;margin-top:6px;">Натисни щоб показати</div>
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <input id="input2FA" type="number" placeholder="Введіть 6-значний код" maxlength="6"
-          style="text-align:center;font-size:22px;letter-spacing:6px;font-weight:900;border-color:rgba(74,158,255,.3);background:rgba(74,158,255,.04);"
-          onkeydown="if(event.key==='Enter')verify2FA()">
-      </div>
-      <div id="err2FA" style="color:#e74c3c;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px;"></div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="verify2FA()" style="flex:1;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:12px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-size:15px;">✅ Підтвердити</button>
-        <button onclick="cancel2FA()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:14px;color:#666;cursor:pointer;font-size:13px;">✕</button>
-      </div>
-      <div style="text-align:center;margin-top:10px;font-size:10px;color:#333;">Код дійсний 5 хвилин · Не передавайте нікому</div>
+      <div style="font-size:10px;color:#333;margin-top:10px;">Заявка нікуди не зникає — можна повернутись і підтвердити пізніше</div>
     </div>`;
   document.body.appendChild(modal);
-  setTimeout(() => document.getElementById('input2FA')?.focus(), 100);
+
+  if(_wd2faListener) { db.ref('withdraw_requests/'+_wd2faListenerId+'/status').off('value', _wd2faListener); }
+  _wd2faListenerId = requestId;
+  _wd2faListener = db.ref('withdraw_requests/'+requestId+'/status').on('value', snap => {
+    const status = snap.val();
+    if(status === 'pending_2fa') return; // ще чекаємо на тап у Telegram
+    db.ref('withdraw_requests/'+requestId+'/status').off('value', _wd2faListener);
+    _wd2faListener = null;
+    const icon = document.getElementById('wd2faIcon');
+    const msg = document.getElementById('wd2faMsg');
+    if(status === 'pending') {
+      if(icon) icon.textContent = '✅';
+      if(msg) msg.innerHTML = '<span style="color:#3dd68c;">Підтверджено!</span> Заявку передано адміністратору — обробка 1-24 год.';
+      loadMyWithdraws();
+      setTimeout(closeWithdraw2FAWait, 2500);
+    } else if(status === 'cancelled') {
+      if(icon) icon.textContent = '❌';
+      if(msg) msg.innerHTML = '<span style="color:#e74c3c;">Скасовано.</span> Кошти повернуто на баланс.';
+      loadMyWithdraws();
+      setTimeout(closeWithdraw2FAWait, 2500);
+    }
+  });
 }
 
-function reveal2FACode() {
-  const el = document.getElementById('inline2FACodeValue');
-  if(!el || !_2faCode) return;
-  const isHidden = el.style.filter !== 'none';
-  if(isHidden) {
-    el.textContent = _2faCode;
-    el.style.filter = 'none';
-    // Also auto-fill the input for convenience
-    const inp = document.getElementById('input2FA');
-    if(inp && !inp.value) inp.value = _2faCode;
-  } else {
-    el.textContent = '••••••';
-    el.style.filter = 'blur(6px)';
-  }
-}
-
-function verify2FA() {
-  const entered = document.getElementById('input2FA')?.value?.trim();
-  const errEl = document.getElementById('err2FA');
-  if(!entered) { if(errEl) errEl.textContent = 'Введіть код'; return; }
-  if(Date.now() > _2faExpiry) {
-    if(errEl) errEl.textContent = '❌ Код прострочено. Спробуй ще раз.';
-    _2faCode = null; return;
-  }
-  if(entered !== _2faCode) {
-    if(errEl) errEl.textContent = '❌ Невірний код. Залишилось спроб: перевір PM';
-    return;
-  }
-  // Code correct!
+function closeWithdraw2FAWait() {
   document.getElementById('modal2FA')?.remove();
-  _2faCode = null;
-  if(_pending2FAWithdraw?.onSuccess) _pending2FAWithdraw.onSuccess();
-  _pending2FAWithdraw = null;
-  notify('✅ Вивід підтверджено!', 'success');
-}
-
-function cancel2FA() {
-  document.getElementById('modal2FA')?.remove();
-  _pending2FAWithdraw = null;
-  _2faCode = null;
-  notify('❌ Вивід скасовано', 'info');
-}
-
-// Патч submitWithdraw для 2FA
-const _origSubmitWithdraw = submitWithdraw;
-function submitWithdrawWith2FA() {
-  const amtEl = document.getElementById('withdrawAmount') || document.getElementById('customWithdrawAmount');
-  const amount = parseInt(amtEl?.value) || selectedWithdrawAmount || 0;
-  if(amount >= WITHDRAW_2FA_THRESHOLD) {
-    request2FA({ amount }, () => { _origSubmitWithdraw(); });
-  } else {
-    _origSubmitWithdraw();
+  if(_wd2faListener && _wd2faListenerId) {
+    db.ref('withdraw_requests/'+_wd2faListenerId+'/status').off('value', _wd2faListener);
   }
+  _wd2faListener = null; _wd2faListenerId = null;
 }
+
+// HTML і раніше, і зараз викликає submitWithdrawWith2FA() — залишаємо назву,
+// щоб не чіпати розмітку, але вся логіка тепер просто в submitWithdraw().
+function submitWithdrawWith2FA() { submitWithdraw(); }
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 6: Provably Fair — Dice і Plinko з seed-перевіркою   ║
@@ -13435,8 +13403,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: [
-      '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ прийде код підтвердження в особисті повідомлення (натисни «Показати код» прямо у вікні виводу — нікуди переходити не треба). Заявки обробляються протягом 1-24 год.',
-      '💸 Щоб вивести гроші: Каса → Вивід → сума + реквізити картки. На суми від 5000₴ потрібне підтвердження кодом (з’явиться в приватних повідомленнях). Обробка заявки — до 24 годин.'
+      '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ треба підтвердити вивід тапом по кнопці у власному Telegram (бот пришле «Підтвердити»/«Скасувати») — тому Telegram має бути прив’язаний заздалегідь у Профіль → Сповіщення. Заявки обробляються протягом 1-24 год.',
+      '💸 Щоб вивести гроші: Каса → Вивід → сума + реквізити картки. На суми від 5000₴ прийде повідомлення в Telegram із кнопкою підтвердження — без цього тапу заявка не піде далі. Обробка — до 24 годин.'
     ] },
   { keys: ['мінімальн вивід','мінімум вивід','ліміт вивід','максимальн вивід','скільки можна вивести'],
     reply: '💸 Ліміти виводу: мінімальна сума — 100₴, максимальна залежить від твого VIP-рівня (чим вищий рівень, тим більший ліміт). Точні цифри для свого рівня дивись у Профіль → VIP Статус.' },

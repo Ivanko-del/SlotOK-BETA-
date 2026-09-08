@@ -20,7 +20,7 @@
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
-const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
+const { startDeposit, startWithdraw, withdrawButtons, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -497,22 +497,28 @@ async function handlePlayerCommand(chatId, rawText) {
 async function handleCallback(cq) {
   const chatId = cq.message.chat.id;
   const messageId = cq.message.message_id;
-  const adminChatId = await dbGet("bot_config/adminChatId");
-
-  if (!adminChatId || String(chatId) !== String(adminChatId)) {
-    await answerCallbackQuery(cq.id, "Немає прав.");
-    return;
-  }
-
   const [domain, action, id] = (cq.data || "").split(":");
   let resultText = null;
 
-  if (domain === "dep") resultText = await actOnDeposit(action, id);
-  else if (domain === "wd") resultText = await actOnWithdraw(action, id);
-  else if (domain === "pwr") resultText = await actOnPasswordReset(action, id);
+  // wd2fa — гравець підтверджує СВІЙ ВЛАСНИЙ вивід тапом у своєму Telegram.
+  // Це не адмінська дія: авторизація тут — сам факт, що Telegram доставив
+  // callback із chatId, прив'язаним саме до власника заявки (перевіряється
+  // всередині actOnWithdraw2FA), а не належність до admin-чату.
+  if (domain === "wd2fa") {
+    resultText = await actOnWithdraw2FA(chatId, action, id);
+  } else {
+    const adminChatId = await dbGet("bot_config/adminChatId");
+    if (!adminChatId || String(chatId) !== String(adminChatId)) {
+      await answerCallbackQuery(cq.id, "Немає прав.");
+      return;
+    }
+    if (domain === "dep") resultText = await actOnDeposit(action, id);
+    else if (domain === "wd") resultText = await actOnWithdraw(action, id);
+    else if (domain === "pwr") resultText = await actOnPasswordReset(action, id);
+  }
 
   if (resultText === null) {
-    await answerCallbackQuery(cq.id, "Заявку вже оброблено або не знайдено.");
+    await answerCallbackQuery(cq.id, "Заявку вже оброблено, не знайдено, або немає прав.");
     return;
   }
 
@@ -558,6 +564,42 @@ async function actOnWithdraw(action, id) {
     await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
     await notifyPlayer(r.user, `❌ Ваш запит на вивід ${r.amount}₴ відхилено. Кошти повернуто на баланс.`);
     return `❌ Відхилено, ${r.amount}₴ повернуто (${esc(r.user)})`;
+  }
+}
+
+// Реальне 2FA для великих виводів: сайт більше не показує/генерує код у
+// браузері (той "2FA" був суто косметичний — код лежав у тому ж вікні, звідки
+// й подавалась заявка). Тепер підтвердження — це тап по кнопці у ВЛАСНОМУ
+// Telegram гравця, і саме Telegram гарантує, з якого chatId прийшов тап —
+// підмінити його з сайту чи консолі браузера неможливо.
+async function actOnWithdraw2FA(chatId, action, id) {
+  const r = await dbGet(`withdraw_requests/${id}`);
+  if (!r || r.status !== "pending_2fa") return null;
+
+  // Власник заявки має збігатись із власником саме цього Telegram-чату —
+  // інакше будь-хто, хто здогадався callback_data чужої заявки, міг би її
+  // підтвердити чи скасувати від чужого імені.
+  const owner = await resolveNick(chatId);
+  if (!owner || owner !== r.user) return null;
+
+  if (action === "confirm") {
+    await dbUpdate(`withdraw_requests/${id}`, { status: "pending", confirmedAt: Date.now() });
+    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "pending" });
+    const adminChatId = await dbGet("bot_config/adminChatId");
+    if (adminChatId) {
+      await sendMessage(
+        adminChatId,
+        `💸 <b>Нова заявка на вивід (2FA підтверджено)</b>\n👤 ${esc(r.user)}\n💵 ${r.amount}₴ · ${esc(r.method || "—")}\n💳 ${esc(r.card || "—")}`,
+        { reply_markup: withdrawButtons(id) }
+      );
+    }
+    return `✅ Підтверджено! Заявку передано адміністратору на виплату.`;
+  } else {
+    await dbIncrement(`users/${r.user}/balance`, r.amount);
+    await dbUpdate(`withdraw_requests/${id}`, { status: "cancelled" });
+    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "cancelled" });
+    await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
+    return `❌ Скасовано, ${r.amount}₴ повернуто на баланс.`;
   }
 }
 
