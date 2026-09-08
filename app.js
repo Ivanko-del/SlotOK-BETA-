@@ -184,7 +184,6 @@ function updateUI() {
     ps('profStatStreak', (userData.dailyStreak || 0) + '🔥');
     pn('profStatSlotsWins', userData.slotsPlayed || 0, '');
     pn('profStatDeposits', userData.totalDeposits || 0, '₴');
-    // Win rate
     const wr = gamesPlayed > 0 ? Math.round((gamesWon/gamesPlayed)*100) : 0;
     pn('profWinRate', wr, '', '%');
     const bar = document.getElementById('profWinRateBar');
@@ -201,7 +200,6 @@ function updateUI() {
     updateVipUI();
     loadMyWithdraws();
     loadMyDeposits();
-    // Home page quick stats
     const hb = document.getElementById('homeStatBalance');
     const hv = document.getElementById('homeStatVip');
     const hs = document.getElementById('homeStatStreak');
@@ -209,7 +207,6 @@ function updateUI() {
     if(hs) hs.textContent = (userData.dailyStreak||0) + '🔥';
     const vipLevel = getVipLevel ? getVipLevel(userData.totalWagered||0) : null;
     if(hv) hv.textContent = vipLevel ? vipLevel.name : 'Немає';
-    // Casino stats
     db.ref('users').once('value', snap => {
       const users = snap.val()||{};
       const total = Object.keys(users).filter(k=>!users[k].isBot).length;
@@ -636,7 +633,6 @@ function submitDepositRequest() {
     });
     showDepositLoading(amount, selectedDepMethod || 'privat', reqId);
     if(btn) { btn.disabled = false; btn.textContent = '✅ Подати заявку на поповнення'; }
-    // Reset selection
     selectedDepAmount = 0;
     document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
     if(customInput) customInput.value = '';
@@ -1061,7 +1057,6 @@ function finishSlots(bet) {
         }
         // Premium reel winner glow
         ['r1','r2','r3'].forEach(id=>{ const r=document.getElementById(id); if(r){r.classList.add('winner'); setTimeout(()=>r.classList.remove('winner'),1500);} });
-        // Achievements
         if(res.every(s=>s==='7️')) db.ref('users/'+currentUser+'/slots777').set((userData.slots777||0)+1);
         if(res.every(s=>s==='💎')) db.ref('users/'+currentUser+'/slotsDiamond').set((userData.slotsDiamond||0)+1);
         const maxW = Math.max(win, userData.slotsMaxWin||0);
@@ -1071,7 +1066,6 @@ function finishSlots(bet) {
         checkAchievements('lose', bet);
       }
 
-      // Bonus round management
       if(slotBonusRound > 0) {
         slotBonusRound--;
         const spinsEl = document.getElementById('bonusSpinsLeft');
@@ -1134,7 +1128,6 @@ function grDrawWheel() {
     const endA   = startA + segAngle;
     const col = GR_WHEEL_COLORS(num);
 
-    // Сектор
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, r - 2, startA, endA);
@@ -1145,7 +1138,6 @@ function grDrawWheel() {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Золота рамка
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, r - 2, startA, endA);
@@ -1154,7 +1146,6 @@ function grDrawWheel() {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Цифра
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(startA + segAngle/2);
@@ -1165,14 +1156,12 @@ function grDrawWheel() {
     ctx.restore();
   });
 
-  // Зовнішнє золоте кільце
   ctx.beginPath();
   ctx.arc(cx, cy, r - 1, 0, 2*Math.PI);
   ctx.strokeStyle = 'rgba(212,175,55,.6)';
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Внутрішнє темне кільце
   ctx.beginPath();
   ctx.arc(cx, cy, r * 0.22, 0, 2*Math.PI);
   ctx.fillStyle = '#08060e';
@@ -1235,12 +1224,10 @@ function grStartTimer() {
     const timerEl = document.getElementById('grTimerDisplay');
     if(timerEl) timerEl.textContent = timeStr;
 
-    // Прогрес-бар
     const pct = (remaining / total) * 100;
     const barEl = document.getElementById('grTimerBar');
     if(barEl) barEl.style.width = pct + '%';
 
-    // Колір таймера
     if(remaining < 60000) {
       if(timerEl) timerEl.style.color = 'var(--red)';
       const statusEl = document.getElementById('grSpinStatus');
@@ -1273,7 +1260,6 @@ function grListenRound() {
   });
 }
 
-// Вибір кольору
 function selectGrColor(color) {
   grSelectedColor = color;
   ['red','green','black'].forEach(c => {
@@ -1294,7 +1280,6 @@ function setGrBet(n) {
   if(inp) inp.value = n;
 }
 
-// Підтвердження ставки
 function placeGrBet() {
   if(!currentUser) return notify('Увійди в акаунт', 'error');
   if(!grSelectedColor) return notify('Оберіть колір: 🔴 🟢 ⚫', 'error');
@@ -1316,7 +1301,6 @@ function placeGrBet() {
     db.ref('global_roulette/rounds/'+grCurrentRoundId+'/bets/'+currentUser).set(bet).then(() => {
       notify(`🎡 Ставку ${formatNumber(amt)}₴ на ${grSelectedColor==='red'?'🔴 Червоне':grSelectedColor==='green'?'🟢 Зелене':'⚫ Чорне'} прийнято!`, 'success');
       playSound('click');
-      // Оновити банк раунду
       db.ref('global_roulette/rounds/'+grCurrentRoundId+'/totalBank').set(firebase.database.ServerValue.increment(amt));
       db.ref('global_roulette/rounds/'+grCurrentRoundId+'/betCount').set(firebase.database.ServerValue.increment(1));
       trackQuest('rouletteBets', 1);
@@ -1422,7 +1406,6 @@ function grExecuteSpin() {
     const winColor = GR_WHEEL_COLORS(winNum);
     const spinResult = { number: winNum, color: winColor, idx, ts: Date.now() };
     roundRef.child('result').set(spinResult);
-    // Виплачуємо переможців
     roundRef.child('bets').once('value', bSnap => {
       const bets = bSnap.val() || {};
       Object.values(bets).forEach(bet => {
@@ -1433,7 +1416,6 @@ function grExecuteSpin() {
         }
       });
     });
-    // Зберегти в історію
     db.ref('global_roulette/history').push(spinResult);
   });
 }
@@ -1745,7 +1727,6 @@ function evaluatePokerHand(hand) {
     if(counts[0]===3) return {name:'Три однакових', multiplier:3};
     if(counts[0]===2 && counts[1]===2) return {name:'Дві пари', multiplier:2};
     
-    // Пара JJ+
     if(counts[0]===2) {
         const pairRank = Object.keys(rankCount).find(r => rankCount[r]===2);
         if(['J','Q','K','A'].includes(pairRank)) return {name:`Пара ${pairRank}`, multiplier:1};
@@ -1824,7 +1805,6 @@ function clickMineCell(idx, el) {
         playSound('loss');
         notify('💣 Бум! Програш', 'error');
         isMinesPlaying = false;
-        // Reveal all mines
         const cells = document.getElementById('minesGrid').children;
         for(let i=0;i<25;i++){
             if(minesGrid[i]===1 && i!==idx){
@@ -1963,7 +1943,6 @@ function startBalloon() {
   document.getElementById('balloonStartMsg').style.display = 'none';
   document.getElementById('balloonBetDisplay').textContent = '₴'+formatNumber(b);
   spawnBalloons();
-  // Schedule random pop
   const popIn = 4000 + Math.random() * 12000;
   balloonPopTimeout = setTimeout(() => { if(balloonActive) burstBalloon(); }, popIn);
   balloonInterval = setInterval(updateBalloonMult, 500);
@@ -2158,7 +2137,6 @@ function nextQuizQuestion() {
   document.getElementById('quizQuestion').innerHTML = '<div style="font-size:15px;font-weight:700;line-height:1.4;">'+quizCurrentQ.q+'</div>';
   const opts = document.getElementById('quizOptions');
   opts.innerHTML = quizCurrentQ.o.map((o,i)=>`<button class="quiz-option" onclick="answerQuiz(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');
-  // Timer
   const bar = document.getElementById('quizTimer');
   bar.style.transition = 'none'; bar.style.width = '100%';
   setTimeout(()=>{ bar.style.transition='width 10s linear'; bar.style.width='0%'; }, 50);
@@ -2311,7 +2289,6 @@ function selectDepPackage(amount, bonus) {
   const input = document.getElementById('depositAmount')||document.getElementById('betDepAmt');
   if(input) input.value = amount;
   notify('Обрано пакет ₴'+formatNumber(amount)+(bonus>0?' з бонусом +₴'+formatNumber(bonus):''), 'info');
-  // Store pending bonus
   if(bonus>0) localStorage.setItem('pendingDepBonus', JSON.stringify({amount, bonus, ts: Date.now()}));
 }
 
@@ -3016,7 +2993,6 @@ function initAffiliate() {
   const link = 'https://slotok.web.app/?ref='+currentUser;
   const el = document.getElementById('affLink');
   if(el) el.textContent = link;
-  // Load stats
   db.ref('users').orderByChild('referredBy').equalTo(currentUser).once('value', snap => {
     const refs = snap.val()||{};
     const count = Object.keys(refs).length;
@@ -4028,11 +4004,9 @@ function bjDeal() {
   if(balEl) balEl.textContent = '₴' + formatNumber((userData.balance||0) - b);
   const betEl = document.getElementById('bjBetDisplay');
   if(betEl) betEl.textContent = '₴' + formatNumber(b);
-  // Split btn
   const canSplit = bjPlayerHand.length===2 && bjCardVal(bjPlayerHand[0])===bjCardVal(bjPlayerHand[1]) && (userData.balance||0) >= b*2;
   const splitBtn = document.getElementById('bjSplitBtn');
   if(splitBtn) splitBtn.classList.toggle('hidden', !canSplit);
-  // Insurance
   const insBtn = document.getElementById('bjInsuranceBtn');
   if(insBtn) insBtn.classList.toggle('hidden', bjDealerHand[0].r !== 'A');
   const dblBtn = document.getElementById('bjDoubleBtn');
@@ -5019,7 +4993,6 @@ function renderHomeAxiomWidget() {
 
 function renderHomeProgressBars() {
   if(!userData) return;
-  // VIP bar
   const VIP_LEVELS = [
     {name:'Bronze',min:0,max:5000,color:'#cd7f32'},
     {name:'Silver',min:5000,max:20000,color:'#a8a9ad'},
@@ -5039,7 +5012,6 @@ function renderHomeProgressBars() {
   if(bar) { bar.style.width = vipPct + '%'; bar.style.background = `linear-gradient(90deg,${vipLevel.color}88,${vipLevel.color})`; }
   if(pct) pct.textContent = vipPct + '%';
 
-  // BP bar
   const bpXp = userData.bpXp || 0;
   const bpLevel = Math.floor(bpXp / 100);
   const bpPct = (bpXp % 100);
@@ -5102,7 +5074,6 @@ function buildNewsCard(n) {
   const catColors = { news:'#4a9eff', update:'#4cd964', event:'#d4af37', promo:'#ff6b6b', warn:'#ff9f0a' };
   const catColor = catColors[n.category] || '#777';
 
-  // Reactions
   const myReactions = n.myReaction ? [n.myReaction] : [];
   const reactionHtml = NEWS_REACTIONS.map(r => {
     const cnt = n.reactions && n.reactions[r] ? n.reactions[r] : 0;
@@ -5144,7 +5115,6 @@ function buildNewsCard(n) {
 
 function reactNews(newsId, reaction, el) {
   db.ref('casino_news/' + newsId + '/reactions/' + reaction).transaction(v => (v||0) + 1);
-  // Track user reaction locally
   const container = document.getElementById('reactions-' + newsId);
   if(container) {
     container.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('reacted'));
@@ -5208,9 +5178,7 @@ function submitComment(newsId) {
   db.ref('casino_news/' + newsId + '/comments').push(comment);
   db.ref('casino_news/' + newsId + '/commentCount').transaction(v => (v||0)+1);
   inp.value = '';
-  // Оновити список
   setTimeout(() => loadComments(newsId), 500);
-  // Оновити лічильник
   const cnt = document.getElementById('cmtcount-' + newsId);
   if(cnt) cnt.textContent = parseInt(cnt.textContent||0)+1;
   notify('💬 Коментар додано!', 'success');
@@ -5401,12 +5369,10 @@ function botPlayGame(nick, bot) {
   const pers = BOT_PERSONALITIES[bot.personality] || BOT_PERSONALITIES.balanced;
   const g = BOT_GAMES[Math.floor(Math.random() * BOT_GAMES.length)];
 
-  // Calculate bet based on personality
   const betMultiplier = pers.betMult[0] + Math.random() * (pers.betMult[1] - pers.betMult[0]);
   const baseBet = Math.min(g.maxBet, Math.max(g.minBet, Math.floor(bot.balance * 0.02 * betMultiplier)));
   const bet = Math.round(baseBet / 50) * 50; // round to 50s
 
-  // Determine outcome
   const isWin = Math.random() < pers.winRate;
   const mult = isWin ? parseFloat((Math.random() * (
     bot.personality === 'whale' ? 8 :
@@ -5414,30 +5380,24 @@ function botPlayGame(nick, bot) {
   ) + 1.1).toFixed(2)) : 0;
   const pnl = isWin ? Math.floor(bet * mult - bet) : -bet;
 
-  // Update local balance
   bot.balance = Math.max(200, bot.balance + pnl);
 
-  // Schedule next game
   const interval = pers.playInterval;
   bot.nextPlay = Date.now() + (interval[0] + Math.random() * (interval[1] - interval[0])) * 1000;
 
-  // Write to Firebase
   db.ref('users/' + nick + '/balance').set(bot.balance);
   db.ref('users/' + nick + '/lastSeen').set(Date.now());
   db.ref('users/' + nick + '/totalGames').set(firebase.database.ServerValue.increment(1));
   if(isWin) db.ref('users/' + nick + '/totalWins').set(firebase.database.ServerValue.increment(1));
   db.ref('users/' + nick + '/totalWagered').set(firebase.database.ServerValue.increment(bet));
 
-  // Live bets feed
   db.ref('live_bets').push({
     user: nick, game: g.game, bet, mult: isWin ? mult : 0,
     pnl, isWin, ts: Date.now(), isBot: true,
   });
 
-  // Jackpot contribution (0.5% of all bets)
   db.ref('casino_stats/jackpot').set(firebase.database.ServerValue.increment(Math.floor(bet * 0.005)));
 
-  // Casino win stats
   if(!isWin) db.ref('casino_stats/todayWins').set(firebase.database.ServerValue.increment(1));
 
   // Chat message (random chance)
@@ -5453,7 +5413,6 @@ function botPlayGame(nick, bot) {
     db.ref('lobby_chat').push({ sender: nick, text: msg, time: Date.now(), isBot: true });
   }
 
-  // Big win announcement
   if(isWin && pnl > 5000) {
     db.ref('global_chat').push({
       user: '🏆 SlotOK',
@@ -5780,7 +5739,6 @@ async function rollDiceFair(dir) {
     : `<span style="color:var(--red);font-weight:900;">🎲 ${result} — Програш -${formatNumber(bet)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`;
   if(win) { notify('🎲 ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success'); addToHistory('Dice: +'+winAmt); }
   else { notify('🎲 ' + result + ' — Програш', 'error'); addToHistory('Dice: -'+bet); }
-  // History dot
   if(histEl) {
     const dot = document.createElement('div');
     dot.className = 'dice-result-dot';
@@ -7029,7 +6987,6 @@ function loadBots() {
         </div>
       </div>`;
     }).join('');
-    // Engine status
     const el = document.getElementById('botEngineStatus');
     const activeCount = Object.keys(_activeBotData).length;
     if(el) el.innerHTML = _botEngine
@@ -9503,7 +9460,6 @@ function switchTab(id, el) {
     }
   } catch(e) { console.error('switchTab hide error:', e); }
 
-  // Update nav
   try {
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(n => n.classList.remove('active'));
@@ -9646,7 +9602,6 @@ function loadSettings() {
     appSettings = JSON.parse(localStorage.getItem('slotok_settings') || '{}');
   } catch(e) { appSettings = {}; }
   applyAllSettings();
-  // Update currency mini display in settings
   const cur = CURRENCIES[currentCurrency] || CURRENCIES.UAH;
   const flagEl = document.getElementById('settingCurrencyFlag');
   const nameEl = document.getElementById('settingCurrencyName');
@@ -9698,7 +9653,6 @@ function getSetting(key, def) {
 }
 
 function applyAllSettings() {
-  // Sync toggles
   const ids = { sounds:['settingSounds'], music:['settingMusic'], vibrate:['settingVibrate'], notifs:['settingNotifs'], giftNotifs:['settingGiftNotifs'], bonusNotifs:['settingBonusNotifs'] };
   const defaults = { sounds:true, music:false, vibrate:true, notifs:true, giftNotifs:true, bonusNotifs:true };
   Object.entries(ids).forEach(([key, idList]) => {
@@ -9713,13 +9667,11 @@ function applyAllSettings() {
   document.querySelectorAll('.font-size-btn').forEach(b=>b.classList.remove('active'));
   const fsBtn = document.getElementById('fs_' + fs);
   if(fsBtn) fsBtn.classList.add('active');
-  // Theme
   const theme = getSetting('theme', 'dark');
   applyThemeVars(theme);
   document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
   const td = document.getElementById('theme-' + theme);
   if(td) td.classList.add('active');
-  // Lang
   const lang = getSetting('lang', 'uk');
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
   const lb = document.getElementById('lang-' + lang);
@@ -9893,20 +9845,15 @@ function t(key) {
 function applyLang(lang) {
   currentLang = lang;
   const T = TRANSLATIONS[lang] || TRANSLATIONS.uk;
-  // Navigation
   const navTexts = document.querySelectorAll('.nav-item span:last-child');
   const navKeys  = ['nav_home','nav_casino','nav_cashier','nav_notif','nav_profile','nav_settings','nav_sport','nav_more'];
   navTexts.forEach((el, i) => { if(navKeys[i] && T[navKeys[i]]) el.textContent = T[navKeys[i]]; });
-  // Cashier sub-tabs
   const ctabDep  = document.getElementById('ctab-deposit');  if(ctabDep)  ctabDep.textContent  = T.cashier_deposit  || ctabDep.textContent;
   const ctabWith = document.getElementById('ctab-withdraw'); if(ctabWith) ctabWith.textContent = T.cashier_withdraw || ctabWith.textContent;
   const ctabRat  = document.getElementById('ctab-rates');    if(ctabRat)  ctabRat.textContent  = T.cashier_rates    || ctabRat.textContent;
-  // Hero
   const heroTitle = document.querySelector('.hero-title'); if(heroTitle) heroTitle.textContent = T.hero_bonus;
-  // Sports
   const spTitle = document.querySelector('#tab-sports .sport-title-text'); if(spTitle) spTitle.textContent = T.sport_title;
   const spMyBets = document.getElementById('sportMyBets'); if(spMyBets && !spMyBets.children.length) spMyBets.textContent = T.sport_no_bets;
-  // Bet slip
   const bsTitle = document.querySelector('#betSlipModal .bs-title'); if(bsTitle) bsTitle.textContent = T.bet_slip_title;
   // Save lang for page reload
   try { localStorage.setItem('slotok_lang', lang); } catch(e) { console.warn(e); }
@@ -10336,7 +10283,6 @@ function listenMpRoom2(roomId) {
 }
 
 function renderMpGame2(r) {
-  // Info bar
   const bar = document.getElementById('mpPlayersInfoBar');
   if(bar) {
     bar.innerHTML = '';
@@ -10355,7 +10301,6 @@ function renderMpGame2(r) {
     });
   }
 
-  // Turn info
   const myTurn = r.turn === currentUser;
   const turnEl = document.getElementById('mpTurnInfo');
   if(turnEl) {
@@ -10364,7 +10309,6 @@ function renderMpGame2(r) {
     else { turnEl.textContent = '⏳ Хід гравця ' + r.turn; turnEl.style.color = '#777'; }
   }
 
-  // Buttons
   const rollBtn = document.getElementById('mpRollBtn');
   const buyBtn  = document.getElementById('mpBuyBtn');
   const passBtn = document.getElementById('mpPassBtn');
@@ -10372,7 +10316,6 @@ function renderMpGame2(r) {
   if(buyBtn)  { buyBtn.disabled  = !myTurn || !r.pendingBuy; }
   if(passBtn) { passBtn.disabled = !myTurn || !r.pendingBuy; }
 
-  // Board
   renderMpBoard2(r);
 }
 
@@ -10655,15 +10598,12 @@ function renderCgBoard() {
   if(!cgState) return;
   const { playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking } = cgState;
 
-  // Trump card
   const tc = document.getElementById('cgTrumpCard');
   if(tc) { const isRed = RED_SUITS.has(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'#cc0000':'#000') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
 
-  // Deck count
   const dc = document.getElementById('cgDeckCount');
   if(dc) dc.textContent = cgState.deck.length;
 
-  // Opponent hand (face down)
   const opp = document.getElementById('cgOpponentHand');
   if(opp) {
     opp.innerHTML = '';
@@ -10674,7 +10614,6 @@ function renderCgBoard() {
   const oppCnt = document.getElementById('cgOpponentCards');
   if(oppCnt) oppCnt.textContent = aiHand.length + ' карт';
 
-  // Player hand
   const ph = document.getElementById('cgPlayerHand');
   if(ph) {
     ph.innerHTML = playerHand.map(c => cardHtml(c, false, cgSelectedCards.includes(c.id))).join('');
@@ -10685,7 +10624,6 @@ function renderCgBoard() {
   const pcc = document.getElementById('cgPlayerCardsCount');
   if(pcc) pcc.textContent = playerHand.length;
 
-  // Battle field
   const bf = document.getElementById('cgBattleField');
   if(bf) {
     if(!table.length) { bf.innerHTML = '<div style="color:#333;font-size:12px;font-style:italic;width:100%;text-align:center;">Поле порожнє</div>'; }
@@ -10700,11 +10638,9 @@ function renderCgBoard() {
     }
   }
 
-  // Phase
   const pi = document.getElementById('cgPhaseInfo');
   if(pi) pi.textContent = isPlayerAttacking ? '⚔️ Атакуйте!' : '🛡️ Відбийтесь!';
 
-  // Buttons
   const attackBtn = document.getElementById('cgAttackBtn');
   const passBtn   = document.getElementById('cgPassBtn');
   if(attackBtn) attackBtn.textContent = isPlayerAttacking ? '⚔️ Атакувати' : '🛡️ Відбити';
@@ -11175,12 +11111,10 @@ function updateRateTicker() {
     return { flag:cur.flag, code, rateStr };
   }).filter(Boolean);
 
-  // Header mini line (first 4)
   if(headerLine) {
     headerLine.textContent = items.slice(0,4).map(i=>`${i.flag} ${i.code} = ${i.rateStr}₴`).join('  •  ');
   }
 
-  // Scrolling ticker
   if(tickerInner) {
     tickerInner.innerHTML = '<span style="color:#555;font-size:10px;margin-right:8px;">📊</span>' +
       items.map(i =>
@@ -11357,7 +11291,6 @@ function switchCashierTab(tab, el) {
 }
 
 function buildMarketsPage() {
-  // Currency mini-grid
   const fiatGrid   = document.getElementById('marketsMiniFiatGrid');
   const cryptoGrid = document.getElementById('marketsMinicryptoGrid');
   [fiatGrid, cryptoGrid].forEach(g => { if(g) g.innerHTML = ''; });
@@ -11378,10 +11311,8 @@ function buildMarketsPage() {
     (cur.isCrypto ? cryptoGrid : fiatGrid)?.appendChild(btn);
   });
 
-  // Rate table
   buildMarketsRateTable();
 
-  // Chart selector
   buildChartSelector();
 
   // Load default chart (BTC)
@@ -11501,7 +11432,6 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  // Background
   ctx.fillStyle = '#080808'; ctx.fillRect(0,0,W,H);
 
   const prices = data.map(d=>d.p);
@@ -11518,14 +11448,12 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',BNB:'#f3ba2f',USDT:'#26a17b',USD:'#4a90e2',EUR:'#2ecc71'};
   const lineColor = cryptoColors[code] || '#d4af37';
 
-  // Grid lines
   ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
   for(let i=0;i<=4;i++) {
     const y = pad.top + (i/4)*chartH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W-pad.right, y); ctx.stroke();
   }
 
-  // Gradient fill
   const grad = ctx.createLinearGradient(0, pad.top, 0, H-pad.bottom);
   grad.addColorStop(0, lineColor + '44');
   grad.addColorStop(1, lineColor + '00');
@@ -11536,17 +11464,14 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   ctx.lineTo(toX(0), H-pad.bottom);
   ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 
-  // Line
   ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
   prices.forEach((p,i) => i===0 ? ctx.moveTo(toX(i),toY(p)) : ctx.lineTo(toX(i),toY(p)));
   ctx.stroke();
 
-  // Last point dot
   const lastX = toX(prices.length-1), lastY = toY(prices[prices.length-1]);
   ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI*2);
   ctx.fillStyle = lineColor; ctx.fill();
 
-  // Price labels
   const fmt = p => p >= 1000 ? Math.round(p).toLocaleString('uk-UA') : p >= 1 ? p.toFixed(2) : p.toFixed(6);
   ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
   ctx.fillText(fmt(maxP)+'₴', W-pad.right, pad.top+10);
@@ -11596,7 +11521,6 @@ function renderTowerGrid() {
       else { cell.innerHTML = '🟦'; cell.onclick = () => towerClick(c); }
       row.appendChild(cell);
     }
-    // Multiplier badge
     const mult = getTowerMult(lv);
     const badge = document.createElement('div');
     badge.style.cssText = 'font-size:10px;color:#555;min-width:36px;text-align:center;display:flex;align-items:center;';
@@ -11787,7 +11711,6 @@ function updateDiceUI() {
   document.getElementById('diceUnderNum').textContent = val;
   const overChance = (99 - val) / 99;
   const underChance = (val - 1) / 99;
-  // Show for over
   document.getElementById('diceChance').textContent = Math.round(overChance*100) + '% / ' + Math.round(underChance*100) + '%';
   const mult = parseFloat((0.97 / Math.max(overChance, underChance)).toFixed(2));
   document.getElementById('diceMult').textContent = 'x' + mult.toFixed(2);
@@ -11827,7 +11750,6 @@ function rollDice(dir) {
       notify('🎲 ' + result + ' — Програш', 'error');
       addToHistory('Dice '+result+': -'+bet);
     }
-    // History dot
     const dot = document.createElement('div');
     dot.className = 'dice-result-dot';
     dot.style.background = win ? 'var(--green)' : 'var(--red)';
@@ -13103,7 +13025,6 @@ function buildLbDisplay(data, field, suffix) {
     { bg:'linear-gradient(135deg,rgba(205,127,50,.1),rgba(205,127,50,.04))', border:'rgba(205,127,50,.25)', color:'#cd7f32', h:'110px' }
   ];
   const top3 = arr.slice(0,3);
-  // Подіум: 2-1-3
   const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
   const podiumRanks = [1, 0, 2];
   if(podium) {
@@ -13123,7 +13044,6 @@ function buildLbDisplay(data, field, suffix) {
     });
   }
 
-  // Список 4+
   if(list) {
     list.innerHTML = '';
     arr.slice(3,20).forEach((u,i) => {
@@ -13141,7 +13061,6 @@ function buildLbDisplay(data, field, suffix) {
     });
   }
 
-  // Моя позиція якщо не в топ-20
   const myRank = arr.findIndex(u => u.name === currentUser);
   if(myPos) {
     if(myRank === -1) {
@@ -13229,7 +13148,6 @@ function playLimbo() {
   trackLbStat('wager',bet); trackLbStat('games',1);
   publishLiveBet('Limbo','🌀', bet, '×'+target);
 
-  // Анімація
   const resEl = document.getElementById('limboResultDisplay');
   const msgEl = document.getElementById('limboResultMsg');
   if(resEl) { resEl.style.color = '#c9a0ff'; resEl.textContent = '...'; }
@@ -14092,7 +14010,6 @@ function initAchievementsTab() {
   const unlockedCount = Object.keys(owned).length;
   const totalCount = ACHIEVEMENTS.length;
 
-  // Header stats
   const header = document.getElementById('achievementsHeader');
   if(header) header.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -14113,7 +14030,6 @@ function initAchievementsTab() {
       <div style="height:100%;width:${Math.round(unlockedCount/totalCount*100)}%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:8px;transition:width 0.5s;"></div>
     </div>`;
 
-  // Group by category
   const cats = {};
   ACHIEVEMENTS.forEach(a => {
     if(!cats[a.cat]) cats[a.cat] = [];
@@ -14965,7 +14881,6 @@ function drawPitch(cfg) {
   ctx.fillStyle = cfg.color;
   ctx.fillRect(0,0,W,H);
 
-  // Stripes
   for(let i = 0; i < 8; i++) {
     ctx.fillStyle = i%2===0 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.03)';
     ctx.fillRect(i * W/8, 0, W/8, H);
@@ -14975,21 +14890,15 @@ function drawPitch(cfg) {
   ctx.lineWidth = 1.5;
 
   if(cfg.field === 'football') {
-    // Outer
     ctx.strokeRect(12, 8, W-24, H-16);
-    // Center line
     ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
-    // Center circle
     ctx.beginPath(); ctx.arc(W/2, H/2, 32, 0, Math.PI*2); ctx.stroke();
     ctx.beginPath(); ctx.arc(W/2, H/2, 3, 0, Math.PI*2);
     ctx.fillStyle = cfg.lineColor; ctx.fill();
-    // Left goal area
     ctx.strokeRect(12, H/2-24, 30, 48);
     ctx.strokeRect(12, H/2-44, 56, 88);
-    // Right goal area
     ctx.strokeRect(W-42, H/2-24, 30, 48);
     ctx.strokeRect(W-68, H/2-44, 56, 88);
-    // Goals
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
     ctx.fillRect(6, H/2-20, 6, 40);
     ctx.fillRect(W-12, H/2-20, 6, 40);
@@ -14999,11 +14908,9 @@ function drawPitch(cfg) {
     ctx.strokeRect(12, 8, W-24, H-16);
     ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
     ctx.beginPath(); ctx.arc(W/2, H/2, 40, 0, Math.PI*2); ctx.stroke();
-    // Hoops
     ctx.beginPath(); ctx.arc(50, H/2, 18, 0, Math.PI*2); ctx.stroke();
     ctx.beginPath(); ctx.arc(W-50, H/2, 18, 0, Math.PI*2); ctx.stroke();
   } else if(cfg.field === 'esport') {
-    // Map grid
     ctx.strokeStyle = 'rgba(0,200,255,0.2)';
     for(let x = 0; x < W; x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
     for(let y = 0; y < H; y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
@@ -15024,16 +14931,13 @@ function drawBall(x, y, sport) {
     ctx.font = '14px serif';
     ctx.fillText(emoji, bx-7, by+5);
   } else {
-    // Soccer ball
     ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
     ctx.fillStyle = '#fff'; ctx.fill();
     ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
-    // Hexagons
     ctx.fillStyle = '#222';
     ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
   }
 
-  // Shadow
   ctx.beginPath(); ctx.ellipse(bx, by+8, 6, 2, 0, 0, Math.PI*2);
   ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
 }
@@ -15207,7 +15111,6 @@ function goalBurst(isHome) {
   const W = canvas.width, H = canvas.height;
   const bx = isHome ? W-20 : 20;
   const by = H/2;
-  // Flash
   ctx.fillStyle = 'rgba(255,220,0,0.3)';
   ctx.fillRect(0,0,W,H);
 }
@@ -16305,9 +16208,7 @@ function triggerWinEffect(amount) {
 function triggerWinReaction(amount, gameName) {
   if(amount < 500) return;
   triggerWinEffect(amount);
-  // Jackpot contribution
   if(amount > 0) db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.floor(amount*0.001)));
-  // Share button on big wins
   if(amount >= 5000) {
     setTimeout(()=>{
       const shareBtn = document.createElement('button');
@@ -16318,7 +16219,6 @@ function triggerWinReaction(amount, gameName) {
       setTimeout(()=>shareBtn.remove(), 6000);
     }, 1000);
   }
-  // Reaction floating emojis
   const emoji = amount >= 5000 ? '🤑' : amount >= 2000 ? '💰' : '🔥';
   for(let i=0; i<3; i++){
     setTimeout(()=>{
@@ -16362,10 +16262,8 @@ function playBaccarat(bet) {
   if(!betAmt || betAmt < 10) return notify('Мінімальна ставка 10₴', 'error');
   if(betAmt > (userData.balance||0)) return notify('Недостатньо коштів', 'error');
 
-  // Build deck
   let deck = [];
   for(const s of BAC_SUITS) for(const r of BAC_FACES) deck.push({rank:r, suit:s});
-  // Shuffle
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
 
   const player = [bacDraw(deck), bacDraw(deck)];
@@ -16373,7 +16271,6 @@ function playBaccarat(bet) {
 
   let ps = bacScore(player), bs = bacScore(banker);
 
-  // Third card rules
   const pNatural = ps >= 8, bNatural = bs >= 8;
   if(!pNatural && !bNatural) {
     if(ps <= 5) {
@@ -16396,7 +16293,6 @@ function playBaccarat(bet) {
   const payout = won ? Math.floor(betAmt * multipliers[bet]) : 0;
   const net = payout - betAmt;
 
-  // Update UI
   document.getElementById('bacPlayerCards').innerHTML = player.map(bacCardHTML).join('');
   document.getElementById('bacBankerCards').innerHTML = banker.map(bacCardHTML).join('');
   document.getElementById('bacPlayerScore').textContent = ps;
@@ -16419,7 +16315,6 @@ function playBaccarat(bet) {
   addToHistory(won ? `Бакара: +${net}₴` : `Бакара: -${betAmt}₴`);
   awardSeasonXP(5);
 
-  // History dots
   bacHistory.unshift(winner);
   if(bacHistory.length > 12) bacHistory = bacHistory.slice(0,12);
   const colors3 = {player:'#4a9eff', banker:'#e74c3c', tie:'#4cd964'};
@@ -18518,7 +18413,6 @@ function renderCardPanel() {
     }
   }
 
-  // Balance
   var bal = userData.balance || 0;
   var balEl = document.getElementById('vcardBalance');
   if(balEl) {
@@ -18537,7 +18431,6 @@ function renderCardPanel() {
     }
   }
 
-  // In/Out totals from cardTx
   if(db && currentUser) {
     db.ref('users/' + currentUser + '/cardTx').limitToLast(50).once('value').then(function(snap) {
       var txs = snap.val() || {};
@@ -20053,17 +19946,14 @@ function celebrateTieredWin(amount, mult, game) {
   const tier = getWinTier(amount, mult);
   if(!tier) return;
 
-  // Тряска екрану
   document.body.classList.add('screen-shake');
   setTimeout(() => document.body.classList.remove('screen-shake'), 520);
 
-  // Спалах
   const flash = document.createElement('div');
   flash.className = 'bigwin-flash';
   document.body.appendChild(flash);
   setTimeout(() => flash.remove(), 1150);
 
-  // Банер з анімованим числом
   const banner = document.createElement('div');
   banner.className = 'bigwin-banner';
   banner.innerHTML = `
@@ -20079,13 +19969,10 @@ function celebrateTieredWin(amount, mult, game) {
     setTimeout(() => banner.remove(), 400);
   }, duration);
 
-  // Густіший конфеті-дощ на весь екран
   spawnConfettiRain(tier === 'mega' ? 70 : 40, tier);
 
-  // Музичний акцент
   playWinSting(tier);
 
-  // Ще монети зверху
   spawnWinCoins(amount);
 
   if(navigator.vibrate) navigator.vibrate(tier === 'mega' ? [80,40,80,40,160] : [60,30,120]);
