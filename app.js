@@ -1671,6 +1671,11 @@ function dealPoker() {
 }
 
 function drawPoker() {
+    // Без цієї перевірки повторний виклик (напр. спам по кнопці чи виклик
+    // напряму з консолі) знову рахував evaluatePokerHand() по ТІЙ САМІЙ
+    // руці — pokerSelectedCards вже порожній, тож карти не змінювались,
+    // і виграш нараховувався ще раз за ту саму комбінацію щоразу.
+    if(pokerPhase !== 'draw') return;
     // Замінюємо виділені карти
     const deck = createDeck().filter(c => !pokerHand.find(h => h.rank===c.rank && h.suit===c.suit));
     let di = 0;
@@ -1920,6 +1925,12 @@ let balloonInterval = null, balloonPopTimeout = null;
 let balloonEl = null;
 
 function startBalloon() {
+  // Без цього гварда повторний виклик під час активного раунду губив
+  // попередні balloonInterval/balloonPopTimeout (перезаписуючи ці глобальні
+  // змінні) — старий interval лишався жити й далі крутив balloonMult, тепер
+  // уже разом із новим — множник ріс у 2+ рази швидше за задумане, і кешаут
+  // читав це роздуте число. Той самий клас багу, що й був у Краші.
+  if(balloonActive) return;
   const b = validateBet(document.getElementById('betAmountBalloon').value);
   if(!b) return;
   balloonBet = b;
@@ -2096,8 +2107,16 @@ const QUIZ_QUESTIONS = [
 ];
 
 let quizBet=0, quizQ=0, quizCorrect=0, quizActive=false, quizTimer=null, quizCurrentQ=null;
+// quizAnswered — гвард від спаму по answerQuiz() на ОДНІЙ і тій самій
+// відповіді: без нього кожен клік планував свій власний setTimeout(nextQuizQuestion),
+// жоден з яких не скасовував інші, і quizBet зростав/quizQ рахувався за
+// кожен клік окремо. Коли ці стек-накопичені таймери спрацьовували, quizQ
+// вже міг бути ≥10 у кожному з них — і endQuiz() виплачував ту саму ставку
+// по кілька разів. quizNextTimer прибирає це накопичення таймерів.
+let quizAnswered = false, quizNextTimer = null;
 
 function startQuiz() {
+  if(quizActive) return;
   const b = validateBet(document.getElementById('betAmountQuiz').value);
   if(!b) return;
   quizBet = b;
@@ -2110,7 +2129,9 @@ function startQuiz() {
 }
 
 function nextQuizQuestion() {
+  clearTimeout(quizNextTimer); quizNextTimer = null;
   if(quizQ >= 10) { endQuiz(); return; }
+  quizAnswered = false;
   const pool = [...QUIZ_QUESTIONS].sort(()=>Math.random()-.5);
   quizCurrentQ = pool[quizQ % pool.length];
   document.getElementById('quizQ').textContent = quizQ+1;
@@ -2126,7 +2147,8 @@ function nextQuizQuestion() {
 }
 
 function answerQuiz(choice) {
-  if(!quizActive) return;
+  if(!quizActive || quizAnswered) return;
+  quizAnswered = true;
   clearTimeout(quizTimer);
   const correct = choice === quizCurrentQ.a;
   const opts = document.getElementById('quizOptions');
@@ -2151,10 +2173,12 @@ function answerQuiz(choice) {
   }
   document.getElementById('quizPrize').textContent = '₴'+formatNumber(quizBet);
   quizQ++;
-  setTimeout(nextQuizQuestion, 1200);
+  clearTimeout(quizNextTimer);
+  quizNextTimer = setTimeout(nextQuizQuestion, 1200);
 }
 
 function endQuiz() {
+  if(!quizActive) return;
   quizActive = false;
   clearTimeout(quizTimer);
   const originalBet = parseInt(document.getElementById('betAmountQuiz')?.value) || 100;
@@ -12237,7 +12261,18 @@ async function settleMatchBets(match, finalScore) {
     if(bet.status !== 'pending') continue;
     const won = bet.outcome === winner;
     const payout = won ? Math.floor(bet.amount * bet.odds) : 0;
-    await db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: homeS+':'+awayS });
+    // Атомарний claim статусу — без нього дві вкладки (чи повторний виклик
+    // цієї функції) бачили status:'pending' з одного й того ж знімку й
+    // ОБИДВІ нараховували виплату за одну ставку. Той самий підхід, що й
+    // для PvP-ігор (Coinflip/RPS/Predict) — лише один запис виграє "гонку".
+    const committed = await new Promise(resolve => {
+      db.ref('sport_bets/'+betId+'/status').transaction(current => {
+        if(current !== 'pending') return; // хтось вже розрахував — абортуємо
+        return won ? 'won' : 'lost';
+      }, (err, committed) => resolve(!!committed));
+    });
+    if(!committed) continue;
+    await db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: homeS+':'+awayS });
     if(bet.userId === currentUser) {
       if(won) {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -12441,17 +12476,26 @@ function resolveOneBet(betId, bet, homeScore, awayScore) {
   const winner = homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw';
   const won = bet.outcome === winner;
   const payout = won ? Math.floor(bet.amount * bet.odds) : 0;
-  db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: homeScore+':'+awayScore });
-  if(won) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-    playSound('bonus');
-    notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴!`, 'success');
-    if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
-  } else {
-    playSound('loss');
-    notify(`😞 ${bet.matchTitle||'Ставка'} — програш -${formatNumber(bet.amount)}₴`, 'error');
-  }
-  addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  // Атомарний claim — checkPendingBetsOnStartup() викликаний двічі (напр. з
+  // двох вкладок, чи повторно з консолі) без цього бачив status:'pending'
+  // в обох викликах і платив ту саму ставку двічі.
+  db.ref('sport_bets/'+betId+'/status').transaction(current => {
+    if(current !== 'pending') return;
+    return won ? 'won' : 'lost';
+  }, (err, committed) => {
+    if(!committed) return;
+    db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: homeScore+':'+awayScore });
+    if(won) {
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+      playSound('bonus');
+      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴!`, 'success');
+      if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
+    } else {
+      playSound('loss');
+      notify(`😞 ${bet.matchTitle||'Ставка'} — програш -${formatNumber(bet.amount)}₴`, 'error');
+    }
+    addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  });
 }
 
 // Симуляція результату для матчів без реального рахунку
@@ -12478,18 +12522,27 @@ function simulateAndResolveBet(betId, bet) {
   if(simulatedWinner === 'home') sc = scores.filter(s=>s[0]>s[1])[0] || [1,0];
   else if(simulatedWinner === 'away') sc = scores.filter(s=>s[0]<s[1])[0] || [0,1];
   else sc = scores.filter(s=>s[0]===s[1])[0] || [1,1];
-  db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: sc[0]+':'+sc[1], simulated: true });
-  db.ref('sport_matches/'+bet.matchId).update({ status:'finished', finalScore: sc[0]+':'+sc[1] });
-  if(won) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-    playSound('bonus');
-    notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴! (${sc[0]}:${sc[1]})`, 'success');
-    if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
-  } else {
-    playSound('loss');
-    notify(`😞 ${bet.matchTitle||'Ставка'} (${sc[0]}:${sc[1]}) — програш`, 'error');
-  }
-  addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  // Атомарний claim — той самий double-payout ризик, що й у resolveOneBet:
+  // повторний виклик (напр. з іншої вкладки чи консолі) без цього платив би
+  // ще раз, і навіть міг би дати ІНШИЙ рандомний результат вдруге.
+  db.ref('sport_bets/'+betId+'/status').transaction(current => {
+    if(current !== 'pending') return;
+    return won ? 'won' : 'lost';
+  }, (err, committed) => {
+    if(!committed) return;
+    db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: sc[0]+':'+sc[1], simulated: true });
+    db.ref('sport_matches/'+bet.matchId).update({ status:'finished', finalScore: sc[0]+':'+sc[1] });
+    if(won) {
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+      playSound('bonus');
+      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴! (${sc[0]}:${sc[1]})`, 'success');
+      if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
+    } else {
+      playSound('loss');
+      notify(`😞 ${bet.matchTitle||'Ставка'} (${sc[0]}:${sc[1]}) — програш`, 'error');
+    }
+    addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  });
 }
 
 // Запустити розрахунок одразу після підтвердження ставки (через 30 сек для демо)
@@ -17100,6 +17153,10 @@ function initPenalty() { document.getElementById('penaltyResult').textContent=''
 function shootPenalty(zone) {
   const bet = parseInt(document.getElementById('penaltyBet').value)||0;
   if(!validateBet(bet)) return;
+  // ставка ніколи не списувалась — гра платила x3 на перемогу і НІЧОГО
+  // не забирала на програш, тобто була безкоштовною лотереєю з чистим плюсом
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   const gkZone = PENALTY_ZONES[Math.floor(Math.random()*PENALTY_ZONES.length)];
   const win = zone !== gkZone;
@@ -17132,6 +17189,9 @@ function throwBowl() {
   const power = parseInt(document.getElementById('bowlingPower').value);
   const btn = document.getElementById('bowlingBtn');
   btn.disabled = true;
+  // ставка ніколи не списувалась — так само як у Penalty/Archery/SicBo/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   // Calculate pins knocked based on power + randomness
   const base = power / 100;
@@ -17181,6 +17241,9 @@ function shootArchery() {
   if(!validateBet(bet)) return;
   const btn = document.getElementById('archeryBtn');
   btn.disabled = true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/SicBo/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   const win = Math.random() < archRisk.chance;
   const arrow = document.getElementById('archeryArrow');
@@ -17222,6 +17285,9 @@ function rollSicBo() {
   const bet = parseInt(document.getElementById('sicboBet').value)||0;
   if(!validateBet(bet)) return;
   const btn = document.getElementById('sicboBtn'); btn.disabled=true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   // Roll dice
   let anim = 0;
@@ -17270,6 +17336,9 @@ function playCardWar() {
   const bet = parseInt(document.getElementById('cwBet').value)||0;
   if(!validateBet(bet)) return;
   const btn=document.getElementById('cwBtn'); btn.disabled=true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   document.getElementById('cwPlayerCard').textContent='🂠';
   document.getElementById('cwDealerCard').textContent='🂠';
@@ -17303,8 +17372,12 @@ function playCardWar() {
 let duckState = { active:false, mult:1, duckIndex:0, totalDucks:10, hit:0 };
 function initDuckShoot() { duckState={active:false,mult:1,duckIndex:0,totalDucks:10,hit:0}; }
 function startDuckShoot() {
+  if(duckState.active) return;
   const bet = parseInt(document.getElementById('duckBet').value)||0;
   if(!validateBet(bet)) return;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Card War
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   duckState={active:true,bet,mult:1,duckIndex:0,totalDucks:10,hit:0};
   document.getElementById('duckBtn').textContent='🦆 Стріляй!';
@@ -19356,6 +19429,10 @@ function chessAiTurn() {
 }
 
 function chessHandleGameEnd(status) {
+  // Гвард ставиться тут, а не лише в місцях виклику — без нього прямий
+  // повторний виклик (напр. з консолі) знову платив би виграш за ту саму
+  // партію щоразу, оскільки сама функція нічого не перевіряла.
+  if(!chessGame || chessGame.gameOver) return;
   chessGame.gameOver = true;
   const loserColor = chessGame.state.turn; // хто зараз мав ходити — той без ходів
   let resultText, profit = -chessGame.bet, playerWon = false, isDraw = false;
