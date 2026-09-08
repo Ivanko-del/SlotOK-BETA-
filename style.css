@@ -1804,6 +1804,15 @@
       overflow-y: auto !important;
       overflow-x: hidden !important;
       padding: 0 !important;
+      /* showAuthScreen() перемикає це на display:flex через JS (лише display,
+         без flex-direction) — без цього правила воно за замовчуванням стає
+         РЯДКОВИМ флексом, і єдина дитина (.auth-wrapper) розтягується/стискається
+         по висоті замість природного росту з вмістом. Це раніше стискало
+         майже все на екрані (плашки, бейдж бонусу і т.д.) непомітно, тому й
+         виглядало "тісно". flex-direction:column тут узгоджує розтягування
+         по ширині (як і треба для одного повноширинного блоку), а не по висоті. */
+      display: flex;
+      flex-direction: column;
     }
     .auth-canvas { position:fixed;inset:0;z-index:0;pointer-events:none; }
     .auth-wrapper {
@@ -1828,10 +1837,38 @@
       font-family: 'Orbitron', monospace;
       font-size: 36px; font-weight: 900; letter-spacing: 6px;
       background: linear-gradient(135deg,#d4af37,#ffdb6a,#d4af37);
+      background-size: 200% 100%;
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
+      animation: winShimmer 3s ease infinite;
     }
     .auth-logo-sub { font-size:11px; color:#555; letter-spacing:2px; margin-top:4px; }
+
+    /* Live win ticker — той самий принцип, що й #rateTicker (стрічка курсів на головній) */
+    .auth-win-ticker {
+      background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius: 10px; overflow:hidden; height:26px; margin-bottom:16px;
+      max-width: 380px; width:100%; position:relative;
+      /* showAuthScreen() перемикає #auth-screen на display:flex через JS без
+         flex-direction, тож воно за замовчуванням стає row-флексом і стискає
+         .auth-wrapper по висоті — а той, своєю чергою, стискає власних дітей.
+         Елементи з overflow:hidden і без "живого" вмісту (як ця стрічка) мають
+         "автоматичний мінімальний розмір" 0 і стискаються першими. flex-shrink:0
+         прибирає це для стрічки, не займаючи чужий (уже усталений) код. */
+      flex-shrink: 0;
+    }
+    .auth-win-ticker-inner {
+      display:flex; gap:0; position:absolute; white-space:nowrap;
+      animation: tickerScroll 22s linear infinite;
+      align-items:center; height:26px;
+    }
+    .auth-win-ticker-item {
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 0 16px; font-size:11px; color:#888;
+      border-right: 1px solid rgba(255,255,255,.06);
+    }
+    .auth-win-ticker-item b { color: var(--green); font-weight:800; }
+    .auth-win-ticker-item .awt-user { color: var(--accent); font-weight:700; }
 
     /* Feature pills */
     .auth-features {
@@ -1850,6 +1887,7 @@
 
     /* Form card */
     .auth-card {
+      position: relative;
       background: rgba(255,255,255,.04);
       border: 1px solid rgba(212,175,55,.2);
       border-radius: 20px;
@@ -1858,19 +1896,45 @@
       backdrop-filter: blur(12px);
       box-shadow: 0 20px 60px rgba(0,0,0,.8), 0 0 40px rgba(212,175,55,.05);
     }
+    /* Повільна "жива" рамка, що обертається навколо картки — суто CSS,
+       через conic-gradient обрізаний до тонкого кільця маскою */
+    .auth-card::before {
+      content:''; position:absolute; inset:-1.5px; border-radius:21px; padding:1.5px;
+      background: conic-gradient(from 0deg, transparent 0%, rgba(212,175,55,.9) 12%, transparent 24%, transparent 76%, rgba(255,219,106,.7) 88%, transparent 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: authBorderSpin 5s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes authBorderSpin { to { transform: rotate(360deg); } }
     .auth-tabs {
+      position: relative;
       display: flex; background:#111; border-radius:12px; padding:3px; margin-bottom:20px; gap:3px;
     }
+    /* Слайдер-індикатор під активною вкладкою — рухається transform'ом
+       замість перемальовування фону кожної кнопки окремо */
+    .auth-tabs::before {
+      content:''; position:absolute; top:3px; left:3px; bottom:3px;
+      width: calc(50% - 4.5px);
+      background: linear-gradient(135deg,rgba(212,175,55,.22),rgba(212,175,55,.08));
+      border: 1px solid rgba(212,175,55,.35); border-radius:9px;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 0;
+    }
+    .auth-tabs.reg-active::before { transform: translateX(calc(100% + 3px)); }
     .auth-tab-btn {
+      position: relative; z-index: 1;
       flex:1; padding:10px; border:none; border-radius:9px;
       font-size:13px; font-weight:700; cursor:pointer;
-      transition: all .2s; color:#666; background:transparent;
+      transition: color .2s; color:#666; background:transparent;
     }
-    .auth-tab-btn.active {
-      background: linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.08));
-      color: var(--accent); border: 1px solid rgba(212,175,55,.3);
-    }
+    .auth-tab-btn.active { color: var(--accent); }
     .auth-input-group { margin-bottom:12px; position:relative; }
+    .auth-pass-toggle {
+      position:absolute; right:14px; top:50%; transform:translateY(-50%);
+      font-size:15px; cursor:pointer; opacity:.5; transition:opacity .15s; user-select:none;
+    }
+    .auth-pass-toggle:active { opacity:1; }
     .auth-input-icon {
       position:absolute; left:14px; top:50%; transform:translateY(-50%);
       font-size:16px; pointer-events:none;

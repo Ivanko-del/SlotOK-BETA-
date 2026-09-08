@@ -3754,9 +3754,14 @@
       </div>
 
       <!-- Live jackpot counter -->
-      <div style="text-align:center;margin-bottom:16px;">
+      <div style="text-align:center;margin-bottom:14px;">
         <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">🏆 Поточний джекпот</div>
         <div class="hero-jackpot-counter" id="authJackpot">₴ 0</div>
+      </div>
+
+      <!-- Live win ticker -->
+      <div class="auth-win-ticker" id="authWinTicker">
+        <div class="auth-win-ticker-inner" id="authWinTickerInner"></div>
       </div>
 
       <!-- Feature pills -->
@@ -3777,7 +3782,7 @@
       <!-- Form card -->
       <div class="auth-card" style="animation:slideUp .4s ease both;">
         <!-- Tabs -->
-        <div class="auth-tabs">
+        <div class="auth-tabs" id="authTabs">
           <button class="auth-tab-btn active" id="authTabLogin" onclick="switchAuthTab('login')">🔑 Вхід</button>
           <button class="auth-tab-btn" id="authTabReg" onclick="switchAuthTab('reg')">✨ Реєстрація</button>
         </div>
@@ -3793,8 +3798,9 @@
           </div>
           <div class="auth-input-group">
             <span class="auth-input-icon">🔒</span>
-            <input class="auth-input" id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password"
+            <input class="auth-input" id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password" style="padding-right:44px;"
               onkeydown="if(event.key==='Enter')authLogin()">
+            <span class="auth-pass-toggle" onclick="toggleAuthPassVisibility('loginPass', this)">👁</span>
           </div>
           <button class="auth-btn-main" onclick="authLogin()" id="loginBtn" style="font-size:16px;padding:16px;">
             🚀 УВІЙТИ
@@ -3824,7 +3830,8 @@
           </div>
           <div class="auth-input-group">
             <span class="auth-input-icon">🔒</span>
-            <input class="auth-input" id="regPass" type="password" placeholder="Пароль (мін 6 символів)" autocomplete="new-password">
+            <input class="auth-input" id="regPass" type="password" placeholder="Пароль (мін 6 символів)" autocomplete="new-password" style="padding-right:44px;">
+            <span class="auth-pass-toggle" onclick="toggleAuthPassVisibility('regPass', this)">👁</span>
           </div>
           <!-- Password strength -->
           <div id="passStrengthBar" style="height:3px;border-radius:2px;background:#1a1a1a;margin:-8px 0 10px;overflow:hidden;">
