@@ -116,6 +116,11 @@
     
     #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index:9999; display:flex; justify-content:center; align-items:center; color:var(--accent); font-size:24px; flex-direction: column; transition: opacity 0.5s; }
     #auth-screen, .full-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,.05), transparent), #000; z-index: 5000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+
+    /* Повноекранний чат ПП — position:fixed, а не звичайний блок у потоці сторінки,
+       щоб поле вводу завжди було приклеєне до низу видимої області екрана (а не
+       ховалось нижче через 100vh на мобільних, чи "їхало" разом зі скролом body). */
+    .pm-thread-fullscreen { position: fixed; inset: 0; z-index: 1200; background: #050505; display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
     .screen.screen-enter { animation: cascadeIn .32s cubic-bezier(.22,1,.36,1) both; }
     #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 6000; width: 90%; max-width: 400px; pointer-events: none; }
     .toast { background: linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,0) 45%), rgba(17,15,28,.85); color: var(--text); padding: 13px 16px; margin-bottom: 10px; border-radius: var(--r-md); display: flex; align-items: center; border-left: 4px solid var(--accent); box-shadow: var(--bevel), var(--elev-2); font-size: 14px; font-weight: 600; animation: slideIn 0.3s ease; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-family:'Rajdhani',sans-serif; }
@@ -3156,3 +3161,48 @@ input:focus-visible, textarea:focus-visible, .nav-item:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   АДАПТАЦІЯ ПІД ПРИСТРІЙ ТА РОЗМІР ЕКРАНА
+   Сайт побудований як мобільний застосунок (без жодного
+   @media під ширину екрана) — на планшеті чи десктопі весь
+   інтерфейс розтягувався на всю ширину вікна: гігантські
+   кнопки, розтягнуті сітки ігор, поле вводу ПП "тікало"
+   вбік. Нижче — центрована "телефонна" колонка на широких
+   екранах (як у більшості мобільних вебзастосунків) плюс
+   дрібні правки для дуже вузьких і низьких екранів.
+═══════════════════════════════════════════════════════ */
+
+/* Планшети/десктоп (≥641px) — центруємо весь застосунок у колонку
+   фіксованої ширини замість розтягування на всю ширину вікна. */
+@media (min-width: 641px) {
+  body { display: flex; flex-direction: column; align-items: center; }
+  .header, .container { max-width: 560px; width: 100%; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+  .bottom-nav, .full-modal, #auth-screen, .slotok-fullscreen-modal, .pm-thread-fullscreen {
+    left: 50%; right: auto; width: 100%; max-width: 560px; transform: translateX(-50%);
+  }
+  /* Легка рамка навколо "телефону", щоб було видно межу застосунку на широкому фоні */
+  .header { box-shadow: 0 1px 0 rgba(212,175,55,.16), 0 14px 30px -16px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04); }
+}
+
+/* Дуже вузькі екрани (старі/малі телефони, ≤360px) — трохи стискаємо
+   відступи й типографіку, щоб нічого не вилазило за межі екрана. */
+@media (max-width: 360px) {
+  .container { padding: 10px; }
+  .header { padding: 10px 12px; }
+  .header h1 { font-size: 19px; }
+  .hero-title { font-size: 20px; }
+  button { padding: 12px; font-size: 13px; }
+  .casino-grid-3 { gap: 6px; }
+}
+
+/* Низькі екрани в альбомній орієнтації (телефон повернутий боком) —
+   fixed-елементи на всю висоту (100dvh) інакше з'їдають майже весь
+   екран під клавіатурою/шапкою браузера. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .pm-thread-fullscreen { height: 100vh; }
+}
+
+/* dvh не підтримується — деякі старі WebView. Явний фолбек через vh
+   уже стоїть першим у .pm-thread-fullscreen, тож додаткового @supports
+   не потрібно (dvh просто ігнорується непідтримуваними рушіями). */

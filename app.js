@@ -1535,9 +1535,16 @@ function startChests(){
 
 // --- Краш ---
 let crashInt; let isCrashPlaying = false; let crashActiveBet = 0;
-function startCrash() { 
-    const b = validateBet(document.getElementById('betAmountCrash').value); 
+function startCrash() {
+    // Без цього захисту швидкий повторний клік по "Старт" міг запустити ще один
+    // setInterval поверх активного раунду: старий крашInt губився (перезаписувався
+    // цим глобальним "crashInt"), лишався жити вічно й нескінченно накручував
+    // множник у DOM — наступний "Забрати" читав це шалене число й нараховував
+    // величезну виплату. Простий guard на вхід прибирає весь клас багу.
+    if(isCrashPlaying) return;
+    const b = validateBet(document.getElementById('betAmountCrash').value);
     if(!b) return;
+    if(crashInt) { clearInterval(crashInt); crashInt = null; }
     crashActiveBet = b;  // зберігаємо ставку — не читаємо input під час гри
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
     addWager(b);
@@ -1567,9 +1574,9 @@ function startCrash() {
         if(autoCashoutTarget > 1 && m >= autoCashoutTarget && isCrashPlaying) {
           cashoutCrash(); return;
         }
-        if(m >= crashPoint){ 
-            clearInterval(crashInt); 
-            isCrashPlaying = false; 
+        if(m >= crashPoint){
+            clearInterval(crashInt); crashInt = null;
+            isCrashPlaying = false;
             notify("💥 КРАШ на " + m.toFixed(2) + "x!", "error");
             updateStreak(false); trackSession(false, crashActiveBet);
             document.getElementById('crashDisplay').style.color = "red";
@@ -1583,7 +1590,7 @@ function startCrash() {
 function cashoutCrash() { 
     if(!isCrashPlaying) return;
     isCrashPlaying = false;  // скидаємо ОДРАЗУ щоб запобігти подвійному кліку
-    clearInterval(crashInt); 
+    clearInterval(crashInt); crashInt = null;
     const b = crashActiveBet;  // читаємо збережену ставку, не input
     const mult = parseFloat(document.getElementById('crashDisplay').textContent);
     const w = Math.floor(b * mult); 
@@ -1664,6 +1671,11 @@ function dealPoker() {
 }
 
 function drawPoker() {
+    // Без цієї перевірки повторний виклик (напр. спам по кнопці чи виклик
+    // напряму з консолі) знову рахував evaluatePokerHand() по ТІЙ САМІЙ
+    // руці — pokerSelectedCards вже порожній, тож карти не змінювались,
+    // і виграш нараховувався ще раз за ту саму комбінацію щоразу.
+    if(pokerPhase !== 'draw') return;
     // Замінюємо виділені карти
     const deck = createDeck().filter(c => !pokerHand.find(h => h.rank===c.rank && h.suit===c.suit));
     let di = 0;
@@ -1913,6 +1925,12 @@ let balloonInterval = null, balloonPopTimeout = null;
 let balloonEl = null;
 
 function startBalloon() {
+  // Без цього гварда повторний виклик під час активного раунду губив
+  // попередні balloonInterval/balloonPopTimeout (перезаписуючи ці глобальні
+  // змінні) — старий interval лишався жити й далі крутив balloonMult, тепер
+  // уже разом із новим — множник ріс у 2+ рази швидше за задумане, і кешаут
+  // читав це роздуте число. Той самий клас багу, що й був у Краші.
+  if(balloonActive) return;
   const b = validateBet(document.getElementById('betAmountBalloon').value);
   if(!b) return;
   balloonBet = b;
@@ -2089,8 +2107,16 @@ const QUIZ_QUESTIONS = [
 ];
 
 let quizBet=0, quizQ=0, quizCorrect=0, quizActive=false, quizTimer=null, quizCurrentQ=null;
+// quizAnswered — гвард від спаму по answerQuiz() на ОДНІЙ і тій самій
+// відповіді: без нього кожен клік планував свій власний setTimeout(nextQuizQuestion),
+// жоден з яких не скасовував інші, і quizBet зростав/quizQ рахувався за
+// кожен клік окремо. Коли ці стек-накопичені таймери спрацьовували, quizQ
+// вже міг бути ≥10 у кожному з них — і endQuiz() виплачував ту саму ставку
+// по кілька разів. quizNextTimer прибирає це накопичення таймерів.
+let quizAnswered = false, quizNextTimer = null;
 
 function startQuiz() {
+  if(quizActive) return;
   const b = validateBet(document.getElementById('betAmountQuiz').value);
   if(!b) return;
   quizBet = b;
@@ -2103,7 +2129,9 @@ function startQuiz() {
 }
 
 function nextQuizQuestion() {
+  clearTimeout(quizNextTimer); quizNextTimer = null;
   if(quizQ >= 10) { endQuiz(); return; }
+  quizAnswered = false;
   const pool = [...QUIZ_QUESTIONS].sort(()=>Math.random()-.5);
   quizCurrentQ = pool[quizQ % pool.length];
   document.getElementById('quizQ').textContent = quizQ+1;
@@ -2119,7 +2147,8 @@ function nextQuizQuestion() {
 }
 
 function answerQuiz(choice) {
-  if(!quizActive) return;
+  if(!quizActive || quizAnswered) return;
+  quizAnswered = true;
   clearTimeout(quizTimer);
   const correct = choice === quizCurrentQ.a;
   const opts = document.getElementById('quizOptions');
@@ -2144,10 +2173,12 @@ function answerQuiz(choice) {
   }
   document.getElementById('quizPrize').textContent = '₴'+formatNumber(quizBet);
   quizQ++;
-  setTimeout(nextQuizQuestion, 1200);
+  clearTimeout(quizNextTimer);
+  quizNextTimer = setTimeout(nextQuizQuestion, 1200);
 }
 
 function endQuiz() {
+  if(!quizActive) return;
   quizActive = false;
   clearTimeout(quizTimer);
   const originalBet = parseInt(document.getElementById('betAmountQuiz')?.value) || 100;
@@ -12230,7 +12261,18 @@ async function settleMatchBets(match, finalScore) {
     if(bet.status !== 'pending') continue;
     const won = bet.outcome === winner;
     const payout = won ? Math.floor(bet.amount * bet.odds) : 0;
-    await db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: homeS+':'+awayS });
+    // Атомарний claim статусу — без нього дві вкладки (чи повторний виклик
+    // цієї функції) бачили status:'pending' з одного й того ж знімку й
+    // ОБИДВІ нараховували виплату за одну ставку. Той самий підхід, що й
+    // для PvP-ігор (Coinflip/RPS/Predict) — лише один запис виграє "гонку".
+    const committed = await new Promise(resolve => {
+      db.ref('sport_bets/'+betId+'/status').transaction(current => {
+        if(current !== 'pending') return; // хтось вже розрахував — абортуємо
+        return won ? 'won' : 'lost';
+      }, (err, committed) => resolve(!!committed));
+    });
+    if(!committed) continue;
+    await db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: homeS+':'+awayS });
     if(bet.userId === currentUser) {
       if(won) {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -12434,17 +12476,26 @@ function resolveOneBet(betId, bet, homeScore, awayScore) {
   const winner = homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw';
   const won = bet.outcome === winner;
   const payout = won ? Math.floor(bet.amount * bet.odds) : 0;
-  db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: homeScore+':'+awayScore });
-  if(won) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-    playSound('bonus');
-    notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴!`, 'success');
-    if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
-  } else {
-    playSound('loss');
-    notify(`😞 ${bet.matchTitle||'Ставка'} — програш -${formatNumber(bet.amount)}₴`, 'error');
-  }
-  addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  // Атомарний claim — checkPendingBetsOnStartup() викликаний двічі (напр. з
+  // двох вкладок, чи повторно з консолі) без цього бачив status:'pending'
+  // в обох викликах і платив ту саму ставку двічі.
+  db.ref('sport_bets/'+betId+'/status').transaction(current => {
+    if(current !== 'pending') return;
+    return won ? 'won' : 'lost';
+  }, (err, committed) => {
+    if(!committed) return;
+    db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: homeScore+':'+awayScore });
+    if(won) {
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+      playSound('bonus');
+      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴!`, 'success');
+      if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
+    } else {
+      playSound('loss');
+      notify(`😞 ${bet.matchTitle||'Ставка'} — програш -${formatNumber(bet.amount)}₴`, 'error');
+    }
+    addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  });
 }
 
 // Симуляція результату для матчів без реального рахунку
@@ -12471,18 +12522,27 @@ function simulateAndResolveBet(betId, bet) {
   if(simulatedWinner === 'home') sc = scores.filter(s=>s[0]>s[1])[0] || [1,0];
   else if(simulatedWinner === 'away') sc = scores.filter(s=>s[0]<s[1])[0] || [0,1];
   else sc = scores.filter(s=>s[0]===s[1])[0] || [1,1];
-  db.ref('sport_bets/'+betId).update({ status: won?'won':'lost', settledAt: Date.now(), finalScore: sc[0]+':'+sc[1], simulated: true });
-  db.ref('sport_matches/'+bet.matchId).update({ status:'finished', finalScore: sc[0]+':'+sc[1] });
-  if(won) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-    playSound('bonus');
-    notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴! (${sc[0]}:${sc[1]})`, 'success');
-    if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
-  } else {
-    playSound('loss');
-    notify(`😞 ${bet.matchTitle||'Ставка'} (${sc[0]}:${sc[1]}) — програш`, 'error');
-  }
-  addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  // Атомарний claim — той самий double-payout ризик, що й у resolveOneBet:
+  // повторний виклик (напр. з іншої вкладки чи консолі) без цього платив би
+  // ще раз, і навіть міг би дати ІНШИЙ рандомний результат вдруге.
+  db.ref('sport_bets/'+betId+'/status').transaction(current => {
+    if(current !== 'pending') return;
+    return won ? 'won' : 'lost';
+  }, (err, committed) => {
+    if(!committed) return;
+    db.ref('sport_bets/'+betId).update({ settledAt: Date.now(), finalScore: sc[0]+':'+sc[1], simulated: true });
+    db.ref('sport_matches/'+bet.matchId).update({ status:'finished', finalScore: sc[0]+':'+sc[1] });
+    if(won) {
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+      playSound('bonus');
+      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴! (${sc[0]}:${sc[1]})`, 'success');
+      if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
+    } else {
+      playSound('loss');
+      notify(`😞 ${bet.matchTitle||'Ставка'} (${sc[0]}:${sc[1]}) — програш`, 'error');
+    }
+    addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
+  });
 }
 
 // Запустити розрахунок одразу після підтвердження ставки (через 30 сек для демо)
@@ -13365,51 +13425,137 @@ function sendSupportMsg() {
 }
 
 // ── FAQ-бот на ключових словах — працює миттєво, без зовнішніх API ──
+// reply може бути рядком або масивом варіантів (тоді береться випадковий,
+// щоб відповіді не звучали однаково у різних розмовах).
 const SUPPORT_FAQ = [
   { keys: ['поповн','депозит','закинут','внест','вклад','поповнити'],
-    reply: '💳 Поповнення: перейди в Каса → Поповнення, обери суму й спосіб (PrivatBank/Monobank/Telegram). Після переказу натисни «Подати заявку» — адмін зарахує кошти протягом 1-24 год. Мінімум 50₴.' },
+    reply: [
+      '💳 Поповнення: перейди в Каса → Поповнення, обери суму й спосіб (PrivatBank/Monobank/Telegram). Після переказу натисни «Подати заявку» — адмін зарахує кошти протягом 1-24 год. Мінімум 50₴.',
+      '💳 Щоб поповнити баланс: Каса → Поповнення → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Кошти зараховуються протягом 1-24 годин після перевірки платежу.'
+    ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
-    reply: '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ прийде код підтвердження в особисті повідомлення (натисни «Показати код» прямо у вікні виводу — нікуди переходити не треба). Заявки обробляються протягом 1-24 год.' },
+    reply: [
+      '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ прийде код підтвердження в особисті повідомлення (натисни «Показати код» прямо у вікні виводу — нікуди переходити не треба). Заявки обробляються протягом 1-24 год.',
+      '💸 Щоб вивести гроші: Каса → Вивід → сума + реквізити картки. На суми від 5000₴ потрібне підтвердження кодом (з’явиться в приватних повідомленнях). Обробка заявки — до 24 годин.'
+    ] },
+  { keys: ['мінімальн вивід','мінімум вивід','ліміт вивід','максимальн вивід','скільки можна вивести'],
+    reply: '💸 Ліміти виводу: мінімальна сума — 100₴, максимальна залежить від твого VIP-рівня (чим вищий рівень, тим більший ліміт). Точні цифри для свого рівня дивись у Профіль → VIP Статус.' },
   { keys: ['vip','віп','рівен','статус гравц'],
-    reply: '👑 VIP програма: рівень залежить від суми твоїх ставок (Iron → Bronze → Silver → Gold → Platinum → Diamond → Master → Supreme). Вищий рівень = більший кешбек і множник на щоденний бонус. Деталі в Профіль → VIP Статус.' },
+    reply: [
+      '👑 VIP програма: рівень залежить від суми твоїх ставок (Iron → Bronze → Silver → Gold → Platinum → Diamond → Master → Supreme). Вищий рівень = більший кешбек і множник на щоденний бонус. Деталі в Профіль → VIP Статус.',
+      '👑 Твій VIP-рівень росте автоматично разом із загальною сумою ставок (wager). Кожен новий рівень дає більший кешбек та бонусні множники. Перевірити прогрес можна в Профіль → VIP Статус.'
+    ] },
   { keys: ['бонус','фріспін','подарун','промокод','промо код'],
     reply: '🎁 Бонуси: щоденний бонус росте кожен день серії (до 7 днів), є ще погодинний бонус і бонус за реєстрацію. Всі активні бонуси — в розділі «Ще» → Бонуси та Магазин.' },
+  { keys: ['вейджер','відіграт','wager','умови бонус','відіграш'],
+    reply: '🔄 Відіграш (вейджер): бонусні кошти потрібно прокрутити у грі перш ніж вивести — умови показані прямо при отриманні бонусу. Загальна сума всіх твоїх ставок також впливає на VIP-рівень.' },
   { keys: ['забув пароль','забула пароль','втратив пароль','не пам\'ятаю пароль','скинь пароль','скинути пароль','відновити пароль','відновлення пароля'],
     reply: '🔑 Відновлення пароля: на екрані входу натисни «Забули пароль?» — там можна відповісти на контрольне питання (якщо задавав при реєстрації) або подати заявку через Telegram-бота, і адміністратор скине пароль вручну.' },
+  { keys: ['змінити нік','поміняти нік','змінити ім\'я','нікнейм змінити'],
+    reply: '✏️ Змінити нікнейм самостійно не можна — це робить лише адміністратор вручну. Напиши сюди свій поточний нік і бажаний новий, я передам заявку.' },
+  { keys: ['видалити акаунт','видалення акаунта','закрити акаунт','видали мій акаунт'],
+    reply: '🗑️ Видалення акаунта: опиши причину і підтверди свій нікнейм — передам заявку адміністратору. Врахуй, що дію не можна скасувати, а баланс перед видаленням варто вивести.' },
   { keys: ['пароль','акаунт','логін','увійт','зареєстр','не можу зайти','не заходить'],
     reply: '🔑 З акаунтом: пароль можна змінити в Налаштування → Змінити пароль. Забув пароль — на екрані входу є кнопка «Забули пароль?». Проблеми зі входом — перевір правильність ніку (регістр не важливий) і опиши детальніше, покличу адміна.' },
+  { keys: ['два акаунт','кілька акаунт','мультиакаунт','другий акаунт','подвійн акаунт'],
+    reply: '⚠️ Правила дозволяють лише один акаунт на гравця. Кілька акаунтів (мультиакаунтинг) можуть призвести до блокування всіх пов’язаних профілів. Якщо потрібно щось уточнити — опиши ситуацію, передам адміну.' },
   { keys: ['заблокован','забанен','бан ','мене забанили','розблокуй'],
     reply: '🚫 Заблокований акаунт: опиши, будь ласка, свій нікнейм і що сталось — передам адміністратору на перевірку. Самостійно розблокувати акаунт я не можу.' },
+  { keys: ['оскарж','апеляц','несправедлив бан','незаслужен бан'],
+    reply: '⚖️ Оскарження блокування: опиши детально свій нікнейм, дату і причину, яку тобі, можливо, вказали — передам все адміністратору для повторного розгляду.' },
   { keys: ['слот','крутит','барабан'],
     reply: '🎰 Слоти: онлайн в розділі Казино → Слоти. Є безкоштовні спіни (нараховуються при реєстрації й іноді в бонусах) і бонусний раунд на комбінації 🎰🎰🎰.' },
   { keys: ['краш','crash'],
     reply: '🚀 Краш: став ставку, множник росте — забери виграш до того як «крашнеться». Є Provably Fair перевірка чесності результату прямо в грі.' },
   { keys: ['блекджек','blackjack','21'],
     reply: '🃏 Блекджек: класичні правила, дилер добирає до 17+. Доступні Double, Split (на парах) і Страховка (коли у дилера туз). Split тепер повністю працює — обидві руки розігруються послідовно.' },
+  { keys: ['рулетк рос','russian roulette','рулетк на вибуван','рулетк на кулю'],
+    reply: '🔫 Russian Roulette: обери скільки набоїв у барабані — чим більше, тим вищий ризик і виплата. Крутиш барабан і натискаєш «Вистрілити», поки не вирішиш забрати виграш.' },
   { keys: ['рулетк','roulette'],
     reply: '🎡 Рулетка: став на колір, число чи сектор — колесо крутиться в реальному часі. Правила й коефіцієнти виплат — прямо на екрані гри.' },
   { keys: ['кості','дайс','dice','кубик'],
     reply: '🎲 Dice: обери діапазон і напрямок (більше/менше), рушій Provably Fair — можна перевірити чесність кожного результату.' },
   { keys: ['шахи','chess'],
     reply: '♟️ Шахи: грай проти AI (3 рівні складності) або проти живого гравця (PvP з реальною ставкою) — обидва режими в розділі Казино → Шахи.' },
+  { keys: ['мінер','mines','сапер'],
+    reply: '💣 Mines: обери кількість мін на полі 5×5 і відкривай клітинки — множник росте з кожною безпечною клітинкою. Забирай виграш у будь-який момент до того, як натрапиш на міну.' },
+  { keys: ['лімбо','limbo'],
+    reply: '🌀 Limbo: задай цільовий множник, натисни «Грати» — якщо випаде число вище твого множника, ти виграв. Чим вищий обраний множник, тим менші шанси, але й більша виплата.' },
+  { keys: ['плінко','plinko'],
+    reply: '🔻 Plinko: постав ставку, обери рівень ризику (низький/середній/високий) і кинь кульку — вона впаде в один із коефіцієнтних кошиків внизу поля.' },
+  { keys: ['покер','poker','відеопокер','video poker'],
+    reply: '🃏 Video Poker: постав ставку, тобі роздають 5 карт — обери які лишити, а які замінити, і натисни «Замінити». Виплата залежить від фінальної комбінації (від пари J і вище).' },
+  { keys: ['колесо фортун','wheel of fortune','fortune wheel'],
+    reply: '🎡 Колесо Фортуни: постав ставку і крути колесо — сектори дають різні множники, є й рідкісний джекпотний сектор x50.' },
+  { keys: ['coinflip','монетк','орел чи решк','орел решка'],
+    reply: '🪙 Coinflip: створи гру зі своєю ставкою (орел/решка) і чекай суперника, або приєднайся до чужої гри. Переможець забирає весь банк мінус 5% комісії.' },
+  { keys: ['камінь-ножиц','камінь ножиц','rock paper scissors','rps'],
+    reply: '✂️ Камінь-Ножиці-Папір (PvP): постав ставку, обери свій хід і чекай суперника — переможець отримує банк за вирахуванням 5% комісії.' },
+  { keys: ['prediction duel','предикшн','вгадай число','передбач'],
+    reply: '🔮 Prediction Duel: обидва гравці ставлять на число — хто вгадає ближче до випадкового результату, той забирає банк (мінус 5% комісії).' },
+  { keys: ['вікторин','quiz','питання за гроші'],
+    reply: '🧠 Quiz Battle: постав ставку і відповідай на 10 питань — за кожну правильну відповідь ставка росте (+12%), помилка чи вихід забирає накопичене на момент зупинки.' },
+  { keys: ['торгівл','trade','трейдинг','угод'],
+    reply: '🔄 Торгівля (Trade): розділ «Ще» → Торгівля — обмінюй ігрові предмети/скіни з іншими гравцями напряму, безпечно через систему угод сайту.' },
+  { keys: ['дуел','duel'],
+    reply: '🤺 Дуелі: викликай іншого гравця на ставку в грі за твоїм вибором — переможець забирає банк. Знайти суперників можна там, де відкрита відповідна гра з PvP-режимом.' },
+  { keys: ['лутбокс','лут-бокс','lootbox','кейс відкри','кейс'],
+    reply: '📦 Лут-Бокси: розділ «Ще» → Лут-Бокси — купуй кейси й відкривай їх на випадкові призи (баланс, Слотіки, скіни). Ймовірності випадання вказані на кожному кейсі.' },
+  { keys: ['кешбек','cashback'],
+    reply: '💰 Кешбек: частина програних ставок повертається автоматично, відсоток залежить від VIP-рівня. Забрати накопичений кешбек можна в Каса → Кешбек.' },
+  { keys: ['квест','завдан','daily quest','щоденне завдання'],
+    reply: '📋 Завдання (квести): розділ «Ще» → Завдання — щоденні й тижневі цілі (зіграти N ігор, поставити суму тощо) за нагороди у балансі та Слотіках.' },
+  { keys: ['турнір','tournament'],
+    reply: '🏆 Турніри: розділ «Ще» → Турніри — змагайся за місце в рейтингу за визначений період, топ гравці отримують призи з призового фонду.' },
+  { keys: ['слотік','монетка сайту','ігрова валюта'],
+    reply: '🪙 Слотіки — внутрішня валюта сайту: заробляються за квести, лут-бокси, досягнення. Витратити їх можна в Магазині («Ще» → Магазин) на скіни, бонуси й інші плюшки.' },
   { keys: ['клан','clan'],
     reply: '🛡️ Клани: створити (500₴) або вступити — розділ «Ще» → Клани. Є спільний банк, тижневі завдання й клановий чат.' },
   { keys: ['рефера','запрос','партнер'],
     reply: '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Афілейт. Отримуєш відсоток з кожної ставки запрошеного гравця довічно.' },
   { keys: ['баг','глюк','не працю','зависа','помилк','лаг','зламал'],
-    reply: '🐞 Дякую що повідомив про проблему! Опиши детальніше що саме сталось (яка гра/екран, що очікував побачити) — передам адміністратору для перевірки.' },
+    reply: [
+      '🐞 Дякую що повідомив про проблему! Опиши детальніше що саме сталось (яка гра/екран, що очікував побачити) — передам адміністратору для перевірки.',
+      '🐞 Зрозумів, схоже на технічний збій. Напиши, будь ласка, в якій грі/розділі це сталось і що саме пішло не так (скріншот теж підійде) — передам адміну на перевірку.'
+    ] },
+  { keys: ['сайт не відкрива','сайт не заванта','не завантажується','білий екран','зависло назавжди'],
+    reply: '🌐 Якщо сайт не відкривається: спробуй оновити сторінку (або перезапустити застосунок), перевір інтернет-з’єднання й, за можливості, інший браузер. Якщо не допомогло — опиши, на якому пристрої й що саме бачиш.' },
   { keys: ['комісі','відсоток каз','edge'],
     reply: '📊 Комісія казино закладена в коефіцієнти кожної гри (зазвичай 3-8%, вказано в правилах гри). PvP ігри (Coinflip, RPS, Predict) мають фіксовану комісію 5% з виграшу.' },
+  { keys: ['provably fair','чесність','чесна гра','рандом чесний','накрутка','обман','шахрайств'],
+    reply: '🔒 Всі результати генеруються Provably Fair алгоритмом — випадковість перевіряється незалежно, накрутити чи вплинути на результат неможливо ні гравцям, ні адміністрації. У грі є кнопка перевірки чесності конкретного раунду.' },
   { keys: ['карт','skin','скін'],
     reply: '🎨 Картка: в Каса → Моя картка можна перевернути (натисни), скопіювати номер, і обрати один із 26 скінів у розділі 🎨.' },
   { keys: ['правил','18+','вік','вікові обмеж'],
     reply: '📜 Правила: реєструючись, гравець підтверджує вік 18+. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
+  { keys: ['телеграм бот','telegram бот','прив\'язати телеграм','підключити телеграм','бот повідомлення'],
+    reply: '📲 Telegram-бот: прив’яжи акаунт у Профіль → Сповіщення, щоб отримувати миттєві повідомлення про поповнення, вивід та відповіді підтримки прямо в Telegram.' },
+  { keys: ['встановити застосунок','встановити додаток','pwa','install app','іконка на екран'],
+    reply: '📱 Встановити застосунок: у більшості браузерів з’явиться кнопка «Встановити» або пункт «Додати на головний екран» у меню браузера — після цього сайт відкриватиметься як окремий додаток.' },
+  { keys: ['сповіщен','notification','пуш','повідомлення не приход'],
+    reply: '🔔 Сповіщення: керувати ними можна в Профіль → Налаштування → Сповіщення. Якщо push-повідомлення не приходять, перевір дозволи браузера/застосунку на сповіщення.' },
+  { keys: ['валют','гривн','долар','₴ це що'],
+    reply: '💱 Валюта сайту — гривня (₴). Усі баланси, ставки й виплати відображаються саме в гривні.' },
+  { keys: ['мінімальн ставк','мінімум ставк','мінімальна сума гри'],
+    reply: '🎯 Мінімальна ставка в більшості ігор — від 1₴ до 10₴ залежно від гри, максимальна — залежить від твого поточного балансу й ліміту гри.' },
+  { keys: ['графік роботи','час роботи підтримк','коли відповіда адмін','робочі години'],
+    reply: '🕒 AI-підтримка працює цілодобово й відповідає миттєво. Адміністратор онлайн не завжди, але кожне повідомлення, яке AI не зміг вирішити, передається йому і він відповідає, щойно з’являється.' },
   { keys: ['людин','оператор','живу людину','справжн','адміністратор','з адміном','покличт','з людиною'],
     reply: '👨‍💼 Звʼязатись з адміністратором: якщо він зараз онлайн — повідомлення підуть напряму йому. Якщо офлайн — просто опиши питання, воно передасться адміну і він відповість тут, щойно зможе.' },
   { keys: ['привіт','вітаю','добрий день','доброго дня','здоров'],
-    reply: '👋 Привіт! Питай про поповнення, вивід, бонуси, VIP чи будь-яку гру — відповім одразу.' },
+    reply: [
+      '👋 Привіт! Питай про поповнення, вивід, бонуси, VIP чи будь-яку гру — відповім одразу.',
+      '👋 Вітаю в SlotOK! Чим можу допомогти — поповнення, вивід, бонуси, ігри чи щось інше?',
+      '😊 Привіт-привіт! Пиши своє питання — про будь-яку гру чи розділ сайту, спробую відповісти одразу.'
+    ] },
   { keys: ['дяк','дякую','спасибі','thanks'],
-    reply: '🙌 Нема за що! Якщо виникнуть ще питання — я тут.' },
+    reply: [
+      '🙌 Нема за що! Якщо виникнуть ще питання — я тут.',
+      '😊 Завжди радий допомогти! Пиши, якщо буде ще щось незрозуміле.',
+      '🙌 Будь ласка! Гарної гри та удачі 🍀'
+    ] },
+  { keys: ['бувай','до побач','па-па','пока','гарного дня','гарного вечора'],
+    reply: '👋 Гарного дня і удачі в іграх! Якщо знадобиться допомога — я завжди тут.' },
 ];
 
 async function aiSupportReply(userMsg) {
@@ -13434,9 +13580,14 @@ async function aiSupportReply(userMsg) {
   let reply;
   let needsAdmin = false;
   if(match) {
-    reply = match.reply;
+    reply = Array.isArray(match.reply) ? match.reply[Math.floor(Math.random()*match.reply.length)] : match.reply;
   } else {
-    reply = '🤔 Не зовсім впевнений, що правильно зрозумів питання. Передав його адміністратору — відповість особисто найближчим часом. А поки можеш глянути розділ «Ще» → там є відповіді на популярні запитання.';
+    const FALLBACK_REPLIES = [
+      '🤔 Не зовсім впевнений, що правильно зрозумів питання. Передав його адміністратору — відповість особисто найближчим часом. А поки можеш глянути розділ «Ще» → там є відповіді на популярні запитання.',
+      '🤔 Хочу допомогти, але не до кінця зрозумів запит. Передав його адміністратору — відповість особисто. Спробуй, будь ласка, сформулювати іншими словами, можливо, я все ж зорієнтуюсь.',
+      '📩 Це питання краще передати живій людині — вже надіслав його адміністратору, він відповість тут, щойно зможе. Якщо хочеш, опиши детальніше — можливо, зрозумію з другої спроби.'
+    ];
+    reply = FALLBACK_REPLIES[Math.floor(Math.random()*FALLBACK_REPLIES.length)];
     needsAdmin = true;
   }
 
@@ -16303,10 +16454,12 @@ function pmSend() {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
     const msg = { from:currentUser, to, text, ts:Date.now() };
     db.ref('pm/'+currentUser).push(msg);
-    db.ref('pm/'+to).push(msg);
+    const toRef = db.ref('pm/'+to).push(msg);
     db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
     db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
-    notifyBot('player-ping', null, { to, kind: 'pm' });
+    // Передаємо id повідомлення (не сам текст!) — сервер сам підтягне текст із
+    // Firebase за цим id, щоб у Telegram-боті одразу було видно зміст ПП.
+    notifyBot('player-ping', null, { to, kind: 'pm', ref: { id: toRef.key } });
     if(msgEl) msgEl.value = '';
     notify('✉️ Надіслано!', 'success');
     renderPmInbox();
@@ -16337,7 +16490,7 @@ function openPmThread(otherUser) {
         <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
-    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
       <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
@@ -16414,8 +16567,8 @@ function pmReply(to) {
   const msg = { from:currentUser, to, text: text||'', ts:Date.now() };
   if(hasImg) msg.imgUrl = imgSrc;
   db.ref('pm/'+currentUser).push(msg);
-  db.ref('pm/'+to).push(msg);
-  notifyBot('player-ping', null, { to, kind: 'pm' });
+  const toRef = db.ref('pm/'+to).push(msg);
+  notifyBot('player-ping', null, { to, kind: 'pm', ref: { id: toRef.key } });
   db.ref('users/'+to+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   db.ref('users/'+currentUser+'/pmSent').set(firebase.database.ServerValue.increment(1));
   const inp = document.getElementById('pmReplyInput');
@@ -16911,12 +17064,18 @@ function renderDragonGrid() {
   }
 }
 function startDragonTower() {
-  const bet = parseInt(document.getElementById('dragonBet').value) || 0;
-  if(!validateBet(bet)) return;
+  const bet = validateBet(document.getElementById('dragonBet').value);
+  if(!bet) return;
+  // ставка раніше НЕ списувалась з балансу тут — гравець міг натиснути
+  // "Старт", одразу забрати (mult=1, рівень=0) і отримати гроші нізвідки,
+  // навіть не вибравши жодного яйця. Списуємо баланс так само, як інші ігри.
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   dragonState = { active:true, level:0, bet, dragons:dragonState.dragons, cols:dragonState.cols, mult:1 };
   addWager(bet);
   document.getElementById('dragonSetup').classList.add('hidden');
-  document.getElementById('dragonCashoutBtn').classList.remove('hidden');
+  // Кешаут доступний лише після першого безпечного вибору (як у Tower Climb) —
+  // без цього кешаут одразу після старту повертав би ставку без жодного ризику.
+  document.getElementById('dragonCashoutBtn').classList.add('hidden');
   document.getElementById('dragonLevel').textContent = '0';
   document.getElementById('dragonMult').textContent = 'x1.00';
   document.getElementById('dragonCashout').textContent = '₴'+formatNumber(bet);
@@ -16964,13 +17123,16 @@ function pickDragonCell(row, col) {
     document.getElementById('dragonLevel').textContent = dragonState.level;
     document.getElementById('dragonMult').textContent = 'x'+dragonState.mult;
     document.getElementById('dragonCashout').textContent = '₴'+formatNumber(cashout);
+    document.getElementById('dragonCashoutBtn').classList.remove('hidden');
     if(dragonState.level >= 8) { cashoutDragon(); return; }
     renderDragonGrid();
     notify(`✅ Безпечно! Рівень ${dragonState.level} | x${dragonState.mult}`, 'success');
   }
 }
 function cashoutDragon() {
-  if(!dragonState.active) return;
+  // level 0 = жодного яйця ще не вибрано — виводити нічого, це б лише
+  // повертало ставку без ризику (кнопка кешауту й так прихована до цього моменту)
+  if(!dragonState.active || dragonState.level <= 0) return;
   const payout = Math.floor(dragonState.bet * dragonState.mult);
   dragonState.active = false;
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -16991,6 +17153,10 @@ function initPenalty() { document.getElementById('penaltyResult').textContent=''
 function shootPenalty(zone) {
   const bet = parseInt(document.getElementById('penaltyBet').value)||0;
   if(!validateBet(bet)) return;
+  // ставка ніколи не списувалась — гра платила x3 на перемогу і НІЧОГО
+  // не забирала на програш, тобто була безкоштовною лотереєю з чистим плюсом
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   const gkZone = PENALTY_ZONES[Math.floor(Math.random()*PENALTY_ZONES.length)];
   const win = zone !== gkZone;
@@ -17023,6 +17189,9 @@ function throwBowl() {
   const power = parseInt(document.getElementById('bowlingPower').value);
   const btn = document.getElementById('bowlingBtn');
   btn.disabled = true;
+  // ставка ніколи не списувалась — так само як у Penalty/Archery/SicBo/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   // Calculate pins knocked based on power + randomness
   const base = power / 100;
@@ -17072,6 +17241,9 @@ function shootArchery() {
   if(!validateBet(bet)) return;
   const btn = document.getElementById('archeryBtn');
   btn.disabled = true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/SicBo/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   const win = Math.random() < archRisk.chance;
   const arrow = document.getElementById('archeryArrow');
@@ -17113,6 +17285,9 @@ function rollSicBo() {
   const bet = parseInt(document.getElementById('sicboBet').value)||0;
   if(!validateBet(bet)) return;
   const btn = document.getElementById('sicboBtn'); btn.disabled=true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/Card War/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   // Roll dice
   let anim = 0;
@@ -17161,6 +17336,9 @@ function playCardWar() {
   const bet = parseInt(document.getElementById('cwBet').value)||0;
   if(!validateBet(bet)) return;
   const btn=document.getElementById('cwBtn'); btn.disabled=true;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Duck Shoot
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   document.getElementById('cwPlayerCard').textContent='🂠';
   document.getElementById('cwDealerCard').textContent='🂠';
@@ -17194,8 +17372,12 @@ function playCardWar() {
 let duckState = { active:false, mult:1, duckIndex:0, totalDucks:10, hit:0 };
 function initDuckShoot() { duckState={active:false,mult:1,duckIndex:0,totalDucks:10,hit:0}; }
 function startDuckShoot() {
+  if(duckState.active) return;
   const bet = parseInt(document.getElementById('duckBet').value)||0;
   if(!validateBet(bet)) return;
+  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Card War
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  userData.balance = (userData.balance||0) - bet; updateUI();
   addWager(bet);
   duckState={active:true,bet,mult:1,duckIndex:0,totalDucks:10,hit:0};
   document.getElementById('duckBtn').textContent='🦆 Стріляй!';
@@ -18655,25 +18837,47 @@ function savePlayerNotes() {
 }
 
 // ── KILL-SWITCH ДЛЯ ІГОР ──
+// Повний список усіх ігор сайту (синхронізовано з картками "Всі ігри" в лобі) —
+// раніше тут було лише 9 ігор і решту адмін не міг вимкнути з панелі модерації.
 const ADMIN_TOGGLEABLE_GAMES = [
-  {id:'slots', name:'🎰 Слоти'}, {id:'crash', name:'🚀 Краш'}, {id:'mines', name:'💣 Міни'},
-  {id:'blackjack', name:'🃏 Блекджек'}, {id:'roulette', name:'🎡 Рулетка'}, {id:'plinko', name:'🔻 Plinko'},
-  {id:'dice', name:'🎲 Dice'}, {id:'coinflip', name:'🪙 Coinflip'}, {id:'chess', name:'♟️ Шахи'},
+  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash Aviator'}, {id:'mines', name:'💣 Mines'},
+  {id:'blackjack', name:'🃏 Blackjack'}, {id:'plinko', name:'🔻 Plinko'}, {id:'dice', name:'🎲 Dice Roll'},
+  {id:'fortune', name:'🎡 Колесо Фортуни'}, {id:'poker', name:'♠️ Video Poker'}, {id:'hilo', name:'🃏 Hi-Lo Cards'},
+  {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'tower', name:'🗼 Tower Climb'},
+  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
+  {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
+  {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
+  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'}, {id:'penalty', name:'⚽ Penalty Kick'},
+  {id:'bowling', name:'🎳 Bowling'}, {id:'archery', name:'🎯 Archery'}, {id:'sicbo', name:'🎲 Sic Bo'},
+  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'}, {id:'duckshoot', name:'🦆 Duck Shoot'},
+  {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
+  {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
 ];
 
+let _gameToggleDisabledCache = {};
 function renderGameToggleList() {
   const el = document.getElementById('gameToggleList');
   if(!el) return;
   db.ref('site_config/disabledGames').once('value').then(snap => {
-    const disabled = snap.val() || {};
-    el.innerHTML = ADMIN_TOGGLEABLE_GAMES.map(g => {
-      const isOff = !!disabled[g.id];
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
-        <span style="font-size:12px;">${g.name}</span>
-        <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isOff?'#e74c3c':'#3dd68c'};border-radius:8px;padding:4px 12px;color:${isOff?'#e74c3c':'#3dd68c'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
-      </div>`;
-    }).join('');
+    _gameToggleDisabledCache = snap.val() || {};
+    filterGameToggleList(document.getElementById('gameToggleFilter')?.value || '');
   });
+}
+
+function filterGameToggleList(query) {
+  const el = document.getElementById('gameToggleList');
+  if(!el) return;
+  const q = (query || '').trim().toLowerCase();
+  const disabled = _gameToggleDisabledCache;
+  const list = q ? ADMIN_TOGGLEABLE_GAMES.filter(g => g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) : ADMIN_TOGGLEABLE_GAMES;
+  if(!list.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:10px;font-size:12px;">Нічого не знайдено</div>'; return; }
+  el.innerHTML = list.map(g => {
+    const isOff = !!disabled[g.id];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
+      <span style="font-size:12px;">${g.name}</span>
+      <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isOff?'#e74c3c':'#3dd68c'};border-radius:8px;padding:4px 12px;color:${isOff?'#e74c3c':'#3dd68c'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
+    </div>`;
+  }).join('');
 }
 
 function toggleGameEnabled(gameId) {
@@ -19225,6 +19429,10 @@ function chessAiTurn() {
 }
 
 function chessHandleGameEnd(status) {
+  // Гвард ставиться тут, а не лише в місцях виклику — без нього прямий
+  // повторний виклик (напр. з консолі) знову платив би виграш за ту саму
+  // партію щоразу, оскільки сама функція нічого не перевіряла.
+  if(!chessGame || chessGame.gameOver) return;
   chessGame.gameOver = true;
   const loserColor = chessGame.state.turn; // хто зараз мав ходити — той без ходів
   let resultText, profit = -chessGame.bet, playerWon = false, isDraw = false;
