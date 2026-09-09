@@ -447,7 +447,8 @@ function claimDailyBonus(amount) {
         dailyStreak: newStreak
     });
     db.ref('users/'+currentUser+'/cardTx').push({dir:'in', amount:finalAmount, title:'Щоденний бонус', subtitle:'День '+streak+' серії', icon:'🎁', ts:Date.now()});
-    
+    checkStreakBonus(streak);
+
     playSound('win');
     const multText = vip.dailyMult > 1 ? ` (${vip.icon} VIP ×${vip.dailyMult})` : '';
     notify(`🎁 Щоденний бонус: +${finalAmount} ₴${multText}`, 'success');
@@ -1735,11 +1736,6 @@ function evaluatePokerHand(hand) {
     return {name:'Нічого', multiplier:0};
 }
 
-function togglePokerPaytable() {
-    const pt = document.getElementById('pokerPaytable');
-    if(pt) pt.style.display = pt.style.display === 'none' ? 'block' : 'none';
-}
-
 // --- Сапер ---
 let minesGrid = []; let isMinesPlaying = false; let currentMinesProfit = 0; let movesMade = 0; let minesBet = 0; let minesCount = 5;
 
@@ -2382,21 +2378,20 @@ function installPWA() {
 // ═══════════════════════════════════════════
 // ⚡ ANIMATION SPEED
 // ═══════════════════════════════════════════
-function setAnimSpeed(multiplier) {
+function setAnimSpeed(multiplier, silent) {
   document.documentElement.style.setProperty('--anim-speed', multiplier+'');
   localStorage.setItem('animSpeed', multiplier);
-  // Apply to all transitions/animations
   if(multiplier === 0) {
     document.documentElement.style.setProperty('--transition','none');
   } else {
     document.documentElement.style.setProperty('--transition', (0.2/multiplier)+'s');
   }
-  notify('⚡ Швидкість анімацій: '+(multiplier===2?'Швидко':multiplier===1?'Нормально':multiplier===0.5?'Повільно':'Вимкнено'),'info');
+  if(!silent) notify('⚡ Швидкість анімацій: '+(multiplier===2?'Швидко':multiplier===1?'Нормально':multiplier===0.5?'Повільно':'Вимкнено'),'info');
 }
 
 function loadAnimSpeed() {
   const saved = parseFloat(localStorage.getItem('animSpeed')||'1');
-  setAnimSpeed(saved);
+  setAnimSpeed(saved, true);
   const sel = document.getElementById('animSpeedSelect');
   if(sel) sel.value = saved;
 }
@@ -3176,11 +3171,6 @@ function setFontSize(size) {
   const el = document.getElementById('fs_'+size);
   if(el) el.classList.add('active');
 }
-function loadFontSize() {
-  const saved = getSetting('fontSize', 14);
-  document.body.style.zoom = FONT_SIZE_ZOOM[saved] || 1;
-}
-
 // ═══════════════════════════════════════════════════════
 // ⚡ TURBO MODE (speed up all game animations)
 // ═══════════════════════════════════════════════════════
@@ -3620,7 +3610,6 @@ function loadUserList() {
   });
 }
 
-function loadWithdrawRequests() { startAdminRequestListeners(); }
 
 function approveWithdraw(id, user) {
     db.ref('withdraw_requests/'+id).once('value').then(snap => {
@@ -4545,6 +4534,7 @@ function initHomeTab() {
   initBannerCarousel();
   renderMysteryBoxWidget();
   renderFriendsFeed();
+  renderHomeLastUpdate();
 }
 
 function switchHomeTab(tab, el) {
@@ -5021,19 +5011,6 @@ function renderHomeProgressBars() {
   if(bpPctEl) bpPctEl.textContent = 'Lv' + bpLevel;
 }
 
-// Admin function: publish a new changelog entry
-function publishChangelog(version, title, sections, stats) {
-  const isAdmin = isAdminUser();
-  if(!isAdmin) return notify('Тільки адмін!', 'error');
-  db.ref('changelog').push({
-    version, title,
-    date: Date.now(),
-    dev: currentUser,
-    sections: sections || [],
-    stats: stats || {}
-  });
-  notify('✅ Changelog опубліковано v' + version, 'success');
-}
 
 // Check if user has seen latest version
 function checkChangelogBadge() {
@@ -5624,11 +5601,6 @@ function sendNativeNotif(title, body, icon = '🎰') {
   try { new Notification(title, { body, icon: '/favicon.ico' }); } catch(e) { console.warn(e); }
 }
 
-function sendPushToUser(nick, title, body) {
-  // Store in Firebase — if user has push enabled, they'll get it next time they open the app
-  db.ref('users/'+nick+'/pendingNotifs').push({ title, body, ts: Date.now() });
-}
-
 function checkPendingNotifs() {
   if(!currentUser) return;
   db.ref('users/'+currentUser+'/pendingNotifs').once('value', snap => {
@@ -5849,6 +5821,7 @@ async function runCleanup() {
 function startAllBackgroundTasks() {
   startAutoCleanup();
   checkPendingNotifs();
+  checkAutoWipeOnLoad();
 }
 
 
@@ -5961,40 +5934,6 @@ function showSearchResults(results, res) {
       + '<div style="font-size:9px;color:#444;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px;">' + r.type + '</div>'
       + '</div>';
   }).join('');
-}
-
-// 4. РЕАКЦІЇ НА live_bets
-function addLiveBetReaction(betKey, emoji) {
-  if(!currentUser || !db) return;
-  var path = 'live_bet_reactions/' + betKey + '/' + currentUser;
-  db.ref(path).once('value').then(function(s) {
-    if(s.val() === emoji) db.ref(path).remove();
-    else db.ref(path).set(emoji);
-  });
-  notify(emoji + ' Реакцію додано!', 'success');
-}
-
-// 5. AI ПІДКАЗКИ
-function showAIHint(game) {
-  var hints = {
-    slots:['🎰 Починай з малих ставок, збільшуй при виграшній серії','⭐⭐⭐ дають +5 фріспінів — чекай!','Бонусний раунд — найцінніший режим'],
-    crash:['🚀 Виводи при x1.5-2.0 — найстабільніше','Ніколи не чекай >x10 без авто-виводу','70% крашів до x3.0'],
-    mines:['💣 Відкривай по діагоналі — безпечніше','При 3 мінах — безпечний прибуток до x2.5','Ніколи не стався на всі 24 клітинки'],
-    dice:['🎲 Roll over 50 — 50/50, найпростіша','При 3+ програшах — зменши ставку вдвічі','Martingale: x2 після кожного програшу'],
-    blackjack:['🃏 Завжди стій на 17+','Дублюй при 11 проти 2-10 дилера','Ніколи не бери страховку'],
-    plinko:['🔻 Середній ризик — найкращий ROI','Low ризик — стабільніше','High ризик: шанс x20']
-  };
-  var arr = (hints[game] || ['💡 Ніколи не ставь >5% балансу за раз','📊 Веди статистику','🎯 Вибирай ігри з RTP >95%']);
-  var hint = arr[Math.floor(Math.random() * arr.length)];
-  var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;background:linear-gradient(135deg,#0a1420,#0d1a30);border:1.5px solid rgba(74,158,255,.3);border-radius:16px;padding:16px;z-index:9000;animation:slideUp .3s ease;';
-  el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px;">'
-    + '<div style="font-size:28px;flex-shrink:0;">🤖</div>'
-    + '<div><div style="font-size:11px;color:#4a9eff;font-weight:700;margin-bottom:4px;">AI Підказка</div>'
-    + '<div style="font-size:13px;color:#ccc;line-height:1.5;">' + hint + '</div></div>'
-    + '<button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:auto;">✕</button></div>';
-  document.body.appendChild(el);
-  setTimeout(function() { el.remove(); }, 6000);
 }
 
 // 7. КРИПТО-СИМУЛЯТОР
@@ -6561,51 +6500,6 @@ async function getCrashFairMultiplier() {
   if (h % 33 === 0) return 1.0; // house edge ~3%
   return Math.max(1.0, parseFloat((1 / (1 - (h % 9999) / 10000) * 0.97).toFixed(2)));
 }
-function showCrashSeedModal() {
-  var modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;background:#0d1a30;border:1.5px solid rgba(74,158,255,.3);border-radius:16px;padding:14px;z-index:9000;animation:slideUp .3s ease;';
-  modal.innerHTML = '<div style="font-size:11px;color:#4a9eff;font-weight:700;margin-bottom:8px;">⚖️ Crash Provably Fair</div>'
-    + '<div style="font-size:10px;color:#555;margin-bottom:6px;">Client Seed:</div>'
-    + '<div style="font-family:monospace;font-size:12px;color:#d4af37;word-break:break-all;margin-bottom:8px;">' + _crashClientSeed + '</div>'
-    + '<div style="font-size:10px;color:#555;">Nonce: ' + _crashNonce + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px;">'
-    + '<button onclick="_crashClientSeed=Math.random().toString(36).slice(2);_crashNonce=0;localStorage.setItem(\'slotok_crash_seed\',_crashClientSeed);this.parentElement.parentElement.remove();notify(\'🔄 Новий seed!\',\'info\')" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;">🔄 Новий seed</button>'
-    + '<button onclick="this.parentElement.parentElement.remove()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:8px;padding:8px;color:#666;cursor:pointer;font-size:12px;">✕</button>'
-    + '</div>';
-  document.body.appendChild(modal);
-}
-
-// ── MINES АВТО-ПІДБІР (AI) ─────────────────────────────────────
-function minesAutoPickSafe(mines, size) {
-  var safe = [];
-  var prob = 1 - mines / (size * size);
-  for (var r = 0; r < size; r++) {
-    for (var c = 0; c < size; c++) {
-      if (Math.random() < prob * 0.6) safe.push({r: r, c: c});
-    }
-  }
-  return safe.slice(0, Math.min(3, safe.length));
-}
-function showMinesAIHint() {
-  var mineCount = parseInt(document.getElementById('minesCount')?.value || '3');
-  var hints = minesAutoPickSafe(mineCount, 5);
-  if (!hints.length) return notify('Немає підказок', 'info');
-  notify('🤖 AI: Спробуй клітинки ' + hints.map(function(h) { return '(' + (h.r+1) + ',' + (h.c+1) + ')'; }).join(', '), 'info');
-}
-
-// ── KENO АВТО-ПІДБІР ───────────────────────────────────────────
-function kenoAutoSelect() {
-  var btns = document.querySelectorAll('.keno-num-btn');
-  btns.forEach(function(b) { b.classList.remove('selected'); });
-  var indices = [];
-  while (indices.length < 10) {
-    var r = Math.floor(Math.random() * 80);
-    if (!indices.includes(r)) indices.push(r);
-  }
-  indices.forEach(function(i) { if (btns[i]) btns[i].classList.add('selected'); });
-  notify('🎲 Автовибір: 10 чисел!', 'success');
-}
-
 // ── ПОРІВНЯННЯ ГРАВЦІВ ─────────────────────────────────────────
 function doComparePlayers(nick) {
   var el = document.getElementById('cmpResult');
@@ -6714,13 +6608,6 @@ function closeModal(id) {
     el.style.transition = 'opacity .15s,transform .15s';
     setTimeout(function() { if(el.parentNode) el.parentNode.removeChild(el); }, 150);
   }
-}
-
-function closeAllModals() {
-  document.querySelectorAll('[data-modal]').forEach(function(el) {
-    el.style.opacity = '0';
-    setTimeout(function() { if(el.parentNode) el.parentNode.removeChild(el); }, 150);
-  });
 }
 
 function modalCloseBtn(id) {
@@ -7028,6 +6915,7 @@ function switchAdminTab(tab, el) {
   if(panel) { panel.style.display = 'block'; }
   if(el) el.classList.add('active');
   if(tab==='requests'){ startAdminRequestListeners(); }
+  if(tab==='users')   { try{setupAutoWipe();}catch(e) { console.warn(e); } }
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
   if(tab==='bots')    { try{loadBots();}catch(e) { console.warn(e); } }
   if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
@@ -7670,7 +7558,6 @@ function startAdminRequestListeners() {
     });
   }
 }
-function loadDepositRequests() { startAdminRequestListeners(); }
 
 function updateRequestBadge() {
   var depEl = document.getElementById('depositRequestsList');
@@ -9676,11 +9563,8 @@ function applyAllSettings() {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
   const lb = document.getElementById('lang-' + lang);
   if(lb) lb.classList.add('active');
-}
-
-function applyFontSize(size) {
-  // Лишено для сумісності зі старими викликами — делегує в єдину систему
-  setFontSize(parseInt(size));
+  loadAnimSpeed();
+  loadLiveWallpaper();
 }
 
 const THEMES = {
@@ -15659,15 +15543,6 @@ function initStatsTab() {
 // ╚══════════════════════════════════════════════════════════╝
 // ============================================================
 
-const SLOTIKY_PACKAGES = [
-  { count:1,   price:50,   label:'Стартер',  bonus:'' },
-  { count:5,   price:230,  label:'Базовий',  bonus:'+1 🎁' },
-  { count:10,  price:450,  label:'Стандарт', bonus:'+2 🎁' },
-  { count:25,  price:1000, label:'Просунутий',bonus:'+5 🎁' },
-  { count:50,  price:1800, label:'VIP',      bonus:'+15 🎁' },
-  { count:100, price:3000, label:'Legendary',bonus:'+35 🎁' },
-];
-
 // ── GENERATE UNIQUE CARD NUMBER ──
 // ════════════════════════════════════════════════
 // ═══ AXIOM BANK CARD INTEGRATION (no self-issue)
@@ -15781,16 +15656,6 @@ function checkCardOnboarding() {
 // ── RENDER CARD PANEL ──
 let cvvVisible = false;
 
-function copyCardNumber() {
-  const card = getCardData();
-  if(!card) return;
-  navigator.clipboard.writeText(card.number.replace(/\s/g,'')).then(()=>{
-    notify('📋 Номер картки скопійовано!', 'success');
-  }).catch(()=>{
-    notify('Номер: ' + card.number, 'info');
-  });
-}
-
 // ── BANK ACTIONS ──
 
 function switchCashierTabAndGo(tabId) {
@@ -15819,41 +15684,6 @@ function submitCardWithdraw() {
   notify(`💸 Заявку на ${formatNumber(amount)} ₴ подано!`, 'success');
 }
 
-// ── BUY SLOTIKY ──
-function renderSlotikyPackages() {
-  const grid = document.getElementById('slotikyPackagesGrid');
-  if(!grid) return;
-  const balEl = document.getElementById('bsmBalance');
-  const sEl   = document.getElementById('bsmSlotiky');
-  if(balEl) balEl.textContent = formatNumber(userData.balance||0) + ' ₴';
-  if(sEl)   sEl.textContent   = (userData.slotiky||0) + ' 🪙';
-
-  grid.innerHTML = SLOTIKY_PACKAGES.map(pkg => {
-    const canAfford = (userData.balance||0) >= pkg.price;
-    return `<div onclick="purchaseSlotikyPackage(${pkg.count},${pkg.price})" style="background:${canAfford?'linear-gradient(135deg,#0d0520,#2d0d60)':'#0a0a0a'};border:1px solid ${canAfford?'#5a20c0':'#222'};border-radius:14px;padding:14px;text-align:center;cursor:${canAfford?'pointer':'default'};transition:0.2s;${!canAfford?'opacity:0.4':''}">
-      <div style="font-size:24px;font-weight:900;color:${canAfford?'#c9a0ff':'#555'};">${pkg.count} 🪙</div>
-      <div style="font-size:10px;color:#6040a0;margin:3px 0;">${pkg.label}</div>
-      ${pkg.bonus?`<div style="font-size:9px;color:var(--green);">${pkg.bonus}</div>`:''}
-      <div style="font-size:13px;font-weight:bold;color:${canAfford?'var(--accent)':'#555'};margin-top:6px;">${formatNumber(pkg.price)} ₴</div>
-    </div>`;
-  }).join('');
-}
-
-function purchaseSlotikyPackage(count, price) {
-  if((userData.balance||0) < price) return notify('Недостатньо коштів!', 'error');
-  const card = getCardData();
-  if(card && card.frozen) return notify('🔒 Картку заблоковано! Розблокуй щоб робити покупки.', 'error');
-  db.ref('users/'+currentUser).update({
-    balance: firebase.database.ServerValue.increment(-price),
-    slotiky: firebase.database.ServerValue.increment(count)
-  });
-  db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(price));
-  addCardTransaction('out', price, `Купівля ${count} Слотіків`, 'SlotOK Shop');
-  closeTabModal('buySlotikyModal');
-  playSound('bonus');
-  notify(`🪙 Придбано ${count} Слотіків!`, 'success');
-}
-
 // ── CARD TRANSACTIONS ──
 function addCardTransaction(direction, amount, title, subtitle) {
   if(!currentUser) return;
@@ -15862,17 +15692,6 @@ function addCardTransaction(direction, amount, title, subtitle) {
     ts: Date.now()
   };
   db.ref('users/'+currentUser+'/cardTx').push(tx);
-}
-
-function renderCardTransactions(limit) {
-  const el = document.getElementById('cardTransactionsList');
-  if(!el) return;
-  db.ref('users/'+currentUser+'/cardTx').orderByChild('ts').limitToLast(limit||5).once('value', snap => {
-    const raw = snap.val();
-    if(!raw) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:16px;">Немає операцій</div>'; return; }
-    const txs = Object.values(raw).reverse();
-    el.innerHTML = txs.map(tx => renderTxItem(tx)).join('');
-  });
 }
 
 function renderTxItem(tx) {
@@ -15891,19 +15710,6 @@ function renderTxItem(tx) {
     <div class="bank-tx-amount ${tx.dir==='in'?'plus':'minus'}">${sign}${formatNumber(tx.amount)} ₴</div>
   </div>`;
 }
-let bankTxFilter = 'all';
-function filterBankTx(filter, btn) {
-  bankTxFilter = filter;
-  document.querySelectorAll('#tab-bank button').forEach(b => {
-    if(['Всі','Надходження','Витрати'].includes(b.textContent.trim())) {
-      b.style.background = 'var(--input)'; b.style.color = '#aaa'; b.style.border = '1px solid var(--border)';
-    }
-  });
-  if(btn) { btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.border='none'; }
-  renderBankTransactionList(filter);
-}
-
-
 // ── Axiom Transfer UI helpers ──
 let axiomTxDir = 'toAxiom';
 function setAxiomTxDir(dir) {
@@ -15956,42 +15762,6 @@ function doAxiomTransfer() {
   closeTabModal('axiomTransferModal');
 }
 
-function renderBankAxiomBanner() {
-  const el = document.getElementById('bankAxiomBanner');
-  if(!el || !userData) return;
-  const linked = userData.virtualCard?.axiomLinked;
-  if(linked) {
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,rgba(92,110,248,.1),rgba(140,92,248,.06));border:1.5px solid rgba(92,110,248,.4);border-radius:20px;padding:16px;overflow:hidden;position:relative;">
-        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:.06;pointer-events:none;">🏦</div>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-size:20px;font-family:'Courier New',monospace;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(92,110,248,.35);">А</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:800;color:#7c8eff;">Аксіома Банк ✅</div>
-            <div style="font-size:10px;color:#555;margin-top:2px;">Офіційний банк-партнер · Картка підключена</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button onclick="openAxiomTransferModal()" style="background:linear-gradient(135deg,rgba(92,110,248,.2),rgba(92,110,248,.08));border:1px solid rgba(92,110,248,.3);color:#7c8eff;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin:0;">
-            ⇄ Переказ
-          </button>
-          <button onclick="switchCashierTabAndGo('card')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#888;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin:0;">
-            💳 Картка
-          </button>
-        </div>
-      </div>`;
-  } else {
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,rgba(92,110,248,.06),rgba(6,5,12,.8));border:1.5px dashed rgba(92,110,248,.25);border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchCashierTabAndGo('card')">
-        <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#1a1a3e,#2d2d6e);display:flex;align-items:center;justify-content:center;font-size:20px;font-family:'Courier New',monospace;font-weight:900;color:#7c8eff;flex-shrink:0;">А</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:800;color:#7c8eff;">Підключи Аксіома Банк</div>
-          <div style="font-size:10px;color:#555;margin-top:2px;">Банк-партнер · Поповнення, виписка, картка</div>
-        </div>
-        <div style="background:rgba(92,110,248,.15);color:#7c8eff;font-size:10px;border-radius:8px;padding:4px 10px;font-weight:700;white-space:nowrap;">+ Підключити</div>
-      </div>`;
-  }
-}
 function renderBankTransactionList(filter) {
   const el = document.getElementById('bankTransactionList');
   if(!el) return;
@@ -16138,12 +15908,6 @@ function confirmAxiomLink() {
       setTimeout(() => { renderCardPanel(); renderAxiomLinkCardBlock(); }, 400);
     });
   });
-}
-
-function unlinkAxiom() {
-  db.ref('users/' + currentUser + '/virtualCard/axiomLinked').set(false);
-  notify('🏦 Аксіома Банк відключено', 'info');
-  setTimeout(() => { renderCardPanel(); renderAxiomLinkCardBlock(); }, 300);
 }
 
 // Перевірка реферала при старті
