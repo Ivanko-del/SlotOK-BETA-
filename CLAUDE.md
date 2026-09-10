@@ -30,6 +30,28 @@ this and silently went stale. It was removed and its historical content
 merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 `BUILTIN_CHANGELOG` is the one source of truth for "what's new."
 
+## Push notifications (FCM) — two manual steps left to fully activate
+
+Client (`app.js`) and server (`api/notify.js` + `lib/fcm.js`) plumbing for
+real push notifications (delivered even when the app is fully closed, not
+just backgrounded) is built and wired in, but two values are still
+placeholders because they're per-project secrets/keys only the site owner
+can generate:
+
+1. **`FCM_VAPID_KEY`** in `app.js` (search for it) — a *public* key, not a
+   secret. Firebase Console → Project Settings → Cloud Messaging → Web Push
+   certificates → generate one, paste the value in directly (safe to commit).
+2. **`FIREBASE_SERVICE_ACCOUNT_KEY`** — a real secret, must NEVER be pasted
+   into chat or committed to the repo. Firebase Console → Project Settings →
+   Service Accounts → Generate new private key → paste the whole downloaded
+   JSON as this env var's value in Vercel (Project Settings → Environment
+   Variables, Production). `lib/fcm.js` reads it at request time and no-ops
+   quietly if it's missing, so the rest of the site is unaffected either way.
+
+Until both are set, `registerFcmToken()` and `sendPush()`/`sendPushToUser()`
+are inert (the existing tab-open-only notifications via `sendNativeNotif`
+keep working as before).
+
 ## Git workflow on this repo
 
 PRs are squash-merged into `main`. The long-lived work branch

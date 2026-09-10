@@ -113,7 +113,7 @@ function startDataSync() {
             loadNotifsFromStorage();
             updateNotifBadge();
             loadSettings();
-            if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); }
+            if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
             if(!window._initDone) {
@@ -1088,6 +1088,107 @@ function finishSlots(bet) {
 function togglePaytable() {
   const el = document.getElementById('slotsPaytable');
   if(el) el.classList.toggle('hidden');
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  💎 DIAMOND RUSH — другий слот: своя тема й таблиця виплат,  ║
+// ║  без бонус-раунду/фріспінів (простіший рушій, той самий      ║
+// ║  цикл ставка → спін → виплата, що й у Classic 777)           ║
+// ╚══════════════════════════════════════════════════════════════╝
+let _diamondSpinBtn = null;
+
+function spinDiamondSlots() {
+  _diamondSpinBtn = document.getElementById('diamondSpinBtn');
+  if(_diamondSpinBtn) _diamondSpinBtn.disabled = true;
+  try {
+    const b = validateBet(document.getElementById('betAmountDiamond').value);
+    if(!b) { if(_diamondSpinBtn) _diamondSpinBtn.disabled = false; return; }
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+    addWager(b);
+    trackLbStat('wager', b); trackLbStat('games', 1);
+    publishLiveBet('Diamond Rush','💎', b, '');
+    if(userData.clanId) trackClanWager(b);
+    trackQuest('slotsPlayed', 1);
+    trackQuest('totalGames', 1);
+    trackQuest('weekWager', b);
+    playSound('click');
+    const reels = [document.getElementById('dr1'), document.getElementById('dr2'), document.getElementById('dr3')];
+    const sym = ["👑","💍","🔷","✨","🥂","🎩"];
+    reels.forEach(r => { if(r) { r.classList.remove('landed'); r.classList.add('spinning'); } });
+    let count = 0;
+    const spinInterval = setInterval(() => {
+      reels.forEach((r,i) => {
+        setTimeout(() => {
+          if(!r) return;
+          r.textContent = sym[Math.floor(Math.random()*sym.length)];
+          r.classList.remove('flip-tick'); void r.offsetWidth; r.classList.add('flip-tick');
+        }, i * 60);
+      });
+      count++;
+      if(count > 18) { clearInterval(spinInterval); finishDiamondSlots(b); }
+    }, 75);
+  } catch(e) { console.error('spinDiamondSlots error:', e); if(_diamondSpinBtn) _diamondSpinBtn.disabled = false; }
+}
+
+function finishDiamondSlots(bet) {
+  const r = Math.random();
+  const luck = getNewPlayerLuck();
+  const adj = luck ? r * 0.6 : r; // новачкам трохи кращі шанси, як і в Classic 777
+
+  let win = 0; let res = ["🔷","✨","🥂"];
+  if(adj < 0.004)      { res = ["🎩","🎩","🎩"]; win = bet*45; }
+  else if(adj < 0.016) { res = ["👑","👑","👑"]; win = bet*15; }
+  else if(adj < 0.046) { res = ["💍","💍","💍"]; win = bet*6;  }
+  else if(adj < 0.126) { res = ["🔷","🔷","🔷"]; win = bet*2.5;}
+  else if(adj < 0.276) { res = ["✨","✨","🥂"]; win = bet*1.3;}
+
+  const r1 = document.getElementById('dr1');
+  const r2 = document.getElementById('dr2');
+  const r3 = document.getElementById('dr3');
+  const winLine = document.getElementById('diamondWinLine');
+  const resultEl = document.getElementById('diamondResult');
+
+  const landReel = (el, symbol) => {
+    if(!el) return;
+    el.classList.remove('spinning');
+    el.textContent = symbol;
+    el.classList.remove('landed'); void el.offsetWidth; el.classList.add('landed');
+  };
+  setTimeout(()=>{ landReel(r1, res[0]); }, 0);
+  setTimeout(()=>{ landReel(r2, res[1]); }, 150);
+  setTimeout(()=>{
+    landReel(r3, res[2]);
+    if(win > 0 && winLine) { winLine.style.background = 'linear-gradient(90deg,transparent,#c9a0ff,transparent)'; setTimeout(()=>{ if(winLine) winLine.style.background=''; }, 1000); }
+
+    if(win > 0) {
+      consumeLuckyGame();
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+      if(win >= bet * 20) {
+        notifyBot('player-ping', null, { to: currentUser, kind: 'bigwin', ref: { amount: win, game: 'Diamond Rush' } });
+      }
+      playSound(win > bet*10 ? 'bonus' : 'win');
+      if(resultEl) resultEl.innerHTML = `<span style="color:var(--green);">💎 +${formatNumber(win)} ₴</span>`;
+      notify(`💎 WIN: +${formatNumber(win)} ₴`, 'success');
+      addToHistory(`Diamond Rush: +${win}`);
+      addToWinFeed('Diamond Rush', win, win/bet);
+      checkAchievements('win', win);
+      spawnWinCoins(win);
+      if(res.every(s=>s==='🎩')) {
+        spawnWinCoins(win);
+        const flash = document.createElement('div');
+        flash.className = 'jackpot-flash';
+        document.body.appendChild(flash);
+        setTimeout(()=>flash.remove(), 900);
+      }
+      ['dr1','dr2','dr3'].forEach(id=>{ const el=document.getElementById(id); if(el){el.classList.add('winner'); setTimeout(()=>el.classList.remove('winner'),1500);} });
+    } else {
+      if(resultEl) resultEl.innerHTML = `<span style="color:#444;">Немає комбінації</span>`;
+      checkAchievements('lose', bet);
+    }
+
+    if(_diamondSpinBtn) _diamondSpinBtn.disabled = false;
+    db.ref('users/'+currentUser+'/slotsPlayed').set((userData.slotsPlayed||0)+1);
+  }, 300);
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -4696,14 +4797,44 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '70';
+const CURRENT_VERSION = '71';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
   {
+    version: '71',
+    title: '💎 Оновлення v71 — Diamond Rush, реальний Push, чистіше меню',
+    date: Date.now(),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '💎 Новий слот — Diamond Rush',
+        items: [
+          'Другий слот на сайті, своя тема й таблиця виплат (RTP ~93%)',
+          'Доступний у "Всі ігри" в Казино',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🔔 Push-сповіщення — тепер по-справжньому',
+        items: [
+          'Раніше сповіщення показувались лише поки сайт був відкритий у фоновій вкладці — тепер закладено реальну доставку через Firebase Cloud Messaging, яка працюватиме навіть коли застосунок повністю закритий',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🧹 Чистіше меню налаштувань',
+        items: [
+          'Прибрано перемикач мови — він реально перекладав лише навігацію, а не весь сайт, і тільки заплутував',
+        ]
+      },
+    ]
+  },
+  {
     version: '70',
     title: '🔧 Оновлення v70 — Мультиплеєр, чесна гра, AI-суперник',
-    date: Date.now(),
+    date: Date.UTC(2026, 8, 10),
     dev: 'SlotOK Dev',
     sections: [
       {
@@ -5772,6 +5903,13 @@ function checkBetRateLimit(gameKey) {
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 4: Push Notifications — Firebase FCM                 ║
 // ╚══════════════════════════════════════════════════════════════╝
+// Публічний VAPID-ключ для Web Push — НЕ секрет (на відміну від
+// FIREBASE_SERVICE_ACCOUNT_KEY у lib/fcm.js), береться з Firebase Console →
+// Налаштування проєкту → Cloud Messaging → Web Push certificates. Поки тут
+// заглушка — реальні push не активуються, доки хтось не вставить справжній
+// ключ сюди.
+const FCM_VAPID_KEY = 'REPLACE_WITH_YOUR_VAPID_KEY';
+
 async function requestPushPermission() {
   if(!('Notification' in window)) return notify('Браузер не підтримує сповіщення', 'error');
   const perm = await Notification.requestPermission();
@@ -5779,14 +5917,27 @@ async function requestPushPermission() {
     localStorage.setItem('pushEnabled', '1');
     notify('🔔 Сповіщення увімкнено!', 'success');
     sendNativeNotif('🎰 SlotOK', 'Ви підписались на сповіщення! 🎉');
-    // Save FCM token placeholder (real FCM requires service worker)
-    if('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
     db.ref('users/'+currentUser+'/pushEnabled').set(true);
+    registerFcmToken();
   } else {
     notify('❌ Сповіщення заблоковано браузером', 'error');
   }
+}
+
+// Реєструє токен цього пристрою для push-сповіщень, які приходять навіть
+// коли застосунок повністю закритий — на відміну від sendNativeNotif, яка
+// працює лише поки вкладка відкрита у фоні. Тихо нічого не робить, доки
+// FCM_VAPID_KEY лишається заглушкою (немає токена — немає push, решта сайту
+// працює як і раніше).
+async function registerFcmToken() {
+  if(!currentUser || !('serviceWorker' in navigator) || FCM_VAPID_KEY === 'REPLACE_WITH_YOUR_VAPID_KEY') return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    if(typeof firebase === 'undefined' || !firebase.messaging) return;
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
+    if(token) db.ref('users/'+currentUser+'/fcmTokens/'+token).set(true);
+  } catch(e) { console.warn('registerFcmToken:', e); }
 }
 
 function sendNativeNotif(title, body, icon = '🎰') {
@@ -9755,10 +9906,6 @@ function applyAllSettings() {
   document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
   const td = document.getElementById('theme-' + theme);
   if(td) td.classList.add('active');
-  const lang = getSetting('lang', 'uk');
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  const lb = document.getElementById('lang-' + lang);
-  if(lb) lb.classList.add('active');
   loadAnimSpeed();
   loadLiveWallpaper();
 }
@@ -9813,141 +9960,6 @@ function setTheme(theme, el) {
   notify('🎨 Тема змінена', 'info');
 }
 
-// ============================================================
-// ===== MULTILANG SYSTEM =====
-// ============================================================
-const TRANSLATIONS = {
-  uk: {
-    nav_home:'Головна', nav_casino:'Казино', nav_cashier:'Каса',
-    nav_notif:'Сповіщення', nav_profile:'Профіль', nav_settings:'Налашт.',
-    nav_more:'Ще', nav_sport:'Спорт',
-    home_popular:'🔥 Популярні', home_all_games:'Всі ігри ➡',
-    cashier_deposit:'💳 Поповнення', cashier_withdraw:'💸 Вивід', cashier_rates:'📊 Курси',
-    sport_title:'Ставки на спорт', sport_refresh:'🔄 Оновити',
-    sport_loading:'Завантаження матчів...',
-    sport_my_bets:'📋 Мої ставки', sport_no_bets:'Немає ставок',
-    bet_slip_title:'🎯 Купон ставки', bet_slip_odds:'Коефіцієнт',
-    bet_slip_potential:'Потенційний виграш', bet_confirm:'✅ ПІДТВЕРДИТИ СТАВКУ',
-    lobby_title:'🎰 Ігри', profile_title:'Профіль',
-    settings_title:'Налаштування', settings_lang:'Мова',
-    settings_theme:'Тема', settings_sound:'Звуки',
-    tab_top:'🏆 РЕЙТИНГ ГРАВЦІВ',
-    live_view:'🔴 LIVE ПЕРЕГЛЯД', loading:'Завантаження...',
-    ai_pick:'🤖 ШІ:', odd_h:'П1', odd_x:'Нічия', odd_a:'П2',
-    back:'⬅ Лобі', deposit_title:'Поповнення через Telegram',
-    withdraw_title:'💸 Вивід коштів', my_withdraws:'Мої заявки',
-    hero_bonus:'🎁 БОНУС 250%', hero_sub:'Вітальний бонус на перший депозит',
-    win_feed:'🔴 LIVE', quest_header:'📋 Завдання', vip_header:'👑 VIP Статус',
-  },
-  en: {
-    nav_home:'Home', nav_casino:'Casino', nav_cashier:'Cashier',
-    nav_notif:'Notifications', nav_profile:'Profile', nav_settings:'Settings',
-    nav_more:'More', nav_sport:'Sports',
-    home_popular:'🔥 Popular', home_all_games:'All games ➡',
-    cashier_deposit:'💳 Deposit', cashier_withdraw:'💸 Withdraw', cashier_rates:'📊 Rates',
-    sport_title:'Sports Betting', sport_refresh:'🔄 Refresh',
-    sport_loading:'Loading matches...',
-    sport_my_bets:'📋 My Bets', sport_no_bets:'No bets',
-    bet_slip_title:'🎯 Bet Slip', bet_slip_odds:'Odds',
-    bet_slip_potential:'Potential Win', bet_confirm:'✅ PLACE BET',
-    lobby_title:'🎰 Games', profile_title:'Profile',
-    settings_title:'Settings', settings_lang:'Language',
-    settings_theme:'Theme', settings_sound:'Sounds',
-    tab_top:'🏆 LEADERBOARD',
-    live_view:'🔴 LIVE VIEW', loading:'Loading...',
-    ai_pick:'🤖 AI:', odd_h:'Home', odd_x:'Draw', odd_a:'Away',
-    back:'⬅ Lobby', deposit_title:'Deposit via Telegram',
-    withdraw_title:'💸 Withdraw', my_withdraws:'My Requests',
-    hero_bonus:'🎁 BONUS 250%', hero_sub:'Welcome bonus on first deposit',
-    win_feed:'🔴 LIVE', quest_header:'📋 Quests', vip_header:'👑 VIP Status',
-  },
-  ru: {
-    nav_home:'Главная', nav_casino:'Казино', nav_cashier:'Касса',
-    nav_notif:'Уведомл.', nav_profile:'Профиль', nav_settings:'Настр.',
-    nav_more:'Ещё', nav_sport:'Спорт',
-    home_popular:'🔥 Популярные', home_all_games:'Все игры ➡',
-    cashier_deposit:'💳 Пополнение', cashier_withdraw:'💸 Вывод', cashier_rates:'📊 Курсы',
-    sport_title:'Ставки на спорт', sport_refresh:'🔄 Обновить',
-    sport_loading:'Загрузка матчей...',
-    sport_my_bets:'📋 Мои ставки', sport_no_bets:'Нет ставок',
-    bet_slip_title:'🎯 Купон', bet_slip_odds:'Коэффициент',
-    bet_slip_potential:'Потенциальный выигрыш', bet_confirm:'✅ ПОДТВЕРДИТЬ',
-    lobby_title:'🎰 Игры', profile_title:'Профиль',
-    settings_title:'Настройки', settings_lang:'Язык',
-    settings_theme:'Тема', settings_sound:'Звуки',
-    tab_top:'🏆 РЕЙТИНГ ИГРОКОВ',
-    live_view:'🔴 LIVE ПРОСМОТР', loading:'Загрузка...',
-    ai_pick:'🤖 ИИ:', odd_h:'П1', odd_x:'Ничья', odd_a:'П2',
-    back:'⬅ Лобби', deposit_title:'Пополнение через Telegram',
-    withdraw_title:'💸 Вывод', my_withdraws:'Мои заявки',
-    hero_bonus:'🎁 БОНУС 250%', hero_sub:'Приветственный бонус на первый депозит',
-    win_feed:'🔴 LIVE', quest_header:'📋 Задания', vip_header:'👑 VIP Статус',
-  },
-  pl: {
-    nav_home:'Główna', nav_casino:'Kasyno', nav_cashier:'Kasa',
-    nav_notif:'Powiad.', nav_profile:'Profil', nav_settings:'Ustaw.',
-    nav_more:'Więcej', nav_sport:'Sport',
-    home_popular:'🔥 Popularne', home_all_games:'Wszystkie gry ➡',
-    cashier_deposit:'💳 Wpłata', cashier_withdraw:'💸 Wypłata', cashier_rates:'📊 Kursy',
-    sport_title:'Zakłady Sportowe', sport_refresh:'🔄 Odśwież',
-    sport_loading:'Ładowanie meczów...',
-    sport_my_bets:'📋 Moje zakłady', sport_no_bets:'Brak zakładów',
-    bet_slip_title:'🎯 Kupon', bet_slip_odds:'Kurs',
-    bet_slip_potential:'Potencjalna wygrana', bet_confirm:'✅ POSTAW ZAKŁAD',
-    lobby_title:'🎰 Gry', profile_title:'Profil',
-    settings_title:'Ustawienia', settings_lang:'Język',
-    settings_theme:'Motyw', settings_sound:'Dźwięki',
-    tab_top:'🏆 RANKING GRACZY',
-    live_view:'🔴 NA ŻYWO', loading:'Ładowanie...',
-    ai_pick:'🤖 AI:', odd_h:'1', odd_x:'X', odd_a:'2',
-    back:'⬅ Lobby', deposit_title:'Wpłata przez Telegram',
-    withdraw_title:'💸 Wypłata', my_withdraws:'Moje wnioski',
-    hero_bonus:'🎁 BONUS 250%', hero_sub:'Bonus powitalny na pierwszy depozyt',
-    win_feed:'🔴 NA ŻYWO', quest_header:'📋 Zadania', vip_header:'👑 Status VIP',
-  },
-};
-let currentLang = 'uk';
-
-function setLang(lang, el) {
-  currentLang = lang;
-  saveSetting('lang', lang);
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  applyLang(lang);
-  notify(lang==='uk'?'🇺🇦 Мова: Українська':lang==='en'?'🇺🇸 Language: English':lang==='ru'?'🇷🇺 Язык: Русский':'🇵🇱 Język: Polski', 'info');
-}
-
-function t(key) {
-  const T = TRANSLATIONS[currentLang] || TRANSLATIONS.uk;
-  return T[key] || TRANSLATIONS.uk[key] || key;
-}
-
-function applyLang(lang) {
-  currentLang = lang;
-  const T = TRANSLATIONS[lang] || TRANSLATIONS.uk;
-  const navTexts = document.querySelectorAll('.nav-item span:last-child');
-  const navKeys  = ['nav_home','nav_casino','nav_cashier','nav_notif','nav_profile','nav_settings','nav_sport','nav_more'];
-  navTexts.forEach((el, i) => { if(navKeys[i] && T[navKeys[i]]) el.textContent = T[navKeys[i]]; });
-  const ctabDep  = document.getElementById('ctab-deposit');  if(ctabDep)  ctabDep.textContent  = T.cashier_deposit  || ctabDep.textContent;
-  const ctabWith = document.getElementById('ctab-withdraw'); if(ctabWith) ctabWith.textContent = T.cashier_withdraw || ctabWith.textContent;
-  const ctabRat  = document.getElementById('ctab-rates');    if(ctabRat)  ctabRat.textContent  = T.cashier_rates    || ctabRat.textContent;
-  const heroTitle = document.querySelector('.hero-title'); if(heroTitle) heroTitle.textContent = T.hero_bonus;
-  const spTitle = document.querySelector('#tab-sports .sport-title-text'); if(spTitle) spTitle.textContent = T.sport_title;
-  const spMyBets = document.getElementById('sportMyBets'); if(spMyBets && !spMyBets.children.length) spMyBets.textContent = T.sport_no_bets;
-  const bsTitle = document.querySelector('#betSlipModal .bs-title'); if(bsTitle) bsTitle.textContent = T.bet_slip_title;
-  // Save lang for page reload
-  try { localStorage.setItem('slotok_lang', lang); } catch(e) { console.warn(e); }
-}
-
-function loadSavedLang() {
-  try {
-    const saved = getSetting('lang') || localStorage.getItem('slotok_lang') || 'uk';
-    currentLang = saved;
-    const langBtn = document.getElementById('lang-'+saved);
-    if(langBtn) { document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active')); langBtn.classList.add('active'); }
-    if(saved !== 'uk') applyLang(saved);
-  } catch(e) { console.warn(e); }
-}
 
 // Звуки - поважати налаштування (пряма заміна функції)
 // (patch applied below - playSound checks settings inline)
@@ -16213,7 +16225,6 @@ function seedChangelogIfAdmin() {
 }
 
 checkRefParam();
-setTimeout(loadSavedLang, 500);
 initTelegramLinkStatus();
 
 
@@ -17103,6 +17114,21 @@ const GAME_HELP = {
       🍋🍋🍋 — x3<br>
       Два однакових — x1.5 (повернення)<br><br>
       <b>RTP:</b> ~95%`
+  },
+  diamond: {
+    title: '💎 Diamond Rush',
+    rules: `<b>Мета:</b> Отримай три однакові символи в ряд — окрема тема й таблиця виплат, без бонус-раундів і фріспінів.<br><br>
+      <b>Як грати:</b><br>
+      1. Встанови ставку<br>
+      2. Натисни "КРУТИТИ"<br>
+      3. Три барабани зупиняться — якщо збіглись, ти виграв!<br><br>
+      <b>Виплати:</b><br>
+      🎩🎩🎩 — x45 (джекпот!)<br>
+      👑👑👑 — x15<br>
+      💍💍💍 — x6<br>
+      🔷🔷🔷 — x2.5<br>
+      ✨✨🥂 — x1.3<br><br>
+      <b>RTP:</b> ~93%`
   },
   crash: {
     title: '🚀 Краш',
@@ -19116,6 +19142,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'}, {id:'duckshoot', name:'🦆 Duck Shoot'},
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
   {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
+  {id:'diamond', name:'💎 Diamond Rush'},
 ];
 
 let _gameToggleDisabledCache = {};
