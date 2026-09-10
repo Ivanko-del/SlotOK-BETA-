@@ -14,8 +14,9 @@
 // what direct DB access already allows in this app).
 // ============================================================
 
-const { dbGet } = require("../lib/firebase");
+const { dbGet, dbUpdate } = require("../lib/firebase");
 const { sendMessage, esc } = require("../lib/telegram");
+const { sendPushToUser } = require("../lib/fcm");
 
 const PATHS = {
   deposit: "deposit_requests",
@@ -68,7 +69,13 @@ module.exports = async (req, res) => {
       }
       if (!text) { res.status(200).end(); return; }
 
-      await sendMessage(chatId, text);
+      // Telegram (existing) and a real FCM push (see lib/fcm.js — no-ops
+      // quietly if FIREBASE_SERVICE_ACCOUNT_KEY isn't configured yet) run
+      // side by side; a failure in either must never break the other.
+      await Promise.allSettled([
+        sendMessage(chatId, text),
+        sendPushToUser(dbGet, dbUpdate, to, "🎰 SlotOK Casino", text.replace(/<[^>]+>/g, ""), { kind }),
+      ]);
       res.status(200).end();
       return;
     }

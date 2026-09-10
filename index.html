@@ -13,6 +13,7 @@
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
@@ -597,6 +598,11 @@
           <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0800,#050505);">🎰</div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Classic 777</div><div class="casino-game-card-prov">SlotOK</div></div>
         </div>
+        <div class="casino-game-card" data-cat="slots" onclick="openGame('diamond')">
+          <span class="casino-badge-hot">NEW</span>
+          <div class="casino-game-card-img" style="background:linear-gradient(135deg,#150524,#050505);">💎</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Diamond Rush</div><div class="casino-game-card-prov">SlotOK</div></div>
+        </div>
         <div class="casino-game-card" data-cat="crash" onclick="openGame('crash')">
           <span class="casino-badge-hot">HOT</span>
           <div class="casino-game-card-img" style="background:linear-gradient(135deg,#00001a,#050505);">🚀</div>
@@ -870,6 +876,57 @@
         <div style="font-size:10px;color:#444;text-align:center;margin-top:6px;" id="slotsHint"></div>
       </div>
     </div><!-- /tab-slots -->
+
+    <!-- 💎 DIAMOND RUSH — другий слот -->
+    <div id="tab-diamond" class="screen hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
+        <button onclick="showGameHelp('diamond')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:6px 14px;color:#aaa;font-size:13px;cursor:pointer;">❓ Правила</button>
+      </div>
+
+      <div style="background:linear-gradient(135deg,#0a0014,#150524,#0a0014);border:2px solid rgba(201,160,255,.35);border-radius:24px;padding:18px;margin-bottom:12px;box-shadow:0 0 40px rgba(201,160,255,.08),inset 0 1px 0 rgba(255,255,255,.04);position:relative;overflow:hidden;">
+        <div style="display:flex;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#c9a0ff;animation:heartbeat 1s ease infinite;box-shadow:0 0 8px #c9a0ff;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#d4af37;animation:heartbeat 1s .3s ease infinite;box-shadow:0 0 8px #d4af37;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#4a9eff;animation:heartbeat 1s .6s ease infinite;box-shadow:0 0 8px #4a9eff;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#d4af37;animation:heartbeat 1s .9s ease infinite;box-shadow:0 0 8px #d4af37;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#c9a0ff;animation:heartbeat 1s 1.2s ease infinite;box-shadow:0 0 8px #c9a0ff;"></div>
+        </div>
+
+        <div class="reels-container slot-reel-premium-row" style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;">
+          <div class="slot-reel-premium" id="dr1" style="font-size:46px;width:74px;height:94px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:linear-gradient(180deg,#0a0014,#150524,#0a0014);border:2px solid rgba(201,160,255,.25);position:relative;overflow:hidden;box-shadow:inset 0 4px 14px rgba(0,0,0,.8);">🔷</div>
+          <div class="slot-reel-premium" id="dr2" style="font-size:46px;width:74px;height:94px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:linear-gradient(180deg,#0a0014,#150524,#0a0014);border:2px solid rgba(201,160,255,.25);position:relative;overflow:hidden;box-shadow:inset 0 4px 14px rgba(0,0,0,.8);">🔷</div>
+          <div class="slot-reel-premium" id="dr3" style="font-size:46px;width:74px;height:94px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:linear-gradient(180deg,#0a0014,#150524,#0a0014);border:2px solid rgba(201,160,255,.25);position:relative;overflow:hidden;box-shadow:inset 0 4px 14px rgba(0,0,0,.8);">🔷</div>
+        </div>
+
+        <div id="diamondWinLine" style="height:3px;border-radius:2px;margin-bottom:10px;transition:all 0.3s;"></div>
+        <div id="diamondResult" style="text-align:center;min-height:28px;font-size:16px;font-weight:900;margin-bottom:8px;font-family:'Orbitron',monospace;"></div>
+
+        <div style="background:#050505;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:2px;font-size:11px;color:#888;line-height:2.2;">
+          <div style="color:#c9a0ff;font-weight:bold;margin-bottom:8px;font-family:'Orbitron',monospace;font-size:12px;">💰 ТАБЛИЦЯ ВИПЛАТ</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="background:#0d0d0d;border-radius:8px;padding:6px 8px;">🎩 🎩 🎩 → <b style="color:var(--green)">×45</b></div>
+            <div style="background:#0d0d0d;border-radius:8px;padding:6px 8px;">👑 👑 👑 → <b style="color:var(--green)">×15</b></div>
+            <div style="background:#0d0d0d;border-radius:8px;padding:6px 8px;">💍 💍 💍 → <b style="color:var(--green)">×6</b></div>
+            <div style="background:#0d0d0d;border-radius:8px;padding:6px 8px;">🔷 🔷 🔷 → <b style="color:var(--green)">×2.5</b></div>
+            <div style="background:#0d0d0d;border-radius:8px;padding:6px 8px;">✨ ✨ 🥂 → <b style="color:var(--green)">×1.3</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <button onclick="setQuickBet('betAmountDiamond',50)"   style="flex:1;background:#111;border:1px solid #222;border-radius:var(--r-sm);padding:7px 4px;color:#aaa;font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel),var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">50</button>
+          <button onclick="setQuickBet('betAmountDiamond',100)"  style="flex:1;background:#111;border:1px solid #222;border-radius:var(--r-sm);padding:7px 4px;color:#aaa;font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel),var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">100</button>
+          <button onclick="setQuickBet('betAmountDiamond',250)"  style="flex:1;background:#111;border:1px solid #222;border-radius:var(--r-sm);padding:7px 4px;color:#aaa;font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel),var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">250</button>
+          <button onclick="setQuickBet('betAmountDiamond',500)"  style="flex:1;background:#111;border:1px solid #222;border-radius:var(--r-sm);padding:7px 4px;color:#aaa;font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel),var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">500</button>
+          <button onclick="setQuickBet('betAmountDiamond',1000)" style="flex:1;background:#111;border:1px solid #222;border-radius:var(--r-sm);padding:7px 4px;color:#aaa;font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel),var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">1k</button>
+          <button onclick="setQuickBet('betAmountDiamond','max')"style="flex:1;background:linear-gradient(155deg,#e0c4ff,#c9a0ff 45%,#7a4fc0);border:1px solid rgba(201,160,255,.4);border-radius:var(--r-sm);padding:7px 4px;color:#1a0030;font-size:11px;cursor:pointer;font-weight:800;min-width:40px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 4px rgba(0,0,0,.25),0 6px 16px -6px rgba(201,160,255,.5);transition:transform .14s var(--ease-tactile),box-shadow .14s;">MAX</button>
+        </div>
+        <input id="betAmountDiamond" type="number" value="100" style="margin-bottom:10px;">
+        <button class="btn-spin-premium" id="diamondSpinBtn" onclick="spinDiamondSlots()" style="background:linear-gradient(155deg,#e0c4ff,#c9a0ff 45%,#7a4fc0);">💎 КРУТИТИ</button>
+      </div>
+    </div><!-- /tab-diamond -->
     <!-- ══════════════════════════════════════════════════════
          🎡 GLOBAL ROULETTE — Спільна для всіх, крутиться раз на годину
     ══════════════════════════════════════════════════════ -->
@@ -2474,22 +2531,6 @@
             <div class="font-size-btn active" id="fs_14" onclick="setFontSize(14)">Aa</div>
             <div class="font-size-btn" id="fs_16" onclick="setFontSize(16)">AA</div>
             <div class="font-size-btn" id="fs_18" onclick="setFontSize(18)">А+</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Мова -->
-      <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;width:100%;">
-            <span class="settings-icon">🌐</span>
-            <div class="settings-label">Мова / Language</div>
-          </div>
-          <div class="lang-grid" style="width:100%;">
-            <div class="lang-btn active" id="lang-uk" onclick="setLang('uk',this)">🇺🇦 Українська</div>
-            <div class="lang-btn" id="lang-en" onclick="setLang('en',this)">🇺🇸 English</div>
-            <div class="lang-btn" id="lang-ru" onclick="setLang('ru',this)">🇷🇺 Русский</div>
-            <div class="lang-btn" id="lang-pl" onclick="setLang('pl',this)">🇵🇱 Polski</div>
           </div>
         </div>
       </div>
