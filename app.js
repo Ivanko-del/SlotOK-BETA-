@@ -4696,14 +4696,84 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '62';
+const CURRENT_VERSION = '70';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
   {
+    version: '70',
+    title: '🔧 Оновлення v70 — Мультиплеєр, чесна гра, AI-суперник',
+    date: Date.now(),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🃏 Дурень — онлайн-режим нарешті працює',
+        items: [
+          'Гра проти реального суперника раніше не синхронізувалась взагалі — обидва гравці мовчки грали кожен свою окрему партію в порожнечу, і жоден не дізнавався про результат',
+          'Тепер ходи, захист і результат раунду передаються між гравцями в реальному часі',
+          'Виплата переможцю захищена від подвійного нарахування (той самий надійний механізм, що й у Шахах/Coinflip/RPS PvP)',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '♟️ Шахи проти AI — значно сильніший суперник',
+        items: [
+          'AI тепер прораховує партію на кілька ходів вперед з реальним відсіканням слабких варіантів замість майже випадкового вибору',
+          'Складність Medium/Hard стала відчутно важчою — прості тактичні пастки AI більше не пропускає',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🛡️ Чесність нарахувань у кількох іграх',
+        items: [
+          'Виправлено кілька ігор, де ставка могла не списуватись з балансу при певному сценарії',
+          'Додано захист від повторного нарахування виграшу при швидких повторних натисканнях у кількох іграх',
+          'Спортивні ставки — розрахунок результату тепер атомарний, без ризику подвійної виплати',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🔐 2FA для великих виводів — тепер по-справжньому',
+        items: [
+          'Підтвердження виводу від 5000₴ — це тепер тап по кнопці у власному Telegram гравця, а не код, що показувався в тому ж вікні браузера',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🔑 Екран входу — новий вигляд',
+        items: [
+          'Жива стрічка останніх великих виграшів прямо на екрані входу',
+          'Плавний перемикач вкладок Вхід/Реєстрація',
+          'Кнопка показати/приховати пароль',
+        ]
+      },
+      {
+        type: 'new',
+        title: '💬 AI-підтримка — ще більше тем',
+        items: [
+          'Бот у підтримці тепер розпізнає понад 120 тем і 440 ключових слів — покриває майже всі ігри та функції сайту',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '⚙️ Дрібні виправлення',
+        items: [
+          'Кік-свіч адміна тепер працює для всіх 34 ігор сайту (раніше — лише для 9)',
+          'Telegram-бот показує реальний текст особистого повідомлення, а не просто "нове повідомлення"',
+          'Поле вводу в приватних повідомленнях більше не з\'їжджає з екрану',
+          'Сайт коректно адаптується під планшети та десктоп',
+          'Швидкість анімацій / розмір шрифту / лайв-шпалери тепер зберігаються між входами',
+          'Бонус за 7-денну серію входів тепер реально нараховується',
+          'Прибрано зайвий мертвий код для швидшої роботи сайту',
+        ]
+      },
+    ]
+  },
+  {
     version: '69',
     title: '🚀 Оновлення v69 — Великий патч якості',
-    date: Date.now(),
+    date: Date.now() - 24*60*60*1000,
     dev: 'SlotOK Dev',
     sections: [
       {
@@ -10423,6 +10493,8 @@ const RED_SUITS = new Set(['♥','♦']);
 
 let cgState = null; // { deck, playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking, selectedCard, aiMode, gameOver }
 let cgRoomId = null;
+let cgIsHost = null;       // онлайн-режим: я хост (p1) чи гість (p2) цієї кімнати
+let cgOpponentName = null; // онлайн-режим: нік реального суперника
 let cgListener = null;
 let cgSelectedCards = [];
 
@@ -10454,6 +10526,10 @@ function startCardGame(mode) {
   const bet = parseInt(document.getElementById('cgBet').value) || 200;
   if(bet < 10) return notify('Мінімум 10₴', 'error');
   if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
+
+  // На випадок, якщо гравець щойно вийшов з онлайн-матчу — без цього скидання
+  // нова гра проти AI помилково трактувалась би як онлайн (cgRoomId лишався б старим).
+  cgRoomId = null; cgIsHost = null; cgOpponentName = null;
 
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
   addWager(bet);
@@ -10558,8 +10634,7 @@ function cgAttack() {
     cgSelectedCards = [];
     cgLog('⚔️ Ви атакуєте: ' + card.rank + card.suit);
     renderCgBoard();
-    // AI defends
-    setTimeout(cgAiDefend, 700);
+    cgHandoffToOpponent(cgAiDefend, 700);
 
   } else {
     // Player defends
@@ -10577,7 +10652,10 @@ function cgAttack() {
     // Check if all attacks defended
     if(!table.some(p => !p.defend)) {
       cgLog('✅ Всі атаки відбиті!');
+      if(cgRoomId) cgSyncRoomState(); // покажи супернику завершений захист одразу, ще до розрахунку раунду
       setTimeout(() => cgEndRound(false), 800);
+    } else if(cgRoomId) {
+      cgSyncRoomState(); // ще лишились відкриті атаки — синхронізуємось, щоб суперник побачив захищену карту
     }
   }
 }
@@ -10589,7 +10667,7 @@ function cgPass() {
     if(!cgState.table.some(p => p.defend === null)) {
       cgLog('⏭ Атаку завершено');
       cgEndRound(false);
-    } else notify('AI ще не відбив всі карти!', 'error');
+    } else notify(cgRoomId ? 'Суперник ще не відбив всі карти!' : 'AI ще не відбив всі карти!', 'error');
   } else {
     // Player takes all table cards
     const allCards = cgState.table.flatMap(p => [p.attack, p.defend].filter(Boolean));
@@ -10597,9 +10675,9 @@ function cgPass() {
     cgState.table = [];
     cgLog('😩 Ви взяли ' + allCards.length + ' карт');
     cgRefill();
-    cgState.isPlayerAttacking = false; // AI attacks again
+    cgState.isPlayerAttacking = false; // суперник атакує знову
     renderCgBoard();
-    setTimeout(cgAiAttack, 1000);
+    cgHandoffToOpponent(cgAiAttack, 1000);
   }
 }
 
@@ -10656,8 +10734,14 @@ function cgEndRound(playerTook) {
   renderCgBoard();
   cgCheckWin();
   if(!cgState.gameOver) {
-    if(!cgState.isPlayerAttacking) setTimeout(cgAiAttack, 800);
-    else cgLog('⚔️ Ваш хід!');
+    if(cgRoomId) {
+      cgSyncRoomState();
+      if(cgState.isPlayerAttacking) cgLog('⚔️ Ваш хід!');
+    } else if(!cgState.isPlayerAttacking) {
+      setTimeout(cgAiAttack, 800);
+    } else {
+      cgLog('⚔️ Ваш хід!');
+    }
   }
 }
 
@@ -10672,6 +10756,7 @@ function cgCheckWin() {
   if(!cgState) return;
   if(!cgState.playerHand.length && !cgState.deck.length) {
     cgState.gameOver = true;
+    if(cgRoomId) { cgResolvePvpGame(currentUser); return; }
     const prize = Math.floor(cgState.bet * 1.85);
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(prize));
     playSound('win');
@@ -10683,6 +10768,7 @@ function cgCheckWin() {
     setTimeout(cgReset, 3000);
   } else if(!cgState.aiHand.length && !cgState.deck.length) {
     cgState.gameOver = true;
+    if(cgRoomId) { cgResolvePvpGame(cgOpponentName); return; }
     cgLog('😔 AI виграв — ви "Дурень"!');
     notify('😔 Програш у Дурня', 'error');
     addToHistory('Карти: -' + cgState.bet);
@@ -10693,6 +10779,7 @@ function cgCheckWin() {
 
 function cgReset() {
   cgState = null; cgSelectedCards = [];
+  cgRoomId = null; cgIsHost = null; cgOpponentName = null;
   document.getElementById('cgGameScreen').classList.add('hidden');
   document.getElementById('cgStartScreen').classList.remove('hidden');
 }
@@ -10704,6 +10791,72 @@ function cgLog(text) {
   item.textContent = text;
   log.appendChild(item);
   log.scrollTop = log.scrollHeight;
+}
+
+function cgAllCardsById() {
+  const map = {};
+  for(const s of SUITS) for(const r of RANKS) { const id = r + s; map[id] = { suit: s, rank: r, id }; }
+  return map;
+}
+
+// Повністю перебудовує локальний cgState зі знімка Firebase — card_rooms є
+// єдиним джерелом правди для онлайн-гри, тому клієнти ніколи не розходяться.
+function cgApplyRoomSnapshot(r) {
+  const allCards = cgAllCardsById();
+  const myIds  = cgIsHost ? r.p1HandIds : r.p2HandIds;
+  const oppIds = cgIsHost ? r.p2HandIds : r.p1HandIds;
+  cgState = {
+    bet: r.bet,
+    deck: (r.deckIds || []).map(id => allCards[id]).filter(Boolean),
+    playerHand: (myIds || []).map(id => allCards[id]).filter(Boolean),
+    aiHand: (oppIds || []).map(id => allCards[id]).filter(Boolean),
+    table: (r.table || []).map(p => ({ attack: allCards[p.attackId], defend: p.defendId ? allCards[p.defendId] : null })),
+    trump: allCards[r.trumpId], trumpSuit: r.trumpSuit,
+    isPlayerAttacking: r.attacker === currentUser,
+    gameOver: r.status === 'finished',
+    aiMode: false,
+  };
+}
+
+// Пише повний стан гри назад у card_rooms/<id> після МОЄЇ дії — реальний
+// суперник підхоплює його через свій listenCardRoom і продовжує з того ж місця.
+function cgSyncRoomState() {
+  if(!cgRoomId || !cgState) return;
+  const attackerUser = cgState.isPlayerAttacking ? currentUser : cgOpponentName;
+  const update = {
+    deckIds: cgState.deck.map(c => c.id),
+    table: cgState.table.map(p => ({ attackId: p.attack.id, defendId: p.defend ? p.defend.id : null })),
+    attacker: attackerUser,
+    lastActionBy: currentUser,
+  };
+  update[cgIsHost ? 'p1HandIds' : 'p2HandIds'] = cgState.playerHand.map(c => c.id);
+  update[cgIsHost ? 'p2HandIds' : 'p1HandIds'] = cgState.aiHand.map(c => c.id);
+  db.ref('card_rooms/' + cgRoomId).update(update);
+}
+
+// Єдина точка розгалуження "хто ходить далі": онлайн — синхронізуємось і чекаємо
+// реального суперника; проти AI — як і раніше, симулюємо його хід локально.
+function cgHandoffToOpponent(aiFn, delay) {
+  if(cgRoomId) { cgSyncRoomState(); return; }
+  setTimeout(aiFn, delay);
+}
+
+// Той самий безпечний "хто перший встиг" транзакційний патерн, що й у
+// Coinflip/RPS/Prediction Duel/Шахах PvP — гарантує одноразову виплату.
+function cgResolvePvpGame(winnerUsername) {
+  if(!cgRoomId) return;
+  db.ref('card_rooms/' + cgRoomId + '/resolved').transaction(current => {
+    if(current) return;
+    return true;
+  }, (err, committed) => {
+    if(!committed) return;
+    db.ref('card_rooms/' + cgRoomId).once('value').then(snap => {
+      const r = snap.val(); if(!r) return;
+      const prize = Math.floor(r.bet * 1.85);
+      db.ref('users/' + winnerUsername + '/balance').set(firebase.database.ServerValue.increment(prize));
+      db.ref('card_rooms/' + cgRoomId).update({ status: 'finished', winner: winnerUsername });
+    });
+  });
 }
 
 // Онлайн лобі для карт
@@ -10797,30 +10950,33 @@ function listenCardRoom(roomId) {
       cgReset(); return;
     }
     if(r.status === 'playing' && r.guest) {
-      document.getElementById('cgOnlineLobby').classList.add('hidden');
-      document.getElementById('cgStartScreen').classList.add('hidden');
-      document.getElementById('cgGameScreen').classList.remove('hidden');
-      // Setup local cgState for this player
-      if(!cgState) {
-        const allCards = {}; // rebuild card objects from IDs
-        for(const s of SUITS) for(const rk of RANKS) { const id=rk+s; allCards[id]={suit:s,rank:rk,id}; }
-        const isHost = r.host === currentUser;
-        const myHandIds = isHost ? r.p1HandIds : r.p2HandIds;
-        cgState = {
-          bet: r.bet, deck: [], table: [], trump: allCards[r.trumpId],
-          trumpSuit: r.trumpSuit, gameOver: false, aiMode: false,
-          playerHand: (myHandIds||[]).map(id=>allCards[id]).filter(Boolean),
-          aiHand: [] // opponent's hand tracked server-side
-        };
-      }
-      cgLog('🃏 Гра з ' + (r.host===currentUser?r.guest:r.host) + ' почалась!');
+      document.getElementById('cgOnlineLobby')?.classList.add('hidden');
+      document.getElementById('cgStartScreen')?.classList.add('hidden');
+      document.getElementById('cgGameScreen')?.classList.remove('hidden');
+      const isFirstSync = !cgState;
+      cgIsHost = r.host === currentUser;
+      cgOpponentName = cgIsHost ? r.guest : r.host;
+      cgApplyRoomSnapshot(r);
+      cgSelectedCards = [];
+      if(isFirstSync) cgLog('🃏 Гра з ' + cgOpponentName + ' почалась!');
       renderCgBoard();
     }
     if(r.status === 'finished') {
       const isWin = r.winner === currentUser;
       const prize = Math.floor(r.bet * 1.85);
-      if(isWin) { playSound('bonus'); notify('🃏 Ви виграли! +'+formatNumber(prize)+'₴','success'); cgLog('🏆 ВИ ВИГРАЛИ! +'+formatNumber(prize)+'₴'); }
-      else { playSound('loss'); notify('😔 Програш у Дурня','error'); cgLog('😔 Суперник переміг...'); }
+      if(isWin) {
+        playSound('bonus');
+        notify('🃏 Ви виграли! +'+formatNumber(prize)+'₴','success');
+        cgLog('🏆 ВИ ВИГРАЛИ! +'+formatNumber(prize)+'₴');
+        addToHistory('Карти PvP: +' + prize);
+        addToWinFeed('Дурень PvP', prize - r.bet, (prize/r.bet).toFixed(1));
+        trackLbStat('wins', prize);
+      } else {
+        playSound('loss');
+        notify('😔 Програш у Дурня','error');
+        cgLog('😔 Суперник переміг...');
+        addToHistory('Карти PvP: -' + r.bet);
+      }
       if(cgListener) { db.ref('card_rooms/'+roomId).off('value',cgListener); cgListener=null; }
       setTimeout(cgReset, 3000);
     }
