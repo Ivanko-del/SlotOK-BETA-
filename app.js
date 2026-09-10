@@ -19086,7 +19086,15 @@ function chessApplyMove(board, state, move, promoChoice) {
   const { from, to, flags } = move;
   const piece = newBoard[from.r][from.c];
   const color = chessColorOf(piece);
-  const newState = JSON.parse(JSON.stringify(state));
+  // Ручне клонування замість JSON.parse(JSON.stringify(state)) — цей виклик
+  // тепер відбувається мільйони разів під час пошуку ходу для AI, і JSON-клон
+  // маленького об'єкта в рази повільніший за пряме копіювання полів.
+  const newState = {
+    turn: state.turn,
+    castling: { w: { k: state.castling.w.k, q: state.castling.w.q }, b: { k: state.castling.b.k, q: state.castling.b.q } },
+    enPassantTarget: state.enPassantTarget ? { r: state.enPassantTarget.r, c: state.enPassantTarget.c } : null,
+    lastMove: state.lastMove,
+  };
 
   let capturedPiece = newBoard[to.r][to.c];
 
@@ -19185,6 +19193,40 @@ function chessEvaluate(board) {
 }
 
 // ── AI: вибір ходу за складністю ──
+function chessOrderMoves(moves) {
+  // Спочатку взяття — рухає найкращі кандидати наперед, тому альфа-бета
+  // відсікає набагато більше гілок (без цього порядок ходів випадковий,
+  // і відсічення майже не спрацьовує).
+  return moves.slice().sort((a, b) => (b.flags.capture ? 1 : 0) - (a.flags.capture ? 1 : 0));
+}
+
+// Негамакс з альфа-бета відсіканням, оцінка завжди з точки зору сторони color.
+// Раніше "hard" рахував лише 2 півходи і взагалі не відсікав гілки (alpha/beta
+// рахувались, але ніколи не використовувались щоб перервати перебір) — бот
+// бачив лише "мій хід → найгірша відповідь суперника з перших 12", тому легко
+// пропускав прості тактики на 3+ ходи. Тепер повний перебір на глибину depth
+// з реальним відсіканням — на порядок сильніша гра при тій самій швидкості.
+function chessNegamax(board, state, depth, alpha, beta, color) {
+  const legal = chessAllLegalMoves(board, color, state);
+  if(!legal.length) {
+    if(chessIsInCheck(board, color)) return -99000 - depth; // мат нам; глибший мат — менш терміновий, тож trade-off у мінус з запасом
+    return 0; // пат
+  }
+  if(depth === 0) return chessEvaluate(board) * (color === 'w' ? 1 : -1);
+
+  let best = -Infinity;
+  for(const m of chessOrderMoves(legal)) {
+    const { board: nb, state: ns } = chessApplyMove(board, state, m, 'Q');
+    const val = -chessNegamax(nb, ns, depth - 1, -beta, -alpha, chessEnemyColor(color));
+    if(val > best) best = val;
+    if(best > alpha) alpha = best;
+    if(alpha >= beta) break; // відсікання гілки
+  }
+  return best;
+}
+
+const CHESS_AI_DEPTH = { medium: 2, hard: 3 };
+
 function chessAiPickMove(board, color, state, difficulty) {
   const legal = chessAllLegalMoves(board, color, state);
   if(!legal.length) return null;
@@ -19196,39 +19238,17 @@ function chessAiPickMove(board, color, state, difficulty) {
     return legal[Math.floor(Math.random()*legal.length)];
   }
 
-  if(difficulty === 'medium') {
-    // 1-ply: максимізувати матеріал+позицію після ходу, з невеликою випадковістю серед топ-3
-    const scored = legal.map(m => {
-      const { board: nb } = chessApplyMove(board, state, m, 'Q');
-      const sign = color === 'w' ? 1 : -1;
-      return { m, score: chessEvaluate(nb) * sign };
-    });
-    scored.sort((a,b) => b.score - a.score);
-    const top = scored.slice(0, Math.min(3, scored.length));
-    return top[Math.floor(Math.random()*top.length)].m;
-  }
-
-  // 'hard': 2-ply minimax з alpha-beta
+  // medium/hard: повний негамакс з альфа-бета відсіканням на відповідну глибину
+  const depth = CHESS_AI_DEPTH[difficulty] || CHESS_AI_DEPTH.hard;
   const enemyColor = chessEnemyColor(color);
-  const sign = color === 'w' ? 1 : -1;
   let bestMove = null, bestScore = -Infinity;
-  let alpha = -Infinity, beta = Infinity;
-  for(const m of legal) {
+  let alpha = -Infinity;
+  const beta = Infinity;
+  for(const m of chessOrderMoves(legal)) {
     const { board: nb, state: ns } = chessApplyMove(board, state, m, 'Q');
-    const oppMoves = chessAllLegalMoves(nb, enemyColor, ns);
-    let worstReply = Infinity;
-    if(!oppMoves.length) {
-      // мат/пат після нашого ходу
-      worstReply = chessIsInCheck(nb, enemyColor) ? 999 : 0; // мат — дуже добре для нас
-    } else {
-      for(const om of oppMoves.slice(0, 12)) { // обмежуємо гілки для швидкості на мобільних
-        const { board: nb2 } = chessApplyMove(nb, ns, om, 'Q');
-        const s = chessEvaluate(nb2) * sign;
-        if(s < worstReply) worstReply = s;
-      }
-    }
-    if(worstReply > bestScore) { bestScore = worstReply; bestMove = m; }
-    alpha = Math.max(alpha, bestScore);
+    const val = -chessNegamax(nb, ns, depth - 1, -beta, -alpha, enemyColor);
+    if(val > bestScore) { bestScore = val; bestMove = m; }
+    if(bestScore > alpha) alpha = bestScore;
   }
   return bestMove || legal[Math.floor(Math.random()*legal.length)];
 }
