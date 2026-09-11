@@ -4897,10 +4897,35 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '75';
+const CURRENT_VERSION = '76';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '76',
+    title: '🎨 Оновлення v76 — тематичні банери ігор, зручніші повідомлення',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎴 Банери ігор тепер по темі',
+        items: [
+          'Кожна гра має власний банер за темою: карти, колесо, кості, слоти, ракета, скарби, спорт чи фішки',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '✉️ Приватні повідомлення стали зручнішими',
+        items: [
+          'Реальний статус "онлайн/офлайн" замість вигаданого',
+          'Позначка непрочитаних повідомлень у списку переписок',
+          'Можна видалити переписку зі свого списку',
+          'Переписка більше не губиться, коли активно пишеш багатьом людям одночасно',
+        ]
+      },
+    ]
+  },
   {
     version: '75',
     title: '🖼️ Оновлення v75 — фото-банер та паралакс на всіх екранах',
@@ -9996,18 +10021,139 @@ function showAdminBypassBanner(gameId) {
 // реальними грошима неприпустимий. picsum.photos гарантовано віддає
 // справжнє фото для будь-якого seed, тож посилання завжди робоче.
 const SCREEN_PHOTOS = {
-  home: 'slotok-home', lobby: 'slotok-lobby', slots: 'slotok-slots',
-  diamond: 'slotok-diamond', cashier: 'slotok-cash', bank: 'slotok-bank',
-  profile: 'slotok-profile', vip: 'slotok-vip', battlepass: 'slotok-bp',
-  tournaments: 'slotok-tourney', sports: 'slotok-sports',
-  lootboxes: 'slotok-loot', roulette: 'slotok-roulette',
-  blackjack: 'slotok-cards', poker: 'slotok-poker', crash: 'slotok-crash',
+  home: 'slotok-home', lobby: 'slotok-lobby', cashier: 'slotok-cash',
+  bank: 'slotok-bank', profile: 'slotok-profile', vip: 'slotok-vip',
+  battlepass: 'slotok-bp', tournaments: 'slotok-tourney',
   admin: 'slotok-admin', default: 'slotok-ambient',
 };
+
+// ── Тематичні SVG-банери для ігор ──
+// Фото КОНКРЕТНОЇ гри без пошуку по вмісту не підібрати (це середовище
+// без доступу в інтернет — не має чим шукати), а випадкове фото з
+// picsum не має жодного стосунку до гри. Замість цього — власноруч
+// намальовані SVG-сцени по темах (карти/колесо/кості/слот/ракета/
+// скарби/спорт/фішки), що гарантовано відповідають грі за змістом і
+// ніколи не зламаються (жодного мережевого запиту).
+function _svgDataUri(inner) {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">' + inner + '</svg>';
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+function _svgPolar(cx, cy, r, deg) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+}
+function _svgWedge(cx, cy, r, startDeg, endDeg, fill) {
+  const [x1, y1] = _svgPolar(cx, cy, r, startDeg);
+  const [x2, y2] = _svgPolar(cx, cy, r, endDeg);
+  const large = (endDeg - startDeg) > 180 ? 1 : 0;
+  return '<path d="M' + cx + ',' + cy + ' L' + x1 + ',' + y1 + ' A' + r + ',' + r + ' 0 ' + large + ' 1 ' + x2 + ',' + y2 + ' Z" fill="' + fill + '"/>';
+}
+function _svgPip(cx, cy, r) { return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#eee"/>'; }
+const GAME_BANNER_SVG = {
+  cards: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0d0b08"/>' +
+    '<g transform="translate(450,300)">' +
+      '<g transform="rotate(-16)"><rect x="-75" y="-160" width="150" height="220" rx="14" fill="#151210" stroke="#d4af37" stroke-width="2.5"/><text x="-52" y="-95" font-size="54" fill="#d1453e" font-family="Georgia,serif">♥</text></g>' +
+      '<g><rect x="-75" y="-165" width="150" height="220" rx="14" fill="#181410" stroke="#f5dc8a" stroke-width="3"/><text x="-52" y="-100" font-size="54" fill="#eee" font-family="Georgia,serif">♠</text></g>' +
+      '<g transform="rotate(16)"><rect x="-75" y="-160" width="150" height="220" rx="14" fill="#151210" stroke="#d4af37" stroke-width="2.5"/><text x="-52" y="-95" font-size="54" fill="#d1453e" font-family="Georgia,serif">♦</text></g>' +
+    '</g>'
+  ),
+  wheel: () => {
+    const cx = 450, cy = 250, r = 190, n = 16;
+    let wedges = '';
+    for (let i = 0; i < n; i++) wedges += _svgWedge(cx, cy, r, i * 360 / n, (i + 1) * 360 / n, i % 2 ? '#141414' : '#7a1414');
+    return _svgDataUri(
+      '<rect width="900" height="500" fill="#0a0908"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 16) + '" fill="none" stroke="#d4af37" stroke-width="7"/>' +
+      wedges +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="42" fill="#d4af37"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="42" fill="none" stroke="#1a1400" stroke-width="3"/>'
+    );
+  },
+  dice: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    '<g transform="translate(340,270) rotate(-10)"><rect x="-90" y="-90" width="180" height="180" rx="26" fill="#171310" stroke="#d4af37" stroke-width="4"/>' +
+      _svgPip(-40, -40, 12) + _svgPip(40, 40, 12) + _svgPip(0, 0, 12) + _svgPip(-40, 40, 12) + _svgPip(40, -40, 12) + '</g>' +
+    '<g transform="translate(560,240) rotate(12)"><rect x="-90" y="-90" width="180" height="180" rx="26" fill="#191510" stroke="#f5dc8a" stroke-width="4"/>' +
+      _svgPip(-40, -40, 12) + _svgPip(40, -40, 12) + _svgPip(-40, 40, 12) + _svgPip(40, 40, 12) + '</g>'
+  ),
+  slots: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    '<rect x="220" y="140" width="460" height="240" rx="24" fill="#151210" stroke="#d4af37" stroke-width="6"/>' +
+    [0, 1, 2].map(i => '<rect x="' + (255 + i * 145) + '" y="175" width="120" height="170" rx="10" fill="#0a0906" stroke="#8a7440" stroke-width="2"/>' +
+      '<text x="' + (315 + i * 145) + '" y="280" font-size="70" text-anchor="middle" font-family="Orbitron,monospace" fill="' + ['#d4af37', '#e74c3c', '#d4af37'][i] + '">' + ['7', '★', '7'][i] + '</text>').join('') +
+    '<circle cx="720" cy="260" r="26" fill="#d4af37"/>'
+  ),
+  rocket: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    '<path d="M120,420 Q450,300 700,120" fill="none" stroke="#d4af37" stroke-width="3" stroke-dasharray="10,10" opacity=".6"/>' +
+    '<g transform="translate(700,120) rotate(-35)">' +
+      '<path d="M0,-70 C34,-30 34,40 0,70 C-34,40 -34,-30 0,-70 Z" fill="#181410" stroke="#f5dc8a" stroke-width="4"/>' +
+      '<circle cx="0" cy="-10" r="16" fill="#4a9eff" opacity=".8"/>' +
+      '<path d="M-18,50 L-40,95 L-6,72 Z" fill="#d4af37"/><path d="M18,50 L40,95 L6,72 Z" fill="#d4af37"/>' +
+      '<path d="M-10,72 L0,130 L10,72 Z" fill="#e74c3c" opacity=".85"/>' +
+    '</g>' +
+    [[180,380],[260,330],[350,300],[520,190]].map(p => '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#f5dc8a"/>').join('')
+  ),
+  treasure: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    '<g transform="translate(450,300)">' +
+      '<rect x="-140" y="0" width="280" height="140" rx="14" fill="#171310" stroke="#d4af37" stroke-width="5"/>' +
+      '<path d="M-146,4 Q0,-78 146,4 L146,20 Q0,-58 -146,20 Z" fill="#1c1712" stroke="#f5dc8a" stroke-width="5"/>' +
+      '<rect x="-140" y="56" width="280" height="16" fill="#8a7440"/>' +
+      '<rect x="-17" y="0" width="34" height="42" rx="7" fill="#d4af37" stroke="#1a1400" stroke-width="2"/>' +
+      '<circle cx="0" cy="20" r="7" fill="#1a1400"/>' +
+      '<ellipse cx="-72" cy="152" rx="26" ry="9" fill="#d4af37"/>' +
+      '<ellipse cx="0" cy="160" rx="30" ry="10" fill="#f5dc8a"/>' +
+      '<ellipse cx="68" cy="150" rx="24" ry="8" fill="#d4af37"/>' +
+      '<path d="M-90,-95 l6,16 16,6 -16,6 -6,16 -6,-16 -16,-6 16,-6 Z" fill="#fff" opacity=".85"/>' +
+      '<path d="M115,-105 l5,13 13,5 -13,5 -5,13 -5,-13 -13,-5 13,-5 Z" fill="#fff" opacity=".7"/>' +
+    '</g>'
+  ),
+  sports: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    '<path d="M0,440 Q450,360 900,440" fill="none" stroke="#3dd68c" stroke-width="4" opacity=".5"/>' +
+    '<path d="M0,470 Q450,410 900,470" fill="none" stroke="#3dd68c" stroke-width="3" opacity=".3"/>' +
+    '<path d="M600,110 L600,330 M600,110 L800,110 L800,330" fill="none" stroke="#8a7440" stroke-width="4"/>' +
+    [130,170,210,250,290].map(y => '<path d="M600,'+y+' L660,'+(y+8)+'" stroke="#3a2e1a" stroke-width="1.5"/>').join('') +
+    '<circle cx="300" cy="290" r="82" fill="#eee" stroke="#0a0908" stroke-width="3"/>' +
+    '<polygon points="300,232 337,258 323,300 277,300 263,258" fill="#171310"/>' +
+    '<path d="M300,232 L263,258 M300,232 L337,258 M277,300 L255,335 M323,300 L345,335 M263,258 L210,262 M337,258 L390,262" stroke="#171310" stroke-width="5" fill="none" stroke-linecap="round"/>'
+  ),
+  chips: () => _svgDataUri(
+    '<rect width="900" height="500" fill="#0a0908"/>' +
+    [0,1,2,3].map(i => '<ellipse cx="360" cy="'+(370-i*22)+'" rx="70" ry="22" fill="'+['#7a1414','#141414','#0d3a1f','#3a2b08'][i]+'" stroke="#d4af37" stroke-width="3"/>').join('') +
+    [0,1,2].map(i => '<ellipse cx="540" cy="'+(360-i*22)+'" rx="70" ry="22" fill="'+['#141414','#7a1414','#0d3a1f'][i]+'" stroke="#f5dc8a" stroke-width="3"/>').join('') +
+    '<circle cx="700" cy="200" r="38" fill="#d4af37" stroke="#1a1400" stroke-width="3"/>' +
+    '<circle cx="640" cy="150" r="26" fill="#f5dc8a" stroke="#1a1400" stroke-width="2"/>'
+  ),
+};
+// Кожна гра → сімʼя SVG-сцени, яка тематично їй відповідає.
+const GAME_BANNER_FAMILY = {
+  blackjack: 'cards', poker: 'cards', hilo: 'cards', cardgame: 'cards', cardwar: 'cards', baccarat: 'cards', videpoker: 'cards',
+  roulette: 'wheel', fortune: 'wheel', russianroulette: 'wheel',
+  dice: 'dice', sicbo: 'dice',
+  slots: 'slots', diamond: 'slots', double: 'slots',
+  crash: 'rocket', dragon: 'rocket',
+  mines: 'treasure', chests: 'treasure', tower: 'treasure', balloon: 'treasure', lootboxes: 'treasure',
+  sports: 'sports', penalty: 'sports', bowling: 'sports', archery: 'sports', duckshoot: 'sports', horseracing: 'sports',
+  coinflip: 'chips', colorbet: 'chips', limbo: 'chips', predict: 'chips', rps: 'chips', quiz: 'chips',
+  keno: 'chips', plinko: 'chips', scratch: 'chips', monopoly: 'chips',
+};
+
 let _lastPhotoBgTab = null;
 function updateScreenPhotoBg(tabId) {
   const img = document.getElementById('screenPhotoBannerImg');
   if (!img) return;
+  const family = GAME_BANNER_FAMILY[tabId];
+  if (family) {
+    // SVG банер гри — локальний, миттєвий, без мережі й без preload-затримки.
+    if (family === _lastPhotoBgTab) return;
+    _lastPhotoBgTab = family;
+    img.style.backgroundImage = "url('" + GAME_BANNER_SVG[family]() + "')";
+    img.classList.add('visible');
+    return;
+  }
   const seed = SCREEN_PHOTOS[tabId] || SCREEN_PHOTOS.default;
   if (seed === _lastPhotoBgTab) return;
   _lastPhotoBgTab = seed;
@@ -17018,8 +17164,16 @@ function renderPmInbox() {
   const el = document.getElementById('pmInbox');
   if(!el || !currentUser) return;
   el.innerHTML = '<div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Вхідні</div>';
-  db.ref('pm/'+currentUser).limitToLast(20).once('value', snap => {
+  // Wider window than before (20→150) — with only 20, a busy conversation
+  // could push an entire OTHER conversation's last message out of the
+  // fetched set, making that thread silently vanish from the inbox even
+  // though real unread history still exists for it.
+  Promise.all([
+    db.ref('pm/'+currentUser).limitToLast(150).once('value'),
+    db.ref('users/'+currentUser+'/pmLastRead').once('value'),
+  ]).then(([snap, lastReadSnap]) => {
     const data = snap.val() || {};
+    const lastRead = lastReadSnap.val() || {};
     const threads = {};
     Object.values(data).forEach(m => {
       const other = m.from === currentUser ? m.to : m.from;
@@ -17032,13 +17186,38 @@ function renderPmInbox() {
       div.className = 'pm-thread';
       div.setAttribute('data-nick', name.toLowerCase());
       const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
+      const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
       div.innerHTML = `<div class="pm-avatar">${escapeHtml(name[0].toUpperCase())}</div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;">${escapeHtml(name)}</div>
-          <div style="font-size:11px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${previewText}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4a9eff;margin-left:4px;"></span>':''}</div>
+          <div style="font-size:11px;color:${isUnread?'#aaa':'#555'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
-        <div style="font-size:10px;color:#444;flex-shrink:0;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>`;
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          <div style="font-size:10px;color:#444;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
+          <button onclick="event.stopPropagation();deletePmThread('${name}')" style="background:none;border:none;color:#333;font-size:13px;cursor:pointer;padding:2px;line-height:1;" title="Видалити переписку">🗑</button>
+        </div>`;
       div.onclick = () => openPmThread(name);
       el.appendChild(div);
+    });
+  });
+}
+
+// "Видалення" тут — прибирає переписку тільки з ВЛАСНОГО інбоксу (як у
+// більшості месенджерів): чистить лише вузли під pm/<currentUser>, тому
+// співрозмовник і далі бачить свою копію листування.
+function deletePmThread(otherUser) {
+  if(!currentUser) return;
+  if(!confirm('Видалити переписку з '+otherUser+'? Це приховає її лише у тебе.')) return;
+  db.ref('pm/'+currentUser).orderByChild('ts').once('value', snap => {
+    const updates = {};
+    snap.forEach(child => {
+      const m = child.val();
+      if((m.from===currentUser&&m.to===otherUser)||(m.from===otherUser&&m.to===currentUser)) {
+        updates[child.key] = null;
+      }
+    });
+    db.ref('pm/'+currentUser).update(updates).then(() => {
+      notify('🗑 Переписку видалено', 'info');
+      renderPmInbox();
     });
   });
 }
@@ -17131,13 +17310,17 @@ function openPmThread(otherUser) {
   if(inboxView) inboxView.classList.add('hidden');
   threadView.classList.remove('hidden');
 
+  // Позначаємо цю переписку прочитаною — без цього в інбоксі назавжди
+  // лишався б непрочитаний індикатор навіть після відкриття чату.
+  if(currentUser) db.ref('users/'+currentUser+'/pmLastRead/'+otherUser).set(Date.now());
+
   threadView.innerHTML = `
     <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
       <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
       <div style="min-width:0;">
         <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
-        <div style="font-size:10px;color:#3dd68c;">● Онлайн</div>
+        <div id="pmThreadStatus" style="font-size:10px;color:#555;">● ...</div>
       </div>
     </div>
     <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:#050505;min-height:0;"></div>
@@ -17154,9 +17337,23 @@ function openPmThread(otherUser) {
       <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
 
-  // Listen for messages
+  // Реальний онлайн-статус замість того, що раніше було намертво
+  // прописано "● Онлайн" незалежно від того, чи людина справді в мережі.
+  if(_pmThreadPresenceListener) db.ref('online/'+_pmThreadPresenceUser).off('value', _pmThreadPresenceListener);
+  _pmThreadPresenceUser = otherUser;
+  _pmThreadPresenceListener = db.ref('online/'+otherUser).on('value', snap => {
+    const el = document.getElementById('pmThreadStatus');
+    if(!el) return;
+    const isOnline = !!snap.val();
+    el.style.color = isOnline ? '#3dd68c' : '#555';
+    el.textContent = isOnline ? '● Онлайн' : '○ Офлайн';
+  });
+
+  // Listen for messages — ширше вікно (50→300), щоб активне листування з
+  // іншими людьми не витісняло історію ЦІЄЇ переписки з вибірки (плаский
+  // pm/<user> список спільний для всіх діалогів разом).
   if(_pmThreadListener) db.ref('pm/'+currentUser).off('value', _pmThreadListener);
-  _pmThreadListener = db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(50).on('value', snap => {
+  _pmThreadListener = db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(300).on('value', snap => {
     const el = document.getElementById('pmThreadMessages');
     if(!el) return;
     const msgs = Object.values(snap.val()||{})
@@ -17177,13 +17374,19 @@ function openPmThread(otherUser) {
       </div>`;
     }).join('');
     el.scrollTop = el.scrollHeight;
+    // Нові повідомлення надійшли, поки чат уже відкритий — теж позначаємо
+    // прочитаними одразу, а не лише при першому відкритті.
+    if(currentUser) db.ref('users/'+currentUser+'/pmLastRead/'+otherUser).set(Date.now());
   });
 }
+let _pmThreadPresenceListener = null;
+let _pmThreadPresenceUser = null;
 
 let _pmThreadListener = null;
 
 function closePmThread() {
   if(_pmThreadListener) { db.ref('pm/'+currentUser).off('value', _pmThreadListener); _pmThreadListener = null; }
+  if(_pmThreadPresenceListener) { db.ref('online/'+_pmThreadPresenceUser).off('value', _pmThreadPresenceListener); _pmThreadPresenceListener = null; _pmThreadPresenceUser = null; }
   const inboxView = document.getElementById('pmInboxView');
   const threadView = document.getElementById('pmThreadView');
   if(threadView) { threadView.classList.add('hidden'); threadView.innerHTML = ''; }
