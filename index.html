@@ -20,10 +20,6 @@
 </head>
 <body data-theme="dark">
   <canvas id="liveBgCanvas"></canvas>
-  <!-- Спільний фоновий шар з фото + паралакс на скролі — один елемент,
-       підмінюється під кожен екран у switchTab()/updateScreenPhotoBg(),
-       замість вставляння окремого фото в кожен з 50+ табів. -->
-  <div id="screenPhotoBg"></div>
 
   <div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity .5s;">
     <div style="font-size:58px;margin-bottom:16px;">🎰</div>
@@ -61,6 +57,13 @@
     <div id="rateTickerInner" style="display:flex;gap:0;position:absolute;white-space:nowrap;animation:tickerScroll 50s linear infinite;align-items:center;height:22px;padding:0 16px;">
       <span style="color:#555;font-size:10px;">📊 Курси:</span>
     </div>
+  </div>
+
+  <!-- Фото-банер — один спільний елемент, завжди на видноті зверху
+       поточної вкладки (а не десь у щілинах між картками), підмінюється
+       під кожен екран у switchTab()/updateScreenPhotoBg(). -->
+  <div id="screenPhotoBanner">
+    <div id="screenPhotoBannerImg"></div>
   </div>
 
   <div id="tab-home" class="screen">

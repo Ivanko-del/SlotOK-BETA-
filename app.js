@@ -4903,15 +4903,15 @@ const CHANGELOG_KEY   = 'slotok_seen_version';
 const BUILTIN_CHANGELOG = [
   {
     version: '75',
-    title: '🖼️ Оновлення v75 — фонові фото та паралакс на всіх екранах',
+    title: '🖼️ Оновлення v75 — фото-банер та паралакс на всіх екранах',
     date: Date.UTC(2026, 8, 11),
     dev: 'SlotOK Dev',
     sections: [
       {
         type: 'new',
-        title: '🖼️ Атмосферні фото-фони',
+        title: '🖼️ Фото зверху кожної вкладки',
         items: [
-          'На кожному екрані сайту тепер є розмите фонове фото з легким ефектом паралаксу при скролі',
+          'На кожному екрані сайту тепер є фото-банер одразу під шапкою, з легким ефектом паралаксу при скролі',
         ]
       },
     ]
@@ -9976,12 +9976,18 @@ function showAdminBypassBanner(gameId) {
 })();
 
 // ═══════════════════════════════════════════
-// 🖼️ ФОНОВІ ФОТО + ПАРАЛАКС — на всіх екранах сайту
+// 🖼️ ФОТО-БАНЕР + ПАРАЛАКС — на всіх екранах сайту
 // ═══════════════════════════════════════════
-// Один спільний шар (#screenPhotoBg, у index.html) замість вставляння
-// фото в кожен з 50+ табів окремо — updateScreenPhotoBg() підміняє
-// картинку й викликається з switchTab(), тож справді працює всюди,
-// без дублювання розмітки по кожному екрану.
+// Один спільний, завжди видимий банер (#screenPhotoBanner, у index.html,
+// докований одразу під шапкою/тікером курсів — поза усіма .screen, тож
+// не ховається під картками) замість вставляння фото в кожен з 50+ табів
+// окремо. updateScreenPhotoBg() підміняє картинку й викликається з
+// switchTab(), тож справді працює всюди без дублювання розмітки.
+//
+// (Перша версія цього була суцільним фоновим шаром позаду контенту —
+// технічно робоче, але непомітне: майже весь екран щільно вкритий
+// картками, тож фото визирало лише у 10-14px щілинах між ними. Банер
+// зверху вирішує це — завжди займає реальний видимий простір.)
 //
 // Джерело фото: picsum.photos (seed → детермінований реальний знімок).
 // Пряме посилання на конкретне фото Unsplash довелось би вгадувати
@@ -9989,8 +9995,6 @@ function showAdminBypassBanner(gameId) {
 // перевірити, чи існує посилання, а битий лінк на живому сайті з
 // реальними грошима неприпустимий. picsum.photos гарантовано віддає
 // справжнє фото для будь-якого seed, тож посилання завжди робоче.
-// Це фонова атмосфера (розмита, затемнена) — не ілюстрація, тому
-// сюжет фото другорядний; кольори картинки не мають значення.
 const SCREEN_PHOTOS = {
   home: 'slotok-home', lobby: 'slotok-lobby', slots: 'slotok-slots',
   diamond: 'slotok-diamond', cashier: 'slotok-cash', bank: 'slotok-bank',
@@ -10002,26 +10006,38 @@ const SCREEN_PHOTOS = {
 };
 let _lastPhotoBgTab = null;
 function updateScreenPhotoBg(tabId) {
-  const el = document.getElementById('screenPhotoBg');
-  if (!el) return;
+  const img = document.getElementById('screenPhotoBannerImg');
+  if (!img) return;
   const seed = SCREEN_PHOTOS[tabId] || SCREEN_PHOTOS.default;
   if (seed === _lastPhotoBgTab) return;
   _lastPhotoBgTab = seed;
-  el.style.backgroundImage = "url('https://picsum.photos/seed/" + seed + "/1200/2000')";
-  el.classList.add('visible');
+  img.classList.remove('visible');
+  const url = 'https://picsum.photos/seed/' + seed + '/900/500';
+  // Preload so the fade-in only starts once the photo is actually ready
+  // (avoids a flash of the raster decoding in place).
+  const preload = new Image();
+  preload.onload = () => {
+    if (_lastPhotoBgTab !== seed) return; // user already navigated elsewhere
+    img.style.backgroundImage = "url('" + url + "')";
+    img.classList.add('visible');
+  };
+  preload.src = url;
 }
 (function initScreenPhotoParallax() {
   // #tab-home starts visible (no .hidden class) with no switchTab() call,
-  // so the shared layer needs an explicit first paint for it.
+  // so the banner needs an explicit first paint for it.
   document.addEventListener('DOMContentLoaded', function() { updateScreenPhotoBg('home'); });
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  // #screenPhotoBg has a 160px overscan margin (inset:-160px in CSS) so this
-  // can never scroll the photo far enough to reveal an empty edge behind it.
+  // #screenPhotoBannerImg has a 40px overscan margin (inset:-40px in CSS),
+  // so this is clamped well inside that — it can never reveal an edge.
   window.addEventListener('scroll', function() {
-    const el = document.getElementById('screenPhotoBg');
-    if (!el) return;
-    const y = Math.max(-140, Math.min(140, window.scrollY * 0.12));
-    el.style.transform = 'translateY(' + y + 'px)';
+    const banner = document.getElementById('screenPhotoBanner');
+    const img = document.getElementById('screenPhotoBannerImg');
+    if (!banner || !img) return;
+    const top = banner.getBoundingClientRect().top;
+    if (top < -200 || top > window.innerHeight + 200) return; // nowhere near viewport
+    const y = Math.max(-35, Math.min(35, top * 0.15));
+    img.style.transform = 'translateY(' + y + 'px)';
   }, { passive: true });
 })();
 
