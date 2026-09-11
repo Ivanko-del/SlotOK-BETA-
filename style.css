@@ -1345,33 +1345,6 @@
     #liveBgCanvas { position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; transition:opacity .5s; }
     #liveBgCanvas.active { opacity:.4; }
 
-    /* SCREEN PHOTO BANNER — one shared, always-visible hero photo strip
-       docked above every tab's content (swapped by updateScreenPhotoBg()),
-       instead of a full-page backdrop that only shows in the thin gaps
-       between cards (invisible in practice on tightly-packed screens). */
-    #screenPhotoBanner {
-      position: relative; height: 130px; margin-bottom: 14px;
-      border-radius: var(--r-lg); overflow: hidden;
-      border: 1px solid rgba(212,175,55,.16);
-      box-shadow: var(--bevel), var(--elev-1);
-      background: #0a0908; /* shows while the photo loads / if it never does */
-    }
-    #screenPhotoBannerImg {
-      position: absolute; inset: -40px 0; /* overscan so parallax never reveals an edge */
-      background-size: cover; background-position: center;
-      filter: brightness(.6) saturate(1.08);
-      opacity: 0; transition: opacity .5s ease;
-      will-change: transform;
-    }
-    #screenPhotoBannerImg.visible { opacity: 1; }
-    #screenPhotoBanner::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(6,5,3,.1) 0%, rgba(6,5,3,.35) 65%, rgba(6,5,3,.88) 100%),
-        linear-gradient(90deg, rgba(6,5,3,.35), transparent 40%);
-    }
-    @media (prefers-reduced-motion: reduce) { #screenPhotoBannerImg { transition: none; } }
-
     /* RETURN BONUS */
     @keyframes returnBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
     .return-bonus-card { animation: returnBounce 1.5s ease-in-out 3; }

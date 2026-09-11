@@ -4897,23 +4897,31 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '76';
+const CURRENT_VERSION = '77';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
   {
-    version: '76',
-    title: '🎨 Оновлення v76 — тематичні банери ігор, зручніші повідомлення',
+    version: '77',
+    title: '🧹 Оновлення v77 — прибрали фото-банер зверху вкладок',
     date: Date.UTC(2026, 8, 11),
     dev: 'SlotOK Dev',
     sections: [
       {
-        type: 'improve',
-        title: '🎴 Банери ігор тепер по темі',
+        type: 'fix',
+        title: '🧹 Менше зайвого зверху екрана',
         items: [
-          'Кожна гра має власний банер за темою: карти, колесо, кості, слоти, ракета, скарби, спорт чи фішки',
+          'Прибрали фото-банер над кожною вкладкою — заважав, тепер знову чистіше й компактніше',
         ]
       },
+    ]
+  },
+  {
+    version: '76',
+    title: '✉️ Оновлення v76 — зручніші приватні повідомлення',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
       {
         type: 'improve',
         title: '✉️ Приватні повідомлення стали зручнішими',
@@ -10000,195 +10008,7 @@ function showAdminBypassBanner(gameId) {
   });
 })();
 
-// ═══════════════════════════════════════════
-// 🖼️ ФОТО-БАНЕР + ПАРАЛАКС — на всіх екранах сайту
-// ═══════════════════════════════════════════
-// Один спільний, завжди видимий банер (#screenPhotoBanner, у index.html,
-// докований одразу під шапкою/тікером курсів — поза усіма .screen, тож
-// не ховається під картками) замість вставляння фото в кожен з 50+ табів
-// окремо. updateScreenPhotoBg() підміняє картинку й викликається з
-// switchTab(), тож справді працює всюди без дублювання розмітки.
-//
-// (Перша версія цього була суцільним фоновим шаром позаду контенту —
-// технічно робоче, але непомітне: майже весь екран щільно вкритий
-// картками, тож фото визирало лише у 10-14px щілинах між ними. Банер
-// зверху вирішує це — завжди займає реальний видимий простір.)
-//
-// Джерело фото: picsum.photos (seed → детермінований реальний знімок).
-// Пряме посилання на конкретне фото Unsplash довелось би вгадувати
-// наосліп — це середовище розробки не має доступу в інтернет, щоб
-// перевірити, чи існує посилання, а битий лінк на живому сайті з
-// реальними грошима неприпустимий. picsum.photos гарантовано віддає
-// справжнє фото для будь-якого seed, тож посилання завжди робоче.
-const SCREEN_PHOTOS = {
-  home: 'slotok-home', lobby: 'slotok-lobby', cashier: 'slotok-cash',
-  bank: 'slotok-bank', profile: 'slotok-profile', vip: 'slotok-vip',
-  battlepass: 'slotok-bp', tournaments: 'slotok-tourney',
-  admin: 'slotok-admin', default: 'slotok-ambient',
-};
-
-// ── Тематичні SVG-банери для ігор ──
-// Фото КОНКРЕТНОЇ гри без пошуку по вмісту не підібрати (це середовище
-// без доступу в інтернет — не має чим шукати), а випадкове фото з
-// picsum не має жодного стосунку до гри. Замість цього — власноруч
-// намальовані SVG-сцени по темах (карти/колесо/кості/слот/ракета/
-// скарби/спорт/фішки), що гарантовано відповідають грі за змістом і
-// ніколи не зламаються (жодного мережевого запиту).
-function _svgDataUri(inner) {
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">' + inner + '</svg>';
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
-}
-function _svgPolar(cx, cy, r, deg) {
-  const rad = (deg - 90) * Math.PI / 180;
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-}
-function _svgWedge(cx, cy, r, startDeg, endDeg, fill) {
-  const [x1, y1] = _svgPolar(cx, cy, r, startDeg);
-  const [x2, y2] = _svgPolar(cx, cy, r, endDeg);
-  const large = (endDeg - startDeg) > 180 ? 1 : 0;
-  return '<path d="M' + cx + ',' + cy + ' L' + x1 + ',' + y1 + ' A' + r + ',' + r + ' 0 ' + large + ' 1 ' + x2 + ',' + y2 + ' Z" fill="' + fill + '"/>';
-}
-function _svgPip(cx, cy, r) { return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#eee"/>'; }
-const GAME_BANNER_SVG = {
-  cards: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0d0b08"/>' +
-    '<g transform="translate(450,300)">' +
-      '<g transform="rotate(-16)"><rect x="-75" y="-160" width="150" height="220" rx="14" fill="#151210" stroke="#d4af37" stroke-width="2.5"/><text x="-52" y="-95" font-size="54" fill="#d1453e" font-family="Georgia,serif">♥</text></g>' +
-      '<g><rect x="-75" y="-165" width="150" height="220" rx="14" fill="#181410" stroke="#f5dc8a" stroke-width="3"/><text x="-52" y="-100" font-size="54" fill="#eee" font-family="Georgia,serif">♠</text></g>' +
-      '<g transform="rotate(16)"><rect x="-75" y="-160" width="150" height="220" rx="14" fill="#151210" stroke="#d4af37" stroke-width="2.5"/><text x="-52" y="-95" font-size="54" fill="#d1453e" font-family="Georgia,serif">♦</text></g>' +
-    '</g>'
-  ),
-  wheel: () => {
-    const cx = 450, cy = 250, r = 190, n = 16;
-    let wedges = '';
-    for (let i = 0; i < n; i++) wedges += _svgWedge(cx, cy, r, i * 360 / n, (i + 1) * 360 / n, i % 2 ? '#141414' : '#7a1414');
-    return _svgDataUri(
-      '<rect width="900" height="500" fill="#0a0908"/>' +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 16) + '" fill="none" stroke="#d4af37" stroke-width="7"/>' +
-      wedges +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="42" fill="#d4af37"/>' +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="42" fill="none" stroke="#1a1400" stroke-width="3"/>'
-    );
-  },
-  dice: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    '<g transform="translate(340,270) rotate(-10)"><rect x="-90" y="-90" width="180" height="180" rx="26" fill="#171310" stroke="#d4af37" stroke-width="4"/>' +
-      _svgPip(-40, -40, 12) + _svgPip(40, 40, 12) + _svgPip(0, 0, 12) + _svgPip(-40, 40, 12) + _svgPip(40, -40, 12) + '</g>' +
-    '<g transform="translate(560,240) rotate(12)"><rect x="-90" y="-90" width="180" height="180" rx="26" fill="#191510" stroke="#f5dc8a" stroke-width="4"/>' +
-      _svgPip(-40, -40, 12) + _svgPip(40, -40, 12) + _svgPip(-40, 40, 12) + _svgPip(40, 40, 12) + '</g>'
-  ),
-  slots: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    '<rect x="220" y="140" width="460" height="240" rx="24" fill="#151210" stroke="#d4af37" stroke-width="6"/>' +
-    [0, 1, 2].map(i => '<rect x="' + (255 + i * 145) + '" y="175" width="120" height="170" rx="10" fill="#0a0906" stroke="#8a7440" stroke-width="2"/>' +
-      '<text x="' + (315 + i * 145) + '" y="280" font-size="70" text-anchor="middle" font-family="Orbitron,monospace" fill="' + ['#d4af37', '#e74c3c', '#d4af37'][i] + '">' + ['7', '★', '7'][i] + '</text>').join('') +
-    '<circle cx="720" cy="260" r="26" fill="#d4af37"/>'
-  ),
-  rocket: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    '<path d="M120,420 Q450,300 700,120" fill="none" stroke="#d4af37" stroke-width="3" stroke-dasharray="10,10" opacity=".6"/>' +
-    '<g transform="translate(700,120) rotate(-35)">' +
-      '<path d="M0,-70 C34,-30 34,40 0,70 C-34,40 -34,-30 0,-70 Z" fill="#181410" stroke="#f5dc8a" stroke-width="4"/>' +
-      '<circle cx="0" cy="-10" r="16" fill="#4a9eff" opacity=".8"/>' +
-      '<path d="M-18,50 L-40,95 L-6,72 Z" fill="#d4af37"/><path d="M18,50 L40,95 L6,72 Z" fill="#d4af37"/>' +
-      '<path d="M-10,72 L0,130 L10,72 Z" fill="#e74c3c" opacity=".85"/>' +
-    '</g>' +
-    [[180,380],[260,330],[350,300],[520,190]].map(p => '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#f5dc8a"/>').join('')
-  ),
-  treasure: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    '<g transform="translate(450,300)">' +
-      '<rect x="-140" y="0" width="280" height="140" rx="14" fill="#171310" stroke="#d4af37" stroke-width="5"/>' +
-      '<path d="M-146,4 Q0,-78 146,4 L146,20 Q0,-58 -146,20 Z" fill="#1c1712" stroke="#f5dc8a" stroke-width="5"/>' +
-      '<rect x="-140" y="56" width="280" height="16" fill="#8a7440"/>' +
-      '<rect x="-17" y="0" width="34" height="42" rx="7" fill="#d4af37" stroke="#1a1400" stroke-width="2"/>' +
-      '<circle cx="0" cy="20" r="7" fill="#1a1400"/>' +
-      '<ellipse cx="-72" cy="152" rx="26" ry="9" fill="#d4af37"/>' +
-      '<ellipse cx="0" cy="160" rx="30" ry="10" fill="#f5dc8a"/>' +
-      '<ellipse cx="68" cy="150" rx="24" ry="8" fill="#d4af37"/>' +
-      '<path d="M-90,-95 l6,16 16,6 -16,6 -6,16 -6,-16 -16,-6 16,-6 Z" fill="#fff" opacity=".85"/>' +
-      '<path d="M115,-105 l5,13 13,5 -13,5 -5,13 -5,-13 -13,-5 13,-5 Z" fill="#fff" opacity=".7"/>' +
-    '</g>'
-  ),
-  sports: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    '<path d="M0,440 Q450,360 900,440" fill="none" stroke="#3dd68c" stroke-width="4" opacity=".5"/>' +
-    '<path d="M0,470 Q450,410 900,470" fill="none" stroke="#3dd68c" stroke-width="3" opacity=".3"/>' +
-    '<path d="M600,110 L600,330 M600,110 L800,110 L800,330" fill="none" stroke="#8a7440" stroke-width="4"/>' +
-    [130,170,210,250,290].map(y => '<path d="M600,'+y+' L660,'+(y+8)+'" stroke="#3a2e1a" stroke-width="1.5"/>').join('') +
-    '<circle cx="300" cy="290" r="82" fill="#eee" stroke="#0a0908" stroke-width="3"/>' +
-    '<polygon points="300,232 337,258 323,300 277,300 263,258" fill="#171310"/>' +
-    '<path d="M300,232 L263,258 M300,232 L337,258 M277,300 L255,335 M323,300 L345,335 M263,258 L210,262 M337,258 L390,262" stroke="#171310" stroke-width="5" fill="none" stroke-linecap="round"/>'
-  ),
-  chips: () => _svgDataUri(
-    '<rect width="900" height="500" fill="#0a0908"/>' +
-    [0,1,2,3].map(i => '<ellipse cx="360" cy="'+(370-i*22)+'" rx="70" ry="22" fill="'+['#7a1414','#141414','#0d3a1f','#3a2b08'][i]+'" stroke="#d4af37" stroke-width="3"/>').join('') +
-    [0,1,2].map(i => '<ellipse cx="540" cy="'+(360-i*22)+'" rx="70" ry="22" fill="'+['#141414','#7a1414','#0d3a1f'][i]+'" stroke="#f5dc8a" stroke-width="3"/>').join('') +
-    '<circle cx="700" cy="200" r="38" fill="#d4af37" stroke="#1a1400" stroke-width="3"/>' +
-    '<circle cx="640" cy="150" r="26" fill="#f5dc8a" stroke="#1a1400" stroke-width="2"/>'
-  ),
-};
-// Кожна гра → сімʼя SVG-сцени, яка тематично їй відповідає.
-const GAME_BANNER_FAMILY = {
-  blackjack: 'cards', poker: 'cards', hilo: 'cards', cardgame: 'cards', cardwar: 'cards', baccarat: 'cards', videpoker: 'cards',
-  roulette: 'wheel', fortune: 'wheel', russianroulette: 'wheel',
-  dice: 'dice', sicbo: 'dice',
-  slots: 'slots', diamond: 'slots', double: 'slots',
-  crash: 'rocket', dragon: 'rocket',
-  mines: 'treasure', chests: 'treasure', tower: 'treasure', balloon: 'treasure', lootboxes: 'treasure',
-  sports: 'sports', penalty: 'sports', bowling: 'sports', archery: 'sports', duckshoot: 'sports', horseracing: 'sports',
-  coinflip: 'chips', colorbet: 'chips', limbo: 'chips', predict: 'chips', rps: 'chips', quiz: 'chips',
-  keno: 'chips', plinko: 'chips', scratch: 'chips', monopoly: 'chips',
-};
-
-let _lastPhotoBgTab = null;
-function updateScreenPhotoBg(tabId) {
-  const img = document.getElementById('screenPhotoBannerImg');
-  if (!img) return;
-  const family = GAME_BANNER_FAMILY[tabId];
-  if (family) {
-    // SVG банер гри — локальний, миттєвий, без мережі й без preload-затримки.
-    if (family === _lastPhotoBgTab) return;
-    _lastPhotoBgTab = family;
-    img.style.backgroundImage = "url('" + GAME_BANNER_SVG[family]() + "')";
-    img.classList.add('visible');
-    return;
-  }
-  const seed = SCREEN_PHOTOS[tabId] || SCREEN_PHOTOS.default;
-  if (seed === _lastPhotoBgTab) return;
-  _lastPhotoBgTab = seed;
-  img.classList.remove('visible');
-  const url = 'https://picsum.photos/seed/' + seed + '/900/500';
-  // Preload so the fade-in only starts once the photo is actually ready
-  // (avoids a flash of the raster decoding in place).
-  const preload = new Image();
-  preload.onload = () => {
-    if (_lastPhotoBgTab !== seed) return; // user already navigated elsewhere
-    img.style.backgroundImage = "url('" + url + "')";
-    img.classList.add('visible');
-  };
-  preload.src = url;
-}
-(function initScreenPhotoParallax() {
-  // #tab-home starts visible (no .hidden class) with no switchTab() call,
-  // so the banner needs an explicit first paint for it.
-  document.addEventListener('DOMContentLoaded', function() { updateScreenPhotoBg('home'); });
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  // #screenPhotoBannerImg has a 40px overscan margin (inset:-40px in CSS),
-  // so this is clamped well inside that — it can never reveal an edge.
-  window.addEventListener('scroll', function() {
-    const banner = document.getElementById('screenPhotoBanner');
-    const img = document.getElementById('screenPhotoBannerImg');
-    if (!banner || !img) return;
-    const top = banner.getBoundingClientRect().top;
-    if (top < -200 || top > window.innerHeight + 200) return; // nowhere near viewport
-    const y = Math.max(-35, Math.min(35, top * 0.15));
-    img.style.transform = 'translateY(' + y + 'px)';
-  }, { passive: true });
-})();
-
 function switchTab(id, el) {
-  try { updateScreenPhotoBg(id); } catch(e) { console.warn(e); }
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
     if(!isAdminUser()) {
