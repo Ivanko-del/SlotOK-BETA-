@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Maskable-варіант: фон на весь квадрат (кути обріже сама маска Android),
+       а логотип лишається всередині safe zone — кола радіусом 40% від сторони.
+       Тому зовнішньої рамки тут немає: вона б потрапила під обрізання. -->
+  <defs>
+    <!-- userSpaceOnUse, бо в <line> нульова площа bounding box, і при типовому
+         objectBoundingBox градієнт стає невизначеним — лінії барабанів не малюються. -->
+    <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0" stop-color="#ffdb6a"/>
+      <stop offset="1" stop-color="#d4af37"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#050505"/>
+  <g transform="translate(256 256) scale(1.1) translate(-256 -256)">
+    <g fill="none" stroke="url(#g)" stroke-width="16" stroke-linecap="round">
+      <rect x="120" y="150" width="272" height="212" rx="24"/>
+      <line x1="120" y1="256" x2="392" y2="256"/>
+      <line x1="212" y1="150" x2="212" y2="362"/>
+      <line x1="300" y1="150" x2="300" y2="362"/>
+    </g>
+    <circle cx="166" cy="203" r="14" fill="url(#g)"/>
+    <circle cx="256" cy="309" r="14" fill="url(#g)"/>
+    <circle cx="346" cy="203" r="14" fill="url(#g)"/>
+  </g>
+</svg>

@@ -17,6 +17,7 @@
 const { dbGet, dbUpdate } = require("../lib/firebase");
 const { sendMessage, esc } = require("../lib/telegram");
 const { sendPushToUser } = require("../lib/fcm");
+const { allow } = require("../lib/rate-limit");
 
 const PATHS = {
   deposit: "deposit_requests",
@@ -35,6 +36,9 @@ module.exports = async (req, res) => {
 
     if (type === "player-ping") {
       if (!to || !kind) { res.status(400).end(); return; }
+      // Гравцю — не більше 10 сповіщень на хвилину, скільки б разів
+      // не повторювали POST ззовні.
+      if (!(await allow(`ping:${to}`, 10, 60000))) { res.status(429).end(); return; }
       const chatId = await dbGet(`users/${to}/telegramChatId`);
       if (!chatId) { res.status(200).end(); return; }
 
@@ -82,6 +86,11 @@ module.exports = async (req, res) => {
 
     if (type === "support") {
       if (!id || !user) { res.status(400).end(); return; }
+      // Одне повідомлення підтримки = одне сповіщення адміну; повтори того
+      // самого id — це реплей. Плюс стеля на гравця, щоб потік нових
+      // повідомлень теж не перетворився на флуд в адмінський чат.
+      if (!(await allow(`support-msg:${user}:${id}`, 1, 60000))) { res.status(429).end(); return; }
+      if (!(await allow(`support-user:${user}`, 20, 60000))) { res.status(429).end(); return; }
       const msg = await dbGet(`support_chats/${user}/${id}`);
       if (!msg || msg.sender !== "user") { res.status(200).end(); return; }
       const adminChatId = await dbGet("bot_config/adminChatId");
@@ -102,6 +111,7 @@ module.exports = async (req, res) => {
       // Підтвердження обробляється тапом по кнопці в telegram-webhook.js
       // (callback_data "wd2fa:..."), не тут — тут лише надсилаємо повідомлення.
       if (!id) { res.status(400).end(); return; }
+      if (!(await allow(`wd2fa:${id}`, 3, 300000))) { res.status(429).end(); return; }
       const r = await dbGet(`withdraw_requests/${id}`);
       if (!r || r.status !== "pending_2fa") { res.status(200).end(); return; }
       const chatId = await dbGet(`users/${r.user}/telegramChatId`);
@@ -127,6 +137,11 @@ module.exports = async (req, res) => {
       res.status(400).end();
       return;
     }
+
+    // Заявка потребує рівно одного сповіщення адміну. Застосунок може
+    // повторити POST після мережевої помилки, тому не 1, а 3 на 5 хвилин —
+    // ретраї проходять, а реплей у циклі ні.
+    if (!(await allow(`${type}:${id}`, 3, 300000))) { res.status(429).end(); return; }
 
     const req_ = await dbGet(`${path}/${id}`);
     if (!req_ || req_.status !== "pending") {

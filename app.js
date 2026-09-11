@@ -76,7 +76,16 @@ const TG_BOT_USERNAME = 'SlotOK_DepositBot';
 // ПЕРЕВІРКА ЛОГІНУ
 // ============================================
 let _capturedLastSeen; // undefined = ще не зловили; для системи "Ми скучили"
-const savedUser = localStorage.getItem("royal_online_user");
+const SESSION_KEY = 'slotok_user';
+const LEGACY_SESSION_KEY = 'royal_online_user'; // назва з часів, коли проєкт звався Royal Online
+
+// Переносимо вже відкриті сесії на новий ключ, щоб ніхто не вилетів із акаунту
+let savedUser = localStorage.getItem(SESSION_KEY);
+if(!savedUser) {
+  const legacy = localStorage.getItem(LEGACY_SESSION_KEY);
+  if(legacy) { savedUser = legacy; localStorage.setItem(SESSION_KEY, legacy); }
+}
+localStorage.removeItem(LEGACY_SESSION_KEY);
 if(savedUser) { currentUser = savedUser; startDataSync(); }
 
 function startDataSync() {
@@ -715,7 +724,10 @@ function unlinkTelegram() {
 }
 
 function initTelegramLinkStatus() {
-  if (!currentUser) return;
+  // Без перевірки db тут кидався TypeError, коли Firebase не піднявся, — а ця
+  // функція викликається в шляху успішного входу ДО startDataSync(), тож
+  // виняток залишав користувача з «увійшов», але без жодної синхронізації даних.
+  if (!currentUser || !db) return;
   const tgStatusRef = db.ref('users/' + currentUser + '/telegramChatId');
   tgStatusRef.off('value'); // avoid stacking duplicate listeners if called more than once per session
   tgStatusRef.on('value', snap => {
@@ -3330,7 +3342,7 @@ function selfExclude(days) {
   db.ref('users/'+currentUser+'/selfExcludeUntil').set(Date.now()+days*86400000);
   db.ref('users/'+currentUser+'/selfExcluded').set(true);
   notify('Само-виключення активовано на '+days+' д.','success');
-  localStorage.removeItem('royal_online_user');
+  localStorage.removeItem(SESSION_KEY);
   location.reload();
 }
 
@@ -3476,20 +3488,27 @@ async function authLogin() {
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 10000);
 
-  const pHash = await sha256(p);
-
-  db.ref('users/' + n).once('value', snap => {
+  db.ref('users/' + n).once('value', async snap => {
     clearTimeout(timeout);
     if(!snap.exists()) { reset(); return showAuthError('❌ Гравця "' + n + '" не знайдено'); }
     const data = snap.val();
     if(data.banned) { reset(); return showAuthError('🚫 Акаунт заблоковано' + (data.banReason ? ': ' + data.banReason : '')); }
-    const storedPass = String(data.pass);
-    const hashMatches = storedPass === pHash;
-    const legacyPlaintextMatches = !hashMatches && storedPass === String(p);
-    if(!hashMatches && !legacyPlaintextMatches) { reset(); return showAuthError('❌ Невірний пароль'); }
-    if(legacyPlaintextMatches) {
-      // Непомітно мігруємо старий акаунт з відкритого пароля на хеш
-      db.ref('users/' + n + '/pass').set(pHash);
+
+    let check;
+    try {
+      check = await SlotOKPassword.verify(p, data.pass);
+    } catch(e) {
+      // Інакше кнопка назавжди лишиться в стані «Перевірка...»
+      reset();
+      console.error('Password verify error:', e);
+      return showAuthError('❌ ' + (e.message || 'Не вдалося перевірити пароль'));
+    }
+    if(!check.ok) { reset(); return showAuthError('❌ Невірний пароль'); }
+    if(check.needsUpgrade) {
+      // Пароль вірний, але лежить у застарілому вигляді (голий SHA-256 або
+      // взагалі відкритий текст) — мовчки переїжджаємо на PBKDF2 із сіллю.
+      // Це єдиний момент, коли ми взагалі бачимо пароль у відкритому вигляді.
+      try { await db.ref('users/' + n + '/pass').set(await SlotOKPassword.hash(p)); } catch(e) { console.warn(e); }
     }
     const isAdminAcc = n.toLowerCase() === 'theivankoo' || data.isAdmin === true;
     db.ref('site_config/maintenance').once('value', mSnap => {
@@ -3499,7 +3518,7 @@ async function authLogin() {
       }
       if(btn) btn.textContent = '✅ Входимо...';
       currentUser = n;
-      localStorage.setItem('royal_online_user', n);
+      localStorage.setItem(SESSION_KEY, n);
       initTelegramLinkStatus();
       _capturedLastSeen = data.lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
       db.ref('users/' + n).update({ lastSeen: Date.now() });
@@ -3538,8 +3557,16 @@ async function authRegister() {
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
 
-  const secAnswerHash = await sha256(secA.toLowerCase());
-  const passHash = await sha256(p);
+  let secAnswerHash, passHash;
+  try {
+    secAnswerHash = await SlotOKPassword.hash(secA.toLowerCase());
+    passHash = await SlotOKPassword.hash(p);
+  } catch(e) {
+    clearTimeout(timeout);
+    reset();
+    console.error('Password hash error:', e);
+    return showAuthError('❌ ' + (e.message || 'Не вдалося захешувати пароль'));
+  }
 
   // Step 1: check if nick is taken
   db.ref('users/' + n).once('value', snap => {
@@ -3578,7 +3605,7 @@ async function authRegister() {
       // Step 4: success!
       if(btn) btn.textContent = '✅ Входимо...';
       currentUser = n;
-      localStorage.setItem('royal_online_user', n);
+      localStorage.setItem(SESSION_KEY, n);
       initTelegramLinkStatus();
 
       // Add to history (non-blocking)
@@ -3682,11 +3709,21 @@ async function pwrVerifyAndReset(nick) {
   if(p1.length < 6) return pwrErr('Пароль мінімум 6 символів');
   if(p1 !== p2) return pwrErr('Паролі не збігаються');
 
-  const hash = await sha256(answer.toLowerCase());
-  const newPassHash = await sha256(p1);
-  db.ref('users/' + nick + '/securityAnswerHash').once('value', snap => {
-    if(snap.val() !== hash) return pwrErr('Невірна відповідь');
-    db.ref('users/' + nick + '/pass').set(newPassHash).then(() => {
+  db.ref('users/' + nick + '/securityAnswerHash').once('value', async snap => {
+    let check, newPassHash;
+    try {
+      // verify() сама розбереться, у якому форматі лежить стара відповідь —
+      // у частини акаунтів це ще голий SHA-256 з попередньої схеми.
+      check = await SlotOKPassword.verify(answer.toLowerCase(), snap.val());
+      if(!check.ok) return pwrErr('Невірна відповідь');
+      newPassHash = await SlotOKPassword.hash(p1);
+    } catch(e) {
+      console.error('Password reset error:', e);
+      return pwrErr(e.message || 'Не вдалося перевірити відповідь');
+    }
+    const updates = { ['users/' + nick + '/pass']: newPassHash };
+    if(check.needsUpgrade) updates['users/' + nick + '/securityAnswerHash'] = await SlotOKPassword.hash(answer.toLowerCase());
+    db.ref().update(updates).then(() => {
       document.getElementById('pwrModal')?.remove();
       notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
       const loginName = document.getElementById('loginName');
@@ -3779,7 +3816,7 @@ function setPlayerStatus(status) {
 }
 function logout(){
   stopBgMusic();
-  localStorage.removeItem("royal_online_user");
+  localStorage.removeItem(SESSION_KEY);
   location.reload();
 }
 
@@ -4897,10 +4934,44 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '78';
+const CURRENT_VERSION = '79';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '79',
+    title: '🔐 Оновлення v79 — захист паролів і виправлення',
+    date: Date.UTC(2026, 8, 12),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🔐 Паролі тепер захищені значно надійніше',
+        items: [
+          'Перевели зберігання паролів на сучасний захищений формат із індивідуальним «ключем» для кожного акаунту',
+          'Нічого робити не треба — твій пароль оновиться сам при наступному вході, він лишається тим самим',
+          'Тимчасові паролі після відновлення доступу стали непередбачуваними',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🎰 Логотип нарешті малюється повністю',
+        items: [
+          'На іконці застосунку не було видно ліній між барабанами — тепер логотип виглядає як задумано',
+          'Іконка на робочому столі Android більше не обрізається по краях',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Виправлено рідкісний випадок, коли після входу дані не підвантажувались зовсім',
+          'Сповіщення більше не спамлять, якщо хтось навмисне повторює запити',
+          'Номер версії у різних місцях застосунку більше не відрізняється',
+        ]
+      },
+    ]
+  },
   {
     version: '78',
     title: '✉️ Оновлення v78 — швидші повідомлення, профіль і пошук',
@@ -6073,6 +6144,15 @@ async function sha256(message) {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+// Тимчасовий пароль після скидання — це повноцінний доступ до акаунту, тому
+// він мусить братись із криптографічного джерела. Math.random() передбачуваний:
+// знаючи кілька попередніх значень, наступні можна вирахувати.
+function randomTempPassword() {
+  const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789'; // без схожих 0/o/1/l — пароль диктують у чат
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return Array.from(bytes).map(b => alphabet[b % alphabet.length]).join('');
+}
+
 async function getProvablyFairResult(min = 1, max = 100) {
   if(!_serverSeed) _serverSeed = Math.random().toString(36).slice(2, 18);
   _nonce++;
@@ -6198,7 +6278,7 @@ function sendNativeNotif(title, body, icon = '🎰') {
   if(!localStorage.getItem('pushEnabled')) return;
   // Only send when tab is hidden
   if(document.visibilityState === 'visible') return;
-  try { new Notification(title, { body, icon: '/favicon.ico' }); } catch(e) { console.warn(e); }
+  try { new Notification(title, { body, icon: '/icons/icon-192.png' }); } catch(e) { console.warn(e); }
 }
 
 function checkPendingNotifs() {
@@ -6439,10 +6519,14 @@ async function doChangePassword() {
   if(!old) return showErr('Введіть поточний пароль');
   if(nw.length < 6) return showErr('Мінімум 6 символів');
   if(nw !== conf) return showErr('Паролі не збігаються');
-  const oldHash = await sha256(old);
-  const storedPass = String(userData.pass);
-  if(storedPass !== oldHash && storedPass !== String(old)) return showErr('Поточний пароль невірний');
-  const nwHash = await sha256(nw);
+  let nwHash;
+  try {
+    if(!(await SlotOKPassword.verify(old, userData.pass)).ok) return showErr('Поточний пароль невірний');
+    nwHash = await SlotOKPassword.hash(nw);
+  } catch(e) {
+    console.error('Change password error:', e);
+    return showErr(e.message || 'Не вдалося перевірити пароль');
+  }
   db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
     userData.pass = nwHash;
     notify('✅ Пароль змінено!', 'success');
@@ -8108,8 +8192,8 @@ function renderPwrCard(id, req) {
 }
 
 async function approvePasswordReset(id, user) {
-  const tempPass = Math.random().toString(36).slice(2, 10);
-  const tempPassHash = await sha256(tempPass);
+  const tempPass = randomTempPassword();
+  const tempPassHash = await SlotOKPassword.hash(tempPass);
   db.ref('users/' + user + '/pass').set(tempPassHash).then(() => {
     db.ref('password_reset_requests/' + id).update({ status: 'done', approvedAt: Date.now(), approvedBy: currentUser });
     db.ref('pm/' + user + '/' + db.ref().push().key).set({

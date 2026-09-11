@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SlotOK">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>SlotOK v64</title>
+  <title>SlotOK v70</title>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -24,7 +24,7 @@
   <div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;flex-direction:column;transition:opacity .5s;">
     <div style="font-size:58px;margin-bottom:16px;">🎰</div>
     <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;background:linear-gradient(135deg,#d4af37,#ffdb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px;margin-bottom:8px;">SLOTOK</div>
-    <div style="font-size:11px;color:#444;margin-top:4px;letter-spacing:2px;">v69 · Завантаження...</div>
+    <div style="font-size:11px;color:#444;margin-top:4px;letter-spacing:2px;">v70 · Завантаження...</div>
     <div style="width:120px;height:2px;background:#111;border-radius:2px;margin-top:16px;overflow:hidden;">
       <div id="splashBar" style="height:100%;width:0;background:linear-gradient(90deg,#d4af37,#ffdb6a);border-radius:2px;transition:width .4s ease;"></div>
     </div>
@@ -2602,7 +2602,7 @@
         </div>
       </div>
 
-      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v63 • Made with ❤️</div>
+      <div style="text-align:center;color:#333;font-size:11px;padding:10px 0;">SlotOK v70 • Made with ❤️</div>
     </div>
 
     <!-- ===== КАРТИ (ДУРЕНЬ) ===== -->
@@ -3951,7 +3951,7 @@
       </div>
 
       <div style="margin-top:14px;font-size:9px;color:#222;text-align:center;">
-        🔞 18+ · Грайте відповідально · SlotOK v69
+        🔞 18+ · Грайте відповідально · SlotOK v70
       </div>
 
       <!-- DISCLAIMER -->
@@ -5312,6 +5312,9 @@
   })();
   </script>
 
+  <!-- Хешування паролів — спільний модуль із серверними функціями, має
+       завантажитись до app.js, бо той користується SlotOKPassword -->
+  <script src="password.js"></script>
   <!-- Main app -->
   <script src="app.js"></script>
 </body>

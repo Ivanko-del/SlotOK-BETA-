@@ -21,6 +21,7 @@ const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 const { startDeposit, startWithdraw, withdrawButtons, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
+const SlotOKPassword = require("../password.js");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -608,8 +609,8 @@ async function actOnPasswordReset(action, id) {
   if (!r || r.status !== "pending") return null;
 
   if (action === "approve") {
-    const tempPass = Math.random().toString(36).slice(2, 10);
-    const tempPassHash = await sha256(tempPass);
+    const tempPass = randomTempPassword();
+    const tempPassHash = await SlotOKPassword.hash(tempPass);
     await dbSet(`users/${r.user}/pass`, tempPassHash);
     await dbUpdate(`password_reset_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
     await notifyPlayer(
@@ -631,9 +632,11 @@ async function notifyPlayer(user, text) {
   return key;
 }
 
-async function sha256(message) {
-  const data = new TextEncoder().encode(message);
-  const hashBuffer = await require("crypto").webcrypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+// Тимчасовий пароль — це повноцінний доступ до акаунту, тому джерело
+// випадковості має бути криптографічним, а не Math.random().
+function randomTempPassword() {
+  const alphabet = "abcdefghijkmnpqrstuvwxyz23456789"; // без схожих 0/o/1/l
+  const bytes = require("crypto").randomBytes(12);
+  return Array.from(bytes).map((b) => alphabet[b % alphabet.length]).join("");
 }
 
