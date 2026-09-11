@@ -1015,7 +1015,8 @@ function finishSlots(bet) {
     else if(adj < 0.155 && !isBonusRound) { res = ["🎰","🎰","🎰"]; win = 0; /* handled below */ }
     // FREE SPINS trigger
     else if(adj < 0.19 && !isBonusRound)  { res = ["⭐","⭐","⭐"]; win = 0; /* free spins */ }
-    
+    if(win > 0) win = Math.round(win * getRtpMultiplier('slots'));
+
     const r1 = document.getElementById('r1');
     const r2 = document.getElementById('r2');
     const r3 = document.getElementById('r3');
@@ -1549,7 +1550,7 @@ function grExecuteSpin() {
       Object.values(bets).forEach(bet => {
         if(bet.color === winColor) {
           const mult = winColor === 'green' ? 14 : 2;
-          const payout = Math.floor(bet.amount * mult);
+          const payout = Math.floor(bet.amount * mult * getRtpMultiplier('roulette'));
           db.ref('users/'+bet.user+'/balance').set(firebase.database.ServerValue.increment(payout));
         }
       });
@@ -1583,7 +1584,7 @@ function grShowResult(result, bets, animated) {
     if(myBet) {
       const won = myBet.color === result.color;
       const mult = result.color==='green' ? 14 : 2;
-      const payout = won ? Math.floor(myBet.amount * mult) : 0;
+      const payout = won ? Math.floor(myBet.amount * mult * getRtpMultiplier('roulette')) : 0;
       if(won) {
         playSound('bonus');
         notify(`🎡 ${colorEmoji} ${result.number} — ВИГРАШ +₴${formatNumber(payout)}!`, 'success');
@@ -1733,7 +1734,7 @@ function cashoutCrash() {
     clearInterval(crashInt); crashInt = null;
     const b = crashActiveBet;  // читаємо збережену ставку, не input
     const mult = parseFloat(document.getElementById('crashDisplay').textContent);
-    const w = Math.floor(b * mult); 
+    const w = Math.floor(b * mult * getRtpMultiplier('crash'));
     // ServerValue.increment — безпечно від race condition
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w));
     trackQuest('crashCashouts', 1);
@@ -1958,7 +1959,7 @@ function clickMineCell(idx, el) {
         movesMade++;
         const safe = 25 - minesCount;
         const mult = getMinesMult(safe, movesMade, 25);
-        currentMinesProfit = Math.floor(minesBet * mult);
+        currentMinesProfit = Math.floor(minesBet * mult * getRtpMultiplier('mines'));
         document.getElementById('minesOpenCount').textContent = movesMade;
         document.getElementById('minesCashoutAmount').textContent = '₴'+formatNumber(currentMinesProfit);
         document.getElementById('minesMultDisplay').textContent = '×'+mult;
@@ -4330,6 +4331,9 @@ function bjSettleSplitRound(profit1, profit2) {
   document.getElementById('bjDealArea').classList.remove('hidden');
   document.getElementById('bjActions').classList.add('hidden');
   bjRender(false);
+  const rtpMult = getRtpMultiplier('blackjack');
+  if(profit1 > 0) profit1 = Math.floor(profit1 * rtpMult);
+  if(profit2 > 0) profit2 = Math.floor(profit2 * rtpMult);
   const totalProfit = profit1 + profit2;
   let totalPay = 0;
   if(profit1 > 0) totalPay += bjBet + profit1; else if(profit1 === 0) totalPay += bjBet;
@@ -4381,20 +4385,20 @@ function bjEnd(result) {
   document.getElementById('bjDealArea').classList.remove('hidden');
   document.getElementById('bjActions').classList.add('hidden');
   bjRender(false);
-  const profit = result==='blackjack' ? Math.floor(bjBet*1.5) : result==='win'?bjBet : result==='push'?0 : -bjBet;
+  const rtpMult = getRtpMultiplier('blackjack');
+  let win = 0;
+  if(result==='blackjack') win = bjBet + Math.floor(Math.floor(bjBet*1.5) * rtpMult);
+  else if(result==='win')  win = bjBet + Math.floor(bjBet * rtpMult);
+  else if(result==='push') win = bjBet;
   const msgs = {
-    blackjack: `🎉 BLACKJACK! +₴${formatNumber(Math.floor(bjBet*1.5))}`,
-    win:  `🏆 Виграш! +₴${formatNumber(bjBet)}`,
+    blackjack: `🎉 BLACKJACK! +₴${formatNumber(win - bjBet)}`,
+    win:  `🏆 Виграш! +₴${formatNumber(win - bjBet)}`,
     lose: '😔 Дилер виграв',
     bust: `💥 Перебір! (${bjValue(bjPlayerHand)})`,
     push: '🤝 Нічия — ставку повернуто'
   };
   const colors = { blackjack:'#ffd700', win:'var(--green)', lose:'var(--red)', bust:'var(--red)', push:'var(--accent)' };
   document.getElementById('bjResult').innerHTML = `<span style="color:${colors[result]}">${msgs[result]}</span>`;
-  let win = 0;
-  if(result==='blackjack') win = bjBet + Math.floor(bjBet*1.5);
-  else if(result==='win')  win = bjBet * 2;
-  else if(result==='push') win = bjBet;
   if(bjInsurancePaid && bjValue(bjDealerHand)===21) { win += bjInsuranceBet*2; notify('🛡️ Страховка спрацювала!','success'); }
   if(win > 0) {
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
@@ -4897,10 +4901,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '78';
+const CURRENT_VERSION = '79';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '79',
+    title: '⚖️ Оновлення v79 — баланс виплат',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '📊 Налаштування RTP тепер реально працюють',
+        items: [
+          'Значення RTP в адмін-панелі більше не просто цифра — тепер вони дійсно впливають на виплати в Слотах, Краші, Mines, Plinko, Блекджеку та Рулетці',
+          'За замовчуванням нічого не змінилось — виплати такі ж, як і раніше',
+        ]
+      },
+    ]
+  },
   {
     version: '78',
     title: '✉️ Оновлення v78 — швидші повідомлення, профіль і пошук',
@@ -6349,7 +6369,7 @@ async function dropPlinkoFair() {
   const mults = {low:[1.5,1.3,1.1,0.6,1.1,1.3,1.5], med:[5,2,1,0.2,1,2,5], high:[20,5,1.5,0,1.5,5,20]};
   setTimeout(() => {
     const mult = mults[plinkoRisk][bucketIndex];
-    const win = Math.floor(bet * mult);
+    const win = Math.floor(bet * mult * getRtpMultiplier('plinko'));
     if(mult > 0) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     if(win > bet) { playSound('win'); notify(`🔻 +${win}₴ (×${mult}) `, 'success'); addToHistory('Plinko: +'+win); }
     else { notify(`🔻 ×${mult} — ${win}₴`, mult > 0 ? 'info' : 'error'); addToHistory('Plinko: '+win); }
@@ -6422,6 +6442,35 @@ function startAllBackgroundTasks() {
   startAutoCleanup();
   checkPendingNotifs();
   checkAutoWipeOnLoad();
+  startRtpConfigListener();
+}
+
+// ═══════════════════════════════════════════
+// 📊 RTP CONTROL — реально впливає на виплати
+// ═══════════════════════════════════════════
+// Адмінка (Фінанси → "Контроль RTP") раніше лише зберігала числа, які
+// ніде не читались — суто UI-театр. Тепер кожна з цих ігор масштабує
+// свій виграш множником rtp/defaultRtp прямо в місці нарахування:
+// не чіпає шанси/символи/розподіл — тільки розмір виплати, так само як
+// getLootboxEdgeMultiplier() вище. Значення за замовчуванням (ті самі,
+// що показує loadRTPSettings()) дають множник 1.0 — без змін у
+// поведінці, поки адмін свідомо не зрушить повзунок.
+//
+// Читається через realtime-listener (не по запиту на кожен спін) —
+// інакше кожна ставка чекала б мережевий round-trip перед нарахуванням,
+// що відчутно "гальмувало" б швидкі ігри типу слотів чи Plinko.
+const RTP_DEFAULTS = { slots: 96, crash: 97, mines: 95, plinko: 94, blackjack: 98, roulette: 97, default: 96 };
+let _rtpConfig = {};
+function startRtpConfigListener() {
+  db.ref('admin_settings/rtp').on('value', snap => { _rtpConfig = snap.val() || {}; });
+}
+function getRtpMultiplier(game) {
+  const def = RTP_DEFAULTS[game] || RTP_DEFAULTS.default;
+  const saved = (typeof _rtpConfig[game] === 'number') ? _rtpConfig[game] : def;
+  // Клемп — навіть якщо адмін вкаже щось абсурдне, це ніколи не поверне
+  // ігри в стан "гарантований прибуток" (як було з лут-боксами) чи не
+  // обнулить виплати повністю.
+  return Math.max(0.5, Math.min(1.15, saved / def));
 }
 
 
