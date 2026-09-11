@@ -115,7 +115,14 @@ function startDataSync() {
                 db.ref('users/' + currentUser + '/selfExcluded').set(false);
               }
             }
-            if(!userData.isBot) antiCheatCheckBalanceJump(prevBalance, userData.balance);
+            if(userData.autoFrozen && !window._autoFrozenNoticeShown) {
+              window._autoFrozenNoticeShown = true;
+              setTimeout(() => notify('🚩 Акаунт тимчасово призупинено через підозрілу активність — ставки й виводи недоступні до перевірки адміном. Напиши в підтримку.', 'error'), 800);
+            }
+            if(!userData.isBot) {
+              antiCheatCheckBalanceJump(prevBalance, userData.balance);
+              if(userData.balance < 0) antiCheatFlag('negative_balance', `Баланс пішов у мінус: ₴${formatNumber(userData.balance)}`, 'high');
+            }
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
             if(!isAdminAcc) {
               db.ref('site_config/maintenance').once('value', mSnap => {
@@ -359,6 +366,10 @@ function playSound(type) {
 function validateBet(amount) {
     if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) {
         notify('🔒 Картка заблокована — розблокуй її в Касі', 'error');
+        return false;
+    }
+    if(userData.autoFrozen) {
+        notify('🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку', 'error');
         return false;
     }
     if(isRGLimitReached()) {
@@ -793,6 +804,7 @@ function submitWithdraw() {
     if(!card) return notify("Введіть реквізити для виводу", "error");
     if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
     if(userData.balance < amount) return notify("Недостатньо коштів", "error");
+    if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
 
     // Перевірка на pending заявки
     if(userData.pendingWithdraw) {
@@ -2471,6 +2483,32 @@ function saveRTPSettings() {
     data[game] = parseInt(inp.value)||96;
   });
   db.ref('admin_settings/rtp').set(data).then(()=>notify('✅ RTP збережено','success'));
+}
+
+// ═══════════════════════════════════════════
+// 📦 ЛУТ-БОКСИ — контроль виплат (admin)
+// ═══════════════════════════════════════════
+// Базові ваги призів уже налаштовані на RTP < 100% (89/92/96%). Цей повзунок
+// дає адміну ще один множник поверх них — суто для гнучкості, без потреби
+// редагувати код і робити новий деплой. Клемпиться на [50,100]%, тож
+// випадковою чи помилковою зміною неможливо знову зробити ящики +EV.
+function loadLootboxEdgeSetting() {
+  const el = document.getElementById('lootboxEdgeInput');
+  if(!el) return;
+  db.ref('admin_settings/lootboxEdge').once('value', snap => {
+    const v = snap.val();
+    el.value = Math.round((typeof v === 'number' ? Math.min(1, Math.max(0.5, v)) : 1) * 100);
+  });
+}
+function saveLootboxEdgeSetting() {
+  const el = document.getElementById('lootboxEdgeInput');
+  if(!el) return;
+  const pct = Math.min(100, Math.max(50, parseInt(el.value) || 100));
+  el.value = pct;
+  db.ref('admin_settings/lootboxEdge').set(pct / 100).then(() => {
+    logAdminAction('lootbox_edge', `${pct}%`);
+    notify(`✅ Виплата лут-боксів: ${pct}% від базової`, 'success');
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -6796,14 +6834,22 @@ function antiCheatCheckBalanceJump(oldBalance, newBalance) {
 
 function antiCheatFlag(type, details, severity) {
   if(!currentUser) return;
-  db.ref('anti_cheat_flags/'+currentUser).push({ type, details, severity: severity||'low', ts: Date.now() });
+  severity = severity || 'low';
+  db.ref('anti_cheat_flags/'+currentUser).push({ type, details, severity, ts: Date.now() });
   db.ref('users/'+currentUser+'/flagged').set(true);
   db.ref('users/'+currentUser+'/flagReason').set(details);
+  // Автоматична дія: 'high' — це патерни, що майже ніколи не трапляються
+  // чесно (від'ємний баланс, ручна правка балансу консоллю тощо), тож
+  // варто одразу призупинити ставки/виводи до ручної перевірки адміном,
+  // а не лишень мовчазно чекати поки хтось прочитає сповіщення.
+  if(severity === 'high' && !userData?.autoFrozen) {
+    db.ref('users/'+currentUser).update({ autoFrozen: true, autoFrozenReason: details, autoFrozenAt: Date.now() });
+  }
   // Реальне сповіщення адміну — не просто мовчазний лог
   const icon = severity === 'high' ? '🔴' : severity === 'medium' ? '🟠' : '🟡';
   db.ref('pm/theivankoo/'+db.ref().push().key).set({
     from: '🚩 Анти-чіт', to: 'theivankoo',
-    text: `${icon} Підозріла активність @${currentUser}\nТип: ${type}\n${details}`,
+    text: `${icon} Підозріла активність @${currentUser}\nТип: ${type}\n${details}${severity === 'high' ? '\n⛔ Акаунт автоматично призупинено до перевірки' : ''}`,
     ts: Date.now()
   });
   db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -6821,7 +6867,7 @@ function loadFlaggedPlayers() {
     el.innerHTML = entries.map(([nick, u]) => `
       <div style="background:#0d0d0d;border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;">🚩 ${nick}</span>
+          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgba(231,76,60,.18);color:#e74c3c;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
           <button onclick="clearPlayerFlag('${nick}')" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
         <div style="font-size:10px;color:#888;">${u.flagReason || 'без деталей'}</div>
@@ -6832,8 +6878,7 @@ function loadFlaggedPlayers() {
 
 function clearPlayerFlag(nick) {
   if(!isAdminUser()) return notify('Тільки для адміна', 'error');
-  db.ref('users/'+nick+'/flagged').set(false);
-  db.ref('users/'+nick+'/flagReason').set(null);
+  db.ref('users/'+nick).update({ flagged: false, flagReason: null, autoFrozen: false, autoFrozenReason: null });
   logAdminAction('unflag', `@${nick}`);
   notify('✅ Позначку знято з '+nick, 'success');
   loadFlaggedPlayers();
@@ -6843,11 +6888,27 @@ function clearPlayerFlag(nick) {
 function saveUserIP() {
   if (!db || !currentUser) return;
   fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(function(data) {
-    db.ref('users/' + currentUser + '/lastIP').set(data.ip || 'unknown');
-    logSecurityEvent('login', 'IP: ' + (data.ip || 'unknown'));
+    const ip = data.ip || 'unknown';
+    db.ref('users/' + currentUser + '/lastIP').set(ip);
+    logSecurityEvent('login', 'IP: ' + ip);
+    if(ip !== 'unknown') antiCheatCheckMultiAccount(ip);
   }).catch(function() {
     logSecurityEvent('login', 'IP: unknown');
   });
+}
+
+// Кілька акаунтів з однієї IP не завжди читерство (сім'я/гуртожиток на
+// одному Wi-Fi), тож це лише 'medium' — сповіщає адміна для ручної
+// перевірки, а не блокує нікого автоматично.
+function antiCheatCheckMultiAccount(ip) {
+  if(!currentUser) return;
+  db.ref('users').orderByChild('lastIP').equalTo(ip).once('value').then(snap => {
+    const users = snap.val() || {};
+    const others = Object.keys(users).filter(n => n !== currentUser && !users[n].isBot);
+    if(others.length >= 2) {
+      antiCheatFlag('multi_account', `Та сама IP що й у ${others.length} інших акаунтів: ${others.slice(0,5).join(', ')}`, 'medium');
+    }
+  }).catch(() => {});
 }
 
 // ── ЧАТОВИЙ РОЗІГРАШ ───────────────────────────────────────────
@@ -7363,7 +7424,7 @@ function switchAdminTab(tab, el) {
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
   if(tab==='bots')    { try{loadBots();}catch(e) { console.warn(e); } }
   if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
-  if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } }
+  if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } try{loadLootboxEdgeSetting();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
@@ -9295,35 +9356,40 @@ function loadHourlyHistory() {
 // ============================================
 // ===== ЛУТ-БОКСИ =====
 // ============================================
+// Weights are tuned so every tier pays out BELOW 100% of its price on
+// average (~89% common / ~92% rare / ~96% epic) — RTP that still leaves
+// real upside variance on a lucky pull, but can't be farmed for guaranteed
+// profit by opening boxes in bulk. (Previously every tier averaged >100%
+// of price back, which is a straight money-printing exploit at scale.)
 const LOOTBOX_CONFIGS = {
   common: {
     name: 'Звичайний ящик', icon: '📦', price: 150, color: '#aaa',
     prizes: [
-      { weight: 40, mult: 0.5, label: 'Втішний приз' },
-      { weight: 35, mult: 1.0, label: 'Повернення' },
-      { weight: 15, mult: 2.0, label: 'Подвоєння!' },
-      { weight: 7,  mult: 4.0, label: '🔥 Гарячий приз!' },
-      { weight: 3,  mult: 10.0, label: '💥 ДЖЕКПОТ!' },
+      { weight: 70, mult: 0.5, label: 'Втішний приз' },
+      { weight: 20, mult: 1.0, label: 'Повернення' },
+      { weight: 6,  mult: 2.0, label: 'Подвоєння!' },
+      { weight: 3,  mult: 4.0, label: '🔥 Гарячий приз!' },
+      { weight: 1,  mult: 10.0, label: '💥 ДЖЕКПОТ!' },
     ]
   },
   rare: {
     name: 'Rare Box', icon: '💠', price: 500, color: '#4a9eff',
     prizes: [
-      { weight: 35, mult: 0.5, label: 'Втішний приз' },
-      { weight: 30, mult: 1.2, label: 'Повернення' },
-      { weight: 20, mult: 2.5, label: 'Подвоєння!' },
-      { weight: 10, mult: 5.0, label: '🔥 Гарячий приз!' },
-      { weight: 5,  mult: 12.0, label: '💥 ДЖЕКПОТ!' },
+      { weight: 75, mult: 0.5, label: 'Втішний приз' },
+      { weight: 17, mult: 1.2, label: 'Повернення' },
+      { weight: 5,  mult: 2.5, label: 'Подвоєння!' },
+      { weight: 2,  mult: 5.0, label: '🔥 Гарячий приз!' },
+      { weight: 1,  mult: 12.0, label: '💥 ДЖЕКПОТ!' },
     ]
   },
   epic: {
     name: 'Epic Box', icon: '💜', price: 2000, color: '#b57bee',
     prizes: [
-      { weight: 30, mult: 0.6, label: 'Втішний приз' },
-      { weight: 30, mult: 1.5, label: 'Повернення' },
-      { weight: 20, mult: 3.0, label: 'Потрійний приз!' },
-      { weight: 12, mult: 6.0, label: '🔥 Великий приз!' },
-      { weight: 8,  mult: 15.0, label: '💥 ЕПІЧНИЙ ДЖЕКПОТ!' },
+      { weight: 85, mult: 0.6, label: 'Втішний приз' },
+      { weight: 10, mult: 1.5, label: 'Повернення' },
+      { weight: 3,  mult: 3.0, label: 'Потрійний приз!' },
+      { weight: 1,  mult: 6.0, label: '🔥 Великий приз!' },
+      { weight: 1,  mult: 15.0, label: '💥 ЕПІЧНИЙ ДЖЕКПОТ!' },
     ]
   }
 };
@@ -9335,42 +9401,75 @@ function rollLootbox(config) {
   return config.prizes[config.prizes.length - 1];
 }
 
+let _lootboxOpening = false;
+
+// Admin-tunable house edge on top of the base weights (Адмінка → Фінанси →
+// "Лут-бокси"): 1.0 = the tuned baseline above, lower values shave payouts
+// further. Clamped to [0.5, 1.0] so a typo/mistake in the admin panel can
+// never push a box back into guaranteed-profit territory.
+function getLootboxEdgeMultiplier() {
+  return db.ref('admin_settings/lootboxEdge').once('value').then(snap => {
+    const v = snap.val();
+    return (typeof v === 'number') ? Math.min(1, Math.max(0.5, v)) : 1;
+  }).catch(() => 1);
+}
+
 function openLootbox(type) {
   const cfg = LOOTBOX_CONFIGS[type];
+  if(_lootboxOpening) return;
   if(userData.balance < cfg.price) return notify(`Недостатньо коштів! Потрібно ${cfg.price} ₴`, 'error');
+  _lootboxOpening = true;
 
-  // Списуємо гроші
-  db.ref('users/' + currentUser).update({ balance: firebase.database.ServerValue.increment(-cfg.price) });
-  addWager(cfg.price);
-  trackQuest('openLootbox', 1);
+  // Atomic check-and-deduct — a plain increment() after only a client-side
+  // balance check lets someone spam-click past the check before the local
+  // balance re-syncs and buy boxes they can't afford, pushing the real
+  // balance negative. A transaction re-reads the live server value on every
+  // attempt, so it can never deduct more than what's actually there.
+  db.ref('users/' + currentUser + '/balance').transaction(bal => {
+    if(bal == null || bal < cfg.price) return; // abort — refuses the write
+    return bal - cfg.price;
+  }, (err, committed) => {
+    if(err || !committed) {
+      _lootboxOpening = false;
+      if(!err) notify(`Недостатньо коштів! Потрібно ${cfg.price} ₴`, 'error');
+      return;
+    }
 
-  const prize = rollLootbox(cfg);
-  const win = Math.floor(cfg.price * prize.mult);
+    addWager(cfg.price);
+    trackQuest('openLootbox', 1);
 
-  const resultScreen = document.getElementById('lootboxResultScreen');
-  // Reparent to <body> so position:fixed is relative to the viewport, not
-  // the .screen ancestor — .screen-enter's transform animation otherwise
-  // turns it into a containing block and traps the fixed overlay in-flow.
-  if (resultScreen.parentElement !== document.body) document.body.appendChild(resultScreen);
-  resultScreen.classList.remove('hidden');
-  document.getElementById('lbOpenEmoji').textContent = cfg.icon;
-  ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    const prize = rollLootbox(cfg);
 
-  const reveal = () => {
-    const amtEl = document.getElementById('lbWinAmount');
-    amtEl.textContent = '+' + win + ' ₴';
-    amtEl.style.color = prize.mult >= 5 ? 'var(--green)' : 'var(--accent)';
-    document.getElementById('lbWinType').textContent = `${cfg.name} • ${prize.label}`;
-    ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.remove('hidden'));
-    playSound(prize.mult >= 2 ? 'win' : 'click');
-  };
-  playCaseOpen3D(cfg.color, reveal);
+    getLootboxEdgeMultiplier().then(edge => {
+      const win = Math.floor(cfg.price * prize.mult * edge);
 
-  // Нараховуємо виграш (не чекає на візуальну анімацію)
-  db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
-  db.ref('users/' + currentUser + '/lootboxHistory').push({ type, win, price: cfg.price, time: Date.now() });
-  addToHistory(`LootBox ${cfg.name}: +${win} ₴`);
-  loadLootboxHistory();
+      const resultScreen = document.getElementById('lootboxResultScreen');
+      // Reparent to <body> so position:fixed is relative to the viewport, not
+      // the .screen ancestor — .screen-enter's transform animation otherwise
+      // turns it into a containing block and traps the fixed overlay in-flow.
+      if (resultScreen.parentElement !== document.body) document.body.appendChild(resultScreen);
+      resultScreen.classList.remove('hidden');
+      document.getElementById('lbOpenEmoji').textContent = cfg.icon;
+      ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+      const reveal = () => {
+        const amtEl = document.getElementById('lbWinAmount');
+        amtEl.textContent = '+' + win + ' ₴';
+        amtEl.style.color = prize.mult >= 5 ? 'var(--green)' : 'var(--accent)';
+        document.getElementById('lbWinType').textContent = `${cfg.name} • ${prize.label}`;
+        ['lbWinAmount', 'lbWinType', 'lbClaimBtn'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+        playSound(prize.mult >= 2 ? 'win' : 'click');
+        _lootboxOpening = false;
+      };
+      playCaseOpen3D(cfg.color, reveal);
+
+      // Нараховуємо виграш (не чекає на візуальну анімацію)
+      db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
+      db.ref('users/' + currentUser + '/lootboxHistory').push({ type, win, price: cfg.price, time: Date.now() });
+      addToHistory(`LootBox ${cfg.name}: +${win} ₴`);
+      loadLootboxHistory();
+    });
+  });
 }
 
 let _threeLoadPromise = null;

@@ -550,12 +550,12 @@
     .badge { background: #222; border: 1px solid #444; border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #aaa; box-shadow: var(--bevel); }
     .badge.gold { border-color: var(--accent); color: var(--accent); background: rgba(212,175,55,0.1); }
 
-    /* АДМІН РОЗШИРЕНИЙ */
+    /* АДМІН РОЗШИРЕНИЙ — premium casino-lux treatment (v74) */
     .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     /* Admin panel tabs */
-    .adm-tab-btn { background:none;border:1px solid #2a2a2a;color:#777;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
-    .adm-tab-btn:hover { border-color:rgba(212,175,55,.35); box-shadow:var(--bevel), var(--glow-accent-soft); }
-    .adm-tab-btn.active { background:var(--accent);color:#000;border-color:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 5px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.5); }
+    .adm-tab-btn { background:linear-gradient(160deg, rgba(255,255,255,.03), rgba(0,0,0,0) 55%), #0a0908;border:1px solid rgba(212,175,55,.15);color:#8a7440;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
+    .adm-tab-btn:hover { border-color:rgba(212,175,55,.4); color:#d4af37; box-shadow:var(--bevel), var(--glow-accent-soft); }
+    .adm-tab-btn.active { background:linear-gradient(135deg,#f5dc8a,#d4af37 60%,#a67c1a);color:#1a0d00;border-color:#f5dc8a;box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 5px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.5); }
     .adm-panel { display:none !important; }
     .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
     .req-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;position:relative;overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
@@ -578,9 +578,9 @@
     .penalty-zone:hover { background: rgba(39,174,96,.3) !important; transform: scale(1.05); }
     #jackpotTicker:hover { background: linear-gradient(90deg,#2d1500,#3d2000,#2d1500) !important; }
     @keyframes duckFly { from{transform:translateX(-40px) scaleX(-1)} to{transform:translateX(260px) scaleX(-1)} }
-    .admin-stat { background: #111; border: 1px solid #222; border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
-    .admin-stat-val { font-size: 22px; font-weight: bold; color: var(--accent); }
-    .admin-stat-label { font-size: 11px; color: #555; }
+    .admin-stat { background: linear-gradient(160deg, rgba(212,175,55,.05), rgba(0,0,0,0) 55%), #0a0908; border: 1px solid rgba(212,175,55,.16); border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
+    .admin-stat-val { font-size: 22px; font-weight: bold; font-family: 'Orbitron', monospace; background:linear-gradient(135deg,#f5dc8a,#d4af37 55%,#a67c1a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .admin-stat-label { font-size: 11px; color: #8a7440; text-transform: uppercase; letter-spacing: .5px; }
     .promo-row { display: flex; justify-content: space-between; align-items: center; background: #111; border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 6px; border: 1px solid #222; box-shadow: var(--bevel), var(--elev-1); }
     .announce-item { background: #1a1a00; border: 1px solid #333; border-radius: var(--r-sm); padding: 10px; margin-bottom: 8px; font-size: 13px; box-shadow: var(--bevel), var(--elev-1); }
     .support-thread { background: #111; border-radius: var(--r-sm); padding: 10px; margin-bottom: 8px; border: 1px solid #222; cursor: pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .12s, box-shadow .14s; }
@@ -2201,7 +2201,7 @@
 }
 .bank-action-btn {
   background: linear-gradient(135deg, #111, #0d0d0d);
-  border: 1px solid rgba(255,255,255,.07);
+  border: 1px solid rgba(212,175,55,.12);
   border-radius: var(--r-sm);
   padding: 12px 6px;
   text-align: center;
@@ -2240,7 +2240,11 @@
   margin-bottom: 14px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--bevel), var(--elev-1);
+  box-shadow: var(--bevel), var(--elev-1), 0 0 32px -20px rgba(212,175,55,.3);
+}
+.card-balance-block::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,.5), transparent);
 }
 .card-balance-block::before {
   content: '₴';
