@@ -233,7 +233,7 @@
         <div id="mysteryBoxWidget" class="hidden anim-cascade" style="margin-bottom:12px;"></div>
 
         <!-- Стрічка друзів -->
-        <div id="friendsFeedWidget" class="hidden anim-cascade" style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.12);border-radius:16px;padding:14px;margin-bottom:12px;"></div>
+        <div id="friendsFeedWidget" class="hidden anim-cascade hp-widget-card" style="margin-bottom:12px;"></div>
 
         <!-- Щоденний бонус banner -->
         <div id="dailyBonusBanner" class="hidden anim-cascade anim-press" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation-delay:.02s;" onclick="openDailyBonus()">
@@ -249,81 +249,81 @@
 
         <!-- VIP + Battle Pass mini progress -->
         <div class="section-header" style="margin-top:0;">👤 Твій прогрес</div>
-        <div class="anim-cascade" style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:12px;animation-delay:.06s;box-shadow:var(--bevel),var(--elev-1);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:11px;color:#777;">👑 VIP: <b id="homeVipLabel" style="color:var(--accent);">Bronze</b></span>
-            <span id="homeVipPct" style="font-size:11px;color:#777;">0%</span>
+        <div class="anim-cascade hp-progress-card" style="animation-delay:.06s;">
+          <div class="hp-progress-row">
+            <span>👑 VIP: <b id="homeVipLabel" style="color:var(--accent);">Bronze</b></span>
+            <span id="homeVipPct">0%</span>
           </div>
-          <div style="height:7px;background:var(--input);border-radius:6px;overflow:hidden;margin-bottom:10px;box-shadow:inset 0 2px 4px rgba(0,0,0,.5);">
-            <div id="homeVipBar" class="progress-fill-shimmer" style="height:100%;width:0%;border-radius:6px;transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
+          <div class="hp-progress-track">
+            <div id="homeVipBar" class="progress-fill-shimmer hp-progress-fill" style="width:0%;"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-size:11px;color:#777;">🎫 Battle Pass</span>
-            <span id="homeBpPct" style="font-size:11px;color:#777;">Lv0</span>
+          <div class="hp-progress-row">
+            <span>🎫 Battle Pass</span>
+            <span id="homeBpPct">Lv0</span>
           </div>
-          <div style="height:7px;background:var(--input);border-radius:6px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.5);">
-            <div id="homeBpBar" class="progress-fill-shimmer" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#5a20c0,#c9a0ff);transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
+          <div class="hp-progress-track">
+            <div id="homeBpBar" class="progress-fill-shimmer hp-progress-fill" style="width:0%;background:linear-gradient(90deg,#5a20c0,#c9a0ff);"></div>
           </div>
         </div>
 
         <!-- Live лента виграшів -->
-        <div class="anim-cascade" style="background:linear-gradient(90deg,rgba(231,76,60,.06),rgba(0,0,0,0));border:1px solid rgba(231,76,60,.15);border-radius:10px;padding:8px 12px;margin-bottom:12px;overflow:hidden;display:flex;align-items:center;gap:8px;animation-delay:.08s;">
-          <span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;flex-shrink:0;animation:heartbeat 2s infinite;letter-spacing:.5px;">LIVE</span>
-          <span id="winTicker" style="font-size:12px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <div class="anim-cascade hp-live-ticker" style="animation-delay:.08s;">
+          <span class="hp-live-badge">LIVE</span>
+          <span id="winTicker" class="hp-live-text"></span>
         </div>
 
         <!-- Quick stats row -->
-        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;animation-delay:.1s;">
-          <div class="anim-press" style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;box-shadow:var(--bevel),var(--elev-1);" onclick="switchTab('stats')">
-            <div style="font-size:15px;font-weight:900;color:#3dd68c;" id="homeStatBalance">₴0</div>
-            <div style="font-size:9px;color:#555;margin-top:2px;">Баланс</div>
+        <div class="anim-cascade hp-stats-grid hp-stats-grid-3" style="animation-delay:.1s;">
+          <div class="anim-press hp-stat-tile stat-green" onclick="switchTab('stats')">
+            <div class="hp-stat-val" id="homeStatBalance">₴0</div>
+            <div class="hp-stat-lbl">Баланс</div>
           </div>
-          <div class="anim-press" style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;box-shadow:var(--bevel),var(--elev-1);" onclick="switchTab('vip')">
-            <div style="font-size:15px;font-weight:900;color:#d4af37;" id="homeStatVip">—</div>
-            <div style="font-size:9px;color:#555;margin-top:2px;">VIP рівень</div>
+          <div class="anim-press hp-stat-tile stat-gold" onclick="switchTab('vip')">
+            <div class="hp-stat-val" id="homeStatVip">—</div>
+            <div class="hp-stat-lbl">VIP рівень</div>
           </div>
-          <div class="anim-press" style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.15);border-radius:12px;padding:10px;text-align:center;cursor:pointer;box-shadow:var(--bevel),var(--elev-1);" onclick="openDailyBonus()">
-            <div style="font-size:15px;font-weight:900;color:#4a9eff;" id="homeStatStreak">0🔥</div>
-            <div style="font-size:9px;color:#555;margin-top:2px;">Серія днів</div>
+          <div class="anim-press hp-stat-tile stat-blue" onclick="openDailyBonus()">
+            <div class="hp-stat-val" id="homeStatStreak">0🔥</div>
+            <div class="hp-stat-lbl">Серія днів</div>
           </div>
         </div>
-        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;animation-delay:.12s;">
-          <div class="anim-press" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;box-shadow:var(--bevel),var(--elev-1);" onclick="switchTab('stats')">
-            <div style="font-size:15px;font-weight:900;color:#eee;" id="homeStatBets">0</div>
-            <div style="font-size:9px;color:#555;margin-top:2px;">Всього ставок</div>
+        <div class="anim-cascade hp-stats-grid hp-stats-grid-2" style="animation-delay:.12s;">
+          <div class="anim-press hp-stat-tile" onclick="switchTab('stats')">
+            <div class="hp-stat-val" id="homeStatBets">0</div>
+            <div class="hp-stat-lbl">Всього ставок</div>
           </div>
-          <div class="anim-press" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;box-shadow:var(--bevel),var(--elev-1);" onclick="switchTab('stats')">
-            <div style="font-size:15px;font-weight:900;color:#eee;" id="homeStatWins">₴0</div>
-            <div style="font-size:9px;color:#555;margin-top:2px;">Всього виграно</div>
+          <div class="anim-press hp-stat-tile" onclick="switchTab('stats')">
+            <div class="hp-stat-val" id="homeStatWins">₴0</div>
+            <div class="hp-stat-lbl">Всього виграно</div>
           </div>
         </div>
 
         <!-- 4 банери -->
         <div class="section-header">⚡ Швидкі дії</div>
-        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;animation-delay:.14s;">
-          <div class="anim-press" onclick="switchTab('sports')" style="background:linear-gradient(135deg,#061a08,#0a2810);border:1px solid rgba(61,214,140,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
-            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">⚽</div>
-            <div style="font-size:24px;margin-bottom:5px;">⚽</div>
-            <div style="font-size:13px;font-weight:800;color:#3dd68c;">Спортбетинг</div>
-            <div style="font-size:10px;color:#555;margin-top:2px;">Live ставки</div>
+        <div class="anim-cascade hp-action-grid" style="animation-delay:.14s;">
+          <div class="anim-press hp-action-tile act-green" onclick="switchTab('sports')">
+            <div class="hp-action-deco">⚽</div>
+            <div class="hp-action-icon">⚽</div>
+            <div class="hp-action-title">Спортбетинг</div>
+            <div class="hp-action-sub">Live ставки</div>
           </div>
-          <div class="anim-press" onclick="openDailyBonus()" style="background:linear-gradient(135deg,#1a1504,#2a2008);border:1px solid rgba(212,175,55,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
-            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🎁</div>
-            <div style="font-size:24px;margin-bottom:5px;">🎁</div>
-            <div style="font-size:13px;font-weight:800;color:#d4af37;">Бонус дня</div>
-            <div style="font-size:10px;color:#555;margin-top:2px;">Щоденна нагорода</div>
+          <div class="anim-press hp-action-tile act-gold" onclick="openDailyBonus()">
+            <div class="hp-action-deco">🎁</div>
+            <div class="hp-action-icon">🎁</div>
+            <div class="hp-action-title">Бонус дня</div>
+            <div class="hp-action-sub">Щоденна нагорода</div>
           </div>
-          <div class="anim-press" onclick="switchTab('vip')" style="background:linear-gradient(135deg,#150a20,#220535);border:1px solid rgba(193,126,234,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
-            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">👑</div>
-            <div style="font-size:24px;margin-bottom:5px;">👑</div>
-            <div style="font-size:13px;font-weight:800;color:#c17eea;">VIP Клуб</div>
-            <div style="font-size:10px;color:#555;margin-top:2px;">14 рівнів • Cashback</div>
+          <div class="anim-press hp-action-tile act-purple" onclick="switchTab('vip')">
+            <div class="hp-action-deco">👑</div>
+            <div class="hp-action-icon">👑</div>
+            <div class="hp-action-title">VIP Клуб</div>
+            <div class="hp-action-sub">14 рівнів • Cashback</div>
           </div>
-          <div class="anim-press" onclick="switchTab('tournaments')" style="background:linear-gradient(135deg,#180c04,#281508);border:1px solid rgba(243,156,18,.2);border-radius:var(--r-md);padding:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s var(--ease-tactile),filter .15s,box-shadow .15s;box-shadow:var(--bevel),var(--elev-1);">
-            <div style="position:absolute;right:-6px;top:-6px;font-size:54px;opacity:.1;">🏆</div>
-            <div style="font-size:24px;margin-bottom:5px;">🏆</div>
-            <div style="font-size:13px;font-weight:800;color:#f39c12;">Турніри</div>
-            <div style="font-size:10px;color:#555;margin-top:2px;" id="homeTournamentPrize">Топ призи</div>
+          <div class="anim-press hp-action-tile act-orange" onclick="switchTab('tournaments')">
+            <div class="hp-action-deco">🏆</div>
+            <div class="hp-action-icon">🏆</div>
+            <div class="hp-action-title">Турніри</div>
+            <div class="hp-action-sub" id="homeTournamentPrize">Топ призи</div>
           </div>
         </div>
 
@@ -356,57 +356,56 @@
         </div>
 
         <!-- Battle Pass промо -->
-        <div class="anim-cascade anim-press" style="background:linear-gradient(135deg,#0a0020,#1a0040,#0a0020);border:1.5px solid rgba(138,43,226,.4);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;animation-delay:.16s;" onclick="switchTab('battlepass')">
-          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(138,43,226,.8),transparent);"></div>
-          <div style="position:absolute;right:-10px;top:-10px;font-size:80px;opacity:.08;">🎫</div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="font-size:36px;animation:float 3s ease-in-out infinite;">🎫</div>
+        <div class="anim-cascade anim-press hp-promo-card" style="animation-delay:.16s;" onclick="switchTab('battlepass')">
+          <div class="hp-promo-deco">🎫</div>
+          <div class="hp-promo-body">
+            <div class="hp-promo-icon">🎫</div>
             <div>
-              <div style="font-weight:900;font-size:15px;color:#c9a0ff;font-family:'Orbitron',monospace;">BATTLE PASS</div>
-              <div style="font-size:12px;color:#888;margin-top:2px;">50 рівнів • Ексклюзивні нагороди</div>
-              <div style="display:flex;gap:4px;margin-top:6px;">
-                <span style="background:rgba(201,160,255,.1);border:1px solid rgba(201,160,255,.2);border-radius:6px;padding:2px 8px;font-size:10px;color:#c9a0ff;">💰 До 50 000 ₴</span>
-                <span style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;padding:2px 8px;font-size:10px;color:#3dd68c;">🎟️ Фріспіни</span>
+              <div class="hp-promo-title">BATTLE PASS</div>
+              <div class="hp-promo-sub">50 рівнів • Ексклюзивні нагороди</div>
+              <div class="hp-promo-pills">
+                <span class="hp-promo-pill" style="background:rgba(201,160,255,.1);border:1px solid rgba(201,160,255,.2);color:#c9a0ff;">💰 До 50 000 ₴</span>
+                <span class="hp-promo-pill" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);color:#3dd68c;">🎟️ Фріспіни</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Статистика казино онлайн -->
-        <div class="anim-cascade" style="background:#070707;border:1px solid #111;border-radius:14px;padding:12px 14px;margin-bottom:12px;animation-delay:.18s;">
-          <div style="font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Казино зараз</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-            <div style="text-align:center;">
-              <div style="font-size:16px;font-weight:900;color:#3dd68c;" id="casinoOnlineCount">—</div>
-              <div style="font-size:9px;color:#444;margin-top:2px;">Онлайн</div>
+        <div class="anim-cascade hp-widget-card" style="animation-delay:.18s;">
+          <div class="hp-widget-label" style="margin-bottom:10px;">📊 Казино зараз</div>
+          <div class="hp-mini-grid">
+            <div class="hp-mini-item">
+              <div class="hp-mini-val" style="color:#3dd68c;" id="casinoOnlineCount">—</div>
+              <div class="hp-mini-lbl">Онлайн</div>
             </div>
-            <div style="text-align:center;">
-              <div style="font-size:16px;font-weight:900;color:#d4af37;" id="casinoTodayWins">—</div>
-              <div style="font-size:9px;color:#444;margin-top:2px;">Виграшів</div>
+            <div class="hp-mini-item">
+              <div class="hp-mini-val" style="color:#d4af37;" id="casinoTodayWins">—</div>
+              <div class="hp-mini-lbl">Виграшів</div>
             </div>
-            <div style="text-align:center;">
-              <div style="font-size:16px;font-weight:900;color:#4a9eff;" id="casinoTotalPlayers">—</div>
-              <div style="font-size:9px;color:#444;margin-top:2px;">Гравців</div>
+            <div class="hp-mini-item">
+              <div class="hp-mini-val" style="color:#4a9eff;" id="casinoTotalPlayers">—</div>
+              <div class="hp-mini-lbl">Гравців</div>
             </div>
           </div>
         </div>
 
         <!-- Активність + Графік -->
-        <div class="anim-cascade" style="background:rgba(74,158,255,.04);border:1px solid rgba(74,158,255,.1);border-radius:14px;padding:12px 14px;margin-bottom:12px;animation-delay:.2s;">
-          <div style="font-size:11px;font-weight:700;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚡ Активність</div>
+        <div class="anim-cascade hp-widget-card" style="background:rgba(74,158,255,.04);border-color:rgba(74,158,255,.1);animation-delay:.2s;">
+          <div class="hp-widget-label" style="color:#4a9eff;margin-bottom:6px;">⚡ Активність</div>
           <div id="activityFeed"></div>
         </div>
-        <div class="anim-cascade anim-press" style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;animation-delay:.22s;" onclick="switchTab('stats')">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="anim-cascade anim-press hp-widget-card clickable" style="animation-delay:.22s;" onclick="switchTab('stats')">
+          <div class="hp-widget-head" style="margin-bottom:6px;">
             <div style="font-size:13px;font-weight:700;color:#aaa;">📈 Графік балансу</div>
-            <div style="font-size:11px;color:#555;">30 ігор →</div>
+            <div class="hp-widget-action">30 ігор →</div>
           </div>
           <canvas id="miniBalanceChart" height="50" style="width:100%;display:block;"></canvas>
         </div>
 
         <!-- Календар подій -->
-        <div class="anim-cascade anim-press" style="background:linear-gradient(135deg,#0d0520,#1a0535);border:1px solid rgba(138,43,226,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer;animation-delay:.24s;" onclick="openEventCalendar()">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="anim-cascade anim-press hp-widget-card clickable" style="background:linear-gradient(135deg,#0d0520,#1a0535);border-color:rgba(138,43,226,.25);animation-delay:.24s;" onclick="openEventCalendar()">
+          <div class="hp-widget-head" style="margin-bottom:0;">
             <div style="font-size:13px;font-weight:700;color:#c9a0ff;">📆 Календар подій</div>
             <div style="font-size:10px;color:#c9a0ff;background:rgba(138,43,226,.15);padding:3px 8px;border-radius:8px;" id="nextEventLabel">Завантаження...</div>
           </div>
@@ -414,16 +413,16 @@
         </div>
 
         <!-- Останнє оновлення -->
-        <div class="anim-cascade anim-press" style="background:#080808;border:1px solid #1a1a1a;border-radius:14px;padding:12px 14px;margin-bottom:14px;cursor:pointer;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:11px;font-weight:700;color:#4cd964;text-transform:uppercase;letter-spacing:1px;">🔄 Останнє оновлення</div>
-            <div style="font-size:10px;color:#333;">Всі →</div>
+        <div class="anim-cascade anim-press hp-widget-card clickable" style="margin-bottom:14px;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
+          <div class="hp-widget-head" style="margin-bottom:6px;">
+            <div class="hp-widget-label" style="color:#4cd964;">🔄 Останнє оновлення</div>
+            <div class="hp-widget-action">Всі →</div>
           </div>
           <div id="homeLastUpdate" style="font-size:12px;color:#666;">Завантаження...</div>
         </div>
 
         <!-- CTA -->
-        <div class="anim-cascade" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;animation-delay:.28s;">
+        <div class="anim-cascade hp-cta-grid" style="animation-delay:.28s;">
           <button class="btn-gold anim-press" onclick="switchTab('cashier')" style="font-size:14px;">💳 Поповнити</button>
           <button class="btn-outline anim-press" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
         </div>
