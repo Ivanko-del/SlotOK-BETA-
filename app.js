@@ -4897,10 +4897,41 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '77';
+const CURRENT_VERSION = '78';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '78',
+    title: '✉️ Оновлення v78 — швидші повідомлення, профіль і пошук',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '⚡ Приватні повідомлення швидше завантажуються',
+        items: [
+          'Зменшили розмір даних, які підвантажуються при відкритті чату й списку переписок',
+        ]
+      },
+      {
+        type: 'new',
+        title: '👤 Профіль прямо з переписки',
+        items: [
+          'Натисни на аватарку чи ім\'я в чаті або списку переписок — відкриється профіль гравця',
+          'З профілю тепер можна одразу написати повідомлення, без пошуку ніка',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🔍 Виправлено пошук гравців у ПП',
+        items: [
+          'Пошук за ніком раніше міг не знаходити гравців, чий нік написаний з великої літери — виправлено',
+          'Додано підказку "Нікого не знайдено", коли результатів немає',
+        ]
+      },
+    ]
+  },
   {
     version: '77',
     title: '🧹 Оновлення v77 — прибрали фото-банер зверху вкладок',
@@ -7740,12 +7771,22 @@ function openPublicProfile(name) {
         </div>
         <div class="pub-badges">${badges}</div>
         <div style="display:flex;gap:8px;margin-top:15px;">
+          <button class="btn-outline" style="flex:1;" onclick="messageUser('${name}')">✉️ Написати</button>
           <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value='${name}';openTabModal('transfer-modal');">💸 Надіслати</button>
           <button class="btn-outline" style="flex:1;" onclick="addContactByName('${name}')">🤝 В знайомі</button>
         </div>
       </div>`;
     openTabModal('pub-profile-modal');
   });
+}
+
+// Відкриває переписку з гравцем НАПРЯМУ — обхід ручного пошуку ніка в
+// ПП, коли людину вже знайшли деінде (чат, рейтинг, список знайомих).
+function messageUser(name) {
+  if(!name || name === currentUser) return;
+  closeTabModal('pub-profile-modal');
+  switchTab('pm');
+  openPmThread(name);
 }
 
 function computeBadges(d) {
@@ -16984,12 +17025,13 @@ function renderPmInbox() {
   const el = document.getElementById('pmInbox');
   if(!el || !currentUser) return;
   el.innerHTML = '<div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Вхідні</div>';
-  // Wider window than before (20→150) — with only 20, a busy conversation
+  // Wider window than the original 20 — with only 20, a busy conversation
   // could push an entire OTHER conversation's last message out of the
   // fetched set, making that thread silently vanish from the inbox even
-  // though real unread history still exists for it.
+  // though real unread history still exists for it. 150 fixed that but
+  // noticeably slowed the inbox down to load — 60 is the middle ground.
   Promise.all([
-    db.ref('pm/'+currentUser).limitToLast(150).once('value'),
+    db.ref('pm/'+currentUser).limitToLast(60).once('value'),
     db.ref('users/'+currentUser+'/pmLastRead').once('value'),
   ]).then(([snap, lastReadSnap]) => {
     const data = snap.val() || {};
@@ -17007,7 +17049,7 @@ function renderPmInbox() {
       div.setAttribute('data-nick', name.toLowerCase());
       const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
       const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
-      div.innerHTML = `<div class="pm-avatar">${escapeHtml(name[0].toUpperCase())}</div>
+      div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile('${name}')" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
         <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4a9eff;margin-left:4px;"></span>':''}</div>
           <div style="font-size:11px;color:${isUnread?'#aaa':'#555'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
@@ -17050,13 +17092,16 @@ function pmSearchRecipient(query) {
   if(!box) return;
   query = (query || '').trim();
   if(query.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.classList.remove('hidden');
+  box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#555;">\ud83d\udd0d \u041f\u043e\u0448\u0443\u043a...</div>';
   _pmSearchDebounce = setTimeout(() => {
     const isNumeric = /^\d+$/.test(query);
-    const results = [];
-    const done = () => {
-      if(!results.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
-      box.classList.remove('hidden');
-      box.innerHTML = results.slice(0, 6).map(nick => `
+    const render = (results) => {
+      if(!results.length) {
+        box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#555;">\u041d\u0456\u043a\u043e\u0433\u043e \u043d\u0435 \u0437\u043d\u0430\u0439\u0434\u0435\u043d\u043e</div>';
+        return;
+      }
+      box.innerHTML = results.slice(0, 8).map(nick => `
         <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;">
           <span style="width:26px;height:26px;border-radius:50%;background:rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#4a9eff;">${nick[0].toUpperCase()}</span>
           ${nick}
@@ -17064,17 +17109,33 @@ function pmSearchRecipient(query) {
     };
     if(isNumeric) {
       db.ref('users').orderByChild('id').equalTo(parseInt(query)).limitToFirst(5).once('value').then(snap => {
+        const results = [];
         Object.keys(snap.val() || {}).forEach(n => { if(n !== currentUser) results.push(n); });
-        done();
+        render(results);
       });
     } else {
-      const q = query.toLowerCase();
-      db.ref('users').orderByKey().startAt(q).endAt(q + '\uf8ff').limitToFirst(8).once('value').then(snap => {
-        Object.keys(snap.val() || {}).forEach(n => { if(n !== currentUser) results.push(n); });
-        done();
+      // Firebase key search is case-SENSITIVE (plain byte-range), but
+      // nicknames keep whatever case the player registered with \u2014 so a
+      // single lowercased query used to miss every correctly-typed,
+      // capitalized name entirely. Run both the as-typed and the
+      // lowercased prefix range in parallel and merge \u2014 covers an exact
+      // case-correct guess as well as the common all-lowercase nick.
+      const qLower = query.toLowerCase();
+      const variants = qLower === query ? [query] : [query, qLower];
+      Promise.all(variants.map(v =>
+        db.ref('users').orderByKey().startAt(v).endAt(v + '\uf8ff').limitToFirst(8).once('value')
+      )).then(snaps => {
+        const seen = new Set();
+        const results = [];
+        snaps.forEach(snap => {
+          Object.keys(snap.val() || {}).forEach(n => {
+            if(n !== currentUser && !seen.has(n)) { seen.add(n); results.push(n); }
+          });
+        });
+        render(results);
       });
     }
-  }, 250);
+  }, 200);
 }
 
 // ── Фільтр списку вхідних за ніком або ID ──────────────────────
@@ -17137,10 +17198,12 @@ function openPmThread(otherUser) {
   threadView.innerHTML = `
     <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
-      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
-      <div style="min-width:0;">
-        <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
-        <div id="pmThreadStatus" style="font-size:10px;color:#555;">● ...</div>
+      <div onclick="openPublicProfile('${otherUser}')" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
+        <div style="min-width:0;">
+          <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
+          <div id="pmThreadStatus" style="font-size:10px;color:#555;">● ...</div>
+        </div>
       </div>
     </div>
     <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:#050505;min-height:0;"></div>
@@ -17169,11 +17232,13 @@ function openPmThread(otherUser) {
     el.textContent = isOnline ? '● Онлайн' : '○ Офлайн';
   });
 
-  // Listen for messages — ширше вікно (50→300), щоб активне листування з
-  // іншими людьми не витісняло історію ЦІЄЇ переписки з вибірки (плаский
-  // pm/<user> список спільний для всіх діалогів разом).
+  // Listen for messages — ширше вікно, ніж було (50), щоб активне
+  // листування з іншими людьми не витісняло історію ЦІЄЇ переписки з
+  // вибірки (плаский pm/<user> список спільний для всіх діалогів разом).
+  // 300 усунуло це повністю, але помітно сповільнило відкриття чату —
+  // 120 лишається набагато безпечнішим за оригінал, не жертвуючи швидкістю.
   if(_pmThreadListener) db.ref('pm/'+currentUser).off('value', _pmThreadListener);
-  _pmThreadListener = db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(300).on('value', snap => {
+  _pmThreadListener = db.ref('pm/'+currentUser).orderByChild('ts').limitToLast(120).on('value', snap => {
     const el = document.getElementById('pmThreadMessages');
     if(!el) return;
     const msgs = Object.values(snap.val()||{})

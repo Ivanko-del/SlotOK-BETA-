@@ -1056,7 +1056,7 @@
 
     /* ─── PRIVATE MESSAGES ─── */
     .pm-thread{display:flex;align-items:center;gap:12px;padding:12px;background:var(--box);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;}
-    .pm-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ffdb4d);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#000;flex-shrink:0;}
+    .pm-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ffdb4d);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#000;flex-shrink:0;cursor:pointer;}
     .pm-bubble{max-width:80%;padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;margin-bottom:6px;}
     .pm-bubble.mine{background:linear-gradient(135deg,#1a3a1a,#1a4a1a);border-bottom-right-radius:4px;align-self:flex-end;margin-left:auto;}
     .pm-bubble.theirs{background:var(--box);border:1px solid var(--border);border-bottom-left-radius:4px;}
