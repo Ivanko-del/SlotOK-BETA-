@@ -312,80 +312,83 @@
     .home-panel { display:none; }
     .home-panel.active { display:block; }
 
-    /* ===== HOME DASHBOARD — hp-* card system (v73 redesign) ===== */
-    #hp-main .hp-section-title { display:flex; align-items:center; justify-content:space-between; margin:18px 0 10px; }
-    #hp-main .hp-section-title .section-header { margin:0; }
-    #hp-main .hp-st-action { font-size:11px; color:var(--accent); cursor:pointer; font-weight:700; }
+    /* ═══════════════════════════════════════════════════════
+       HOME DASHBOARD — PREMIUM CASINO-LUX SYSTEM (lux-* / v74)
+    ═══════════════════════════════════════════════════════ */
+    #hp-main { --lux-gold:#d4af37; --lux-gold-soft:rgba(212,175,55,.7); --lux-dim:#8a7440; }
 
-    .hp-stats-grid { display:grid; gap:6px; margin-bottom:8px; }
-    .hp-stats-grid-3 { grid-template-columns:repeat(3,1fr); }
-    .hp-stats-grid-2 { grid-template-columns:repeat(2,1fr); }
-    .hp-stat-tile {
-      background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 55%), rgba(255,255,255,.025);
-      border: 1px solid var(--border); border-radius: var(--r-md);
-      padding: 11px 6px; text-align:center; cursor:pointer;
-      box-shadow: var(--bevel), var(--elev-1);
-    }
-    .hp-stat-ic { font-size:14px; opacity:.85; margin-bottom:3px; }
-    .hp-stat-val { font-size:15px; font-weight:900; font-family:'Orbitron',monospace; color:#eee; line-height:1.1; }
-    .hp-stat-lbl { font-size:9px; color:#555; margin-top:4px; font-weight:700; }
-    .hp-stat-tile.stat-green { background: linear-gradient(160deg, rgba(61,214,140,.09), rgba(255,255,255,0) 55%), rgba(61,214,140,.03); border-color: rgba(61,214,140,.18); }
-    .hp-stat-tile.stat-green .hp-stat-val { color:#3dd68c; }
-    .hp-stat-tile.stat-gold { background: linear-gradient(160deg, rgba(212,175,55,.09), rgba(255,255,255,0) 55%), rgba(212,175,55,.03); border-color: rgba(212,175,55,.18); }
-    .hp-stat-tile.stat-gold .hp-stat-val { color:#d4af37; }
-    .hp-stat-tile.stat-blue { background: linear-gradient(160deg, rgba(74,158,255,.09), rgba(255,255,255,0) 55%), rgba(74,158,255,.03); border-color: rgba(74,158,255,.18); }
-    .hp-stat-tile.stat-blue .hp-stat-val { color:#4a9eff; }
+    /* Ornate section divider — flanking hairlines around a small gold label */
+    #hp-main .lux-divider { display:flex; align-items:center; gap:10px; margin:22px 0 12px; }
+    #hp-main .lux-divider::before, #hp-main .lux-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(212,175,55,.32), transparent); }
+    #hp-main .lux-divider:first-child::before { background:linear-gradient(90deg, transparent, rgba(212,175,55,.15), transparent); }
+    #hp-main .lux-divider-label { font-family:'Orbitron',monospace; font-size:10px; letter-spacing:2.5px; color:var(--lux-gold); text-transform:uppercase; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+    #hp-main .lux-divider-action { font-size:10px; color:var(--lux-dim); cursor:pointer; font-weight:700; letter-spacing:.4px; white-space:nowrap; }
 
-    .hp-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
-    .hp-action-tile {
-      border-radius: var(--r-md); padding:14px; cursor:pointer; position:relative; overflow:hidden;
-      box-shadow: var(--bevel), var(--elev-1); border:1px solid var(--border);
-    }
-    .hp-action-deco { position:absolute; right:-6px; top:-6px; font-size:54px; opacity:.1; pointer-events:none; }
-    .hp-action-icon { font-size:24px; margin-bottom:5px; }
-    .hp-action-title { font-size:13px; font-weight:800; }
-    .hp-action-sub { font-size:10px; color:#555; margin-top:2px; }
-    .hp-action-tile.act-green  { background: linear-gradient(135deg,#061a08,#0a2810); border-color: rgba(61,214,140,.2); }
-    .hp-action-tile.act-green .hp-action-title { color:#3dd68c; }
-    .hp-action-tile.act-gold   { background: linear-gradient(135deg,#1a1504,#2a2008); border-color: rgba(212,175,55,.2); }
-    .hp-action-tile.act-gold .hp-action-title { color:#d4af37; }
-    .hp-action-tile.act-purple { background: linear-gradient(135deg,#150a20,#220535); border-color: rgba(193,126,234,.2); }
-    .hp-action-tile.act-purple .hp-action-title { color:#c17eea; }
-    .hp-action-tile.act-orange { background: linear-gradient(135deg,#180c04,#281508); border-color: rgba(243,156,18,.2); }
-    .hp-action-tile.act-orange .hp-action-title { color:#f39c12; }
+    /* Hero — balance, VIP crest, streak/bets/wins strip */
+    .lux-hero { position:relative; background: radial-gradient(120% 160% at 12% 0%, rgba(212,175,55,.11), transparent 55%), linear-gradient(160deg, rgba(255,255,255,.03), rgba(0,0,0,0) 50%), #090807; border:1px solid rgba(212,175,55,.22); border-radius:22px; padding:18px 18px 16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-2), 0 0 44px -24px rgba(212,175,55,.4); overflow:hidden; will-change:transform; }
+    .lux-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(212,175,55,.75),transparent); }
+    .lux-hero-top { display:flex; align-items:flex-start; justify-content:space-between; cursor:pointer; }
+    .lux-hero-greet { font-size:10px; color:var(--lux-dim); letter-spacing:1.6px; text-transform:uppercase; margin-bottom:6px; }
+    .lux-hero-balance { font-family:'Orbitron',monospace; font-size:30px; font-weight:900; line-height:1.05; background:linear-gradient(135deg,#f5dc8a,#d4af37 55%,#a67c1a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:.3px; }
+    .lux-hero-vip { flex-shrink:0; text-align:center; cursor:pointer; padding:8px 14px; border-radius:14px; background:rgba(212,175,55,.06); border:1px solid rgba(212,175,55,.22); }
+    .lux-hero-vip-crest { font-size:19px; }
+    .lux-hero-vip-tier { font-family:'Orbitron',monospace; font-size:11px; font-weight:800; color:var(--lux-gold); margin-top:3px; }
+    .lux-hero-vip-lbl { font-size:8px; color:var(--lux-dim); text-transform:uppercase; letter-spacing:1px; margin-top:1px; }
+    .lux-hero-strip { display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:16px; padding-top:14px; border-top:1px solid rgba(212,175,55,.12); }
+    .lux-hero-cell { text-align:center; cursor:pointer; }
+    .lux-hero-cell + .lux-hero-cell { border-left:1px solid rgba(255,255,255,.06); }
+    .lux-hero-cell-val { font-family:'Orbitron',monospace; font-size:14px; font-weight:800; color:#eee; }
+    .lux-hero-cell-lbl { font-size:8px; color:var(--lux-dim); margin-top:4px; text-transform:uppercase; letter-spacing:.7px; }
 
-    .hp-live-ticker { background: linear-gradient(90deg,rgba(231,76,60,.07),rgba(0,0,0,0)); border:1px solid rgba(231,76,60,.16); border-radius:12px; padding:9px 12px; margin-bottom:14px; overflow:hidden; display:flex; align-items:center; gap:8px; box-shadow: var(--bevel), var(--elev-1); }
-    .hp-live-badge { background:#e74c3c; color:#fff; font-size:9px; font-weight:800; padding:2px 7px; border-radius:10px; flex-shrink:0; animation:heartbeat 2s infinite; letter-spacing:.5px; }
-    .hp-live-text { font-size:12px; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+    /* Generic luxe panel — replaces plain widget cards */
+    .lux-panel { position:relative; background: linear-gradient(160deg, rgba(255,255,255,.022), rgba(0,0,0,0) 50%), #0a0908; border:1px solid rgba(212,175,55,.13); border-radius:18px; padding:14px 16px; margin-bottom:12px; box-shadow: var(--bevel), var(--elev-1); }
+    .lux-panel.clickable { cursor:pointer; transition: border-color .15s, transform .14s var(--ease-tactile); }
+    .lux-panel.clickable:active { transform: scale(.98); }
+    .lux-panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .lux-panel-label { font-size:10px; font-weight:800; color:var(--lux-gold); text-transform:uppercase; letter-spacing:1.6px; display:flex; align-items:center; gap:7px; }
+    .lux-panel-action { font-size:10px; color:var(--lux-dim); }
 
-    .hp-progress-card { background:var(--box); border:1px solid var(--border); border-radius:var(--r-md); padding:14px; margin-bottom:12px; box-shadow: var(--bevel), var(--elev-1); }
-    .hp-progress-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-    .hp-progress-row span { font-size:11px; color:#777; }
-    .hp-progress-track { height:7px; background:var(--input); border-radius:6px; overflow:hidden; margin-bottom:12px; box-shadow: inset 0 2px 4px rgba(0,0,0,.5); }
-    .hp-progress-track:last-of-type { margin-bottom:0; }
-    .hp-progress-fill { height:100%; border-radius:6px; transition:width .8s cubic-bezier(.22,1,.36,1); }
+    .lux-mini-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .lux-mini-item { text-align:center; }
+    .lux-mini-val { font-family:'Orbitron',monospace; font-size:15px; font-weight:900; }
+    .lux-mini-lbl { font-size:8px; color:var(--lux-dim); margin-top:3px; text-transform:uppercase; letter-spacing:.6px; }
 
-    .hp-widget-card { border-radius:14px; padding:12px 14px; margin-bottom:12px; background:#080808; border:1px solid #1a1a1a; box-shadow: var(--bevel), var(--elev-1); }
-    .hp-widget-card.clickable { cursor:pointer; }
-    .hp-widget-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-    .hp-widget-label { font-size:11px; font-weight:700; color:#777; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:6px; }
-    .hp-widget-action { font-size:10px; color:#444; }
-    .hp-mini-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .hp-mini-item { text-align:center; }
-    .hp-mini-val { font-size:16px; font-weight:900; }
-    .hp-mini-lbl { font-size:9px; color:#444; margin-top:2px; }
+    /* VIP + Battle Pass progress */
+    .lux-progress-card { background: linear-gradient(160deg, rgba(212,175,55,.05), rgba(0,0,0,0) 50%), #0a0908; border:1px solid rgba(212,175,55,.18); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-1); }
+    .lux-progress-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
+    .lux-progress-row span { font-size:10px; color:var(--lux-dim); text-transform:uppercase; letter-spacing:.7px; }
+    .lux-progress-row b { color:var(--lux-gold); }
+    .lux-progress-track { height:6px; background: rgba(255,255,255,.05); border-radius:6px; overflow:hidden; margin-bottom:14px; box-shadow: inset 0 2px 4px rgba(0,0,0,.6); }
+    .lux-progress-track:last-of-type { margin-bottom:0; }
+    .lux-progress-fill { height:100%; border-radius:6px; background: linear-gradient(90deg,#a67c1a,#f5dc8a); transition:width .8s cubic-bezier(.22,1,.36,1); }
 
-    .hp-promo-card { background: linear-gradient(135deg,#0a0020,#1a0040,#0a0020); border:1.5px solid rgba(138,43,226,.4); border-radius:18px; padding:16px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden; }
-    .hp-promo-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background: linear-gradient(90deg,transparent,rgba(138,43,226,.8),transparent); }
-    .hp-promo-deco { position:absolute; right:-10px; top:-10px; font-size:80px; opacity:.08; }
-    .hp-promo-body { display:flex; align-items:center; gap:12px; }
-    .hp-promo-icon { font-size:36px; animation: float 3s ease-in-out infinite; }
-    .hp-promo-title { font-weight:900; font-size:15px; color:#c9a0ff; font-family:'Orbitron',monospace; }
-    .hp-promo-sub { font-size:12px; color:#888; margin-top:2px; }
-    .hp-promo-pills { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
-    .hp-promo-pill { border-radius:6px; padding:2px 8px; font-size:10px; }
+    /* Live win ticker */
+    .lux-live-ticker { background: linear-gradient(90deg,rgba(0,0,0,0),rgba(212,175,55,.04) 40%,rgba(0,0,0,0)), #0a0908; border:1px solid rgba(212,175,55,.14); border-radius:12px; padding:9px 12px; margin-bottom:14px; overflow:hidden; display:flex; align-items:center; gap:9px; box-shadow: var(--bevel), var(--elev-1); }
+    .lux-live-badge { background:#e74c3c; color:#fff; font-size:9px; font-weight:800; padding:2px 7px; border-radius:10px; flex-shrink:0; animation:heartbeat 2s infinite; letter-spacing:.5px; }
+    .lux-live-text { font-size:12px; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 
-    .hp-cta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+    /* Quick action tiles — minimal dark glass with a thin accent top-edge */
+    .lux-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+    .lux-action-tile { position:relative; background: linear-gradient(160deg, rgba(255,255,255,.022), rgba(0,0,0,0) 50%), #0a0908; border:1px solid rgba(255,255,255,.07); border-radius:18px; padding:15px 14px; cursor:pointer; overflow:hidden; box-shadow: var(--bevel), var(--elev-1); transition: transform .15s var(--ease-tactile), border-color .15s, box-shadow .15s; }
+    .lux-action-tile::before { content:''; position:absolute; top:0; left:14px; right:14px; height:2px; border-radius:0 0 3px 3px; background: var(--ac, var(--lux-gold)); opacity:.75; }
+    .lux-action-tile:active { transform: scale(.96); }
+    .lux-action-tile:hover { border-color: var(--ac, var(--lux-gold)); box-shadow: var(--bevel), var(--elev-1), 0 0 22px -10px var(--ac, rgba(212,175,55,.5)); }
+    .lux-action-icon-badge { width:34px; height:34px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px; }
+    .lux-action-title { font-size:13px; font-weight:800; color:#eee; letter-spacing:.2px; }
+    .lux-action-sub { font-size:10px; color:var(--lux-dim); margin-top:2px; }
+
+    /* Battle Pass promo — jewel-tone purple with a gold hairline frame */
+    .lux-promo-card { background: linear-gradient(135deg,#0a0020,#1a0040,#0a0020); border:1px solid rgba(212,175,55,.22); border-radius:20px; padding:16px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
+    .lux-promo-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background: linear-gradient(90deg,transparent,rgba(212,175,55,.7),transparent); }
+    .lux-promo-deco { position:absolute; right:-10px; top:-10px; font-size:80px; opacity:.08; }
+    .lux-promo-body { display:flex; align-items:center; gap:12px; }
+    .lux-promo-icon { font-size:34px; animation: float 3s ease-in-out infinite; }
+    .lux-promo-title { font-weight:900; font-size:15px; color:#c9a0ff; font-family:'Orbitron',monospace; letter-spacing:1px; }
+    .lux-promo-sub { font-size:12px; color:#888; margin-top:2px; }
+    .lux-promo-pills { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+    .lux-promo-pill { border-radius:6px; padding:2px 8px; font-size:10px; }
+
+    .lux-cta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
 
     /* ===== НОВИНИ ===== */
     .news-card { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), var(--box); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-1); }
@@ -547,12 +550,12 @@
     .badge { background: #222; border: 1px solid #444; border-radius: 20px; padding: 4px 10px; font-size: 11px; color: #aaa; box-shadow: var(--bevel); }
     .badge.gold { border-color: var(--accent); color: var(--accent); background: rgba(212,175,55,0.1); }
 
-    /* АДМІН РОЗШИРЕНИЙ */
+    /* АДМІН РОЗШИРЕНИЙ — premium casino-lux treatment (v74) */
     .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     /* Admin panel tabs */
-    .adm-tab-btn { background:none;border:1px solid #2a2a2a;color:#777;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
-    .adm-tab-btn:hover { border-color:rgba(212,175,55,.35); box-shadow:var(--bevel), var(--glow-accent-soft); }
-    .adm-tab-btn.active { background:var(--accent);color:#000;border-color:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 5px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.5); }
+    .adm-tab-btn { background:linear-gradient(160deg, rgba(255,255,255,.03), rgba(0,0,0,0) 55%), #0a0908;border:1px solid rgba(212,175,55,.15);color:#8a7440;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
+    .adm-tab-btn:hover { border-color:rgba(212,175,55,.4); color:#d4af37; box-shadow:var(--bevel), var(--glow-accent-soft); }
+    .adm-tab-btn.active { background:linear-gradient(135deg,#f5dc8a,#d4af37 60%,#a67c1a);color:#1a0d00;border-color:#f5dc8a;box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 5px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.5); }
     .adm-panel { display:none !important; }
     .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
     .req-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;position:relative;overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
@@ -575,9 +578,9 @@
     .penalty-zone:hover { background: rgba(39,174,96,.3) !important; transform: scale(1.05); }
     #jackpotTicker:hover { background: linear-gradient(90deg,#2d1500,#3d2000,#2d1500) !important; }
     @keyframes duckFly { from{transform:translateX(-40px) scaleX(-1)} to{transform:translateX(260px) scaleX(-1)} }
-    .admin-stat { background: #111; border: 1px solid #222; border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
-    .admin-stat-val { font-size: 22px; font-weight: bold; color: var(--accent); }
-    .admin-stat-label { font-size: 11px; color: #555; }
+    .admin-stat { background: linear-gradient(160deg, rgba(212,175,55,.05), rgba(0,0,0,0) 55%), #0a0908; border: 1px solid rgba(212,175,55,.16); border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
+    .admin-stat-val { font-size: 22px; font-weight: bold; font-family: 'Orbitron', monospace; background:linear-gradient(135deg,#f5dc8a,#d4af37 55%,#a67c1a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .admin-stat-label { font-size: 11px; color: #8a7440; text-transform: uppercase; letter-spacing: .5px; }
     .promo-row { display: flex; justify-content: space-between; align-items: center; background: #111; border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 6px; border: 1px solid #222; box-shadow: var(--bevel), var(--elev-1); }
     .announce-item { background: #1a1a00; border: 1px solid #333; border-radius: var(--r-sm); padding: 10px; margin-bottom: 8px; font-size: 13px; box-shadow: var(--bevel), var(--elev-1); }
     .support-thread { background: #111; border-radius: var(--r-sm); padding: 10px; margin-bottom: 8px; border: 1px solid #222; cursor: pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .12s, box-shadow .14s; }
@@ -2198,7 +2201,7 @@
 }
 .bank-action-btn {
   background: linear-gradient(135deg, #111, #0d0d0d);
-  border: 1px solid rgba(255,255,255,.07);
+  border: 1px solid rgba(212,175,55,.12);
   border-radius: var(--r-sm);
   padding: 12px 6px;
   text-align: center;
@@ -2237,7 +2240,11 @@
   margin-bottom: 14px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--bevel), var(--elev-1);
+  box-shadow: var(--bevel), var(--elev-1), 0 0 32px -20px rgba(212,175,55,.3);
+}
+.card-balance-block::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,.5), transparent);
 }
 .card-balance-block::before {
   content: '₴';
@@ -2539,8 +2546,8 @@
   overflow: hidden;
   margin-bottom: 12px;
   animation: slideUp .4s ease;
-  box-shadow: var(--bevel), var(--elev-2);
-  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: var(--bevel), var(--elev-2), 0 0 40px -26px rgba(212,175,55,.5);
+  border: 1px solid rgba(212,175,55,.18);
 }
 .banner-dot.active { box-shadow: 0 0 8px rgba(212,175,55,.7); }
 
@@ -3193,6 +3200,11 @@
 /* Кнопки — легкий тактильний відгук на будь-якому елементі з цим класом */
 .anim-press { transition: transform .12s cubic-bezier(.4,0,.2,1), box-shadow .15s; }
 .anim-press:active { transform: scale(.93); }
+/* A touch of 3D on tap for the premium tiles — pure CSS, no gesture capture,
+   so it can never fight scrolling or the banner carousel's swipe. */
+.lux-action-tile.anim-press:active { transform: perspective(400px) scale(.94) rotateX(6deg); }
+.lux-hero-cell { transition: transform .12s cubic-bezier(.4,0,.2,1); cursor:pointer; }
+.lux-hero-cell:active { transform: perspective(400px) scale(.93) rotateX(8deg); }
 #tab-home .anim-press:hover { box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
 
 /* Картки — плавна поява каскадом */

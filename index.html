@@ -232,11 +232,37 @@
         <!-- Mystery Box — тільки для нових гравців перші 24 год -->
         <div id="mysteryBoxWidget" class="hidden anim-cascade" style="margin-bottom:12px;"></div>
 
-        <!-- Стрічка друзів -->
-        <div id="friendsFeedWidget" class="hidden anim-cascade hp-widget-card" style="margin-bottom:12px;"></div>
+        <!-- HERO — баланс, VIP, серія/ставки/виграно -->
+        <div class="anim-cascade lux-hero" style="animation-delay:.02s;">
+          <div class="lux-hero-top" onclick="switchTab('stats')">
+            <div>
+              <div class="lux-hero-greet">Твій рахунок</div>
+              <div class="lux-hero-balance" id="homeStatBalance">₴0</div>
+            </div>
+            <div class="lux-hero-vip" onclick="event.stopPropagation();switchTab('vip')">
+              <div class="lux-hero-vip-crest">👑</div>
+              <div class="lux-hero-vip-tier" id="homeStatVip">—</div>
+              <div class="lux-hero-vip-lbl">VIP</div>
+            </div>
+          </div>
+          <div class="lux-hero-strip">
+            <div class="lux-hero-cell" onclick="openDailyBonus()">
+              <div class="lux-hero-cell-val" id="homeStatStreak">0🔥</div>
+              <div class="lux-hero-cell-lbl">Серія днів</div>
+            </div>
+            <div class="lux-hero-cell" onclick="switchTab('stats')">
+              <div class="lux-hero-cell-val" id="homeStatBets">0</div>
+              <div class="lux-hero-cell-lbl">Ставок</div>
+            </div>
+            <div class="lux-hero-cell" onclick="switchTab('stats')">
+              <div class="lux-hero-cell-val" id="homeStatWins">₴0</div>
+              <div class="lux-hero-cell-lbl">Виграно</div>
+            </div>
+          </div>
+        </div>
 
         <!-- Щоденний бонус banner -->
-        <div id="dailyBonusBanner" class="hidden anim-cascade anim-press" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation-delay:.02s;" onclick="openDailyBonus()">
+        <div id="dailyBonusBanner" class="hidden anim-cascade anim-press" style="background:linear-gradient(135deg,#0d2a0d,#051a05);border:1.5px solid var(--green);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation-delay:.03s;" onclick="openDailyBonus()">
           <div>
             <div style="font-size:15px;font-weight:900;color:var(--green);">🎁 Щоденний бонус готовий!</div>
             <div style="font-size:11px;color:#aaa;margin-top:2px;">Натисни щоб забрати нагороду</div>
@@ -244,93 +270,66 @@
           <div style="font-size:36px;animation:heartbeat 1s ease infinite;">✨</div>
         </div>
 
+        <!-- Стрічка друзів -->
+        <div id="friendsFeedWidget" class="hidden anim-cascade lux-panel" style="animation-delay:.04s;"></div>
+
         <!-- Axiom Bank widget -->
-        <div id="homeAxiomWidget" class="anim-cascade" style="margin-bottom:12px;animation-delay:.04s;"></div>
+        <div id="homeAxiomWidget" class="anim-cascade" style="margin-bottom:12px;animation-delay:.05s;"></div>
 
         <!-- VIP + Battle Pass mini progress -->
-        <div class="section-header" style="margin-top:0;">👤 Твій прогрес</div>
-        <div class="anim-cascade hp-progress-card" style="animation-delay:.06s;">
-          <div class="hp-progress-row">
-            <span>👑 VIP: <b id="homeVipLabel" style="color:var(--accent);">Bronze</b></span>
+        <div class="lux-divider" style="margin-top:4px;"><span class="lux-divider-label">👤 Твій прогрес</span></div>
+        <div class="anim-cascade lux-progress-card" style="animation-delay:.06s;">
+          <div class="lux-progress-row">
+            <span>👑 VIP · <b id="homeVipLabel">Bronze</b></span>
             <span id="homeVipPct">0%</span>
           </div>
-          <div class="hp-progress-track">
-            <div id="homeVipBar" class="progress-fill-shimmer hp-progress-fill" style="width:0%;"></div>
+          <div class="lux-progress-track">
+            <div id="homeVipBar" class="progress-fill-shimmer lux-progress-fill" style="width:0%;"></div>
           </div>
-          <div class="hp-progress-row">
+          <div class="lux-progress-row">
             <span>🎫 Battle Pass</span>
             <span id="homeBpPct">Lv0</span>
           </div>
-          <div class="hp-progress-track">
-            <div id="homeBpBar" class="progress-fill-shimmer hp-progress-fill" style="width:0%;background:linear-gradient(90deg,#5a20c0,#c9a0ff);"></div>
+          <div class="lux-progress-track">
+            <div id="homeBpBar" class="progress-fill-shimmer lux-progress-fill" style="width:0%;background:linear-gradient(90deg,#5a20c0,#c9a0ff);"></div>
           </div>
         </div>
 
         <!-- Live лента виграшів -->
-        <div class="anim-cascade hp-live-ticker" style="animation-delay:.08s;">
-          <span class="hp-live-badge">LIVE</span>
-          <span id="winTicker" class="hp-live-text"></span>
-        </div>
-
-        <!-- Quick stats row -->
-        <div class="anim-cascade hp-stats-grid hp-stats-grid-3" style="animation-delay:.1s;">
-          <div class="anim-press hp-stat-tile stat-green" onclick="switchTab('stats')">
-            <div class="hp-stat-val" id="homeStatBalance">₴0</div>
-            <div class="hp-stat-lbl">Баланс</div>
-          </div>
-          <div class="anim-press hp-stat-tile stat-gold" onclick="switchTab('vip')">
-            <div class="hp-stat-val" id="homeStatVip">—</div>
-            <div class="hp-stat-lbl">VIP рівень</div>
-          </div>
-          <div class="anim-press hp-stat-tile stat-blue" onclick="openDailyBonus()">
-            <div class="hp-stat-val" id="homeStatStreak">0🔥</div>
-            <div class="hp-stat-lbl">Серія днів</div>
-          </div>
-        </div>
-        <div class="anim-cascade hp-stats-grid hp-stats-grid-2" style="animation-delay:.12s;">
-          <div class="anim-press hp-stat-tile" onclick="switchTab('stats')">
-            <div class="hp-stat-val" id="homeStatBets">0</div>
-            <div class="hp-stat-lbl">Всього ставок</div>
-          </div>
-          <div class="anim-press hp-stat-tile" onclick="switchTab('stats')">
-            <div class="hp-stat-val" id="homeStatWins">₴0</div>
-            <div class="hp-stat-lbl">Всього виграно</div>
-          </div>
+        <div class="anim-cascade lux-live-ticker" style="animation-delay:.08s;">
+          <span class="lux-live-badge">LIVE</span>
+          <span id="winTicker" class="lux-live-text"></span>
         </div>
 
         <!-- 4 банери -->
-        <div class="section-header">⚡ Швидкі дії</div>
-        <div class="anim-cascade hp-action-grid" style="animation-delay:.14s;">
-          <div class="anim-press hp-action-tile act-green" onclick="switchTab('sports')">
-            <div class="hp-action-deco">⚽</div>
-            <div class="hp-action-icon">⚽</div>
-            <div class="hp-action-title">Спортбетинг</div>
-            <div class="hp-action-sub">Live ставки</div>
+        <div class="lux-divider"><span class="lux-divider-label">⚡ Швидкі дії</span></div>
+        <div class="anim-cascade lux-action-grid" style="animation-delay:.1s;">
+          <div class="anim-press lux-action-tile" style="--ac:#3dd68c;" onclick="switchTab('sports')">
+            <div class="lux-action-icon-badge">⚽</div>
+            <div class="lux-action-title">Спортбетинг</div>
+            <div class="lux-action-sub">Live ставки</div>
           </div>
-          <div class="anim-press hp-action-tile act-gold" onclick="openDailyBonus()">
-            <div class="hp-action-deco">🎁</div>
-            <div class="hp-action-icon">🎁</div>
-            <div class="hp-action-title">Бонус дня</div>
-            <div class="hp-action-sub">Щоденна нагорода</div>
+          <div class="anim-press lux-action-tile" style="--ac:#d4af37;" onclick="openDailyBonus()">
+            <div class="lux-action-icon-badge">🎁</div>
+            <div class="lux-action-title">Бонус дня</div>
+            <div class="lux-action-sub">Щоденна нагорода</div>
           </div>
-          <div class="anim-press hp-action-tile act-purple" onclick="switchTab('vip')">
-            <div class="hp-action-deco">👑</div>
-            <div class="hp-action-icon">👑</div>
-            <div class="hp-action-title">VIP Клуб</div>
-            <div class="hp-action-sub">14 рівнів • Cashback</div>
+          <div class="anim-press lux-action-tile" style="--ac:#c17eea;" onclick="switchTab('vip')">
+            <div class="lux-action-icon-badge">👑</div>
+            <div class="lux-action-title">VIP Клуб</div>
+            <div class="lux-action-sub">14 рівнів • Cashback</div>
           </div>
-          <div class="anim-press hp-action-tile act-orange" onclick="switchTab('tournaments')">
-            <div class="hp-action-deco">🏆</div>
-            <div class="hp-action-icon">🏆</div>
-            <div class="hp-action-title">Турніри</div>
-            <div class="hp-action-sub" id="homeTournamentPrize">Топ призи</div>
+          <div class="anim-press lux-action-tile" style="--ac:#f39c12;" onclick="switchTab('tournaments')">
+            <div class="lux-action-icon-badge">🏆</div>
+            <div class="lux-action-title">Турніри</div>
+            <div class="lux-action-sub" id="homeTournamentPrize">Топ призи</div>
           </div>
         </div>
 
         <!-- Популярні ігри -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div class="section-header" style="margin:0;">🔥 Популярні</div>
-          <div onclick="switchTab('lobby')" style="font-size:11px;color:#d4af37;cursor:pointer;font-weight:700;">Всі ігри →</div>
+        <div class="lux-divider">
+          <span class="lux-divider-label">🔥 Популярні</span>
+          <span class="lux-divider-action" onclick="switchTab('lobby')">Всі ігри →</span>
         </div>
         <div class="games-scroll" style="margin-bottom:14px;">
           <div class="game-thumb" onclick="switchTab('coinflip')"><span class="icon">🪙</span><span class="label">Coinflip</span></div>
@@ -356,73 +355,73 @@
         </div>
 
         <!-- Battle Pass промо -->
-        <div class="anim-cascade anim-press hp-promo-card" style="animation-delay:.16s;" onclick="switchTab('battlepass')">
-          <div class="hp-promo-deco">🎫</div>
-          <div class="hp-promo-body">
-            <div class="hp-promo-icon">🎫</div>
+        <div class="anim-cascade anim-press lux-promo-card" style="animation-delay:.16s;" onclick="switchTab('battlepass')">
+          <div class="lux-promo-deco">🎫</div>
+          <div class="lux-promo-body">
+            <div class="lux-promo-icon">🎫</div>
             <div>
-              <div class="hp-promo-title">BATTLE PASS</div>
-              <div class="hp-promo-sub">50 рівнів • Ексклюзивні нагороди</div>
-              <div class="hp-promo-pills">
-                <span class="hp-promo-pill" style="background:rgba(201,160,255,.1);border:1px solid rgba(201,160,255,.2);color:#c9a0ff;">💰 До 50 000 ₴</span>
-                <span class="hp-promo-pill" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);color:#3dd68c;">🎟️ Фріспіни</span>
+              <div class="lux-promo-title">BATTLE PASS</div>
+              <div class="lux-promo-sub">50 рівнів • Ексклюзивні нагороди</div>
+              <div class="lux-promo-pills">
+                <span class="lux-promo-pill" style="background:rgba(201,160,255,.1);border:1px solid rgba(201,160,255,.2);color:#c9a0ff;">💰 До 50 000 ₴</span>
+                <span class="lux-promo-pill" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);color:#3dd68c;">🎟️ Фріспіни</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Статистика казино онлайн -->
-        <div class="anim-cascade hp-widget-card" style="animation-delay:.18s;">
-          <div class="hp-widget-label" style="margin-bottom:10px;">📊 Казино зараз</div>
-          <div class="hp-mini-grid">
-            <div class="hp-mini-item">
-              <div class="hp-mini-val" style="color:#3dd68c;" id="casinoOnlineCount">—</div>
-              <div class="hp-mini-lbl">Онлайн</div>
+        <!-- Статистика казино -->
+        <div class="lux-divider"><span class="lux-divider-label">📊 Статистика казино</span></div>
+        <div class="anim-cascade lux-panel" style="animation-delay:.18s;">
+          <div class="lux-panel-label" style="margin-bottom:10px;">Казино зараз</div>
+          <div class="lux-mini-grid">
+            <div class="lux-mini-item">
+              <div class="lux-mini-val" style="color:#3dd68c;" id="casinoOnlineCount">—</div>
+              <div class="lux-mini-lbl">Онлайн</div>
             </div>
-            <div class="hp-mini-item">
-              <div class="hp-mini-val" style="color:#d4af37;" id="casinoTodayWins">—</div>
-              <div class="hp-mini-lbl">Виграшів</div>
+            <div class="lux-mini-item">
+              <div class="lux-mini-val" style="color:#d4af37;" id="casinoTodayWins">—</div>
+              <div class="lux-mini-lbl">Виграшів</div>
             </div>
-            <div class="hp-mini-item">
-              <div class="hp-mini-val" style="color:#4a9eff;" id="casinoTotalPlayers">—</div>
-              <div class="hp-mini-lbl">Гравців</div>
+            <div class="lux-mini-item">
+              <div class="lux-mini-val" style="color:#4a9eff;" id="casinoTotalPlayers">—</div>
+              <div class="lux-mini-lbl">Гравців</div>
             </div>
           </div>
         </div>
 
-        <!-- Активність + Графік -->
-        <div class="anim-cascade hp-widget-card" style="background:rgba(74,158,255,.04);border-color:rgba(74,158,255,.1);animation-delay:.2s;">
-          <div class="hp-widget-label" style="color:#4a9eff;margin-bottom:6px;">⚡ Активність</div>
+        <div class="anim-cascade lux-panel" style="animation-delay:.2s;">
+          <div class="lux-panel-label" style="margin-bottom:6px;">⚡ Активність</div>
           <div id="activityFeed"></div>
         </div>
-        <div class="anim-cascade anim-press hp-widget-card clickable" style="animation-delay:.22s;" onclick="switchTab('stats')">
-          <div class="hp-widget-head" style="margin-bottom:6px;">
-            <div style="font-size:13px;font-weight:700;color:#aaa;">📈 Графік балансу</div>
-            <div class="hp-widget-action">30 ігор →</div>
+        <div class="anim-cascade anim-press lux-panel clickable" style="animation-delay:.22s;" onclick="switchTab('stats')">
+          <div class="lux-panel-head" style="margin-bottom:6px;">
+            <div class="lux-panel-label" style="margin-bottom:0;">📈 Графік балансу</div>
+            <div class="lux-panel-action">30 ігор →</div>
           </div>
           <canvas id="miniBalanceChart" height="50" style="width:100%;display:block;"></canvas>
         </div>
 
         <!-- Календар подій -->
-        <div class="anim-cascade anim-press hp-widget-card clickable" style="background:linear-gradient(135deg,#0d0520,#1a0535);border-color:rgba(138,43,226,.25);animation-delay:.24s;" onclick="openEventCalendar()">
-          <div class="hp-widget-head" style="margin-bottom:0;">
-            <div style="font-size:13px;font-weight:700;color:#c9a0ff;">📆 Календар подій</div>
+        <div class="anim-cascade anim-press lux-panel clickable" style="background:linear-gradient(135deg,#0d0520,#1a0535);border-color:rgba(138,43,226,.28);animation-delay:.24s;" onclick="openEventCalendar()">
+          <div class="lux-panel-head" style="margin-bottom:0;">
+            <div class="lux-panel-label" style="color:#c9a0ff;margin-bottom:0;">📆 Календар подій</div>
             <div style="font-size:10px;color:#c9a0ff;background:rgba(138,43,226,.15);padding:3px 8px;border-radius:8px;" id="nextEventLabel">Завантаження...</div>
           </div>
           <div id="eventCalendarMini" style="margin-top:8px;display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;"></div>
         </div>
 
         <!-- Останнє оновлення -->
-        <div class="anim-cascade anim-press hp-widget-card clickable" style="margin-bottom:14px;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
-          <div class="hp-widget-head" style="margin-bottom:6px;">
-            <div class="hp-widget-label" style="color:#4cd964;">🔄 Останнє оновлення</div>
-            <div class="hp-widget-action">Всі →</div>
+        <div class="anim-cascade anim-press lux-panel clickable" style="margin-bottom:14px;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
+          <div class="lux-panel-head" style="margin-bottom:6px;">
+            <div class="lux-panel-label" style="margin-bottom:0;">🔄 Останнє оновлення</div>
+            <div class="lux-panel-action">Всі →</div>
           </div>
           <div id="homeLastUpdate" style="font-size:12px;color:#666;">Завантаження...</div>
         </div>
 
         <!-- CTA -->
-        <div class="anim-cascade hp-cta-grid" style="animation-delay:.28s;">
+        <div class="anim-cascade lux-cta-grid" style="animation-delay:.28s;">
           <button class="btn-gold anim-press" onclick="switchTab('cashier')" style="font-size:14px;">💳 Поповнити</button>
           <button class="btn-outline anim-press" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
         </div>
@@ -2795,10 +2794,11 @@
       <div class="box">
         <div class="section-header" style="margin-top:0;">📊 Шанси виграшу</div>
         <table style="width:100%; font-size:12px; color:#777;">
-          <tr><td>📦 Common</td><td>Мін 75₴ гарантовано</td><td style="color:var(--green);">Avg ×1.5</td></tr>
-          <tr><td>💠 Rare</td><td>Мін 250₴ гарантовано</td><td style="color:#4a9eff;">Avg ×1.8</td></tr>
-          <tr><td>💜 Epic</td><td>Мін 1 000₴ гарантовано</td><td style="color:#b57bee;">Avg ×2.5</td></tr>
+          <tr><td>📦 Common</td><td>Мін 75₴ гарантовано</td><td style="color:var(--green);">До ×10</td></tr>
+          <tr><td>💠 Rare</td><td>Мін 250₴ гарантовано</td><td style="color:#4a9eff;">До ×12</td></tr>
+          <tr><td>💜 Epic</td><td>Мін 1 200₴ гарантовано</td><td style="color:#b57bee;">До ×15</td></tr>
         </table>
+        <div style="font-size:10px; color:#444; margin-top:8px;">Ящик — азартна механіка з випадковим призом: середня віддача менша за ціну ящика (як і в будь-якій грі казино), джекпот — рідкісний, а не гарантований результат.</div>
       </div>
 
       <div class="section-header">📜 Останні відкриття</div>
@@ -3088,6 +3088,20 @@
         <div id="rtpGrid"></div>
         <button class="btn-outline" style="border-color:#c9a0ff;color:#c9a0ff;margin-top:6px;" onclick="loadRTPSettings()">📂 Завантажити</button>
         <button class="btn-gold" style="margin-top:6px;" onclick="saveRTPSettings()">💾 Зберегти RTP</button>
+
+        <!-- Lootbox payout control -->
+        <div style="font-size:12px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:8px;margin-top:14px;">📦 Лут-бокси — виплати</div>
+        <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Базові шанси вже налаштовані на RTP &lt;100% (Common ~89%, Rare ~92%, Epic ~96%). Множник нижче — додатковий контроль поверх базових цін, від 50% до 100% (не можна підняти вище базового, щоб випадково не зробити ящики знову прибутковими для гравця).</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input id="lootboxEdgeInput" type="number" min="50" max="100" value="100" style="flex:1;margin:0;">
+            <span style="font-size:12px;color:#777;">% від базової виплати</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn-outline" style="flex:1;border-color:#d4af37;color:#d4af37;font-size:12px;padding:9px;" onclick="loadLootboxEdgeSetting()">📂 Завантажити</button>
+            <button class="btn-gold" style="flex:1;font-size:12px;padding:9px;" onclick="saveLootboxEdgeSetting()">💾 Зберегти</button>
+          </div>
+        </div>
 
         <!-- Promo codes -->
         <div style="font-size:12px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:8px;">🎁 Промокоди</div>
