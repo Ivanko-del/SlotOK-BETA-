@@ -4897,10 +4897,25 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '74';
+const CURRENT_VERSION = '75';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '75',
+    title: '🖼️ Оновлення v75 — фонові фото та паралакс на всіх екранах',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🖼️ Атмосферні фото-фони',
+        items: [
+          'На кожному екрані сайту тепер є розмите фонове фото з легким ефектом паралаксу при скролі',
+        ]
+      },
+    ]
+  },
   {
     version: '74',
     title: '💎 Оновлення v74 — преміум-дизайн, чесніші лут-бокси, 3D',
@@ -9960,7 +9975,58 @@ function showAdminBypassBanner(gameId) {
   });
 })();
 
+// ═══════════════════════════════════════════
+// 🖼️ ФОНОВІ ФОТО + ПАРАЛАКС — на всіх екранах сайту
+// ═══════════════════════════════════════════
+// Один спільний шар (#screenPhotoBg, у index.html) замість вставляння
+// фото в кожен з 50+ табів окремо — updateScreenPhotoBg() підміняє
+// картинку й викликається з switchTab(), тож справді працює всюди,
+// без дублювання розмітки по кожному екрану.
+//
+// Джерело фото: picsum.photos (seed → детермінований реальний знімок).
+// Пряме посилання на конкретне фото Unsplash довелось би вгадувати
+// наосліп — це середовище розробки не має доступу в інтернет, щоб
+// перевірити, чи існує посилання, а битий лінк на живому сайті з
+// реальними грошима неприпустимий. picsum.photos гарантовано віддає
+// справжнє фото для будь-якого seed, тож посилання завжди робоче.
+// Це фонова атмосфера (розмита, затемнена) — не ілюстрація, тому
+// сюжет фото другорядний; кольори картинки не мають значення.
+const SCREEN_PHOTOS = {
+  home: 'slotok-home', lobby: 'slotok-lobby', slots: 'slotok-slots',
+  diamond: 'slotok-diamond', cashier: 'slotok-cash', bank: 'slotok-bank',
+  profile: 'slotok-profile', vip: 'slotok-vip', battlepass: 'slotok-bp',
+  tournaments: 'slotok-tourney', sports: 'slotok-sports',
+  lootboxes: 'slotok-loot', roulette: 'slotok-roulette',
+  blackjack: 'slotok-cards', poker: 'slotok-poker', crash: 'slotok-crash',
+  admin: 'slotok-admin', default: 'slotok-ambient',
+};
+let _lastPhotoBgTab = null;
+function updateScreenPhotoBg(tabId) {
+  const el = document.getElementById('screenPhotoBg');
+  if (!el) return;
+  const seed = SCREEN_PHOTOS[tabId] || SCREEN_PHOTOS.default;
+  if (seed === _lastPhotoBgTab) return;
+  _lastPhotoBgTab = seed;
+  el.style.backgroundImage = "url('https://picsum.photos/seed/" + seed + "/1200/2000')";
+  el.classList.add('visible');
+}
+(function initScreenPhotoParallax() {
+  // #tab-home starts visible (no .hidden class) with no switchTab() call,
+  // so the shared layer needs an explicit first paint for it.
+  document.addEventListener('DOMContentLoaded', function() { updateScreenPhotoBg('home'); });
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // #screenPhotoBg has a 160px overscan margin (inset:-160px in CSS) so this
+  // can never scroll the photo far enough to reveal an empty edge behind it.
+  window.addEventListener('scroll', function() {
+    const el = document.getElementById('screenPhotoBg');
+    if (!el) return;
+    const y = Math.max(-140, Math.min(140, window.scrollY * 0.12));
+    el.style.transform = 'translateY(' + y + 'px)';
+  }, { passive: true });
+})();
+
 function switchTab(id, el) {
+  try { updateScreenPhotoBg(id); } catch(e) { console.warn(e); }
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
     if(!isAdminUser()) {

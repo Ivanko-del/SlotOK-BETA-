@@ -1345,6 +1345,25 @@
     #liveBgCanvas { position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; transition:opacity .5s; }
     #liveBgCanvas.active { opacity:.4; }
 
+    /* SCREEN PHOTO BACKDROP — shared layer behind every tab, swapped by
+       updateScreenPhotoBg(). Blurred + darkened so it reads as ambient
+       texture (never competes with foreground text/cards for contrast). */
+    #screenPhotoBg {
+      position: fixed; inset: -160px; z-index: -1;
+      background-size: cover; background-position: center top;
+      filter: blur(3px) brightness(.38) saturate(1.15);
+      opacity: 0; transition: opacity .6s ease;
+      pointer-events: none; will-change: transform;
+    }
+    #screenPhotoBg.visible { opacity: .5; }
+    #screenPhotoBg::after {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(0,0,0,.15), rgba(6,5,3,.8) 70%),
+        linear-gradient(180deg, rgba(10,8,4,.25), rgba(6,5,3,.9));
+    }
+    @media (prefers-reduced-motion: reduce) { #screenPhotoBg { transition: none; } }
+
     /* RETURN BONUS */
     @keyframes returnBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
     .return-bonus-card { animation: returnBounce 1.5s ease-in-out 3; }
