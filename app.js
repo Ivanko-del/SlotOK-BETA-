@@ -92,10 +92,29 @@ function startDataSync() {
               // Якщо це авто-вхід через збережену сесію — лишень зараз бачимо
               // справжнє попереднє значення (ще ніхто нічого не перезаписав).
               if(_capturedLastSeen === undefined) _capturedLastSeen = data.lastSeen || null;
+              // Точка відліку для лімітів "Відповідальної гри" (програш/час за
+              // сесію) — беремо баланс і час РІВНО на вході, до першої ставки.
+              _rgSessionStartBalance = data.balance || 0;
+              _rgSessionStartTime = Date.now();
             }
             userData = data;
             syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
+            // Само-виключення — раніше цей прапорець лише встановлювався і ніде
+            // й ніколи не перевірявся, тож гравець міг зайти назад одразу ж.
+            // Перевіряємо тут (а не лише при явному вході), бо той самий шлях
+            // спрацьовує і для автовходу через збережену сесію.
+            if(userData.selfExcluded) {
+              if(userData.selfExcludeUntil && userData.selfExcludeUntil > Date.now()) {
+                const hrsLeft = Math.ceil((userData.selfExcludeUntil - Date.now()) / 3600000);
+                alert("🚫 Ви увімкнули само-виключення. Залишилось: " + hrsLeft + " год.");
+                logout();
+                return;
+              } else {
+                // Термін вийшов — знімаємо прапорець, щоб не перевіряти щоразу.
+                db.ref('users/' + currentUser + '/selfExcluded').set(false);
+              }
+            }
             if(!userData.isBot) antiCheatCheckBalanceJump(prevBalance, userData.balance);
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
             if(!isAdminAcc) {
@@ -340,6 +359,11 @@ function playSound(type) {
 function validateBet(amount) {
     if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) {
         notify('🔒 Картка заблокована — розблокуй її в Касі', 'error');
+        return false;
+    }
+    if(isRGLimitReached()) {
+        updateRGLossWarnUI();
+        notify('🛡️ Досягнуто ліміт "Відповідальної гри" — деталі в Налаштуваннях', 'error');
         return false;
     }
     const bet = Math.abs(parseInt(amount));
@@ -3214,15 +3238,53 @@ function claimRakeback() {
 // ═══════════════════════════════════════════════════════
 // 🛡️ RESPONSIBLE GAMBLING
 // ═══════════════════════════════════════════════════════
-let sessionLossTotal = 0;
-let rgLimits = JSON.parse(localStorage.getItem('slotok_rg')||'{"loss":0,"deposit":0,"session":0}');
+// Точка відліку для лімітів (заповнюється в startDataSync на вході в сесію).
+let _rgSessionStartBalance = null;
+let _rgSessionStartTime = null;
 
+// Ліміти зберігаються в Firebase (users/<nick>/rgLimits), а не в localStorage —
+// ліміт, який гравець може обійти простим очищенням даних сайту, не є
+// реальним запобіжником. userData.rgLimits синхронізується тим самим
+// realtime-слухачем, що й решта userData.
 function saveRGLimits() {
-  rgLimits.loss = parseInt(document.getElementById('rgLossLimit')?.value||0);
-  rgLimits.deposit = parseInt(document.getElementById('rgDepositLimit')?.value||0);
-  rgLimits.session = parseInt(document.getElementById('rgSessionLimit')?.value||0);
-  localStorage.setItem('slotok_rg', JSON.stringify(rgLimits));
-  notify('✅ Ліміти збережено','success');
+  const loss = parseInt(document.getElementById('rgLossLimit')?.value || 0);
+  const session = parseInt(document.getElementById('rgSessionLimit')?.value || 0);
+  db.ref('users/' + currentUser + '/rgLimits').set({ loss, session }).then(() => {
+    notify('✅ Ліміти збережено', 'success');
+    updateRGLossWarnUI();
+  });
+}
+
+// Показує/ховає банер "Ви досягли ліміту" відповідно до поточного стану —
+// викликається і одразу після збереження лімітів, і щоразу коли відкривають
+// Налаштування, щоб попередження лишалось видимим, а не зникало як toast.
+function updateRGLossWarnUI() {
+  const el = document.getElementById('rgLossWarn');
+  if(!el || !userData) return;
+  const rg = userData.rgLimits;
+  const lossInp = document.getElementById('rgLossLimit');
+  const sessInp = document.getElementById('rgSessionLimit');
+  if(lossInp && document.activeElement !== lossInp) lossInp.value = (rg && rg.loss) || '';
+  if(sessInp && document.activeElement !== sessInp) sessInp.value = (rg && rg.session) || '';
+  let msg = '';
+  if(rg && rg.session > 0 && _rgSessionStartTime && (Date.now() - _rgSessionStartTime) >= rg.session * 60000) {
+    msg = '⏰ Досягнуто встановлений ліміт часу сесії. Зроби перерву.';
+  } else if(rg && rg.loss > 0 && _rgSessionStartBalance !== null && (_rgSessionStartBalance - (userData.balance || 0)) >= rg.loss) {
+    msg = '⚠️ Ви досягли встановленого ліміту програшів! Зробіть перерву.';
+  }
+  if(msg) { el.textContent = msg; el.style.display = 'block'; }
+  else { el.style.display = 'none'; }
+}
+
+// Викликається з validateBet() перед кожною ставкою — якщо повертає true,
+// ставку треба заблокувати. Єдина точка правди для обох лімітів, щоб
+// перевірка завжди узгоджувалась з тим, що показує updateRGLossWarnUI().
+function isRGLimitReached() {
+  const rg = userData && userData.rgLimits;
+  if(!rg) return false;
+  if(rg.session > 0 && _rgSessionStartTime && (Date.now() - _rgSessionStartTime) >= rg.session * 60000) return true;
+  if(rg.loss > 0 && _rgSessionStartBalance !== null && (_rgSessionStartBalance - (userData.balance || 0)) >= rg.loss) return true;
+  return false;
 }
 
 function selfExclude(days) {
@@ -4797,14 +4859,31 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '71';
+const CURRENT_VERSION = '72';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
   {
+    version: '72',
+    title: '🛡️ Оновлення v72 — Відповідальна гра тепер реально працює',
+    date: Date.now(),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🛡️ Само-виключення та особисті ліміти',
+        items: [
+          'Само-виключення раніше лише розлогінювало один раз — можна було зайти назад одразу. Тепер вхід дійсно заблокований до кінця обраного терміну',
+          'Ліміт програшів і ліміт часу сесії — раніше зберігались, але ніде не перевірялись. Тепер при досягненні ліміту нові ставки блокуються, а в Налаштуваннях з\'являється попередження',
+          'Ліміти тепер зберігаються на сервері, а не лише в цьому браузері — не скидаються при очищенні кешу чи вході з іншого пристрою',
+        ]
+      },
+    ]
+  },
+  {
     version: '71',
     title: '💎 Оновлення v71 — Diamond Rush, реальний Push, чистіше меню',
-    date: Date.now(),
+    date: Date.UTC(2026, 8, 11),
     dev: 'SlotOK Dev',
     sections: [
       {
@@ -9758,7 +9837,7 @@ function switchTab(id, el) {
   if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
-  if(id==='settings')     safe(() => loadSettings());
+  if(id==='settings')     safe(() => { loadSettings(); updateRGLossWarnUI(); });
   if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='lobby')        safe(() => { updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='baccarat')     safe(() => initBaccarat());
