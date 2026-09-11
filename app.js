@@ -4897,10 +4897,49 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '73';
+const CURRENT_VERSION = '74';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '74',
+    title: '💎 Оновлення v74 — преміум-дизайн, чесніші лут-бокси, 3D',
+    date: Date.UTC(2026, 8, 11),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '👑 Головна сторінка — преміум казино-стиль',
+        items: [
+          'Повністю переоформлена головна: золоті акценти, картка балансу й VIP в одному місці, охайніші розділи',
+          '3D-нахил картки балансу при наведенні (на десктопі)',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '📦 Лут-бокси стали чеснішими',
+        items: [
+          'Виправлено баланс виплат — раніше ящики в середньому платили більше за свою ціну',
+          'Прибрано неточну рекламу середньої виплати на сторінці лут-боксів',
+          'Додано захист від збою балансу при швидких повторних відкриттях',
+        ]
+      },
+      {
+        type: 'new',
+        title: '💎 3D-ефекти при відкритті лут-боксів',
+        items: [
+          'Кожна рідкість ящика тепер має свою 3D-форму та іскри при відкритті',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Посилений захист акаунтів',
+        items: [
+          'Система виявлення шахрайства тепер може тимчасово призупиняти підозрілі акаунти до перевірки',
+        ]
+      },
+    ]
+  },
   {
     version: '73',
     title: '🎨 Оновлення v73 — новий дизайн головної сторінки',
@@ -9461,7 +9500,7 @@ function openLootbox(type) {
         playSound(prize.mult >= 2 ? 'win' : 'click');
         _lootboxOpening = false;
       };
-      playCaseOpen3D(cfg.color, reveal);
+      playCaseOpen3D(cfg.color, reveal, type);
 
       // Нараховуємо виграш (не чекає на візуальну анімацію)
       db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
@@ -9495,10 +9534,11 @@ function supports3DCaseOpen() {
 }
 
 // Spins a rotating 3D case in the reveal overlay (color-matched to the box
-// rarity), then bursts and hands off to reveal(). Falls straight through to
-// reveal() on reduced-motion, no WebGL, or if the three.js CDN fails to load
-// — the prize/balance logic in openLootbox never depends on this running.
-function playCaseOpen3D(color, reveal) {
+// rarity, shape-matched too — see GEOMETRY_BY_TIER below), then bursts and
+// hands off to reveal(). Falls straight through to reveal() on
+// reduced-motion, no WebGL, or if the three.js CDN fails to load — the
+// prize/balance logic in openLootbox never depends on this running.
+function playCaseOpen3D(color, reveal, tier) {
   if (!supports3DCaseOpen()) { reveal(); return; }
   const canvas = document.getElementById('lbCaseCanvas');
   const emoji = document.getElementById('lbOpenEmoji');
@@ -9519,37 +9559,73 @@ function playCaseOpen3D(color, reveal) {
     const rim = new THREE.PointLight(color, 1.5, 10);
     rim.position.set(-2, -1, 2);
     scene.add(rim);
-    const material = new THREE.MeshStandardMaterial({ color, metalness: .6, roughness: .25, emissive: color, emissiveIntensity: .15 });
-    const box = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), material);
-    scene.add(box);
 
-    const spinMs = 1500, t0 = performance.now();
+    // Кожна рідкість — своя форма, не лише колір: Common — простий куб,
+    // Rare — октаедр (грань діаманта, як іконка 💠), Epic — ікосаедр
+    // (найбільш "коштовна" багатогранна форма, під іконку 💜).
+    const GEOMETRY_BY_TIER = {
+      common: () => new THREE.BoxGeometry(1.6, 1.6, 1.6),
+      rare:   () => new THREE.OctahedronGeometry(1.15, 0),
+      epic:   () => new THREE.IcosahedronGeometry(1.05, 0),
+    };
+    const geometry = (GEOMETRY_BY_TIER[tier] || GEOMETRY_BY_TIER.common)();
+    const material = new THREE.MeshStandardMaterial({ color, metalness: .6, roughness: .25, emissive: color, emissiveIntensity: .15 });
+    const shape = new THREE.Mesh(geometry, material);
+    scene.add(shape);
+
+    // Мерехтливі частинки навколо форми — густіші для вищої рідкості,
+    // щоб epic-відкриття відчувалось помітно "більшим", ніж common.
+    const sparkleCount = tier === 'epic' ? 70 : tier === 'rare' ? 40 : 18;
+    const positions = new Float32Array(sparkleCount * 3);
+    for (let i = 0; i < sparkleCount; i++) {
+      const r = 1.6 + Math.random() * 0.9;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 2 - 1);
+      positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+    }
+    const sparkleGeo = new THREE.BufferGeometry();
+    sparkleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const sparkleMat = new THREE.PointsMaterial({ color, size: 0.05, transparent: true, opacity: .85 });
+    const sparkles = new THREE.Points(sparkleGeo, sparkleMat);
+    scene.add(sparkles);
+
+    // Дорожчі ящики крутяться довше — більше передчуття перед розкриттям.
+    const spinMs = tier === 'epic' ? 2200 : tier === 'rare' ? 1850 : 1500;
+    const t0 = performance.now();
     function tick(now) {
       const t = Math.min(1, (now - t0) / spinMs);
       const eased = 1 - Math.pow(1 - t, 3);
-      box.rotation.y = eased * Math.PI * 2 * 4;
-      box.rotation.x = Math.sin(t * Math.PI) * 0.4;
+      shape.rotation.y = eased * Math.PI * 2 * 4;
+      shape.rotation.x = Math.sin(t * Math.PI) * 0.4;
+      sparkles.rotation.y = -eased * Math.PI * 2 * 1.5;
       const s = 1 + Math.sin(t * Math.PI) * .08;
-      box.scale.set(s, s, s);
+      shape.scale.set(s, s, s);
       renderer.render(scene, camera);
       if (t < 1) requestAnimationFrame(tick); else burst();
     }
     function burst() {
-      const tb0 = performance.now(), burstMs = 260;
+      const tb0 = performance.now(), burstMs = 300;
       material.transparent = true;
+      sparkleMat.transparent = true;
       (function step(now) {
         const t = Math.min(1, (now - tb0) / burstMs);
         const s = 1 + t * 1.6;
-        box.scale.set(s, s, s);
+        shape.scale.set(s, s, s);
         material.opacity = 1 - t;
+        sparkles.scale.setScalar(1 + t * 2.2);
+        sparkleMat.opacity = .85 * (1 - t);
         renderer.render(scene, camera);
         if (t < 1) requestAnimationFrame(step); else finish();
       })(tb0);
     }
     function finish() {
       renderer.dispose();
-      box.geometry.dispose();
+      geometry.dispose();
       material.dispose();
+      sparkleGeo.dispose();
+      sparkleMat.dispose();
       canvas.classList.add('hidden');
       emoji.classList.remove('hidden');
       reveal();
@@ -9856,6 +9932,32 @@ function showAdminBypassBanner(gameId) {
     deco.style.transform = 'translate(' + (px * 20) + 'px,' + (py * 20) + 'px)';
   }, { passive: true });
   carousel.addEventListener('pointerleave', function() { reset(current); current = null; });
+})();
+
+// Desktop-only 3D tilt for the home hero card (balance/VIP) — mouse-follow
+// only, same pattern as the virtual card and banner parallax above. No
+// touch listener at all, so it can never fight page scroll or any swipe
+// gesture; on touch devices this whole block never registers a listener.
+(function initHeroTilt() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.addEventListener('DOMContentLoaded', function() {
+    const hero = document.querySelector('.lux-hero');
+    if (!hero) return;
+    hero.addEventListener('mousemove', function(e) {
+      const r = hero.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const dx = (px - 0.5) * 6;
+      const dy = (0.5 - py) * 4;
+      hero.style.transition = 'transform 0.08s linear';
+      hero.style.transform = 'perspective(700px) rotateY(' + dx + 'deg) rotateX(' + dy + 'deg)';
+    });
+    hero.addEventListener('mouseleave', function() {
+      hero.style.transition = 'transform 0.5s cubic-bezier(0.22,1,.36,1)';
+      hero.style.transform = '';
+    });
+  });
 })();
 
 function switchTab(id, el) {

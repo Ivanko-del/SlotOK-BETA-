@@ -325,7 +325,7 @@
     #hp-main .lux-divider-action { font-size:10px; color:var(--lux-dim); cursor:pointer; font-weight:700; letter-spacing:.4px; white-space:nowrap; }
 
     /* Hero — balance, VIP crest, streak/bets/wins strip */
-    .lux-hero { position:relative; background: radial-gradient(120% 160% at 12% 0%, rgba(212,175,55,.11), transparent 55%), linear-gradient(160deg, rgba(255,255,255,.03), rgba(0,0,0,0) 50%), #090807; border:1px solid rgba(212,175,55,.22); border-radius:22px; padding:18px 18px 16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-2), 0 0 44px -24px rgba(212,175,55,.4); overflow:hidden; }
+    .lux-hero { position:relative; background: radial-gradient(120% 160% at 12% 0%, rgba(212,175,55,.11), transparent 55%), linear-gradient(160deg, rgba(255,255,255,.03), rgba(0,0,0,0) 50%), #090807; border:1px solid rgba(212,175,55,.22); border-radius:22px; padding:18px 18px 16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-2), 0 0 44px -24px rgba(212,175,55,.4); overflow:hidden; will-change:transform; }
     .lux-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(212,175,55,.75),transparent); }
     .lux-hero-top { display:flex; align-items:flex-start; justify-content:space-between; cursor:pointer; }
     .lux-hero-greet { font-size:10px; color:var(--lux-dim); letter-spacing:1.6px; text-transform:uppercase; margin-bottom:6px; }
@@ -3200,6 +3200,11 @@
 /* Кнопки — легкий тактильний відгук на будь-якому елементі з цим класом */
 .anim-press { transition: transform .12s cubic-bezier(.4,0,.2,1), box-shadow .15s; }
 .anim-press:active { transform: scale(.93); }
+/* A touch of 3D on tap for the premium tiles — pure CSS, no gesture capture,
+   so it can never fight scrolling or the banner carousel's swipe. */
+.lux-action-tile.anim-press:active { transform: perspective(400px) scale(.94) rotateX(6deg); }
+.lux-hero-cell { transition: transform .12s cubic-bezier(.4,0,.2,1); cursor:pointer; }
+.lux-hero-cell:active { transform: perspective(400px) scale(.93) rotateX(8deg); }
 #tab-home .anim-press:hover { box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
 
 /* Картки — плавна поява каскадом */
