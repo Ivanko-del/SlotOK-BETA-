@@ -3331,7 +3331,11 @@ input:focus-visible, textarea:focus-visible, .nav-item:focus-visible,
    фіксованої ширини замість розтягування на всю ширину вікна. */
 @media (min-width: 641px) {
   body { display: flex; flex-direction: column; align-items: center; }
-  .header, .container { max-width: 560px; width: 100%; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+  /* .screen тут не випадково: екрани вкладок лежать у розмітці поза .container,
+     тож обмеження ширини на них не поширювалось. Більшість виглядали
+     центрованими лише завдяки align-items у body, а «Ще» розтягувалась на всю
+     ширину вікна. */
+  .header, .container, .screen { max-width: 560px; width: 100%; margin-left: auto; margin-right: auto; box-sizing: border-box; }
   .bottom-nav, .full-modal, #auth-screen, .slotok-fullscreen-modal, .pm-thread-fullscreen {
     left: 50%; right: auto; width: 100%; max-width: 560px; transform: translateX(-50%);
   }

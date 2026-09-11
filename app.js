@@ -217,7 +217,7 @@ function updateUI() {
     pn('profStatGames', gamesPlayed, '');
     pn('profStatWager', userData.totalWagered || userData.totalWager || 0, '₴');
     ps('profStatStreak', (userData.dailyStreak || 0) + '🔥');
-    pn('profStatSlotsWins', userData.slotsPlayed || 0, '');
+    pn('profStatSlotsPlayed', userData.slotsPlayed || 0, '');
     pn('profStatDeposits', userData.totalDeposits || 0, '₴');
     const wr = gamesPlayed > 0 ? Math.round((gamesWon/gamesPlayed)*100) : 0;
     pn('profWinRate', wr, '', '%');
@@ -4934,10 +4934,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '79';
+const CURRENT_VERSION = '80';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '80',
+    title: '🐛 Оновлення v80 — виправлення в профілі та вкладці «Ще»',
+    date: Date.UTC(2026, 8, 12),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Вкладка «Ще» на компʼютері розтягувалась на всю ширину екрана замість акуратної колонки, як решта вкладок — виправлено',
+          'У профілі плитка «Перемог у слотах» насправді рахувала зіграні ігри, через що показувала більше перемог, ніж усього ігор. Тепер підписана правильно — «Ігор у слотах»',
+        ]
+      },
+    ]
+  },
   {
     version: '79',
     title: '🔐 Оновлення v79 — захист паролів і виправлення',

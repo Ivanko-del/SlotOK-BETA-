@@ -1819,8 +1819,12 @@
             <div class="prof-stat-lbl">VIP рівень</div>
           </div>
           <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:#4a9eff;" id="profStatSlotsWins">0</div>
-            <div class="prof-stat-lbl">Перемог у слотах</div>
+            <!-- Показує slotsPlayed — кількість зіграних у слотах ігор. Підпис
+                 раніше казав «Перемог у слотах», через що профіль міг показувати
+                 більше перемог, ніж усього зіграно ігор. Окремого лічильника
+                 перемог саме в слотах у даних немає. -->
+            <div class="prof-stat-val" style="color:#4a9eff;" id="profStatSlotsPlayed">0</div>
+            <div class="prof-stat-lbl">Ігор у слотах</div>
           </div>
           <div class="prof-stat-card">
             <div class="prof-stat-val" style="color:#3dd68c;" id="profStatDeposits">₴0</div>
