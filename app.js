@@ -19404,8 +19404,9 @@ function openAddCardModal() {
         '<span class="ks-hint">або</span>' +
         '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
       '</div>' +
-      '<button class="ks-btn is-block" onclick="createPartnerCard()">' + ksIcon('card') + ' Згенерувати Партнер-картку (30 днів)</button>' +
-      '<p class="ks-hint" style="margin:8px 0 0;text-align:center;">Партнер-картку створює SlotOK — з номером і CVV, діє 30 днів, можна продовжити.</p>' +
+      '<button class="ks-btn is-block" style="margin-bottom:8px;" onclick="createPartnerCard()">' + ksIcon('card') + ' Згенерувати Партнер-картку (30 днів)</button>' +
+      '<button class="ks-btn is-block" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
+      '<p class="ks-hint" style="margin:10px 0 0;text-align:center;">Партнер-картку створює SlotOK (діє 30 днів). Аксіому — привʼяжи 6-значним кодом із застосунку Аксіома.</p>' +
     '</div>';
   document.body.appendChild(m);
   setTimeout(function() { var f = document.getElementById('ksAcHolder'); if(f) f.focus(); }, 60);
