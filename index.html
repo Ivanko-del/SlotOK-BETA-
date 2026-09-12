@@ -1759,125 +1759,116 @@
 
         <!-- ТОП -->
     <!-- ПРОФІЛЬ -->
-    <div id="tab-profile" class="screen hidden" style="padding:0;padding-bottom:100px;">
+    <!-- ПРОФІЛЬ — мова «Ledger» (та сама, що в Касі). Усі id та обробники
+         збережені; наповнюється loadProfile()/updateVipUI() без змін. -->
+    <div id="tab-profile" class="screen ledger hidden" style="padding:0 15px 100px;">
 
-      <!-- Profile hero header -->
-      <div style="background:linear-gradient(160deg,#0d0800,#1a1200,#0d0a00);border-bottom:1px solid rgba(212,175,55,.15);padding:20px 16px 16px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-30px;right:-30px;font-size:120px;opacity:.04;pointer-events:none;">🎰</div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent);"></div>
-
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-          <!-- Avatar -->
-          <div style="position:relative;flex-shrink:0;">
-            <div id="currentAvatar" onclick="document.getElementById('avatarInput').click()" style="width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#1a1200,#2a2000);border:3px solid rgba(212,175,55,.5);display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;overflow:hidden;box-shadow:0 0 20px rgba(212,175,55,.2);">👤</div>
-            <div onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:2px solid #000;">✏️</div>
-          </div>
-          <!-- Name + status -->
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span id="profileName" style="font-size:20px;font-weight:900;font-family:'Orbitron',monospace;color:#fff;"></span>
-              <span id="adminBadge" class="hidden" style="background:#e74c3c;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;">ADMIN</span>
+      <!-- Шапка профілю -->
+      <section class="ks-panel" style="margin-top:14px;">
+        <div class="ks-panel-body">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <div style="position:relative;flex-shrink:0;">
+              <div id="currentAvatar" onclick="document.getElementById('avatarInput').click()"
+                style="width:64px;height:64px;border-radius:16px;background:var(--ks-surface-3);border:1px solid var(--ks-line-2);display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;overflow:hidden;">👤</div>
+              <div onclick="document.getElementById('avatarInput').click()"
+                style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;background:var(--ks-acc);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--ks-surface);color:#0b0d18;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </div>
             </div>
-            <div id="profileTag" style="font-size:11px;color:#666;margin-top:2px;"></div>
-            <div id="profileVipBadge" style="margin-top:5px;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span id="profileName" style="font-size:20px;font-weight:650;letter-spacing:-.01em;color:var(--ks-fg);"></span>
+                <span id="adminBadge" class="ks-badge is-neg hidden">ADMIN</span>
+              </div>
+              <div id="profileTag" style="font-size:12px;color:var(--ks-fg-3);margin-top:2px;"></div>
+              <div id="profileVipBadge" style="margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div class="ks-field">
+            <input id="bioInput" placeholder="Статус профілю…" onchange="updateBio(this.value)">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="ks-copy" style="margin:0;cursor:pointer;"
+              onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('profileId').textContent);notify('ID скопійовано','success')">
+              <div class="ks-copy-main">
+                <div class="ks-label" style="margin-bottom:3px;">ID</div>
+                <div class="ks-copy-val ks-num" id="profileId">…</div>
+              </div>
+            </div>
+            <div class="ks-copy" style="margin:0;cursor:pointer;min-width:0;"
+              onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('profileEmail').textContent);notify('Email скопійовано','success')">
+              <div class="ks-copy-main" style="min-width:0;">
+                <div class="ks-label" style="margin-bottom:3px;">Email</div>
+                <div class="ks-copy-val" id="profileEmail" style="font-family:var(--ks-sans);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">…</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Bio input -->
-        <input id="bioInput" placeholder="✍️ Напиши свій статус..." onchange="updateBio(this.value)"
-          style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#aaa;font-size:12px;padding:8px 12px;width:100%;box-sizing:border-box;margin-bottom:12px;">
-
-        <!-- ID + Email row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-          <div onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('profileId').textContent);notify('✅ ID скопійовано','success')"
-            style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 10px;cursor:pointer;">
-            <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📋 ID</div>
-            <div style="font-size:13px;font-weight:800;color:#d4af37;font-family:monospace;" id="profileId">...</div>
-          </div>
-          <div onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('profileEmail').textContent);notify('✅ Email скопійовано','success')"
-            style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 10px;cursor:pointer;">
-            <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">✉️ Email</div>
-            <div style="font-size:12px;font-weight:700;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="profileEmail">...</div>
-          </div>
-        </div>
-
-        <!-- Status select -->
-        <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;">
+        <div class="ks-panel-body" style="border-top:1px solid var(--ks-line);display:flex;gap:6px;flex-wrap:wrap;">
           <select id="statusSelect" onchange="setPlayerStatus(this.value)"
-            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aaa;border-radius:8px;padding:6px 10px;font-size:11px;flex-shrink:0;">
+            style="flex:0 0 auto;width:auto;background:var(--ks-surface-2);border:1px solid var(--ks-line);color:var(--ks-fg-2);border-radius:var(--ks-r);padding:9px 12px;font-size:13px;">
             <option value="online">🟢 В грі</option>
             <option value="afk">💤 АФК</option>
             <option value="looking">🎯 Шукаю суперника</option>
             <option value="streamer">📺 Стрімлю</option>
           </select>
-          <button class="btn-outline" onclick="document.getElementById('avatarInput').click()" style="white-space:nowrap;font-size:11px;padding:6px 12px;flex-shrink:0;">📷 Аватар</button>
-          <button class="btn-outline" onclick="openHistoryModal()" style="white-space:nowrap;font-size:11px;padding:6px 12px;flex-shrink:0;">📜 Історія</button>
-          <button class="btn-outline" onclick="openDailyBonus()" style="white-space:nowrap;font-size:11px;padding:6px 12px;flex-shrink:0;">🎁 Бонус</button>
+          <button class="ks-btn is-quiet is-sm" onclick="document.getElementById('avatarInput').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Аватар
+          </button>
+          <button class="ks-btn is-quiet is-sm" onclick="openHistoryModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+            Історія
+          </button>
+          <button class="ks-btn is-quiet is-sm" onclick="openDailyBonus()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13"/><path d="M3 13h18"/><path d="M12 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Z"/><path d="M12 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z"/></svg>
+            Бонус
+          </button>
         </div>
         <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(this)">
+      </section>
+
+      <!-- Статистика в реальному часі -->
+      <section class="ks-panel">
+        <div class="ks-panel-head"><div class="ks-panel-title">Статистика</div></div>
+        <div class="ks-statgrid">
+          <div class="ks-stat"><div class="ks-stat-lbl">Баланс</div><div class="ks-stat-val is-acc ks-num" id="profStatBalance">₴0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Найбільший виграш</div><div class="ks-stat-val is-pos ks-num" id="profStatBigWin">₴0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Ігор зіграно</div><div class="ks-stat-val ks-num" id="profStatGames">0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Загальні ставки</div><div class="ks-stat-val ks-num" id="profStatWager">₴0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Серія днів</div><div class="ks-stat-val ks-num" id="profStatStreak">0🔥</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">VIP рівень</div><div class="ks-stat-val is-acc" id="profStatVip">—</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Ігор у слотах</div><div class="ks-stat-val ks-num" id="profStatSlotsPlayed">0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Всього депозитів</div><div class="ks-stat-val is-pos ks-num" id="profStatDeposits">₴0</div></div>
+        </div>
+        <div class="ks-panel-body" style="border-top:1px solid var(--ks-line);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span class="ks-hint">Win Rate</span>
+            <span class="ks-num" style="font-weight:650;color:var(--ks-pos);" id="profWinRate">0%</span>
+          </div>
+          <div class="ks-meter"><div class="ks-meter-fill is-pos" id="profWinRateBar" style="width:0;"></div></div>
+        </div>
+      </section>
+
+      <div class="ks-btn-row" style="margin-bottom:14px;">
+        <button class="ks-btn is-primary" onclick="switchTab('cashier')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+          Поповнити
+        </button>
+        <button class="ks-btn is-quiet" onclick="switchTab('stats')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>
+          Детальніше
+        </button>
       </div>
 
-      <!-- Real-time stats section -->
-      <div style="padding:14px 16px;">
-        <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">📊 Статистика в реальному часі</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:var(--accent);" id="profStatBalance">₴0</div>
-            <div class="prof-stat-lbl">Баланс</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:var(--green);" id="profStatBigWin">₴0</div>
-            <div class="prof-stat-lbl">Найбільший виграш</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" id="profStatGames">0</div>
-            <div class="prof-stat-lbl">Ігор зіграно</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:#ffd700;" id="profStatWager">₴0</div>
-            <div class="prof-stat-lbl">Загальні ставки</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:#ff9500;" id="profStatStreak">0🔥</div>
-            <div class="prof-stat-lbl">Серія днів</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:#c9a0ff;" id="profStatVip">—</div>
-            <div class="prof-stat-lbl">VIP рівень</div>
-          </div>
-          <div class="prof-stat-card">
-            <!-- Показує slotsPlayed — кількість зіграних у слотах ігор. Підпис
-                 раніше казав «Перемог у слотах», через що профіль міг показувати
-                 більше перемог, ніж усього зіграно ігор. Окремого лічильника
-                 перемог саме в слотах у даних немає. -->
-            <div class="prof-stat-val" style="color:#4a9eff;" id="profStatSlotsPlayed">0</div>
-            <div class="prof-stat-lbl">Ігор у слотах</div>
-          </div>
-          <div class="prof-stat-card">
-            <div class="prof-stat-val" style="color:#3dd68c;" id="profStatDeposits">₴0</div>
-            <div class="prof-stat-lbl">Всього депозитів</div>
-          </div>
-        </div>
-
-        <!-- Win rate bar -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <div style="font-size:11px;color:#777;font-weight:700;">Win Rate</div>
-            <div style="font-size:11px;color:var(--green);font-weight:900;" id="profWinRate">0%</div>
-          </div>
-          <div style="height:6px;background:#111;border-radius:3px;overflow:hidden;">
-            <div id="profWinRateBar" style="height:100%;width:0;background:linear-gradient(90deg,#3dd68c,#d4af37);border-radius:3px;transition:width 1s ease;"></div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;">
-          <button class="btn-gold" style="flex:1;font-size:13px;padding:12px;" onclick="switchTab('cashier')">💳 Поповнити</button>
-          <button class="btn-outline" style="flex:1;font-size:13px;padding:12px;" onclick="switchTab('stats')">📊 Детальніше</button>
-        </div>
-      </div>
-
-      <div class="box hidden" id="adminPanelBtnBox" style="margin:0 16px;border-color:#e74c3c;text-align:center;">
-        <button class="btn-red" onclick="switchTab('admin')">⚙️ ПАНЕЛЬ АДМІНІСТРАТОРА</button>
+      <div id="adminPanelBtnBox" class="hidden" style="margin-bottom:14px;">
+        <button class="ks-btn is-block" style="border-color:rgba(240,85,107,.5);color:var(--ks-neg);" onclick="switchTab('admin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 14a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 3.6a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+          Панель адміністратора
+        </button>
       </div>
     </div>
 
