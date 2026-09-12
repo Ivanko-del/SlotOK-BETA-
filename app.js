@@ -19016,6 +19016,7 @@ var KS_BANKS = {
   privat: { name: 'PrivatBank',        color: '#4caf50', short: 'П'  },
   mono:   { name: 'Monobank',          color: '#1c1c1c', short: 'М'  },
   visa:   { name: 'Visa / Mastercard', color: '#1a1f71', short: 'VM' },
+  partner:{ name: 'Партнер Банк',      color: '#4a9eff', short: 'PB' },
   abank:  { name: 'A-Bank',            color: '#e2333a', short: 'A'  },
   sense:  { name: 'Sense Bank',        color: '#7b3fe4', short: 'S'  },
   pumb:   { name: 'ПУМБ',              color: '#c8102e', short: 'ПБ' },

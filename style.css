@@ -3615,3 +3615,10 @@ input:focus-visible, textarea:focus-visible, .nav-item:focus-visible,
 /* dvh не підтримується — деякі старі WebView. Явний фолбек через vh
    уже стоїть першим у .pm-thread-fullscreen, тож додаткового @supports
    не потрібно (dvh просто ігнорується непідтримуваними рушіями). */
+
+/* Обведення фокуса лишалось глобально золотим і билось із новою мовою.
+   Доступність не прибираємо — лише перефарбовуємо в акцент Каси. */
+:where(#tab-cashier, .ks-modal-box) :is(button, input, textarea):focus-visible {
+  outline: 2px solid var(--ks-acc);
+  outline-offset: 2px;
+}
