@@ -139,10 +139,6 @@
     .pay-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(212, 175, 55, 0.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -3px 6px rgba(0,0,0,.2), 0 8px 22px -8px rgba(212,175,55,.4); }
 
     /* TELEGRAM ДЕПОЗИТ */
-    .tg-deposit-box { background: linear-gradient(160deg, rgba(255,255,255,.04), rgba(255,255,255,0) 45%), linear-gradient(135deg, #1a2a3a, #0d1a27); border: 1px solid #229ED9; border-radius: var(--r-md); padding: 20px; margin-bottom: 15px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
-    .tg-logo { font-size: 50px; margin-bottom: 10px; }
-    .tg-title { color: #229ED9; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-    .tg-desc { color: #aaa; font-size: 12px; margin-bottom: 15px; line-height: 1.5; }
     .tg-steps { text-align: left; background: rgba(0,0,0,0.3); border-radius: var(--r-sm); padding: 12px; margin-bottom: 15px; box-shadow: inset 0 2px 8px rgba(0,0,0,.35); }
     .tg-step { display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #ccc; }
     .tg-step-num { color: #229ED9; font-weight: bold; min-width: 20px; }
@@ -151,8 +147,6 @@
     .amount-btn.selected { border-color: #229ED9; color: #229ED9; background: rgba(34, 158, 217, 0.1); }
 
     /* ВИВІД */
-    .withdraw-box { position: relative; overflow: hidden; background: linear-gradient(160deg, rgba(61,214,140,.08), rgba(255,255,255,0) 45%), var(--box); border: 1px solid rgba(61,214,140,.35); border-radius: var(--r-lg); padding: 20px; margin-bottom: 15px; box-shadow: var(--bevel), var(--elev-2), 0 0 32px -18px rgba(61,214,140,.55); }
-    .withdraw-title { color: var(--green); font-size: 16px; font-weight: bold; margin-bottom: 14px; text-shadow: 0 0 16px rgba(61,214,140,.35); }
     .withdraw-method { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .wm-btn { background: #222; border: 1px solid #333; border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: #aaa; cursor: pointer; box-shadow: var(--bevel), var(--elev-1); }
     .wm-btn.selected { border-color: var(--green); color: var(--green); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -3px 6px rgba(0,0,0,.2), 0 8px 22px -8px rgba(61,214,140,.4); }
@@ -160,11 +154,7 @@
     .withdraw-method .wm-btn { flex: 1; text-align: center; transition: transform .14s var(--ease-tactile), box-shadow .14s ease, background .15s ease, color .15s ease, border-color .15s ease; }
     .withdraw-method .wm-btn:active { transform: scale(.94); }
     .withdraw-method .wm-btn.selected { background: linear-gradient(155deg,#8af0c4,var(--green) 45%,#0f6b45); border-color: transparent; color: #062015; font-weight: 800; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.22), 0 10px 24px -8px rgba(61,214,140,.5); }
-    .withdraws-history-box { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; margin-bottom: 15px; box-shadow: var(--bevel), var(--elev-1); }
-    .withdraw-quick-actions { display: flex; gap: 8px; }
-    .withdraw-quick-actions .btn-outline { margin-bottom: 0; }
     .pending-withdraw { background: linear-gradient(160deg, rgba(255,255,255,.03), rgba(255,255,255,0) 45%), #1a1a1a; border: 1px solid #333; border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--bevel), var(--elev-1); }
-    .pw-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 4px rgba(0,0,0,.25); }
     .pw-status { font-size: 11px; padding: 4px 10px; border-radius: 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 2px 6px rgba(0,0,0,.25); font-weight:700; white-space:nowrap; }
     .pw-pending { background: rgba(212,175,55,0.16); color: var(--accent); border: 1px solid rgba(212,175,55,.3); }
     .pw-done { background: rgba(76,217,100,0.16); color: var(--green); border: 1px solid rgba(76,217,100,.3); }
@@ -219,27 +209,17 @@
     /* ЧАТ ЛОБІ */
     /* old chat-box replaced below */
 
-    /* ===== CASHIER TABS ===== */
-    /* Каса — ковзний "pill" рейл замість плоских кнопок-перемикачів */
-    .cashier-tabs-rail { position:relative; display:flex; gap:0; background:var(--box); border-radius:16px; padding:4px; margin-bottom:14px; border:1px solid var(--border); box-shadow:var(--bevel), var(--elev-1); }
-    .cashier-tab-slider {
-      position:absolute; top:4px; left:4px; height:calc(100% - 8px); width:calc(20% - 4.8px);
-      border-radius:13px;
-      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5);
-      transition: transform .32s cubic-bezier(.22,1,.36,1);
-      pointer-events:none;
-    }
+    /* ===== SUB-TAB BUTTONS (турніри) ===== */
+    /* Каса має власний сегментований перемикач (.ks-seg) — рейл із золотим
+       слайдером прибрано разом із редизайном. Ці кнопки лишились у турнірах,
+       тому активний стан тепер має власний колір, а не колір під слайдером. */
     .cashier-tab-btn { position:relative; z-index:1; flex:1; padding:10px 2px; background:none; border:none; color:#777; font-size:11px; font-weight:bold; cursor:pointer; border-radius:13px; transition:transform .14s var(--ease-tactile), color .2s; display:flex; flex-direction:column; align-items:center; gap:2px; }
     .cashier-tab-btn span { font-size:9px; letter-spacing:.2px; }
     .cashier-tab-btn:active { transform:scale(.94); }
-    .cashier-tab-btn.active { color:#241800; }
+    .cashier-tab-btn.active { color:var(--accent); }
     .chart-period-btn { padding:4px 10px;background:var(--input);border:1px solid var(--border);color:#777;border-radius:var(--r-sm);font-size:11px;cursor:pointer;box-shadow: var(--bevel);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, border-color .15s, color .15s; }
     .chart-period-btn:active { transform:scale(.94); }
     .chart-period-btn.active { background:var(--accent);color:#000;border-color:var(--accent);box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 4px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.4); }
-    .chart-currency-chip { width:auto;flex:0 0 auto;margin-bottom:0;padding:6px 12px;background:var(--input);border:1px solid var(--border);color:#aaa;border-radius:20px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow: var(--bevel);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, border-color .15s, color .15s; }
-    .chart-currency-chip:active { transform:scale(.92); }
-    .chart-currency-chip.active { background:linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);color:#241800;border-color:var(--accent);box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5); }
 
     /* ===== SPORT BETTING v2 — REAL ===== */
     .match-card { background:var(--box);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
@@ -936,29 +916,34 @@
     .vcard-skin-galaxy .vcard-back   { background: linear-gradient(135deg, #7000b0 0%, #300080 50%, #0a004a 100%); }
 
     /* Card front elements — реалістичний EMV-чип: сітка контактів, а не хрест */
+    /* Чип, безконтактна іконка та платіжне лого лежать у потоці:
+       раніше вони були absolute і накладались на бейдж та термін дії */
     .vcard-chip {
-      width: 42px; height: 32px;
+      width: 42px; height: 32px; flex-shrink: 0;
       background:
         repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0, rgba(0,0,0,.22) 1px, transparent 1px, transparent 14px),
         repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0, rgba(0,0,0,.18) 1px, transparent 1px, transparent 10px),
         linear-gradient(135deg, #f4d78a, #d4af37 40%, #ffdb4d 60%, #a0820c);
-      border-radius: 6px; margin-bottom: 16px; position: relative;
+      border-radius: 6px; position: relative;
       box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 2px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,0.3);
     }
-    .vcard-contactless { position:absolute; top:20px; right:24px; font-size:22px; opacity:0.8; }
-    /* Емборсований (тиснений) друк, як на справжній картці — світла грань зверху, тінь знизу */
-    .vcard-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight:bold; letter-spacing: 3px; color: rgba(255,255,255,0.95); text-shadow: 0 1px 0 rgba(255,255,255,.25), 0 -1px 1px rgba(0,0,0,.6), 0 2px 3px rgba(0,0,0,.5); margin-bottom: 14px; }
+    .vcard-chip-row { display:flex; justify-content:space-between; align-items:center; margin:15px 0 14px; }
+    .vcard-contactless { opacity:.5; color:rgba(255,255,255,.9); }
+    .vcard-contactless svg { width:20px; height:20px; }
+    /* Тиснений друк, як на справжній картці, але приглушений: акцент на
+       читабельності номера, а не на блиску */
+    .vcard-number { font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 19px; font-weight:500; letter-spacing: 2.2px; color: rgba(255,255,255,.96); text-shadow: 0 1px 0 rgba(255,255,255,.16), 0 -1px 1px rgba(0,0,0,.5); margin-bottom: 16px; }
     .vcard-holder-row { display:flex; justify-content:space-between; align-items:flex-end; }
-    .vcard-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing: 1px; }
-    .vcard-value { font-size: 13px; font-weight:bold; color: rgba(255,255,255,0.9); letter-spacing:1px; text-shadow: 0 1px 0 rgba(255,255,255,.2), 0 -1px 1px rgba(0,0,0,.55); }
-    .vcard-logo { position:absolute; bottom:18px; right:24px; display:flex; gap:-6px; }
-    .vcard-logo .c1, .vcard-logo .c2 { width:30px; height:30px; border-radius:50%; opacity:0.9; }
+    .vcard-label { font-size: 8px; color: rgba(255,255,255,0.42); text-transform:uppercase; letter-spacing: .14em; font-weight:600; }
+    .vcard-value { font-size: 12px; font-weight:600; color: rgba(255,255,255,0.92); letter-spacing:.06em; text-shadow: 0 1px 0 rgba(255,255,255,.12), 0 -1px 1px rgba(0,0,0,.45); margin-top:3px; }
+    .vcard-logo { display:flex; align-items:center; flex-shrink:0; }
+    .vcard-logo .c1, .vcard-logo .c2 { width:26px; height:26px; border-radius:50%; opacity:0.85; }
     .vcard-logo .c1 { background:#eb001b; }
-    .vcard-logo .c2 { background:#f79e1b; margin-left:-10px; }
-    .vcard-bank-name { font-size:13px; font-weight:900; color:rgba(255,255,255,0.9); letter-spacing:2px; text-transform:uppercase; margin-bottom:2px; }
+    .vcard-logo .c2 { background:#f79e1b; margin-left:-9px; }
+    .vcard-bank-name { font-size:11px; font-weight:700; color:rgba(255,255,255,0.88); letter-spacing:.16em; text-transform:uppercase; }
     
     /* Card back elements */
-    .vcard-stripe { height: 44px; background: rgba(0,0,0,0.7); margin: -20px -24px 14px; }
+    .vcard-stripe { height: 44px; background: rgba(0,0,0,0.7); margin: -22px -24px 14px; }
     .vcard-cvv-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
     .vcard-cvv-tape { flex:1; background:rgba(255,255,255,0.85); height:36px; border-radius:4px; display:flex; align-items:center; padding: 0 10px; }
     .vcard-cvv-value { font-family:'Courier New',monospace; font-size:16px; font-weight:bold; color:#000; letter-spacing:4px; }
@@ -976,8 +961,12 @@
     .skin-locked-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; font-size:18px; }
 
     /* CARD ONBOARDING MODAL */
-    .card-onboard-modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9900; display:flex; align-items:center; justify-content:center; padding:20px; }
-    .card-onboard-box { background:linear-gradient(135deg,#0a0a0a,#141414); border:1px solid var(--accent); border-radius:24px; padding:28px 22px; max-width:380px; width:100%; text-align:center; }
+    .card-onboard-modal { position:fixed; inset:0; background:rgba(4,5,8,.84); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:9900; display:flex; align-items:center; justify-content:center; padding:18px; }
+    .card-onboard-box { background:#12141a; border:1px solid rgba(255,255,255,.14); border-radius:20px; padding:24px 22px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; color:#eceff5; }
+    .card-onboard-box::-webkit-scrollbar { width:0; }
+    .card-onboard-box input { text-align:center; background:#191c24; border:1px solid rgba(255,255,255,.07); border-radius:12px; box-shadow:none; color:#eceff5; }
+    .card-onboard-box input:focus { border-color:#7c8cff; box-shadow:none; }
+    .card-onboard-box button { box-shadow:none; letter-spacing:0; }
     
     /* BANK TAB */
     .bank-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
@@ -1813,22 +1802,8 @@
     }
     .wm-btn:active { transform:scale(.92) !important; }
 
-    /* Deposit panel: amount/method chips use the gold-chip language (scoped, doesn't touch shared .amount-btn/.wm-btn base) */
-    #cashier-panel-deposit .amount-btn { font-weight:800; }
-    #cashier-panel-withdraw .amount-btn { font-weight:800; }
-    #cashier-panel-withdraw .amount-btn.selected {
-      background: linear-gradient(155deg,#8af0c4,var(--green) 45%,#0f6b45) !important;
-      border-color: transparent !important;
-      color:#062015 !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -3px 6px rgba(0,0,0,.22), 0 8px 24px -8px rgba(61,214,140,.5) !important;
-    }
-
-    #cashier-panel-deposit .amount-btn.selected {
-      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c) !important;
-      border-color: transparent !important;
-      color:#241800 !important;
-    }
-    #depMethodBtns .wm-btn { flex:1; min-width:100px; text-align:center; font-weight:700; }
+    /* Каса має власну мову чипів (див. блок «КАСА v80») — золоті/зелені
+       градієнтні перебивки тут прибрані, щоб не протікали в новий дизайн. */
 
     /* Game tab back button */
     .game-back-btn {
@@ -2074,35 +2049,36 @@
 @keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}
 
 /* ═══════════════════════════════════════════════════════
-   КАСА v70 — 3D КАРТКА + АНІМАЦІЇ
+   КАСА — 3D КАРТКА
 ═══════════════════════════════════════════════════════ */
 
 /* 3D Card Container */
 .vcard-scene {
   width: 100%;
-  perspective: 1000px;
-  margin-bottom: 8px;
+  perspective: 1400px;
+  margin-bottom: 16px;
   position: relative;
 }
+/* Під карткою — нейтральна тінь-подушка, а не золотий казиновий ореол:
+   картка має читатись як предмет, що лежить на площині */
 .vcard-scene::before {
   content: '';
-  position: absolute; left: 50%; top: 50%;
-  width: 90%; max-width: 340px; height: 160px;
-  transform: translate(-50%,-50%);
-  background: radial-gradient(ellipse, rgba(212,175,55,.22), transparent 70%);
-  filter: blur(18px);
+  position: absolute; left: 50%; bottom: 4px;
+  width: 76%; max-width: 300px; height: 34px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,.75), transparent 72%);
+  filter: blur(14px);
   z-index: -1;
-  animation: pulseGlow 4s ease-in-out infinite;
   pointer-events: none;
 }
-/* Тонка амбієнтна смуга блиску — набагато слабша й повільніша, ніж раніше:
-   реалізм тепер несе інтерактивне світло нижче, це лише фоновий "живий" штрих */
+/* Ледь помітна амбієнтна смуга блиску — основний реалізм несе
+   інтерактивне світло нижче, це лише фоновий "живий" штрих */
 .vcard-front::after {
   content: '';
   position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
-  background: linear-gradient(112deg, transparent 30%, rgba(255,255,255,.05) 45%, rgba(255,255,255,.22) 50%, rgba(255,255,255,.05) 55%, transparent 70%);
+  background: linear-gradient(112deg, transparent 34%, rgba(255,255,255,.03) 46%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.03) 54%, transparent 66%);
   background-size: 280% 280%;
-  animation: shimmerSweep 9s ease-in-out infinite;
+  animation: shimmerSweep 14s ease-in-out infinite;
   mix-blend-mode: overlay;
 }
 /* Інтерактивне "дзеркальне" світло — позиція задається JS через --lx/--ly
@@ -2134,7 +2110,7 @@
   transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.22,1,.36,1);
   cursor: pointer;
-  border-radius: 20px;
+  border-radius: 16px;
   touch-action: pan-y;
 }
 .vcard-wrap.flipped { transform: rotateY(180deg); }
@@ -2142,7 +2118,7 @@
    товстий фізичний об'єкт, а не пласка наклейка */
 .vcard-wrap::before {
   content: '';
-  position: absolute; inset: 0; border-radius: 20px;
+  position: absolute; inset: 0; border-radius: 16px;
   transform: translateZ(-3px) translate(3px, 4px);
   background: rgba(0,0,0,.55);
   filter: blur(1px);
@@ -2152,8 +2128,8 @@
   position: absolute; inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  border-radius: 20px;
-  padding: 20px 24px;
+  border-radius: 16px;
+  padding: 22px 24px;
   box-sizing: border-box;
 }
 .vcard-back { transform: rotateY(180deg); }
@@ -2172,206 +2148,480 @@
   box-shadow: 0 0 30px rgba(212,175,55,.15), inset 0 1px 0 rgba(212,175,55,.2);
 }
 
-/* Temp partner card */
-.temp-card-wrap .vcard-front {
-  background: linear-gradient(135deg, #0a1428, #1a2848, #0a1428);
-  background-size: 200% 200%;
-  animation: hologram 5s ease infinite;
-  border: 1.5px solid rgba(74,158,255,.4);
-  box-shadow: 0 0 30px rgba(74,158,255,.12);
+/* ═══════════════════════════════════════════════════════════════════
+   КАСА v80 — «Ledger»
+   Свідомо НЕ казинова мова: без золота, без глоу, без Orbitron.
+   Графітові площини, волоскові межі, один індиговий акцент,
+   табличні цифри, штрихові SVG-іконки замість емодзі.
+   Усе заскоуплено в #tab-cashier — решта застосунку лишається
+   у своїй золотій мові й нічого не ламається.
+═══════════════════════════════════════════════════════════════════ */
+/* Токени живуть на :root, а не на #tab-cashier: модалки Каси портуються
+   в <body>, тож у вкладці вони б їх не бачили й лишались безбарвними. */
+:root {
+  --ks-surface:   #12141a;
+  --ks-surface-2: #191c24;
+  --ks-surface-3: #222630;
+  --ks-line:      rgba(255,255,255,.07);
+  --ks-line-2:    rgba(255,255,255,.14);
+  --ks-fg:        #eceff5;
+  --ks-fg-2:      #98a0af;
+  --ks-fg-3:      #5e6675;
+  --ks-acc:       #7c8cff;
+  --ks-acc-dim:   rgba(124,140,255,.12);
+  --ks-pos:       #31c48d;
+  --ks-neg:       #f0556b;
+  --ks-warn:      #e8b339;
+  --ks-r:         12px;
+  --ks-r-lg:      18px;
+  --ks-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ks-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
 }
-.temp-card-countdown {
-  background: rgba(231,76,60,.12);
-  border: 1px solid rgba(231,76,60,.3);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 11px;
-  color: #e74c3c;
-  text-align: center;
-  margin-bottom: 10px;
-  animation: pulseGlow 2s ease-in-out infinite;
+#tab-cashier {
+  font-family: var(--ks-sans);
+  color: var(--ks-fg);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.45;
 }
+/* Скидаємо глобальні казинові дефолти (width:100%, bevel, центрований input).
+   Обгортка :where() навколо #tab-cashier обнуляє вагу ідентифікатора — інакше
+   цей скид перебивав би власні класи Каси (.ks-btn.is-block тощо) і кнопки
+   лишались би вузькими. */
+:where(#tab-cashier) button,
+:where(#tab-cashier) input,
+:where(#tab-cashier) textarea,
+:where(#tab-cashier) select {
+  font-family: var(--ks-sans);
+}
+:where(#tab-cashier) button {
+  width: auto; margin: 0; padding: 0; border-radius: var(--ks-r);
+  background: none; box-shadow: none; color: inherit;
+  font-weight: 600; letter-spacing: 0;
+  transition: background .15s, border-color .15s, color .15s, opacity .15s;
+}
+:where(#tab-cashier) button:active { transform: none; filter: none; box-shadow: none; }
+:where(#tab-cashier) input,
+:where(#tab-cashier) textarea {
+  text-align: left; font-weight: 500; font-size: 15px;
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line);
+  border-radius: var(--ks-r); box-shadow: none; color: var(--ks-fg);
+  padding: 13px 14px; margin: 0; min-height: 0;
+  transition: border-color .15s, background .15s;
+}
+:where(#tab-cashier) input::placeholder { color: var(--ks-fg-3); }
+:where(#tab-cashier) input:focus,
+:where(#tab-cashier) textarea:focus {
+  border-color: var(--ks-acc); background: var(--ks-surface-3); box-shadow: none;
+}
+#tab-cashier .ks-num { font-variant-numeric: tabular-nums; }
+#tab-cashier .ks-mono { font-family: var(--ks-mono); font-variant-numeric: tabular-nums; }
+#tab-cashier svg { display: block; flex-shrink: 0; }
 
-/* Bank action buttons redesigned */
-.bank-action-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
+/* ── Сегментований перемикач розділів ───────────────────────────── */
+.ks-seg {
+  display: flex; gap: 2px;
+  background: var(--ks-surface); border: 1px solid var(--ks-line);
+  border-radius: 14px; padding: 3px; margin-bottom: 18px;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-.bank-action-btn {
-  background: linear-gradient(135deg, #111, #0d0d0d);
-  border: 1px solid rgba(212,175,55,.12);
-  border-radius: var(--r-sm);
-  padding: 12px 6px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--bevel), var(--elev-1);
+.ks-seg::-webkit-scrollbar { display: none; }
+.ks-seg-btn {
+  flex: 1 0 auto; min-width: 62px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 9px 10px 8px; border-radius: 11px;
+  color: var(--ks-fg-3); font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; border: 1px solid transparent;
 }
-.bank-action-btn::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at center, rgba(212,175,55,.08), transparent 70%);
-  opacity: 0;
-  transition: opacity .2s;
+.ks-seg-btn svg { width: 17px; height: 17px; opacity: .85; }
+.ks-seg-btn:hover { color: var(--ks-fg-2); }
+.ks-seg-btn.is-active {
+  background: var(--ks-surface-3); border-color: var(--ks-line-2); color: var(--ks-fg);
 }
-.bank-action-btn:hover {
-  border-color: rgba(212,175,55,.25);
-  box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft);
-}
-.bank-action-btn:active {
-  transform: scale(.88);
-  border-color: rgba(212,175,55,.3);
-}
-.bank-action-btn:active::before { opacity: 1; }
-.ba-icon { font-size: 20px; margin: 0 auto 6px; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform .2s var(--ease-tactile); }
-.bank-action-btn:active .ba-icon { transform: scale(.88); }
-.ba-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: .3px; }
+.ks-seg-btn.is-active svg { opacity: 1; color: var(--ks-acc); }
 
-/* Balance block premium */
-.card-balance-block {
-  background: linear-gradient(135deg, #061a08, #0a2810);
-  border: 1.5px solid rgba(61,214,140,.2);
-  border-radius: var(--r-md);
-  padding: 18px;
-  margin-bottom: 14px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--bevel), var(--elev-1), 0 0 32px -20px rgba(212,175,55,.3);
+/* ── Площина / секція ───────────────────────────────────────────── */
+.ks-panel {
+  background: var(--ks-surface); border: 1px solid var(--ks-line);
+  border-radius: var(--ks-r-lg); margin-bottom: 14px; overflow: hidden;
 }
-.card-balance-block::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,.5), transparent);
+.ks-panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--ks-line);
 }
-.card-balance-block::before {
-  content: '₴';
-  position: absolute; right: 16px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 80px; opacity: .04;
-  font-weight: 900; color: #3dd68c;
+.ks-panel-title {
+  font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ks-fg-2);
 }
-.card-balance-amount {
-  font-size: 32px;
-  font-weight: 900;
-  color: #3dd68c;
-  font-family: 'Orbitron', monospace;
-  animation: slideUp .4s ease;
-}
-.card-balance-change {
-  display: inline-block;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-left: 8px;
-  vertical-align: middle;
-  animation: popIn .3s ease;
-}
-.card-balance-change.up   { background: rgba(61,214,140,.15); color: #3dd68c; }
-.card-balance-change.down { background: rgba(231,76,60,.12);  color: #e74c3c; }
-
-/* Cashier tabs redesign */
-.cashier-tab-row {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 4px;
-  margin-bottom: 14px;
-}
-.cashier-tab-row::-webkit-scrollbar { display: none; }
-.ctb-btn {
-  flex-shrink: 0;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px;
-  padding: 8px 14px;
-  color: #666;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all .2s;
-}
-.ctb-btn.active {
-  background: rgba(212,175,55,.12);
-  border-color: rgba(212,175,55,.3);
-  color: #d4af37;
-  font-weight: 700;
-}
-.ctb-btn:active { transform: scale(.93); }
-
-/* Card number glow on copy */
-@keyframes copyFlash {
-  0%   { background: rgba(212,175,55,.0); }
-  30%  { background: rgba(212,175,55,.2); }
-  100% { background: rgba(212,175,55,.0); }
-}
-.vcard-number.copied { animation: copyFlash .6s ease; }
-
-/* Partner card badge */
-.partner-badge {
+.ks-panel-body { padding: 16px; }
+.ks-panel-body.is-flush { padding: 0; }
+.ks-link {
   display: inline-flex; align-items: center; gap: 4px;
-  background: linear-gradient(135deg, rgba(74,158,255,.15), rgba(74,158,255,.05));
-  border: 1px solid rgba(74,158,255,.3);
-  border-radius: 20px;
-  padding: 3px 10px;
-  font-size: 10px;
-  color: #4a9eff;
-  font-weight: 700;
-  letter-spacing: .5px;
+  font-size: 12px; font-weight: 600; color: var(--ks-acc); cursor: pointer;
+  background: none; border: none;
 }
+.ks-link:hover { color: #9aa6ff; }
+.ks-hint { font-size: 12px; color: var(--ks-fg-3); line-height: 1.55; }
+.ks-hint b { color: var(--ks-fg-2); font-weight: 600; }
+.ks-label {
+  display: block; font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ks-fg-3); margin-bottom: 7px;
+}
+.ks-field { margin-bottom: 14px; }
+.ks-field input { width: 100%; box-sizing: border-box; }
 
-/* Renewal modal */
-.renewal-modal {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.95);
-  z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  animation: fadeInOverlay .3s ease;
+/* ── Кнопки ─────────────────────────────────────────────────────── */
+.ks-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 18px; border-radius: var(--ks-r);
+  border: 1px solid var(--ks-line-2); background: var(--ks-surface-2);
+  color: var(--ks-fg); font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.renewal-box {
-  background: linear-gradient(135deg, #0a0d18, #0d1224);
-  border: 2px solid rgba(74,158,255,.4);
-  border-radius: 24px;
-  padding: 28px 22px;
-  max-width: 340px;
-  width: 100%;
-  text-align: center;
-  animation: slideUp .35s cubic-bezier(.34,1.56,.64,1);
-}
+.ks-btn svg { width: 17px; height: 17px; }
+.ks-btn:hover { background: var(--ks-surface-3); }
+.ks-btn:active { opacity: .82; }
+.ks-btn.is-block { width: 100%; }
+.ks-btn.is-primary { background: var(--ks-acc); border-color: var(--ks-acc); color: #0b0d18; font-weight: 700; }
+.ks-btn.is-primary:hover { background: #8c9bff; }
+.ks-btn.is-pos { background: var(--ks-pos); border-color: var(--ks-pos); color: #04160e; font-weight: 700; }
+.ks-btn.is-pos:hover { background: #3ed69b; }
+.ks-btn.is-quiet { background: transparent; border-color: var(--ks-line); color: var(--ks-fg-2); }
+.ks-btn.is-quiet:hover { background: var(--ks-surface-2); color: var(--ks-fg); }
+.ks-btn.is-sm { padding: 9px 13px; font-size: 13px; }
+.ks-btn:disabled, .ks-btn[disabled] { opacity: .38; cursor: not-allowed; }
+.ks-btn-row { display: flex; gap: 8px; }
+.ks-btn-row > .ks-btn { flex: 1; }
 
-/* Transaction item */
-.tx-item {
+/* ── Швидкі дії під карткою ─────────────────────────────────────── */
+.ks-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.ks-quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 4px 11px; border-radius: var(--ks-r);
+  background: var(--ks-surface); border: 1px solid var(--ks-line);
+  color: var(--ks-fg-2); cursor: pointer;
+}
+.ks-quick-btn svg { width: 19px; height: 19px; color: var(--ks-fg); }
+.ks-quick-btn span { font-size: 11px; font-weight: 600; }
+.ks-quick-btn:hover { background: var(--ks-surface-2); border-color: var(--ks-line-2); }
+.ks-quick-btn:active { opacity: .8; }
+.ks-quick-btn:disabled { opacity: .3; cursor: not-allowed; }
+.ks-quick-btn:disabled:hover { background: var(--ks-surface); border-color: var(--ks-line); }
+
+/* ── Баланс ─────────────────────────────────────────────────────── */
+.ks-balance {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+  padding: 18px 16px; margin-bottom: 14px;
+  background: var(--ks-surface); border: 1px solid var(--ks-line);
+  border-radius: var(--ks-r-lg);
+}
+.ks-balance-amount {
+  font-size: 34px; font-weight: 650; line-height: 1.05; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--ks-fg);
+}
+.ks-balance-amount .ks-cur { font-size: 20px; font-weight: 500; color: var(--ks-fg-3); margin-right: 4px; }
+.ks-delta {
+  display: inline-block; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 2px 8px; border-radius: 7px; margin-left: 8px; vertical-align: 6px;
+}
+.ks-delta.up   { background: rgba(49,196,141,.14); color: var(--ks-pos); }
+.ks-delta.down { background: rgba(240,85,107,.14); color: var(--ks-neg); }
+.ks-flow { display: flex; flex-direction: column; gap: 6px; text-align: right; }
+.ks-flow-item {
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ks-fg-2);
+}
+.ks-flow-item svg { width: 13px; height: 13px; }
+.ks-flow-item.in  svg { color: var(--ks-pos); }
+.ks-flow-item.out svg { color: var(--ks-neg); }
+
+/* ── Рядок списку (операції, картки, курси, заявки) ─────────────── */
+.ks-row {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,.04);
-  animation: slideUp .2s ease both;
+  padding: 12px 16px; border-bottom: 1px solid var(--ks-line);
 }
-.tx-item:last-child { border-bottom: none; }
-.tx-icon {
-  width: 38px; height: 38px; border-radius: 50%;
+.ks-row:last-child { border-bottom: none; }
+.ks-row.is-tappable { cursor: pointer; }
+.ks-row.is-tappable:hover { background: var(--ks-surface-2); }
+.ks-icn {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.25);
+  background: var(--ks-surface-3); color: var(--ks-fg-2);
 }
-.tx-icon.in  { background: radial-gradient(circle, rgba(61,214,140,.28), rgba(61,214,140,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), inset 0 -2px 4px rgba(0,0,0,.2), 0 0 14px -4px rgba(61,214,140,.55); }
-.tx-icon.out { background: radial-gradient(circle, rgba(231,76,60,.24), rgba(231,76,60,.04)); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.2), 0 0 14px -4px rgba(231,76,60,.45); }
-.tx-icon.neutral { background: rgba(255,255,255,.06); }
-.tx-label { font-size: 13px; font-weight: 600; color: #ccc; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tx-sub   { font-size: 10px; color: #555; margin-top: 2px; }
-.tx-amount { font-size: 14px; font-weight: 900; flex-shrink: 0; font-family: 'Orbitron', monospace; }
-.tx-amount.in  { color: #3dd68c; text-shadow: 0 0 10px rgba(61,214,140,.3); }
-.tx-amount.out { color: #e74c3c; }
+.ks-icn svg { width: 17px; height: 17px; }
+.ks-icn.is-pos { background: rgba(49,196,141,.11); color: var(--ks-pos); }
+.ks-icn.is-neg { background: rgba(240,85,107,.11); color: var(--ks-neg); }
+.ks-icn.is-acc { background: var(--ks-acc-dim);    color: var(--ks-acc); }
+.ks-row-main { flex: 1; min-width: 0; }
+.ks-row-title {
+  font-size: 14px; font-weight: 600; color: var(--ks-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ks-row-sub { font-size: 12px; color: var(--ks-fg-3); margin-top: 1px; }
+.ks-row-value {
+  font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums;
+  flex-shrink: 0; text-align: right;
+}
+.ks-row-value.is-pos { color: var(--ks-pos); }
+.ks-row-value.is-neg { color: var(--ks-neg); }
+.ks-row-value small { display: block; font-size: 11px; font-weight: 500; color: var(--ks-fg-3); }
 
-/* Card recent-transactions wrapper */
-.card-tx-box { background: linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,0) 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; box-shadow: var(--bevel), var(--elev-1); }
-.card-tx-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.card-tx-box-title { font-size: 12px; font-weight: 800; color: var(--accent); font-family: 'Orbitron', monospace; letter-spacing: .3px; }
-.card-tx-all-btn { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; color: #888; font-size: 11px; cursor: pointer; transition: transform .14s var(--ease-tactile), background .15s, color .15s, border-color .15s; }
-.card-tx-all-btn:active { transform: scale(.93); background: rgba(212,175,55,.12); color: var(--accent); border-color: rgba(212,175,55,.3); }
+/* ── Порожній / заблокований стан ───────────────────────────────── */
+.ks-empty { padding: 26px 20px; text-align: center; }
+.ks-empty-icn {
+  width: 46px; height: 46px; margin: 0 auto 14px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ks-surface-3); color: var(--ks-fg-2);
+}
+.ks-empty-icn svg { width: 22px; height: 22px; }
+.ks-empty-title { font-size: 15px; font-weight: 650; color: var(--ks-fg); margin-bottom: 6px; }
+.ks-empty-text { font-size: 13px; color: var(--ks-fg-3); line-height: 1.6; margin-bottom: 18px; }
+.ks-empty-text b { color: var(--ks-fg-2); font-weight: 600; }
+.ks-muted { padding: 22px 16px; text-align: center; font-size: 13px; color: var(--ks-fg-3); }
+
+/* ── Бейджі / статуси ───────────────────────────────────────────── */
+.ks-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 650;
+  padding: 3px 9px; border-radius: 7px; white-space: nowrap;
+  background: var(--ks-surface-3); color: var(--ks-fg-2);
+}
+.ks-badge.is-pos  { background: rgba(49,196,141,.13); color: var(--ks-pos); }
+.ks-badge.is-neg  { background: rgba(240,85,107,.13); color: var(--ks-neg); }
+.ks-badge.is-warn { background: rgba(232,179,57,.13); color: var(--ks-warn); }
+.ks-badge.is-acc  { background: var(--ks-acc-dim);    color: var(--ks-acc); }
+
+/* ── Сума: чипи ─────────────────────────────────────────────────── */
+#tab-cashier .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 12px; }
+#tab-cashier .amount-btn {
+  padding: 11px 4px; border-radius: 10px; text-align: center;
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line);
+  color: var(--ks-fg-2); font-size: 13px; font-weight: 600;
+  font-variant-numeric: tabular-nums; cursor: pointer; box-shadow: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+#tab-cashier .amount-btn:hover { background: var(--ks-surface-3); color: var(--ks-fg); }
+#tab-cashier .amount-btn:active { transform: none; }
+#tab-cashier .amount-btn.selected {
+  background: var(--ks-acc-dim); border-color: var(--ks-acc); color: #b3bcff;
+  transform: none; filter: none;
+  /* !important гасить глобальне золоте glow/popIn з мобільного медіа-блоку */
+  box-shadow: none !important; animation: none !important;
+}
+
+/* ── Спосіб оплати: рядки з радіо ───────────────────────────────── */
+.ks-methods { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+#tab-cashier .wm-btn {
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 14px; border-radius: var(--ks-r);
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line);
+  color: var(--ks-fg-2); font-size: 14px; font-weight: 600;
+  cursor: pointer; box-shadow: none; text-align: left;
+  transition: background .15s, border-color .15s, color .15s;
+}
+#tab-cashier .wm-btn::before {
+  content: ""; width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--ks-line-2); transition: border-color .15s, box-shadow .15s;
+}
+#tab-cashier .wm-btn:hover { background: var(--ks-surface-3); color: var(--ks-fg); }
+#tab-cashier .wm-btn:active { transform: none; }
+#tab-cashier .wm-btn.selected {
+  background: var(--ks-acc-dim); border-color: var(--ks-acc); color: var(--ks-fg);
+  transform: none; filter: none; font-weight: 650; box-shadow: none;
+}
+#tab-cashier .wm-btn.selected::before {
+  border-color: var(--ks-acc); box-shadow: inset 0 0 0 4px var(--ks-acc);
+}
+#tab-cashier .wm-btn .ks-bank {
+  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #fff; letter-spacing: -.02em;
+}
+#tab-cashier .wm-btn .ks-m-name { flex: 1; min-width: 0; }
+#tab-cashier .wm-btn .ks-m-note { font-size: 11px; font-weight: 500; color: var(--ks-fg-3); }
+
+/* ── Реквізити для копіювання ───────────────────────────────────── */
+.ks-copy {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: var(--ks-r);
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line);
+  margin-bottom: 14px;
+}
+.ks-copy-main { flex: 1; min-width: 0; }
+.ks-copy-val {
+  font-family: var(--ks-mono); font-size: 14px; font-weight: 600; color: var(--ks-fg);
+  word-break: break-all;
+}
+.ks-copy-btn {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ks-surface-3); border: 1px solid var(--ks-line);
+  color: var(--ks-fg-2); cursor: pointer;
+}
+.ks-copy-btn svg { width: 15px; height: 15px; }
+.ks-copy-btn:hover { color: var(--ks-fg); border-color: var(--ks-line-2); }
+
+/* ── Статистика 3-в-ряд ─────────────────────────────────────────── */
+.ks-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--ks-line); }
+.ks-stat { background: var(--ks-surface); padding: 14px 12px; text-align: center; }
+.ks-stat-lbl { font-size: 11px; color: var(--ks-fg-3); margin-bottom: 4px; }
+.ks-stat-val { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ks-fg); }
+.ks-stat-val.is-pos { color: var(--ks-pos); }
+.ks-stat-val.is-acc { color: var(--ks-acc); }
+
+/* ── Прогрес ────────────────────────────────────────────────────── */
+.ks-meter { height: 6px; border-radius: 3px; background: var(--ks-surface-3); overflow: hidden; }
+.ks-meter-fill { height: 100%; border-radius: 3px; background: var(--ks-acc); transition: width .6s cubic-bezier(.16,1,.3,1); }
+.ks-meter-fill.is-pos { background: var(--ks-pos); }
+
+/* ── Тариф / VIP-шапка кешбеку ──────────────────────────────────── */
+.ks-tier {
+  display: flex; align-items: center; gap: 13px;
+  padding: 16px; border-radius: var(--ks-r-lg); margin-bottom: 14px;
+  background: linear-gradient(120deg, #1b1f2b, #14171f);
+  border: 1px solid var(--ks-line-2);
+}
+.ks-tier-mark {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 21px; line-height: 1;
+  background: var(--ks-surface-3); border: 1px solid var(--ks-line);
+}
+.ks-tier-name { font-size: 16px; font-weight: 650; color: var(--ks-fg); }
+.ks-tier-note { font-size: 12px; color: var(--ks-fg-2); margin-top: 1px; }
+
+/* ── Графік та курси ────────────────────────────────────────────── */
+#tab-cashier .chart-period-btn {
+  padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line);
+  color: var(--ks-fg-3); cursor: pointer; box-shadow: none;
+}
+#tab-cashier .chart-period-btn.active {
+  background: var(--ks-acc-dim); border-color: var(--ks-acc); color: #b3bcff; box-shadow: none;
+}
+#tab-cashier .currency-btn {
+  padding: 10px 6px; border-radius: 10px; text-align: center; cursor: pointer;
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line); box-shadow: none;
+  transition: background .15s, border-color .15s;
+}
+#tab-cashier .currency-btn:hover { background: var(--ks-surface-3); border-color: var(--ks-line-2); }
+#tab-cashier .currency-btn:active { transform: none; }
+#tab-cashier .currency-btn.active { background: var(--ks-acc-dim); border-color: var(--ks-acc); box-shadow: none; }
+.ks-chart-canvas {
+  width: 100%; height: 200px; border-radius: var(--ks-r);
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line); box-shadow: none;
+}
+
+/* ── Заявки (депозит / вивід) ───────────────────────────────────── */
+#tab-cashier .pending-withdraw {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; margin: 0; border: none; border-radius: 0;
+  border-bottom: 1px solid var(--ks-line);
+  background: transparent; box-shadow: none;
+}
+#tab-cashier .pending-withdraw:last-child { border-bottom: none; }
+#tab-cashier .pw-status {
+  font-size: 11px; font-weight: 650; padding: 3px 9px; border-radius: 7px;
+  border: none; box-shadow: none; white-space: nowrap;
+}
+#tab-cashier .pw-pending  { background: rgba(232,179,57,.13); color: var(--ks-warn); }
+#tab-cashier .pw-done     { background: rgba(49,196,141,.13); color: var(--ks-pos); }
+#tab-cashier .pw-rejected { background: rgba(240,85,107,.13); color: var(--ks-neg); }
+
+/* ── Пакети поповнення ──────────────────────────────────────────── */
+#tab-cashier .dep-package {
+  padding: 14px 12px; border-radius: var(--ks-r); text-align: center; cursor: pointer;
+  background: var(--ks-surface); border: 1px solid var(--ks-line); box-shadow: none;
+  transition: background .15s, border-color .15s;
+}
+#tab-cashier .dep-package::before { content: none; }
+#tab-cashier .dep-package:hover { background: var(--ks-surface-2); border-color: var(--ks-line-2); }
+#tab-cashier .dep-package:active { transform: none; filter: none; }
+#tab-cashier .dep-package.popular,
+#tab-cashier .dep-package.is-selected { border-color: var(--ks-acc); background: var(--ks-acc-dim); }
+#tab-cashier .dep-package-icon { display: none; }
+#tab-cashier .dep-package-amount {
+  font-family: var(--ks-sans); font-size: 21px; font-weight: 650; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--ks-fg);
+}
+#tab-cashier .dep-package-bonus {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 7px;
+  font-size: 11px; font-weight: 650; color: var(--ks-pos); background: rgba(49,196,141,.12);
+}
+#tab-cashier .dep-package-bonus.none { background: none; padding: 0; color: var(--ks-fg-3); font-weight: 500; }
+#tab-cashier .dep-package-total { font-size: 11px; color: var(--ks-fg-3); margin-top: 6px; }
+#tab-cashier .dep-package-label {
+  font-size: 10px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ks-fg-3); margin-top: 4px;
+}
+
+/* ── Telegram-блок ──────────────────────────────────────────────── */
+.ks-tg {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: var(--ks-r-lg); margin-bottom: 14px;
+  background: var(--ks-surface); border: 1px solid var(--ks-line);
+}
+.ks-tg-mark {
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(34,158,217,.14); color: #4ab3e8;
+}
+.ks-tg-mark svg { width: 19px; height: 19px; }
+
+/* ── Модалка каси (додати картку / всі операції) ────────────────── */
+.ks-modal {
+  position: fixed; inset: 0; z-index: 9950;
+  background: rgba(4,5,8,.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+  animation: fadeIn .18s ease;
+}
+.ks-modal-box {
+  width: 100%; max-width: 400px; max-height: 86vh; overflow-y: auto;
+  background: var(--ks-surface); border: 1px solid var(--ks-line-2);
+  border-radius: 20px; padding: 22px;
+  font-family: var(--ks-sans); color: var(--ks-fg);
+  animation: slideUp .22s cubic-bezier(.16,1,.3,1);
+}
+.ks-modal-box::-webkit-scrollbar { width: 0; }
+:where(.ks-modal-box) button { width: auto; margin: 0; padding: 0; background: none; box-shadow: none; color: inherit; font-weight: 600; letter-spacing: 0; }
+:where(.ks-modal-box) button:active { transform: none; filter: none; box-shadow: none; }
+:where(.ks-modal-box) input {
+  width: 100%; box-sizing: border-box; text-align: left; font-weight: 500; font-size: 15px;
+  padding: 13px 14px; margin: 0; min-height: 0; border-radius: 12px; box-shadow: none;
+  background: var(--ks-surface-2); border: 1px solid var(--ks-line); color: var(--ks-fg);
+  font-family: var(--ks-sans);
+}
+:where(.ks-modal-box) input::placeholder { color: var(--ks-fg-3); }
+:where(.ks-modal-box) input:focus { border-color: var(--ks-acc); background: var(--ks-surface-3); box-shadow: none; }
+.ks-modal-box .ks-label { text-align: left; }
+.ks-modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 18px;
+}
+.ks-modal-title { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.ks-modal-x {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; padding: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ks-surface-3); border: none; color: var(--ks-fg-2); cursor: pointer; box-shadow: none;
+}
+.ks-modal-x svg { width: 15px; height: 15px; }
+.ks-modal-x:hover { color: var(--ks-fg); }
+
+/* Порожній пластик не має вдавати справжню картку */
+.vcard-unlinked .vcard-logo,
+.vcard-unlinked .vcard-contactless { visibility: hidden; }
+
+/* ── Накладка "картку не підключено" поверх візуалу картки ──────── */
+.ks-card-locked {
+  position: absolute; inset: 0; border-radius: 16px; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
+  background: rgba(8,9,13,.74); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  color: rgba(255,255,255,.6);
+}
+.ks-card-locked svg { width: 22px; height: 22px; }
+.ks-card-locked span {
+  font-family: var(--ks-sans);
+  font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase;
+}
 
 /* ═══════════════════════════════════════════════════════
    КАРТКА — 14 РІЗНОМАНІТНИХ СКІНІВ З ТЕКСТУРАМИ
@@ -3028,10 +3278,10 @@
 .vcard-frozen-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(10,20,40,.72);
+  background: rgba(8,12,22,.76);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  border-radius: inherit;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3040,6 +3290,7 @@
   z-index: 6;
   animation: fadeInOverlay .3s ease;
 }
+.vcard-frozen-icon svg { width: 24px; height: 24px; }
 .vcard-frozen-icon {
   font-size: 40px;
   filter: drop-shadow(0 0 12px rgba(150,220,255,.5));

@@ -373,7 +373,7 @@ function playSound(type) {
 }
 
 function validateBet(amount) {
-    if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) {
+    if(userData.virtualCard && userData.virtualCard.frozen) {
         notify('🔒 Картка заблокована — розблокуй її в Касі', 'error');
         return false;
     }
@@ -597,21 +597,14 @@ function showDepositReceipt(amount, method, reqId) {
 
 function selectDepMethod(method, el) {
   selectedDepMethod = method;
-  document.querySelectorAll('#depMethodBtns .wm-btn').forEach(b => {
-    b.classList.remove('selected');
-    b.style.color = '';
-    b.style.borderColor = '';
-  });
-  if(el) {
-    el.classList.add('selected');
-    el.style.color = '#3dd68c';
-    el.style.borderColor = '#3dd68c';
-  }
+  const scope = (el && el.parentElement) || document.getElementById('depMethodBtns') || document;
+  scope.querySelectorAll('.wm-btn').forEach(b => b.classList.remove('selected'));
+  if(el) el.classList.add('selected');
   const box = document.getElementById('depRequisitesBox');
   const txt = document.getElementById('depRequisitesText');
   if(box && txt) {
     txt.textContent = DEPOSIT_REQUISITES[method] || '—';
-    box.style.display = 'block';
+    box.style.display = 'flex';
   }
 }
 
@@ -645,7 +638,7 @@ function submitDepositRequest() {
   const userName = currentUser;
   const reqId = `${userName}_${Date.now()}`;
   const btn = document.getElementById('depSubmitBtn');
-  if(btn) { btn.disabled = true; btn.textContent = '⏳ Відправляємо...'; }
+  if(btn) { btn.disabled = true; btn.textContent = 'Відправляємо…'; }
 
   db.ref('deposit_requests/' + reqId).set({
     user: userName,
@@ -677,15 +670,15 @@ function submitDepositRequest() {
       });
     });
     showDepositLoading(amount, selectedDepMethod || 'privat', reqId);
-    if(btn) { btn.disabled = false; btn.textContent = '✅ Подати заявку на поповнення'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку'; }
     selectedDepAmount = 0;
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+    ksClearDepositAmountUI();
     if(customInput) customInput.value = '';
     document.getElementById('customAmountBox')?.classList.add('hidden');
     loadMyDeposits();
   }).catch(err => {
     notify('Помилка подачі заявки. Спробуй ще.', 'error');
-    if(btn) { btn.disabled = false; btn.textContent = '✅ Подати заявку на поповнення'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку'; }
   });
 }
 
@@ -751,35 +744,46 @@ function loadMyDeposits() {
   if(!list || !currentUser) return;
   db.ref('deposit_requests').orderByChild('user').equalTo(currentUser).limitToLast(5).once('value', snap => {
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;">Немає активних заявок</div>'; return; }
+    if(!data) { list.innerHTML = '<div class="ks-muted">Активних заявок немає</div>'; return; }
     const entries = Object.entries(data).sort((a,b) => (b[1].time||0)-(a[1].time||0));
     list.innerHTML = entries.map(([id, d]) => {
-      const date = new Date(d.time).toLocaleString('uk-UA');
-      const statusClass = d.status === 'done' ? 'pw-done' : d.status === 'rejected' ? 'pw-rejected' : 'pw-pending';
-      const statusText = d.status === 'done' ? '✅ Зараховано' : d.status === 'rejected' ? '❌ Відхилено' : '⏳ Очікує';
+      const date = new Date(d.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+      const done = d.status === 'done', bad = d.status === 'rejected';
+      const cls  = done ? 'pw-done' : bad ? 'pw-rejected' : 'pw-pending';
+      const text = done ? 'Зараховано' : bad ? 'Відхилено' : 'Очікує';
+      const icon = done ? 'check' : bad ? 'x' : 'clock';
       return `<div class="pending-withdraw">
-        <div>
-          <div style="font-weight:900;font-size:15px;color:#fff;">+₴${formatNumber(d.amount)}</div>
-          <div style="color:#777;font-size:11px;margin-top:2px;">${d.method||'—'} • ${date}</div>
+        <div class="ks-icn ${done ? 'is-pos' : bad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
+        <div class="ks-row-main">
+          <div class="ks-row-title ks-num">+${formatNumber(d.amount)} ₴</div>
+          <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[d.method] || d.method || '—'} · ${date}</div>
         </div>
-        <span class="pw-status ${statusClass}">${statusText}</span>
+        <span class="pw-status ${cls}">${text}</span>
       </div>`;
     }).join('');
   });
 }
 
+function ksClearDepositAmountUI() {
+    document.querySelectorAll('#cashier-panel-deposit .amount-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#depositPackages .dep-package').forEach(p => p.classList.remove('is-selected'));
+}
+
 function selectDepAmount(amount, el) {
     selectedDepAmount = amount;
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('customAmountBox').classList.add('hidden');
+    ksClearDepositAmountUI();
+    if(el) el.classList.add('selected');
+    document.getElementById('customAmountBox')?.classList.add('hidden');
+    localStorage.removeItem('pendingDepBonus');
 }
 
 function selectCustomAmount() {
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('customAmtBtn').classList.add('selected');
-    document.getElementById('customAmountBox').classList.remove('hidden');
+    ksClearDepositAmountUI();
+    document.getElementById('customAmtBtn')?.classList.add('selected');
+    document.getElementById('customAmountBox')?.classList.remove('hidden');
+    document.getElementById('customDepAmount')?.focus();
     selectedDepAmount = 0;
+    localStorage.removeItem('pendingDepBonus');
 }
 
 // ============================================
@@ -794,10 +798,14 @@ function selectWithdrawAmount(amount, el) {
 
 function selectWithdrawMethod(method, el) {
     selectedWithdrawMethod = method;
-    document.querySelectorAll('.wm-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    
+    // Тільки сусіди в тому ж списку: той самий обробник викликається і з Каси,
+    // і з модалки виводу з картки
+    const scope = (el && el.parentElement) || document;
+    scope.querySelectorAll('.wm-btn').forEach(b => b.classList.remove('selected'));
+    if(el) el.classList.add('selected');
+
     const cardInput = document.getElementById('withdrawCard');
+    if(!cardInput) return;
     if(method === 'usdt') {
         cardInput.placeholder = 'USDT TRC20 адреса';
     } else if(method === 'privat') {
@@ -911,28 +919,27 @@ function loadMyWithdraws() {
     
     db.ref('users/' + currentUser + '/withdraws').limitToLast(5).once('value', snap => {
         const data = snap.val();
-        if(!data) { list.innerHTML = '<div style="color:#777; font-size:13px; padding:10px 0;">Немає заявок</div>'; return; }
-        
-        list.innerHTML = '';
-        Object.entries(data).reverse().forEach(([id, w]) => {
-            const date = new Date(w.time).toLocaleDateString('uk-UA');
+        if(!data) { list.innerHTML = '<div class="ks-muted">Заявок немає</div>'; return; }
+
+        list.innerHTML = Object.entries(data).reverse().map(([id, w]) => {
+            const date = new Date(w.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+            const done = w.status === 'done';
             const isBad = w.status === 'rejected' || w.status === 'cancelled';
-            const statusClass = w.status === 'done' ? 'pw-done' : isBad ? 'pw-rejected' : 'pw-pending';
-            const statusText = w.status === 'done' ? '✅ Виконано' : w.status === 'rejected' ? '❌ Відхилено'
-              : w.status === 'cancelled' ? '❌ Скасовано в Telegram' : w.status === 'pending_2fa' ? '🔐 Очікує підтвердження в Telegram' : '⏳ Обробляється';
-            const statusIcon = w.status === 'done' ? '✅' : isBad ? '❌' : w.status === 'pending_2fa' ? '🔐' : '⏳';
-            const iconBg = w.status === 'done' ? 'rgba(76,217,100,.22),rgba(76,217,100,.05)' : isBad ? 'rgba(240,64,96,.22),rgba(240,64,96,.05)' : 'rgba(212,175,55,.22),rgba(212,175,55,.05)';
-            list.innerHTML += `
+            const cls = done ? 'pw-done' : isBad ? 'pw-rejected' : 'pw-pending';
+            const text = done ? 'Виконано' : w.status === 'rejected' ? 'Відхилено'
+              : w.status === 'cancelled' ? 'Скасовано' : w.status === 'pending_2fa' ? 'Підтвердіть у Telegram' : 'Обробляється';
+            const icon = done ? 'check' : isBad ? 'x' : w.status === 'pending_2fa' ? 'shield' : 'clock';
+            return `
                 <div class="pending-withdraw">
-                    <div class="pw-icon" style="background:radial-gradient(circle,${iconBg});">${statusIcon}</div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:800; font-family:'Orbitron',monospace; font-size:14px;">${w.amount} ₴</div>
-                        <div style="color:#777; font-size:11px; margin-top:2px;">${w.method} • ${date}</div>
+                    <div class="ks-icn ${done ? 'is-pos' : isBad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
+                    <div class="ks-row-main">
+                        <div class="ks-row-title ks-num">−${formatNumber(w.amount)} ₴</div>
+                        <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[w.method] || w.method || '—'} · ${date}</div>
                     </div>
-                    <span class="pw-status ${statusClass}">${statusText}</span>
+                    <span class="pw-status ${cls}">${text}</span>
                 </div>
             `;
-        });
+        }).join('');
     });
 }
 
@@ -2419,22 +2426,31 @@ function initDepositPackages() {
     {amount:10000, bonus:4000, label:'Хайроллер', icon:'🚀'},
   ];
   pkg.innerHTML = packages.map(p=>`
-    <div class="dep-package${p.popular?' popular':''}" onclick="selectDepPackage(${p.amount},${p.bonus})">
-      <div class="dep-package-icon">${p.icon}</div>
-      <div class="dep-package-amount">₴${formatNumber(p.amount)}</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">+₴'+formatNumber(p.bonus)+' бонус</div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
-      <div class="dep-package-total">${p.bonus>0?'Разом: ₴'+formatNumber(p.amount+p.bonus):'Тільки депозит'}</div>
+    <div class="dep-package${p.popular?' popular':''}" data-amount="${p.amount}" onclick="selectDepPackage(${p.amount},${p.bonus})">
+      <div class="dep-package-amount">${formatNumber(p.amount)} ₴</div>
+      ${p.bonus>0?'<div class="dep-package-bonus">+'+formatNumber(p.bonus)+' ₴</div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
+      <div class="dep-package-total">${p.bonus>0?'Разом '+formatNumber(p.amount+p.bonus)+' ₴':'Тільки депозит'}</div>
       <div class="dep-package-label">${p.label}</div>
     </div>
   `).join('');
 }
 
+// Раніше пакет писав суму в #depositAmount/#betDepAmt — таких полів у Касі
+// немає, тож вибір пакета нічого не робив. Тепер він задає ту саму змінну
+// selectedDepAmount, яку читає submitDepositRequest().
 function selectDepPackage(amount, bonus) {
-  document.querySelectorAll('.dep-package').forEach(p => p.style.borderColor='');
-  const input = document.getElementById('depositAmount')||document.getElementById('betDepAmt');
-  if(input) input.value = amount;
-  notify('Обрано пакет ₴'+formatNumber(amount)+(bonus>0?' з бонусом +₴'+formatNumber(bonus):''), 'info');
-  if(bonus>0) localStorage.setItem('pendingDepBonus', JSON.stringify({amount, bonus, ts: Date.now()}));
+  selectedDepAmount = amount;
+  ksClearDepositAmountUI();
+  const card = document.querySelector('#depositPackages .dep-package[data-amount="' + amount + '"]');
+  if(card) card.classList.add('is-selected');
+  const custom = document.getElementById('customDepAmount');
+  if(custom) custom.value = '';
+  document.getElementById('customAmountBox')?.classList.add('hidden');
+  notify(bonus > 0
+    ? 'Пакет ' + formatNumber(amount) + ' ₴ · бонус +' + formatNumber(bonus) + ' ₴'
+    : 'Сума ' + formatNumber(amount) + ' ₴', 'info');
+  if(bonus > 0) localStorage.setItem('pendingDepBonus', JSON.stringify({amount, bonus, ts: Date.now()}));
+  else localStorage.removeItem('pendingDepBonus');
 }
 
 // ═══════════════════════════════════════════
@@ -3987,52 +4003,73 @@ function openGame(g) { trackRecentGame(g); switchTab(g); }
 function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
+// Приймаємо і 16 цифр (номер прив'язаної картки Аксіоми), і нік гравця:
+// SlotOK власних карток не випускає, тож номер є не в усіх.
 function formatCardInput(inp) {
-  let val = inp.value.replace(/[^0-9]/g,'').substring(0,16);
-  inp.value = val.replace(/(.{4})(?=.)/g,'$1 ');
+  const raw = inp.value.trim();
   const info = document.getElementById('transferRecipientInfo');
-  if(val.length === 16) {
-    if(info) { info.textContent = '🔍 Пошук...'; info.style.color = '#555'; }
-    db.ref('users').once('value', snap => {
-      const users = snap.val() || {};
-      let found = null;
-      Object.entries(users).forEach(([name, data]) => {
-        const num = (data.virtualCard && data.virtualCard.number) || (data.tempPartnerCard && data.tempPartnerCard.number);
-        if(num && num.replace(/\s/g,'') === val) found = name;
-      });
-      if(info) { info.textContent = found ? ('✅ Отримувач: ' + found) : '❌ Картку не знайдено'; info.style.color = found ? '#4cd964' : '#ff3b30'; }
-    });
-  } else {
-    if(info) { info.textContent = ''; }
+  const clear = () => { if(info) { info.textContent = ''; } };
+  if(/^[0-9 ]*$/.test(raw)) {
+    const digits = raw.replace(/\D/g,'').substring(0,16);
+    inp.value = digits.replace(/(.{4})(?=.)/g,'$1 ');
+    if(digits.length !== 16) return clear();
+  } else if(raw.replace(/^@/,'').length < 3) {
+    return clear();
   }
+  if(info) { info.textContent = 'Пошук…'; info.style.color = '#98a0af'; }
+  resolveTransferRecipient(inp.value, name => {
+    if(!info) return;
+    info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
+    info.style.color = name ? '#31c48d' : '#f0556b';
+  });
+}
+
+// Один шлях розв'язання отримувача для підказки в полі та для самого переказу,
+// щоб вони не могли розійтись у логіці пошуку.
+function resolveTransferRecipient(raw, cb) {
+  const str = String(raw || '').trim();
+  const digits = str.replace(/\D/g,'');
+  const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
+  const nick = str.replace(/^@/,'');
+  if(!byCard && nick.length < 3) return cb(null, null);
+  db.ref('users').once('value', snap => {
+    const users = snap.val() || {};
+    let found = null;
+    Object.keys(users).forEach(name => {
+      if(found) return;
+      if(byCard) {
+        const vc = users[name] && users[name].virtualCard;
+        if(vc && vc.axiomLinked && String(vc.number || '').replace(/\D/g,'') === digits) found = name;
+      } else if(name.toLowerCase() === nick.toLowerCase()) {
+        found = name;
+      }
+    });
+    cb(found, found ? users[found] : null);
+  });
 }
 
 function sendMoney() {
   const btn = document.getElementById('sendMoneyBtn');
   if(btn && btn.disabled) return; // запобігаємо подвійному кліку
-  const rawCard = (document.getElementById('transferToCard') || {value:''}).value.replace(/\s/g,'');
+  const input = (document.getElementById('transferToCard') || {value:''}).value.trim();
+  const rawCard = input.replace(/\s/g,'');
+  const isCard = /^[0-9]{16}$/.test(rawCard);
   const a = parseInt(document.getElementById('transferAmount').value);
-  if(!rawCard || rawCard.length !== 16) return notify('Введіть номер картки (16 цифр)', 'error');
+  if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
-  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
 
-  if(btn) { btn.disabled = true; btn.textContent = '⏳ Відправляємо...'; }
-  const resetBtn = () => { if(btn) { btn.disabled = false; btn.textContent = 'НАДІСЛАТИ'; } };
+  if(btn) { btn.disabled = true; btn.textContent = 'Відправляємо…'; }
+  const resetBtn = () => { if(btn) { btn.disabled = false; btn.textContent = 'Надіслати'; } };
 
-  db.ref('users').once('value', snap => {
-    const users = snap.val() || {};
-    let recipientName = null;
-    Object.entries(users).forEach(([name, data]) => {
-      const num = (data.virtualCard && data.virtualCard.number) || (data.tempPartnerCard && data.tempPartnerCard.number);
-      if(num && num.replace(/\s/g,'') === rawCard) recipientName = name;
-    });
-    if(!recipientName) { resetBtn(); return notify('❌ Картку не знайдено в SlotOK Bank', 'error'); }
+  resolveTransferRecipient(input, (recipientName, recipientData) => {
+    if(!recipientName) { resetBtn(); return notify(isCard ? '❌ Картку не знайдено' : '❌ Гравця з таким ніком немає', 'error'); }
     if(recipientName === currentUser) { resetBtn(); return notify('❌ Не можна переказати самому собі', 'error'); }
-    const recipient = users[recipientName] || {};
-    if((recipient.virtualCard && recipient.virtualCard.frozen) || (recipient.tempPartnerCard && recipient.tempPartnerCard.frozen)) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
+    const recipient = recipientData || {};
+    if(recipient.virtualCard && recipient.virtualCard.frozen) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
-    const formattedCard = rawCard.replace(/(.{4})(?=.)/g,'$1 ');
+    const formattedCard = isCard ? rawCard.replace(/(.{4})(?=.)/g,'$1 ') : '@' + recipientName;
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
     db.ref('users/'+recipientName+'/balance').set(firebase.database.ServerValue.increment(a));
     db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(a));
@@ -4040,7 +4077,7 @@ function sendMoney() {
 
     // Transactions log both sides
     addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
-    const myCardNum = (userData.virtualCard && userData.virtualCard.number) || (userData.tempPartnerCard && userData.tempPartnerCard.number) || '';
+    const myCardNum = (userData.virtualCard && userData.virtualCard.number) || '';
     db.ref('users/'+recipientName+'/cardTx').push({ dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum, ts: Date.now() });
 
     playSound('win');
@@ -4934,10 +4971,49 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '80';
+const CURRENT_VERSION = '81';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '81',
+    title: '💳 Оновлення v81 — Каса повністю нова',
+    date: Date.UTC(2026, 8, 12),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '💳 Каса виглядає й працює по-новому',
+        items: [
+          'Каса повністю перемальована: спокійний банківський вигляд замість казинового золота — рівні площини, чіткі підписи, однакові цифри в колонках',
+          'Розділи Каси тепер перемикаються сегментованим рядком із іконками: Картка · Поповнити · Вивід · Кешбек · Курси',
+          'З’явився розділ «Підключені картки»: свої картки можна додавати й відключати',
+          'У розділі «Вивід» видно, скільки коштів доступно, а поля мають підписи — суму більше не треба вгадувати',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🔐 Картка SlotOK більше не видається автоматично',
+        items: [
+          'SlotOK не випускає власних карток — ні тимчасових, ні постійних. У Касі показується лише та картка, яку ти підключив сам',
+          'Підключити можна свою картку будь-якого банку або картку Аксіома Банку за кодом — обидва варіанти рівноцінні',
+          'Зі своєї картки зберігаємо тільки банк, ім’я, термін дії та останні 4 цифри. Повний номер і CVV не запитуємо й не зберігаємо',
+          'Номер картки перевіряється на місці, тож описку видно одразу, а не після подачі заявки',
+          'Переказ гравцю тепер працює й за ніком, а не лише за номером картки',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Виправлення в Касі',
+        items: [
+          'Вибір пакета поповнення з бонусом нічого не робив — сума не підставлялась. Тепер пакет справді задає суму заявки',
+          'Вибір способу оплати в Касі скидав вибір у вікні виводу з картки (і навпаки) — тепер списки не заважають один одному',
+          'У заявці на вивід із картки записувався спосіб оплати з іншої панелі — виправлено',
+          'Кнопка CVV мовчки не працювала: тепер Каса прямо каже, чому CVV недоступний',
+        ]
+      },
+    ]
+  },
   {
     version: '80',
     title: '🐛 Оновлення v80 — виправлення в профілі та вкладці «Ще»',
@@ -6701,7 +6777,7 @@ function renderCryptoAssets() {
 }
 
 function buyCrypto(sym, amount) {
-  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
   if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
   var price = _cryptoPrices[sym];
   if(!price) return;
@@ -8782,7 +8858,7 @@ function sendGift() {
   const message   = document.getElementById('giftMessage').value.trim();
   if(!recipient) return notify('Введіть нік отримувача', 'error');
   if(recipient === currentUser) return notify('Не можна надсилати собі 😄', 'error');
-  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
   const gift = GIFT_CATALOG[selectedGiftType];
   if(userData.balance < gift.price) return notify('Недостатньо коштів', 'error');
 
@@ -9391,77 +9467,79 @@ function toggleCashback(el) {
 function updateCashierCashbackUI() {
   const el = document.getElementById('cashierCashbackPanel');
   if(!el) return;
-  // Guard: userData not loaded yet
-  if(!userData) {
-    el.innerHTML = '<div style="text-align:center;color:#555;padding:30px;font-size:13px;">⏳ Завантаження...</div>';
-    return;
-  }
+  if(!userData) { el.innerHTML = '<div class="ks-muted">Завантаження…</div>'; return; }
+
   const pending   = userData.cashbackPending || 0;
   const weekUsed  = userData.cashbackWeekUsed || 0;
   const weekStart = userData.cashbackWeekStart || Date.now();
   const daysLeft  = Math.max(0, Math.ceil((7*24*3600000 - (Date.now()-weekStart)) / 86400000));
   const weekLeft  = Math.max(0, CASHBACK_MAX_PER_WEEK - weekUsed);
-  const wagered = userData.totalWagered || 0;
-  const vip = getVipLevel(wagered);
-  const enabled = getCashbackEnabled();
-  const hasNext = vip.index < VIP_LEVELS.length - 1;
-  const nextVip = VIP_LEVELS[Math.min(vip.index + 1, VIP_LEVELS.length - 1)];
-  const tierPct = hasNext ? Math.min(100, Math.max(0, ((wagered - vip.min) / (nextVip.min - vip.min)) * 100)) : 100;
+  const wagered   = userData.totalWagered || 0;
+  const vip       = getVipLevel(wagered);
+  const enabled   = getCashbackEnabled();
+  const hasNext   = vip.index < VIP_LEVELS.length - 1;
+  const nextVip   = VIP_LEVELS[Math.min(vip.index + 1, VIP_LEVELS.length - 1)];
+  const tierPct   = hasNext
+    ? Math.min(100, Math.max(0, ((wagered - vip.min) / (nextVip.min - vip.min)) * 100))
+    : 100;
 
   el.innerHTML = `
-    <div style="position:relative;overflow:hidden;border-radius:var(--r-lg);padding:16px;margin-bottom:12px;
-      background: linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.25), 0 8px 20px -8px rgba(212,175,55,.5);">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:30px;line-height:1;">${vip.icon}</div>
-          <div>
-            <div style="font-size:16px;font-weight:900;color:#241800;">${vip.name}</div>
-            <div style="font-size:10px;color:rgba(36,24,0,.65);font-weight:bold;">${((vip.cashback+clanCashbackBonus)*100).toFixed(2)}% з кожної ставки${clanCashbackBonus>0?' (+клан)':''}</div>
-          </div>
+    <div class="ks-tier">
+      <div class="ks-tier-mark">${vip.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="ks-tier-name">${vip.name}</div>
+        <div class="ks-tier-note ks-num">${((vip.cashback + clanCashbackBonus) * 100).toFixed(2)}% з кожної ставки${clanCashbackBonus > 0 ? ' · бонус клану' : ''}</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+        <span class="ks-hint">${enabled ? 'Увімк.' : 'Вимк.'}</span>
+        <div class="toggle-switch" style="width:40px;height:22px;"><input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleCashback(this)"><div class="toggle-slider"></div></div>
+      </label>
+    </div>
+
+    <section class="ks-panel">
+      <div class="ks-panel-body">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ks-fg-3);margin-bottom:9px;">
+          <span>${vip.name}</span>
+          <span>${hasNext ? nextVip.name : 'Максимальний рівень'}</span>
         </div>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <span style="font-size:10px;color:rgba(36,24,0,.65);font-weight:bold;">${enabled?'Увімк.':'Вимк.'}</span>
-          <div class="toggle-switch" style="width:40px;height:22px;"><input type="checkbox" ${enabled?'checked':''} onchange="toggleCashback(this)"><div class="toggle-slider"></div></div>
-        </label>
+        <div class="ks-meter"><div class="ks-meter-fill" style="width:${tierPct}%;"></div></div>
+        ${hasNext ? `<div style="text-align:right;font-size:11px;color:var(--ks-fg-3);margin-top:8px;">До «${nextVip.name}» — ще ${formatNumber(Math.max(0, nextVip.min - wagered))} ₴ ставок</div>` : ''}
       </div>
+    </section>
+
+    <section class="ks-panel">
+      <div class="ks-stats">
+        <div class="ks-stat">
+          <div class="ks-stat-lbl">Накопичено</div>
+          <div class="ks-stat-val is-pos">${formatNumber(pending)} ₴</div>
+        </div>
+        <div class="ks-stat">
+          <div class="ks-stat-lbl">Ліміт тижня</div>
+          <div class="ks-stat-val is-acc">${formatNumber(weekLeft)} ₴</div>
+        </div>
+        <div class="ks-stat">
+          <div class="ks-stat-lbl">Скидання</div>
+          <div class="ks-stat-val">${daysLeft} дн</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="ks-copy" style="align-items:flex-start;">
+      <span style="color:var(--ks-acc);margin-top:1px;">${ksIcon('shield', 17)}</span>
+      <div class="ks-copy-main ks-hint">Не більше <b>${CASHBACK_MAX_PER_BET} ₴</b> за одну ставку і <b>${formatNumber(CASHBACK_MAX_PER_WEEK)} ₴</b> за тиждень. Забрати можна від <b>2 000 ₴</b>.</div>
     </div>
 
-    <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#777;margin-bottom:6px;">
-        <span>${vip.icon} ${vip.name}</span>
-        <span>${hasNext ? nextVip.icon + ' ' + nextVip.name : '🏆 Максимальний рівень'}</span>
-      </div>
-      <div style="height:8px;background:#0a0a0a;border-radius:6px;overflow:hidden;box-shadow: inset 0 2px 4px rgba(0,0,0,.6);">
-        <div class="progress-fill-shimmer" style="height:100%;width:${tierPct}%;border-radius:6px;background:linear-gradient(90deg,#8a6d1f,var(--accent));transition:width .8s cubic-bezier(.22,1,.36,1);"></div>
-      </div>
-      ${hasNext ? `<div style="text-align:right;font-size:9px;color:#555;margin-top:5px;">до ${nextVip.name}: ${formatNumber(Math.max(0,nextVip.min-wagered))} ₴ ставок</div>` : ''}
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
-        <div style="font-size:9px;color:#555;margin-bottom:3px;">Накопичено</div>
-        <div style="font-size:18px;font-weight:900;color:var(--green);">${formatNumber(pending)}₴</div>
-      </div>
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
-        <div style="font-size:9px;color:#555;margin-bottom:3px;">Тижн. ліміт</div>
-        <div style="font-size:18px;font-weight:900;color:var(--accent);">${formatNumber(weekLeft)}₴</div>
-      </div>
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;text-align:center;box-shadow:var(--bevel), var(--elev-1);">
-        <div style="font-size:9px;color:#555;margin-bottom:3px;">Скидання</div>
-        <div style="font-size:18px;font-weight:900;color:#777;">${daysLeft}д</div>
-      </div>
-    </div>
-    <div style="background:#050a05;border:1px solid #0d2a0d;border-radius:var(--r-sm);padding:10px;margin-bottom:12px;font-size:11px;color:#555;">
-      ℹ️ Ліміт: <b style="color:var(--green);">${CASHBACK_MAX_PER_BET}₴</b>/ставка • <b style="color:var(--green);">${formatNumber(CASHBACK_MAX_PER_WEEK)}₴</b>/тиждень • Мінімум виплати: <b style="color:var(--accent);">2 000₴</b>
-    </div>
-    <button class="btn-green" onclick="claimCashback()" ${pending<=0?'disabled style="opacity:0.5;"':''}>
-      💰 ЗАБРАТИ ${formatNumber(pending)} ₴
+    <button class="ks-btn is-pos is-block" onclick="claimCashback()" ${pending <= 0 ? 'disabled' : ''}>
+      Забрати ${formatNumber(pending)} ₴
     </button>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 12px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);box-shadow:var(--bevel);">
-      <span style="font-size:10px;color:#555;">Всього отримано кешбеку</span>
-      <span style="font-size:14px;font-weight:900;color:var(--green);">${formatNumber(userData.cashbackTotalClaimed||0)} ₴</span>
-    </div>`;
+
+    <section class="ks-panel" style="margin-top:14px;">
+      <div class="ks-row">
+        <div class="ks-icn is-pos">${ksIcon('percent')}</div>
+        <div class="ks-row-main"><div class="ks-row-title">Усього отримано кешбеку</div></div>
+        <div class="ks-row-value is-pos">${formatNumber(userData.cashbackTotalClaimed || 0)} ₴</div>
+      </div>
+    </section>`;
 }
 
 function updateVipUI() {
@@ -11934,17 +12012,17 @@ window.formatNumber = function(num) {
 // ============================================================
 function switchCashierTab(tab, el) {
   const rail = document.getElementById('cashierTabsRail');
-  const btns = rail ? Array.from(rail.querySelectorAll('.cashier-tab-btn')) : [];
-  document.querySelectorAll('.cashier-tab-btn').forEach(b => b.classList.remove('active'));
+  const btns = rail ? Array.from(rail.querySelectorAll('.ks-seg-btn')) : [];
+  btns.forEach(b => b.classList.remove('is-active'));
   const activeBtn = el || btns.find(b => b.id === 'ctb-' + tab);
-  if(activeBtn) activeBtn.classList.add('active');
-  // Ковзний індикатор — переїжджає під активну кнопку замість плоскої заливки
-  const slider = document.getElementById('cashierTabSlider');
-  if(slider && activeBtn) {
-    const idx = btns.indexOf(activeBtn);
-    if(idx >= 0) slider.style.transform = 'translateX(' + (idx * 100) + '%)';
+  if(activeBtn) {
+    activeBtn.classList.add('is-active');
+    // На вузьких екранах рейл скролиться — підтягуємо активний розділ у видиму
+    // частину, інакше «Курси» лишаються за краєм і здаються недоступними
+    if(activeBtn.scrollIntoView) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
   }
-  // Show/hide ALL cashier panels — включаючи нову 'card'
   ['card','deposit','withdraw','cashback','markets'].forEach(t => {
     const p = document.getElementById('cashier-panel-' + t);
     if(p) p.classList.toggle('hidden', t !== tab);
@@ -11953,6 +12031,16 @@ function switchCashierTab(tab, el) {
   if(tab === 'markets')  buildMarketsPage();
   if(tab === 'card')     renderCardPanel();
   if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('privat', document.getElementById('depm-privat')); }
+  if(tab === 'withdraw') { loadMyWithdraws(); updateWithdrawAvailable(); }
+}
+
+// Скільки реально можна вивести — показуємо в шапці розділу, щоб гравець не
+// підбирав суму навмання й не ловив «недостатньо коштів»
+function updateWithdrawAvailable() {
+  const el = document.getElementById('wdAvailBadge');
+  if(!el) return;
+  const bal = Math.floor((userData && userData.balance) || 0);
+  el.innerHTML = 'Доступно&nbsp;<span class="ks-num">' + formatNumber(bal) + ' ₴</span>';
 }
 
 function buildMarketsPage() {
@@ -11968,10 +12056,9 @@ function buildMarketsPage() {
     const isActive = cur.code === currentCurrency;
     const btn = document.createElement('div');
     btn.className = 'currency-btn' + (isActive ? ' active' : '');
-    btn.style.padding = '8px 4px';
-    btn.innerHTML = '<div style="font-size:18px;">' + cur.flag + '</div>' +
-      '<div style="font-size:10px;font-weight:bold;color:'+(isActive?'var(--accent)':'#bbb')+';">' + cur.code + '</div>' +
-      '<div style="font-size:9px;color:#555;">' + rStr + '</div>';
+    btn.innerHTML = '<div style="font-size:17px;line-height:1.1;">' + cur.flag + '</div>' +
+      '<div style="font-size:11px;font-weight:650;margin-top:3px;color:' + (isActive ? 'var(--ks-acc)' : 'var(--ks-fg-2)') + ';">' + cur.code + '</div>' +
+      '<div class="ks-num" style="font-size:10px;color:var(--ks-fg-3);">' + rStr + '</div>';
     btn.onclick = () => { setCurrency(cur.code); buildMarketsPage(); };
     (cur.isCrypto ? cryptoGrid : fiatGrid)?.appendChild(btn);
   });
@@ -12003,17 +12090,19 @@ function buildMarketsRateTable() {
     const isUp = parseFloat(change) >= 0;
     const changeColor = isUp ? 'var(--green)' : 'var(--red)';
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;padding:11px 14px;transition:background .15s;' + (i%2?'background:rgba(255,255,255,.015);':'background:transparent;');
+    row.className = 'ks-row';
     row.innerHTML =
-      '<span style="font-size:22px;margin-right:10px;">' + cur.flag + '</span>' +
-      '<div style="flex:1;"><div style="font-size:13px;font-weight:bold;">' + cur.code + '</div><div style="font-size:10px;color:#555;">' + cur.name + '</div></div>' +
-      '<div style="text-align:right;">' +
-        '<div style="font-size:15px;font-weight:900;color:' + color + ';">' + fmt + ' ₴</div>' +
-        '<div style="font-size:10px;font-weight:bold;color:' + changeColor + ';display:flex;align-items:center;justify-content:flex-end;gap:2px;">' + (isUp?'▲':'▼') + ' ' + Math.abs(change) + '%</div>' +
+      '<div class="ks-icn" style="font-size:18px;">' + cur.flag + '</div>' +
+      '<div class="ks-row-main">' +
+        '<div class="ks-row-title">' + cur.code + '</div>' +
+        '<div class="ks-row-sub">' + cur.name + '</div>' +
+      '</div>' +
+      '<div class="ks-row-value" style="color:' + color + ';">' + fmt + ' ₴' +
+        '<small style="color:' + changeColor + ';">' + (isUp ? '+' : '−') + Math.abs(change) + '%</small>' +
       '</div>';
     tbl.appendChild(row);
   });
-  if(ts && ratesLastFetch) ts.textContent = '🕒 ' + new Date(ratesLastFetch).toLocaleTimeString('uk-UA');
+  if(ts && ratesLastFetch) ts.textContent = 'Оновлено ' + new Date(ratesLastFetch).toLocaleTimeString('uk-UA');
 }
 
 function buildChartSelector() {
@@ -12023,7 +12112,7 @@ function buildChartSelector() {
     const cur = CURRENCIES[code]; if(!cur) return;
     const active = (window._chartCurrency || 'BTC') === code;
     const btn = document.createElement('button');
-    btn.className = 'chart-currency-chip' + (active ? ' active' : '');
+    btn.className = 'ks-btn is-sm' + (active ? ' is-primary' : ' is-quiet');
     btn.textContent = cur.flag + ' ' + code;
     btn.onclick = () => {
       window._chartCurrency = code;
@@ -12050,9 +12139,9 @@ async function loadCurrencyChart(code, period='7D') {
 
   // Show loading
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#444'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('⏳ Завантаження...', canvas.width/2, canvas.height/2);
+  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#5e6675'; ctx.font = '13px -apple-system, Segoe UI, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Завантаження…', canvas.width/2, canvas.height/2);
 
   try {
     const coinIds = {BTC:'bitcoin',ETH:'ethereum',SOL:'solana',BNB:'binancecoin',USDT:'tether'};
@@ -12097,7 +12186,7 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  ctx.fillStyle = '#080808'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,W,H);
 
   const prices = data.map(d=>d.p);
   const minP = Math.min(...prices), maxP = Math.max(...prices);
@@ -12111,7 +12200,7 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const toY = p => pad.top + chartH - ((p-minP)/range)*chartH;
 
   const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',BNB:'#f3ba2f',USDT:'#26a17b',USD:'#4a90e2',EUR:'#2ecc71'};
-  const lineColor = cryptoColors[code] || '#d4af37';
+  const lineColor = cryptoColors[code] || '#7c8cff';
 
   ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
   for(let i=0;i<=4;i++) {
@@ -16149,7 +16238,7 @@ function addBpXP(amount) {
 
 function buyVipBattlePass() {
   const cost = 500; // slotiky
-  if((userData.virtualCard && userData.virtualCard.frozen) || (userData.tempPartnerCard && userData.tempPartnerCard.frozen)) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;
@@ -16333,10 +16422,13 @@ function initStatsTab() {
 // Єдина точка правди: яка картка зараз активна — справжня (Axioma) чи тимчасова партнерська.
 // Раніше багато місць коду перевіряли лише userData.virtualCard напряму, тому CVV/блокування/
 // заморозка мовчки не працювали для більшості гравців (у них саме тимчасова картка).
+// Єдина картка з повними даними — прив'язана картка Аксіоми: лише в неї є
+// номер і CVV. Свої зовнішні картки гравця зберігаються замасковано (банк +
+// останні 4 цифри), тому «активною карткою» в цьому сенсі не є —
+// повний перелік підключеного дає getLinkedCards().
 function getActiveCard() {
   if(!userData) return null;
   if(userData.virtualCard && userData.virtualCard.axiomLinked) return userData.virtualCard;
-  if(userData.tempPartnerCard) return userData.tempPartnerCard;
   return null;
 }
 
@@ -16426,7 +16518,9 @@ function dismissCardOnboard() {
 // ── CARD ONBOARD CHECK ──
 function checkCardOnboarding() {
   if(!currentUser || !userData) return;
-  if(userData.virtualCard && userData.virtualCard.number && userData.virtualCard.axiomLinked) return;
+  // Нагадуємо лише тим, у кого немає ЖОДНОЇ підключеної картки: своя зовнішня
+  // картка так само знімає гейт, як і прив'язка Аксіоми
+  if(hasConnectedCard()) return;
   const dismissed = localStorage.getItem('cardOnboardDismissed_'+currentUser);
   if(dismissed) return;
   setTimeout(() => {
@@ -16453,7 +16547,7 @@ function submitCardWithdraw() {
   const card = getCardData();
   if(card && card.frozen) return notify('🔒 Картку заблоковано!', 'error');
   // Submit withdraw request same as standard
-  const method = document.querySelector('.wm-btn.selected')?.textContent || 'PrivatBank';
+  const method = selectedWithdrawMethod || 'privat';
   const req = { user:currentUser, amount, card:cardNum, method, status:'pending', ts:Date.now() };
   db.ref('withdrawRequests').push(req);
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amount));
@@ -16578,34 +16672,9 @@ function selectCardTopupAmt(amt, btn) {
 // ===== SLOTOK ↔ AXIOM BANK INTEGRATION =====
 // ============================================================
 
-function renderAxiomLinkCardBlock() {
-  const el = document.getElementById('axiomLinkCardBlock');
-  if(!el || !userData) return;
-  const linked = userData.virtualCard?.axiomLinked;
-  const source = userData.virtualCard?.source;
-
-  if(linked && source === 'axiom') {
-    // Show Axiom badge + card info
-    const axiomLinkedAt = userData.virtualCard?.axiomLinkedAt;
-    const dateStr = axiomLinkedAt ? new Date(axiomLinkedAt).toLocaleDateString('uk-UA', {day:'numeric', month:'long'}) : '';
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,rgba(92,110,248,.08),rgba(140,92,248,.04));border:1px solid rgba(92,110,248,.3);border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:16px;font-weight:900;color:#fff;flex-shrink:0;">А</div>
-          <div style="flex:1;">
-            <div style="font-size:12px;font-weight:bold;color:#7c8eff;">Аксіома Банк — офіційна картка</div>
-            <div style="font-size:10px;color:#444;margin-top:1px;">Прив'язано ${dateStr ? '· '+dateStr : ''} · Заморозка синхронізується</div>
-          </div>
-          <div style="font-size:9px;background:rgba(92,110,248,.2);color:#7c8eff;border-radius:6px;padding:2px 7px;font-weight:bold;">PARTNER</div>
-        </div>
-      </div>`;
-  } else if(!linked) {
-    el.innerHTML = `
-      <button onclick="openTabModal('cardOnboardModal')" style="width:100%;padding:13px;background:linear-gradient(135deg,rgba(92,110,248,.1),rgba(140,92,248,.05));border:1px dashed rgba(92,110,248,.3);border-radius:14px;color:#7c8eff;font-size:12px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:10px;">
-        <span>🏦</span> Прив'язати картку Аксіома Банку
-      </button>`;
-  }
-}
+// Аксіома тепер просто один із рядків у переліку підключених карток —
+// окремого блоку під карткою більше немає.
+function renderAxiomLinkCardBlock() { renderLinkedCards(); }
 
 function renderAxiomLinkContent() {
   const el = document.getElementById('axiomLinkContent');
@@ -18862,7 +18931,9 @@ function copyCardNumberFlash(e) {
   if(e) e.stopPropagation();
   var numEl = document.getElementById('vcardNumber');
   var num = numEl ? numEl.textContent.replace(/\s/g,'') : '';
-  if(!num || num === '4874000000000000') return notify('Картку ще не активовано', 'error');
+  if(!/^[0-9]{12,19}$/.test(num)) return notify(hasConnectedCard()
+    ? 'Повний номер картки зберігається у вашому банку, не в SlotOK'
+    : 'Спочатку підключіть картку в Касі', 'error');
   navigator.clipboard && navigator.clipboard.writeText(num).then(function() {
     notify('📋 Номер скопійовано!', 'success');
     if(numEl) { numEl.classList.add('copied'); setTimeout(function(){ numEl.classList.remove('copied'); }, 600); }
@@ -18874,198 +18945,462 @@ function toggleCvvVisibility() {
   var btn = document.getElementById('cvvToggleBtn');
   var cvvFront = document.getElementById('vcardCvvDisplay');
   var cvvBack  = document.getElementById('vcardCvvBack');
-  // Картка може бути або справжня (Axioma), або тимчасова партнерська —
-  // раніше перевірявся лише перший варіант, тому CVV мовчки не працював
-  // для більшості гравців (у них саме тимчасова картка)
-  var card = (userData.virtualCard && userData.virtualCard.axiomLinked) ? userData.virtualCard : userData.tempPartnerCard;
-  if(!card) return notify('Спочатку отримай картку в Касі', 'error');
-  var cvv = card.cvv || '***';
-  var hidden = cvvFront && cvvFront.textContent === '***';
-  if(cvvFront) cvvFront.textContent = hidden ? cvv : '***';
-  if(cvvBack)  cvvBack.textContent  = hidden ? cvv : '***';
-  if(btn) btn.textContent = hidden ? '🙈 Приховати CVV' : '👁 CVV';
+  // CVV є лише в прив'язаної картки Аксіоми. Свої зовнішні картки ми
+  // зберігаємо замасковано й CVV не приймаємо взагалі — тому тут нічого
+  // показувати, і про це треба сказати прямо, а не мовчки нічого не робити.
+  var card = getActiveCard();
+  if(!card) return notify(hasConnectedCard()
+    ? 'CVV своєї картки SlotOK не зберігає — дивіться його на самій картці'
+    : 'Спочатку підключіть картку в Касі', 'error');
+  var cvv = card.cvv || '•••';
+  var hidden = cvvFront && cvvFront.textContent === '•••';
+  if(cvvFront) cvvFront.textContent = hidden ? cvv : '•••';
+  if(cvvBack)  cvvBack.textContent  = hidden ? cvv : '•••';
+  if(btn) btn.innerHTML = hidden ? (ksIcon('eyeOff') + ' Приховати') : (ksIcon('eye') + ' CVV');
 }
 
-// ── ТИМЧАСОВА КАРТКА ПАРТНЕРА ─────────────────────────────────
-function createTempPartnerCard() {
-  if(!currentUser || !db) return notify('Спочатку увійди', 'error');
-  db.ref('users/' + currentUser + '/tempPartnerCard').once('value').then(function(snap) {
-    if(snap.exists()) {
-      var card = snap.val();
-      var daysLeft = Math.max(0, Math.ceil((card.expiresAt - Date.now()) / 86400000));
-      if(daysLeft > 0) {
-        notify('У тебе вже є тимчасова картка! Діє ще ' + daysLeft + ' днів', 'info');
-        renderCardPanel();
-        return;
-      }
-    }
-    // Generate new temp card
-    var expiry = Date.now() + 30 * 86400000;
-    var num = '8888 ' +
-      String(Math.floor(1000 + Math.random()*9000)) + ' ' +
-      String(Math.floor(1000 + Math.random()*9000)) + ' ' +
-      String(Math.floor(1000 + Math.random()*9000));
-    var cvv = String(Math.floor(100 + Math.random()*900));
-    var tempCard = {
-      number: num, cvv: cvv, type: 'partner_temp',
-      createdAt: Date.now(), expiresAt: expiry,
-      label: 'SlotOK Partner Card', renewReminder: false,
-    };
-    db.ref('users/' + currentUser + '/tempPartnerCard').set(tempCard);
-    userData.tempPartnerCard = tempCard;
-    notify('✅ Тимчасова картка партнера створена! Діє 30 днів', 'success');
-    if(navigator.vibrate) navigator.vibrate([100,50,200]);
-    renderCardPanel();
-    spawnWinCoins(100);
+// ═══════════════════════════════════════════════════════════════════
+// КАСА v80 — ІКОНКИ
+// Штрихові SVG замість емодзі: одна мова іконок на всю Касу, у кольорі
+// currentColor, щоб успадковувати стан елемента (активний / вимкнений).
+// ═══════════════════════════════════════════════════════════════════
+var KS_ICON_PATHS = {
+  card:    '<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>',
+  bank:    '<path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9.5 21v-6h5v6"/>',
+  down:    '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+  up:      '<path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/>',
+  send:    '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  percent: '<path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+  trend:   '<path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  palette: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="9.2" r="1.2"/><circle cx="15" cy="9.2" r="1.2"/><circle cx="9.8" cy="15" r="1.2"/>',
+  lock:    '<rect x="3.5" y="11" width="17" height="10.5" rx="2.5"/><path d="M7.5 11V7a4.5 4.5 0 0 1 9 0v4"/>',
+  unlock:  '<rect x="3.5" y="11" width="17" height="10.5" rx="2.5"/><path d="M7.5 11V7a4.5 4.5 0 0 1 8.9-1"/>',
+  dice:    '<rect x="3" y="3" width="18" height="18" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.15"/><circle cx="12" cy="12" r="1.15"/><circle cx="15.5" cy="15.5" r="1.15"/>',
+  eye:     '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:  '<path d="M10.6 5.2A9.6 9.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.4 3.3M6.3 6.7A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4-.8"/><path d="m3 3 18 18"/>',
+  copy:    '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  plus:    '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  x:       '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  trash:   '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m6 6 1 14h10l1-14"/>',
+  inflow:  '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
+  outflow: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
+  swap:    '<path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/>',
+  gift:    '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13"/><path d="M3 13h18"/>',
+  shield:  '<path d="M12 3l8 3v6c0 4.5-3.3 8.3-8 9-4.7-.7-8-4.5-8-9V6Z"/><path d="m9 12 2 2 4-4"/>',
+  check:   '<path d="M20 6 9 17l-5-5"/>',
+  clock:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+};
+function ksIcon(name, size) {
+  var d = KS_ICON_PATHS[name];
+  if(!d) return '';
+  var st = size ? ' style="width:' + size + 'px;height:' + size + 'px;"' : '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" stroke-linejoin="round"' + st + '>' + d + '</svg>';
+}
+function ksEsc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ПІДКЛЮЧЕНІ КАРТКИ
+// SlotOK не випускає власних карток — ні тимчасових, ні постійних.
+// У Касі показується лише та картка, яку гравець підключив сам:
+//   • своя картка свого банку — зберігаємо ТІЛЬКИ банк, ім'я власника,
+//     останні 4 цифри й термін дії. Повний номер і CVV не приймаємо
+//     й не пишемо в базу взагалі;
+//   • картка Аксіома Банку — приходить через 6-значний код і має повні
+//     дані, бо їх видає сам банк-партнер.
+// ═══════════════════════════════════════════════════════════════════
+var KS_BANKS = {
+  privat: { name: 'PrivatBank',        color: '#4caf50', short: 'П'  },
+  mono:   { name: 'Monobank',          color: '#1c1c1c', short: 'М'  },
+  visa:   { name: 'Visa / Mastercard', color: '#1a1f71', short: 'VM' },
+  abank:  { name: 'A-Bank',            color: '#e2333a', short: 'A'  },
+  sense:  { name: 'Sense Bank',        color: '#7b3fe4', short: 'S'  },
+  pumb:   { name: 'ПУМБ',              color: '#c8102e', short: 'ПБ' },
+  oschad: { name: 'Ощадбанк',          color: '#0f8a4a', short: 'О'  },
+  other:  { name: 'Інший банк',        color: '#3b4252', short: '•'  },
+};
+
+function getLinkedCards() {
+  if(!userData) return [];
+  var out = [];
+  var vc = userData.virtualCard;
+  if(vc && vc.axiomLinked) {
+    out.push({
+      id: 'axiom', kind: 'axiom', bank: 'axiom', bankName: 'Аксіома Банк',
+      mark: 'А', markColor: '#5c6ef8',
+      holder: String(vc.holder || currentUser || '').toUpperCase(),
+      last4: String(vc.number || '').replace(/\D/g,'').slice(-4) || '••••',
+      number: vc.number, cvv: vc.cvv, expiry: vc.expiry || '',
+      addedAt: vc.axiomLinkedAt || 0,
+    });
+  }
+  var linked = userData.linkedCards || {};
+  Object.keys(linked).forEach(function(id) {
+    var c = linked[id] || {};
+    var b = KS_BANKS[c.bank] || KS_BANKS.other;
+    out.push({
+      id: id, kind: 'external', bank: c.bank || 'other', bankName: b.name,
+      mark: b.short, markColor: b.color,
+      holder: String(c.holder || '').toUpperCase(),
+      last4: c.last4 || '••••', expiry: c.expiry || '', addedAt: c.addedAt || 0,
+    });
   });
+  return out;
+}
+function hasConnectedCard() { return getLinkedCards().length > 0; }
+function getPrimaryCard() { var l = getLinkedCards(); return l.length ? l[0] : null; }
+
+// Перевірка Луна — та сама, якою користуються справжні платіжні системи.
+// Ловить описки в номері ДО того, як гравець вирішить, що Каса зламана.
+function ksLuhn(digits) {
+  if(!/^[0-9]{12,19}$/.test(digits)) return false;
+  var sum = 0, dbl = false;
+  for(var i = digits.length - 1; i >= 0; i--) {
+    var d = digits.charCodeAt(i) - 48;
+    if(dbl) { d *= 2; if(d > 9) d -= 9; }
+    sum += d; dbl = !dbl;
+  }
+  return sum % 10 === 0;
 }
 
-// renderTempPartnerCard — прибрано; вся логіка тепер в renderCardPanel()
-// (одна функція, один state machine — надійніше)
+function renderLinkedCards() {
+  var el = document.getElementById('linkedCardsList');
+  if(!el) return;
+  var cards = getLinkedCards();
+  if(!cards.length) {
+    el.innerHTML =
+      '<div class="ks-empty" style="padding:22px 18px;">' +
+        '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що не підключено жодної картки. ' +
+          'Доки її немає, Каса не показує картку — SlotOK власних карток не випускає.</div>' +
+        '<div class="ks-btn-row">' +
+          '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
+          '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+  el.innerHTML = cards.map(function(c, idx) {
+    var badge = c.kind === 'axiom'
+      ? '<span class="ks-badge is-acc">Партнер</span>'
+      : (idx === 0 ? '<span class="ks-badge is-pos">Основна</span>' : '');
+    var del = c.kind === 'external'
+      ? '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="confirmRemoveLinkedCard(this)" ' +
+        'title="Відключити картку">' + ksIcon('trash') + '</button>'
+      : '';
+    return '<div class="ks-row">' +
+      '<div class="ks-icn" style="background:' + c.markColor + ';color:#fff;font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
+      '<div class="ks-row-main">' +
+        '<div class="ks-row-title">' + ksEsc(c.bankName) + '</div>' +
+        '<div class="ks-row-sub ks-num">•••• ' + ksEsc(c.last4) + (c.holder ? ' · ' + ksEsc(c.holder) : '') +
+          (c.expiry ? ' · ' + ksEsc(c.expiry) : '') + '</div>' +
+      '</div>' +
+      badge + del +
+      '</div>';
+  }).join('');
+}
 
-function showCardRenewalModal(daysLeft) {
-  var existing = document.getElementById('renewalModal');
-  if(existing) existing.remove();
-  var modal = document.createElement('div');
-  modal.id = 'renewalModal';
-  modal.className = 'renewal-modal';
-  modal.innerHTML =
-    '<div class="renewal-box">' +
-      '<div style="font-size:52px;margin-bottom:14px;">💳</div>' +
-      '<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#4a9eff;margin-bottom:8px;">Картка закінчується!</div>' +
-      '<div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.6;">Ваша тимчасова картка партнера закінчується через <b style="color:#f39c12;">' + daysLeft + ' днів</b>.<br>Що бажаєте зробити?</div>' +
-      '<button onclick="extendTempCard();document.getElementById(\'renewalModal\').remove()" style="width:100%;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-size:14px;margin-bottom:10px;">🔄 Продовжити ще на 30 днів</button>' +
-      '<button onclick="connectAxiomaFromCard();document.getElementById(\'renewalModal\').remove()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:14px;padding:14px;color:#000;font-weight:900;cursor:pointer;font-size:14px;margin-bottom:10px;">🏦 Підключити Аксіому Банк</button>' +
-      '<button onclick="document.getElementById(\'renewalModal\').remove()" style="width:100%;background:rgba(255,255,255,.04);border:1px solid #222;border-radius:14px;padding:12px;color:#555;cursor:pointer;font-size:13px;">Нагадати пізніше</button>' +
+function renderCardMetaRow(card) {
+  var el = document.getElementById('cardMetaRow');
+  if(!el) return;
+  if(!card) {
+    el.innerHTML =
+      '<section class="ks-panel">' +
+        '<div class="ks-empty">' +
+          '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
+          '<div class="ks-empty-title">Підключіть свою картку</div>' +
+          '<div class="ks-empty-text">SlotOK не випускає власних карток. Підключіть <b>свою картку</b> ' +
+            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Касі.</div>' +
+          '<div class="ks-btn-row">' +
+            '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
+            '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
+    return;
+  }
+  if(card.kind === 'axiom') {
+    el.innerHTML =
+      '<div class="ks-btn-row" style="margin-bottom:8px;">' +
+        '<button class="ks-btn is-quiet" id="cvvToggleBtn" onclick="toggleCvvVisibility()">' + ksIcon('eye') + ' CVV</button>' +
+        '<button class="ks-btn is-quiet" onclick="copyCardNumberFlash()">' + ksIcon('copy') + ' Номер</button>' +
+        '<button class="ks-btn is-quiet" style="flex:0 0 auto;padding:13px 15px;" onclick="openCardColorPicker()" ' +
+          'title="Скін картки">' + ksIcon('palette') + '</button>' +
+      '</div>' +
+      '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">Натисніть на картку, щоб перевернути</p>';
+    return;
+  }
+  // Своя зовнішня картка: копіювати й показувати нічого — повні дані в банку.
+  // «Додати» й «Скін» уже є нижче (перелік карток і швидкі дії), тому тут лише
+  // пояснення, а не третя копія тих самих кнопок.
+  el.innerHTML =
+    '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">' +
+      'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.</p>';
+}
+
+function renderCardQuickActions(card) {
+  var el = document.getElementById('cardQuickActions');
+  if(!el) return;
+  var frozen = !!(userData && userData.virtualCard && userData.virtualCard.frozen);
+  // Поповнення, вивід, кешбек, курси й казино працюють і без картки —
+  // інакше новий гравець не зміг би завести перші кошти. Картку вимагають
+  // тільки суто карткові дії.
+  var acts = [
+    { k:'topup',      icon:'down',    label:'Поповнити', needsCard:false },
+    { k:'withdraw',   icon:'up',      label:'Вивід',     needsCard:false },
+    { k:'transfer',   icon:'send',    label:'Переказ',   needsCard:true  },
+    { k:'cashback',   icon:'percent', label:'Кешбек',    needsCard:false },
+    { k:'buySlotyky', icon:'trend',   label:'Курси',     needsCard:false },
+    { k:'skinShop',   icon:'palette', label:'Скін',      needsCard:true  },
+    { k:'freeze',     icon:frozen ? 'unlock' : 'lock', label:frozen ? 'Розблок.' : 'Блок', needsCard:true },
+    { k:'casino',     icon:'dice',    label:'Казино',    needsCard:false },
+  ];
+  el.innerHTML = acts.map(function(a) {
+    var off = a.needsCard && !card;
+    return '<button class="ks-quick-btn" onclick="bankAction(\'' + a.k + '\')"' +
+      (off ? ' disabled title="Спочатку підключіть картку"' : '') + '>' +
+      ksIcon(a.icon) + '<span>' + a.label + '</span></button>';
+  }).join('');
+}
+
+// ── Додавання своєї картки ───────────────────────────────────────
+var _ksAddBank = 'privat';
+
+function openAddCardModal() {
+  if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
+  closeAddCardModal();
+  var banks = Object.keys(KS_BANKS).map(function(id) {
+    var b = KS_BANKS[id];
+    return '<button class="ks-btn is-sm' + (id === _ksAddBank ? ' is-primary' : ' is-quiet') + '" ' +
+      'data-bank="' + id + '" onclick="selectAddCardBank(\'' + id + '\')" style="justify-content:flex-start;">' +
+      '<span class="ks-bank" style="width:20px;height:20px;border-radius:6px;display:flex;align-items:center;' +
+      'justify-content:center;font-size:10px;font-weight:800;color:#fff;background:' + b.color + ';">' + b.short + '</span>' +
+      b.name + '</button>';
+  }).join('');
+  var m = document.createElement('div');
+  m.className = 'ks-modal';
+  m.id = 'ksAddCardModal';
+  m.addEventListener('click', function(e) { if(e.target === m) closeAddCardModal(); });
+  m.innerHTML =
+    '<div class="ks-modal-box">' +
+      '<div class="ks-modal-head">' +
+        '<div class="ks-modal-title">Підключити свою картку</div>' +
+        '<button class="ks-modal-x" onclick="closeAddCardModal()">' + ksIcon('x') + '</button>' +
+      '</div>' +
+      '<label class="ks-label">Банк</label>' +
+      '<div id="ksAddBankGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">' + banks + '</div>' +
+      '<div class="ks-field">' +
+        '<label class="ks-label" for="ksAcHolder">Ім\'я власника</label>' +
+        '<input id="ksAcHolder" maxlength="26" autocomplete="off" placeholder="IVAN KOVALENKO">' +
+      '</div>' +
+      '<div class="ks-field">' +
+        '<label class="ks-label" for="ksAcNum">Номер картки</label>' +
+        '<input id="ksAcNum" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="0000 0000 0000 0000" ' +
+          'oninput="ksFormatCardNum(this)" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1.5px;">' +
+      '</div>' +
+      '<div class="ks-field">' +
+        '<label class="ks-label" for="ksAcExp">Дійсна до</label>' +
+        '<input id="ksAcExp" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/YY" ' +
+          'oninput="ksFormatExpiry(this)" style="font-family:ui-monospace,Menlo,Consolas,monospace;">' +
+      '</div>' +
+      '<div class="ks-copy" style="align-items:flex-start;">' +
+        '<span style="color:#31c48d;margin-top:1px;">' + ksIcon('shield', 17) + '</span>' +
+        '<div class="ks-copy-main ks-hint">У базу SlotOK запишемо лише <b>банк, ім\'я, термін дії та останні 4 цифри</b>. ' +
+          'Повний номер використовується лише тут, у браузері, для перевірки — і не зберігається. CVV не запитуємо ніколи.</div>' +
+      '</div>' +
+      '<button class="ks-btn is-primary is-block" onclick="submitAddCard()">Підключити картку</button>' +
     '</div>';
-  document.body.appendChild(modal);
+  document.body.appendChild(m);
+  setTimeout(function() { var f = document.getElementById('ksAcHolder'); if(f) f.focus(); }, 60);
 }
-
-function extendTempCard() {
-  db.ref('users/' + currentUser + '/tempPartnerCard/expiresAt').set(Date.now() + 30 * 86400000);
-  db.ref('users/' + currentUser + '/tempPartnerCard/renewReminder').set(false);
-  notify('✅ Картку продовжено ще на 30 днів!', 'success');
-  db.ref('users/' + currentUser + '/tempPartnerCard').once('value').then(function(s) {
-    if(s.exists()) { userData.tempPartnerCard = s.val(); renderCardPanel(); }
+function closeAddCardModal() {
+  var m = document.getElementById('ksAddCardModal');
+  if(m) m.remove();
+}
+function selectAddCardBank(id) {
+  _ksAddBank = id;
+  var grid = document.getElementById('ksAddBankGrid');
+  if(!grid) return;
+  Array.prototype.forEach.call(grid.querySelectorAll('[data-bank]'), function(b) {
+    var on = b.getAttribute('data-bank') === id;
+    b.className = 'ks-btn is-sm' + (on ? ' is-primary' : ' is-quiet');
   });
 }
-
-function connectAxiomaFromCard() {
-  notify('🏦 Переходимо до підключення Аксіома Банку...', 'info');
-  setTimeout(function() { switchCashierTab('card'); }, 300);
-  // Show Axioma link block
-  var b = document.getElementById('axiomLinkCardBlock');
-  if(b) b.scrollIntoView({behavior:'smooth'});
+function ksFormatCardNum(inp) {
+  var d = inp.value.replace(/\D/g,'').slice(0,16);
+  inp.value = d.replace(/(.{4})(?=.)/g,'$1 ');
+}
+function ksFormatExpiry(inp) {
+  var d = inp.value.replace(/\D/g,'').slice(0,4);
+  inp.value = d.length > 2 ? d.slice(0,2) + '/' + d.slice(2) : d;
 }
 
+function submitAddCard() {
+  if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
+  var holder = (document.getElementById('ksAcHolder') || {value:''}).value.trim();
+  var digits = (document.getElementById('ksAcNum') || {value:''}).value.replace(/\D/g,'');
+  var exp    = (document.getElementById('ksAcExp') || {value:''}).value.trim();
+
+  if(holder.length < 3)  return notify('Вкажіть ім\'я власника картки', 'error');
+  if(digits.length !== 16) return notify('Номер картки — 16 цифр', 'error');
+  if(!ksLuhn(digits))    return notify('Такого номера картки не існує — перевірте цифри', 'error');
+  var m = /^(\d{2})\/(\d{2})$/.exec(exp);
+  if(!m)                 return notify('Термін дії у форматі MM/YY', 'error');
+  var mm = parseInt(m[1], 10), yy = 2000 + parseInt(m[2], 10);
+  if(mm < 1 || mm > 12)  return notify('Некоректний місяць у терміні дії', 'error');
+  // Картка дійсна до останнього дня вказаного місяця включно
+  if(new Date(yy, mm, 1).getTime() <= Date.now()) return notify('Термін дії цієї картки вже сплив', 'error');
+
+  var last4 = digits.slice(-4);
+  var dup = getLinkedCards().some(function(c) {
+    return c.kind === 'external' && c.bank === _ksAddBank && c.last4 === last4;
+  });
+  if(dup) return notify('Ця картка вже підключена', 'error');
+
+  // Повний номер далі не йде: у базу пишемо лише маску.
+  var rec = {
+    bank: _ksAddBank,
+    holder: holder.toUpperCase().slice(0, 26),
+    last4: last4,
+    expiry: exp,
+    addedAt: Date.now(),
+  };
+  var ref = db.ref('users/' + currentUser + '/linkedCards').push();
+  ref.set(rec);
+  userData.linkedCards = userData.linkedCards || {};
+  userData.linkedCards[ref.key] = rec;
+
+  closeAddCardModal();
+  notify('Картку підключено', 'success');
+  if(navigator.vibrate) navigator.vibrate([40,30,60]);
+  renderCardPanel();
+}
+
+// Двокроковий підтверджувач замість системного confirm(): перший тап
+// «озброює» кнопку, другий відключає картку.
+function confirmRemoveLinkedCard(btn) {
+  var id = btn.getAttribute('data-id');
+  if(btn.dataset.armed !== '1') {
+    btn.dataset.armed = '1';
+    btn.style.color = '#f0556b';
+    btn.style.borderColor = 'rgba(240,85,107,.5)';
+    btn.title = 'Натисніть ще раз, щоб відключити';
+    notify('Натисніть ще раз, щоб відключити картку', 'info');
+    setTimeout(function() {
+      if(!btn.parentNode) return;
+      btn.dataset.armed = '0';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 4000);
+    return;
+  }
+  removeLinkedCard(id);
+}
+
+function removeLinkedCard(id) {
+  if(!id || !db || !currentUser) return;
+  db.ref('users/' + currentUser + '/linkedCards/' + id).remove();
+  if(userData.linkedCards) delete userData.linkedCards[id];
+  // Заморозка знімається разом з останньою карткою: інакше гравець лишився б
+  // із заблокованими ставками й виводом, а кнопка розблокування вимагає
+  // підключеної картки — вийти з цього стану було б неможливо
+  if(!hasConnectedCard() && userData.virtualCard && userData.virtualCard.frozen) {
+    db.ref('users/' + currentUser + '/virtualCard/frozen').set(false);
+    userData.virtualCard.frozen = false;
+  }
+  notify('Картку відключено', 'info');
+  renderCardPanel();
+}
+
+function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
+// Стара назва лишилась у кнопках і нагадуваннях попередніх версій
+function connectAxiomaFromCard() { openAxiomLinkFlow(); }
+
+// ═══════════════════════════════════════════════════════════════════
+// ПАНЕЛЬ КАРТКИ
+// ═══════════════════════════════════════════════════════════════════
 function renderCardPanel() {
-  var card = userData.virtualCard;
-  var tempCard = userData.tempPartnerCard;
-  var isAxioma = card && card.axiomLinked;
-  var hasTempOnly = !isAxioma && tempCard;
-  var hasNothing = !isAxioma && !tempCard;
+  if(!userData) return;
+  var cards   = getLinkedCards();
+  var primary = cards[0] || null;
+  var isAxiom = !!(primary && primary.kind === 'axiom');
 
   var bankNameEl = document.getElementById('vcardBankName');
-  var badgeEl     = document.getElementById('vcardBadgeArea');
-  var numEl       = document.getElementById('vcardNumber');
-  var holderEl    = document.getElementById('vcardHolder');
-  var expiryEl    = document.getElementById('vcardExpiry');
-  var sigEl       = document.getElementById('vcardSignatureText');
-  var cardElRoot  = document.getElementById('vcardEl');
+  var badgeEl    = document.getElementById('vcardBadgeArea');
+  var numEl      = document.getElementById('vcardNumber');
+  var holderEl   = document.getElementById('vcardHolder');
+  var expiryEl   = document.getElementById('vcardExpiry');
+  var sigEl      = document.getElementById('vcardSignatureText');
+  var cardElRoot = document.getElementById('vcardEl');
+  var cvvFront   = document.getElementById('vcardCvvDisplay');
+  var cvvBack    = document.getElementById('vcardCvvBack');
 
-  if(isAxioma) {
-    // ═══ STATE 1: Axioma linked — real bank card ═══
-    if(bankNameEl) bankNameEl.textContent = 'Axioma Bank';
-    if(badgeEl) badgeEl.innerHTML = '<div class="partner-badge" style="background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.06));border-color:rgba(212,175,55,.4);color:#d4af37;">AXIOMA</div>';
-    if(numEl)    numEl.textContent    = card.number;
-    if(holderEl) holderEl.textContent = (currentUser || 'USER').toUpperCase();
-    if(expiryEl) expiryEl.textContent = card.expiry || '01/28';
-    if(sigEl)    sigEl.textContent    = (currentUser || 'USER').toUpperCase();
-    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (card.skin || userData.pendingCardSkin || 'gold'); applyCardPhotoBg(cardElRoot, card.skin, card.customPhotoUrl || userData.pendingCardPhotoUrl); }
+  var skin  = (isAxiom && userData.virtualCard.skin) || userData.pendingCardSkin || 'onyx';
+  var photo = (isAxiom && userData.virtualCard.customPhotoUrl) || userData.pendingCardPhotoUrl;
 
-  } else if(hasTempOnly) {
-    // ═══ STATE 2: Temp Partner Card is the MAIN card ═══
-    var daysLeft = Math.max(0, Math.ceil((tempCard.expiresAt - Date.now()) / 86400000));
-    if(bankNameEl) bankNameEl.textContent = 'SlotOK Partner';
-    if(badgeEl) badgeEl.innerHTML = '<div class="partner-badge">PARTNER · ' + daysLeft + 'д</div>';
-    if(numEl)    numEl.textContent    = tempCard.number;
-    if(holderEl) holderEl.textContent = (currentUser || 'USER').toUpperCase();
-    if(expiryEl) expiryEl.textContent = new Date(tempCard.expiresAt).toLocaleDateString('uk-UA',{month:'2-digit',year:'2-digit'}).replace('.','/');
-    if(sigEl)    sigEl.textContent    = (currentUser || 'USER').toUpperCase();
-    // Respect chosen skin — same visual customization as a real card
-    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (tempCard.skin || userData.pendingCardSkin || 'sapphire'); applyCardPhotoBg(cardElRoot, tempCard.skin, tempCard.customPhotoUrl || userData.pendingCardPhotoUrl); }
-    // CVV for temp card
-    var cvvFront = document.getElementById('vcardCvvDisplay');
-    var cvvBack  = document.getElementById('vcardCvvBack');
-    if(cvvFront && cvvFront.textContent !== '***') cvvFront.textContent = tempCard.cvv;
-    if(cvvBack  && cvvBack.textContent  !== '***') cvvBack.textContent  = tempCard.cvv;
-
-  } else {
-    // ═══ STATE 3: Nothing yet — onboarding placeholder ═══
-    if(bankNameEl) bankNameEl.textContent = 'SlotOK Bank';
-    if(badgeEl) badgeEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.35);border:1px dashed rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;">Не активовано</div>';
-    if(numEl)    numEl.textContent    = '•••• •••• •••• ••••';
-    if(holderEl) holderEl.textContent = (currentUser || 'USER').toUpperCase();
-    if(expiryEl) expiryEl.textContent = '—/—';
-    if(sigEl)    sigEl.textContent    = '—';
-    if(cardElRoot) { cardElRoot.className = 'vcard vcard-skin-' + (userData.pendingCardSkin || 'gold'); applyCardPhotoBg(cardElRoot, userData.pendingCardSkin, userData.pendingCardPhotoUrl); }
-  }
-
-  // ── Below-card action block ──
-  var block = document.getElementById('tempPartnerCardBlock');
-  if(block) {
-    if(hasNothing) {
-      block.innerHTML =
-        '<div style="background:rgba(74,158,255,.04);border:1.5px dashed rgba(74,158,255,.25);border-radius:18px;padding:20px;text-align:center;">' +
-          '<div style="font-size:36px;margin-bottom:8px;animation:float 3s ease-in-out infinite;">💳</div>' +
-          '<div style="font-size:15px;font-weight:800;color:#4a9eff;margin-bottom:6px;">Картки ще немає</div>' +
-          '<div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.6;">Отримай <b style="color:#4a9eff;">безкоштовну тимчасову картку</b> на 30 днів,<br>або одразу підключи <b style="color:#d4af37;">Аксіому</b></div>' +
-          '<button onclick="createTempPartnerCard()" style="width:100%;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-size:14px;animation:pulseGlow 2s infinite;margin-bottom:8px;">💳 Створити тимчасову картку</button>' +
-          '<div style="font-size:10px;color:#333;">Безкоштовно · Автоматично · Діє 30 днів</div>' +
-        '</div>';
-    } else if(hasTempOnly) {
-      var daysLeft2 = Math.max(0, Math.ceil((tempCard.expiresAt - Date.now()) / 86400000));
-      var pct = Math.round((daysLeft2 / 30) * 100);
-      var color = daysLeft2 > 10 ? '#4a9eff' : daysLeft2 > 5 ? '#f39c12' : '#e74c3c';
-      block.innerHTML =
-        '<div style="background:rgba(74,158,255,.05);border:1px solid rgba(74,158,255,.15);border-radius:16px;padding:14px;">' +
-          '<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:6px;">' +
-            '<span>Термін дії картки партнера</span>' +
-            '<span style="color:' + color + ';font-weight:800;">' + daysLeft2 + ' днів</span>' +
-          '</div>' +
-          '<div style="height:5px;background:#1a1a1a;border-radius:3px;overflow:hidden;margin-bottom:12px;">' +
-            '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 1s ease;"></div>' +
-          '</div>' +
-          (daysLeft2 <= 7 ? '<div class="temp-card-countdown">⏰ Картка закінчується через ' + daysLeft2 + ' дн.!</div>' : '') +
-          '<div style="display:flex;gap:8px;">' +
-            '<button onclick="extendTempCard()" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:10px;padding:10px;color:#4a9eff;cursor:pointer;font-size:12px;font-weight:700;">🔄 Продовжити на 30 дн.</button>' +
-            '<button onclick="connectAxiomaFromCard()" style="flex:1;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:10px;color:#d4af37;cursor:pointer;font-size:12px;font-weight:700;">🏦 Підключити Аксіому</button>' +
-          '</div>' +
-        '</div>';
-      if(daysLeft2 <= 0) { showCardRenewalModal(0); }
-      else if(daysLeft2 <= 7 && !tempCard.renewReminder) {
-        db.ref('users/' + currentUser + '/tempPartnerCard/renewReminder').set(true);
-        setTimeout(function() { showCardRenewalModal(daysLeft2); }, 1500);
-      }
-    } else {
-      // Axioma linked — no extra block needed, just a subtle upgrade note
-      block.innerHTML = '';
+  if(primary) {
+    if(bankNameEl) bankNameEl.textContent = primary.bankName;
+    if(badgeEl) badgeEl.innerHTML = isAxiom
+      ? '<span class="ks-badge is-acc">Партнер</span>'
+      : '<span class="ks-badge">Підключена</span>';
+    if(numEl)    numEl.textContent    = isAxiom ? primary.number : ('•••• •••• •••• ' + primary.last4);
+    if(holderEl) holderEl.textContent = primary.holder || String(currentUser || '').toUpperCase();
+    if(expiryEl) expiryEl.textContent = primary.expiry || '••/••';
+    if(sigEl)    sigEl.textContent    = primary.holder || String(currentUser || '').toUpperCase();
+    // CVV показуємо тільки якщо гравець сам його відкрив і він узагалі є
+    if(!isAxiom) {
+      if(cvvFront) cvvFront.textContent = '•••';
+      if(cvvBack)  cvvBack.textContent  = '•••';
     }
+  } else {
+    if(bankNameEl) bankNameEl.textContent = 'SlotOK';
+    if(badgeEl)    badgeEl.innerHTML = '';
+    if(numEl)      numEl.textContent = '•••• •••• •••• ••••';
+    if(holderEl)   holderEl.textContent = '—';
+    if(expiryEl)   expiryEl.textContent = '••/••';
+    if(sigEl)      sigEl.textContent = '—';
+    if(cvvFront)   cvvFront.textContent = '•••';
+    if(cvvBack)    cvvBack.textContent  = '•••';
   }
+  if(cardElRoot) {
+    cardElRoot.className = 'vcard vcard-skin-' + skin + (primary ? '' : ' vcard-unlinked');
+    applyCardPhotoBg(cardElRoot, skin, photo);
+  }
+
+  // Накладка «картку не підключено» — щоб порожній пластик не читався
+  // як справжня, просто ще не завантажена картка
+  var lockEl = document.getElementById('vcardLockOverlay');
+  if(!primary && cardElRoot) {
+    if(!lockEl) {
+      lockEl = document.createElement('div');
+      lockEl.id = 'vcardLockOverlay';
+      lockEl.className = 'ks-card-locked';
+      lockEl.innerHTML = ksIcon('lock') + '<span>Картку не підключено</span>';
+      cardElRoot.appendChild(lockEl);
+    }
+  } else if(lockEl) {
+    lockEl.remove();
+  }
+
+  renderCardMetaRow(primary);
+  renderCardQuickActions(primary);
+  renderLinkedCards();
 
   var bal = userData.balance || 0;
   var balEl = document.getElementById('vcardBalance');
   if(balEl) {
-    var old = parseFloat(balEl.dataset.prev || bal);
+    var old = parseFloat(balEl.dataset.prev);
+    if(isNaN(old)) old = bal;
     balEl.dataset.prev = bal;
-    animateNumberText(balEl, bal, '', ' ₴');
+    animateNumberText(balEl, bal, '', '');
     if(old !== bal) {
       var change = bal - old;
       var changeEl = document.getElementById('balanceChange');
       if(changeEl) {
-        changeEl.textContent = (change > 0 ? '+' : '') + formatNumber(change) + '₴';
-        changeEl.className = 'card-balance-change ' + (change > 0 ? 'up' : 'down');
-        changeEl.classList.remove('hidden');
+        changeEl.textContent = (change > 0 ? '+' : '') + formatNumber(change);
+        changeEl.className = 'ks-delta ' + (change > 0 ? 'up' : 'down');
         setTimeout(function() { changeEl.classList.add('hidden'); }, 2500);
       }
     }
@@ -19075,120 +19410,118 @@ function renderCardPanel() {
     db.ref('users/' + currentUser + '/cardTx').limitToLast(50).once('value').then(function(snap) {
       var txs = snap.val() || {};
       var totalIn = 0, totalOut = 0;
-      var txList = Object.values(txs).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+      var txList = Object.values(txs).sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
       txList.forEach(function(t) {
-        if(t.dir === 'in')  totalIn  += (t.amount||0);
-        else                totalOut += (t.amount||0);
+        if(t.dir === 'in') totalIn += (t.amount||0);
+        else               totalOut += (t.amount||0);
       });
-      var inEl = document.getElementById('vcardTotalIn');
+      var inEl  = document.getElementById('vcardTotalIn');
       var outEl = document.getElementById('vcardTotalOut');
       if(inEl)  inEl.textContent  = formatNumber(totalIn) + ' ₴';
       if(outEl) outEl.textContent = formatNumber(totalOut) + ' ₴';
-      // Render recent transactions
-      renderTransactionList(txList.slice(0,5));
+      renderTransactionList(txList.slice(0, 6));
     });
   }
 
-  // Freeze status — перевіряємо ТУ картку що реально активна (справжня або тимчасова)
-  var activeCardForFreeze = isAxioma ? card : (hasTempOnly ? tempCard : null);
-  var frozen = activeCardForFreeze && activeCardForFreeze.frozen;
-  var freezeIcon = document.getElementById('cardFreezeIcon');
-  var freezeLabel = document.getElementById('cardFreezeLabel');
-  if(freezeIcon)  freezeIcon.textContent = frozen ? '🔓' : '🔒';
-  if(freezeLabel) freezeLabel.textContent = frozen ? 'Розблок' : 'Блок';
-
-  // Видима крижана накладка ПРЯМО на картці — щоб блокування було очевидним,
-  // а не тільки написом на кнопці
-  var cardRootEl = document.getElementById('vcardEl');
-  var existingOverlay = document.getElementById('vcardFrozenOverlay');
-  if(frozen && cardRootEl) {
-    if(!existingOverlay) {
-      var overlay = document.createElement('div');
-      overlay.id = 'vcardFrozenOverlay';
-      overlay.className = 'vcard-frozen-overlay';
-      overlay.innerHTML = '<div class="vcard-frozen-icon">🔒</div><div class="vcard-frozen-text">ЗАБЛОКОВАНО</div>';
-      cardRootEl.appendChild(overlay);
+  // Заморозка — один прапорець на гравця (users/<nick>/virtualCard/frozen),
+  // його ж перевіряють ставки, переказ і вивід
+  var frozen = !!(userData.virtualCard && userData.virtualCard.frozen);
+  var frozenOverlay = document.getElementById('vcardFrozenOverlay');
+  if(frozen && primary && cardElRoot) {
+    if(!frozenOverlay) {
+      frozenOverlay = document.createElement('div');
+      frozenOverlay.id = 'vcardFrozenOverlay';
+      frozenOverlay.className = 'vcard-frozen-overlay';
+      frozenOverlay.innerHTML = '<div class="vcard-frozen-icon">' + ksIcon('lock') + '</div>' +
+        '<div class="vcard-frozen-text">Заблоковано</div>';
+      cardElRoot.appendChild(frozenOverlay);
     }
-  } else if(existingOverlay) {
-    existingOverlay.remove();
+  } else if(frozenOverlay) {
+    frozenOverlay.remove();
   }
 }
 
+// ── Історія операцій ─────────────────────────────────────────────
+var KS_TX_KINDS = {
+  in:       { cls:'is-pos',  icon:'inflow',  sign:'+' },
+  out:      { cls:'is-neg',  icon:'outflow', sign:'−' },
+  transfer: { cls:'',        icon:'swap',    sign:'−' },
+  casino:   { cls:'',        icon:'dice',    sign:'−' },
+  bonus:    { cls:'is-pos',  icon:'gift',    sign:'+' },
+  slotiky:  { cls:'is-neg',  icon:'trend',   sign:'−' },
+  cashback: { cls:'is-pos',  icon:'percent', sign:'+' },
+  freeze:   { cls:'',        icon:'lock',    sign:'−' },
+};
+function ksTxRowHtml(t) {
+  var dir  = t.dir || ((t.amount || 0) > 0 ? 'in' : 'out');
+  var kind = KS_TX_KINDS[dir] || KS_TX_KINDS.in;
+  var date = new Date(t.ts || Date.now())
+    .toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  var sub  = [t.subtitle, date].filter(Boolean).join(' · ');
+  return '<div class="ks-row">' +
+    '<div class="ks-icn ' + kind.cls + '">' + ksIcon(kind.icon) + '</div>' +
+    '<div class="ks-row-main">' +
+      '<div class="ks-row-title">' + ksEsc(t.title || (dir === 'in' ? 'Надходження' : 'Списання')) + '</div>' +
+      '<div class="ks-row-sub">' + ksEsc(sub) + '</div>' +
+    '</div>' +
+    '<div class="ks-row-value ' + kind.cls + '">' + kind.sign + formatNumber(Math.abs(t.amount || 0)) + ' ₴</div>' +
+  '</div>';
+}
 function renderTransactionList(txs) {
   var el = document.getElementById('cardTransactionsList');
   if(!el) return;
-  if(!txs || !txs.length) {
-    el.innerHTML = '<div style="color:#444;font-size:12px;text-align:center;padding:16px;">Немає операцій</div>';
-    return;
-  }
-  var icons = {
-    in:       {cls:'in',      icon:'↗️'},
-    out:      {cls:'out',     icon:'↙️'},
-    transfer: {cls:'neutral', icon:'↔️'},
-    casino:   {cls:'neutral', icon:'🎰'},
-    bonus:    {cls:'in',      icon:'🎁'},
-    slotiky:  {cls:'out',     icon:'🪙'},
-  };
-  el.innerHTML = txs.map(function(t, i) {
-    var dir    = t.dir || (t.amount > 0 ? 'in' : 'out');
-    var ico    = icons[dir] || icons.in;
-    var date   = new Date(t.ts || Date.now()).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    var sign   = dir === 'in' ? '+' : '-';
-    var animDelay = i * 60;
-    return '<div class="tx-item" style="animation-delay:' + animDelay + 'ms;">' +
-      '<div class="tx-icon ' + ico.cls + '">' + ico.icon + '</div>' +
-      '<div style="flex:1;min-width:0;">' +
-        '<div class="tx-label">' + (t.title || (dir === 'in' ? 'Надходження' : 'Списання')) + '</div>' +
-        '<div class="tx-sub">' + (t.subtitle || '') + ' · ' + date + '</div>' +
-      '</div>' +
-      '<div class="tx-amount ' + ico.cls + '">' + sign + formatNumber(Math.abs(t.amount||0)) + '₴</div>' +
-    '</div>';
-  }).join('');
+  el.innerHTML = (txs && txs.length)
+    ? txs.map(ksTxRowHtml).join('')
+    : '<div class="ks-muted">Операцій ще немає</div>';
 }
 
 function showAllTransactions() {
   if(!db || !currentUser) return;
   db.ref('users/' + currentUser + '/cardTx').limitToLast(100).once('value').then(function(snap) {
-    var txs = Object.values(snap.val()||{}).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    var modal = openModal('alltx',
-      modalCloseBtn('alltx') +
-      '<div style="font-family:Orbitron,monospace;font-size:13px;color:#d4af37;margin-bottom:14px;padding-right:36px;">📋 Всі операції</div>' +
-      '<div id="allTxList"></div>'
-    );
-    setTimeout(function() {
-      var el = document.getElementById('allTxList');
-      if(el) {
-        if(!txs.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:20px;">Операцій немає</div>'; }
-        else { var tmp = document.createElement('div'); renderTransactionList(txs); tmp.innerHTML = ''; el.innerHTML = document.getElementById('cardTransactionsList').innerHTML; }
-      }
-    }, 100);
+    var txs = Object.values(snap.val() || {}).sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+    var m = document.createElement('div');
+    m.className = 'ks-modal';
+    m.id = 'ksAllTxModal';
+    m.addEventListener('click', function(e) { if(e.target === m) m.remove(); });
+    m.innerHTML =
+      '<div class="ks-modal-box" style="padding:22px 0 10px;">' +
+        '<div class="ks-modal-head" style="padding:0 20px;">' +
+          '<div class="ks-modal-title">Усі операції</div>' +
+          '<button class="ks-modal-x" onclick="document.getElementById(\'ksAllTxModal\').remove()">' + ksIcon('x') + '</button>' +
+        '</div>' +
+        (txs.length ? txs.map(ksTxRowHtml).join('') : '<div class="ks-muted">Операцій ще немає</div>') +
+      '</div>';
+    document.body.appendChild(m);
   });
 }
 
 function bankAction(action) {
+  var needsCard = { transfer:1, skinShop:1, freeze:1 };
+  if(needsCard[action] && !hasConnectedCard()) {
+    notify('Спочатку підключіть картку в Касі', 'error');
+    return;
+  }
   var actions = {
-    topup:     function() { switchCashierTab('deposit',  document.getElementById('ctb-deposit')); },
-    withdraw:  function() { switchCashierTab('withdraw', document.getElementById('ctb-withdraw')); },
-    transfer:  function() { openTabModal('transfer-modal'); },
-    buySlotyky:function() { switchCashierTab('markets',  document.getElementById('ctb-markets')); },
-    skinShop:  function() { openCardColorPicker(); },
-    freeze:    function() { toggleCardFreeze(); },
-    cashback:  function() { switchCashierTab('cashback', document.getElementById('ctb-cashback')); },
-    casino:    function() { switchTab('lobby'); },
-    slotikiBuy:function() { switchTab('lobby'); },
+    topup:      function() { switchCashierTab('deposit',  document.getElementById('ctb-deposit')); },
+    withdraw:   function() { switchCashierTab('withdraw', document.getElementById('ctb-withdraw')); },
+    transfer:   function() { openTabModal('transfer-modal'); },
+    buySlotyky: function() { switchCashierTab('markets',  document.getElementById('ctb-markets')); },
+    skinShop:   function() { openCardColorPicker(); },
+    freeze:     function() { toggleCardFreeze(); },
+    cashback:   function() { switchCashierTab('cashback', document.getElementById('ctb-cashback')); },
+    casino:     function() { switchTab('lobby'); },
+    slotikiBuy: function() { switchTab('lobby'); },
   };
   if(actions[action]) actions[action]();
   if(navigator.vibrate) navigator.vibrate(20);
 }
 
 function toggleCardFreeze() {
-  const card = getActiveCard();
-  if(!card) return notify('Спочатку отримай картку в Касі', 'error');
-  const isAxioma = userData.virtualCard && userData.virtualCard.axiomLinked;
-  const path = isAxioma ? 'virtualCard' : 'tempPartnerCard';
-  const frozen = !!card.frozen;
-  db.ref('users/' + currentUser + '/' + path + '/frozen').set(!frozen);
-  notify(frozen ? '🔓 Картку розблоковано' : '🔒 Картку заблоковано — гроші з неї списати не вийде', frozen ? 'success' : 'info');
+  if(!hasConnectedCard()) return notify('Спочатку підключіть картку в Касі', 'error');
+  var frozen = !!(userData.virtualCard && userData.virtualCard.frozen);
+  db.ref('users/' + currentUser + '/virtualCard/frozen').set(!frozen);
+  notify(frozen ? 'Картку розблоковано' : 'Картку заблоковано — списання з неї не пройде', frozen ? 'success' : 'info');
+  renderCardPanel();
 }
 
 // ── CARD COLOR PICKER (existing enhanced) ─────────────────────
@@ -19322,8 +19655,7 @@ function openCardColorPicker() {
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
   var current = (userData.virtualCard && userData.virtualCard.skin)
-    || (userData.tempPartnerCard && userData.tempPartnerCard.skin)
-    || userData.pendingCardSkin || 'gold';
+    || userData.pendingCardSkin || 'onyx';
   function swatchHtml(s) {
     var active = current === s.id;
     return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgba(255,255,255,.08)') + ';color:' + s.accent + ';">' +
@@ -19403,11 +19735,6 @@ function uploadCustomCardPhoto() {
           userData.virtualCard.customPhotoUrl = dataUrl;
           db.ref('users/' + currentUser + '/virtualCard/skin').set('custom-photo');
           db.ref('users/' + currentUser + '/virtualCard/customPhotoUrl').set(dataUrl);
-        } else if(userData.tempPartnerCard) {
-          userData.tempPartnerCard.skin = 'custom-photo';
-          userData.tempPartnerCard.customPhotoUrl = dataUrl;
-          db.ref('users/' + currentUser + '/tempPartnerCard/skin').set('custom-photo');
-          db.ref('users/' + currentUser + '/tempPartnerCard/customPhotoUrl').set(dataUrl);
         } else {
           userData.pendingCardSkin = 'custom-photo';
           userData.pendingCardPhotoUrl = dataUrl;
@@ -19430,11 +19757,8 @@ function applyCardSkin(skinId) {
   if(userData.virtualCard && userData.virtualCard.axiomLinked) {
     userData.virtualCard.skin = skinId;
     db.ref('users/' + currentUser + '/virtualCard/skin').set(skinId);
-  } else if(userData.tempPartnerCard) {
-    userData.tempPartnerCard.skin = skinId;
-    db.ref('users/' + currentUser + '/tempPartnerCard/skin').set(skinId);
   } else {
-    // Persist skin choice even before a real card exists (onboarding)
+    // Скін зберігається і до того, як гравець підключив картку
     userData.pendingCardSkin = skinId;
     db.ref('users/' + currentUser + '/pendingCardSkin').set(skinId);
   }
@@ -19442,8 +19766,8 @@ function applyCardSkin(skinId) {
   closeModal('cardskin');
 }
 
-// Термін дії тимчасової картки тепер перевіряється всередині renderCardPanel()
-// (щоб не показувати нагадування двічі). Функція лишена для сумісності зі старими викликами.
+// Тимчасових карток SlotOK більше не існує — жодних термінів дії та
+// нагадувань про продовження тут немає.
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  BANNER CAROUSEL — авто-ротація + свайп + крапки            ║

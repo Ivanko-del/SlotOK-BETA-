@@ -1191,44 +1191,68 @@
       </div>
     </div>
 
-    <!-- КАСА (оновлена) -->
+    <!-- ═══════════════════════════════════════════════════════════════
+         КАСА v80 — «Ledger».
+         Редизайн: сегментований перемикач, графітові площини, штрихові
+         SVG-іконки, табличні цифри. Ідентифікатори елементів збережені —
+         уся наявна логіка в app.js продовжує працювати.
+         Картка SlotOK більше НЕ видається автоматично: у Касі показується
+         лише та картка, яку гравець сам підключив (своя зовнішня або
+         Аксіома), — див. renderCardPanel()/renderLinkedCards() в app.js.
+    ═══════════════════════════════════════════════════════════════ -->
     <div id="tab-cashier" class="screen hidden">
-      <!-- Cashier sub-tabs — ковзний "pill" індикатор замість плоских активних кнопок -->
-      <div class="cashier-tabs-rail" id="cashierTabsRail">
-        <div class="cashier-tab-slider" id="cashierTabSlider"></div>
-        <button class="cashier-tab-btn active" id="ctb-card" onclick="switchCashierTab('card',this)">💳 <span>Картка</span></button>
-        <button class="cashier-tab-btn" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">⬆️ <span>Поповнення</span></button>
-        <button class="cashier-tab-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">💸 <span>Вивід</span></button>
-        <button class="cashier-tab-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">💰 <span>Кешбек</span></button>
-        <button class="cashier-tab-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">📊 <span>Ринок</span></button>
-      </div>
 
-      <!-- CARD PANEL -->
+      <nav class="ks-seg" id="cashierTabsRail">
+        <button class="ks-seg-btn is-active" id="ctb-card" onclick="switchCashierTab('card',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+          <span>Картка</span>
+        </button>
+        <button class="ks-seg-btn" id="ctb-deposit" onclick="switchCashierTab('deposit',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span>Поповнити</span>
+        </button>
+        <button class="ks-seg-btn" id="ctb-withdraw" onclick="switchCashierTab('withdraw',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>
+          <span>Вивід</span>
+        </button>
+        <button class="ks-seg-btn" id="ctb-cashback" onclick="switchCashierTab('cashback',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+          <span>Кешбек</span>
+        </button>
+        <button class="ks-seg-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
+          <span>Курси</span>
+        </button>
+      </nav>
+
+      <!-- ═══ КАРТКА ═══ -->
       <div id="cashier-panel-card">
-        <!-- 3D Card Scene -->
+
         <div class="vcard-scene" id="vcardScene">
           <div class="vcard-wrap" id="vcardWrap" onclick="flipCard()" ontouchstart="handleCardTouchStart(event)" ontouchmove="handleCardTouchMove(event)" ontouchend="handleCardTouchEnd(event)">
             <div class="vcard vcard-skin-gold" id="vcardEl">
-              <!-- FRONT -->
+              <!-- ЛИЦЕ -->
               <div class="vcard-front">
                 <div class="vcard-grain"></div>
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-                  <div class="vcard-bank-name" id="vcardBankName">SlotOK Bank</div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                  <div class="vcard-bank-name" id="vcardBankName">SlotOK</div>
                   <div id="vcardBadgeArea"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div class="vcard-chip-row">
                   <div class="vcard-chip"></div>
-                  <div class="vcard-contactless">((·))</div>
+                  <div class="vcard-contactless">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="transform:rotate(90deg)"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg>
+                  </div>
                 </div>
-                <div class="vcard-number" id="vcardNumber" onclick="copyCardNumberFlash(event)">4874 0000 0000 0000</div>
+                <div class="vcard-number" id="vcardNumber" onclick="copyCardNumberFlash(event)">•••• •••• •••• ••••</div>
                 <div class="vcard-holder-row">
                   <div>
                     <div class="vcard-label">Власник</div>
-                    <div class="vcard-value" id="vcardHolder">IVAN IVANOV</div>
+                    <div class="vcard-value" id="vcardHolder">—</div>
                   </div>
                   <div>
                     <div class="vcard-label">Дійсна до</div>
-                    <div class="vcard-value" id="vcardExpiry">12/28</div>
+                    <div class="vcard-value" id="vcardExpiry">—/—</div>
                   </div>
                   <div class="vcard-logo">
                     <div class="c1"></div>
@@ -1236,24 +1260,24 @@
                   </div>
                 </div>
               </div>
-              <!-- BACK -->
+              <!-- ЗВОРОТ -->
               <div class="vcard-back">
                 <div class="vcard-stripe"></div>
-                <div style="font-size:9px;color:rgba(255,255,255,.5);margin-bottom:8px;">ПІДПИС ВЛАСНИКА / AUTHORIZED SIGNATURE</div>
+                <div class="vcard-label" style="margin-bottom:8px;">Підпис власника · Authorized signature</div>
                 <div class="vcard-cvv-row">
                   <div class="vcard-cvv-tape">
-                    <span class="vcard-cvv-value" id="vcardCvvDisplay">***</span>
+                    <span class="vcard-cvv-value" id="vcardCvvDisplay">•••</span>
                   </div>
                   <div>
-                    <div class="vcard-cvv-label">CVV/CVC</div>
-                    <div class="vcard-cvv-value" id="vcardCvvBack" style="color:#fff;font-size:18px;">***</div>
+                    <div class="vcard-cvv-label">CVV / CVC</div>
+                    <div class="vcard-cvv-value" id="vcardCvvBack" style="color:#fff;font-size:17px;">•••</div>
                   </div>
                 </div>
-                <div class="vcard-signature" id="vcardSignatureText">Authorized Signature</div>
+                <div class="vcard-signature" id="vcardSignatureText">—</div>
                 <div class="vcard-back-logo">
                   <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-                    <div style="width:24px;height:24px;border-radius:50%;background:#eb001b;"></div>
-                    <div style="width:24px;height:24px;border-radius:50%;background:#f79e1b;margin-left:-8px;"></div>
+                    <div style="width:22px;height:22px;border-radius:50%;background:#eb001b;opacity:.85;"></div>
+                    <div style="width:22px;height:22px;border-radius:50%;background:#f79e1b;margin-left:-8px;opacity:.85;"></div>
                   </div>
                 </div>
               </div>
@@ -1261,237 +1285,240 @@
           </div>
         </div>
 
-        <!-- Card hints -->
-        <div style="text-align:center;font-size:10px;color:#333;margin-bottom:10px;letter-spacing:.3px;">
-          👆 Натисни щоб перевернути · Свайп для тилту
-        </div>
+        <!-- Рядок під карткою: CVV / копіювати / скін — або заклик підключити -->
+        <div id="cardMetaRow"></div>
 
-        <!-- Temp card countdown (shown if temp card active) -->
-        <div id="tempCardCountdown" style="display:none;"></div>
-
-        <!-- Quick controls row -->
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button onclick="toggleCvvVisibility()" style="flex:1;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,0) 45%),#111;border:1px solid #222;border-radius:var(--r-sm);color:#aaa;font-size:12px;padding:11px;box-shadow:var(--bevel),var(--elev-1);" id="cvvToggleBtn">👁 CVV</button>
-          <button onclick="copyCardNumberFlash()" style="flex:1;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,0) 45%),#111;border:1px solid #222;border-radius:var(--r-sm);color:#aaa;font-size:12px;padding:11px;box-shadow:var(--bevel),var(--elev-1);">📋 Копіювати</button>
-          <button onclick="openCardColorPicker()" style="background:linear-gradient(155deg,#f4d78a,var(--accent) 45%,#a9791c);border:1px solid rgba(212,175,55,.4);border-radius:var(--r-sm);color:#241800;font-size:12px;padding:11px 14px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 4px rgba(0,0,0,.25),0 8px 20px -8px rgba(212,175,55,.5);">🎨</button>
-        </div>
-
-        <!-- Axiom Bank link button -->
-        <div id="axiomLinkCardBlock" style="margin-bottom:12px;"></div>
-
-        <!-- Temp Partner Card -->
-        <div id="tempPartnerCardBlock" style="margin-bottom:14px;"></div>
-
-        <!-- Card balance block -->
-        <div class="card-balance-block">
-          <div style="font-size:10px;color:rgba(61,214,140,.6);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Баланс картки</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="card-balance-amount" id="vcardBalance">0 ₴</div>
-            <div class="card-balance-change up hidden" id="balanceChange">+0</div>
+        <!-- Баланс -->
+        <div class="ks-balance">
+          <div>
+            <div class="ks-label">Баланс</div>
+            <div class="ks-balance-amount"><span class="ks-cur">₴</span><span id="vcardBalance">0</span><span class="ks-delta up hidden" id="balanceChange">+0</span></div>
           </div>
-          <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;">
-            <span style="color:#555;">↗ <span id="vcardTotalIn" style="color:#3dd68c;">0 ₴</span></span>
-            <span style="color:#555;">↙ <span id="vcardTotalOut" style="color:#e74c3c;">0 ₴</span></span>
-          </div>
-        </div>
-
-        <!-- Action grid -->
-        <div class="bank-action-grid">
-          <div class="bank-action-btn" onclick="bankAction('topup')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(61,214,140,.22),rgba(61,214,140,.05));">💳</div><div class="ba-label">Поповнити</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('withdraw')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(231,76,60,.22),rgba(231,76,60,.05));">💸</div><div class="ba-label">Зняти</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('transfer')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(74,158,255,.22),rgba(74,158,255,.05));">↗️</div><div class="ba-label">Переказ</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('buySlotyky')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(212,175,55,.22),rgba(212,175,55,.05));">🪙</div><div class="ba-label">Слотіки</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('skinShop')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(201,160,255,.22),rgba(201,160,255,.05));">🎨</div><div class="ba-label">Скін</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('freeze')">
-            <div class="ba-icon" id="cardFreezeIcon" style="background:radial-gradient(circle,rgba(255,255,255,.14),rgba(255,255,255,.03));">🔒</div>
-            <div class="ba-label" id="cardFreezeLabel">Блок</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('cashback')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(212,175,55,.22),rgba(212,175,55,.05));">💰</div><div class="ba-label">Кешбек</div>
-          </div>
-          <div class="bank-action-btn" onclick="bankAction('casino')">
-            <div class="ba-icon" style="background:radial-gradient(circle,rgba(255,105,180,.22),rgba(255,105,180,.05));">🎰</div><div class="ba-label">Казино</div>
-          </div>
-        </div>
-
-        <!-- Recent transactions -->
-        <div class="card-tx-box">
-          <div class="card-tx-box-header">
-            <div class="card-tx-box-title">📋 Останні операції</div>
-            <button onclick="showAllTransactions()" class="card-tx-all-btn">Всі →</button>
-          </div>
-          <div id="cardTransactionsList"><div style="color:#444;font-size:12px;text-align:center;padding:16px;">Немає операцій</div></div>
-        </div>
-      </div><!-- /cashier-panel-card -->
-
-      <!-- DEPOSIT PANEL -->
-      <div id="cashier-panel-deposit" class="hidden">
-
-        <!-- Deposit packages -->
-        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:8px;letter-spacing:.5px;">🎁 Пакети поповнення з бонусом</div>
-        <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"></div>
-
-        <!-- Main deposit box -->
-        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%),linear-gradient(135deg,#0d1a0d,#101a10);border:1.5px solid rgba(61,214,140,.25);border-radius:var(--r-lg);padding:18px;margin-bottom:14px;box-shadow:var(--bevel),var(--elev-1);">
-          <div style="font-size:15px;font-weight:800;color:#3dd68c;margin-bottom:4px;">💳 Подати заявку на поповнення</div>
-          <div style="font-size:12px;color:#666;margin-bottom:14px;">Обери суму → натисни «Подати» → адмін зарахує кошти</div>
-
-          <!-- User ID display -->
-          <div style="background:rgba(0,0,0,0.35);border:1px solid #1a3a1a;border-radius:var(--r-sm);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--bevel),inset 0 2px 6px rgba(0,0,0,.4);">
-            <span style="font-size:12px;color:#666;">Ваш ID для переказу:</span>
-            <span id="cashierUserId" style="color:#3dd68c;font-weight:900;font-size:18px;letter-spacing:1px;">—</span>
-          </div>
-
-          <!-- Amount grid -->
-          <div class="amount-grid" style="margin-bottom:10px;">
-            <div class="amount-btn" onclick="selectDepAmount(100, this)">100₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(250, this)">250₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(500, this)">500₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(1000, this)">1000₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(2000, this)">2000₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(5000, this)">5000₴</div>
-            <div class="amount-btn" onclick="selectDepAmount(10000, this)">10k₴</div>
-            <div class="amount-btn" id="customAmtBtn" onclick="selectCustomAmount()">Інша</div>
-          </div>
-          <div id="customAmountBox" class="hidden">
-            <input id="customDepAmount" type="number" placeholder="Введіть свою суму (₴)" style="margin-bottom:8px;">
-          </div>
-
-          <!-- Payment method -->
-          <div style="font-size:11px;color:#666;margin-bottom:6px;font-weight:700;text-transform:uppercase;">Спосіб оплати:</div>
-          <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="depMethodBtns">
-            <div class="wm-btn selected" id="depm-privat" onclick="selectDepMethod('privat',this)">🟢 PrivatBank</div>
-            <div class="wm-btn" id="depm-mono" onclick="selectDepMethod('mono',this)">🐈 Monobank</div>
-            <div class="wm-btn" id="depm-card" onclick="selectDepMethod('card',this)">💳 Visa/Mastercard</div>
-            <div class="wm-btn" id="depm-applepay" onclick="selectDepMethod('applepay',this)">🍎 Apple Pay</div>
-            <div class="wm-btn" id="depm-googlepay" onclick="selectDepMethod('googlepay',this)">🔵 Google Pay</div>
-            <div class="wm-btn" id="depm-usdt" onclick="selectDepMethod('usdt',this)">₮ USDT</div>
-            <div class="wm-btn" id="depm-tg" onclick="selectDepMethod('telegram',this)">✈️ Telegram</div>
-          </div>
-
-          <!-- Реквізити адміна (показуються після вибору методу) -->
-          <div id="depRequisitesBox" style="background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,0) 45%),rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.25);border-radius:var(--r-md);padding:12px;margin-bottom:12px;display:none;box-shadow:var(--bevel),var(--elev-1);">
-            <div style="font-size:11px;color:#d4af37;font-weight:700;margin-bottom:6px;">📋 Реквізити для переказу:</div>
-            <div id="depRequisitesText" style="font-size:14px;color:#fff;font-weight:700;letter-spacing:.5px;word-break:break-all;"></div>
-            <button onclick="copyDepRequisites()" style="background:rgba(255,255,255,.04);border:1px solid #333;border-radius:8px;color:#999;font-size:11px;padding:5px 12px;cursor:pointer;margin-top:8px;width:auto;box-shadow:var(--bevel);">📋 Копіювати</button>
-          </div>
-
-          <button class="btn-green" onclick="submitDepositRequest()" id="depSubmitBtn" style="font-size:15px;font-weight:800;letter-spacing:.5px;">
-            ✅ Подати заявку на поповнення
-          </button>
-          <div style="font-size:11px;color:#444;text-align:center;margin-top:8px;">Після переказу — натисни кнопку. Адмін зарахує протягом 1-24 год.</div>
-        </div>
-
-        <!-- Telegram bot shortcut -->
-        <div class="tg-deposit-box" style="padding:16px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div class="tg-logo" style="font-size:28px;margin:0;">✈️</div>
-            <div>
-              <div class="tg-title" style="font-size:14px;margin:0 0 2px;">Швидко через Telegram-бота</div>
-              <div class="tg-desc" style="margin:0;font-size:11px;">Відкрий бота та слідуй інструкціям</div>
+          <div class="ks-flow">
+            <div class="ks-flow-item in">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>
+              <span id="vcardTotalIn">0 ₴</span>
+            </div>
+            <div class="ks-flow-item out">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              <span id="vcardTotalOut">0 ₴</span>
             </div>
           </div>
-          <button class="btn-tg" onclick="openTelegramBot()" style="font-size:13px;">✈️ Відкрити Telegram Бота</button>
         </div>
 
-        <!-- My pending deposits -->
-        <div style="margin-top:14px;">
-          <div class="section-header">Мої заявки на поповнення</div>
-          <div id="myDepositsList" style="color:#777;font-size:13px;padding:10px 0;">Немає активних заявок</div>
+        <!-- Швидкі дії (рендериться JS, щоб недоступні дії були реально disabled) -->
+        <div class="ks-quick" id="cardQuickActions"></div>
+
+        <!-- Підключені картки -->
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Підключені картки</div>
+            <button class="ks-link" onclick="openAddCardModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Додати
+            </button>
+          </div>
+          <div class="ks-panel-body is-flush" id="linkedCardsList"></div>
+        </section>
+
+        <!-- Історія -->
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Останні операції</div>
+            <button class="ks-link" onclick="showAllTransactions()">Усі операції</button>
+          </div>
+          <div class="ks-panel-body is-flush" id="cardTransactionsList">
+            <div class="ks-muted">Операцій ще немає</div>
+          </div>
+        </section>
+      </div><!-- /cashier-panel-card -->
+
+      <!-- ═══ ПОПОВНЕННЯ ═══ -->
+      <div id="cashier-panel-deposit" class="hidden">
+
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Пакети з бонусом</div>
+          </div>
+          <div class="ks-panel-body">
+            <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+          </div>
+        </section>
+
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Заявка на поповнення</div>
+            <span class="ks-badge">ID&nbsp;<span id="cashierUserId" class="ks-num">—</span></span>
+          </div>
+          <div class="ks-panel-body">
+            <div class="ks-label">Сума</div>
+            <div class="amount-grid">
+              <div class="amount-btn" onclick="selectDepAmount(100, this)">100</div>
+              <div class="amount-btn" onclick="selectDepAmount(250, this)">250</div>
+              <div class="amount-btn" onclick="selectDepAmount(500, this)">500</div>
+              <div class="amount-btn" onclick="selectDepAmount(1000, this)">1 000</div>
+              <div class="amount-btn" onclick="selectDepAmount(2000, this)">2 000</div>
+              <div class="amount-btn" onclick="selectDepAmount(5000, this)">5 000</div>
+              <div class="amount-btn" onclick="selectDepAmount(10000, this)">10 000</div>
+              <div class="amount-btn" id="customAmtBtn" onclick="selectCustomAmount()">Інша</div>
+            </div>
+            <div id="customAmountBox" class="hidden ks-field">
+              <input id="customDepAmount" type="number" inputmode="numeric" placeholder="Своя сума, ₴">
+            </div>
+
+            <div class="ks-label">Спосіб оплати</div>
+            <div class="ks-methods" id="depMethodBtns">
+              <div class="wm-btn selected" id="depm-privat" onclick="selectDepMethod('privat',this)"><span class="ks-bank" style="background:#4caf50;">П</span><span class="ks-m-name">PrivatBank<div class="ks-m-note">Переказ на картку</div></span></div>
+              <div class="wm-btn" id="depm-mono" onclick="selectDepMethod('mono',this)"><span class="ks-bank" style="background:#1c1c1c;border:1px solid rgba(255,255,255,.2);">М</span><span class="ks-m-name">Monobank<div class="ks-m-note">Переказ на картку</div></span></div>
+              <div class="wm-btn" id="depm-card" onclick="selectDepMethod('card',this)"><span class="ks-bank" style="background:#1a1f71;">VM</span><span class="ks-m-name">Visa / Mastercard<div class="ks-m-note">Будь-який банк</div></span></div>
+              <div class="wm-btn" id="depm-applepay" onclick="selectDepMethod('applepay',this)"><span class="ks-bank" style="background:#2a2a2e;">A</span><span class="ks-m-name">Apple&nbsp;Pay</span></div>
+              <div class="wm-btn" id="depm-googlepay" onclick="selectDepMethod('googlepay',this)"><span class="ks-bank" style="background:#1a73e8;">G</span><span class="ks-m-name">Google&nbsp;Pay</span></div>
+              <div class="wm-btn" id="depm-usdt" onclick="selectDepMethod('usdt',this)"><span class="ks-bank" style="background:#26a17b;">₮</span><span class="ks-m-name">USDT<div class="ks-m-note">TRC-20</div></span></div>
+              <div class="wm-btn" id="depm-tg" onclick="selectDepMethod('telegram',this)"><span class="ks-bank" style="background:#229ed9;">TG</span><span class="ks-m-name">Telegram<div class="ks-m-note">Через бота</div></span></div>
+            </div>
+
+            <div id="depRequisitesBox" class="ks-copy" style="display:none;">
+              <div class="ks-copy-main">
+                <div class="ks-label" style="margin-bottom:4px;">Реквізити для переказу</div>
+                <div class="ks-copy-val" id="depRequisitesText"></div>
+              </div>
+              <button class="ks-copy-btn" onclick="copyDepRequisites()" title="Копіювати">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+
+            <button class="ks-btn is-primary is-block" id="depSubmitBtn" onclick="submitDepositRequest()">Подати заявку</button>
+            <p class="ks-hint" style="margin:10px 0 0;text-align:center;">Спочатку зробіть переказ за реквізитами, потім натисніть кнопку. Адміністратор зарахує кошти протягом 1–24 годин.</p>
+          </div>
+        </section>
+
+        <div class="ks-tg">
+          <div class="ks-tg-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:650;">Швидше через Telegram-бота</div>
+            <div class="ks-hint">Оберіть суму вище й відкрийте бота</div>
+          </div>
+          <button class="ks-btn is-sm" onclick="openTelegramBot()">Відкрити</button>
         </div>
+
+        <section class="ks-panel">
+          <div class="ks-panel-head"><div class="ks-panel-title">Мої заявки на поповнення</div></div>
+          <div class="ks-panel-body is-flush" id="myDepositsList">
+            <div class="ks-muted">Активних заявок немає</div>
+          </div>
+        </section>
 
       </div><!-- /cashier-panel-deposit -->
 
-      <!-- WITHDRAW PANEL -->
+      <!-- ═══ ВИВІД ═══ -->
       <div id="cashier-panel-withdraw" class="hidden">
-      <!-- ВИВІД КОШТІВ -->
-      <div class="withdraw-box">
-        <div class="withdraw-title">💸 Вивід коштів</div>
-        <div class="withdraw-method">
-          <div class="wm-btn selected" id="wm-privat" onclick="selectWithdrawMethod('privat', this)">🟢 PrivatBank</div>
-          <div class="wm-btn" id="wm-mono" onclick="selectWithdrawMethod('mono', this)">🐈 Monobank</div>
-          <div class="wm-btn" id="wm-card" onclick="selectWithdrawMethod('card', this)">💳 Visa/MC</div>
-          <div class="wm-btn" id="wm-usdt" onclick="selectWithdrawMethod('usdt', this)">₮ USDT</div>
-        </div>
-        <input id="withdrawCard" placeholder="Номер картки / USDT адреса">
-        <div class="amount-grid" id="withdrawAmountGrid" style="margin-bottom:10px;">
-          <div class="amount-btn" onclick="selectWithdrawAmount(200, this)">200₴</div>
-          <div class="amount-btn" onclick="selectWithdrawAmount(500, this)">500₴</div>
-          <div class="amount-btn" onclick="selectWithdrawAmount(1000, this)">1000₴</div>
-          <div class="amount-btn" onclick="selectWithdrawAmount(2000, this)">2000₴</div>
-          <div class="amount-btn" onclick="selectWithdrawAmount(5000, this)">5000₴</div>
-          <div class="amount-btn" onclick="selectWithdrawAmount('max', this)">Макс</div>
-        </div>
-        <input id="withdrawAmount" type="number" placeholder="Сума виводу (мін. 200₴)">
-        <button class="btn-green" onclick="submitWithdrawWith2FA()">💸 ПОДАТИ ЗАЯВКУ</button>
-      </div>
 
-      <!-- Мої заявки на вивід -->
-      <div id="myWithdrawsBox" class="withdraws-history-box">
-        <div class="section-header" style="margin-top:0;">Мої заявки на вивід</div>
-        <div id="myWithdrawsList" style="color:#777; font-size:13px; padding:10px 0;">Немає заявок</div>
-      </div>
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Вивід коштів</div>
+            <span class="ks-badge" id="wdAvailBadge">Доступно&nbsp;<span class="ks-num">—</span></span>
+          </div>
+          <div class="ks-panel-body">
+            <div class="ks-label">Куди виводимо</div>
+            <div class="ks-methods">
+              <div class="wm-btn selected" id="wm-privat" onclick="selectWithdrawMethod('privat', this)"><span class="ks-bank" style="background:#4caf50;">П</span><span class="ks-m-name">PrivatBank</span></div>
+              <div class="wm-btn" id="wm-mono" onclick="selectWithdrawMethod('mono', this)"><span class="ks-bank" style="background:#1c1c1c;border:1px solid rgba(255,255,255,.2);">М</span><span class="ks-m-name">Monobank</span></div>
+              <div class="wm-btn" id="wm-card" onclick="selectWithdrawMethod('card', this)"><span class="ks-bank" style="background:#1a1f71;">VM</span><span class="ks-m-name">Visa / Mastercard</span></div>
+              <div class="wm-btn" id="wm-usdt" onclick="selectWithdrawMethod('usdt', this)"><span class="ks-bank" style="background:#26a17b;">₮</span><span class="ks-m-name">USDT<div class="ks-m-note">TRC-20</div></span></div>
+            </div>
 
-      <div class="withdraw-quick-actions">
-        <button class="btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openTabModal('transfer-modal')">💸 Переказ</button>
-        <button class="btn-outline" onclick="openTabModal('promo-modal')">🎁 Промокод</button>
-      </div>
+            <div class="ks-field">
+              <label class="ks-label" for="withdrawCard">Реквізити отримання</label>
+              <input id="withdrawCard" placeholder="Номер картки PrivatBank">
+            </div>
+
+            <div class="ks-label">Сума</div>
+            <div class="amount-grid" id="withdrawAmountGrid">
+              <div class="amount-btn" onclick="selectWithdrawAmount(200, this)">200</div>
+              <div class="amount-btn" onclick="selectWithdrawAmount(500, this)">500</div>
+              <div class="amount-btn" onclick="selectWithdrawAmount(1000, this)">1 000</div>
+              <div class="amount-btn" onclick="selectWithdrawAmount(2000, this)">2 000</div>
+              <div class="amount-btn" onclick="selectWithdrawAmount(5000, this)">5 000</div>
+              <div class="amount-btn" onclick="selectWithdrawAmount('max', this)">Максимум</div>
+            </div>
+            <div class="ks-field">
+              <input id="withdrawAmount" type="number" inputmode="numeric" placeholder="Сума, ₴ (мінімум 200)">
+            </div>
+
+            <button class="ks-btn is-pos is-block" onclick="submitWithdrawWith2FA()">Подати заявку на вивід</button>
+          </div>
+        </section>
+
+        <section class="ks-panel">
+          <div class="ks-panel-head"><div class="ks-panel-title">Мої заявки на вивід</div></div>
+          <div class="ks-panel-body is-flush" id="myWithdrawsList">
+            <div class="ks-muted">Заявок немає</div>
+          </div>
+        </section>
+
+        <div class="ks-btn-row" style="margin-bottom:14px;">
+          <button class="ks-btn is-quiet" onclick="openTabModal('transfer-modal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            Переказ
+          </button>
+          <button class="ks-btn is-quiet" onclick="openTabModal('promo-modal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13"/><path d="M3 13h18"/><path d="M12 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3Z"/><path d="M12 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z"/></svg>
+            Промокод
+          </button>
+        </div>
       </div><!-- /cashier-panel-withdraw -->
 
-      <!-- CASHBACK PANEL -->
+      <!-- ═══ КЕШБЕК ═══ -->
       <div id="cashier-panel-cashback" class="hidden">
-        <div id="cashierCashbackPanel" style="padding:4px 0;">
-          <div style="text-align:center;color:#555;padding:20px;">⏳ Завантаження...</div>
+        <div id="cashierCashbackPanel">
+          <div class="ks-muted">Завантаження…</div>
         </div>
       </div><!-- /cashier-panel-cashback -->
 
-      <!-- MARKETS PANEL -->
+      <!-- ═══ КУРСИ ═══ -->
       <div id="cashier-panel-markets" class="hidden">
-        <!-- Currency selector -->
-        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
-          <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:10px;">💱 Відображення балансу</div>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px;" id="marketsMiniFiatGrid"></div>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="marketsMinicryptoGrid"></div>
-        </div>
 
-        <!-- Chart selector -->
-        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:bold;color:var(--accent);">📈 Графік</div>
-            <div style="display:flex;gap:4px;">
+        <section class="ks-panel">
+          <div class="ks-panel-head"><div class="ks-panel-title">Відображення балансу</div></div>
+          <div class="ks-panel-body">
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;" id="marketsMiniFiatGrid"></div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="marketsMinicryptoGrid"></div>
+          </div>
+        </section>
+
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Графік</div>
+            <div style="display:flex;gap:5px;">
               <button class="chart-period-btn active" onclick="setChartPeriod('1D',this)">1Д</button>
               <button class="chart-period-btn" onclick="setChartPeriod('7D',this)">7Д</button>
               <button class="chart-period-btn" onclick="setChartPeriod('30D',this)">30Д</button>
             </div>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="chartCurrencySelector"></div>
-          <canvas id="currencyChartCanvas" width="360" height="200" style="width:100%;height:200px;border-radius:var(--r-sm);background:#0a0a0a;box-shadow: inset 0 4px 14px rgba(0,0,0,.7);"></canvas>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#555;">
-            <span id="chartLow">Min: —</span>
-            <span id="chartSymbol" style="color:var(--accent);font-weight:bold;">BTC/UAH</span>
-            <span id="chartHigh">Max: —</span>
+          <div class="ks-panel-body">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="chartCurrencySelector"></div>
+            <canvas id="currencyChartCanvas" class="ks-chart-canvas" width="360" height="200"></canvas>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;">
+              <span class="ks-num" style="color:var(--ks-fg-3);" id="chartLow">Min —</span>
+              <span id="chartSymbol" style="font-weight:650;color:var(--ks-acc);">BTC/UAH</span>
+              <span class="ks-num" style="color:var(--ks-fg-3);" id="chartHigh">Max —</span>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Live rate table -->
-        <div style="background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;box-shadow:var(--bevel), var(--elev-1);">
-          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:13px;font-weight:bold;">📊 Актуальний курс до ₴</div>
-            <button onclick="fetchRates().then(()=>{buildMarketsPage();buildRatesList();})" style="background:var(--input);border:1px solid var(--border);color:#aaa;border-radius:var(--r-sm);padding:4px 10px;font-size:11px;cursor:pointer;box-shadow:var(--bevel);transition:transform .14s var(--ease-tactile);">🔄</button>
+        <section class="ks-panel">
+          <div class="ks-panel-head">
+            <div class="ks-panel-title">Курс до ₴</div>
+            <button class="ks-link" onclick="fetchRates().then(()=>{buildMarketsPage();buildRatesList();})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+              Оновити
+            </button>
           </div>
-          <div id="marketsRateTable"></div>
-          <div id="marketsRateTs" style="font-size:10px;color:#333;padding:6px 14px 10px;text-align:right;"></div>
-        </div>
+          <div class="ks-panel-body is-flush" id="marketsRateTable"></div>
+          <div id="marketsRateTs" style="font-size:11px;color:var(--ks-fg-3);padding:8px 16px 12px;text-align:right;"></div>
+        </section>
       </div><!-- /cashier-panel-markets -->
     </div>
 
@@ -4024,15 +4051,15 @@
 
   <div id="transfer-modal" class="full-modal hidden">
     <button class="btn-outline" onclick="closeTabModal('transfer-modal')" style="width:50px;">⬅</button>
-    <h2>↗️ Переказ по картці</h2>
-    <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:11px;color:#777;">
-      💳 Переказ можливий лише по <b style="color:#fff;">номеру картки SlotOK Bank</b>. Картка є у кожного гравця у вкладці «Каса → Моя картка».
+    <h2>↗️ Переказ гравцю</h2>
+    <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:11px;color:#777;line-height:1.6;">
+      Переказати можна за <b style="color:#fff;">ніком гравця</b> або за <b style="color:#fff;">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. SlotOK власних карток не випускає, тому номер є не в кожного — нік працює завжди.
     </div>
-    <div style="font-size:11px;color:#555;margin-bottom:4px;">Номер картки отримувача</div>
-    <input id="transferToCard" placeholder="4874 XXXX XXXX XXXX" maxlength="19" oninput="formatCardInput(this)" style="font-family:'Courier New',monospace;letter-spacing:2px;font-size:16px;text-align:center;">
+    <div style="font-size:11px;color:#555;margin-bottom:4px;">Нік або номер картки отримувача</div>
+    <input id="transferToCard" placeholder="@nickname або 0000 0000 0000 0000" maxlength="24" oninput="formatCardInput(this)" style="font-family:'Courier New',monospace;letter-spacing:1px;font-size:15px;text-align:center;">
     <div id="transferRecipientInfo" style="font-size:11px;color:#555;min-height:20px;margin-bottom:4px;text-align:center;"></div>
     <input id="transferAmount" type="number" placeholder="Сума переказу (мін. 10 ₴)">
-    <button class="btn-gold" id="sendMoneyBtn" onclick="sendMoney()">НАДІСЛАТИ</button>
+    <button class="btn-gold" id="sendMoneyBtn" onclick="sendMoney()">Надіслати</button>
   </div>
 
   <div id="promo-modal" class="full-modal hidden">
@@ -4391,50 +4418,53 @@
     </div>
   </div>
 
-  <!-- ═══ CARD ONBOARDING MODAL ═══ -->
-  <!-- ═══ AXIOM CARD ONBOARD MODAL ═══ -->
+  <!-- ═══ ПІДКЛЮЧЕННЯ КАРТКИ ═══ -->
+  <!-- Показується новим гравцям замість автоматичної видачі картки SlotOK:
+       обидва шляхи рівноцінні — своя картка або картка Аксіома Банку. -->
   <div id="cardOnboardModal" class="card-onboard-modal hidden">
     <div class="card-onboard-box">
-      <!-- Header: Axiom × SlotOK -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;">
-        <div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:20px;font-weight:900;color:#fff;">А</div>
-        <div style="font-size:18px;color:#444;">+</div>
-        <div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#1a0d00,#d4af37);display:flex;align-items:center;justify-content:center;font-size:20px;">🎰</div>
-      </div>
-      <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:6px;text-align:center;">Картка від Аксіома Банку</div>
-      <div style="font-size:12px;color:#666;line-height:1.7;margin-bottom:18px;text-align:center;">
-        SlotOK використовує картку <b style="color:#7c8eff;">Аксіома Банку</b>.<br>
-        Прив'яжи її — і вона стане твоєю картою SlotOK.
+      <div class="ks-modal-head">
+        <div class="ks-modal-title">Підключення картки</div>
+        <button class="ks-modal-x" onclick="dismissCardOnboard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
       </div>
 
-      <!-- Steps -->
-      <div style="background:#0a0a0a;border-radius:14px;padding:14px;margin-bottom:16px;text-align:left;">
-        <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#5c6ef8;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
-          <div style="font-size:12px;color:#aaa;">Відкрий <b style="color:#fff;">Аксіома Банк</b> і зайди в Профіль → SlotOK підключення</div>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#5c6ef8;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
-          <div style="font-size:12px;color:#aaa;">Скопіюй <b style="color:#7c8eff;">6-значний код</b> який генерує Аксіома</div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#5c6ef8;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
-          <div style="font-size:12px;color:#aaa;">Введи код нижче — і картка Аксіоми стане картою SlotOK</div>
-        </div>
-      </div>
+      <p style="font-size:13px;color:#98a0af;line-height:1.6;margin:0 0 18px;text-align:left;">
+        SlotOK не випускає власних карток. Щоб у Касі з’явилася картка, підключіть
+        <b style="color:#eceff5;">свою картку</b> будь-якого банку або
+        <b style="color:#eceff5;">картку Аксіома Банку</b> — будь-що одне.
+      </p>
 
-      <!-- Code input -->
-      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Код з Аксіома Банку</div>
-      <input id="onboardAxiomCode" type="number" placeholder="000000" maxlength="6"
-        style="text-align:center;font-size:28px;font-weight:900;letter-spacing:8px;font-family:'Courier New',monospace;margin-bottom:10px;"
-        oninput="this.value=this.value.slice(0,6)">
-      <button onclick="confirmAxiomLinkOnboard()" style="width:100%;padding:16px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);color:#fff;font-weight:900;font-size:15px;border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;">
-        🏦 Прив'язати картку Аксіоми
+      <button class="ks-btn is-primary is-block" style="margin-bottom:10px;" onclick="dismissCardOnboard();switchTab('cashier');setTimeout(openAddCardModal,300)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Підключити свою картку
       </button>
-      <button onclick="dismissCardOnboard()" style="width:100%;padding:12px;background:transparent;border:1px solid #1a1a1a;color:#444;font-size:12px;border-radius:12px;cursor:pointer;">Пізніше</button>
-      <div style="font-size:10px;color:#333;text-align:center;margin-top:10px;line-height:1.6;">
-        Немає акаунту Аксіоми? Зареєструйся за <b style="color:#555;">тим самим ніком</b> що у SlotOK
+
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.09);"></div>
+        <span style="font-size:11px;color:#5e6675;">або картка партнера</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.09);"></div>
       </div>
+
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;">А</div>
+        <div>
+          <div style="font-size:14px;font-weight:650;color:#eceff5;">Аксіома Банк</div>
+          <div style="font-size:12px;color:#5e6675;">Профіль → SlotOK підключення → код</div>
+        </div>
+      </div>
+
+      <label class="ks-label" style="text-align:left;">Код з Аксіома Банку</label>
+      <input id="onboardAxiomCode" type="number" placeholder="000000" maxlength="6"
+        style="font-size:26px;font-weight:700;letter-spacing:10px;font-family:ui-monospace,Menlo,Consolas,monospace;margin-bottom:10px;padding:13px 14px;"
+        oninput="this.value=this.value.slice(0,6)">
+      <button class="ks-btn is-block" onclick="confirmAxiomLinkOnboard()">Прив’язати картку Аксіоми</button>
+
+      <p style="font-size:11px;color:#5e6675;margin:14px 0 0;line-height:1.6;">
+        Немає акаунту Аксіоми? Зареєструйтесь під <b style="color:#98a0af;">тим самим ніком</b>, що у SlotOK.
+      </p>
+      <button class="ks-btn is-quiet is-block" style="margin-top:12px;" onclick="dismissCardOnboard()">Пізніше</button>
     </div>
   </div>
 
