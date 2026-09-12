@@ -527,12 +527,26 @@ async function handleCallback(cq) {
   await editMessageText(chatId, messageId, cq.message.text + `\n\n${resultText}`);
 }
 
+// Дзеркалить клієнтський _depositCreditPath: депозит на неактивну картку йде в
+// її linkedCards/<id>/balance, а не в спільний balance (в якому живе активна).
+function depositCreditPath(u, cardId) {
+  if (!u || !cardId) return "balance";
+  const ids = [];
+  if (u.virtualCard && u.virtualCard.axiomLinked) ids.push("axiom");
+  if (u.linkedCards) Object.keys(u.linkedCards).forEach((k) => ids.push(k));
+  if (ids.indexOf(cardId) < 0) return "balance";
+  const active = u.activeCardId && ids.indexOf(u.activeCardId) >= 0 ? u.activeCardId : ids[0];
+  if (cardId === active) return "balance";
+  return cardId === "axiom" ? "virtualCard/balance" : `linkedCards/${cardId}/balance`;
+}
+
 async function actOnDeposit(action, id) {
   const r = await dbGet(`deposit_requests/${id}`);
   if (!r || r.status !== "pending") return null;
 
   if (action === "approve") {
-    await dbIncrement(`users/${r.user}/balance`, r.amount);
+    const u = await dbGet(`users/${r.user}`);
+    await dbIncrement(`users/${r.user}/${depositCreditPath(u, r.cardId)}`, r.amount);
     await dbUpdate(`deposit_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
     await dbPush(`users/${r.user}/history`, { text: `✅ Депозит підтверджено: +${r.amount}₴`, date: Date.now() });
     await dbPush(`users/${r.user}/cardTx`, { dir: "in", amount: r.amount, title: "Поповнення картки", subtitle: "Через касу", icon: "💳", ts: Date.now() });

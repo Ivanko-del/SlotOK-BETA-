@@ -645,6 +645,9 @@ function submitDepositRequest() {
     userId: userId,
     amount: amount,
     method: selectedDepMethod || 'privat',
+    // Прив'язка до картки, активної на момент заявки: адмін зарахує саме на неї,
+    // навіть якщо гравець згодом перемкне активну картку.
+    cardId: getActiveCardId() || null,
     status: 'pending',
     time: Date.now()
   }).then(() => {
@@ -4971,10 +4974,33 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '82';
+const CURRENT_VERSION = '83';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '83',
+    title: '💳 Оновлення v83 — окремі скіни карток і точне зарахування',
+    date: Date.UTC(2026, 8, 13),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎨 У кожної картки — свій скін',
+        items: [
+          'Тепер скін застосовується саме до активної картки, а не до всіх одразу — кожна картка може мати власний вигляд',
+          'Своє фото як скін теж зберігається окремо для кожної картки',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '💳 Поповнення зараховується на правильну картку',
+        items: [
+          'Заявка на поповнення тепер прив’язана до картки, яка була активною під час подачі: кошти зарахуються саме на неї, навіть якщо ти згодом перемкнеш активну картку',
+        ]
+      },
+    ]
+  },
   {
     version: '82',
     title: '💳 Оновлення v82 — кілька карток, у кожної свій баланс',
@@ -8274,7 +8300,7 @@ function renderDepositCard(id, req) {
       <div class="req-card-amount" style="color:#3dd68c;">+${req.amount}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount})">✅ Зарахувати</button>
+      <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount},'${req.cardId||''}')">✅ Зарахувати</button>
       <button class="req-reject"  onclick="rejectDeposit('${id}','${req.user}')">❌ Відхилити</button>
     </div>
   </div>`;
@@ -8422,8 +8448,31 @@ function updateRequestBadge() {
   if(pendingBadge) pendingBadge.textContent = total > 0 ? '⚠️ ' + total + ' заявок очікують' : '';
 }
 
-function approveDeposit(id, user, amount) {
-  db.ref('users/'+user+'/balance').set(firebase.database.ServerValue.increment(amount));
+// Куди зараховувати депозит: у балансі живе лише активна картка, тому депозит
+// на НЕактивну картку йде в її linkedCards/<id>/balance, а не в спільний balance.
+// Якщо картку встигли видалити — падаємо на спільний баланс, щоб гроші не зникли.
+function _depositCreditPath(u, cardId) {
+  if(!u || !cardId) return 'balance';
+  var ids = [];
+  if(u.virtualCard && u.virtualCard.axiomLinked) ids.push('axiom');
+  if(u.linkedCards) Object.keys(u.linkedCards).forEach(function(k){ ids.push(k); });
+  if(ids.indexOf(cardId) < 0) return 'balance';
+  var active = (u.activeCardId && ids.indexOf(u.activeCardId) >= 0) ? u.activeCardId : ids[0];
+  if(cardId === active) return 'balance';
+  return cardId === 'axiom' ? 'virtualCard/balance' : ('linkedCards/' + cardId + '/balance');
+}
+
+function approveDeposit(id, user, amount, cardId) {
+  db.ref('users/'+user).once('value', function(snap) {
+    var u = snap.val() || {};
+    var path = _depositCreditPath(u, cardId);
+    db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
+    if(path !== 'balance') {
+      var obj = (u.linkedCards && u.linkedCards[cardId]) || (cardId === 'axiom' ? u.virtualCard : null);
+      var last4 = obj ? (obj.last4 || String(obj.number||'').replace(/\D/g,'').slice(-4)) : '';
+      notify('Зараховано на картку ····' + last4 + ' (не активну)', 'info');
+    }
+  });
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
   db.ref('users/'+user+'/history').push({text:`✅ Депозит підтверджено: +${amount}₴`, date:Date.now()});
   db.ref('users/'+user+'/cardTx').push({dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳', ts:Date.now()});
@@ -19077,6 +19126,7 @@ function getLinkedCards() {
       last4: String(vc.number || '').replace(/\D/g,'').slice(-4) || '••••',
       number: vc.number, cvv: vc.cvv, expiry: vc.expiry || '',
       addedAt: vc.axiomLinkedAt || 0, storedBalance: vc.balance || 0,
+      skin: vc.skin || '', customPhotoUrl: vc.customPhotoUrl || '',
     });
   }
   var linked = userData.linkedCards || {};
@@ -19094,6 +19144,7 @@ function getLinkedCards() {
       number: c.number || '', cvv: c.cvv || '', expiry: c.expiry || '',
       addedAt: c.addedAt || 0, generated: gen, expiresAt: c.expiresAt || 0,
       storedBalance: c.balance || 0,
+      skin: c.skin || '', customPhotoUrl: c.customPhotoUrl || '',
     });
   });
   // Позначаємо активну картку та підставляємо їй ЖИВИЙ баланс (userData.balance),
@@ -19605,8 +19656,9 @@ function renderCardPanel() {
   var cvvFront   = document.getElementById('vcardCvvDisplay');
   var cvvBack    = document.getElementById('vcardCvvBack');
 
-  var skin  = (isAxiom && userData.virtualCard.skin) || userData.pendingCardSkin || 'onyx';
-  var photo = (isAxiom && userData.virtualCard.customPhotoUrl) || userData.pendingCardPhotoUrl;
+  // Кожна картка має власний скін; коли картки ще нема — тимчасовий pending-скін
+  var skin  = (primary && primary.skin) || (!primary && userData.pendingCardSkin) || 'onyx';
+  var photo = (primary && primary.customPhotoUrl) || (!primary ? userData.pendingCardPhotoUrl : '');
 
   var partnerExpired = !!(primary && primary.kind === 'partner' && primary.expiresAt && primary.expiresAt < Date.now());
   if(primary) {
@@ -19928,8 +19980,8 @@ function openCardColorPicker() {
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
-  var current = (userData.virtualCard && userData.virtualCard.skin)
-    || userData.pendingCardSkin || 'onyx';
+  var _act = getActiveCardObj();
+  var current = (_act && _act.skin) || (!_act && userData.pendingCardSkin) || 'onyx';
   function swatchHtml(s) {
     var active = current === s.id;
     return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgba(255,255,255,.08)') + ';color:' + s.accent + ';">' +
@@ -20004,11 +20056,11 @@ function uploadCustomCardPhoto() {
         var cardEl = document.getElementById('vcardEl');
         if(cardEl) { cardEl.className = 'vcard vcard-skin-custom-photo'; applyCardPhotoBg(cardEl, 'custom-photo', dataUrl); }
 
-        if(userData.virtualCard && userData.virtualCard.axiomLinked) {
-          userData.virtualCard.skin = 'custom-photo';
-          userData.virtualCard.customPhotoUrl = dataUrl;
-          db.ref('users/' + currentUser + '/virtualCard/skin').set('custom-photo');
-          db.ref('users/' + currentUser + '/virtualCard/customPhotoUrl').set(dataUrl);
+        var t = _activeSkinTarget();
+        if(t.base && t.local) {
+          t.local.skin = 'custom-photo'; t.local.customPhotoUrl = dataUrl;
+          db.ref('users/' + currentUser + '/' + t.base + '/skin').set('custom-photo');
+          db.ref('users/' + currentUser + '/' + t.base + '/customPhotoUrl').set(dataUrl);
         } else {
           userData.pendingCardSkin = 'custom-photo';
           userData.pendingCardPhotoUrl = dataUrl;
@@ -20017,6 +20069,7 @@ function uploadCustomCardPhoto() {
         }
         notify('📷 Фото застосовано як скін картки!', 'success');
         closeModal('cardskin');
+        renderCardPanel();
       };
       img.src = e.target.result;
     };
@@ -20025,19 +20078,30 @@ function uploadCustomCardPhoto() {
   input.click();
 }
 
+// Скін пишеться на АКТИВНУ картку (linkedCards/<id> або virtualCard), а до
+// підключення першої картки — у тимчасовий pendingCardSkin.
+function _activeSkinTarget() {
+  var a = getActiveCardObj();
+  if(a && a.kind === 'axiom') return { base: 'virtualCard', local: userData.virtualCard };
+  if(a && userData.linkedCards && userData.linkedCards[a.id]) return { base: 'linkedCards/' + a.id, local: userData.linkedCards[a.id] };
+  return { base: null, local: null }; // ще немає картки
+}
+
 function applyCardSkin(skinId) {
   var cardEl = document.getElementById('vcardEl');
   if(cardEl) { cardEl.className = 'vcard vcard-skin-' + skinId; applyCardPhotoBg(cardEl, skinId, null); }
-  if(userData.virtualCard && userData.virtualCard.axiomLinked) {
-    userData.virtualCard.skin = skinId;
-    db.ref('users/' + currentUser + '/virtualCard/skin').set(skinId);
+  var t = _activeSkinTarget();
+  if(t.base && t.local) {
+    t.local.skin = skinId; t.local.customPhotoUrl = '';
+    db.ref('users/' + currentUser + '/' + t.base + '/skin').set(skinId);
+    db.ref('users/' + currentUser + '/' + t.base + '/customPhotoUrl').remove();
   } else {
-    // Скін зберігається і до того, як гравець підключив картку
     userData.pendingCardSkin = skinId;
     db.ref('users/' + currentUser + '/pendingCardSkin').set(skinId);
   }
   notify('🎨 Скін застосовано!', 'success');
   closeModal('cardskin');
+  renderCardPanel();
 }
 
 // Тимчасових карток SlotOK більше не існує — жодних термінів дії та
