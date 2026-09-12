@@ -729,28 +729,31 @@
     .nav-notif-dot { position:absolute; top:8px; right:12px; width:8px; height:8px; background:var(--red); border-radius:50%; border:1.5px solid #080808; }
 
     /* ===== СПОВІЩЕННЯ ===== */
-    .notif-item { display:flex; align-items:flex-start; gap:12px; padding:12px; background:#111; border:1px solid #1a1a1a; border-radius:var(--r-sm); margin-bottom:8px; cursor:pointer; transition:border-color 0.2s, transform .12s; box-shadow: var(--bevel), var(--elev-1); }
-    .notif-item:active { transform: scale(.98); }
-    .notif-item.unread { border-left:3px solid var(--accent); background:rgba(212,175,55,0.04); }
-    .notif-item.unread.green-notif { border-left-color:var(--green); background:rgba(76,217,100,0.04); }
-    .notif-item.unread.red-notif   { border-left-color:var(--red); }
-    .notif-icon { font-size:26px; flex-shrink:0; margin-top:2px; }
-    .notif-body { flex:1; }
-    .notif-title { font-size:14px; font-weight:bold; margin-bottom:2px; }
-    .notif-text  { font-size:12px; color:#777; line-height:1.4; }
-    .notif-time  { font-size:10px; color:#444; margin-top:4px; }
+    /* Сповіщення — мова «Ledger» */
+    .notif-item { display:flex; align-items:flex-start; gap:12px; padding:13px 14px; background:var(--ks-surface); border:1px solid var(--ks-line); border-left:3px solid transparent; border-radius:var(--ks-r); margin-bottom:8px; cursor:pointer; transition:background .15s, border-color .15s; }
+    .notif-item:hover { background:var(--ks-surface-2); }
+    .notif-item.unread { border-left-color:var(--ks-acc); background:var(--ks-acc-dim); }
+    .notif-item.unread.green-notif { border-left-color:var(--ks-pos); background:rgba(49,196,141,.08); }
+    .notif-item.unread.red-notif   { border-left-color:var(--ks-neg); background:rgba(240,85,107,.08); }
+    .notif-icon { font-size:22px; flex-shrink:0; margin-top:1px; line-height:1; }
+    .notif-body { flex:1; min-width:0; }
+    .notif-title { font-size:14px; font-weight:650; color:var(--ks-fg); margin-bottom:2px; }
+    .notif-text  { font-size:13px; color:var(--ks-fg-2); line-height:1.45; }
+    .notif-time  { font-size:11px; color:var(--ks-fg-3); margin-top:5px; }
     .notif-filter { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
-    .notif-filter-btn { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; background:#1a1a1a; border:1px solid #333; color:#777; white-space:nowrap; box-shadow: var(--bevel); transition: transform .12s; }
-    .notif-filter-btn:active { transform: scale(.95); }
-    .notif-filter-btn.active { background:rgba(212,175,55,0.15); border-color:var(--accent); color:var(--accent); }
+    .notif-filter::-webkit-scrollbar { display:none; }
+    .notif-filter-btn { padding:8px 14px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; background:var(--ks-surface-2); border:1px solid var(--ks-line); color:var(--ks-fg-3); white-space:nowrap; flex-shrink:0; transition:background .15s, border-color .15s, color .15s; }
+    .notif-filter-btn:hover { background:var(--ks-surface-3); color:var(--ks-fg-2); }
+    .notif-filter-btn.active { background:var(--ks-acc-dim); border-color:var(--ks-acc); color:#b3bcff; }
 
     /* ===== НАЛАШТУВАННЯ ===== */
-    .settings-section { background:#111; border:1px solid #1a1a1a; border-radius:var(--r-md); overflow:hidden; margin-bottom:15px; box-shadow: var(--bevel), var(--elev-1); }
-    .settings-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #1a1a1a; }
+    /* Налаштування — мова «Ledger» (класи використовуються лише тут) */
+    .settings-section { background:var(--ks-surface); border:1px solid var(--ks-line); border-radius:var(--ks-r-lg); overflow:hidden; margin-bottom:14px; box-shadow:none; }
+    .settings-row { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--ks-line); }
     .settings-row:last-child { border-bottom:none; }
-    .settings-icon { font-size:22px; min-width:30px; }
-    .settings-label { flex:1; font-size:14px; }
-    .settings-sub   { font-size:11px; color:#555; margin-top:2px; }
+    .settings-icon { font-size:19px; min-width:26px; text-align:center; }
+    .settings-label { flex:1; font-size:14px; font-weight:600; color:var(--ks-fg); font-family:var(--ks-sans); }
+    .settings-sub   { font-size:12px; color:var(--ks-fg-3); margin-top:2px; font-family:var(--ks-sans); }
     .toggle-switch  { position:relative; width:46px; height:26px; flex-shrink:0; }
     .toggle-switch input { opacity:0; width:0; height:0; }
     .toggle-slider  { position:absolute; inset:0; background:#333; border-radius:26px; cursor:pointer; transition:.3s; }
@@ -3499,7 +3502,7 @@
 .settings-row {
   transition: background-color .15s;
 }
-.settings-row:active { background-color: rgba(255,255,255,.04); }
+.settings-row:active { background-color: var(--ks-surface-2); }
 
 .pm-thread {
   transition: transform .12s, background-color .15s;
