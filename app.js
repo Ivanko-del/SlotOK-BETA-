@@ -4000,7 +4000,7 @@ function wipeEconomy_auto() {
 // ІНШІ ФУНКЦІЇ
 // ============================================
 function openGame(g) { trackRecentGame(g); switchTab(g); }
-function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); if(id === 'transfer-modal' && typeof renderSourceBars === 'function') renderSourceBars(); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
 // Приймаємо і 16 цифр (номер прив'язаної картки Аксіоми), і нік гравця:
@@ -4971,10 +4971,44 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '81';
+const CURRENT_VERSION = '82';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '82',
+    title: '💳 Оновлення v82 — кілька карток, у кожної свій баланс',
+    date: Date.UTC(2026, 8, 13),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '💳 Кілька карток і вибір активної',
+        items: [
+          'Тепер можна підключити кілька карток одночасно, і в кожної — свій окремий баланс',
+          'Обери «активну» картку — саме з неї йдуть ставки в іграх, поповнення, вивід і переказ. Перемкнути можна одним дотиком у списку карток',
+          'У розділах «Поповнити», «Вивід» і в переказі вгорі видно, з якої картки йдуть кошти, з кнопкою «Змінити»',
+          'При перемиканні активної картки гроші нікуди не зникають: баланс кожної картки зберігається окремо',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🆕 Партнер-картку можна згенерувати',
+        items: [
+          'У вікні «Підключити картку» з’явилась кнопка «Згенерувати Партнер-картку» — SlotOK створює її з номером і CVV',
+          'Партнер-картка діє 30 днів, її можна продовжити ще на 30 у будь-який момент',
+          'Партнер-картку можна й підключити як чужу — обери «Партнер Банк» у списку банків і введи її дані',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '↗️ Переказ став зручнішим',
+        items: [
+          'Відключення картки більше не втрачає гроші — залишок переноситься на іншу твою картку',
+        ]
+      },
+    ]
+  },
   {
     version: '81',
     title: '💳 Оновлення v81 — Каса повністю нова',
@@ -12030,8 +12064,8 @@ function switchCashierTab(tab, el) {
   if(tab === 'cashback') updateCashierCashbackUI();
   if(tab === 'markets')  buildMarketsPage();
   if(tab === 'card')     renderCardPanel();
-  if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('privat', document.getElementById('depm-privat')); }
-  if(tab === 'withdraw') { loadMyWithdraws(); updateWithdrawAvailable(); }
+  if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('privat', document.getElementById('depm-privat')); renderSourceBars(); }
+  if(tab === 'withdraw') { loadMyWithdraws(); updateWithdrawAvailable(); renderSourceBars(); }
 }
 
 // Скільки реально можна вивести — показуємо в шапці розділу, щоб гравець не
@@ -16426,10 +16460,16 @@ function initStatsTab() {
 // номер і CVV. Свої зовнішні картки гравця зберігаються замасковано (банк +
 // останні 4 цифри), тому «активною карткою» в цьому сенсі не є —
 // повний перелік підключеного дає getLinkedCards().
+// Активна картка з повними даними (номер + CVV) — Аксіома або згенерована
+// Партнер-картка. Свої підключені картки повних даних не мають.
 function getActiveCard() {
   if(!userData) return null;
-  if(userData.virtualCard && userData.virtualCard.axiomLinked) return userData.virtualCard;
-  return null;
+  var a = getActiveCardObj();
+  if(a && (a.kind === 'axiom' || a.kind === 'partner') && a.cvv) return a;
+  // навіть якщо активна — звичайна картка, CVV може мати згенерована Партнер
+  var cards = getLinkedCards();
+  for(var i=0;i<cards.length;i++) if((cards[i].kind === 'axiom' || cards[i].kind === 'partner') && cards[i].active && cards[i].cvv) return cards[i];
+  return (a && a.cvv) ? a : null;
 }
 
 function getCardData() {
@@ -19027,6 +19067,7 @@ var KS_BANKS = {
 function getLinkedCards() {
   if(!userData) return [];
   var out = [];
+  var activeId = getActiveCardId();
   var vc = userData.virtualCard;
   if(vc && vc.axiomLinked) {
     out.push({
@@ -19035,24 +19076,111 @@ function getLinkedCards() {
       holder: String(vc.holder || currentUser || '').toUpperCase(),
       last4: String(vc.number || '').replace(/\D/g,'').slice(-4) || '••••',
       number: vc.number, cvv: vc.cvv, expiry: vc.expiry || '',
-      addedAt: vc.axiomLinkedAt || 0,
+      addedAt: vc.axiomLinkedAt || 0, storedBalance: vc.balance || 0,
     });
   }
   var linked = userData.linkedCards || {};
   Object.keys(linked).forEach(function(id) {
     var c = linked[id] || {};
     var b = KS_BANKS[c.bank] || KS_BANKS.other;
+    // Партнер-картка, згенерована самим SlotOK, має повні дані (номер + CVV)
+    // і 30-денний термін; звичайна підключена картка — лише маску.
+    var gen = !!c.generated;
     out.push({
-      id: id, kind: 'external', bank: c.bank || 'other', bankName: b.name,
+      id: id, kind: gen ? 'partner' : 'external', bank: c.bank || 'other', bankName: b.name,
       mark: b.short, markColor: b.color,
       holder: String(c.holder || '').toUpperCase(),
-      last4: c.last4 || '••••', expiry: c.expiry || '', addedAt: c.addedAt || 0,
+      last4: c.last4 || (c.number ? String(c.number).replace(/\D/g,'').slice(-4) : '••••'),
+      number: c.number || '', cvv: c.cvv || '', expiry: c.expiry || '',
+      addedAt: c.addedAt || 0, generated: gen, expiresAt: c.expiresAt || 0,
+      storedBalance: c.balance || 0,
     });
   });
+  // Позначаємо активну картку та підставляємо їй ЖИВИЙ баланс (userData.balance),
+  // решті — збережений на картці. Активною за замовчуванням є перша.
+  out.forEach(function(c) { c.active = (c.id === activeId); c.balance = c.active ? (userData.balance || 0) : c.storedBalance; });
   return out;
 }
 function hasConnectedCard() { return getLinkedCards().length > 0; }
-function getPrimaryCard() { var l = getLinkedCards(); return l.length ? l[0] : null; }
+function getPrimaryCard() { return getActiveCardObj() || (getLinkedCards()[0] || null); }
+
+// ═══════════════════════════════════════════════════════════════════
+// АКТИВНА КАРТКА — джерело коштів для ігор, поповнення, виводу, переказу.
+// Проєкційна модель: userData.balance ЗАВЖДИ дорівнює балансу активної
+// картки, тож ігри пишуть у balance як і раніше, нічого не знаючи про картки.
+// Баланс кожної картки зберігається окремо (linkedCards/<id>/balance або
+// virtualCard/balance для Аксіоми) й авторитетний лише поки картка НЕ активна;
+// в активної живий баланс — це userData.balance.
+// ═══════════════════════════════════════════════════════════════════
+function _rawCardIds() {
+  var ids = [];
+  if(userData && userData.virtualCard && userData.virtualCard.axiomLinked) ids.push('axiom');
+  if(userData && userData.linkedCards) Object.keys(userData.linkedCards).forEach(function(k){ ids.push(k); });
+  return ids;
+}
+function getActiveCardId() {
+  var ids = _rawCardIds();
+  if(!ids.length) return null;
+  var a = userData && userData.activeCardId;
+  return (a && ids.indexOf(a) >= 0) ? a : ids[0];
+}
+function getActiveCardObj() {
+  var id = getActiveCardId();
+  if(!id) return null;
+  var cards = getLinkedCards();
+  for(var i=0;i<cards.length;i++) if(cards[i].id === id) return cards[i];
+  return null;
+}
+function _cardBalPath(id) { return id === 'axiom' ? 'virtualCard/balance' : ('linkedCards/' + id + '/balance'); }
+function _storedBalOf(id) {
+  if(id === 'axiom') return (userData.virtualCard && userData.virtualCard.balance) || 0;
+  return (userData.linkedCards && userData.linkedCards[id] && userData.linkedCards[id].balance) || 0;
+}
+
+// Перемикання активної картки. Живий баланс старої картки зберігається назад
+// на неї, баланс нової підвантажується в userData.balance — одним атомарним
+// update, щоб гроші не могли загубитись між записами.
+function switchActiveCard(id) {
+  if(!db || !currentUser || !userData) return;
+  var ids = _rawCardIds();
+  if(ids.indexOf(id) < 0) return;
+  var cur = getActiveCardId();
+  if(id === cur) return;
+  if(userData.virtualCard && userData.virtualCard.frozen) return notify('Спочатку розблокуйте картку', 'error');
+  var liveBal = userData.balance || 0;
+  var newBal = _storedBalOf(id);
+  var updates = {};
+  if(cur) updates[_cardBalPath(cur)] = liveBal;   // зберегти живий баланс старої активної
+  updates['balance'] = newBal;                    // підвантажити баланс нової
+  updates['activeCardId'] = id;
+  // локально теж — щоб UI не блимав старими значеннями до відповіді Firebase
+  if(cur === 'axiom' && userData.virtualCard) userData.virtualCard.balance = liveBal;
+  else if(cur && userData.linkedCards && userData.linkedCards[cur]) userData.linkedCards[cur].balance = liveBal;
+  userData.balance = newBal;
+  userData.activeCardId = id;
+  db.ref('users/' + currentUser).update(updates);
+  var obj = getActiveCardObj();
+  notify('Активна картка: ' + (obj ? obj.bankName + ' ····' + obj.last4 : '—'), 'success');
+  if(navigator.vibrate) navigator.vibrate(20);
+  renderCardPanel();
+  renderSourceBars();
+}
+
+// Перша підключена/згенерована картка успадковує наявний баланс гравця, щоб
+// гроші не подвоїлись і не зникли; наступні стартують з нуля.
+function _adoptOrZeroBalance(newId, recRef) {
+  var hadCards = _rawCardIds().filter(function(x){ return x !== newId; }).length > 0;
+  if(hadCards) {
+    // вже є активна картка — нова стартує з 0
+    if(recRef) recRef.child('balance').set(0);
+  } else {
+    // перша картка — стає активною й переймає поточний баланс
+    var bal = userData.balance || 0;
+    if(recRef) recRef.child('balance').set(bal);
+    db.ref('users/' + currentUser + '/activeCardId').set(newId);
+    userData.activeCardId = newId;
+  }
+}
 
 // Перевірка Луна — та сама, якою користуються справжні платіжні системи.
 // Ловить описки в номері ДО того, як гравець вирішить, що Каса зламана.
@@ -19075,30 +19203,30 @@ function renderLinkedCards() {
     el.innerHTML =
       '<div class="ks-empty" style="padding:22px 18px;">' +
         '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що не підключено жодної картки. ' +
-          'Доки її немає, Каса не показує картку — SlotOK власних карток не випускає.</div>' +
-        '<div class="ks-btn-row">' +
+          'Підключіть свою, згенеруйте Партнер-картку або прив\'яжіть Аксіому.</div>' +
+        '<div class="ks-btn-row" style="margin-bottom:8px;">' +
           '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
-          '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
+          '<button class="ks-btn" onclick="createPartnerCard()">' + ksIcon('card') + ' Партнер</button>' +
         '</div>' +
+        '<button class="ks-btn is-quiet is-block" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Прив\'язати Аксіому</button>' +
       '</div>';
     return;
   }
-  el.innerHTML = cards.map(function(c, idx) {
-    var badge = c.kind === 'axiom'
-      ? '<span class="ks-badge is-acc">Партнер</span>'
-      : (idx === 0 ? '<span class="ks-badge is-pos">Основна</span>' : '');
-    var del = c.kind === 'external'
-      ? '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="confirmRemoveLinkedCard(this)" ' +
-        'title="Відключити картку">' + ksIcon('trash') + '</button>'
-      : '';
-    return '<div class="ks-row">' +
+  el.innerHTML = cards.map(function(c) {
+    var expired = c.kind === 'partner' && c.expiresAt && c.expiresAt < Date.now();
+    var badge = c.active ? '<span class="ks-badge is-pos">Активна</span>' : '';
+    var act = '';
+    if(expired) act += '<button class="ks-copy-btn" style="width:auto;padding:0 10px;color:var(--ks-acc);" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();renewPartnerCard(this.getAttribute(\'data-id\'))" title="Продовжити на 30 днів">' + ksIcon('clock') + '</button>';
+    if(c.kind !== 'axiom') act += '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();confirmRemoveLinkedCard(this)" title="Відключити картку">' + ksIcon('trash') + '</button>';
+    var sub = '•••• ' + ksEsc(c.last4) + (c.holder ? ' · ' + ksEsc(c.holder) : '') + (c.expiry ? ' · ' + ksEsc(c.expiry) : '');
+    return '<div class="ks-row is-tappable" onclick="switchActiveCard(\'' + ksEsc(c.id) + '\')"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') + '>' +
       '<div class="ks-icn" style="background:' + c.markColor + ';color:#fff;font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
       '<div class="ks-row-main">' +
-        '<div class="ks-row-title">' + ksEsc(c.bankName) + '</div>' +
-        '<div class="ks-row-sub ks-num">•••• ' + ksEsc(c.last4) + (c.holder ? ' · ' + ksEsc(c.holder) : '') +
-          (c.expiry ? ' · ' + ksEsc(c.expiry) : '') + '</div>' +
+        '<div class="ks-row-title">' + ksEsc(c.bankName) + (expired ? ' · <span style="color:var(--ks-neg);">прострочена</span>' : '') + '</div>' +
+        '<div class="ks-row-sub ks-num">' + sub + '</div>' +
       '</div>' +
-      badge + del +
+      '<div class="ks-row-value ks-num" style="margin-right:6px;">' + formatNumber(c.balance) + ' ₴' + (badge ? '<small>' + badge + '</small>' : '') + '</div>' +
+      act +
       '</div>';
   }).join('');
 }
@@ -19122,8 +19250,15 @@ function renderCardMetaRow(card) {
       '</section>';
     return;
   }
-  if(card.kind === 'axiom') {
-    el.innerHTML =
+  if(card.kind === 'axiom' || card.kind === 'partner') {
+    var renewBtn = '';
+    if(card.kind === 'partner') {
+      var dLeft = Math.max(0, Math.ceil(((card.expiresAt || 0) - Date.now()) / 86400000));
+      if(card.expiresAt && (card.expiresAt < Date.now() || dLeft <= 7)) {
+        renewBtn = '<button class="ks-btn is-primary is-block" style="margin-bottom:8px;" onclick="renewPartnerCard(\'' + ksEsc(card.id) + '\')">' + ksIcon('clock') + ' Продовжити на 30 днів</button>';
+      }
+    }
+    el.innerHTML = renewBtn +
       '<div class="ks-btn-row" style="margin-bottom:8px;">' +
         '<button class="ks-btn is-quiet" id="cvvToggleBtn" onclick="toggleCvvVisibility()">' + ksIcon('eye') + ' CVV</button>' +
         '<button class="ks-btn is-quiet" onclick="copyCardNumberFlash()">' + ksIcon('copy') + ' Номер</button>' +
@@ -19133,10 +19268,11 @@ function renderCardMetaRow(card) {
       '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">Натисніть на картку, щоб перевернути</p>';
     return;
   }
-  // Своя зовнішня картка: копіювати й показувати нічого — повні дані в банку.
-  // «Додати» й «Скін» уже є нижче (перелік карток і швидкі дії), тому тут лише
-  // пояснення, а не третя копія тих самих кнопок.
   el.innerHTML =
+    '<div class="ks-btn-row" style="margin-bottom:8px;">' +
+      '<button class="ks-btn is-quiet" onclick="openAddCardModal()">' + ksIcon('plus') + ' Ще картка</button>' +
+      '<button class="ks-btn is-quiet" style="flex:0 0 auto;padding:13px 15px;" onclick="openCardColorPicker()" title="Скін картки">' + ksIcon('palette') + '</button>' +
+    '</div>' +
     '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">' +
       'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.</p>';
 }
@@ -19212,6 +19348,13 @@ function openAddCardModal() {
           'Повний номер використовується лише тут, у браузері, для перевірки — і не зберігається. CVV не запитуємо ніколи.</div>' +
       '</div>' +
       '<button class="ks-btn is-primary is-block" onclick="submitAddCard()">Підключити картку</button>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin:16px 0 12px;">' +
+        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
+        '<span class="ks-hint">або</span>' +
+        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
+      '</div>' +
+      '<button class="ks-btn is-block" onclick="createPartnerCard()">' + ksIcon('card') + ' Згенерувати Партнер-картку (30 днів)</button>' +
+      '<p class="ks-hint" style="margin:8px 0 0;text-align:center;">Партнер-картку створює SlotOK — з номером і CVV, діє 30 днів, можна продовжити.</p>' +
     '</div>';
   document.body.appendChild(m);
   setTimeout(function() { var f = document.getElementById('ksAcHolder'); if(f) f.focus(); }, 60);
@@ -19269,9 +19412,11 @@ function submitAddCard() {
     addedAt: Date.now(),
   };
   var ref = db.ref('users/' + currentUser + '/linkedCards').push();
+  rec.balance = 0;
   ref.set(rec);
   userData.linkedCards = userData.linkedCards || {};
   userData.linkedCards[ref.key] = rec;
+  _adoptOrZeroBalance(ref.key, ref);
 
   closeAddCardModal();
   notify('Картку підключено', 'success');
@@ -19301,18 +19446,139 @@ function confirmRemoveLinkedCard(btn) {
 }
 
 function removeLinkedCard(id) {
-  if(!id || !db || !currentUser) return;
+  if(!id || !db || !currentUser || id === 'axiom') return;
+  var activeId = getActiveCardId();
+  // Баланс картки, що відключається (для активної — це живий userData.balance)
+  var remBal = (id === activeId) ? (userData.balance || 0) : _storedBalOf(id);
+  var others = _rawCardIds().filter(function(x){ return x !== id; });
+
   db.ref('users/' + currentUser + '/linkedCards/' + id).remove();
   if(userData.linkedCards) delete userData.linkedCards[id];
-  // Заморозка знімається разом з останньою карткою: інакше гравець лишився б
-  // із заблокованими ставками й виводом, а кнопка розблокування вимагає
-  // підключеної картки — вийти з цього стану було б неможливо
-  if(!hasConnectedCard() && userData.virtualCard && userData.virtualCard.frozen) {
-    db.ref('users/' + currentUser + '/virtualCard/frozen').set(false);
-    userData.virtualCard.frozen = false;
+
+  if(others.length) {
+    // Гроші відключеної картки зливаються в активну (або в першу, що лишилась),
+    // щоб нічого не загубилось. Ця картка стає активною, а balance = її баланс + залишок.
+    var newActive = (id === activeId) ? others[0] : activeId;
+    if(others.indexOf(newActive) < 0) newActive = others[0];
+    var merged = _storedBalOf(newActive) + remBal;
+    var updates = {};
+    updates['balance'] = merged;
+    updates['activeCardId'] = newActive;
+    userData.balance = merged;
+    userData.activeCardId = newActive;
+    db.ref('users/' + currentUser).update(updates);
+  } else {
+    // Остання картка — залишок лишається на балансі гравця (безкартковий гаманець)
+    if(id === activeId) { /* userData.balance вже містить залишок */ }
+    else { db.ref('users/' + currentUser + '/balance').set((userData.balance || 0) + remBal); userData.balance = (userData.balance || 0) + remBal; }
+    db.ref('users/' + currentUser + '/activeCardId').remove();
+    if(userData.virtualCard && userData.virtualCard.frozen) {
+      db.ref('users/' + currentUser + '/virtualCard/frozen').set(false);
+      userData.virtualCard.frozen = false;
+    }
   }
-  notify('Картку відключено', 'info');
+  notify(remBal > 0 ? ('Картку відключено · ' + formatNumber(remBal) + ' ₴ перенесено') : 'Картку відключено', 'info');
   renderCardPanel();
+  renderSourceBars();
+}
+
+// Луна-валідний номер (щоб виглядав як справжній і проходив ті ж перевірки)
+function ksGenCardNumber(prefix) {
+  var body = String(prefix || '');
+  while(body.length < 15) body += Math.floor(Math.random() * 10);
+  body = body.slice(0, 15);
+  var sum = 0, dbl = true;
+  for(var i = body.length - 1; i >= 0; i--) {
+    var d = body.charCodeAt(i) - 48;
+    if(dbl) { d *= 2; if(d > 9) d -= 9; }
+    sum += d; dbl = !dbl;
+  }
+  return body + ((10 - (sum % 10)) % 10);
+}
+
+// Генерація тимчасової Партнер-картки — єдина картка, яку SlotOK створює сам,
+// і лише коли гравець сам натиснув кнопку (автоматично нікому не видається).
+function createPartnerCard() {
+  if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
+  var digits = ksGenCardNumber('4400');
+  var expDate = new Date(Date.now() + 30 * 86400000);
+  var exp = ('0' + (expDate.getMonth() + 1)).slice(-2) + '/' + String(expDate.getFullYear()).slice(-2);
+  var rec = {
+    bank: 'partner', generated: true,
+    holder: String(currentUser || 'USER').toUpperCase().slice(0, 26),
+    number: digits.replace(/(.{4})(?=.)/g, '$1 '),
+    last4: digits.slice(-4),
+    cvv: String(Math.floor(100 + Math.random() * 900)),
+    expiry: exp, addedAt: Date.now(),
+    expiresAt: expDate.getTime(), balance: 0,
+  };
+  var ref = db.ref('users/' + currentUser + '/linkedCards').push();
+  ref.set(rec);
+  userData.linkedCards = userData.linkedCards || {};
+  userData.linkedCards[ref.key] = rec;
+  _adoptOrZeroBalance(ref.key, ref);
+  closeAddCardModal();
+  notify('Партнер-картку згенеровано · діє 30 днів', 'success');
+  if(navigator.vibrate) navigator.vibrate([60, 40, 80]);
+  renderCardPanel();
+}
+
+function renewPartnerCard(id) {
+  if(!db || !currentUser || !userData.linkedCards || !userData.linkedCards[id]) return;
+  var when = Date.now() + 30 * 86400000;
+  db.ref('users/' + currentUser + '/linkedCards/' + id + '/expiresAt').set(when);
+  userData.linkedCards[id].expiresAt = when;
+  notify('Партнер-картку продовжено ще на 30 днів', 'success');
+  renderCardPanel();
+}
+
+// Рядок «джерело коштів» — показує активну картку й дозволяє перемкнути.
+// Живить поповнення (кошти йдуть на активну картку), вивід і переказ.
+function sourceBarHtml(ctx) {
+  var a = getActiveCardObj();
+  if(!a) {
+    return '<div class="ks-copy" style="margin-bottom:14px;"><div class="ks-copy-main ks-hint">' +
+      'Картку не підключено — кошти йдуть на спільний баланс. ' +
+      '<b style="color:var(--ks-acc);cursor:pointer;" onclick="switchCashierTab(\'card\',document.getElementById(\'ctb-card\'))">Підключити</b></div></div>';
+  }
+  var verb = ctx === 'withdraw' ? 'Вивід з картки' : ctx === 'transfer' ? 'Переказ з картки' : 'Зарахувати на картку';
+  return '<div class="ks-copy" style="margin-bottom:14px;">' +
+    '<div class="ks-icn" style="background:' + a.markColor + ';color:#fff;font-weight:800;font-size:11px;width:32px;height:32px;">' + ksEsc(a.mark) + '</div>' +
+    '<div class="ks-copy-main">' +
+      '<div class="ks-label" style="margin-bottom:2px;">' + verb + '</div>' +
+      '<div class="ks-copy-val" style="font-family:var(--ks-sans);font-size:14px;">' + ksEsc(a.bankName) + ' ····' + ksEsc(a.last4) +
+        ' · <span class="ks-num">' + formatNumber(a.balance) + ' ₴</span></div>' +
+    '</div>' +
+    (getLinkedCards().length > 1 ? '<button class="ks-btn is-quiet is-sm" style="width:auto;flex:0 0 auto;" onclick="openCardSourcePicker()">Змінити</button>' : '') +
+    '</div>';
+}
+function renderSourceBars() {
+  ['depSourceBar', 'wdSourceBar', 'transferSourceBar'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if(el) el.innerHTML = sourceBarHtml(id === 'wdSourceBar' ? 'withdraw' : id === 'transferSourceBar' ? 'transfer' : 'deposit');
+  });
+}
+function openCardSourcePicker() {
+  var cards = getLinkedCards();
+  if(cards.length < 2) return;
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksSrcModal';
+  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
+  m.innerHTML = '<div class="ks-modal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">Активна картка</div>' +
+      '<button class="ks-modal-x" onclick="document.getElementById(\'ksSrcModal\').remove()">' + ksIcon('x') + '</button></div>' +
+    '<p class="ks-hint" style="margin:0 0 14px;">Обрана картка живить ігри, поповнення, вивід і переказ.</p>' +
+    cards.map(function(c) {
+      return '<div class="ks-row is-tappable"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') +
+        ' onclick="switchActiveCard(\'' + ksEsc(c.id) + '\');document.getElementById(\'ksSrcModal\').remove()">' +
+        '<div class="ks-icn" style="background:' + c.markColor + ';color:#fff;font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
+        '<div class="ks-row-main"><div class="ks-row-title">' + ksEsc(c.bankName) + '</div>' +
+          '<div class="ks-row-sub ks-num">•••• ' + ksEsc(c.last4) + '</div></div>' +
+        '<div class="ks-row-value ks-num">' + formatNumber(c.balance) + ' ₴' + (c.active ? '<small><span class="ks-badge is-pos">Активна</span></small>' : '') + '</div>' +
+        '</div>';
+    }).join('') +
+    '</div>';
+  document.body.appendChild(m);
 }
 
 function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
@@ -19325,8 +19591,9 @@ function connectAxiomaFromCard() { openAxiomLinkFlow(); }
 function renderCardPanel() {
   if(!userData) return;
   var cards   = getLinkedCards();
-  var primary = cards[0] || null;
+  var primary = getActiveCardObj() || cards[0] || null;
   var isAxiom = !!(primary && primary.kind === 'axiom');
+  var isFull  = !!(primary && (primary.kind === 'axiom' || primary.kind === 'partner')); // повний номер видно
 
   var bankNameEl = document.getElementById('vcardBankName');
   var badgeEl    = document.getElementById('vcardBadgeArea');
@@ -19341,20 +19608,25 @@ function renderCardPanel() {
   var skin  = (isAxiom && userData.virtualCard.skin) || userData.pendingCardSkin || 'onyx';
   var photo = (isAxiom && userData.virtualCard.customPhotoUrl) || userData.pendingCardPhotoUrl;
 
+  var partnerExpired = !!(primary && primary.kind === 'partner' && primary.expiresAt && primary.expiresAt < Date.now());
   if(primary) {
     if(bankNameEl) bankNameEl.textContent = primary.bankName;
-    if(badgeEl) badgeEl.innerHTML = isAxiom
-      ? '<span class="ks-badge is-acc">Партнер</span>'
-      : '<span class="ks-badge">Підключена</span>';
-    if(numEl)    numEl.textContent    = isAxiom ? primary.number : ('•••• •••• •••• ' + primary.last4);
+    if(badgeEl) {
+      if(primary.kind === 'axiom') badgeEl.innerHTML = '<span class="ks-badge is-acc">Партнер</span>';
+      else if(primary.kind === 'partner') {
+        var dLeft = Math.max(0, Math.ceil(((primary.expiresAt || 0) - Date.now()) / 86400000));
+        badgeEl.innerHTML = partnerExpired
+          ? '<span class="ks-badge is-neg">Прострочена</span>'
+          : '<span class="ks-badge is-acc">Партнер · ' + dLeft + 'д</span>';
+      } else badgeEl.innerHTML = '<span class="ks-badge">Підключена</span>';
+    }
+    if(numEl)    numEl.textContent    = isFull ? primary.number : ('•••• •••• •••• ' + primary.last4);
     if(holderEl) holderEl.textContent = primary.holder || String(currentUser || '').toUpperCase();
     if(expiryEl) expiryEl.textContent = primary.expiry || '••/••';
     if(sigEl)    sigEl.textContent    = primary.holder || String(currentUser || '').toUpperCase();
-    // CVV показуємо тільки якщо гравець сам його відкрив і він узагалі є
-    if(!isAxiom) {
-      if(cvvFront) cvvFront.textContent = '•••';
-      if(cvvBack)  cvvBack.textContent  = '•••';
-    }
+    // CVV скидаємо в приховане; гравець відкриває сам через кнопку
+    if(cvvFront) cvvFront.textContent = '•••';
+    if(cvvBack)  cvvBack.textContent  = '•••';
   } else {
     if(bankNameEl) bankNameEl.textContent = 'SlotOK';
     if(badgeEl)    badgeEl.innerHTML = '';
@@ -19388,6 +19660,7 @@ function renderCardPanel() {
   renderCardMetaRow(primary);
   renderCardQuickActions(primary);
   renderLinkedCards();
+  renderSourceBars();
 
   var bal = userData.balance || 0;
   var balEl = document.getElementById('vcardBalance');

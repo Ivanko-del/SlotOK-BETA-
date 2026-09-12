@@ -1351,6 +1351,7 @@
             <span class="ks-badge">ID&nbsp;<span id="cashierUserId" class="ks-num">—</span></span>
           </div>
           <div class="ks-panel-body">
+            <div id="depSourceBar"></div>
             <div class="ks-label">Сума</div>
             <div class="amount-grid">
               <div class="amount-btn" onclick="selectDepAmount(100, this)">100</div>
@@ -1421,6 +1422,7 @@
             <span class="ks-badge" id="wdAvailBadge">Доступно&nbsp;<span class="ks-num">—</span></span>
           </div>
           <div class="ks-panel-body">
+            <div id="wdSourceBar"></div>
             <div class="ks-label">Куди виводимо</div>
             <div class="ks-methods">
               <div class="wm-btn selected" id="wm-privat" onclick="selectWithdrawMethod('privat', this)"><span class="ks-bank" style="background:#4caf50;">П</span><span class="ks-m-name">PrivatBank</span></div>
@@ -4056,6 +4058,7 @@
     <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:11px;color:#777;line-height:1.6;">
       Переказати можна за <b style="color:#fff;">ніком гравця</b> або за <b style="color:#fff;">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. SlotOK власних карток не випускає, тому номер є не в кожного — нік працює завжди.
     </div>
+    <div id="transferSourceBar"></div>
     <div style="font-size:11px;color:#555;margin-bottom:4px;">Нік або номер картки отримувача</div>
     <input id="transferToCard" placeholder="@nickname або 0000 0000 0000 0000" maxlength="24" oninput="formatCardInput(this)" style="font-family:'Courier New',monospace;letter-spacing:1px;font-size:15px;text-align:center;">
     <div id="transferRecipientInfo" style="font-size:11px;color:#555;min-height:20px;margin-bottom:4px;text-align:center;"></div>
