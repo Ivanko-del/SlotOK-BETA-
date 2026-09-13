@@ -107,6 +107,7 @@ function startDataSync() {
               _rgSessionStartTime = Date.now();
             }
             userData = data;
+            migrateCardFreeze();
             syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
             // Само-виключення — раніше цей прапорець лише встановлювався і ніде
@@ -373,8 +374,8 @@ function playSound(type) {
 }
 
 function validateBet(amount) {
-    if(userData.virtualCard && userData.virtualCard.frozen) {
-        notify('🔒 Картка заблокована — розблокуй її в Касі', 'error');
+    if(isActiveCardFrozen()) {
+        notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
         return false;
     }
     if(userData.autoFrozen) {
@@ -490,7 +491,7 @@ function claimDailyBonus(amount) {
         lastDailyBonus: Date.now(),
         dailyStreak: newStreak
     });
-    db.ref('users/'+currentUser+'/cardTx').push({dir:'in', amount:finalAmount, title:'Щоденний бонус', subtitle:'День '+streak+' серії', icon:'🎁', ts:Date.now()});
+    pushCardTx(currentUser, {dir:'in', amount:finalAmount, title:'Щоденний бонус', subtitle:'День '+streak+' серії', icon:'🎁'}, getActiveCardId());
     checkStreakBonus(streak);
 
     playSound('win');
@@ -828,6 +829,8 @@ function submitWithdraw() {
     if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
     if(userData.balance < amount) return notify("Недостатньо коштів", "error");
     if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
+    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Касі", "error");
+    if(!checkCardLimit(getActiveCardId(), amount)) return;
 
     // Перевірка на pending заявки
     if(userData.pendingWithdraw) {
@@ -859,6 +862,10 @@ function submitWithdraw() {
         amount: amount,
         method: selectedWithdrawMethod,
         card: card,
+        // Картка, з якої кошти заморозили: на неї ж повернемо при відмові й
+        // її ж історію позначимо при схваленні, навіть якщо гравець тим часом
+        // перемкнув активну.
+        cardId: getActiveCardId() || null,
         status: status,
         time: Date.now()
     }).then(() => notifyBot(needs2FA ? 'withdraw-2fa' : 'withdraw', requestId));
@@ -870,6 +877,7 @@ function submitWithdraw() {
         time: Date.now()
     });
 
+    noteCardSpend(getActiveCardId(), amount);
     addToHistory(needs2FA ? `Заявка на вивід: -${amount} ₴ (очікує підтвердження в Telegram)` : `Заявка на вивід: -${amount} ₴ (обробляється)`);
     // Адміна повідомляємо одразу лише для заявок БЕЗ 2FA — підтверджені 2FA-заявки
     // сам webhook сповістить адміна, щойно гравець тапне "Підтвердити" в Telegram.
@@ -3875,7 +3883,7 @@ function approveWithdraw(id, user) {
         db.ref('withdraw_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
         db.ref('users/'+user+'/withdraws/'+id).update({status:'done'});
         db.ref('users/'+user).update({pendingWithdraw: false});
-        db.ref('users/'+user+'/cardTx').push({dir:'out', amount:amount, title:'Виведення коштів', subtitle: req.method||'', icon:'💸', ts:Date.now()});
+        pushCardTx(user, {dir:'out', amount:amount, title:'Виведення коштів', subtitle: req.method||'', icon:'💸'}, req.cardId || null);
         db.ref('users/'+user+'/history').push({text:`✅ Вивід підтверджено: -${amount}₴`, date:Date.now()});
         db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'✅ Ваш вивід коштів схвалено! Кошти надійдуть на реквізити протягом 1-24 год.', ts:Date.now()});
         db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -3884,7 +3892,16 @@ function approveWithdraw(id, user) {
 }
 
 function rejectWithdraw(id, user, amount) {
-    db.ref('users/'+user+'/balance').set(firebase.database.ServerValue.increment(amount));
+    // Повертаємо саме на ту картку, з якої гроші заморозили: поки заявка висіла
+    // в адмінці, гравець міг перемкнути активну — і повернення на спільний
+    // balance поклало б кошти чужій картці.
+    db.ref('withdraw_requests/'+id+'/cardId').once('value').then(function(cs) {
+        var cardId = cs.val() || null;
+        db.ref('users/'+user).once('value').then(function(us) {
+            var path = cardBalancePath(us.val() || {}, cardId);
+            db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
+        });
+    });
     db.ref('withdraw_requests/'+id).update({status:'rejected'});
     db.ref('users/'+user+'/withdraws/'+id).update({status:'rejected'});
     db.ref('users/'+user).update({pendingWithdraw: false});
@@ -4061,7 +4078,8 @@ function sendMoney() {
   if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(!checkCardLimit(getActiveCardId(), a)) return;
 
   if(btn) { btn.disabled = true; btn.textContent = 'Відправляємо…'; }
   const resetBtn = () => { if(btn) { btn.disabled = false; btn.textContent = 'Надіслати'; } };
@@ -4070,7 +4088,7 @@ function sendMoney() {
     if(!recipientName) { resetBtn(); return notify(isCard ? '❌ Картку не знайдено' : '❌ Гравця з таким ніком немає', 'error'); }
     if(recipientName === currentUser) { resetBtn(); return notify('❌ Не можна переказати самому собі', 'error'); }
     const recipient = recipientData || {};
-    if(recipient.virtualCard && recipient.virtualCard.frozen) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
+    if(isCardFrozenOf(recipient, _activeCardIdOf(recipient))) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
     const formattedCard = isCard ? rawCard.replace(/(.{4})(?=.)/g,'$1 ') : '@' + recipientName;
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
@@ -4078,10 +4096,11 @@ function sendMoney() {
     db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(a));
     db.ref('users/'+recipientName+'/virtualCard/totalIn').set(firebase.database.ServerValue.increment(a));
 
+    noteCardSpend(getActiveCardId(), a);
     // Transactions log both sides
     addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
     const myCardNum = (userData.virtualCard && userData.virtualCard.number) || '';
-    db.ref('users/'+recipientName+'/cardTx').push({ dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum, ts: Date.now() });
+    pushCardTx(recipientName, { dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum }, _activeCardIdOf(recipient));
 
     playSound('win');
     notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
@@ -4974,10 +4993,73 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '83';
+const CURRENT_VERSION = '84';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '84',
+    title: '💳 Оновлення v84 — гаманець із кількох справжніх карток',
+    date: Date.UTC(2026, 8, 13),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🔒 Блокування тепер на картку, а не на весь гаманець',
+        items: [
+          'Раніше кнопка «Блок» стояла на активній картці, але замикала геть усе — ставки, перекази й вивід з усіх карток одразу',
+          'Тепер блокується саме та картка, що показана на пластику: решта гаманця працює як звичайно, а в переліку заблокована картка має помітку',
+          'Якщо ти блокував картку раніше — цей стан переніс на всі твої картки, щоб нічого не розблокувалось саме собою',
+          'Заблокована картка не віддає гроші, але приймати їх на себе може — перекид на неї пройде',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🛡️ Денний ліміт на картку',
+        items: [
+          'У Касі під переліком карток з’явився «Денний ліміт» — скільки максимум за добу може піти з цієї картки на вивід, перекази, подарунки й купівлю крипти',
+          'Видно, скільки вже витрачено сьогодні й скільки лишилось; лічильник сам обнуляється новим днем',
+          'Ставок ліміт не стосується — для гри є окрема «Відповідальна гра» в Налаштуваннях',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🔁 Перекид між своїми картками',
+        items: [
+          'У Касі над переліком карток з’явився «Перекид» — можна миттєво перекинути гроші з однієї своєї картки на іншу',
+          'Обираєш «Звідки» і «Куди» тапом, сума — вручну або кнопками 25% / 50% / Усе; є й кнопка поміняти напрям місцями',
+          'Зарахування миттєве, без заявки й комісії — гроші не залишають твій гаманець, і перемикати активну картку заради цього більше не треба',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🧾 Історія прив’язана до картки',
+        items: [
+          'Під карткою тепер видно операції саме цієї картки, а не всього гаманця — і «Надходження / Списання» рахуються теж по ній',
+          'Кнопка «Усі операції» лишилась спільною для всього гаманця: там кожен рядок підписаний карткою, якій він належить',
+          'Старі операції, записані до появи кількох карток, не зникли — вони показуються в будь-якій картці',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '💸 Вивід прив’язаний до картки',
+        items: [
+          'Заявка на вивід запам’ятовує картку, з якої заморозили кошти: якщо адміністратор її відхилить, гроші повернуться саме на неї, навіть якщо ти встиг перемкнути активну картку',
+          'Схвалений вивід тепер потрапляє в історію тієї ж картки',
+          'Вивід тепер перевіряє, чи не заблокована активна картка — раніше не перевіряв узагалі',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🎨 Один вигляд замість трьох',
+        items: [
+          'Усі повноекранні вікна — переказ, поповнення, бонуси, підтримка, календар подій — перейшли на спокійний вигляд Каси замість старого чорно-золотого',
+          'Вкладка «Ще» була веселкою з восьми кольорів обведення: тепер це рівний список, де колір розділу несе емодзі, а не рамка кнопки',
+          'Екран входу свідомо лишився золотим — це обличчя застосунку, а не вікно',
+        ]
+      },
+    ]
+  },
   {
     version: '83',
     title: '💳 Оновлення v83 — окремі скіни карток і точне зарахування',
@@ -6837,14 +6919,16 @@ function renderCryptoAssets() {
 }
 
 function buyCrypto(sym, amount) {
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
   if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
+  if(!checkCardLimit(getActiveCardId(), amount)) return;
   var price = _cryptoPrices[sym];
   if(!price) return;
   var qty = amount / price;
   _cryptoPortfolio[sym] = (_cryptoPortfolio[sym] || 0) + qty;
   localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-amount));
+  noteCardSpend(getActiveCardId(), amount);
   userData.balance -= amount;
   notify('✅ Куплено ' + qty.toFixed(6) + ' ' + sym + ' за ₴' + amount, 'success');
   renderCryptoAssets();
@@ -7887,10 +7971,23 @@ function refreshAdminDash() {
     const el = document.getElementById('adminLotteryLive');
     if(el) el.textContent = '₴'+formatNumber(Math.floor(pool));
   });
-  db.ref('withdraw_requests').orderByChild('status').equalTo('pending').once('value', snap => {
-    const count = Object.keys(snap.val()||{}).length;
-    const el = document.getElementById('adminTurnover24h');
-    if(el) el.textContent = count + ' очікують';
+  refreshPendingWithdrawCount();
+}
+
+// Лічильник заявок на вивід показують дві різні панелі адмінки, і кожна раніше
+// читала withdraw_requests власним запитом — при відкритті вкладки статистики
+// летіли два однакові запити. Тепер один на обидві, а поки відкрита вкладка
+// заявок, число оновлює її живий слухач — узагалі без запиту.
+function setPendingWithdrawCount(count) {
+  var a = document.getElementById('adminTurnover24h');
+  var b = document.getElementById('statPendingWithdraws');
+  if(a) a.textContent = count + ' очікують';
+  if(b) b.textContent = count;
+}
+function refreshPendingWithdrawCount() {
+  if(!db) return;
+  db.ref('withdraw_requests').orderByChild('status').equalTo('pending').once('value', function(snap) {
+    setPendingWithdrawCount(Object.keys(snap.val() || {}).length);
   });
 }
 
@@ -8155,10 +8252,7 @@ function loadAdminStats() {
     const el2 = document.getElementById('statTotalBalance');
     if(el2) el2.textContent = '₴'+formatNumber(Math.floor(totalBal));
   });
-  db.ref('withdraw_requests').orderByChild('status').equalTo('pending').once('value', snap => {
-    const el = document.getElementById('statPendingWithdraws');
-    if(el) el.textContent = Object.keys(snap.val()||{}).length;
-  });
+  // лічильник виводів заповнює refreshAdminDash() — один запит на обидві панелі
 }
 function sendAnnouncement() {
   const txt = document.getElementById('announceText').value.trim();
@@ -8405,6 +8499,7 @@ function startAdminRequestListeners() {
       wdEl.innerHTML = pending.length
         ? pending.map(function(e){ return renderWithdrawCard(e[0], e[1]); }).join('')
         : '<div class="req-empty">✅ Заявок на вивід немає</div>';
+      setPendingWithdrawCount(pending.length);
       updateRequestBadge();
     });
   }
@@ -8448,25 +8543,26 @@ function updateRequestBadge() {
   if(pendingBadge) pendingBadge.textContent = total > 0 ? '⚠️ ' + total + ' заявок очікують' : '';
 }
 
-// Куди зараховувати депозит: у балансі живе лише активна картка, тому депозит
-// на НЕактивну картку йде в її linkedCards/<id>/balance, а не в спільний balance.
+// Де лежать гроші конкретної картки: у балансі живе лише АКТИВНА картка, решта
+// тримає свій баланс на собі. Цим шляхом ходить усе, що рухає кошти картки —
+// зарахування депозиту, повернення відхиленого виводу, перекид між картками.
 // Якщо картку встигли видалити — падаємо на спільний баланс, щоб гроші не зникли.
-function _depositCreditPath(u, cardId) {
+function cardBalancePath(u, cardId) {
   if(!u || !cardId) return 'balance';
-  var ids = [];
-  if(u.virtualCard && u.virtualCard.axiomLinked) ids.push('axiom');
-  if(u.linkedCards) Object.keys(u.linkedCards).forEach(function(k){ ids.push(k); });
-  if(ids.indexOf(cardId) < 0) return 'balance';
-  var active = (u.activeCardId && ids.indexOf(u.activeCardId) >= 0) ? u.activeCardId : ids[0];
-  if(cardId === active) return 'balance';
-  return cardId === 'axiom' ? 'virtualCard/balance' : ('linkedCards/' + cardId + '/balance');
+  if(_cardIdsOf(u).indexOf(cardId) < 0) return 'balance';
+  if(cardId === _activeCardIdOf(u)) return 'balance';
+  return _cardBalPath(cardId);
 }
 
 function approveDeposit(id, user, amount, cardId) {
   db.ref('users/'+user).once('value', function(snap) {
     var u = snap.val() || {};
-    var path = _depositCreditPath(u, cardId);
+    var path = cardBalancePath(u, cardId);
     db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
+    // Якщо потрібну картку встигли відключити, кошти йдуть на активну —
+    // і в історію теж саме її, а не зниклої.
+    pushCardTx(user, {dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳'},
+               path === 'balance' ? _activeCardIdOf(u) : cardId);
     if(path !== 'balance') {
       var obj = (u.linkedCards && u.linkedCards[cardId]) || (cardId === 'axiom' ? u.virtualCard : null);
       var last4 = obj ? (obj.last4 || String(obj.number||'').replace(/\D/g,'').slice(-4)) : '';
@@ -8475,7 +8571,6 @@ function approveDeposit(id, user, amount, cardId) {
   });
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
   db.ref('users/'+user+'/history').push({text:`✅ Депозит підтверджено: +${amount}₴`, date:Date.now()});
-  db.ref('users/'+user+'/cardTx').push({dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳', ts:Date.now()});
   db.ref('users/'+user+'/totalDeposits').set(firebase.database.ServerValue.increment(amount));
   db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:`✅ Ваш депозит ${amount}₴ зараховано! Гарної гри! 🎰`, ts:Date.now()});
   db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -8941,13 +9036,15 @@ function sendGift() {
   const message   = document.getElementById('giftMessage').value.trim();
   if(!recipient) return notify('Введіть нік отримувача', 'error');
   if(recipient === currentUser) return notify('Не можна надсилати собі 😄', 'error');
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
   const gift = GIFT_CATALOG[selectedGiftType];
   if(userData.balance < gift.price) return notify('Недостатньо коштів', 'error');
+  if(!checkCardLimit(getActiveCardId(), gift.price)) return;
 
   db.ref('users/' + recipient).once('value', snap => {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-gift.price));
+    noteCardSpend(getActiveCardId(), gift.price);
     db.ref('gifts/' + recipient).push({
       from: currentUser, type: selectedGiftType, icon: gift.icon, name: gift.name,
       value: gift.value, isBox: gift.isBox, message: message||null, time: Date.now(), claimed: false
@@ -16321,7 +16418,7 @@ function addBpXP(amount) {
 
 function buyVipBattlePass() {
   const cost = 500; // slotiky
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('🔒 Ваша картка заблокована!', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;
@@ -16626,54 +16723,23 @@ function switchCashierTabAndGo(tabId) {
   switchTab('cashier');
   setTimeout(()=>switchCashierTab(tabId, document.getElementById('ctb-'+tabId)), 150);
 }
-// ── CARD WITHDRAW ──
-function submitCardWithdraw() {
-  const amount = parseInt(document.getElementById('cwdAmount').value);
-  const cardNum = document.getElementById('cwdCardNum').value.trim();
-  if(!amount || amount < 200) return notify('Мінімум 200 ₴', 'error');
-  if(!cardNum) return notify('Введіть номер картки', 'error');
-  if((userData.balance||0) < amount) return notify('Недостатньо коштів', 'error');
-  const card = getCardData();
-  if(card && card.frozen) return notify('🔒 Картку заблоковано!', 'error');
-  // Submit withdraw request same as standard
-  const method = selectedWithdrawMethod || 'privat';
-  const req = { user:currentUser, amount, card:cardNum, method, status:'pending', ts:Date.now() };
-  db.ref('withdrawRequests').push(req);
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amount));
-  // Track card stats
-  db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(amount));
-  // Add to transactions
-  addCardTransaction('out', amount, 'Вивід на ' + cardNum.slice(-4), method);
-  closeTabModal('cardWithdrawModal');
-  notify(`💸 Заявку на ${formatNumber(amount)} ₴ подано!`, 'success');
-}
-
 // ── CARD TRANSACTIONS ──
+// Кожен запис стрічки прив'язаний до картки, на яку гроші реально лягли (чи з
+// якої пішли). Без цього історія активної картки показувала б операції всього
+// гаманця — і баланс картки не сходився б з її ж списком операцій.
+// Усі записи в cardTx мають іти через цю функцію, інакше операція загубиться
+// в «нічийних» і висітиме в історії всіх карток одразу.
+function pushCardTx(user, tx, cardId) {
+  if(!db || !user) return;
+  if(cardId) tx.cardId = cardId;
+  if(!tx.ts) tx.ts = Date.now();
+  db.ref('users/'+user+'/cardTx').push(tx);
+}
 function addCardTransaction(direction, amount, title, subtitle) {
   if(!currentUser) return;
-  const tx = {
-    dir: direction, amount, title, subtitle: subtitle || '',
-    ts: Date.now()
-  };
-  db.ref('users/'+currentUser+'/cardTx').push(tx);
+  pushCardTx(currentUser, { dir: direction, amount: amount, title: title, subtitle: subtitle || '' }, getActiveCardId());
 }
 
-function renderTxItem(tx) {
-  const icons = { out:'↗️', in:'↙️', slotiky:'🪙', game:'🎰', cashback:'💰', freeze:'🔒' };
-  const color = tx.dir==='in' ? '#4cd964' : '#ff3b30';
-  const sign  = tx.dir==='in' ? '+' : '-';
-  const dt = new Date(tx.ts).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-  return `<div class="bank-tx-item">
-    <div class="bank-tx-icon" style="background:${tx.dir==='in'?'rgba(76,217,100,0.1)':'rgba(255,59,48,0.1)'};">
-      ${icons[tx.dir]||'💳'}
-    </div>
-    <div class="bank-tx-desc">
-      <div class="bank-tx-title">${tx.title||'Операція'}</div>
-      <div class="bank-tx-time">${tx.subtitle||''} • ${dt}</div>
-    </div>
-    <div class="bank-tx-amount ${tx.dir==='in'?'plus':'minus'}">${sign}${formatNumber(tx.amount)} ₴</div>
-  </div>`;
-}
 // ── Axiom Transfer UI helpers ──
 let axiomTxDir = 'toAxiom';
 function setAxiomTxDir(dir) {
@@ -16712,7 +16778,7 @@ function doAxiomTransfer() {
   if(axiomTxDir === 'toAxiom') {
     if(amt > bal) return notify('Недостатньо коштів у Casino', 'error');
     // Both apps share same Firebase balance — record a transaction note only
-    db.ref('users/'+currentUser+'/cardTx').push({ title:'Переказ → Аксіома Банк', amount: amt, dir:'out', icon:'🏦', ts: Date.now() });
+    pushCardTx(currentUser, { title:'Переказ → Аксіома Банк', amount: amt, dir:'out', icon:'🏦' }, getActiveCardId());
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amt));
     // Write to Axiom namespace so Axiom Bank sees it
     db.ref('users/'+currentUser+'/axiomDeposits').push({ amount: amt, from:'slotok', ts: Date.now() });
@@ -16720,24 +16786,10 @@ function doAxiomTransfer() {
   } else {
     // Axiom → Casino: credit casino balance
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(amt));
-    db.ref('users/'+currentUser+'/cardTx').push({ title:'Поповнення ← Аксіома Банк', amount: amt, dir:'in', icon:'🏦', ts: Date.now() });
+    pushCardTx(currentUser, { title:'Поповнення ← Аксіома Банк', amount: amt, dir:'in', icon:'🏦' }, getActiveCardId());
     notify(`✅ ₴${formatNumber(amt)} надійшло з Аксіоми!`, 'success');
   }
   closeTabModal('axiomTransferModal');
-}
-
-function renderBankTransactionList(filter) {
-  const el = document.getElementById('bankTransactionList');
-  if(!el) return;
-  db.ref('users/'+currentUser+'/cardTx').orderByChild('ts').limitToLast(50).once('value', snap => {
-    const raw = snap.val();
-    if(!raw) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>'; return; }
-    let txs = Object.values(raw).reverse();
-    if(filter === 'in')  txs = txs.filter(t => t.dir === 'in');
-    if(filter === 'out') txs = txs.filter(t => t.dir === 'out');
-    if(!txs.length) { el.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:24px;">Немає операцій</div>'; return; }
-    el.innerHTML = txs.map(tx => `<div style="padding:0 14px;">${renderTxItem(tx)}</div>`).join('');
-  });
 }
 
 function openTelegramBotWithCard() {
@@ -19088,7 +19140,9 @@ function ksIcon(name, size) {
 }
 function ksEsc(str) {
   return String(str == null ? '' : str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Апостроф теж: значення з ksEsc() підставляються в onclick="fn('…')",
+    // де сирий ' обірвав би аргумент і зламав обробник.
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -19125,7 +19179,7 @@ function getLinkedCards() {
       holder: String(vc.holder || currentUser || '').toUpperCase(),
       last4: String(vc.number || '').replace(/\D/g,'').slice(-4) || '••••',
       number: vc.number, cvv: vc.cvv, expiry: vc.expiry || '',
-      addedAt: vc.axiomLinkedAt || 0, storedBalance: vc.balance || 0,
+      addedAt: vc.axiomLinkedAt || 0, storedBalance: vc.balance || 0, frozen: !!vc.frozen,
       skin: vc.skin || '', customPhotoUrl: vc.customPhotoUrl || '',
     });
   }
@@ -19143,7 +19197,7 @@ function getLinkedCards() {
       last4: c.last4 || (c.number ? String(c.number).replace(/\D/g,'').slice(-4) : '••••'),
       number: c.number || '', cvv: c.cvv || '', expiry: c.expiry || '',
       addedAt: c.addedAt || 0, generated: gen, expiresAt: c.expiresAt || 0,
-      storedBalance: c.balance || 0,
+      storedBalance: c.balance || 0, frozen: !!c.frozen,
       skin: c.skin || '', customPhotoUrl: c.customPhotoUrl || '',
     });
   });
@@ -19163,18 +19217,22 @@ function getPrimaryCard() { return getActiveCardObj() || (getLinkedCards()[0] ||
 // virtualCard/balance для Аксіоми) й авторитетний лише поки картка НЕ активна;
 // в активної живий баланс — це userData.balance.
 // ═══════════════════════════════════════════════════════════════════
-function _rawCardIds() {
+function _cardIdsOf(u) {
   var ids = [];
-  if(userData && userData.virtualCard && userData.virtualCard.axiomLinked) ids.push('axiom');
-  if(userData && userData.linkedCards) Object.keys(userData.linkedCards).forEach(function(k){ ids.push(k); });
+  if(u && u.virtualCard && u.virtualCard.axiomLinked) ids.push('axiom');
+  if(u && u.linkedCards) Object.keys(u.linkedCards).forEach(function(k){ ids.push(k); });
   return ids;
 }
-function getActiveCardId() {
-  var ids = _rawCardIds();
+// Активну картку рахуємо не лише для себе: адмінка зараховує депозит і повертає
+// відхилений вивід ЧУЖОМУ акаунту й мусить визначати її точно так само.
+function _activeCardIdOf(u) {
+  var ids = _cardIdsOf(u);
   if(!ids.length) return null;
-  var a = userData && userData.activeCardId;
+  var a = u && u.activeCardId;
   return (a && ids.indexOf(a) >= 0) ? a : ids[0];
 }
+function _rawCardIds()   { return _cardIdsOf(userData); }
+function getActiveCardId() { return _activeCardIdOf(userData); }
 function getActiveCardObj() {
   var id = getActiveCardId();
   if(!id) return null;
@@ -19182,7 +19240,42 @@ function getActiveCardObj() {
   for(var i=0;i<cards.length;i++) if(cards[i].id === id) return cards[i];
   return null;
 }
-function _cardBalPath(id) { return id === 'axiom' ? 'virtualCard/balance' : ('linkedCards/' + id + '/balance'); }
+// Аксіома тримає свої поля у virtualCard/, підключені картки — у своєму записі.
+// Один шлях на всі поля, щоб баланс, заморозка й ліміт не розповзались по трьох
+// різних уявленнях про те, де що лежить.
+function _cardFieldPath(id, field) { return (id === 'axiom' ? 'virtualCard/' : 'linkedCards/' + id + '/') + field; }
+function _cardRecOf(u, id) {
+  if(!u || !id) return null;
+  return id === 'axiom' ? (u.virtualCard || null) : ((u.linkedCards && u.linkedCards[id]) || null);
+}
+function _cardBalPath(id) { return _cardFieldPath(id, 'balance'); }
+
+// ── Заморозка ────────────────────────────────────────────────────
+// Блокування — властивість однієї картки, а не всього гаманця: заблокував
+// Приват, Аксіома далі працює. Аксіома тримає прапорець там само, де й раніше
+// (virtualCard/frozen), тож стан, який синхронізує банк-партнер, лишається
+// сумісним; підключені картки тримають свій на собі.
+function _freezePath(id) { return _cardFieldPath(id, 'frozen'); }
+function isCardFrozenOf(u, id) { return !!(_cardRecOf(u, id) || {}).frozen; }
+function isCardFrozen(id) { return isCardFrozenOf(userData, id); }
+// Гроші завжди йдуть з активної картки, тож усі перевірки списання питають саме її.
+function isActiveCardFrozen() { return isCardFrozen(getActiveCardId()); }
+
+// До мульти-карткового гаманця заморозка була одна на акаунт і лежала в
+// virtualCard/frozen. Хто заморозився тоді, мав на увазі «всі картки» — тож
+// переносимо прапорець на кожну, а не тихо розморожуємо решту.
+function migrateCardFreeze() {
+  if(!db || !currentUser || !userData || userData.freezeMigrated) return;
+  var updates = { freezeMigrated: true };
+  if(userData.virtualCard && userData.virtualCard.frozen) {
+    Object.keys(userData.linkedCards || {}).forEach(function(id) {
+      updates['linkedCards/' + id + '/frozen'] = true;
+      userData.linkedCards[id].frozen = true;
+    });
+  }
+  userData.freezeMigrated = true;
+  db.ref('users/' + currentUser).update(updates);
+}
 function _storedBalOf(id) {
   if(id === 'axiom') return (userData.virtualCard && userData.virtualCard.balance) || 0;
   return (userData.linkedCards && userData.linkedCards[id] && userData.linkedCards[id].balance) || 0;
@@ -19197,7 +19290,6 @@ function switchActiveCard(id) {
   if(ids.indexOf(id) < 0) return;
   var cur = getActiveCardId();
   if(id === cur) return;
-  if(userData.virtualCard && userData.virtualCard.frozen) return notify('Спочатку розблокуйте картку', 'error');
   var liveBal = userData.balance || 0;
   var newBal = _storedBalOf(id);
   var updates = {};
@@ -19233,6 +19325,92 @@ function _adoptOrZeroBalance(newId, recRef) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ДЕННИЙ ЛІМІТ КАРТКИ
+// Ліміт банківський, а не ігровий: рахує гроші, що йдуть З картки НАЗОВНІ —
+// вивід, переказ гравцю, подарунок, купівля крипти, перекид на іншу картку.
+// Програші в іграх сюди НЕ входять: за них відповідає «Відповідальна гра»
+// (userData.rgLimits), і дублювати її лічильником на кожну ставку — зайвий
+// запис у базу на кожен спін.
+// Лічильник живе на самій картці й скидається першою ж операцією нового дня,
+// тож окремого «обнулення опівночі» не потрібно.
+// ═══════════════════════════════════════════════════════════════════
+var CARD_LIMIT_PRESETS = [0, 500, 1000, 2000, 5000, 10000];
+
+function _dayKey(ts) {
+  var d = new Date(ts || Date.now());
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function cardDayLimit(id) { return Math.max(0, (_cardRecOf(userData, id) || {}).dayLimit || 0); }
+function cardSpentToday(id) {
+  var rec = _cardRecOf(userData, id) || {};
+  return rec.dayKey === _dayKey() ? (rec.daySpent || 0) : 0;
+}
+function cardLimitLeft(id) {
+  var lim = cardDayLimit(id);
+  return lim > 0 ? Math.max(0, lim - cardSpentToday(id)) : Infinity;
+}
+// Повертає true, якщо операцію можна проводити; інакше сама пояснює гравцю, чому ні.
+function checkCardLimit(id, amount) {
+  if(!id || !amount) return true;
+  var left = cardLimitLeft(id);
+  if(amount <= left) return true;
+  notify('Денний ліміт картки вичерпано — сьогодні лишилось ' + formatNumber(left) + ' ₴', 'error');
+  return false;
+}
+// Викликається ПІСЛЯ успішного списання: зайвий інкремент забрав би в гравця
+// ліміт за операцію, яка не відбулась.
+function noteCardSpend(id, amount) {
+  if(!db || !currentUser || !id || !amount) return;
+  if(cardDayLimit(id) <= 0) return;   // без ліміту нема чого рахувати
+  var key = _dayKey();
+  var spent = cardSpentToday(id) + amount;
+  var rec = _cardRecOf(userData, id);
+  if(rec) { rec.dayKey = key; rec.daySpent = spent; }
+  var updates = {};
+  updates[_cardFieldPath(id, 'dayKey')]   = key;
+  updates[_cardFieldPath(id, 'daySpent')] = spent;
+  db.ref('users/' + currentUser).update(updates);
+}
+
+function openCardLimitModal() {
+  var card = getActiveCardObj();
+  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  var old = document.getElementById('ksLimitModal'); if(old) old.remove();
+  var cur = cardDayLimit(card.id);
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksLimitModal';
+  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
+  m.innerHTML = '<div class="ks-modal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">Денний ліміт · ····' + ksEsc(card.last4) + '</div>' +
+      '<button class="ks-modal-x" onclick="document.getElementById(\'ksLimitModal\').remove()">' + ksIcon('x') + '</button></div>' +
+    '<p class="ks-hint" style="margin:0 0 14px;">Обмежує, скільки за добу може піти з цієї картки на вивід, перекази, подарунки й купівлю крипти. ' +
+      'Ставки він не чіпає — для гри є <b>Відповідальна гра</b> в Налаштуваннях.</p>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">' +
+      CARD_LIMIT_PRESETS.map(function(v) {
+        return '<button class="ks-btn is-sm' + (v === cur ? ' is-primary' : ' is-quiet') + '" style="flex:1 1 30%;" ' +
+          'onclick="setCardDayLimit(' + v + ')">' + (v === 0 ? 'Без ліміту' : formatNumber(v) + ' ₴') + '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="ks-label">Своя сума</div>' +
+    '<input id="ksLimitAmt" type="number" inputmode="numeric" min="0" placeholder="' + (cur || 0) + '" style="margin-bottom:10px;">' +
+    '<button class="ks-btn is-primary is-block" onclick="setCardDayLimit(Math.floor(parseFloat((document.getElementById(\'ksLimitAmt\')||{}).value)) || 0)">Зберегти</button>' +
+    '</div>';
+  document.body.appendChild(m);
+}
+
+function setCardDayLimit(v) {
+  var card = getActiveCardObj();
+  if(!card) return;
+  v = Math.max(0, Math.floor(v) || 0);
+  var rec = _cardRecOf(userData, card.id);
+  if(rec) rec.dayLimit = v;
+  db.ref('users/' + currentUser + '/' + _cardFieldPath(card.id, 'dayLimit')).set(v);
+  notify(v ? ('Денний ліміт картки ····' + card.last4 + ': ' + formatNumber(v) + ' ₴') : 'Денний ліміт знято', 'success');
+  var m = document.getElementById('ksLimitModal'); if(m) m.remove();
+  renderCardPanel();
+}
+
 // Перевірка Луна — та сама, якою користуються справжні платіжні системи.
 // Ловить описки в номері ДО того, як гравець вирішить, що Каса зламана.
 function ksLuhn(digits) {
@@ -19250,6 +19428,8 @@ function renderLinkedCards() {
   var el = document.getElementById('linkedCardsList');
   if(!el) return;
   var cards = getLinkedCards();
+  var moveBtn = document.getElementById('cardMoveBtn');
+  if(moveBtn) moveBtn.hidden = cards.length < 2;
   if(!cards.length) {
     el.innerHTML =
       '<div class="ks-empty" style="padding:22px 18px;">' +
@@ -19265,7 +19445,8 @@ function renderLinkedCards() {
   }
   el.innerHTML = cards.map(function(c) {
     var expired = c.kind === 'partner' && c.expiresAt && c.expiresAt < Date.now();
-    var badge = c.active ? '<span class="ks-badge is-pos">Активна</span>' : '';
+    var badge = c.frozen ? '<span class="ks-badge is-neg">Заблокована</span>'
+              : c.active ? '<span class="ks-badge is-pos">Активна</span>' : '';
     var act = '';
     if(expired) act += '<button class="ks-copy-btn" style="width:auto;padding:0 10px;color:var(--ks-acc);" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();renewPartnerCard(this.getAttribute(\'data-id\'))" title="Продовжити на 30 днів">' + ksIcon('clock') + '</button>';
     if(c.kind !== 'axiom') act += '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();confirmRemoveLinkedCard(this)" title="Відключити картку">' + ksIcon('trash') + '</button>';
@@ -19279,7 +19460,25 @@ function renderLinkedCards() {
       '<div class="ks-row-value ks-num" style="margin-right:6px;">' + formatNumber(c.balance) + ' ₴' + (badge ? '<small>' + badge + '</small>' : '') + '</div>' +
       act +
       '</div>';
-  }).join('');
+  }).join('') + cardLimitRowHtml();
+}
+
+// Рядок ліміту живе в тій самій панелі, що й картки — окремої розмітки не треба.
+function cardLimitRowHtml() {
+  var card = getActiveCardObj();
+  if(!card) return '';
+  var lim = cardDayLimit(card.id);
+  var sub = lim > 0
+    ? ('Сьогодні: ' + formatNumber(cardSpentToday(card.id)) + ' / ' + formatNumber(lim) + ' ₴')
+    : 'Не встановлено';
+  return '<div class="ks-row is-tappable" onclick="openCardLimitModal()">' +
+    '<div class="ks-icn">' + ksIcon('shield') + '</div>' +
+    '<div class="ks-row-main">' +
+      '<div class="ks-row-title">Денний ліміт · ····' + ksEsc(card.last4) + '</div>' +
+      '<div class="ks-row-sub">' + ksEsc(sub) + '</div>' +
+    '</div>' +
+    '<div class="ks-row-value">' + (lim > 0 ? formatNumber(cardLimitLeft(card.id)) + ' ₴' : '—') + '</div>' +
+  '</div>';
 }
 
 function renderCardMetaRow(card) {
@@ -19331,7 +19530,7 @@ function renderCardMetaRow(card) {
 function renderCardQuickActions(card) {
   var el = document.getElementById('cardQuickActions');
   if(!el) return;
-  var frozen = !!(userData && userData.virtualCard && userData.virtualCard.frozen);
+  var frozen = isActiveCardFrozen();
   // Поповнення, вивід, кешбек, курси й казино працюють і без картки —
   // інакше новий гравець не зміг би завести перші кошти. Картку вимагають
   // тільки суто карткові дії.
@@ -19524,7 +19723,7 @@ function removeLinkedCard(id) {
     if(id === activeId) { /* userData.balance вже містить залишок */ }
     else { db.ref('users/' + currentUser + '/balance').set((userData.balance || 0) + remBal); userData.balance = (userData.balance || 0) + remBal; }
     db.ref('users/' + currentUser + '/activeCardId').remove();
-    if(userData.virtualCard && userData.virtualCard.frozen) {
+    if(id === 'axiom' && userData.virtualCard && userData.virtualCard.frozen) {
       db.ref('users/' + currentUser + '/virtualCard/frozen').set(false);
       userData.virtualCard.frozen = false;
     }
@@ -19633,6 +19832,127 @@ function openCardSourcePicker() {
   document.body.appendChild(m);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ПЕРЕКИД МІЖ СВОЇМИ КАРТКАМИ
+// Гроші не залишають гаманець, тож це не «переказ гравцю»: ні заявки, ні
+// адміна — один атомарний update двох балансів. Баланс активної картки живе
+// в users/<nick>/balance, решти — на самій картці, тому шлях кожного боку
+// рахує cardBalancePath(). Перемикати активну картку заради перекиду не треба.
+// ═══════════════════════════════════════════════════════════════════
+var _ksMoveFrom = null, _ksMoveTo = null;
+
+function openCardMoveModal() {
+  var cards = getLinkedCards();
+  if(cards.length < 2) return notify('Потрібно щонайменше дві підключені картки', 'error');
+  _ksMoveFrom = getActiveCardId() || cards[0].id;
+  _ksMoveTo   = (cards.filter(function(c){ return c.id !== _ksMoveFrom; })[0] || {}).id || null;
+  var old = document.getElementById('ksMoveModal'); if(old) old.remove();
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksMoveModal';
+  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
+  m.innerHTML = '<div class="ks-modal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">Перекид між картками</div>' +
+      '<button class="ks-modal-x" onclick="document.getElementById(\'ksMoveModal\').remove()">' + ksIcon('x') + '</button></div>' +
+    '<p class="ks-hint" style="margin:0 0 14px;">Гроші лишаються у вашому гаманці — зарахування миттєве, без заявки та комісії.</p>' +
+    '<div id="ksMoveBody"></div>' +
+    '</div>';
+  document.body.appendChild(m);
+  renderCardMoveBody();
+}
+
+// Тап по картці, що вже стоїть з протилежного боку, просто розвертає напрям —
+// так стан «звідки == куди» недосяжний і кнопку не треба блокувати.
+function ksMovePick(side, id) {
+  if(side === 'from') { if(id === _ksMoveTo) _ksMoveTo = _ksMoveFrom; _ksMoveFrom = id; }
+  else                { if(id === _ksMoveFrom) _ksMoveFrom = _ksMoveTo; _ksMoveTo = id; }
+  renderCardMoveBody();
+}
+function ksMoveSwap() { var f = _ksMoveFrom; _ksMoveFrom = _ksMoveTo; _ksMoveTo = f; renderCardMoveBody(); }
+function ksMoveSetAmt(v) { var i = document.getElementById('ksMoveAmt'); if(i) { i.value = v; i.focus(); } }
+
+function renderCardMoveBody() {
+  var el = document.getElementById('ksMoveBody');
+  if(!el) return;
+  var cards = getLinkedCards();
+  var byId = {}; cards.forEach(function(c){ byId[c.id] = c; });
+  var src = byId[_ksMoveFrom], dst = byId[_ksMoveTo];
+  var avail = src ? (src.balance || 0) : 0;
+  function chips(side, sel) {
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">' + cards.map(function(c) {
+      return '<button class="ks-btn is-sm' + (c.id === sel ? ' is-primary' : ' is-quiet') + '" ' +
+        'style="flex:1 1 46%;justify-content:flex-start;" ' +
+        'onclick="ksMovePick(\'' + side + '\',\'' + ksEsc(c.id) + '\')">' +
+        '<span style="width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;' +
+        'font-size:9px;font-weight:800;color:#fff;background:' + c.markColor + ';">' + ksEsc(c.mark) + '</span>' +
+        '····' + ksEsc(c.last4) + '</button>';
+    }).join('') + '</div>';
+  }
+  el.innerHTML =
+    '<div class="ks-label">Звідки</div>' + chips('from', _ksMoveFrom) +
+    '<button class="ks-btn is-quiet is-sm is-block" style="margin-bottom:12px;" onclick="ksMoveSwap()">' +
+      ksIcon('swap') + ' Поміняти місцями</button>' +
+    '<div class="ks-label">Куди</div>' + chips('to', _ksMoveTo) +
+    '<div class="ks-label" style="display:flex;justify-content:space-between;text-transform:none;letter-spacing:0;font-size:12px;">' +
+      '<span>Сума</span><span class="ks-num">на картці ' + formatNumber(avail) + ' ₴</span></div>' +
+    '<input id="ksMoveAmt" type="number" inputmode="numeric" min="1" placeholder="0" style="margin-bottom:8px;">' +
+    '<div class="ks-btn-row" style="margin-bottom:14px;">' +
+      [25, 50, 100].map(function(p) {
+        return '<button class="ks-btn is-quiet is-sm" onclick="ksMoveSetAmt(' + Math.floor(avail * p / 100) + ')">' +
+          (p === 100 ? 'Усе' : p + '%') + '</button>';
+      }).join('') + '</div>' +
+    '<button class="ks-btn is-primary is-block" onclick="submitCardMove()"' + (avail < 1 || !dst ? ' disabled' : '') + '>' +
+      ksIcon('swap') + ' Переказати' + (dst ? ' на ····' + ksEsc(dst.last4) : '') + '</button>';
+}
+
+function submitCardMove() {
+  var amount = Math.floor(parseFloat((document.getElementById('ksMoveAmt') || {}).value));
+  if(!amount || amount < 1) return notify('Введіть суму', 'error');
+  if(moveBetweenCards(_ksMoveFrom, _ksMoveTo, amount)) {
+    var m = document.getElementById('ksMoveModal'); if(m) m.remove();
+  }
+}
+
+function moveBetweenCards(fromId, toId, amount) {
+  if(!db || !currentUser || !userData) return false;
+  if(!fromId || !toId || fromId === toId) { notify('Оберіть дві різні картки', 'error'); return false; }
+  var ids = _rawCardIds();
+  if(ids.indexOf(fromId) < 0 || ids.indexOf(toId) < 0) { notify('Картку не знайдено', 'error'); return false; }
+  var byId = {}; getLinkedCards().forEach(function(c){ byId[c.id] = c; });
+  var src = byId[fromId], dst = byId[toId];
+  if(!src || !dst) return false;
+  // Заморожена картка не віддає гроші; приймати на себе — може.
+  if(src.frozen) { notify('Картку ····' + src.last4 + ' заблоковано', 'error'); return false; }
+  if(!checkCardLimit(fromId, amount)) return false;
+  if((src.balance || 0) < amount) { notify('На картці ····' + src.last4 + ' лише ' + formatNumber(src.balance) + ' ₴', 'error'); return false; }
+  var pFrom = cardBalancePath(userData, fromId), pTo = cardBalancePath(userData, toId);
+  // Страховка на грошовому шляху: якщо обидві картки раптом вказали в один
+  // вузол, update() залишив би там лише другий приріст і сума подвоїлась би.
+  if(pFrom === pTo) { notify('Не вдалося визначити картки', 'error'); return false; }
+  var updates = {};
+  updates[pFrom] = firebase.database.ServerValue.increment(-amount);
+  updates[pTo]   = firebase.database.ServerValue.increment(amount);
+  db.ref('users/' + currentUser).update(updates);
+  // локально теж — щоб панель не блимала старими числами до відповіді Firebase
+  _applyLocalCardDelta(fromId, -amount);
+  _applyLocalCardDelta(toId, amount);
+  noteCardSpend(fromId, amount);
+  pushCardTx(currentUser, { dir:'out', amount:amount, title:'Перекид на ····' + dst.last4, subtitle:dst.bankName, icon:'🔁' }, fromId);
+  pushCardTx(currentUser, { dir:'in',  amount:amount, title:'Перекид з ····' + src.last4,  subtitle:src.bankName, icon:'🔁' }, toId);
+  notify('Перекинуто ' + formatNumber(amount) + ' ₴ на ····' + dst.last4, 'success');
+  if(navigator.vibrate) navigator.vibrate(20);
+  renderCardPanel();
+  renderSourceBars();
+  return true;
+}
+
+// Локальне дзеркало того самого правила: активна картка живе в userData.balance,
+// решта — у власному полі. Без цього панель показувала б старі числа до відповіді Firebase.
+function _applyLocalCardDelta(id, delta) {
+  if(id === getActiveCardId()) { userData.balance = (userData.balance || 0) + delta; return; }
+  if(id === 'axiom') { if(userData.virtualCard) userData.virtualCard.balance = (userData.virtualCard.balance || 0) + delta; return; }
+  if(userData.linkedCards && userData.linkedCards[id]) userData.linkedCards[id].balance = (userData.linkedCards[id].balance || 0) + delta;
+}
+
 function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
 // Стара назва лишилась у кнопках і нагадуваннях попередніх версій
 function connectAxiomaFromCard() { openAxiomLinkFlow(); }
@@ -19734,10 +20054,14 @@ function renderCardPanel() {
   }
 
   if(db && currentUser) {
-    db.ref('users/' + currentUser + '/cardTx').limitToLast(50).once('value').then(function(snap) {
-      var txs = snap.val() || {};
+    // Картка показує свою стрічку і свої підсумки; беремо із запасом, бо після
+    // фільтра по картці з останніх 50 записів могло б лишитись два.
+    var txCardId = getActiveCardId();
+    db.ref('users/' + currentUser + '/cardTx').limitToLast(300).once('value').then(function(snap) {
       var totalIn = 0, totalOut = 0;
-      var txList = Object.values(txs).sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+      var txList = Object.values(snap.val() || {})
+        .filter(function(t) { return ksTxOnCard(t, txCardId); })
+        .sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
       txList.forEach(function(t) {
         if(t.dir === 'in') totalIn += (t.amount||0);
         else               totalOut += (t.amount||0);
@@ -19750,9 +20074,8 @@ function renderCardPanel() {
     });
   }
 
-  // Заморозка — один прапорець на гравця (users/<nick>/virtualCard/frozen),
-  // його ж перевіряють ставки, переказ і вивід
-  var frozen = !!(userData.virtualCard && userData.virtualCard.frozen);
+  // Заморожена саме активна картка — її ж перевіряють ставки, переказ, вивід і перекид
+  var frozen = isActiveCardFrozen();
   var frozenOverlay = document.getElementById('vcardFrozenOverlay');
   if(frozen && primary && cardElRoot) {
     if(!frozenOverlay) {
@@ -19779,12 +20102,15 @@ var KS_TX_KINDS = {
   cashback: { cls:'is-pos',  icon:'percent', sign:'+' },
   freeze:   { cls:'',        icon:'lock',    sign:'−' },
 };
-function ksTxRowHtml(t) {
+// Операції, записані до появи мульти-карткового гаманця, не мають cardId —
+// показуємо їх у будь-якій картці, інакше історія старих гравців просто зникне.
+function ksTxOnCard(t, cardId) { return !t || !t.cardId || !cardId || t.cardId === cardId; }
+function ksTxRowHtml(t, cardLabel) {
   var dir  = t.dir || ((t.amount || 0) > 0 ? 'in' : 'out');
   var kind = KS_TX_KINDS[dir] || KS_TX_KINDS.in;
   var date = new Date(t.ts || Date.now())
     .toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-  var sub  = [t.subtitle, date].filter(Boolean).join(' · ');
+  var sub  = [t.subtitle, cardLabel, date].filter(Boolean).join(' · ');
   return '<div class="ks-row">' +
     '<div class="ks-icn ' + kind.cls + '">' + ksIcon(kind.icon) + '</div>' +
     '<div class="ks-row-main">' +
@@ -19797,14 +20123,20 @@ function ksTxRowHtml(t) {
 function renderTransactionList(txs) {
   var el = document.getElementById('cardTransactionsList');
   if(!el) return;
+  // Через map напряму передавати ksTxRowHtml не можна — другим аргументом
+  // прилетів би індекс і сів у рядок як «підпис картки».
   el.innerHTML = (txs && txs.length)
-    ? txs.map(ksTxRowHtml).join('')
+    ? txs.map(function(t) { return ksTxRowHtml(t); }).join('')
     : '<div class="ks-muted">Операцій ще немає</div>';
 }
 
 function showAllTransactions() {
   if(!db || !currentUser) return;
-  db.ref('users/' + currentUser + '/cardTx').limitToLast(100).once('value').then(function(snap) {
+  // Тут, на відміну від стрічки під карткою, показуємо весь гаманець —
+  // тому кожен рядок підписуємо карткою, якій він належить.
+  var label = {};
+  getLinkedCards().forEach(function(c) { label[c.id] = c.bankName + ' ····' + c.last4; });
+  db.ref('users/' + currentUser + '/cardTx').limitToLast(300).once('value').then(function(snap) {
     var txs = Object.values(snap.val() || {}).sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
     var m = document.createElement('div');
     m.className = 'ks-modal';
@@ -19816,7 +20148,7 @@ function showAllTransactions() {
           '<div class="ks-modal-title">Усі операції</div>' +
           '<button class="ks-modal-x" onclick="document.getElementById(\'ksAllTxModal\').remove()">' + ksIcon('x') + '</button>' +
         '</div>' +
-        (txs.length ? txs.map(ksTxRowHtml).join('') : '<div class="ks-muted">Операцій ще немає</div>') +
+        (txs.length ? txs.map(function(t){ return ksTxRowHtml(t, label[t.cardId] || ''); }).join('') : '<div class="ks-muted">Операцій ще немає</div>') +
       '</div>';
     document.body.appendChild(m);
   });
@@ -19843,11 +20175,18 @@ function bankAction(action) {
   if(navigator.vibrate) navigator.vibrate(20);
 }
 
+// Блокуємо/розблоковуємо АКТИВНУ картку — саме ту, що показана на пластику
+// й з якої йдуть гроші. Решта карток гаманця своїх станів не змінює.
 function toggleCardFreeze() {
-  if(!hasConnectedCard()) return notify('Спочатку підключіть картку в Касі', 'error');
-  var frozen = !!(userData.virtualCard && userData.virtualCard.frozen);
-  db.ref('users/' + currentUser + '/virtualCard/frozen').set(!frozen);
-  notify(frozen ? 'Картку розблоковано' : 'Картку заблоковано — списання з неї не пройде', frozen ? 'success' : 'info');
+  var card = getActiveCardObj();
+  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  var frozen = isCardFrozen(card.id);
+  db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
+  if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }
+  else if(userData.linkedCards && userData.linkedCards[card.id]) userData.linkedCards[card.id].frozen = !frozen;
+  notify(frozen
+    ? ('Картку ····' + card.last4 + ' розблоковано')
+    : ('Картку ····' + card.last4 + ' заблоковано — списання з неї не пройде'), frozen ? 'success' : 'info');
   renderCardPanel();
 }
 
@@ -21399,7 +21738,7 @@ function showWelcomeBackModal(days, bonus) {
 
 function claimWelcomeBackBonus(bonus) {
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bonus));
-  db.ref('users/'+currentUser+'/cardTx').push({dir:'in', amount:bonus, title:'Бонус повернення', subtitle:'Ми скучили!', icon:'🥺', ts:Date.now()});
+  pushCardTx(currentUser, {dir:'in', amount:bonus, title:'Бонус повернення', subtitle:'Ми скучили!', icon:'🥺'}, getActiveCardId());
   notify('🎁 +₴'+formatNumber(bonus)+' — з поверненням!', 'success');
   spawnWinCoins(bonus);
   closeModal('welcomeBack');
@@ -21521,7 +21860,7 @@ function openMysteryBox() {
   db.ref('users/'+currentUser+'/mysteryBoxClaimed').set(true);
   if(chosen.type === 'cash') {
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(chosen.amount));
-    db.ref('users/'+currentUser+'/cardTx').push({dir:'in', amount:chosen.amount, title:'Mystery Box', subtitle:'Нагорода новачка', icon:'🎁', ts:Date.now()});
+    pushCardTx(currentUser, {dir:'in', amount:chosen.amount, title:'Mystery Box', subtitle:'Нагорода новачка', icon:'🎁'}, getActiveCardId());
   } else if(chosen.type === 'spins') {
     db.ref('users/'+currentUser+'/freeSlots').set(firebase.database.ServerValue.increment(chosen.amount));
   } else if(chosen.type === 'vip') {

@@ -1313,10 +1313,17 @@
         <section class="ks-panel">
           <div class="ks-panel-head">
             <div class="ks-panel-title">Підключені картки</div>
-            <button class="ks-link" onclick="openAddCardModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              Додати
-            </button>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <!-- Перекид між своїми картками; JS ховає кнопку, поки картка одна -->
+              <button class="ks-link" id="cardMoveBtn" hidden onclick="openCardMoveModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M16 3l4 4-4 4"/><path d="M20 7H4"/><path d="M8 21l-4-4 4-4"/><path d="M4 17h16"/></svg>
+                Перекид
+              </button>
+              <button class="ks-link" onclick="openAddCardModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                Додати
+              </button>
+            </div>
           </div>
           <div class="ks-panel-body is-flush" id="linkedCardsList"></div>
         </section>
@@ -1324,7 +1331,7 @@
         <!-- Історія -->
         <section class="ks-panel">
           <div class="ks-panel-head">
-            <div class="ks-panel-title">Останні операції</div>
+            <div class="ks-panel-title">Операції картки</div>
             <button class="ks-link" onclick="showAllTransactions()">Усі операції</button>
           </div>
           <div class="ks-panel-body is-flush" id="cardTransactionsList">
@@ -1882,78 +1889,78 @@
     </div>
 
     <!-- ЩЕ -->
-    <div id="tab-more" class="screen hidden">
+    <div id="tab-more" class="screen ledger hidden">
 
       <!-- ── ⚙️ СИСТЕМА ── -->
-      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">⚙️ Система</div>
-      <div class="box" style="padding:8px;">
+      <div class="ks-label" style="padding:18px 2px 8px;">⚙️ Система</div>
+      <div class="ks-panel" style="padding:8px;">
         <button class="btn-outline" onclick="switchTab('settings')">⚙️ Налаштування</button>
-        <button class="btn-outline" onclick="installPWA()" style="border-color:#4a9eff;color:#4a9eff;">📱 Встановити застосунок на телефон</button>
+        <button class="btn-outline" onclick="installPWA()">📱 Встановити застосунок на телефон</button>
       </div>
 
       <!-- ── 👥 СОЦІАЛЬНЕ ── -->
-      <div style="font-size:10px;color:#4a9eff;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">👥 Соціальне</div>
-      <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('pm')" style="border-color:#4a9eff;color:#4a9eff;">✉️ Приватні повідомлення <span id="pmBadge" class="tab-badge hidden">!</span></button>
-        <button class="btn-outline" onclick="switchTab('trade')" style="border-color:#ff9f43;color:#ff9f43;">🔄 Торгівля (Trade)</button>
+      <div class="ks-label" style="padding:18px 2px 8px;">👥 Соціальне</div>
+      <div class="ks-panel" style="padding:8px;">
+        <button class="btn-outline" onclick="switchTab('pm')">✉️ Приватні повідомлення <span id="pmBadge" class="tab-badge hidden">!</span></button>
+        <button class="btn-outline" onclick="switchTab('trade')">🔄 Торгівля (Trade)</button>
         <button class="btn-outline" onclick="switchTab('gifts')">🎀 Подарунки гравцям <span id="giftsBadge" class="tab-badge hidden">!</span></button>
         <button class="btn-outline" onclick="switchTab('contacts')">🤝 Знайомі</button>
         <button class="btn-outline" onclick="switchTab('clans')">🛡️ Клани</button>
         <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки <span class="htbadge hidden" id="supportUnreadBadge" style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;">0</span></button>
-        <button class="btn-outline" onclick="switchTab('watchmode')" style="border-color:#ff69b4;color:#ff69b4;">👁️ Watch Mode</button>
-        <button class="btn-outline" onclick="openGlobalSearch()" style="border-color:#d4af37;color:#d4af37;">🔍 Пошук гравців і ігор</button>
-        <button class="btn-outline" onclick="showReferralQR()" style="border-color:#3dd68c;color:#3dd68c;">📲 QR-код реферала</button>
-        <button class="btn-outline" onclick="comparePlayersModal()" style="border-color:#4a9eff;color:#4a9eff;">📊 Порівняти гравців</button>
-        <button class="btn-outline" onclick="showTopDonators()" style="border-color:#d4af37;color:#d4af37;">🏆 Топ донатерів</button>
+        <button class="btn-outline" onclick="switchTab('watchmode')">👁️ Watch Mode</button>
+        <button class="btn-outline" onclick="openGlobalSearch()">🔍 Пошук гравців і ігор</button>
+        <button class="btn-outline" onclick="showReferralQR()">📲 QR-код реферала</button>
+        <button class="btn-outline" onclick="comparePlayersModal()">📊 Порівняти гравців</button>
+        <button class="btn-outline" onclick="showTopDonators()">🏆 Топ донатерів</button>
       </div>
 
       <!-- ── ⚔️ PvP / КОНКУРСИ ── -->
-      <div style="font-size:10px;color:#ff6b6b;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">⚔️ PvP та Конкурси</div>
-      <div class="box" style="padding:8px;">
+      <div class="ks-label" style="padding:18px 2px 8px;">⚔️ PvP та Конкурси</div>
+      <div class="ks-panel" style="padding:8px;">
         <button class="btn-outline" onclick="switchTab('tournaments')">🏆 Турніри</button>
         <button class="btn-outline" onclick="switchTab('leaderboard')">📊 Рейтинги (День/Тиждень/Місяць)</button>
         <button class="btn-outline" onclick="switchTab('referrals')">👥 Реферали</button>
       </div>
 
       <!-- ── 🏆 ПРОГРЕС ── -->
-      <div style="font-size:10px;color:#d4af37;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">🏆 Прогрес та Нагороди</div>
-      <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('affiliate')" style="border-color:var(--accent);color:var(--accent);">🤝 Афілейт</button>
+      <div class="ks-label" style="padding:18px 2px 8px;">🏆 Прогрес та Нагороди</div>
+      <div class="ks-panel" style="padding:8px;">
+        <button class="btn-outline" onclick="switchTab('affiliate')">🤝 Афілейт</button>
         <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
-        <button class="btn-outline" onclick="switchTab('seasons')" style="border-color:#5c6ef8;color:#7c8eff;">🌟 Сезони</button>
-        <button class="btn-outline" onclick="switchTab('ranks')" style="border-color:#d4af37;color:#d4af37;">🏅 Ранги</button>
-        <button class="btn-outline" onclick="switchTab('halloffame')" style="border-color:#d4af37;color:#d4af37;">🥇 Зал Слави</button>
+        <button class="btn-outline" onclick="switchTab('seasons')">🌟 Сезони</button>
+        <button class="btn-outline" onclick="switchTab('ranks')">🏅 Ранги</button>
+        <button class="btn-outline" onclick="switchTab('halloffame')">🥇 Зал Слави</button>
         <button class="btn-outline" onclick="switchTab('quests')">📋 Завдання <span id="questsBadge" class="tab-badge hidden">!</span></button>
         <button class="btn-outline" onclick="switchTab('weekly')">📅 Тижневі місії</button>
       </div>
-      <div style="font-size:10px;color:#666;padding:0 4px 8px;">VIP, Battle Pass і статистику дивись на Головній — там вони вже під рукою.</div>
+      <div class="ks-hint" style="padding:0 4px 10px;">VIP, Battle Pass і статистику дивись на Головній — там вони вже під рукою.</div>
 
       <!-- ── 💰 ФІНАНСИ ── -->
-      <div style="font-size:10px;color:#3dd68c;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">💰 Фінансові інструменти</div>
-      <div class="box" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('lottery')" style="border-color:#d4af37;color:#d4af37;">🎟️ Лотерея</button>
-        <button class="btn-outline" onclick="switchTab('investpool')" style="border-color:#3dd68c;color:#3dd68c;">📈 Інвест-Пул</button>
-        <button class="btn-outline" onclick="openCryptoSimulator()" style="border-color:#f0c040;color:#f0c040;">📈 Крипто-симулятор</button>
+      <div class="ks-label" style="padding:18px 2px 8px;">💰 Фінансові інструменти</div>
+      <div class="ks-panel" style="padding:8px;">
+        <button class="btn-outline" onclick="switchTab('lottery')">🎟️ Лотерея</button>
+        <button class="btn-outline" onclick="switchTab('investpool')">📈 Інвест-Пул</button>
+        <button class="btn-outline" onclick="openCryptoSimulator()">📈 Крипто-симулятор</button>
       </div>
 
       <!-- ── 🎁 БОНУСИ ── -->
-      <div style="font-size:10px;color:#ff9f43;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">🎁 Бонуси та Магазин</div>
-      <div class="box" style="padding:8px;">
+      <div class="ks-label" style="padding:18px 2px 8px;">🎁 Бонуси та Магазин</div>
+      <div class="ks-panel" style="padding:8px;">
         <button class="btn-outline" onclick="openDailyBonus()">🎁 Щоденний бонус</button>
         <button class="btn-outline" onclick="openDailySpinModal()">🎡 Щоденний безкоштовний спін</button>
         <button class="btn-outline" onclick="switchTab('hourly')">⏰ Погодинний бонус</button>
         <button class="btn-outline" onclick="switchTab('lootboxes')">📦 Лут-Бокси</button>
         <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
-        <button class="btn-outline" onclick="switchTab('lootboxes')" style="border-color:#d4af37;color:#d4af37;">📦 Відкриття кейсів</button>
-        <button class="btn-outline" onclick="openUpgradeSystem()" style="border-color:#ff9500;color:#ff9500;">⬆️ Upgrade предметів</button>
-        <button class="btn-outline" onclick="openCustomTagShop()" style="border-color:#d4af37;color:#d4af37;">🏷️ Магазин тегів</button>
-        <button class="btn-outline" onclick="openProfileEffectShop()" style="border-color:#c9a0ff;color:#c9a0ff;">🎭 Ефекти профілю</button>
-        <button class="btn-outline" onclick="openGiftVIPModal()" style="border-color:#d4af37;color:#d4af37;">🎁 Подарувати VIP</button>
+        <button class="btn-outline" onclick="switchTab('lootboxes')">📦 Відкриття кейсів</button>
+        <button class="btn-outline" onclick="openUpgradeSystem()">⬆️ Upgrade предметів</button>
+        <button class="btn-outline" onclick="openCustomTagShop()">🏷️ Магазин тегів</button>
+        <button class="btn-outline" onclick="openProfileEffectShop()">🎭 Ефекти профілю</button>
+        <button class="btn-outline" onclick="openGiftVIPModal()">🎁 Подарувати VIP</button>
       </div>
 
       <!-- ── ❤️ ПІДТРИМКА ПРОЄКТУ ── -->
-      <div style="font-size:10px;color:#d4af37;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:14px 0 6px;">❤️ Підтримка проєкту</div>
-      <div class="box" style="padding:8px;">
+      <div class="ks-label" style="padding:18px 2px 8px;">❤️ Підтримка проєкту</div>
+      <div class="ks-panel" style="padding:8px;">
         <a class="btn-gold" style="display:block;text-align:center;text-decoration:none;" href="https://send.monobank.ua/jar/3iLuXEs9Uz" target="_blank" rel="noopener">💜 Задонатити на оновлення SlotOK</a>
       </div>
 
@@ -4493,31 +4500,6 @@
     <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;">Кошти зараховуються протягом 1–5 хв</div>
   </div>
 
-  <!-- Card Withdraw Modal -->
-  <div id="cardWithdrawModal" class="full-modal hidden">
-    <button class="btn-outline" onclick="closeTabModal('cardWithdrawModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
-    <h2>💸 Вивід коштів</h2>
-    <div style="background:var(--box);border-radius:14px;padding:14px;margin-bottom:14px;">
-      <div style="font-size:11px;color:#555;margin-bottom:4px;">Ваш баланс</div>
-      <div style="font-size:22px;font-weight:900;color:var(--green);" id="cwdAvailBal">0 ₴</div>
-    </div>
-    <div class="withdraw-method" style="margin-bottom:12px;">
-      <div class="wm-btn selected" id="cwm-privat" onclick="selectWithdrawMethod('privat',this)">🟢 PrivatBank</div>
-      <div class="wm-btn" id="cwm-mono" onclick="selectWithdrawMethod('mono',this)">🐈 Monobank</div>
-      <div class="wm-btn" id="cwm-card" onclick="selectWithdrawMethod('card',this)">💳 Visa/MC</div>
-      <div class="wm-btn" id="cwm-usdt" onclick="selectWithdrawMethod('usdt',this)">₮ USDT</div>
-    </div>
-    <input id="cwdCardNum" placeholder="Номер картки / адреса" style="margin-bottom:8px;">
-    <input id="cwdAmount" type="number" placeholder="Сума (мін. 200₴)" style="margin-bottom:12px;">
-    <button class="btn-green" onclick="submitCardWithdraw()">💸 ПОДАТИ ЗАЯВКУ</button>
-  </div>
-
-  <!-- All Transactions Modal -->
-  <div id="allTransactionsModal" class="full-modal hidden">
-    <button class="btn-outline" onclick="closeTabModal('allTransactionsModal')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
-    <h2>📋 Всі операції</h2>
-    <div id="allTransactionsList"></div>
-  </div>
 
   <!-- ══════════════ BACCARAT ══════════════ -->
   <div id="tab-baccarat" class="screen hidden">
