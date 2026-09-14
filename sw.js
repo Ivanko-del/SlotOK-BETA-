@@ -3,7 +3,10 @@
 // data. This worker exists only to receive and display push notifications
 // while the app isn't open (see requestPushPermission() in app.js for token
 // registration, and lib/fcm.js for the server-side send).
-self.addEventListener('fetch', () => {});
+//
+// There is deliberately no 'fetch' listener: an empty one used to sit here,
+// and merely registering it makes the browser route every single page request
+// through the worker for nothing.
 
 self.addEventListener('push', (event) => {
   let payload = {};

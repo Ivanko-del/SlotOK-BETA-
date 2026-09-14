@@ -4,6 +4,15 @@ Single-file vanilla-JS app: `app.js` (~20k lines) + `index.html` + `style.css`,
 using the Firebase Realtime Database directly from the client. Deployed on
 Vercel from the `main` branch.
 
+## Where the remaining work is written down
+
+Big unfinished directions live in `ROADMAP.md` at the repo root — sports-bet
+settlement, the poker engine, multiplayer, the per-screen design migration,
+global chat, the Telegram bot, and the two FCM keys only the owner can create.
+Each entry names its entry point in the code, so a new session does not have to
+re-investigate. When something there ships, move it into `BUILTIN_CHANGELOG`
+and drop it from the roadmap.
+
 ## Changelog — update it every time you ship a change
 
 Whenever you make a change that a player would notice (a fix, a new feature,

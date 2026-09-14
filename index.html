@@ -11,9 +11,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>SlotOK v70</title>
   
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
@@ -1895,6 +1895,7 @@
       <div class="ks-label" style="padding:18px 2px 8px;">⚙️ Система</div>
       <div class="ks-panel" style="padding:8px;">
         <button class="btn-outline" onclick="switchTab('settings')">⚙️ Налаштування</button>
+        <button class="btn-outline" onclick="openRulesModal()">📜 Правила та політика</button>
         <button class="btn-outline" onclick="installPWA()">📱 Встановити застосунок на телефон</button>
       </div>
 
@@ -5334,7 +5335,7 @@
 
   <!-- Хешування паролів — спільний модуль із серверними функціями, має
        завантажитись до app.js, бо той користується SlotOKPassword -->
-  <script src="password.js"></script>
+  <script defer src="password.js"></script>
   <!-- Main app -->
-  <script src="app.js"></script>
+  <script defer src="app.js"></script>
 </body>

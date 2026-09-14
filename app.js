@@ -142,7 +142,8 @@ function startDataSync() {
             document.getElementById('auth-screen').classList.add('hidden');
             stopAuthStatsListeners();
             updateUI();
-            loadContacts(); 
+            checkTermsGate();
+            loadContacts();
             checkAdmin();
             checkDailyBonus();
             checkInboxGifts();
@@ -4993,10 +4994,44 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '84';
+const CURRENT_VERSION = '85';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '85',
+    title: '📜 Оновлення v85 — правила, реальні рахунки й швидший старт',
+    date: Date.UTC(2026, 8, 14),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '📜 Правила та політика',
+        items: [
+          'При вході один раз показуються правила: вік від 14 років, один акаунт на людину, заборона лізти в код сайту й писати напряму в базу',
+          'Там же коротко зібрано те, що й так діяло: як працює Каса, які дані зберігаються, за що блокують і де шукати інструменти відповідальної гри',
+          'Перечитати правила можна будь-коли — вкладка «Ще» → «📜 Правила та політика»',
+          'Якщо знайшов помилку, яка дає гроші чи перевагу — напиши в підтримку: за повідомлення дякуємо, за використання анулюємо здобуте',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '⚽ Спорт-ставки закриваються справжнім рахунком',
+        items: [
+          'Ставка на реальний матч тепер закривається рахунком із ESPN одразу, щойно матч завершився — раніше вона висіла три години й дораховувалась випадково, хоча справжній рахунок уже був відомий',
+          'Якщо рахунок так і не надійшов, результат, як і раніше, визначається автоматично — але тепер сповіщення прямо про це каже, а не вдає справжній рахунок',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '⚡ Застосунок стартує швидше',
+        items: [
+          'Сторінка більше не чекає завантаження всіх скриптів, перш ніж щось показати',
+          'Прибрано зайвий перехоплювач, через який кожен запит сторінки марно йшов через фонового робітника',
+        ]
+      },
+    ]
+  },
   {
     version: '84',
     title: '💳 Оновлення v84 — гаманець із кількох справжніх карток',
@@ -12935,6 +12970,7 @@ async function loadRealSportMatches(sport, btnEl) {
 
   // Store
   matches.forEach(m => { realMatches[m.id] = m; });
+  publishFinalScores(matches);
   if(loadEl) loadEl.classList.add('hidden');
   renderRealMatches(matches);
 
@@ -12944,6 +12980,24 @@ async function loadRealSportMatches(sport, btnEl) {
 
   // Load bets
   loadSportMyBets();
+}
+
+// Матч, який ESPN позначив завершеним, отримує запис із рахунком — саме звідти
+// checkPendingBetsOnStartup() бере результат. Без цього запису ставка на
+// СПРАВЖНІЙ матч висіла три години й закривалась симуляцією, хоча рахунок
+// приходив від ESPN з кожним оновленням списку. Пишемо тільки справжні
+// результати (isFinal і обидва рахунки), щоб симуляція не підмінила реальний матч.
+function publishFinalScores(matches) {
+  if(!db || !matches) return;
+  matches.forEach(function(m) {
+    if(!m || !m.isFinal || !m.liveScore) return;
+    if(m.liveScore.home == null || m.liveScore.away == null) return;
+    db.ref('sport_matches/' + m.id).update({
+      status: 'finished',
+      finalScore: m.liveScore.home + ':' + m.liveScore.away,
+      source: 'espn',
+    });
+  });
 }
 
 function randomFutureMatchTime() {
@@ -13404,11 +13458,11 @@ function simulateAndResolveBet(betId, bet) {
     if(won) {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
       playSound('bonus');
-      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴! (${sc[0]}:${sc[1]})`, 'success');
+      notify(`🏆 ${bet.matchTitle||'Ставка'} — ВИГРАШ +${formatNumber(payout)}₴ · рахунок не надійшов, результат визначено автоматично`, 'success');
       if(payout >= 500) addToWinFeed('Спорт', payout, bet.odds);
     } else {
       playSound('loss');
-      notify(`😞 ${bet.matchTitle||'Ставка'} (${sc[0]}:${sc[1]}) — програш`, 'error');
+      notify(`😞 ${bet.matchTitle||'Ставка'} — програш · рахунок не надійшов, результат визначено автоматично`, 'error');
     }
     addToHistory(`Спорт: ${won?'+'+payout:'-'+bet.amount}`);
   });
@@ -19951,6 +20005,181 @@ function _applyLocalCardDelta(id, delta) {
   if(id === getActiveCardId()) { userData.balance = (userData.balance || 0) + delta; return; }
   if(id === 'axiom') { if(userData.virtualCard) userData.virtualCard.balance = (userData.virtualCard.balance || 0) + delta; return; }
   if(userData.linkedCards && userData.linkedCards[id]) userData.linkedCards[id].balance = (userData.linkedCards[id].balance || 0) + delta;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ПРАВИЛА ТА ЗГОДА ГРАВЦЯ
+// Гейт показується один раз на версію правил і блокує решту застосунку,
+// доки гравець не підтвердить вік і не погодиться не лізти в код сайту.
+// Це ПІДТВЕРДЖЕННЯ, а не захист: правила Firebase дозволяють клієнту писати
+// у свої вузли, тож технічно обійти гейт може будь-хто, хто цього захоче.
+// Сенс у тому, щоб людина свідомо прочитала й натиснула, а не в тому, щоб
+// зупинити зловмисника — для цього потрібен серверний бік (див. ROADMAP.md).
+// Піднімаємо TERMS_VERSION, коли текст правил змінюється по суті: тоді
+// згоду запитають наново.
+// ═══════════════════════════════════════════════════════════════════
+var TERMS_VERSION = '1';
+
+var TERMS_SECTIONS = [
+  {
+    title: 'Вік',
+    items: [
+      'Користуватись SlotOK можна з 14 років. Підтверджуючи згоду, ти заявляєш, що тобі вже виповнилось 14.',
+      'Якщо тобі менше — закрий сайт. Акаунти, власники яких не досягли цього віку, блокуються без повернення балансу.',
+    ]
+  },
+  {
+    title: 'Один акаунт',
+    items: [
+      'На одного гравця — один акаунт. Другий акаунт, створений тією самою людиною, вважається мультиакаунтингом.',
+      'За мультиакаунтинг блокуються всі пов’язані профілі, а не лише останній.',
+    ]
+  },
+  {
+    title: 'Не лізь у код сайту',
+    items: [
+      'Заборонено змінювати сторінку через консоль браузера, розширення, перехоплення запитів чи будь-яку автоматизацію ставок.',
+      'Заборонено писати напряму в базу даних в обхід інтерфейсу.',
+      'Якщо знайшов помилку, яка дає гроші чи перевагу — напиши в підтримку. Використання такої помилки прирівнюється до спроби зламу, і баланс, здобутий нею, анулюється.',
+      'Того, хто повідомив про діру замість того, щоб нею скористатись, ми дякуємо і не караємо.',
+    ]
+  },
+  {
+    title: 'Чесна гра',
+    items: [
+      'Заборонена змова між гравцями в іграх один проти одного та в турнірах.',
+      'Заборонено передавати акаунт іншій людині або грати з чужого.',
+      'Результати ігор визначає код сайту; спори вирішує адміністратор.',
+    ]
+  },
+  {
+    title: 'Каса',
+    items: [
+      'Поповнення й виводи обробляє адміністратор вручну — миттєвого зарахування немає.',
+      'Вивід від 5000 ₴ додатково підтверджується тапом у прив’язаному Telegram.',
+      'Заявка на поповнення й на вивід прив’язується до картки, активної на момент подачі: кошти зарахуються або повернуться саме на неї.',
+      'Одна активна заявка на вивід за раз.',
+    ]
+  },
+  {
+    title: 'Відповідальна гра',
+    items: [
+      'У Налаштуваннях є особисті ліміти на програш і тривалість сесії та само-виключення на час.',
+      'У Касі можна поставити денний ліміт на картку — скільки максимум за добу може піти з неї назовні.',
+      'Якщо відчуваєш, що граєш забагато — увімкни само-виключення. Адміністратор не знімає його достроково на прохання.',
+    ]
+  },
+  {
+    title: 'Твої дані',
+    items: [
+      'Зберігаються: нік, хеш пароля, баланс і його історія, операції по картках, налаштування, прив’язаний Telegram (якщо прив’язав) і токен пристрою для сповіщень (якщо дозволив).',
+      'Іншим гравцям видно твій нік, аватар, рівень, досягнення й публічну статистику. Баланс картки, операції та Telegram — не видно.',
+      'Видалення акаунта — через підтримку.',
+    ]
+  },
+  {
+    title: 'Блокування',
+    items: [
+      'Адміністратор може заблокувати акаунт за порушення цих правил.',
+      'Підозріла активність може тимчасово призупинити ставки й виводи до перевірки — це не блокування, напиши в підтримку.',
+    ]
+  },
+  {
+    title: 'Зміни правил',
+    items: [
+      'Правила можуть змінюватись. Коли зміниться суть — попросимо підтвердити згоду наново при вході.',
+    ]
+  },
+];
+
+function termsSectionsHtml() {
+  return TERMS_SECTIONS.map(function(sec) {
+    return '<div class="ks-label" style="margin-top:16px;">' + ksEsc(sec.title) + '</div>' +
+      sec.items.map(function(it) {
+        return '<p class="ks-hint" style="margin:0 0 7px;">• ' + ksEsc(it) + '</p>';
+      }).join('');
+  }).join('');
+}
+
+// Правила можна відкрити будь-коли — з вкладки «Ще» або з самого гейта.
+function openRulesModal() {
+  var old = document.getElementById('ksRulesModal'); if(old) old.remove();
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksRulesModal';
+  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
+  m.innerHTML = '<div class="ks-modal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">Правила SlotOK</div>' +
+      '<button class="ks-modal-x" onclick="document.getElementById(\'ksRulesModal\').remove()">' + ksIcon('x') + '</button></div>' +
+    '<p class="ks-hint" style="margin:0;">Правила користування сайтом. Версія ' + ksEsc(TERMS_VERSION) + '.</p>' +
+    termsSectionsHtml() +
+    '<button class="ks-btn is-quiet is-block" style="margin-top:18px;" onclick="document.getElementById(\'ksRulesModal\').remove()">Закрити</button>' +
+    '</div>';
+  document.body.appendChild(m);
+}
+
+// ── Гейт згоди ───────────────────────────────────────────────────
+var TERMS_CHECKS = [
+  { k: 'age',    text: 'Мені виповнилось 14 років' },
+  { k: 'noHack', text: 'Я не лізтиму в консоль, не змінюватиму код сайту й не намагатимусь його зламати' },
+  { k: 'read',   text: 'Я прочитав правила й погоджуюсь із ними' },
+];
+var _termsChecked = {};
+
+function hasAcceptedTerms() {
+  return !!(userData && userData.termsAcceptedAt && String(userData.termsVersion) === TERMS_VERSION);
+}
+
+function checkTermsGate() {
+  if(!currentUser || !userData) return;
+  if(hasAcceptedTerms()) return;
+  if(document.getElementById('ksTermsGate')) return;
+  _termsChecked = {};
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksTermsGate';
+  // Навмисно без закриття по фону і без хрестика: єдині виходи — підтвердити
+  // або вийти з акаунта.
+  m.innerHTML = '<div class="ks-modal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">Перш ніж грати</div></div>' +
+    '<p class="ks-hint" style="margin:0 0 14px;">Коротко про головне. Повний текст — за кнопкою нижче.</p>' +
+    '<div id="ksTermsChecks"></div>' +
+    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати повні правила</button>' +
+    '<button class="ks-btn is-primary is-block" id="ksTermsAccept" disabled onclick="acceptTerms()">Підтверджую</button>' +
+    '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="logout()">Вийти</button>' +
+    '</div>';
+  document.body.appendChild(m);
+  renderTermsChecks();
+}
+
+function renderTermsChecks() {
+  var el = document.getElementById('ksTermsChecks');
+  if(!el) return;
+  el.innerHTML = TERMS_CHECKS.map(function(c) {
+    var on = !!_termsChecked[c.k];
+    return '<div class="ks-row is-tappable" onclick="toggleTermsCheck(\'' + c.k + '\')" style="align-items:flex-start;">' +
+      '<div class="ks-icn' + (on ? ' is-pos' : '') + '">' + (on ? ksIcon('check') : '') + '</div>' +
+      '<div class="ks-row-main"><div class="ks-row-sub" style="color:' + (on ? 'var(--ks-fg)' : 'var(--ks-fg-2)') + ';">' +
+        ksEsc(c.text) + '</div></div>' +
+    '</div>';
+  }).join('');
+  var btn = document.getElementById('ksTermsAccept');
+  if(btn) btn.disabled = TERMS_CHECKS.some(function(c){ return !_termsChecked[c.k]; });
+}
+
+function toggleTermsCheck(k) {
+  _termsChecked[k] = !_termsChecked[k];
+  renderTermsChecks();
+}
+
+function acceptTerms() {
+  if(TERMS_CHECKS.some(function(c){ return !_termsChecked[c.k]; })) return;
+  if(!db || !currentUser) return;
+  var now = Date.now();
+  db.ref('users/' + currentUser).update({ termsAcceptedAt: now, termsVersion: TERMS_VERSION });
+  userData.termsAcceptedAt = now;
+  userData.termsVersion = TERMS_VERSION;
+  var m = document.getElementById('ksTermsGate'); if(m) m.remove();
+  notify('Дякуємо. Гарної гри!', 'success');
 }
 
 function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
