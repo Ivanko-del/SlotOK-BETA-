@@ -4,7 +4,7 @@
   "version": "70.0.0",
   "description": "SlotOK — браузерне казино (Firebase RTDB + Vercel serverless + Telegram-бот)",
   "scripts": {
-    "test": "node scripts/selfcheck-bp-season.js && node scripts/selfcheck-telegram-bot.js && node scripts/selfcheck-password-hash.js && node scripts/selfcheck-notify-ratelimit.js && node scripts/selfcheck-card-ledger.js"
+    "test": "node scripts/selfcheck-bp-season.js && node scripts/selfcheck-telegram-bot.js && node scripts/selfcheck-password-hash.js && node scripts/selfcheck-notify-ratelimit.js && node scripts/selfcheck-card-ledger.js && node scripts/selfcheck-progress-sources.js"
   },
   "engines": {
     "node": ">=20"

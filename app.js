@@ -618,6 +618,25 @@ function copyDepRequisites() {
 
 // Fire-and-forget push to the Telegram bot so admin gets an actionable
 // notification immediately, without waiting for the player to open the bot.
+// Порожній або битий <img> інакше малює системну іконку "зламане зображення":
+// аватарки без avatarUrl, прев'ю чату/підтримки до вибору файлу, мертві
+// посилання в історії повідомлень. Один перехоплювач на документі замість
+// guard-а в кожному з ~20 місць, де будується <img>.
+const IMG_FALLBACK = 'data:image/svg+xml;charset=utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">' +
+  '<rect width="48" height="48" rx="10" fill="#15151c"/>' +
+  '<circle cx="24" cy="19" r="7" fill="#3a3a48"/>' +
+  '<path d="M10 42c0-8 6.5-12 14-12s14 4 14 12z" fill="#3a3a48"/></svg>');
+
+document.addEventListener('error', e => {
+  const el = e.target;
+  if(!el || el.tagName !== 'IMG') return;
+  if(el.onerror) return;              // у місця зі своїм onerror не лізем
+  if(el.dataset.imgFallback) return;  // і не зациклюємось на самому фолбеку
+  el.dataset.imgFallback = '1';
+  el.src = IMG_FALLBACK;
+}, true);
+
 function notifyBot(type, id, extra) {
   try {
     fetch('/api/notify', {
@@ -2474,7 +2493,7 @@ function runFraudCheck() {
     const suspicious = [];
     Object.entries(users).forEach(([u, data])=>{
       const balance = data.balance||0;
-      const totalWager = data.totalWager||0;
+      const totalWager = data.totalWagered || data.totalWager || 0;
       // Flag: balance >> wager (unusual gains)
       if(balance > 100000 && totalWager < balance*0.1) suspicious.push({user:u, reason:'balance/wager ratio', balance, totalWager});
       // Flag: too many rapid wins
@@ -3141,7 +3160,7 @@ function clearChatImage() {
   const vidEl = document.getElementById('chatVideoPreview');
   if(vidEl) { vidEl.src = ''; vidEl.style.display = 'none'; }
   const img = document.getElementById('chatImagePreviewImg');
-  if(img) img.style.display = 'block';
+  if(img) { img.removeAttribute('src'); img.style.display = 'block'; }
 }
 
 function toggleGifPanel() {
@@ -3194,8 +3213,9 @@ function initAffiliate() {
   db.ref('users').orderByChild('referredBy').equalTo(currentUser).once('value', snap => {
     const refs = snap.val()||{};
     const count = Object.keys(refs).length;
-    const active = Object.values(refs).filter(u=>u.totalWager>100).length;
-    const earned = Math.floor(Object.values(refs).reduce((s,u)=>(s+(u.totalWager||0)*0.01),0));
+    const refWager = u => u.totalWagered || u.totalWager || 0;  // totalWager — легасі-поле
+    const active = Object.values(refs).filter(u => refWager(u) > 100).length;
+    const earned = Math.floor(Object.values(refs).reduce((s,u)=>(s+refWager(u)*0.01),0));
     const e1=document.getElementById('affRefs'), e2=document.getElementById('affEarned'), e3=document.getElementById('affActive');
     if(e1) e1.textContent=count; if(e2) e2.textContent='₴'+formatNumber(earned); if(e3) e3.textContent=active;
   });
@@ -3297,20 +3317,30 @@ function searchGames(query) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 💰 RAKEBACK
+// 💰 RAKEBACK — це той самий VIP-кешбек
 // ═══════════════════════════════════════════════════════
-function claimRakeback() {
-  db.ref('users/'+currentUser).once('value', snap => {
-    const data = snap.val()||{};
-    const wager = data.totalWager||0;
-    const claimed = data.rakebackClaimed||0;
-    const earned = Math.floor(wager*0.005);
-    const toClaim = Math.max(0, earned-claimed);
-    if(toClaim < 10) return notify('Мінімум ₴10 для виводу ракебеку','error');
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(toClaim));
-    db.ref('users/'+currentUser+'/rakebackClaimed').set(earned);
-    notify('💰 Ракебек ₴'+formatNumber(toClaim)+' отримано!','success');
-  });
+// Ракебек у налаштуваннях і кешбек у Касі — одна й та сама накопичена сума
+// (cashbackPending), і ставка береться з VIP-рівня (VIP_LEVELS), а не з
+// фіксованих 0.5%. Старий claimRakeback() рахував 0.5% від поля totalWager,
+// яке ніде не пишеться (пишеться totalWagered), тож завжди видавав ₴0 —
+// і водночас суперечив відсоткам, обіцяним на екрані VIP.
+function updateRakebackUI() {
+  const titleEl = document.getElementById('rakebackTitle');
+  if(!titleEl || !userData) return;
+  const vip     = getVipLevel(userData.totalWagered || 0);
+  const rate    = vip.cashback + clanCashbackBonus;
+  const pending = userData.cashbackPending || 0;
+  const pct     = Math.min(100, Math.round(pending / CASHBACK_MIN_CLAIM * 100));
+
+  titleEl.textContent = `💰 Ракебек (${+(rate * 100).toFixed(2)}% від ставки · ${vip.icon} ${vip.name})`;
+  const amountEl = document.getElementById('rakebackAmount');
+  if(amountEl) amountEl.textContent = '₴' + formatNumber(pending);
+  const barEl = document.getElementById('rakebackBar');
+  if(barEl) barEl.style.width = pct + '%';
+  const nextEl = document.getElementById('rakebackNext');
+  if(nextEl) nextEl.textContent = pending >= CASHBACK_MIN_CLAIM
+    ? 'Можна вивести'
+    : `До виводу лишилось ₴${formatNumber(CASHBACK_MIN_CLAIM - pending)}`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4994,10 +5024,53 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '85';
+const CURRENT_VERSION = '86';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '86',
+    title: '📜 Оновлення v86 — іменні сезони та чесні цифри рівнів',
+    date: Date.UTC(2026, 8, 15),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🎫 Battle Pass показує один і той самий рівень скрізь',
+        items: [
+          'На Головній рівень Battle Pass більше не завмирає на «Lv0» — тепер там той самий рівень і той самий прогрес XP, що й на екрані Battle Pass',
+          'Банер на Головній, спливаюче вікно «Новий рівень!» і пуш у Telegram теж рахують рівні однаково',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🍂 У сезонів Battle Pass з’явились назви',
+        items: [
+          'Кожен сезон тепер має свою назву й іконку: зараз іде «Сезон 9 · 🍂 Осінній рейз», далі — 🎃 Хелловін, 🌌 Нічна зміна, 🎄 Зимове свято та інші',
+          'Назва видно просто в шапці Battle Pass, поруч із таймером до кінця сезону',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '💰 Ракебек = твій VIP-кешбек',
+        items: [
+          'У налаштуваннях більше не написано фіксовані «0.5% від вейджеру» — там показано твій реальний відсоток за VIP-рівнем і скільки вже накопичено',
+          'Кнопка «Вивести ракебек» виплачує ту саму накопичену суму, що й кешбек у Касі (раніше вона завжди відповідала «₴0»)',
+          'Список VIP-рівнів тепер показує справжні відсотки кешбеку, погодинні бонуси й пороги ставок — усі 14 рівнів, від Iron до Supreme',
+          'Плитки погодинного бонусу теж показують усі 14 рівнів із реальними сумами (раніше було чотири плитки, і Gold/Platinum у них були вказані неправильно)',
+          'VIP-герб на Головній і рейтинг за сумою ставок більше не завмирають на нулі — вони рахували ставки по полю, якого движок не заповнює',
+          'Заробіток із рефералів рахується з тієї ж суми ставок, що й скрізь',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🖼 Биті картинки',
+        items: [
+          'Аватарки з мертвим посиланням і прев’ю фото в чаті/підтримці більше не показують іконку «зламане зображення» — замість неї стоїть звичайний заповнювач',
+        ]
+      },
+    ]
+  },
   {
     version: '85',
     title: '📜 Оновлення v85 — правила, реальні рахунки й швидший старт',
@@ -5903,32 +5976,31 @@ function renderHomeAxiomWidget() {
 
 function renderHomeProgressBars() {
   if(!userData) return;
-  const VIP_LEVELS = [
-    {name:'Bronze',min:0,max:5000,color:'#cd7f32'},
-    {name:'Silver',min:5000,max:20000,color:'#a8a9ad'},
-    {name:'Gold',min:20000,max:50000,color:'#d4af37'},
-    {name:'Platinum',min:50000,max:150000,color:'#e5e4e2'},
-    {name:'Diamond',min:150000,max:500000,color:'#4a9eff'},
-  ];
+  // VIP і Battle Pass на Головній читаються рівно з тих самих джерел, що й
+  // екрани «VIP» (глобальний VIP_LEVELS/getVipLevel) і «Battle Pass»
+  // (getBpData). Раніше тут був власний скорочений список рівнів і власне
+  // поле bpXp, якого ніхто не пише — звідси й вічний «Lv0» на Головній.
   const wag = userData.totalWagered || 0;
-  let vipLevel = VIP_LEVELS[0];
-  for(const lv of VIP_LEVELS) { if(wag >= lv.min) vipLevel = lv; }
-  const vipPct = Math.min(100, Math.round(((wag - vipLevel.min) / ((vipLevel.max - vipLevel.min)||1)) * 100));
+  const vipLevel = getVipLevel(wag);
+  const hasNextVip = vipLevel.index < VIP_LEVELS.length - 1;
+  const nextVip = VIP_LEVELS[Math.min(vipLevel.index + 1, VIP_LEVELS.length - 1)];
+  const vipPct = hasNextVip
+    ? Math.min(100, Math.round(((wag - vipLevel.min) / ((nextVip.min - vipLevel.min)||1)) * 100))
+    : 100;
 
   const lbl = document.getElementById('homeVipLabel');
   const bar = document.getElementById('homeVipBar');
   const pct = document.getElementById('homeVipPct');
   if(lbl) lbl.textContent = vipLevel.name;
-  if(bar) { bar.style.width = vipPct + '%'; bar.style.background = `linear-gradient(90deg,${vipLevel.color}88,${vipLevel.color})`; }
+  if(bar) { bar.style.width = vipPct + '%'; bar.style.background = vipLevel.cssVar; }
   if(pct) pct.textContent = vipPct + '%';
 
-  const bpXp = userData.bpXp || 0;
-  const bpLevel = Math.floor(bpXp / 100);
-  const bpPct = (bpXp % 100);
+  const bp = getBpData();
+  const bpPct = Math.min(100, Math.round((bp.xp % BP_XP_PER_LEVEL) / BP_XP_PER_LEVEL * 100));
   const bpBar = document.getElementById('homeBpBar');
   const bpPctEl = document.getElementById('homeBpPct');
   if(bpBar) bpBar.style.width = bpPct + '%';
-  if(bpPctEl) bpPctEl.textContent = 'Lv' + bpLevel;
+  if(bpPctEl) bpPctEl.textContent = 'Lv' + (bp.level + 1);
 }
 
 
@@ -9602,6 +9674,7 @@ function getVipLevel(wagered) {
 // ============================================================
 const CASHBACK_MAX_PER_BET  = 50;    // грн
 const CASHBACK_MAX_PER_WEEK = 5000;  // грн
+const CASHBACK_MIN_CLAIM    = 2000;  // грн — мінімум для виводу
 
 function getCashbackEnabled() {
   try { return localStorage.getItem('cashback_enabled') !== 'false'; } catch(e) { return true; }
@@ -9659,7 +9732,7 @@ function addWager(amount) {
 function claimCashback() {
   const pending = userData.cashbackPending || 0;
   if(pending <= 0) return notify('Немає накопиченого кешбеку', 'info');
-  if(pending < 2000) return notify(`❌ Мінімум для виплати: 2000 ₴. Зараз: ${formatNumber(pending)} ₴`, 'error');
+  if(pending < CASHBACK_MIN_CLAIM) return notify(`❌ Мінімум для виплати: ${CASHBACK_MIN_CLAIM} ₴. Зараз: ${formatNumber(pending)} ₴`, 'error');
   db.ref('users/'+currentUser).update({
     balance: firebase.database.ServerValue.increment(pending),
     cashbackPending: 0,
@@ -9671,6 +9744,7 @@ function claimCashback() {
   addToHistory('Кешбек: +'+pending);
   addCardTransaction('in', pending, 'Кешбек нараховано', 'SlotOK Casino');
   updateCashierCashbackUI();
+  updateRakebackUI();
 }
 
 function toggleCashback(el) {
@@ -9788,11 +9862,41 @@ function updateVipUI() {
     document.getElementById('vipProgRight').textContent = 'Максимальний рівень! 🏆';
   }
 
-  // Підсвітка погодинного VIP
-  ['bronze','silver','gold','plat'].forEach((t, i) => {
-    const el = document.getElementById('hvt-' + t);
-    if(el) el.classList.toggle('active', i === vip.index);
-  });
+  // Список усіх рівнів будується з VIP_LEVELS — того самого масиву, за яким
+  // реально нараховується кешбек і погодинний бонус. Раніше це були чотири
+  // захардкоджені картки (Bronze 0% / Silver 1% / Gold 2% / Platinum 5%),
+  // яких движок ніколи не платив.
+  const allEl = document.getElementById('vipAllLevels');
+  if(allEl) {
+    allEl.innerHTML = VIP_LEVELS.map((lv, i) => {
+      const titleColor = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
+      return `
+      <div class="vip-card ${lv.class}" style="margin-bottom:8px;${i === vip.index ? 'outline:1px solid var(--accent);' : ''}">
+        <div style="font-size:14px; font-weight:bold; color:${titleColor}; margin-bottom:8px;">
+          ${lv.icon} ${lv.name} — ${lv.min === 0 ? 'старт' : 'від ' + formatNumber(lv.min) + ' ₴ ставок'}
+        </div>
+        <div class="vip-perk"><span class="vip-perk-icon">🎁</span><span>Щоденний бонус ×${lv.dailyMult}</span></div>
+        <div class="vip-perk"><span class="vip-perk-icon">⏰</span><span>Погодинний бонус: ${lv.hourly} ₴</span></div>
+        <div class="vip-perk"><span class="vip-perk-icon">💰</span><span>Кешбек: ${+(lv.cashback * 100).toFixed(2)}% з кожної ставки</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Плитки погодинного бонусу — з того ж VIP_LEVELS. Раніше це були чотири
+  // захардкоджені суми (25/50/100/200 ₴), які вже розійшлися з движком, а
+  // підсвітка по індексу працювала лише для перших чотирьох із 14 рівнів.
+  const hourlyEl = document.getElementById('hourlyVipTiers');
+  if(hourlyEl) {
+    hourlyEl.innerHTML = VIP_LEVELS.map((lv, i) => {
+      const c = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
+      return `<div class="hourly-vip-tier${i === vip.index ? ' active' : ''}">
+        <div class="hourly-vip-amount" style="color:${c};">${lv.hourly}₴</div>
+        <div style="color:${c};">${lv.icon} ${lv.name}</div>
+      </div>`;
+    }).join('');
+    const active = hourlyEl.querySelector('.hourly-vip-tier.active');
+    if(active) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+  }
 }
 
 // ============================================
@@ -10538,7 +10642,7 @@ function switchTab(id, el) {
   if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
-  if(id==='settings')     safe(() => { loadSettings(); updateRGLossWarnUI(); });
+  if(id==='settings')     safe(() => { loadSettings(); updateRGLossWarnUI(); updateRakebackUI(); });
   if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='lobby')        safe(() => { updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='baccarat')     safe(() => initBaccarat());
@@ -13961,10 +14065,10 @@ function loadLeaderboardNew() {
 
   if(lbCurrentPeriod === 'all') {
     // Завантажуємо з глобальних даних юзерів
-    const fieldMap = { wager:'totalWager', wins:'totalWins', profit:'totalProfit', games:'stats.gamesPlayed', bigwin:'stats.biggestWin' };
+    const fieldMap = { wager:'totalWagered', wins:'totalWins', profit:'totalProfit', games:'stats.gamesPlayed', bigwin:'stats.biggestWin' };
     db.ref('users').once('value', snap => {
       const data = snap.val()||{};
-      buildLbDisplay(data, fieldMap[lbCurrentMetric]||'totalWager', metricLabels[lbCurrentMetric]||'₴');
+      buildLbDisplay(data, fieldMap[lbCurrentMetric]||'totalWagered', metricLabels[lbCurrentMetric]||'₴');
     });
   } else {
     // Завантажуємо з лідерборду за період
@@ -13974,17 +14078,18 @@ function loadLeaderboardNew() {
       if(!Object.keys(data).length) {
         // Якщо немає даних — fallback на globalні
         db.ref('users').once('value', uSnap => {
-          buildLbDisplay(uSnap.val()||{}, 'totalWager', '₴');
+          buildLbDisplay(uSnap.val()||{}, 'totalWagered', '₴');
         });
         return;
       }
-      // Перетворюємо в формат {username: {totalWager: val}}
+      // Перетворюємо в формат {username: {lbValue: val}} — lbValue це локальний
+      // ключ для buildLbDisplay, а не поле в базі
       const mapped = {};
       Object.entries(data).forEach(([user, udata]) => {
         const fieldMap = { wager:'wager', wins:'wins', profit:'profit', games:'games', bigwin:'bigwin' };
-        mapped[user] = { totalWager: udata[fieldMap[lbCurrentMetric]]||0, avatar: udata.avatar };
+        mapped[user] = { lbValue: udata[fieldMap[lbCurrentMetric]]||0, avatar: udata.avatar };
       });
-      buildLbDisplay(mapped, 'totalWager', metricLabels[lbCurrentMetric]||'₴');
+      buildLbDisplay(mapped, 'lbValue', metricLabels[lbCurrentMetric]||'₴');
     });
   }
 }
@@ -14853,12 +14958,10 @@ function updateHomeStats() {
   }
   // VIP level
   if(statVip && userData) {
-    const wager = userData.totalWager || 0;
-    const _VIP_LEVEL_NAMES = ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Master','Supreme'];
-    const VIP_REQ    = [0,1000,5000,20000,50000,100000,250000,500000];
-    let vipLevel = 0;
-    for(let i=_VIP_LEVEL_NAMES.length-1;i>=0;i--) { if(wager>=VIP_REQ[i]){vipLevel=i;break;} }
-    statVip.textContent = _VIP_LEVEL_NAMES[vipLevel];
+    // Був третій захардкоджений список рівнів із власними порогами, та ще й
+    // по полю totalWager, якого ніхто не пише — герб на Головній вічно
+    // показував «Iron». Джерело те саме, що й на екрані VIP.
+    statVip.textContent = getVipLevel(userData.totalWagered || 0).name;
   }
   // Random jackpot
   if(jackEl) {
@@ -16220,11 +16323,40 @@ const BP_MAX_LEVEL    = 50;
 const BP_SEASON_EPOCH = Date.UTC(2026, 0, 1);
 const BP_SEASON_DAYS  = 30;
 
+// Назви й теми сезонів. Сезони самі йдуть по 30 днів від епохи й ніколи не
+// закінчуються, тому таблиця лише дає їм обличчя: номер, якого тут немає,
+// показується просто як «Сезон N» — нічого не ламається, коли список
+// вичерпається. Щоб додати сезон — допиши рядок з наступним num.
+const BP_SEASONS = [
+  { num: 1,  name: 'Перший захід',     icon: '🎬', color: '#c9a0ff' },
+  { num: 2,  name: 'Крижаний банк',    icon: '❄️', color: '#7fd4ff' },
+  { num: 3,  name: 'Весняний ап',      icon: '🌱', color: '#6fe08a' },
+  { num: 4,  name: 'Квітневий блеф',   icon: '🃏', color: '#ff8fa3' },
+  { num: 5,  name: 'Травневий олл-ін', icon: '⚡', color: '#ffd24a' },
+  { num: 6,  name: 'Літній заплив',    icon: '🌊', color: '#4ab8ff' },
+  { num: 7,  name: 'Спека',            icon: '🔥', color: '#ff7a3d' },
+  { num: 8,  name: 'Золотий берег',    icon: '🏝', color: '#ffc861' },
+  { num: 9,  name: 'Осінній рейз',     icon: '🍂', color: '#e67e22' },
+  { num: 10, name: 'Хелловін',         icon: '🎃', color: '#ff7518' },
+  { num: 11, name: 'Нічна зміна',      icon: '🌌', color: '#8f7dff' },
+  { num: 12, name: 'Зимове свято',     icon: '🎄', color: '#4cd964' },
+  { num: 13, name: 'Новий заїзд',      icon: '🎆', color: '#ffe08a' },
+  { num: 14, name: 'Крижаний джекпот', icon: '💎', color: '#9ad8ff' },
+  { num: 15, name: 'Космічний рейс',   icon: '🚀', color: '#b18cff' },
+  { num: 16, name: 'Корона',           icon: '👑', color: '#d4af37' },
+];
+const BP_SEASON_DEFAULT = { name: '', icon: '🎫', color: '#c9a0ff' };
+
+function getBpSeasonTheme(num) {
+  return BP_SEASONS.find(s => s.num === num) || BP_SEASON_DEFAULT;
+}
+
 function getBpSeasonInfo() {
   const len = BP_SEASON_DAYS * 86400000;
   const num = Math.floor((Date.now() - BP_SEASON_EPOCH) / len) + 1;
   const endsAt = BP_SEASON_EPOCH + num * len;
-  return { num, endsAt };
+  const theme = getBpSeasonTheme(num);
+  return { num, endsAt, name: theme.name, icon: theme.icon, color: theme.color };
 }
 
 function formatBpTimeLeft(ms) {
@@ -16297,6 +16429,9 @@ function getBpData() {
   return {
     season:   season.num,
     seasonEndsAt: season.endsAt,
+    seasonName:  season.name,
+    seasonIcon:  season.icon,
+    seasonColor: season.color,
     stale,
     xp:       stale ? 0     : (userData.bpXP      || 0),
     level:    stale ? 0     : (userData.bpLevel    || 0),
@@ -16321,6 +16456,11 @@ function initBattlePass() {
 
   const seasonNumEl = document.getElementById('bpSeasonNum');
   if(seasonNumEl) seasonNumEl.textContent = bp.season;
+  const seasonNameEl = document.getElementById('bpSeasonName');
+  if(seasonNameEl) {
+    seasonNameEl.textContent = bp.seasonName ? `· ${bp.seasonIcon} ${bp.seasonName}` : '';
+    seasonNameEl.style.color = bp.seasonColor;
+  }
   const timerEl = document.getElementById('bpSeasonTimer');
   if(timerEl) {
     timerEl.textContent = formatBpTimeLeft(bp.seasonEndsAt - Date.now());
@@ -16459,12 +16599,12 @@ function addBpXP(amount) {
     setTimeout(() => {
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
-      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Рівень ${newLevel}!</div>`;
+      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Рівень ${newLevel + 1}!</div>`;
       document.body.appendChild(t);
       playSound('bonus');
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
     }, 500);
-    notifyBot('player-ping', null, { to: currentUser, kind: 'bplevel', ref: { level: newLevel } });
+    notifyBot('player-ping', null, { to: currentUser, kind: 'bplevel', ref: { level: newLevel + 1 } });
   }
 
   db.ref('users/'+currentUser).update(updates);
@@ -16558,7 +16698,7 @@ function initStatsTab() {
         <div style="font-size:9px;color:#555;">Всього ставок</div>
       </div>
       <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:20px;font-weight:900;color:#c9a0ff;">${bpLevel}</div>
+        <div style="font-size:20px;font-weight:900;color:#c9a0ff;">${bpLevel + 1}</div>
         <div style="font-size:9px;color:#555;">Рівень BP</div>
       </div>
     </div>
@@ -20762,7 +20902,7 @@ function resetBannerAutoRotate() {
 function updateBannerDynamicContent() {
   // Battle Pass рівень
   var bpEl = document.getElementById('bannerBpLevel');
-  if(bpEl) bpEl.textContent = (userData.bpLevel || 0) + 1;
+  if(bpEl) bpEl.textContent = getBpData().level + 1;
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);

@@ -2456,13 +2456,13 @@
         </div>
       </div>
 
-      <!-- Rakeback -->
+      <!-- Rakeback = VIP-кешбек; відсоток і сума приходять з updateRakebackUI() -->
       <div class="settings-section">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;">💰 Ракебек (0.5% від вейджеру)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;" id="rakebackTitle">💰 Ракебек</div>
         <div style="font-size:22px;font-weight:900;color:var(--accent);" id="rakebackAmount">₴0</div>
         <div class="rakeback-bar-wrap"><div class="rakeback-bar" id="rakebackBar" style="width:0;"></div></div>
         <div style="font-size:10px;color:#555;" id="rakebackNext"></div>
-        <button class="btn-gold" onclick="claimRakeback()" style="margin-top:8px;">💰 Вивести ракебек</button>
+        <button class="btn-gold" onclick="claimCashback()" style="margin-top:8px;">💰 Вивести ракебек</button>
       </div>
 
       <!-- Responsible Gambling -->
@@ -2754,33 +2754,9 @@
       </div>
 
       <div class="section-header">💎 Всі рівні</div>
-      <div class="vip-card bronze" style="margin-bottom:8px;">
-        <div style="font-size:14px; font-weight:bold; color:var(--bronze); margin-bottom:8px;">🥉 Bronze — старт</div>
-        <div class="vip-perk"><span class="vip-perk-icon">🎁</span><span>Щоденний бонус ×1.0</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">⏰</span><span>Погодинний бонус: 25 ₴</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">💰</span><span>Кешбек: 0%</span></div>
-      </div>
-      <div class="vip-card silver" style="margin-bottom:8px;">
-        <div style="font-size:14px; font-weight:bold; color:var(--silver-c); margin-bottom:8px;">🥈 Silver — від 5 000 ₴ ставок</div>
-        <div class="vip-perk"><span class="vip-perk-icon">🎁</span><span>Щоденний бонус ×1.2</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">⏰</span><span>Погодинний бонус: 50 ₴</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">💰</span><span>Кешбек: 1% з кожної ставки</span></div>
-      </div>
-      <div class="vip-card gold" style="margin-bottom:8px;">
-        <div style="font-size:14px; font-weight:bold; color:var(--gold-c); margin-bottom:8px;">🥇 Gold — від 25 000 ₴ ставок</div>
-        <div class="vip-perk"><span class="vip-perk-icon">🎁</span><span>Щоденний бонус ×1.5</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">⏰</span><span>Погодинний бонус: 100 ₴</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">💰</span><span>Кешбек: 2% з кожної ставки</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">📦</span><span>Щотижневий безкоштовний лутбокс</span></div>
-      </div>
-      <div class="vip-card platinum">
-        <div style="font-size:14px; font-weight:bold; color:var(--plat); margin-bottom:8px;">💎 Platinum — від 100 000 ₴ ставок</div>
-        <div class="vip-perk"><span class="vip-perk-icon">🎁</span><span>Щоденний бонус ×2.0</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">⏰</span><span>Погодинний бонус: 200 ₴</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">💰</span><span>Кешбек: 5% з кожної ставки</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">📦</span><span>Щотижневий Rare лутбокс безкоштовно</span></div>
-        <div class="vip-perk"><span class="vip-perk-icon">⚡</span><span>Пріоритетна підтримка 24/7</span></div>
-      </div>
+      <!-- Рендериться з VIP_LEVELS в updateVipUI() — щоб відсотки кешбеку
+           збігались з тим, що реально нараховує движок -->
+      <div id="vipAllLevels"></div>
     </div>
 
     <!-- ===== КВЕСТИ ===== -->
@@ -2864,11 +2840,9 @@
       </div>
 
       <div class="section-header">👑 Бонус за VIP рівень</div>
-      <div class="hourly-vip-perks">
-        <div class="hourly-vip-tier" id="hvt-bronze"><div class="hourly-vip-amount" style="color:var(--bronze);">25₴</div><div style="color:var(--bronze);">🥉 Bronze</div></div>
-        <div class="hourly-vip-tier" id="hvt-silver"><div class="hourly-vip-amount" style="color:var(--silver-c);">50₴</div><div style="color:var(--silver-c);">🥈 Silver</div></div>
-        <div class="hourly-vip-tier" id="hvt-gold"><div class="hourly-vip-amount" style="color:var(--gold-c);">100₴</div><div style="color:var(--gold-c);">🥇 Gold</div></div>
-        <div class="hourly-vip-tier" id="hvt-plat"><div class="hourly-vip-amount" style="color:var(--plat);">200₴</div><div style="color:var(--plat);">💎 Plat</div></div>
+      <!-- Плитки рендеряться з VIP_LEVELS в updateVipUI() — суми погодинного
+           бонусу мусять збігатися з тим, що видає claimHourlyBonus() -->
+      <div class="hourly-vip-perks" id="hourlyVipTiers">
       </div>
 
       <div class="section-header" style="margin-top:15px;">📜 Останні отримання</div>
@@ -3637,7 +3611,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:20px;font-weight:900;color:#c9a0ff;">🎫 Battle Pass</div>
-            <div style="font-size:10px;color:#6040a0;margin-top:2px;">Сезон <span id="bpSeasonNum">1</span> • 50 рівнів • ⏳ <span id="bpSeasonTimer">—</span></div>
+            <div style="font-size:10px;color:#6040a0;margin-top:2px;">Сезон <span id="bpSeasonNum">1</span> <span id="bpSeasonName" style="font-weight:700;"></span> • 50 рівнів • ⏳ <span id="bpSeasonTimer">—</span></div>
           </div>
           <div id="bpVipBadge" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border-radius:12px;padding:6px 12px;font-size:11px;font-weight:bold;color:#fff;">FREE</div>
         </div>

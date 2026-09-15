@@ -42,3 +42,31 @@ assert.strictEqual(formatBpTimeLeft(2 * 86400000 + 3 * 3600000), "2д 3г");
 assert.strictEqual(formatBpTimeLeft(5 * 3600000 + 30 * 60000), "5г 30хв");
 
 console.log("OK — Battle Pass season boundary math and timer formatting are correct");
+
+// ── Назви сезонів ──────────────────────────────────────────────────
+// Сезони нумеруються нескінченно, а таблиця назв скінченна — найважливіше
+// тут те, що номер поза таблицею НЕ ламає екран, а просто лишається
+// безіменним «Сезоном N».
+const fs = require("fs");
+const path = require("path");
+const appSrc = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+
+const block = appSrc.slice(appSrc.indexOf("const BP_SEASONS = ["));
+const nums = [...block.slice(0, block.indexOf("];")).matchAll(/\{\s*num:\s*(\d+)/g)].map(m => +m[1]);
+assert.ok(nums.length >= 12, "очікуємо щонайменше 12 названих сезонів, знайдено " + nums.length);
+assert.strictEqual(nums[0], 1, "таблиця сезонів має починатись з 1");
+nums.forEach((n, i) => assert.strictEqual(n, i + 1, "номери сезонів мають іти підряд, розрив біля " + n));
+
+const names = [...block.slice(0, block.indexOf("];")).matchAll(/name:\s*'([^']+)'/g)].map(m => m[1]);
+assert.strictEqual(new Set(names).size, names.length, "назви сезонів мають бути унікальні");
+
+// Поведінка getBpSeasonTheme: у таблиці — своя назва, поза нею — порожня.
+const SEASONS = nums.map((num, i) => ({ num, name: names[i] }));
+const DEFAULT = { name: "", icon: "🎫" };
+const getTheme = n => SEASONS.find(s => s.num === n) || DEFAULT;
+assert.strictEqual(getTheme(1).name, names[0]);
+assert.strictEqual(getTheme(nums.length).name, names[nums.length - 1]);
+assert.strictEqual(getTheme(nums.length + 1).name, "", "сезон поза таблицею лишається безіменним");
+assert.strictEqual(getTheme(9999).name, "");
+
+console.log("OK — таблиця сезонів Battle Pass суцільна й безпечно вичерпується");
