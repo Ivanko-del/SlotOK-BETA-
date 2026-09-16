@@ -4992,10 +4992,36 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '89';
+const CURRENT_VERSION = '90';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '90',
+    title: '📜 Оновлення v90 — новий екран рейтингів',
+    date: Date.UTC(2026, 8, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🏆 Рейтинги виглядають по-новому',
+        items: [
+          'Справжній подіум для топ-3 з короною в лідера, аватарками й місцями-п\'єдесталами',
+          'У кожного гравця в списку тепер видно аватарку і смужку — наскільки він близько до лідера',
+          'Твоя позиція тепер закріплена внизу екрана: місце, сума і скільки не вистачає до гравця вище',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '⏱ Призи й таймер більше не брешуть',
+        items: [
+          'Призи за 1-3 місце одразу показують суми обраного періоду — раніше при вході завжди висіли тижневі, навіть на вкладці «День»',
+          'Таймер до скидання рейтингу тепер іде наживо щосекунди, а не стоїть на прочерку, доки не перемкнеш період',
+          'Якщо за період ще ніхто не грав — так і написано. Раніше замість цього підставлявся рейтинг за весь час, і здавалося, що хтось уже наставив мільйони за сьогодні',
+        ]
+      },
+    ]
+  },
   {
     version: '89',
     title: '📜 Оновлення v89 — прибрано Торгівлю, Подарунки, Watch Mode й Upgrade',
@@ -10489,7 +10515,7 @@ function switchTab(id, el) {
   if(id==='lootboxes')    safe(() => loadLootboxHistory());
   if(id==='hourly')       safe(() => initHourlyBonus());
   if(id==='clans')        safe(() => loadClanTab());
-  if(id==='leaderboard')  safe(() => { loadLeaderboardNew(); });
+  if(id==='leaderboard')  safe(() => initLeaderboard());
   if(id==='monopoly')     safe(() => { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); });
   if(id==='cardgame')     safe(() => {
     document.getElementById('cgStartScreen')?.classList.remove('hidden');
@@ -13855,10 +13881,18 @@ function showPdResult(won, draw, secret, myGuess, oppGuess, myDist, oppDist, bet
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
-// ║          🏆  НОВИЙ ЛІДЕРБОРД — День / Тиждень / Місяць      ║
+// ║          🏆  ЛІДЕРБОРД — День / Тиждень / Місяць            ║
 // ╚══════════════════════════════════════════════════════════════╝
 let lbCurrentMetric = 'wager';
 let lbCurrentPeriod = 'day';
+let lbResetIv   = null;  // тікер зворотного відліку до скидання
+let lbLoadToken = 0;     // відкидає відповідь застарілого запиту при швидкому перемиканні
+let lbWired     = false;
+
+const LB_PRIZES        = { day:[5000,2500,1000], week:[50000,25000,10000], month:[200000,100000,50000], all:null };
+const LB_PERIOD_WORD   = { day:'за добу', week:'за тиждень', month:'за місяць', all:'за весь час' };
+const LB_METRIC_WORD   = { wager:'Найбільші ставки', wins:'Найбільші виграші', profit:'Найбільший прибуток', games:'Найбільше ігор', bigwin:'Рекордний виграш' };
+const LB_METRIC_SUFFIX = { wager:'₴', wins:'₴', profit:'₴', games:' ігор', bigwin:'₴' };
 
 function getLbPeriodKey(period) {
   const now = new Date();
@@ -13876,170 +13910,247 @@ function getLbResetTime(period) {
   return null;
 }
 
-function setLbMetric(metric, el) {
-  lbCurrentMetric = metric;
-  document.querySelectorAll('.lb-metric-btn').forEach(b => {
-    b.style.background = 'var(--box)'; b.style.borderColor = 'var(--border)'; b.style.color = 'var(--sub)';
-  });
-  el.style.background = 'rgba(212,175,55,.15)'; el.style.borderColor = 'rgba(212,175,55,.4)'; el.style.color = 'var(--accent)';
+// ── Вхід у вкладку: синхронізуємо перемикачі, призи, таймер і вантажимо дані ──
+function initLeaderboard() {
+  if(!lbWired) {
+    lbWired = true;
+    document.getElementById('lbPeriods')?.addEventListener('click', e => {
+      const btn = e.target.closest('.lb-seg-btn');
+      if(btn && btn.dataset.period !== lbCurrentPeriod) setLbPeriod(btn.dataset.period);
+    });
+    document.getElementById('lbMetrics')?.addEventListener('click', e => {
+      const chip = e.target.closest('.lb-chip');
+      if(chip && chip.dataset.metric !== lbCurrentMetric) setLbMetric(chip.dataset.metric);
+    });
+    // Тап по будь-якому гравцю (подіум, список, моя картка) → публічний профіль
+    ['lbPodium','leaderboardList','lbMyPosition'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', e => {
+        const el = e.target.closest('[data-nick]');
+        if(el) openPublicProfile(el.dataset.nick);
+      });
+    });
+  }
+  lbSyncHeader();
+  lbStartResetTimer();
   loadLeaderboardNew();
 }
 
-function setLbPeriod(period, el) {
+function setLbPeriod(period) {
   lbCurrentPeriod = period;
-  ['day','week','month','all'].forEach(p => {
-    const btn = document.getElementById('lb-period-'+p);
-    if(!btn) return;
-    btn.style.background = p===period ? 'rgba(212,175,55,.15)' : 'transparent';
-    btn.style.color = p===period ? 'var(--accent)' : 'var(--sub)';
-  });
-  // Оновити таймер
-  const resetEl = document.getElementById('lbResetTimer');
-  const labelEl = document.getElementById('lbResetLabel');
-  if(period === 'all') {
-    if(labelEl) labelEl.style.display = 'none';
-  } else {
-    if(labelEl) labelEl.style.display = '';
-    const resetTime = getLbResetTime(period);
-    if(resetTime && resetEl) {
-      const diff = resetTime - Date.now();
-      const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
-      resetEl.textContent = h>0 ? `${h}год ${m}хв` : `${m}хв`;
-    }
-  }
-  const prizes = { day:[5000,2500,1000], week:[50000,25000,10000], month:[200000,100000,50000], all:[null,null,null] };
-  const p = prizes[period];
-  if(p[0]) {
-    document.getElementById('lbPrize1') && (document.getElementById('lbPrize1').textContent = '₴'+formatNumber(p[0]));
-    document.getElementById('lbPrize2') && (document.getElementById('lbPrize2').textContent = '₴'+formatNumber(p[1]));
-    document.getElementById('lbPrize3') && (document.getElementById('lbPrize3').textContent = '₴'+formatNumber(p[2]));
-  }
+  document.querySelectorAll('#lbPeriods .lb-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  lbSyncHeader();
+  lbStartResetTimer();
   loadLeaderboardNew();
 }
 
-function loadLeaderboardNew() {
-  const podium = document.getElementById('lbPodium');
-  const list   = document.getElementById('leaderboardList');
-  const myPos  = document.getElementById('lbMyPosition');
-  if(list) list.innerHTML = '<div style="text-align:center;color:var(--sub);padding:20px;font-size:13px;">⏳ Завантаження...</div>';
-  if(podium) podium.innerHTML = '';
+function setLbMetric(metric) {
+  lbCurrentMetric = metric;
+  document.querySelectorAll('#lbMetrics .lb-chip').forEach(c => c.classList.toggle('active', c.dataset.metric === metric));
+  lbSyncHeader();
+  loadLeaderboardNew();
+}
 
-  const metricFields = {
-    wager: 'periodWager', wins: 'periodWins', profit: 'periodProfit',
-    games: 'periodGames', bigwin: 'stats.biggestWin'
-  };
-  const metricLabels = {
-    wager:'₴', wins:'₴', profit:'₴', games:' ігор', bigwin:'₴'
-  };
+// Підзаголовок + призи поточного періоду
+function lbSyncHeader() {
+  const sub = document.getElementById('lbSubtitle');
+  if(sub) sub.textContent = `${LB_METRIC_WORD[lbCurrentMetric]||''} · ${LB_PERIOD_WORD[lbCurrentPeriod]||''}`;
+
+  const prizes = LB_PRIZES[lbCurrentPeriod];
+  const box = document.getElementById('lbPrizes');
+  if(box) box.classList.toggle('no-prize', !prizes);
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('lbPrize'+i);
+    if(el) el.textContent = prizes ? '₴'+formatNumber(prizes[i-1]) : '—';
+  });
+}
+
+// Живий зворотний відлік: тікає щосекунди, сам зупиняється при виході з вкладки
+function lbStartResetTimer() {
+  clearInterval(lbResetIv);
+  lbResetIv = null;
+  lbTickResetTimer();
+  if(lbCurrentPeriod !== 'all') lbResetIv = setInterval(lbTickResetTimer, 1000);
+}
+
+function lbTickResetTimer() {
+  const screen = document.getElementById('tab-leaderboard');
+  if(!screen || screen.classList.contains('hidden')) { clearInterval(lbResetIv); lbResetIv = null; return; }
+
+  const chip = document.getElementById('lbTimer');
+  const val  = document.getElementById('lbResetTimer');
+  const reset = getLbResetTime(lbCurrentPeriod);
+  if(!reset) { if(chip) chip.style.display = 'none'; return; }
+  if(chip) chip.style.display = '';
+
+  const diff = Math.max(0, reset - Date.now());
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor(diff%86400000/3600000);
+  const m = Math.floor(diff%3600000/60000);
+  const s = Math.floor(diff%60000/1000);
+  const pad = n => String(n).padStart(2,'0');
+  if(val) val.textContent = d > 0 ? `${d}д ${pad(h)}:${pad(m)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+// ── Завантаження даних ──
+function loadLeaderboardNew() {
+  const list = document.getElementById('leaderboardList');
+  const podium = document.getElementById('lbPodium');
+  if(podium) podium.innerHTML = '';
+  if(list) list.innerHTML = '<div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div>';
+
+  const token = ++lbLoadToken;
+  const suffix = LB_METRIC_SUFFIX[lbCurrentMetric] || '₴';
 
   if(lbCurrentPeriod === 'all') {
-    // Завантажуємо з глобальних даних юзерів
     const fieldMap = { wager:'totalWagered', wins:'totalWins', profit:'totalProfit', games:'stats.gamesPlayed', bigwin:'stats.biggestWin' };
+    const field = fieldMap[lbCurrentMetric] || 'totalWagered';
     db.ref('users').once('value', snap => {
-      const data = snap.val()||{};
-      buildLbDisplay(data, fieldMap[lbCurrentMetric]||'totalWagered', metricLabels[lbCurrentMetric]||'₴');
+      if(token !== lbLoadToken) return;   // гравець уже перемкнув вкладку
+      const data = snap.val() || {};
+      lbRender(Object.entries(data).map(([name, d]) => ({
+        name,
+        val: (field.includes('.') ? field.split('.').reduce((o,k)=>(o||{})[k], d) : d[field]) || 0,
+        avatar: d.avatar,
+      })), suffix);
     });
   } else {
-    // Завантажуємо з лідерборду за період
-    const periodKey = getLbPeriodKey(lbCurrentPeriod);
-    db.ref(`leaderboards/${periodKey}`).once('value', snap => {
-      const data = snap.val()||{};
-      if(!Object.keys(data).length) {
-        // Якщо немає даних — fallback на globalні
-        db.ref('users').once('value', uSnap => {
-          buildLbDisplay(uSnap.val()||{}, 'totalWagered', '₴');
-        });
-        return;
-      }
-      // Перетворюємо в формат {username: {lbValue: val}} — lbValue це локальний
-      // ключ для buildLbDisplay, а не поле в базі
-      const mapped = {};
-      Object.entries(data).forEach(([user, udata]) => {
-        const fieldMap = { wager:'wager', wins:'wins', profit:'profit', games:'games', bigwin:'bigwin' };
-        mapped[user] = { lbValue: udata[fieldMap[lbCurrentMetric]]||0, avatar: udata.avatar };
-      });
-      buildLbDisplay(mapped, 'lbValue', metricLabels[lbCurrentMetric]||'₴');
+    db.ref(`leaderboards/${getLbPeriodKey(lbCurrentPeriod)}`).once('value', snap => {
+      if(token !== lbLoadToken) return;
+      const data = snap.val() || {};
+      // Порожньо — так і кажемо. Раніше тут підставлявся рейтинг за весь час,
+      // і гравець бачив чужі всечасні суми під вкладкою «День».
+      lbRender(Object.entries(data).map(([name, d]) => ({ name, val: d[lbCurrentMetric] || 0 })), suffix);
     });
   }
 }
 
-function buildLbDisplay(data, field, suffix) {
+// ── Рендер ──
+function lbFmtVal(val, suffix) {
+  const n = formatNumber(Math.floor(val));
+  return suffix === '₴' ? '₴'+n : n+suffix;
+}
+
+function lbAvatar(name, avatar, cls) {
+  const url = typeof avatar === 'string' && avatar.length > 20 ? avatar.replace(/'/g, '%27') : null;
+  const emoji = !url && typeof avatar === 'string' && avatar.length > 0 && avatar.length <= 4 ? avatar : null;
+  const inner = url ? '' : (emoji || (name[0] || '?').toUpperCase());
+  const style = url ? ` style="background-image:url('${escapeHtml(url)}');background-size:cover;background-position:center;"` : '';
+  return `<div class="${cls}"${style} data-av-for="${escapeHtml(name)}">${escapeHtml(inner)}</div>`;
+}
+
+function lbRender(rows, suffix) {
   const podium = document.getElementById('lbPodium');
   const list   = document.getElementById('leaderboardList');
-  const myPos  = document.getElementById('lbMyPosition');
+  const myBox  = document.getElementById('lbMyPosition');
 
-  let arr = Object.entries(data).map(([name, d]) => {
-    let val = field.includes('.') ? field.split('.').reduce((o,k)=>(o||{})[k], d) : d[field];
-    return { name, val: val||0, avatar: d.avatar };
-  }).filter(u=>u.val>0).sort((a,b)=>b.val-a.val);
+  const arr = rows.filter(u => u.val > 0).sort((a,b) => b.val - a.val);
 
   if(!arr.length) {
-    if(list) list.innerHTML = '<div style="text-align:center;color:var(--sub);padding:30px;font-size:13px;">Немає даних за цей період.<br>Грай щоб потрапити в рейтинг!</div>';
     if(podium) podium.innerHTML = '';
+    if(myBox)  myBox.innerHTML = '';
+    if(list) list.innerHTML = `<div class="lb-empty">
+      <div class="lb-empty-icon">🏆</div>
+      Тут поки порожньо ${escapeHtml(LB_PERIOD_WORD[lbCurrentPeriod]||'')}.<br>Зіграй — і перше місце твоє.</div>`;
     return;
   }
 
-  const fmtVal = v => (suffix==='₴'?'₴':'')+formatNumber(Math.floor(v))+(suffix!=='₴'?suffix:'');
-  const medals = ['🥇','🥈','🥉'];
-  const podColors = [
-    { bg:'linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,215,0,.05))', border:'rgba(255,215,0,.35)', color:'#ffd700', h:'140px' },
-    { bg:'linear-gradient(135deg,rgba(192,192,192,.1),rgba(192,192,192,.04))', border:'rgba(192,192,192,.3)', color:'#c0c0c0', h:'120px' },
-    { bg:'linear-gradient(135deg,rgba(205,127,50,.1),rgba(205,127,50,.04))', border:'rgba(205,127,50,.25)', color:'#cd7f32', h:'110px' }
-  ];
-  const top3 = arr.slice(0,3);
-  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
-  const podiumRanks = [1, 0, 2];
+  const leaderVal = arr[0].val;
+
+  // Подіум: у розмітці порядок 2 · 1 · 3, тож лідер стоїть у центрі
   if(podium) {
-    podium.innerHTML = '';
-    podiumOrder.forEach((u, pi) => {
-      const rank = u === top3[0] ? 0 : u === top3[1] ? 1 : 2;
-      const c = podColors[rank];
-      const av = u.avatar && u.avatar.length>20 ? `<img src="${u.avatar}" style="width:44px;height:44px;border-radius:50%;border:2px solid ${c.color};object-fit:cover;">` : `<div style="width:44px;height:44px;border-radius:50%;background:var(--input);border:2px solid ${c.color};display:flex;align-items:center;justify-content:center;font-size:20px;">👤</div>`;
+    podium.innerHTML = [arr[1], arr[0], arr[2]].map((u, i) => {
+      if(!u) return '<div></div>';
+      const rank = i === 1 ? 1 : i === 0 ? 2 : 3;
       const isMe = u.name === currentUser;
-      podium.innerHTML += `
-        <div style="background:${c.bg};border:1px solid ${c.border};border-radius:18px;padding:14px 8px;text-align:center;cursor:pointer;${rank===0?'grid-column:2;grid-row:1;':''}${isMe?'box-shadow:0 0 0 2px var(--accent);':''}" onclick="openPublicProfile('${u.name}')">
-          <div style="font-size:22px;margin-bottom:6px;">${medals[rank]}</div>
-          <div style="display:flex;justify-content:center;margin-bottom:6px;">${av}</div>
-          <div style="font-size:12px;font-weight:700;color:${c.color};word-break:break-all;">${u.name}${isMe?' 👈':''}</div>
-          <div style="font-size:13px;font-weight:900;color:#fff;margin-top:4px;">${fmtVal(u.val)}</div>
-        </div>`;
-    });
-  }
-
-  if(list) {
-    list.innerHTML = '';
-    arr.slice(3,20).forEach((u,i) => {
-      const isMe = u.name === currentUser;
-      const av = u.avatar && u.avatar.length>20
-        ? `<img src="${u.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`
-        : `<div style="width:32px;height:32px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>`;
-      list.innerHTML += `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${isMe?'rgba(212,175,55,.08)':'var(--box)'};border:1px solid ${isMe?'rgba(212,175,55,.3)':'var(--border)'};border-radius:14px;margin-bottom:6px;cursor:pointer;" onclick="openPublicProfile('${u.name}')">
-          <div style="min-width:28px;font-size:13px;font-weight:700;color:var(--sub);">${i+4}.</div>
-          ${av}
-          <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${u.name}${isMe?' <span style="color:var(--accent);font-size:10px;">(Ти)</span>':''}</div></div>
-          <div style="font-size:14px;font-weight:900;color:var(--accent);">${fmtVal(u.val)}</div>
-        </div>`;
-    });
-  }
-
-  const myRank = arr.findIndex(u => u.name === currentUser);
-  if(myPos) {
-    if(myRank === -1) {
-      myPos.innerHTML = '<div style="text-align:center;color:var(--sub);font-size:12px;padding:8px;">Ти ще не в рейтингу. Грай!</div>';
-    } else if(myRank >= 20) {
-      const u = arr[myRank];
-      myPos.innerHTML = `<div style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3);border-radius:14px;padding:12px;text-align:center;margin-top:4px;">
-        <div style="font-size:12px;color:var(--sub);">Твоя позиція</div>
-        <div style="font-size:22px;font-weight:900;color:var(--accent);">#${myRank+1}</div>
-        <div style="font-size:13px;color:#fff;">${fmtVal(u.val)}</div>
+      return `<div class="lb-pod r${rank}${isMe ? ' me' : ''}" data-nick="${escapeHtml(u.name)}">
+        ${rank === 1 ? '<div class="lb-crown">👑</div>' : ''}
+        ${lbAvatar(u.name, u.avatar, 'lb-pod-av')}
+        <div class="lb-pod-name">${escapeHtml(u.name)}</div>
+        <div class="lb-pod-val">${lbFmtVal(u.val, suffix)}</div>
+        <div class="lb-pod-base">${rank}</div>
       </div>`;
-    } else {
-      myPos.innerHTML = '';
-    }
-    const lbRank = document.getElementById('lbMyRankLabel');
-    if(lbRank && myRank>=0) lbRank.textContent = `Твоя позиція: #${myRank+1}`;
+    }).join('');
   }
+
+  // Місця 4–20 зі смужкою «скільки це від лідера»
+  if(list) {
+    const rest = arr.slice(3, 20);
+    list.innerHTML = rest.length ? rest.map((u, i) => {
+      const isMe = u.name === currentUser;
+      const pct = leaderVal > 0 ? Math.max(3, Math.round(u.val / leaderVal * 100)) : 0;
+      return `<div class="lb-row${isMe ? ' me' : ''}" data-nick="${escapeHtml(u.name)}" style="animation-delay:${Math.min(i*30, 300)}ms;">
+        <div class="lb-rank">${i+4}</div>
+        ${lbAvatar(u.name, u.avatar, 'lb-av')}
+        <div class="lb-row-main">
+          <div class="lb-row-name">${escapeHtml(u.name)}${isMe ? '<span class="lb-row-tag">ТИ</span>' : ''}</div>
+          <div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%;"></div></div>
+        </div>
+        <div class="lb-row-val">${lbFmtVal(u.val, suffix)}</div>
+      </div>`;
+    }).join('') : '';
+  }
+
+  // Моя позиція — прилипає внизу, показує відрив від гравця вище
+  if(myBox) {
+    const myRank = arr.findIndex(u => u.name === currentUser);
+    if(myRank === -1) {
+      myBox.innerHTML = `<div class="lb-me-card"><div style="flex:1;text-align:center;">
+        <div class="lb-me-lbl">Тебе ще немає в рейтингу</div>
+        <div class="lb-me-gap">Зіграй, щоб потрапити в топ ${escapeHtml(LB_PERIOD_WORD[lbCurrentPeriod]||'')}</div>
+      </div></div>`;
+    } else {
+      const me = arr[myRank];
+      const above = arr[myRank-1];
+      const gap = above ? above.val - me.val : 0;
+      myBox.innerHTML = `<div class="lb-me-card" data-nick="${escapeHtml(currentUser)}">
+        <div class="lb-me-rank">#${myRank+1}</div>
+        ${lbAvatar(me.name, me.avatar, 'lb-av')}
+        <div style="flex:1;min-width:0;">
+          <div class="lb-me-lbl">Твоя позиція</div>
+          <div class="lb-me-gap">${above
+            ? `до <b>#${myRank}</b> — ${lbFmtVal(gap, suffix)}`
+            : '👑 Ти лідер — тримай перше місце'}</div>
+        </div>
+        <div class="lb-me-val">${lbFmtVal(me.val, suffix)}</div>
+      </div>`;
+    }
+  }
+
+  // Аватарки за період не зберігаються в лідерборді — підтягуємо їх окремо,
+  // уже після рендеру, щоб список не чекав на ці запити
+  if(lbCurrentPeriod !== 'all') lbHydrateAvatars();
+}
+
+const lbAvatarCache = {};   // нік → аватар, щоб перемикання метрик не перечитувало те саме
+
+function lbApplyAvatar(el, av) {
+  if(typeof av !== 'string' || !av) return;
+  if(av.length > 20) {
+    el.style.backgroundImage = `url('${av.replace(/'/g, '%27')}')`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.textContent = '';
+  } else if(av.length <= 4) {
+    el.textContent = av;
+  }
+}
+
+function lbHydrateAvatars() {
+  const slots = new Map();
+  document.querySelectorAll('#tab-leaderboard [data-av-for]').forEach(el => {
+    const nick = el.getAttribute('data-av-for');
+    if(!slots.has(nick)) slots.set(nick, []);
+    slots.get(nick).push(el);
+  });
+  const token = lbLoadToken;
+  slots.forEach((els, nick) => {
+    if(nick in lbAvatarCache) { els.forEach(el => lbApplyAvatar(el, lbAvatarCache[nick])); return; }
+    db.ref('users/'+nick+'/avatar').once('value').then(snap => {
+      lbAvatarCache[nick] = snap.val();
+      if(token !== lbLoadToken) return;
+      els.forEach(el => lbApplyAvatar(el, lbAvatarCache[nick]));
+    }).catch(() => {});
+  });
 }
 
 // Записуємо статистику у лідерборд при кожній грі
