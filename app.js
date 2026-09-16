@@ -5024,10 +5024,25 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '86';
+const CURRENT_VERSION = '87';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '87',
+    title: '📜 Оновлення v87 — виправлено приєднання до онлайн-кімнат',
+    date: Date.UTC(2026, 8, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '♟️ «Кімнату вже зайнято» на щойно створених кімнатах',
+        items: [
+          'У Шахах, Coinflip, RPS, Передбаченнях і Картах кнопка «Прийняти» іноді помилково писала «Кімнату вже зайнято» для вільної, щойно створеної кімнати — тепер приєднання коректно перевіряє її стан на сервері замість застарілого локального кешу',
+        ]
+      },
+    ]
+  },
   {
     version: '86',
     title: '📜 Оновлення v86 — іменні сезони та чесні цифри рівнів',
@@ -11949,7 +11964,9 @@ function loadCardRooms() {
 function joinCardRoom(roomId, bet) {
   if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
   db.ref('card_rooms/'+roomId+'/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
+    // current===null — кеш ще не прогрітий (loadCardRooms читає once()),
+    // а не факт що кімнату зайнято. Дозволяємо спробу, SDK звірить з сервером.
+    if(current === 'waiting' || current === null) return 'joining';
     return;
   }, (err, committed) => {
     if(!committed) { notify('Кімнату вже зайнято', 'error'); loadCardRooms(); return; }
@@ -13656,7 +13673,9 @@ function joinCfRoom(roomId, bet, creator, creatorSide) {
   // тільки ОДИН з них реально приєднається; другий отримає помилку замість
   // подвійного списання і плутанини з переможцем.
   db.ref('pvp_coinflip/'+roomId+'/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
+    // current===null — кеш ще не прогрітий (loadCfRooms читає once()),
+    // а не факт що кімнату зайнято. Дозволяємо спробу, SDK звірить з сервером.
+    if(current === 'waiting' || current === null) return 'joining';
     return; // хтось вже забрав цю кімнату
   }, (err, committed) => {
     if(!committed) { notify('Цю кімнату вже зайняв інший гравець', 'error'); loadCfRooms(); return; }
@@ -13754,7 +13773,9 @@ function loadRpsRooms() {
 function joinRpsRoom(roomId, bet, creator) {
   if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
   db.ref('pvp_rps/'+roomId+'/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
+    // current===null — кеш ще не прогрітий (loadRpsRooms читає once()),
+    // а не факт що кімнату зайнято. Дозволяємо спробу, SDK звірить з сервером.
+    if(current === 'waiting' || current === null) return 'joining';
     return;
   }, (err, committed) => {
     if(!committed) { notify('Кімната вже зайнята', 'error'); loadRpsRooms(); return; }
@@ -13895,7 +13916,9 @@ function loadPdRooms() {
 function joinPdRoom(roomId, bet, creator) {
   if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
   db.ref('pvp_predict/'+roomId+'/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
+    // current===null — кеш ще не прогрітий (loadPdRooms читає once()),
+    // а не факт що кімнату зайнято. Дозволяємо спробу, SDK звірить з сервером.
+    if(current === 'waiting' || current === null) return 'joining';
     return;
   }, (err, committed) => {
     if(!committed) { notify('Зайнята', 'error'); loadPdRooms(); return; }
@@ -21885,7 +21908,11 @@ function loadChessRooms() {
 function joinChessRoom(roomId, bet) {
   if((userData.balance||0) < bet) return notify('Недостатньо коштів', 'error');
   db.ref('pvp_chess/'+roomId+'/status').transaction(current => {
-    if(current === 'waiting') return 'joining';
+    // current===null означає лише, що клієнт ще не кешував це значення
+    // (loadChessRooms читає once() і одразу відписується) — не факт, що
+    // кімнату справді зайнято. Дозволяємо спробу; SDK перевірить реальне
+    // значення на сервері і сам заретраїть/абортує транзакцію коректно.
+    if(current === 'waiting' || current === null) return 'joining';
     return;
   }, (err, committed) => {
     if(!committed) { notify('Кімнату вже зайнято', 'error'); loadChessRooms(); return; }
