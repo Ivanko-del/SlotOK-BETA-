@@ -149,7 +149,7 @@ function startDataSync() {
             loadNotifsFromStorage();
             updateNotifBadge();
             loadSettings();
-            if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
+            if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); watchAntiCheatConfig(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
             if(!window._initDone) {
@@ -270,6 +270,50 @@ function checkAdmin() {
 
 function isAdminUser() {
   return !!(currentUser && (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true));
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ПРАВА АДМІНІВ                                               ║
+// ║  Чесно: сайт працює без бекенду, тож це операційний          ║
+// ║  контроль (хто що бачить і може натиснути + журнал дій),     ║
+// ║  а не криптографічний захист. Адмін із доступом до консолі   ║
+// ║  браузера все одно може писати в базу напряму — прибрати це  ║
+// ║  можна лише сервером, якого тут немає (ROADMAP.md).          ║
+// ╚══════════════════════════════════════════════════════════════╝
+const ADMIN_OWNER = 'theivankoo';   // власник: має все й не може бути понижений
+
+// Одне право = доступ до однієї вкладки адмін-панелі, плюс до дій усередині неї
+const ADMIN_PERMS = [
+  { key:'requests',   icon:'📥', name:'Заявки',     desc:'Підтверджувати поповнення, виводи, скидання паролів' },
+  { key:'stats',      icon:'📊', name:'Статистика', desc:'Дивитись зведення по сайту' },
+  { key:'users',      icon:'👥', name:'Гравці',     desc:'Правити баланси, статуси, видаляти акаунти, обнулення' },
+  { key:'bots',       icon:'🤖', name:'Боти',       desc:'Керувати ботами' },
+  { key:'content',    icon:'📢', name:'Контент',    desc:'Новини та чат підтримки' },
+  { key:'finance',    icon:'💰', name:'Фінанси',    desc:'RTP, джекпот, ручні нарахування' },
+  { key:'security',   icon:'🛡️', name:'Безпека',    desc:'Розіграші, Shadow Mode, службові інструменти' },
+  { key:'moderation', icon:'🎛️', name:'Модерація',  desc:'Бани, мути, вимкнення ігор, обслуговування' },
+  { key:'admins',     icon:'👑', name:'Адміни',     desc:'Призначати адмінів, міняти права, налаштовувати анти-чіт' },
+];
+
+function isOwnerUser() {
+  return !!(currentUser && currentUser.toLowerCase() === ADMIN_OWNER);
+}
+
+// Адміни, призначені до появи прав, не мають поля adminPerms — для них
+// нічого не змінюється (повний доступ), доки власник не обмежить явно.
+function adminCan(perm) {
+  if(isOwnerUser()) return true;
+  if(!isAdminUser()) return false;
+  const perms = userData && userData.adminPerms;
+  if(!perms || typeof perms !== 'object') return true;
+  return perms[perm] === true;
+}
+
+function requireAdminPerm(perm) {
+  if(adminCan(perm)) return true;
+  const p = ADMIN_PERMS.find(x => x.key === perm);
+  notify('⛔ Немає доступу: ' + (p ? p.icon + ' ' + p.name : perm), 'error');
+  return false;
 }
 
 // Плавний перелік числа замість миттєвої підміни тексту — для головних
@@ -3876,6 +3920,7 @@ function loadUserList() {
 
 
 function approveWithdraw(id, user) {
+    if(!requireAdminPerm('requests')) return;
     db.ref('withdraw_requests/'+id).once('value').then(snap => {
         const req = snap.val() || {};
         const amount = req.amount || 0;
@@ -3891,6 +3936,7 @@ function approveWithdraw(id, user) {
 }
 
 function rejectWithdraw(id, user, amount) {
+    if(!requireAdminPerm('requests')) return;
     // Повертаємо саме на ту картку, з якої гроші заморозили: поки заявка висіла
     // в адмінці, гравець міг перемкнути активну — і повернення на спільний
     // balance поклало б кошти чужій картці.
@@ -3916,24 +3962,29 @@ function openAdminManage(n) {
     document.getElementById('admManageName').textContent=n; 
 }
 function admGiveMoney() { 
+    if(!requireAdminPerm('users')) return;
     const a=parseInt(document.getElementById('admAmount').value); 
     if(!a) return; 
     db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a)); 
     notify("Баланс змінено","success"); 
 }
 function admSetTag() { 
+    if(!requireAdminPerm('users')) return;
     const t=document.getElementById('admTag').value; 
     if(t){ db.ref('users/'+admSelectedUser).update({tag:t}); notify("Статус змінено"); } 
 }
 function admBanUser() { 
+    if(!requireAdminPerm('moderation')) return;
     if(confirm("Заблокувати гравця?")){ db.ref('users/'+admSelectedUser).update({banned:true}); notify("ЗАБЛОКОВАНО"); } 
 }
 function admDeleteUser() { 
+    if(!requireAdminPerm('users')) return;
     if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")){ 
         db.ref('users/'+admSelectedUser).remove().then(()=>{ notify("Видалено"); closeTabModal('admin-user-manage'); loadUserList(); }); 
     } 
 }
 function wipeEconomy() {
+    if(!requireAdminPerm('users')) return;
     if(prompt("Введіть WIPE щоб обнулити ВСІХ гравців:") !== "WIPE") return;
     db.ref('users').once('value', s => {
         const users = s.val() || {};
@@ -7402,9 +7453,10 @@ function antiCheatRecordBet(bet) {
   const now = Date.now();
   _antiCheatBetTimestamps.push(now);
   _antiCheatBetTimestamps = _antiCheatBetTimestamps.filter(t => now - t < 60000);
-  // Людина фізично не встигне усвідомлено зробити 25+ ставок за хвилину
-  // в казино з підтвердженнями/анімаціями — це ознака скрипта/бота
-  if(_antiCheatBetTimestamps.length > 25) {
+  // Людина фізично не встигне усвідомлено зробити стільки ставок за хвилину
+  // в казино з підтвердженнями/анімаціями — це ознака скрипта/бота.
+  // Поріг налаштовується в адмінці → 👑 Адміни → Анти-чіт.
+  if(_acConfig.enabled && _antiCheatBetTimestamps.length > _acConfig.rapidBetsPerMin) {
     antiCheatFlag('rapid_betting', `${_antiCheatBetTimestamps.length} ставок за 60с`, 'medium');
     _antiCheatBetTimestamps = []; // не спамити повторно щохвилини
   }
@@ -7413,6 +7465,7 @@ function antiCheatRecordBet(bet) {
 }
 
 function antiCheatCheckBalanceJump(oldBalance, newBalance) {
+  if(!_acConfig.enabled) return;
   if(oldBalance === null || oldBalance === undefined || !currentUser) return; // перший запуск — нема з чим порівнювати
   const delta = newBalance - oldBalance;
   if(delta <= 0) return; // цікавлять лише РАПТОВІ збільшення
@@ -7422,19 +7475,19 @@ function antiCheatCheckBalanceJump(oldBalance, newBalance) {
 
   // Великий стрибок балансу при тому що акаунт майже не грав —
   // класична ознака ручної правки балансу через консоль браузера
-  if(delta > 100000 && games < 5) {
+  if(delta > _acConfig.balanceJumpAmount && games < _acConfig.balanceJumpMinGames) {
     antiCheatFlag('balance_jump', `+₴${formatNumber(delta)} за раз, зіграно лише ${games} ігор`, 'high');
     return;
   }
   // Баланс сильно переважає над сумою всіх ставок гравця — теж підозріло,
   // бо в чесній грі баланс не може рости набагато швидше за обіг ставок
-  if(newBalance > 3000000 && wagered < newBalance * 0.02) {
+  if(newBalance > _acConfig.implausibleBalance && wagered < newBalance * (_acConfig.implausibleRatio / 100)) {
     antiCheatFlag('balance_implausible', `Баланс ₴${formatNumber(newBalance)} при загальних ставках лише ₴${formatNumber(wagered)}`, 'high');
   }
 }
 
 function antiCheatFlag(type, details, severity) {
-  if(!currentUser) return;
+  if(!currentUser || !_acConfig.enabled) return;
   severity = severity || 'low';
   db.ref('anti_cheat_flags/'+currentUser).push({ type, details, severity, ts: Date.now() });
   db.ref('users/'+currentUser+'/flagged').set(true);
@@ -7443,7 +7496,7 @@ function antiCheatFlag(type, details, severity) {
   // чесно (від'ємний баланс, ручна правка балансу консоллю тощо), тож
   // варто одразу призупинити ставки/виводи до ручної перевірки адміном,
   // а не лишень мовчазно чекати поки хтось прочитає сповіщення.
-  if(severity === 'high' && !userData?.autoFrozen) {
+  if(severity === 'high' && _acConfig.autoFreeze && !userData?.autoFrozen) {
     db.ref('users/'+currentUser).update({ autoFrozen: true, autoFrozenReason: details, autoFrozenAt: Date.now() });
   }
   // Реальне сповіщення адміну — не просто мовчазний лог
@@ -7485,6 +7538,228 @@ function clearPlayerFlag(nick) {
   loadFlaggedPlayers();
 }
 
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  КЕРУВАННЯ АДМІНАМИ — призначити, обмежити, зняти           ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// Набір прав за замовчуванням для новопризначеного адміна:
+// повсякденна робота без доступу до грошей, обнулення й інших адмінів
+const ADMIN_PRESET_DEFAULT = { requests:true, stats:true, users:false, bots:false, content:true, finance:false, security:false, moderation:true, admins:false };
+
+function loadAdminsList() {
+  const el = document.getElementById('adminsList');
+  if(!el) return;
+  el.innerHTML = '<div style="color:#555;text-align:center;padding:14px;font-size:12px;">Завантаження...</div>';
+  db.ref('users').orderByChild('isAdmin').equalTo(true).once('value').then(snap => {
+    const users = snap.val() || {};
+    // Власник може не мати isAdmin у базі — права в нього за ніком
+    if(!Object.keys(users).some(n => n.toLowerCase() === ADMIN_OWNER)) users[ADMIN_OWNER] = { _ownerStub: true };
+
+    el.innerHTML = Object.keys(users).sort().map(nick => {
+      const u = users[nick] || {};
+      const owner = nick.toLowerCase() === ADMIN_OWNER;
+      const perms = u.adminPerms;
+      const legacy = !owner && (!perms || typeof perms !== 'object');
+      // Показуємо лише видані права — так одразу видно обсяг доступу,
+      // а не сіро-зелену мозаїку з усіх дев'яти
+      const granted = legacy || owner ? [] : ADMIN_PERMS.filter(p => perms[p.key] === true);
+      const chips = owner
+        ? '<span class="adm-perm-chip on">Повний доступ (власник)</span>'
+        : legacy
+          ? '<span class="adm-perm-chip legacy">Повний доступ — права не обмежено</span>'
+          : granted.length
+            ? granted.map(p => `<span class="adm-perm-chip on">${p.icon} ${p.name}</span>`).join('')
+              + (granted.length < ADMIN_PERMS.length ? `<span class="adm-perm-chip">решта закрита</span>` : '')
+            : '<span class="adm-perm-chip off">Доступу немає жодного</span>';
+
+      return `<div class="adm-admin-card">
+        <div class="adm-admin-head">
+          <div style="min-width:0;">
+            <div class="adm-admin-nick">${owner ? '👑' : '🛡️'} ${escapeHtml(nick)}${owner ? '<span class="adm-owner-tag">ВЛАСНИК</span>' : ''}</div>
+            <div class="adm-admin-sub">${owner ? 'Права не можна змінити' : legacy ? 'Призначений до появи прав' : 'Доступ обмежено'}</div>
+          </div>
+          ${owner ? '' : `<button class="adm-mini-btn danger" onclick="revokeAdmin('${escapeHtml(nick)}')">Зняти адмінку</button>`}
+        </div>
+        <div class="adm-perm-chips">${chips}</div>
+        ${owner ? '' : `<div class="adm-perm-toggles" id="admPerms-${escapeHtml(nick)}" style="display:none;">
+          ${ADMIN_PERMS.map(p => `<label class="adm-perm-row">
+            <input type="checkbox" data-admin-nick="${escapeHtml(nick)}" data-perm="${p.key}" ${(!legacy && perms[p.key] === true) ? 'checked' : ''}>
+            <span><b>${p.icon} ${p.name}</b><br><span style="color:#666;font-size:10px;">${p.desc}</span></span>
+          </label>`).join('')}
+          <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="saveAdminPerms('${escapeHtml(nick)}')">💾 Зберегти права</button>
+        </div>
+        <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="toggleAdminPermsEditor('${escapeHtml(nick)}')">⚙️ Налаштувати права</button>`}
+      </div>`;
+    }).join('');
+  }).catch(() => {
+    el.innerHTML = '<div style="color:#e74c3c;text-align:center;padding:14px;font-size:12px;">Не вдалось завантажити список</div>';
+  });
+}
+
+function toggleAdminPermsEditor(nick) {
+  const box = document.getElementById('admPerms-' + nick);
+  if(box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveAdminPerms(nick) {
+  if(!requireAdminPerm('admins')) return;
+  if(nick.toLowerCase() === ADMIN_OWNER) return notify('Права власника змінити не можна', 'error');
+  if(nick === currentUser) return notify('Свої власні права міняти не можна', 'error');
+  const perms = {};
+  document.querySelectorAll(`[data-admin-nick="${nick}"]`).forEach(cb => { perms[cb.dataset.perm] = cb.checked; });
+  const granted = ADMIN_PERMS.filter(p => perms[p.key]).map(p => p.name);
+  db.ref('users/' + nick + '/adminPerms').set(perms).then(() => {
+    logAdminAction('admin_perms', `@${nick} → ${granted.length ? granted.join(', ') : 'нічого'}`);
+    notify('✅ Права оновлено: ' + nick, 'success');
+    loadAdminsList();
+  });
+}
+
+function grantAdmin() {
+  if(!requireAdminPerm('admins')) return;
+  const nick = (document.getElementById('newAdminNick')?.value || '').trim();
+  if(!nick) return notify('Введи нік гравця', 'error');
+  db.ref('users/' + nick).once('value').then(snap => {
+    if(!snap.exists()) return notify('Гравця не знайдено', 'error');
+    if(snap.val().isAdmin === true) return notify(nick + ' уже адмін', 'info');
+    db.ref('users/' + nick).update({ isAdmin: true, adminPerms: ADMIN_PRESET_DEFAULT });
+    db.ref('pm/' + nick + '/' + db.ref().push().key).set({
+      from: '👑 SlotOK', to: nick,
+      text: 'Тобі видано права адміністратора. Доступні розділи видно в адмін-панелі.', ts: Date.now()
+    });
+    db.ref('users/' + nick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+    logAdminAction('admin_grant', `@${nick} — базові права`);
+    notify('👑 ' + nick + ' тепер адмін', 'success');
+    const inp = document.getElementById('newAdminNick');
+    if(inp) inp.value = '';
+    loadAdminsList();
+  });
+}
+
+function revokeAdmin(nick) {
+  if(!requireAdminPerm('admins')) return;
+  if(nick.toLowerCase() === ADMIN_OWNER) return notify('Власника не можна зняти з адмінки', 'error');
+  if(nick === currentUser) return notify('Зняти адмінку сам із себе не можна', 'error');
+  if(!confirm('Зняти права адміна з ' + nick + '?')) return;
+  db.ref('users/' + nick).update({ isAdmin: false, adminPerms: null });
+  db.ref('pm/' + nick + '/' + db.ref().push().key).set({
+    from: '👑 SlotOK', to: nick, text: 'Права адміністратора знято.', ts: Date.now()
+  });
+  db.ref('users/' + nick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
+  logAdminAction('admin_revoke', `@${nick}`);
+  notify('Права знято з ' + nick, 'success');
+  loadAdminsList();
+}
+
+// Показуємо лише ті вкладки адмінки, до яких у цього адміна є доступ
+function applyAdminTabVisibility() {
+  let firstAllowed = null;
+  ADMIN_PERMS.forEach(p => {
+    const btn = document.getElementById('admtb-' + p.key);
+    if(!btn) return;
+    const allowed = adminCan(p.key);
+    btn.style.display = allowed ? '' : 'none';
+    if(allowed && !firstAllowed) firstAllowed = p.key;
+  });
+  return firstAllowed;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  НАЛАШТУВАННЯ АНТИ-ЧІТА                                      ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// Значення за замовчуванням = ті самі пороги, що були зашиті в коді,
+// тож поки власник нічого не міняв, поведінка лишається як була
+const AC_DEFAULTS = {
+  enabled: true,
+  autoFreeze: true,
+  rapidBetsPerMin: 25,
+  balanceJumpAmount: 100000,
+  balanceJumpMinGames: 5,
+  implausibleBalance: 3000000,
+  implausibleRatio: 2,        // % від балансу
+  multiAccount: true,
+  multiAccountMin: 2,
+};
+let _acConfig = Object.assign({}, AC_DEFAULTS);
+
+function watchAntiCheatConfig() {
+  if(!db) return;
+  db.ref('site_config/antiCheat').on('value', snap => {
+    _acConfig = Object.assign({}, AC_DEFAULTS, snap.val() || {});
+  });
+}
+
+function loadAntiCheatSettings() {
+  db.ref('site_config/antiCheat').once('value').then(snap => {
+    const c = Object.assign({}, AC_DEFAULTS, snap.val() || {});
+    const set = (id, val, isCheck) => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(isCheck) el.checked = !!val; else el.value = val;
+    };
+    set('acEnabled', c.enabled, true);
+    set('acAutoFreeze', c.autoFreeze, true);
+    set('acMultiAccount', c.multiAccount, true);
+    set('acRapidBets', c.rapidBetsPerMin);
+    set('acJumpAmount', c.balanceJumpAmount);
+    set('acJumpGames', c.balanceJumpMinGames);
+    set('acImplausible', c.implausibleBalance);
+    set('acRatio', c.implausibleRatio);
+    set('acMultiMin', c.multiAccountMin);
+    updateAntiCheatStatusLine(c);
+  });
+}
+
+function updateAntiCheatStatusLine(c) {
+  const el = document.getElementById('acStatusLine');
+  if(!el) return;
+  el.textContent = c.enabled
+    ? (c.autoFreeze ? '✅ Увімкнено · підозрілі акаунти призупиняються автоматично'
+                    : '✅ Увімкнено · лише сповіщення, без автопризупинення')
+    : '⛔ Вимкнено — порушення не відстежуються';
+  el.style.color = c.enabled ? '#3dd68c' : '#e74c3c';
+}
+
+function saveAntiCheatSettings() {
+  if(!requireAdminPerm('admins')) return;
+  const num = (id, def, min) => {
+    const v = parseInt(document.getElementById(id)?.value);
+    return (isNaN(v) || v < (min === undefined ? 1 : min)) ? def : v;
+  };
+  const cfg = {
+    enabled:             !!document.getElementById('acEnabled')?.checked,
+    autoFreeze:          !!document.getElementById('acAutoFreeze')?.checked,
+    multiAccount:        !!document.getElementById('acMultiAccount')?.checked,
+    rapidBetsPerMin:     num('acRapidBets', AC_DEFAULTS.rapidBetsPerMin, 5),
+    balanceJumpAmount:   num('acJumpAmount', AC_DEFAULTS.balanceJumpAmount, 1000),
+    balanceJumpMinGames: num('acJumpGames', AC_DEFAULTS.balanceJumpMinGames, 0),
+    implausibleBalance:  num('acImplausible', AC_DEFAULTS.implausibleBalance, 10000),
+    implausibleRatio:    num('acRatio', AC_DEFAULTS.implausibleRatio, 1),
+    multiAccountMin:     num('acMultiMin', AC_DEFAULTS.multiAccountMin, 1),
+  };
+  db.ref('site_config/antiCheat').set(cfg).then(() => {
+    logAdminAction('anticheat_config', cfg.enabled ? `увімкнено (автостоп: ${cfg.autoFreeze ? 'так' : 'ні'})` : 'ВИМКНЕНО');
+    notify('🛡️ Налаштування анти-чіта збережено', 'success');
+    updateAntiCheatStatusLine(cfg);
+  });
+}
+
+function resetAntiCheatSettings() {
+  if(!requireAdminPerm('admins')) return;
+  if(!confirm('Повернути стандартні пороги анти-чіта?')) return;
+  db.ref('site_config/antiCheat').set(AC_DEFAULTS).then(() => {
+    logAdminAction('anticheat_config', 'скинуто до стандартних');
+    notify('↩️ Повернуто стандартні налаштування', 'success');
+    loadAntiCheatSettings();
+  });
+}
+
+function initAdminsPanel() {
+  loadAdminsList();
+  loadAntiCheatSettings();
+}
+
 // ── IP ЛОГУВАННЯ ───────────────────────────────────────────────
 function saveUserIP() {
   if (!db || !currentUser) return;
@@ -7502,11 +7777,11 @@ function saveUserIP() {
 // одному Wi-Fi), тож це лише 'medium' — сповіщає адміна для ручної
 // перевірки, а не блокує нікого автоматично.
 function antiCheatCheckMultiAccount(ip) {
-  if(!currentUser) return;
+  if(!currentUser || !_acConfig.enabled || !_acConfig.multiAccount) return;
   db.ref('users').orderByChild('lastIP').equalTo(ip).once('value').then(snap => {
     const users = snap.val() || {};
     const others = Object.keys(users).filter(n => n !== currentUser && !users[n].isBot);
-    if(others.length >= 2) {
+    if(others.length >= _acConfig.multiAccountMin) {
       antiCheatFlag('multi_account', `Та сама IP що й у ${others.length} інших акаунтів: ${others.slice(0,5).join(', ')}`, 'medium');
     }
   }).catch(() => {});
@@ -7964,8 +8239,10 @@ function deleteBot(nick) {
 }
 
 function switchAdminTab(tab, el) {
+  // Адмін без права на цю вкладку не має її відкривати навіть прямим викликом
+  if(!adminCan(tab)) { requireAdminPerm(tab); return; }
   // Hide ALL panels cleanly
-  ['requests','stats','users','bots','content','finance','security','moderation'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) { p.style.display = 'none'; }
   });
@@ -7974,6 +8251,7 @@ function switchAdminTab(tab, el) {
   var panel = document.getElementById('adm-panel-'+tab);
   if(panel) { panel.style.display = 'block'; }
   if(el) el.classList.add('active');
+  if(!el) { var btn = document.getElementById('admtb-'+tab); if(btn) btn.classList.add('active'); }
   if(tab==='requests'){ startAdminRequestListeners(); }
   if(tab==='users')   { try{setupAutoWipe();}catch(e) { console.warn(e); } }
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
@@ -7981,17 +8259,26 @@ function switchAdminTab(tab, el) {
   if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
   if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } try{loadLootboxEdgeSetting();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
+  if(tab==='admins')  { try{initAdminsPanel();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
   // Force clear all panels first
-  ['requests','stats','users','bots','content','finance','security','moderation'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) p.style.display = 'none';
   });
-  switchAdminTab('requests', document.getElementById('admtb-requests'));
+  // Ховаємо вкладки без доступу і відкриваємо першу дозволену
+  var first = applyAdminTabVisibility();
+  if(!first) {
+    notify('⛔ Доступ до адмін-панелі обмежено', 'error');
+    switchTab('profile');
+    return;
+  }
+  switchAdminTab(first, document.getElementById('admtb-'+first));
 }
 
 function adminManualDeposit() {
+  if(!requireAdminPerm('finance')) return;
   var user = (document.getElementById('adminDepUser').value||'').trim();
   var amt  = parseInt(document.getElementById('adminDepAmt').value||0);
   var note = (document.getElementById('adminDepNote').value||'Ручне нарахування').trim();
@@ -8003,12 +8290,14 @@ function adminManualDeposit() {
   notify((amt>0?'✅':'⚠️')+' '+user+' '+(amt>0?'+':'')+amt+'₴','success');
 }
 function adminSetJackpot() {
+  if(!requireAdminPerm('finance')) return;
   var amt = parseInt(document.getElementById('adminJackpotSet').value||0);
   if(!amt) return notify('Введіть суму','error');
   db.ref('jackpot/amount').set(amt);
   notify('🎰 Джекпот: ₴'+formatNumber(amt),'success');
 }
 function adminResetJackpot() {
+  if(!requireAdminPerm('finance')) return;
   if(!confirm('Скинути джекпот до 0?')) return;
   db.ref('jackpot/amount').set(0);
   notify('Джекпот скинуто','info');
@@ -8489,8 +8778,10 @@ let _depListener = null, _wdListener = null, _pwrListener = null;
 
 function admMakeAdmin() {
   if(!admSelectedUser) return;
-  if(!confirm('Дати права адміна: ' + admSelectedUser + '?')) return;
-  db.ref('users/' + admSelectedUser).update({ isAdmin: true });
+  if(!requireAdminPerm('admins')) return;
+  if(!confirm('Дати права адміна: ' + admSelectedUser + '?\n\nБазовий набір: заявки, статистика, контент, модерація.\nЗмінити можна у вкладці 👑 Адміни.')) return;
+  db.ref('users/' + admSelectedUser).update({ isAdmin: true, adminPerms: ADMIN_PRESET_DEFAULT });
+  logAdminAction('admin_grant', `@${admSelectedUser} — базові права`);
   notify('👑 ' + admSelectedUser + ' тепер адмін', 'success');
 }
 
@@ -20574,7 +20865,7 @@ function logAdminAction(action, details) {
 
 // ── БАН / МУТ (нарешті є сторона запису — раніше тільки перевірялось) ──
 function banPlayer() {
-  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  if(!requireAdminPerm('moderation')) return;
   const nick = (document.getElementById('modUserNick')?.value || '').trim();
   const reason = (document.getElementById('modReason')?.value || '').trim();
   if(!nick) return notify('Введи нік гравця', 'error');
@@ -20587,7 +20878,7 @@ function banPlayer() {
 }
 
 function unbanPlayer() {
-  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  if(!requireAdminPerm('moderation')) return;
   const nick = (document.getElementById('modUserNick')?.value || '').trim();
   if(!nick) return notify('Введи нік гравця', 'error');
   db.ref('users/' + nick).update({ banned: false, banReason: null });
@@ -20596,7 +20887,7 @@ function unbanPlayer() {
 }
 
 function mutePlayer() {
-  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  if(!requireAdminPerm('moderation')) return;
   const nick = (document.getElementById('modUserNick')?.value || '').trim();
   const reason = (document.getElementById('modReason')?.value || '').trim();
   const hours = parseInt(document.getElementById('modMuteHours')?.value) || 1;
@@ -20610,7 +20901,7 @@ function mutePlayer() {
 }
 
 function unmutePlayer() {
-  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  if(!requireAdminPerm('moderation')) return;
   const nick = (document.getElementById('modUserNick')?.value || '').trim();
   if(!nick) return notify('Введи нік гравця', 'error');
   db.ref('users/' + nick).update({ muted: false, muteUntil: null });
@@ -20620,7 +20911,7 @@ function unmutePlayer() {
 
 // ── MAINTENANCE MODE ──
 function toggleMaintenanceMode() {
-  if(!isAdminUser()) return notify('Тільки для адміна', 'error');
+  if(!requireAdminPerm('moderation')) return;
   db.ref('site_config/maintenance').once('value').then(snap => {
     const newState = !snap.val();
     db.ref('site_config/maintenance').set(newState);
