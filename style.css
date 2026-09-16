@@ -672,17 +672,6 @@
     .lb-tab.active { background: rgba(212,175,55,0.15); border-color: var(--accent); color: var(--accent); }
 
     .lb-me    { border-color: var(--accent) !important; background: rgba(212,175,55,0.05) !important; }
-    /* ===== ПОДАРУНКИ ===== */
-    .gift-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-    .gift-card { background: #111; border: 1px solid #222; border-radius: var(--r-md); padding: 14px; text-align: center; cursor: pointer; transition: border-color 0.2s, transform 0.15s; box-shadow: var(--bevel), var(--elev-1); }
-    .gift-card:active { transform: scale(0.97); }
-    .gift-card.selected { border-color: var(--accent); background: rgba(212,175,55,0.06); }
-    .gift-icon   { font-size: 36px; margin-bottom: 6px; }
-    .gift-name   { font-size: 13px; font-weight: bold; }
-    .gift-price  { font-size: 12px; color: var(--accent); margin-top: 3px; }
-    .gift-desc   { font-size: 10px; color: #555; margin-top: 2px; }
-    .inbox-gift  { display: flex; align-items: center; gap: 12px; padding: 12px; background: #111; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; }
-    .inbox-gift.new-gift { border-color: var(--accent); background: rgba(212,175,55,0.05); animation: pulse 2s ease infinite; }
     /* ===== МОНОПОЛІЯ ===== */
     .mono-board-wrap { position: relative; width: 100%; max-width: 420px; margin: 0 auto 10px; aspect-ratio: 1; background: #e8f4e8; border: 3px solid #2d5a2d; border-radius: 4px; overflow: hidden; }
     .mono-board { display: grid; grid-template-columns: 56px repeat(9,1fr) 56px; grid-template-rows: 56px repeat(9,1fr) 56px; width: 100%; height: 100%; }

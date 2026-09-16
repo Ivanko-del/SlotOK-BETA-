@@ -146,7 +146,6 @@ function startDataSync() {
             loadContacts();
             checkAdmin();
             checkDailyBonus();
-            checkInboxGifts();
             loadNotifsFromStorage();
             updateNotifBadge();
             loadSettings();
@@ -166,7 +165,6 @@ function startDataSync() {
               setTimeout(checkPendingBetsOnStartup, 3000);
               setTimeout(watchPmUnread, 1500);
               setTimeout(watchSupportUnread, 1500);
-              setTimeout(watchTradeUnread, 1800);
               setTimeout(initV62Features, 2200);
               setTimeout(renderActivityFeed, 2000);
               if(userData.virtualCard?.axiomLinked) setTimeout(startAxiomFreezeSync, 1000);
@@ -4994,10 +4992,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '88';
+const CURRENT_VERSION = '89';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '89',
+    title: '📜 Оновлення v89 — прибрано Торгівлю, Подарунки, Watch Mode й Upgrade',
+    date: Date.UTC(2026, 8, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🧹 Менше зайвого в меню «Ще»',
+        items: [
+          'Прибрано Торгівлю (Trade), Подарунки гравцям, Watch Mode і Upgrade предметів — ці розділи більше не використовувались і дублювали інші функції',
+          'Пошук гравців і ігор, Порівняти гравців, Топ донатерів, Магазин тегів, Ефекти профілю та Подарувати VIP лишаються доступними — через пошук у шапці або екран Профіль',
+        ]
+      },
+    ]
+  },
   {
     version: '88',
     title: '📜 Оновлення v88 — прибрано зайве з меню «Ще»',
@@ -7579,26 +7593,6 @@ function doComparePlayers(nick) {
   });
 }
 
-// ── ITEM UPGRADE СИСТЕМА ───────────────────────────────────────
-function doUpgrade(fromName, cost, toName, chance, fromEmoji, toEmoji) {
-  if (!userData.balance || userData.balance < cost) return notify('Потрібно ₴' + formatNumber(cost), 'error');
-  db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-cost));
-  userData.balance -= cost;
-  var success = Math.random() < chance;
-  var resultEmoji = success ? toEmoji : '💀';
-  var msg = success ? '⬆️ УСПІХ! Отримано: ' + toEmoji + ' ' + toName : '💀 Невдача! Предмет втрачено';
-  if (success) {
-    var bonus = Math.round(cost * (1 / chance) * 0.9);
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bonus));
-    userData.balance += bonus;
-    if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
-    spawnWinCoins(bonus);
-  } else {
-    if (navigator.vibrate) navigator.vibrate(300);
-  }
-  notify(msg + (success ? ' (+₴' + formatNumber(Math.round(cost * (1/chance) * 0.9)) + ')' : ''), success ? 'success' : 'error');
-}
-
 // ── ПРОФІЛЬНІ ЕФЕКТИ ───────────────────────────────────────────
 var PROFILE_EFFECTS = [
   {id:'gold_glow', name:'Золоте сяйво', emoji:'✨', css:'box-shadow:0 0 20px rgba(212,175,55,.8),0 0 40px rgba(212,175,55,.4);animation:pulseGlow 2s infinite;', price:500},
@@ -7794,32 +7788,6 @@ function openCryptoSimulator() {
   window._cryptoIv = setInterval(function() {
     updateCryptoPrices(); renderCryptoAssets();
   }, 5000);
-}
-
-function openUpgradeSystem() {
-  var UPGRADE_ITEMS = [
-    {name:'Бронзова монета',emoji:'🪙',value:100,nextName:'Срібна',nextEmoji:'🥈',chance:.6},
-    {name:'Срібна монета',emoji:'🥈',value:250,nextName:'Золота',nextEmoji:'🥇',chance:.5},
-    {name:'Золота монета',emoji:'🥇',value:600,nextName:'Діамантова',nextEmoji:'💎',chance:.35},
-    {name:'Діамантова монета',emoji:'💎',value:1500,nextName:'Кристальна',nextEmoji:'🔮',chance:.25},
-  ];
-  var html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
-    +'<button onclick="closeModal(\'upgrade\')" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>'
-    +'<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#ff9500;">⬆️ Upgrade</div></div>'
-    +'<div style="background:rgba(255,149,0,.06);border:1px solid rgba(255,149,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;font-size:11px;color:#888;">При невдачі предмет втрачається!</div>'
-    + UPGRADE_ITEMS.map(function(item){
-        return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:10px;">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
-          +'<div style="display:flex;align-items:center;gap:10px;"><div style="font-size:36px;">'+item.emoji+'</div>'
-          +'<div><div style="font-weight:800;">'+item.name+'</div><div style="font-size:10px;color:#555;">₴'+formatNumber(item.value)+'</div></div></div>'
-          +'<div style="font-size:22px;color:#555;">→</div>'
-          +'<div style="text-align:center;"><div style="font-size:36px;">'+item.nextEmoji+'</div>'
-          +'<div style="font-size:11px;color:#3dd68c;font-weight:700;">'+Math.round(item.chance*100)+'%</div></div></div>'
-          +'<button onclick="doUpgrade(\''+item.name+'\','+item.value+',\''+item.nextName+'\','+item.chance+',\''+item.emoji+'\',\''+item.nextEmoji+'\')" '
-          +'style="width:100%;background:linear-gradient(135deg,#ff9500,#f0c040);border:none;border-radius:10px;padding:11px;color:#000;font-weight:900;cursor:pointer;font-size:13px;">⬆️ Апгрейд (−₴'+formatNumber(item.value)+')</button>'
-          +'</div>';
-      }).join('');
-  openModal('upgrade', html, {fullscreen: true});
 }
 
 function openProfileEffectShop() {
@@ -9119,105 +9087,6 @@ function syncClanBankListener() {
 // loadLeaderboard replaced by loadLeaderboardNew
 
 // ============================================
-// ===== ПОДАРУНКИ =====
-// ============================================
-const GIFT_CATALOG = {
-  bouquet:  { icon:'💐', name:'Букет',        price:50,   value:50,   isBox:null },
-  chest:    { icon:'📦', name:'Звичайний ящик',    price:200,  value:null, isBox:'common' },
-  money500: { icon:'💵', name:'Конверт 500₴',  price:500,  value:500,  isBox:null },
-  diamond:  { icon:'💎', name:'Діамант',       price:1000, value:1000, isBox:null },
-  crown:    { icon:'👑', name:'Золота корона', price:2500, value:2500, isBox:null },
-  rocket:   { icon:'🚀', name:'Ракета',        price:5000, value:5000, isBox:null },
-};
-let selectedGiftType = null;
-
-function selectGift(type, el) {
-  selectedGiftType = type;
-  document.querySelectorAll('.gift-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-function sendGift() {
-  if(!selectedGiftType) return notify('Оберіть подарунок', 'error');
-  const recipient = document.getElementById('giftRecipient').value.trim();
-  const message   = document.getElementById('giftMessage').value.trim();
-  if(!recipient) return notify('Введіть нік отримувача', 'error');
-  if(recipient === currentUser) return notify('Не можна надсилати собі 😄', 'error');
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
-  const gift = GIFT_CATALOG[selectedGiftType];
-  if(userData.balance < gift.price) return notify('Недостатньо коштів', 'error');
-  if(!checkCardLimit(getActiveCardId(), gift.price)) return;
-
-  db.ref('users/' + recipient).once('value', snap => {
-    if(!snap.exists()) return notify('Гравця не знайдено', 'error');
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-gift.price));
-    noteCardSpend(getActiveCardId(), gift.price);
-    db.ref('gifts/' + recipient).push({
-      from: currentUser, type: selectedGiftType, icon: gift.icon, name: gift.name,
-      value: gift.value, isBox: gift.isBox, message: message||null, time: Date.now(), claimed: false
-    });
-    addToHistory('Подарунок ' + gift.icon + ' -> ' + recipient + ': -' + gift.price + '₴');
-    notify(gift.icon + ' Подарунок надіслано ' + recipient + '!', 'success');
-    document.getElementById('giftRecipient').value = '';
-    document.getElementById('giftMessage').value = '';
-  });
-}
-
-function loadInboxGifts() {
-  const inbox = document.getElementById('inboxGifts');
-  if(!inbox) return;
-  db.ref('gifts/' + currentUser).orderByChild('claimed').equalTo(false).once('value', snap => {
-    const data = snap.val();
-    if(!data) { inbox.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:15px 0;">Немає подарунків</div>'; return; }
-    inbox.innerHTML = '';
-    let unclaimed = 0;
-    Object.entries(data).forEach(([id, g]) => {
-      unclaimed++;
-      const t = new Date(g.time).toLocaleDateString('uk-UA');
-      inbox.innerHTML += '<div class="inbox-gift new-gift">' +
-        '<div style="font-size:36px;">' + g.icon + '</div>' +
-        '<div style="flex:1;">' +
-          '<div style="font-weight:bold;">' + g.name + ' <span style="color:#777;font-size:11px;">від ' + g.from + '</span></div>' +
-          (g.message ? '<div style="color:#aaa;font-size:12px;margin-top:3px;">"' + g.message + '"</div>' : '') +
-          '<div style="color:#555;font-size:11px;margin-top:2px;">' + t + '</div>' +
-        '</div>' +
-        '<button style="width:auto;padding:8px 14px;font-size:12px;flex-shrink:0;" class="btn-gold" onclick="claimGift(\'' + id + '\',\'' + g.type + '\',' + g.value + ',\'' + (g.isBox||'') + '\')">🎁 Забрати</button>' +
-      '</div>';
-    });
-    const badge = document.getElementById('giftsBadge');
-    if(badge) badge.classList.toggle('hidden', unclaimed === 0);
-  });
-}
-
-function claimGift(giftId, type, value, isBox) {
-  db.ref('gifts/' + currentUser + '/' + giftId).update({ claimed: true });
-  const gift = GIFT_CATALOG[type] || {};
-  if(isBox && LOOTBOX_CONFIGS && LOOTBOX_CONFIGS[isBox]) {
-    const cfg = LOOTBOX_CONFIGS[isBox];
-    const prize = rollLootbox(cfg);
-    const win = Math.floor(cfg.price * prize.mult);
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
-    notify((gift.icon||'📦') + ' Подарунок відкрито! +' + win + '₴', 'success');
-    addToHistory('Подарунок-скринька +' + win + '₴');
-  } else if(value) {
-    db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(value));
-    notify((gift.icon||'🎁') + ' Подарунок: +' + value + '₴', 'success');
-    addToHistory('Подарунок ' + (gift.icon||'') + ' +' + value + '₴');
-  } else {
-    notify((gift.icon||'🎁') + ' Подарунок ' + (gift.name||'') + ' отримано!', 'success');
-  }
-  loadInboxGifts();
-}
-
-function checkInboxGifts() {
-  db.ref('gifts/' + currentUser).orderByChild('claimed').equalTo(false).once('value', snap => {
-    const count = snap.val() ? Object.keys(snap.val()).length : 0;
-    const badge = document.getElementById('giftsBadge');
-    if(badge) badge.classList.toggle('hidden', count === 0);
-  });
-}
-
-// ============================================
 // ===== МОНОПОЛІЯ =====
 // ============================================
 const MONO_COLORS = {
@@ -10368,15 +10237,15 @@ const NAV_TAB_MAP = {
   scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
   cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1,
   tournaments:5, referrals:5, vip:5, quests:5, lootboxes:5,
-  hourly:5, clans:5, leaderboard:5, gifts:5, slotiky:5,
+  hourly:5, clans:5, leaderboard:5, slotiky:5,
   achievements:5, battlepass:5, stats:5, bank:5, admin:4,
   baccarat:1, videpoker:1,
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, penalty:1, bowling:1, archery:1, sicbo:1, cardwar:1, duckshoot:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
-  autobet:5, insurance:5, copytrade:5, trade:5,
-  lottery:5, investpool:5, watchmode:5,
+  autobet:5, insurance:5, copytrade:5,
+  lottery:5, investpool:5,
 };
 
 // Кеш вимкнених ігор — оновлюється в реальному часі, дозволяє
@@ -10621,7 +10490,6 @@ function switchTab(id, el) {
   if(id==='hourly')       safe(() => initHourlyBonus());
   if(id==='clans')        safe(() => loadClanTab());
   if(id==='leaderboard')  safe(() => { loadLeaderboardNew(); });
-  if(id==='gifts')        safe(() => loadInboxGifts());
   if(id==='monopoly')     safe(() => { const s = document.getElementById('monoStartScreen'); if(s) s.classList.remove('hidden'); });
   if(id==='cardgame')     safe(() => {
     document.getElementById('cgStartScreen')?.classList.remove('hidden');
@@ -10661,7 +10529,6 @@ function switchTab(id, el) {
   if(id==='limbo')        safe(() => updateLimboChance());
   if(id==='mines')        safe(() => updateMinesInfo());
   if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
-  if(id==='trade')        safe(() => { loadTrade(); db.ref('users/'+currentUser+'/tradeUnread').set(0); });
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
   if(id==='penalty')      safe(() => initPenalty());
@@ -10680,7 +10547,6 @@ function switchTab(id, el) {
   });
   if(id==='lottery')      safe(() => loadLottery());
   if(id==='investpool')   safe(() => loadInvestPool());
-  if(id==='watchmode')    safe(() => initWatchMode());
   if(id==='horseracing')  safe(() => { /* ready */ });
   if(id==='balloon')      safe(() => { /* ready */ });
   if(id==='quiz')         safe(() => { /* ready */ });
@@ -14656,11 +14522,6 @@ const SUPPORT_FAQ = [
       '📊 Рейтинг гравців: розділ «Ще» → Рейтинг — топи за ставками, виграшами й активністю за різні періоди. Найкращі місця дають додаткові нагороди.',
       '📊 Рейтинг гравців («Ще» → Рейтинг) показує топи за ставками, виграшами й активністю — найкращі місця дають додаткові нагороди.'
     ] },
-  { keys: ['подарун гравцю','надіслати подарунок','подарувати гроші'],
-    reply: [
-      '🎁 Подарунки: можна надіслати частину балансу іншому гравцю прямо з його профілю чи чату — кнопка «Подарувати». Ліміти й комісія показані перед відправкою.',
-      '🎁 Надіслати подарунок іншому гравцю можна з його профілю чи чату кнопкою «Подарувати» — ліміти й комісія завжди видно перед відправкою.'
-    ] },
   { keys: ['мут','замучен','забанили в чаті','правила чату','спам чат'],
     reply: '💬 Правила чату: без спаму, реклами, образ і читерських порад. За порушення — тимчасовий мут. Якщо вважаєш мут помилковим, опиши ситуацію — передам адміну на перевірку.' },
   { keys: ['гроші списались а не зарахувал','платіж завис','оплата пройшла а грошей нема','гроші не прийшли'],
@@ -14711,11 +14572,6 @@ const SUPPORT_FAQ = [
     reply: [
       '🧠 Quiz Battle: постав ставку і відповідай на 10 питань — за кожну правильну відповідь ставка росте (+12%), помилка чи вихід забирає накопичене на момент зупинки.',
       '🧠 У Quiz Battle відповідаєш на 10 питань — кожна правильна відповідь додає +12% до ставки, а помилка забирає накопичене на той момент.'
-    ] },
-  { keys: ['торгівл','trade','трейдинг','угод'],
-    reply: [
-      '🔄 Торгівля (Trade): розділ «Ще» → Торгівля — обмінюй ігрові предмети/скіни з іншими гравцями напряму, безпечно через систему угод сайту.',
-      '🔄 Торгівля («Ще» → Торгівля) дозволяє напряму обмінюватись скінами/предметами з іншими гравцями через безпечну систему угод сайту.'
     ] },
   { keys: ['дуел','duel'],
     reply: [
@@ -14823,8 +14679,6 @@ const SUPPORT_FAQ = [
     reply: '🛡️ Страхування ставки: за невелику доплату можна застрахувати частину ставки — при програші повернеться відсоток застрахованої суми.' },
   { keys: ['сезон','season пройшов','нагороди сезону'],
     reply: '🗓️ Сезони — це Battle Pass на Головній: кожен сезон триває 30 днів, має власну назву й тему, рівні з нагородами за XP. Наприкінці сезону прогрес скидається і починається новий.' },
-  { keys: ['watchmode','режим спостереження','дивитись без ставок'],
-    reply: '👀 Режим спостереження: можна дивитись за грою (наприклад PvP-дуель чи спортивний матч) не роблячи ставку — просто відкрий гру й обери «Дивитись».' },
   { keys: ['тема оформлен','змінити тему','темна тема','світла тема'],
     reply: '🎨 Теми оформлення: розділ «Ще» → Теми — обери інший вигляд інтерфейсу, деякі теми відкриваються за досягнення чи Слотіки.' },
   { keys: ['мова сайту','змінити мову','change language','язык сайта'],
@@ -15016,7 +14870,6 @@ const ACHIEVEMENTS = [
   { id:'referral_5',      icon:'🌟', name:'Інфлюєнсер',         desc:'Запроси 5 друзів',                     cat:'Соціальні', xp:150, cond: d => (d.referrals||0) >= 5 },
   { id:'clan_join',       icon:'⚔️', name:'Командний гравець',   desc:'Вступи до клану',                     cat:'Соціальні', xp:30,  cond: d => !!(d.clanId) },
   { id:'duel_win',        icon:'🤺', name:'Дуелянт',             desc:'Виграй 5 дуелей',                     cat:'Соціальні', xp:80,  cond: d => (d.duelWins||0) >= 5 },
-  { id:'gift_sent',       icon:'🎁', name:'Щедрий',              desc:'Надішли подарунок іншому гравцю',      cat:'Соціальні', xp:25,  cond: d => (d.giftsSent||0) >= 1 },
   // ── VIP / ПРОГРЕС ──
   { id:'vip_silver',      icon:'🥈', name:'Срібний',             desc:'Досягни VIP рівня Silver',             cat:'VIP',       xp:40,  cond: d => (d.totalWagered||0) >= 5000 },
   { id:'vip_gold',        icon:'🥇', name:'Золотий',             desc:'Досягни VIP рівня Gold',               cat:'VIP',       xp:80,  cond: d => (d.totalWagered||0) >= 20000 },
@@ -15038,8 +14891,6 @@ const ACHIEVEMENTS = [
   // ── НОВІ v61 ──
   { id:'limbo_100x',      icon:'🌀', name:'Космос',              desc:'Вгадай множник x100+ у Limbo',         cat:'Limbo',     xp:150, cond: d => (d.limboMax||0) >= 100 },
   { id:'limbo_25',        icon:'🎯', name:'Гравець Limbo',       desc:'25 ігор у Limbo',                      cat:'Limbo',     xp:40,  cond: d => (d.limboGames||0) >= 25 },
-  { id:'trade_first',     icon:'🔄', name:'Першая угода',        desc:'Проведи першу торгову угоду',          cat:'Торгівля',  xp:50,  cond: d => (d.tradesCompleted||0) >= 1 },
-  { id:'trade_10',        icon:'💹', name:'Трейдер',             desc:'10 успішних угод',                     cat:'Торгівля',  xp:150, cond: d => (d.tradesCompleted||0) >= 10 },
   { id:'pm_10',           icon:'✉️', name:'Листоноша',           desc:'Надішли 10 приватних повідомлень',     cat:'Соціальні', xp:20,  cond: d => (d.pmSent||0) >= 10 },
   { id:'pm_pen_pal',      icon:'📬', name:'Перо і папір',        desc:'50 приватних повідомлень',             cat:'Соціальні', xp:60,  cond: d => (d.pmSent||0) >= 50 },
   { id:'wins_streak_5',   icon:'🔥', name:'5 перемог поспіль',   desc:'Виграй 5 ставок підряд',               cat:'Початок',   xp:80,  cond: d => (d.winStreak||0) >= 5 },
@@ -17728,138 +17579,6 @@ function getRelativeTime(ts) {
   return Math.floor(diff/86400000) + 'д';
 }
 
-// ══════════════════════════════════════════
-// 🔄 ТОРГІВЛЯ (TRADE SYSTEM)
-// ══════════════════════════════════════════
-function sendTradeOffer() {
-  const to = document.getElementById('tradeToInput')?.value?.trim();
-  const offer = parseInt(document.getElementById('tradeOfferAmount')?.value) || 0;
-  const ask = parseInt(document.getElementById('tradeAskAmount')?.value) || 0;
-  const comment = document.getElementById('tradeComment')?.value?.trim() || '';
-  if(!to) return notify('Вкажи нік гравця', 'error');
-  if(to === currentUser) return notify('Не можна торгувати з собою', 'error');
-  if(offer < 1) return notify('Сума відправки мінімум 1 ₴', 'error');
-  if(offer > (userData.balance || 0)) return notify('Недостатньо коштів', 'error');
-  db.ref('users/'+to).once('value', snap => {
-    if(!snap.exists()) return notify('Гравця не знайдено', 'error');
-    const trade = { from: currentUser, to, offer, ask, comment, status: 'pending', ts: Date.now() };
-    const ref = db.ref('trades').push();
-    ref.set(trade).then(() => {
-      db.ref('users/'+to+'/tradeUnread').set(firebase.database.ServerValue.increment(1));
-      // Freeze offered amount
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-offer));
-      userData.balance -= offer;
-      notify('✅ Пропозицію надіслано!', 'success');
-      document.getElementById('tradeToInput').value = '';
-      document.getElementById('tradeOfferAmount').value = '';
-      document.getElementById('tradeAskAmount').value = '';
-      document.getElementById('tradeComment').value = '';
-      loadTrade();
-    });
-  });
-}
-
-function loadTrade() {
-  if(!currentUser) return;
-  // Incoming
-  db.ref('trades').orderByChild('to').equalTo(currentUser).limitToLast(20).once('value', snap => {
-    const el = document.getElementById('tradeIncoming');
-    if(!el) return;
-    const trades = snap.val() || {};
-    const pending = Object.entries(trades).filter(([,t])=>t.status==='pending');
-    const badge = document.getElementById('tradeIncomingBadge');
-    if(badge) { badge.textContent=pending.length||''; badge.classList.toggle('hidden',!pending.length); }
-    if(!pending.length) { el.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:16px;">Немає вхідних пропозицій</div>'; }
-    else {
-      el.innerHTML = pending.map(([id,t])=>`
-        <div style="background:linear-gradient(135deg,#1a1200,#0d0900);border:1px solid rgba(255,159,67,.3);border-radius:14px;padding:14px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="font-weight:bold;color:#ff9f43;">👤 ${escapeHtml(t.from)}</div>
-            <div style="font-size:11px;color:#555;">${new Date(t.ts).toLocaleDateString('uk-UA')}</div>
-          </div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:6px;">📤 Пропонує: <span style="color:#4cd964;font-weight:bold;">${formatNumber(t.offer)} ₴</span></div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:6px;">💰 Просить: <span style="color:var(--accent);font-weight:bold;">${t.ask>0?formatNumber(t.ask)+' ₴':'нічого'}</span></div>
-          ${t.comment?`<div style="font-size:12px;color:#777;margin-bottom:8px;">💬 ${escapeHtml(t.comment)}</div>`:''}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-            <button class="btn-gold" onclick="acceptTrade('${id}','${t.from}',${t.offer},${t.ask})">✅ Прийняти</button>
-            <button class="btn-outline" onclick="declineTrade('${id}','${t.from}',${t.offer})" style="border-color:#ff6b6b;color:#ff6b6b;">❌ Відхилити</button>
-          </div>
-        </div>`).join('');
-    }
-  });
-  // Outgoing
-  db.ref('trades').orderByChild('from').equalTo(currentUser).limitToLast(20).once('value', snap => {
-    const el = document.getElementById('tradeOutgoing');
-    if(!el) return;
-    const trades = Object.entries(snap.val()||{}).sort((a,b)=>b[1].ts-a[1].ts);
-    if(!trades.length) { el.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:16px;">Ви не надсилали пропозицій</div>'; return; }
-    const statusIcon = s => s==='pending'?'⏳':s==='accepted'?'✅':'❌';
-    const statusColor = s => s==='pending'?'#ff9f43':s==='accepted'?'#4cd964':'#ff6b6b';
-    el.innerHTML = trades.map(([id,t])=>`
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:13px;font-weight:bold;">👉 ${t.to}</div>
-          <div style="font-size:12px;color:#aaa;">📤 ${formatNumber(t.offer)}₴ → 💰 ${t.ask>0?formatNumber(t.ask)+'₴':'безкоштовно'}</div>
-          ${t.comment?`<div style="font-size:11px;color:#555;">${t.comment}</div>`:''}
-        </div>
-        <div style="text-align:right;">
-          <div style="color:${statusColor(t.status)};font-size:18px;">${statusIcon(t.status)}</div>
-          ${t.status==='pending'?`<button onclick="cancelTrade('${id}',${t.offer})" style="font-size:10px;color:#ff6b6b;background:none;border:none;cursor:pointer;margin-top:4px;">скасувати</button>`:''}
-        </div>
-      </div>`).join('');
-  });
-}
-
-function acceptTrade(tradeId, from, offer, ask) {
-  if(ask > 0 && (userData.balance||0) < ask) return notify('Недостатньо коштів для прийняття угоди', 'error');
-  const updates = {};
-  updates['trades/'+tradeId+'/status'] = 'accepted';
-  // Transfer: from → to (offer already frozen), to gives ask to from
-  updates['users/'+currentUser+'/balance'] = firebase.database.ServerValue.increment(offer - ask);
-  updates['users/'+from+'/balance'] = firebase.database.ServerValue.increment(ask);
-  updates['users/'+currentUser+'/tradesCompleted'] = firebase.database.ServerValue.increment(1);
-  updates['users/'+from+'/tradesCompleted'] = firebase.database.ServerValue.increment(1);
-  db.ref().update(updates).then(()=>{
-    notify(`✅ Угода з ${from} прийнята!`, 'success');
-    db.ref('users/'+currentUser+'/tradeUnread').set(0);
-    loadTrade();
-    // Notify sender via PM
-    db.ref('pm/'+from).push({ from:'Система', to:from, text:`✅ Гравець ${currentUser} прийняв вашу торгову пропозицію на ${formatNumber(offer)}₴!`, ts:Date.now() });
-    db.ref('users/'+from+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  });
-}
-
-function declineTrade(tradeId, from, offer) {
-  db.ref('trades/'+tradeId+'/status').set('declined');
-  // Return frozen funds to sender
-  db.ref('users/'+from+'/balance').set(firebase.database.ServerValue.increment(offer));
-  db.ref('pm/'+from).push({ from:'Система', to:from, text:`❌ Гравець ${currentUser} відхилив вашу пропозицію на ${formatNumber(offer)}₴. Кошти повернено.`, ts:Date.now() });
-  db.ref('users/'+from+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  notify('Пропозицію відхилено', 'info');
-  loadTrade();
-}
-
-function cancelTrade(tradeId, offer) {
-  db.ref('trades/'+tradeId).once('value', snap => {
-    const t = snap.val();
-    if(!t || t.status !== 'pending') return notify('Угоду вже обробили', 'error');
-    db.ref('trades/'+tradeId+'/status').set('cancelled');
-    // Return frozen funds
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(offer));
-    userData.balance += offer;
-    notify('Пропозицію скасовано, кошти повернено', 'success');
-    loadTrade();
-  });
-}
-
-function watchTradeUnread() {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser+'/tradeUnread').on('value', snap => {
-    const c = snap.val() || 0;
-    const badge = document.getElementById('tradeIncomingBadge');
-    if(badge) { badge.textContent=c||''; badge.classList.toggle('hidden',!c); }
-  });
-}
 
 // ══════════════════════════════════════════
 // ❓ ІНСТРУКЦІЇ ДО ІГОР
@@ -18586,43 +18305,6 @@ function withdrawFromPool() {
     upd['users/'+currentUser+'/balance']=firebase.database.ServerValue.increment(amt);
     userData.balance+=amt; updateUI();
     db.ref().update(upd).then(()=>{notify('💸 Виведено з пулу!','success');loadInvestPool();});
-  });
-}
-
-// ══════════════════════════════════════════════════════
-// 👁️ WATCH MODE
-// ══════════════════════════════════════════════════════
-let watchLiveListener = null;
-function initWatchMode() {
-  // Load online players from live_bets
-  db.ref('live_bets').orderByChild('ts').limitToLast(30).once('value',snap=>{
-    const data=snap.val()||{};
-    const players={};
-    Object.values(data).forEach(b=>{ if(b.user && b.user!==currentUser) players[b.user]=(players[b.user]||0)+1; });
-    const el=document.getElementById('watchPlayerList');
-    if(!el) return;
-    const sorted=Object.entries(players).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    el.innerHTML=sorted.length?sorted.map(([u,c])=>`
-      <div class="box" style="padding:10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-weight:bold;">👤 ${u}</div>
-        <div style="font-size:12px;color:#555;">${c} ставок</div>
-      </div>`).join(''):'<div style="color:#555;text-align:center;padding:14px;">Немає активних гравців</div>';
-  });
-  // Live feed
-  if(watchLiveListener) db.ref('live_bets').off('child_added',watchLiveListener);
-  const feedEl=document.getElementById('watchLiveFeed');
-  if(!feedEl) return;
-  watchLiveListener=db.ref('live_bets').orderByChild('ts').limitToLast(1).on('child_added',snap=>{
-    const b=snap.val();
-    if(!b) return;
-    const div=document.createElement('div');
-    div.style.cssText='background:var(--box);border:1px solid var(--border);border-radius:12px;padding:10px;animation:fadeIn .3s;';
-    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><b>${b.emoji||'🎮'} ${b.game||'Гра'}</b> — <span style="color:var(--accent);">${b.user||'—'}</span></div>
-      <div style="${b.isWin?'color:#3dd68c':'color:#ff6b6b'};font-weight:bold;">${b.isWin?'+':'−'}₴${formatNumber(Math.abs(b.pnl||b.bet||0))}</div>
-    </div>`;
-    feedEl.insertBefore(div,feedEl.firstChild);
-    if(feedEl.children.length>20) feedEl.removeChild(feedEl.lastChild);
   });
 }
 
