@@ -531,6 +531,28 @@
     .adm-tab-btn.active { background:linear-gradient(135deg,#f5dc8a,#d4af37 60%,#a67c1a);color:#1a0d00;border-color:#f5dc8a;box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 5px rgba(0,0,0,.2), 0 6px 16px -8px rgba(212,175,55,.5); }
     .adm-panel { display:none !important; }
     .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
+
+    /* ── Керування адмінами та анти-чітом ── */
+    .adm-admin-card { background:#0d0d12;border:1px solid #23202e;border-radius:12px;padding:11px;margin-bottom:8px; }
+    .adm-admin-head { display:flex;align-items:flex-start;justify-content:space-between;gap:10px; }
+    .adm-admin-nick { font-size:13px;font-weight:800;color:#e8ddc0;word-break:break-all; }
+    .adm-admin-sub { font-size:10px;color:#666;margin-top:2px; }
+    .adm-owner-tag { background:rgba(212,175,55,.18);color:#d4af37;border-radius:5px;padding:1px 5px;font-size:8px;font-weight:900;margin-left:5px;vertical-align:middle; }
+    .adm-mini-btn { background:rgba(255,255,255,.05);border:1px solid #333;border-radius:8px;color:#aaa;font-size:11px;font-weight:700;padding:6px 10px;cursor:pointer;white-space:nowrap;width:auto;margin:0; }
+    .adm-mini-btn.danger { border-color:rgba(231,76,60,.35);color:#e74c3c; }
+    .adm-perm-chips { display:flex;flex-wrap:wrap;gap:4px;margin-top:8px; }
+    .adm-perm-chip { font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid #2a2635;color:#5d5870; }
+    .adm-perm-chip.on { background:rgba(61,214,140,.12);border-color:rgba(61,214,140,.3);color:#3dd68c; }
+    .adm-perm-chip.legacy { background:rgba(255,159,67,.1);border-color:rgba(255,159,67,.3);color:#ff9f43; }
+    .adm-perm-chip.off { background:rgba(231,76,60,.08);border-color:rgba(231,76,60,.25);color:#e74c3c; }
+    .adm-perm-toggles { margin-top:10px;padding-top:10px;border-top:1px solid #1e1b28; }
+    .adm-perm-row, .adm-switch-row { display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:12px;color:#ccc;cursor:pointer;line-height:1.35; }
+    .adm-perm-row input, .adm-switch-row input { width:17px;height:17px;flex-shrink:0;margin:1px 0 0;accent-color:#d4af37; }
+    .adm-switch-row { border-bottom:1px solid #1a1722; }
+    .adm-switch-row:last-of-type { border-bottom:none; }
+    .adm-hint { color:#666;font-size:10px; }
+    .adm-num-row { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:11.5px;color:#999; }
+    .adm-num-row input { width:110px;flex-shrink:0;margin:0;padding:8px 10px;font-size:13px;min-height:auto;text-align:center; }
     .req-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;position:relative;overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
     .req-card.deposit { border-left:3px solid #3dd68c; }
     .req-card.withdraw { border-left:3px solid #ff9f43; }

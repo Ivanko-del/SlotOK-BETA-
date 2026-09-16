@@ -2806,6 +2806,7 @@
         <button class="adm-tab-btn" id="admtb-finance"  onclick="switchAdminTab('finance',this)">💰 Фінанси</button>
         <button class="adm-tab-btn" id="admtb-security" onclick="switchAdminTab('security',this)">🛡️ Безпека</button>
         <button class="adm-tab-btn" id="admtb-moderation" onclick="switchAdminTab('moderation',this)">🎛️ Модерація</button>
+        <button class="adm-tab-btn" id="admtb-admins" onclick="switchAdminTab('admins',this)">👑 Адміни</button>
       </div>
 
       <!-- ══ TAB: ЗАЯВКИ ══ -->
@@ -3228,6 +3229,69 @@
           <div id="adminActionLog" style="max-height:260px;overflow-y:auto;font-size:11px;"></div>
         </div>
       </div><!-- /moderation panel -->
+
+      <!-- ══ TAB: АДМІНИ ══ -->
+      <div class="adm-panel" id="adm-panel-admins" style="display:none;padding:12px;">
+        <div style="font-size:11px;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">👑 Адміни та анти-чіт</div>
+
+        <!-- Чесна примітка про межі цього контролю -->
+        <div style="background:rgba(255,159,67,.06);border:1px solid rgba(255,159,67,.2);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#c08a4a;line-height:1.5;">
+          ⚠️ Права керують тим, що адмін <b>бачить і може натиснути</b> в панелі, і лишають слід у журналі дій.
+          Сайт працює без власного сервера, тож адмін із доступом до консолі браузера технічно все одно може
+          писати в базу напряму — повністю закрити це можна лише серверною частиною.
+        </div>
+
+        <!-- Список адмінів -->
+        <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:800;color:#d4af37;white-space:nowrap;">🛡️ Чинні адміни</div>
+            <button onclick="loadAdminsList()" style="background:none;border:1px solid #333;border-radius:6px;color:#888;font-size:11px;padding:4px 10px;cursor:pointer;width:auto;flex-shrink:0;margin:0;">🔄</button>
+          </div>
+          <div id="adminsList"></div>
+        </div>
+
+        <!-- Призначити адміна -->
+        <div style="background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.2);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#3dd68c;margin-bottom:6px;">➕ Призначити адміна</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Отримає базовий набір: заявки, статистика, контент, модерація. Решту — вручну в списку вище.</div>
+          <div style="display:flex;gap:8px;">
+            <input id="newAdminNick" placeholder="Нік гравця..." style="flex:1;margin:0;">
+            <button onclick="grantAdmin()" class="btn-outline" style="border-color:#3dd68c;color:#3dd68c;font-size:12px;padding:8px 14px;width:auto;margin:0;">👑 Дати права</button>
+          </div>
+        </div>
+
+        <!-- Анти-чіт -->
+        <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:12px;">
+          <div style="font-size:13px;font-weight:800;color:#e74c3c;margin-bottom:4px;">🛡️ Анти-чіт</div>
+          <div id="acStatusLine" style="font-size:11px;font-weight:700;margin-bottom:10px;color:#3dd68c;">—</div>
+
+          <label class="adm-switch-row">
+            <input type="checkbox" id="acEnabled">
+            <span><b>Увімкнути анти-чіт</b><br><span class="adm-hint">Вимкнення повністю зупиняє перевірки й сповіщення</span></span>
+          </label>
+          <label class="adm-switch-row">
+            <input type="checkbox" id="acAutoFreeze">
+            <span><b>Автопризупинення акаунта</b><br><span class="adm-hint">При грубому порушенні ставки й виводи блокуються до перевірки</span></span>
+          </label>
+          <label class="adm-switch-row">
+            <input type="checkbox" id="acMultiAccount">
+            <span><b>Перевірка мультиакаунтів</b><br><span class="adm-hint">Кілька акаунтів з однієї IP — лише сповіщення адміну</span></span>
+          </label>
+
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px;font-weight:700;">Пороги спрацювання</div>
+          <div class="adm-num-row"><span>Ставок за хвилину — понад</span><input type="number" id="acRapidBets" min="5"></div>
+          <div class="adm-num-row"><span>Стрибок балансу, ₴ — понад</span><input type="number" id="acJumpAmount" min="1000"></div>
+          <div class="adm-num-row"><span>…якщо зіграно менше ніж, ігор</span><input type="number" id="acJumpGames" min="0"></div>
+          <div class="adm-num-row"><span>Неправдоподібний баланс, ₴ — понад</span><input type="number" id="acImplausible" min="10000"></div>
+          <div class="adm-num-row"><span>…і ставок менше ніж, % від балансу</span><input type="number" id="acRatio" min="1"></div>
+          <div class="adm-num-row"><span>Мультиакаунт — інших акаунтів на IP</span><input type="number" id="acMultiMin" min="1"></div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:12px;">
+            <button class="btn-gold" onclick="saveAntiCheatSettings()" style="font-size:12px;padding:10px;margin:0;">💾 Зберегти</button>
+            <button class="btn-outline" onclick="resetAntiCheatSettings()" style="font-size:12px;padding:10px;margin:0;">↩️ Скинути</button>
+          </div>
+        </div>
+      </div><!-- /admins panel -->
 
     </div><!-- /tab-admin -->
     <div id="tab-blackjack" class="screen hidden" style="padding:16px;padding-bottom:100px;">
