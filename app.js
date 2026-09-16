@@ -4992,10 +4992,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '90';
+const CURRENT_VERSION = '91';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '91',
+    title: '📜 Оновлення v91 — рейтинги тепер видно з Головної',
+    date: Date.UTC(2026, 8, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🏅 Картка рейтингів у каруселі на Головній',
+        items: [
+          'У каруселі банерів з\'явилась картка «Рейтинги» — одразу видно твоє місце за добу і скільки дають за перше місце',
+          'Тап по картці одразу відкриває рейтинги — більше не треба шукати їх у «Ще»',
+        ]
+      },
+    ]
+  },
   {
     version: '90',
     title: '📜 Оновлення v90 — новий екран рейтингів',
@@ -20416,7 +20432,7 @@ function applyCardSkin(skinId) {
 // ║  BANNER CAROUSEL — авто-ротація + свайп + крапки            ║
 // ╚══════════════════════════════════════════════════════════════╝
 var _bannerIndex = 0;
-var _bannerCount = 7;
+var _bannerCount = 0;   // рахується з розмітки в initBannerCarousel
 var _bannerAutoTimer = null;
 var _bannerTouchStartX = 0;
 var _bannerTouchDeltaX = 0;
@@ -20426,6 +20442,9 @@ function initBannerCarousel() {
   var dotsEl = document.getElementById('bannerDots');
   var trackEl = document.getElementById('bannerTrack');
   if(!dotsEl || !trackEl) return;
+
+  _bannerCount = trackEl.querySelectorAll('.banner-slide').length;
+  if(!_bannerCount) return;
 
   // Побудова крапок (один раз)
   if(!dotsEl.dataset.built) {
@@ -20508,6 +20527,18 @@ function updateBannerDynamicContent() {
     btcEl.textContent = '₴' + formatNumber(Math.round(_cryptoPrices.BTC));
   } else if(btcEl) {
     btcEl.textContent = '₴95 000';
+  }
+  // Моє місце в денному рейтингу (та сама таблиця, що й у «Ще» → Рейтинги)
+  var lbRankEl = document.getElementById('bannerLbRank');
+  if(lbRankEl && db && currentUser) {
+    db.ref('leaderboards/' + getLbPeriodKey('day')).once('value').then(function(snap) {
+      var sorted = Object.entries(snap.val() || {})
+        .map(function(e) { return { name: e[0], val: e[1].wager || 0 }; })
+        .filter(function(u) { return u.val > 0; })
+        .sort(function(a, b) { return b.val - a.val; });
+      var i = sorted.findIndex(function(u) { return u.name === currentUser; });
+      lbRankEl.textContent = i >= 0 ? '#' + (i + 1) : '—';
+    }).catch(function() {});
   }
   // Місце в турнірній таблиці
   var rankEl = document.getElementById('bannerTourneyRank');

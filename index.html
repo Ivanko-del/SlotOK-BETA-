@@ -79,7 +79,7 @@
       <!-- === ГОЛОВНА панель === -->
       <div class="home-panel active" id="hp-main">
 
-        <!-- HERO BANNER CAROUSEL — 6 слайдів, авто-ротація + свайп -->
+        <!-- HERO BANNER CAROUSEL — авто-ротація + свайп -->
         <div class="banner-carousel" id="bannerCarousel">
           <div class="banner-track" id="bannerTrack">
 
@@ -144,7 +144,27 @@
               </div>
             </div>
 
-            <!-- Слайд 4: Реферали -->
+            <!-- Слайд 4: Рейтинги -->
+            <div class="banner-slide" style="background:linear-gradient(135deg,#0a1226,#17233f,#0a1226);border:1.5px solid rgba(150,180,230,.4);" onclick="switchTab('leaderboard')">
+              <div class="banner-deco">🏅</div>
+              <div class="banner-inner">
+                <div>
+                  <div class="banner-title" style="color:#9fc0ff;">🏅 РЕЙТИНГИ</div>
+                  <div class="banner-sub" style="color:#9fc0ff;">Топ дня, тижня і місяця</div>
+                  <div class="banner-desc">Ставки, виграші, прибуток, ігри, рекорди</div>
+                  <div class="banner-pills">
+                    <span class="banner-pill" style="color:#ffd700;background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.22);">🥇 ₴5 000 за 1 місце щодня</span>
+                  </div>
+                </div>
+                <div class="banner-stat-box" style="border-color:rgba(150,180,230,.3);">
+                  <div class="banner-stat-lbl">Твоє місце</div>
+                  <div class="banner-stat-val" style="color:#9fc0ff;" id="bannerLbRank">—</div>
+                  <div class="banner-stat-sub" style="color:#888;">За добу</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Слайд 5: Реферали -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#001a0d,#003320,#001a0d);border:1.5px solid rgba(61,214,140,.4);" onclick="switchTab('referrals')">
               <div class="banner-deco">🤝</div>
               <div class="banner-inner">
@@ -164,7 +184,7 @@
               </div>
             </div>
 
-            <!-- Слайд 5: Глобальна рулетка -->
+            <!-- Слайд 6: Глобальна рулетка -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#1a0005,#330010,#1a0005);border:1.5px solid rgba(231,76,60,.4);" onclick="switchTab('roulette')">
               <div class="banner-deco">🎡</div>
               <div class="banner-inner">
@@ -185,7 +205,7 @@
               </div>
             </div>
 
-            <!-- Слайд 6: Крипто-симулятор -->
+            <!-- Слайд 7: Крипто-симулятор -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#1a1000,#332000,#1a1000);border:1.5px solid rgba(240,192,64,.4);" onclick="openCryptoSimulator()">
               <div class="banner-deco">📈</div>
               <div class="banner-inner">
@@ -205,7 +225,7 @@
               </div>
             </div>
 
-            <!-- Слайд 7: Кейси -->
+            <!-- Слайд 8: Кейси -->
             <div class="banner-slide" style="background:linear-gradient(135deg,#1a0010,#330020,#1a0010);border:1.5px solid rgba(255,105,180,.4);" onclick="switchTab('lootboxes')">
               <div class="banner-deco">📦</div>
               <div class="banner-inner">
