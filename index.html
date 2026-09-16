@@ -4219,35 +4219,6 @@
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- TAB: AFFILIATE                      -->
-    <!-- ═══════════════════════════════════ -->
-    <div id="tab-affiliate" class="screen hidden" style="padding:16px;padding-bottom:100px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('more')">⬅ Назад</button>
-        <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--accent);">🤝 АФІЛЕЙТ</div>
-        <div></div>
-      </div>
-      <div class="aff-stat-grid" id="affStats">
-        <div class="aff-stat-card"><div class="aff-stat-val" id="affRefs">0</div><div class="aff-stat-lbl">РЕФЕРАЛІВ</div></div>
-        <div class="aff-stat-card"><div class="aff-stat-val" id="affEarned">₴0</div><div class="aff-stat-lbl">ЗАРОБЛЕНО</div></div>
-        <div class="aff-stat-card"><div class="aff-stat-val" id="affActive">0</div><div class="aff-stat-lbl">АКТИВНИХ</div></div>
-        <div class="aff-stat-card"><div class="aff-stat-val">10%</div><div class="aff-stat-lbl">КОМІСІЯ</div></div>
-      </div>
-      <div class="box">
-        <div style="font-size:12px;color:#777;margin-bottom:8px;">Твоє реферальне посилання:</div>
-        <div id="affLink" style="background:#111;border:1px solid #333;border-radius:10px;padding:10px 12px;font-size:11px;font-family:monospace;color:var(--accent);word-break:break-all;margin-bottom:8px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button class="btn-outline" onclick="copyAffLink()">📋 Копіювати</button>
-          <button class="btn-gold" onclick="shareAffLink()">📤 Поділитись</button>
-        </div>
-      </div>
-      <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">💰 Як це працює</div>
-        <div style="font-size:11px;color:#777;line-height:1.6;">1. Поділись своїм посиланням<br>2. Друг реєструється і робить депозит<br>3. Ти отримуєш <b style="color:var(--accent);">10%</b> від кожного програшу реферала<br>4. Виводь заробіток будь-коли</div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════ -->
     <!-- TAB: BALLOON POP                    -->
     <!-- ═══════════════════════════════════ -->
     <div id="tab-balloon" class="screen hidden" style="padding:16px;padding-bottom:100px;">
@@ -4544,39 +4515,6 @@
     <div id="vpDrawArea" class="hidden">
       <button class="btn-gold" onclick="vpDraw()">🔄 Замінити / Отримати виграш</button>
     </div>
-  </div>
-
-  <!-- ══════════════ SEASONS (Сезони) ══════════════ -->
-  <div id="tab-seasons" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin-bottom:12px;">⬅</button>
-    <h2 style="color:var(--accent);margin-bottom:4px;">🌟 Сезони</h2>
-    <div style="color:#777;font-size:12px;margin-bottom:14px;">30-денний сезон з нагородами за XP</div>
-    <div class="box" id="seasonHeader"></div>
-    <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;font-weight:700;">Нагороди сезону</div>
-    <div class="reward-track" id="seasonRewardTrack"></div>
-    <div class="box" style="font-size:12px;color:#777;line-height:1.8;">
-      ⚡ XP нараховується за кожну гру<br>
-      🎯 100 XP = 1 рівень сезону<br>
-      🎁 Кожен рівень — нова нагорода<br>
-      🏆 Фінальна нагорода: ексклюзивний скін
-    </div>
-  </div>
-
-  <!-- ══════════════ RANKS (Ранги) ══════════════ -->
-  <div id="tab-ranks" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin-bottom:12px;">⬅</button>
-    <h2 style="color:var(--accent);margin-bottom:4px;">🏅 Ранги</h2>
-    <div style="color:#777;font-size:12px;margin-bottom:14px;">Прогресуй через ранги за кількість ігор</div>
-    <div id="myRankCard" style="margin-bottom:14px;"></div>
-    <div id="allRanksList"></div>
-  </div>
-
-  <!-- ══════════════ HALL OF FAME ══════════════ -->
-  <div id="tab-halloffame" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin-bottom:12px;">⬅</button>
-    <h2 style="color:var(--accent);margin-bottom:4px;">🏆 Зал Слави</h2>
-    <div style="color:#777;font-size:12px;margin-bottom:14px;">Топ гравців місяця з ексклюзивними бейджами</div>
-    <div id="hofList"></div>
   </div>
 
   <!-- ══════════════ ПРИВАТНІ ПОВІДОМЛЕННЯ ══════════════ -->
@@ -5034,13 +4972,6 @@
     <div id="themeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
   </div>
 
-  <!-- ══════════════ WEEKLY MISSIONS ══════════════ -->
-  <div id="tab-weekly" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin-bottom:12px;">⬅</button>
-    <h2 style="color:var(--accent);margin-bottom:4px;">📅 Тижневі місії</h2>
-    <div style="color:#777;font-size:12px;margin-bottom:14px;">Оновлюються щопонеділка</div>
-    <div id="weeklyMissionsList"></div>
-  </div>
   <!-- ══════════════════════════════════════════════════════
        🪙 COINFLIP PVP
   ══════════════════════════════════════════════════════ -->

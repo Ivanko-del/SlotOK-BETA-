@@ -1008,29 +1008,11 @@
     .vp-paytable{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:11px;color:#777;margin-bottom:12px;}
     .vp-paytable .highlight{color:var(--accent);font-weight:bold;}
 
-    /* ─── SEASONS / RANKS ─── */
-    .season-bar{height:8px;background:#111;border-radius:4px;overflow:hidden;margin:6px 0;}
-    .season-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#5c6ef8,#c17eea);transition:width .6s;}
-    .reward-track{display:flex;gap:8px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none;}
-    .reward-node{min-width:58px;text-align:center;flex-shrink:0;}
-    .reward-box{width:46px;height:46px;border-radius:12px;border:2px solid #333;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-    .reward-box.claimed{border-color:#4cd964;background:rgba(76,217,100,.12);}
-    .reward-box.available{border-color:var(--accent);background:rgba(212,175,55,.12);animation:rpulse 1.5s infinite;}
-    @keyframes rpulse{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,.4);}50%{box-shadow:0 0 0 6px rgba(212,175,55,0);}}
-    .reward-box.locked{opacity:.35;}
-    .rank-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;box-shadow: var(--bevel), var(--elev-1);}
-    .rank-bar{flex:1;height:5px;background:#111;border-radius:3px;overflow:hidden;margin-top:4px;}
-    .rank-bar-fill{height:100%;border-radius:3px;}
-
     /* ─── PRIVATE MESSAGES ─── */
     .pm-thread{display:flex;align-items:center;gap:12px;padding:12px;background:var(--box);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;}
     .pm-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ffdb4d);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#000;flex-shrink:0;cursor:pointer;}
     .pm-bubble{max-width:80%;padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;margin-bottom:6px;}
     .pm-bubble.mine{background:linear-gradient(135deg,#1a3a1a,#1a4a1a);border-bottom-right-radius:4px;align-self:flex-end;margin-left:auto;}
-
-    /* ─── HALL OF FAME ─── */
-    .hof-row{display:flex;align-items:center;gap:12px;padding:13px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:7px;box-shadow: var(--bevel), var(--elev-1);}
-    .hof-num{font-size:22px;font-weight:900;width:34px;text-align:center;}
 
     /* ─── ACTIVITY FEED ─── */
     .feed-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,255,255,.03);border-radius:var(--r-sm);margin-bottom:5px;font-size:12px;animation:fadeIn .4s ease;box-shadow: var(--bevel);}
@@ -1431,12 +1413,6 @@
     /* Loss limit warning */
     .loss-limit-warn { background:rgba(255,107,107,.1); border:1px solid rgba(255,107,107,.3); border-radius:12px; padding:12px; text-align:center; margin-bottom:10px; animation:warnPulse 1.5s ease-in-out infinite; display:none; }
     @keyframes warnPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
-
-    /* Affiliate panel */
-    .aff-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
-    .aff-stat-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:12px; text-align:center; }
-    .aff-stat-val { font-size:20px; font-weight:900; color:var(--accent); }
-    .aff-stat-lbl { font-size:9px; color:#555; margin-top:2px; }
 
     /* Font size control */
     .font-size-row { display:flex; gap:6px; }

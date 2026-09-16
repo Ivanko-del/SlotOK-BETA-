@@ -3203,36 +3203,6 @@ function sendChatMsg() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 🤝 AFFILIATE
-// ═══════════════════════════════════════════════════════
-function initAffiliate() {
-  if(!currentUser) return;
-  const link = 'https://slotok.web.app/?ref='+currentUser;
-  const el = document.getElementById('affLink');
-  if(el) el.textContent = link;
-  db.ref('users').orderByChild('referredBy').equalTo(currentUser).once('value', snap => {
-    const refs = snap.val()||{};
-    const count = Object.keys(refs).length;
-    const refWager = u => u.totalWagered || u.totalWager || 0;  // totalWager — легасі-поле
-    const active = Object.values(refs).filter(u => refWager(u) > 100).length;
-    const earned = Math.floor(Object.values(refs).reduce((s,u)=>(s+refWager(u)*0.01),0));
-    const e1=document.getElementById('affRefs'), e2=document.getElementById('affEarned'), e3=document.getElementById('affActive');
-    if(e1) e1.textContent=count; if(e2) e2.textContent='₴'+formatNumber(earned); if(e3) e3.textContent=active;
-  });
-}
-
-function copyAffLink() {
-  const link = 'https://slotok.web.app/?ref='+currentUser;
-  navigator.clipboard.writeText(link).then(()=>notify('📋 Посилання скопійовано!','success'));
-}
-
-function shareAffLink() {
-  const link = 'https://slotok.web.app/?ref='+currentUser;
-  if(navigator.share) navigator.share({title:'SlotOK Casino',text:'Зареєструйся за моїм посиланням!',url:link});
-  else copyAffLink();
-}
-
-// ═══════════════════════════════════════════════════════
 // ⚡ QUICK BET BUTTONS helper
 // ═══════════════════════════════════════════════════════
 function setQuickBet(inputId, val) {
@@ -10401,10 +10371,10 @@ const NAV_TAB_MAP = {
   hourly:5, clans:5, leaderboard:5, gifts:5, slotiky:5,
   achievements:5, battlepass:5, stats:5, bank:5, admin:4,
   baccarat:1, videpoker:1,
-  seasons:5, ranks:5, halloffame:5, pm:5, weekly:5, themes:5,
+  pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, penalty:1, bowling:1, archery:1, sicbo:1, cardwar:1, duckshoot:1,
-  balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5, affiliate:5,
+  balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5, trade:5,
   lottery:5, investpool:5, watchmode:5,
 };
@@ -10667,7 +10637,6 @@ function switchTab(id, el) {
   if(id==='stats')        safe(() => initStatsTab());
   if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
   if(id==='colorbet')     safe(() => renderColorHistory());
-  if(id==='affiliate')    safe(() => initAffiliate());
   if(id==='russianroulette') safe(() => updateRRDisplay());
   if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
@@ -10677,9 +10646,6 @@ function switchTab(id, el) {
   if(id==='lobby')        safe(() => { updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='baccarat')     safe(() => initBaccarat());
   if(id==='videpoker')    safe(() => initVideoPoker());
-  if(id==='seasons')      safe(() => renderSeasons());
-  if(id==='ranks')        safe(() => renderRanks());
-  if(id==='halloffame')   safe(() => renderHallOfFame());
   if(id==='pm')           safe(() => {
     // Про всяк випадок скидаємо на інбокс — якщо хтось лишив відкритою переписку
     // і вийшов не через кнопку "назад" всередині чату
@@ -10688,7 +10654,6 @@ function switchTab(id, el) {
     renderPmInbox();
     db.ref('users/'+currentUser+'/pmUnread').set(0);
   });
-  if(id==='weekly')       safe(() => renderWeeklyMissions());
   if(id==='themes')       safe(() => renderThemeGrid());
   if(id==='coinflip')     safe(() => loadCfRooms());
   if(id==='rps')          safe(() => loadRpsRooms());
@@ -14789,8 +14754,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['рефера','запрос','партнер'],
     reply: [
-      '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Афілейт. Отримуєш відсоток з кожної ставки запрошеного гравця довічно.',
-      '🤝 Реферальне посилання шукай у «Ще» → Афілейт — з кожної ставки запрошеного тобою гравця ти отримуєш відсоток довічно.'
+      '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Реферали. Отримуєш відсоток з кожної ставки запрошеного гравця довічно.',
+      '🤝 Реферальне посилання шукай у «Ще» → Реферали — з кожної ставки запрошеного тобою гравця ти отримуєш відсоток довічно.'
     ] },
   { keys: ['баг','глюк','не працю','зависа','помилк','лаг','зламал'],
     reply: [
@@ -14857,13 +14822,7 @@ const SUPPORT_FAQ = [
   { keys: ['страхування ставк','insurance ставк','застрахувати ставку'],
     reply: '🛡️ Страхування ставки: за невелику доплату можна застрахувати частину ставки — при програші повернеться відсоток застрахованої суми.' },
   { keys: ['сезон','season пройшов','нагороди сезону'],
-    reply: '🗓️ Сезони: кожен сезон має власні квести, рейтинг і ексклюзивні нагороди. Наприкінці сезону прогрес частково скидається, а найкращі гравці отримують призи.' },
-  { keys: ['ранг гравц','мій ранг','підвищити ранг'],
-    reply: '🎖️ Ранги: окрема від VIP система прогресу за активність — підвищуються за кількість зіграних ігор і виконаних завдань, дають візуальні відзнаки в профілі.' },
-  { keys: ['зал слави','hall of fame'],
-    reply: '🏛️ Зал слави: розділ «Ще» → Зал слави — гравці з найбільшими виграшами, найдовшими серіями й рекордами за весь час.' },
-  { keys: ['тижнев місі','weekly mission','тижневе завдання'],
-    reply: '📆 Тижневі місії: розділ «Ще» → Тижневі — більш масштабні цілі ніж щоденні квести, з відповідно більшими нагородами, оновлюються щопонеділка.' },
+    reply: '🗓️ Сезони — це Battle Pass на Головній: кожен сезон триває 30 днів, має власну назву й тему, рівні з нагородами за XP. Наприкінці сезону прогрес скидається і починається новий.' },
   { keys: ['watchmode','режим спостереження','дивитись без ставок'],
     reply: '👀 Режим спостереження: можна дивитись за грою (наприклад PvP-дуель чи спортивний матч) не роблячи ставку — просто відкрий гру й обери «Дивитись».' },
   { keys: ['тема оформлен','змінити тему','темна тема','світла тема'],
@@ -14893,7 +14852,7 @@ const SUPPORT_FAQ = [
   { keys: ['клан війн','війна кланів','клан рівень'],
     reply: '⚔️ Клани мають спільний рівень, що росте з активністю учасників — вищий рівень клану відкриває бонуси для всіх його членів. Окремих "воєн" між кланами наразі немає, є лише тижневі завдання клану.' },
   { keys: ['реферал не зарахувався','друг не зарахувався','запросив друга нема бонусу'],
-    reply: '🤝 Якщо запрошений друг не з’явився у твоєму списку рефералів — переконайся, що він реєструвався саме за твоїм посиланням («Ще» → Афілейт). Якщо посилання правильне, а бонусу все одно нема, опиши нік друга — передам адміну.' },
+    reply: '🤝 Якщо запрошений друг не з’явився у твоєму списку рефералів — переконайся, що він реєструвався саме за твоїм посиланням («Ще» → Реферали). Якщо посилання правильне, а бонусу все одно нема, опиши нік друга — передам адміну.' },
   { keys: ['швидко заробити xp','як підняти рівень швидко','прокачати battle pass'],
     reply: '⚡ XP для Battle Pass і Досягнень нараховується за будь-яку активність — найшвидше росте від виконання щоденних і тижневих завдань, а не просто від кількості ставок.' },
   { keys: ['курс валют','обмін валют','конвертація валюти'],
@@ -17299,7 +17258,6 @@ function playBaccarat(bet) {
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(balChange));
   if(won) addToWinFeed('Бакара', payout, multipliers[bet]);
   addToHistory(won ? `Бакара: +${net}₴` : `Бакара: -${betAmt}₴`);
-  awardSeasonXP(5);
 
   bacHistory.unshift(winner);
   if(bacHistory.length > 12) bacHistory = bacHistory.slice(0,12);
@@ -17389,7 +17347,6 @@ function vpDraw() {
     el.style.color = 'var(--red)';
   }
   addToHistory(win ? `Відео Покер: +${win}₴` : `Відео Покер: -${bet}₴`);
-  awardSeasonXP(5);
   document.getElementById('vpDrawArea').classList.add('hidden');
   document.getElementById('vpDealArea').classList.remove('hidden');
   const balEl = document.getElementById('vpBalance');
@@ -17418,148 +17375,6 @@ function vpEvaluate(hand) {
     if(pairRank >= VP_RANKS.indexOf('J')) return 'Пара Валетів+';
   }
   return '';
-}
-
-// ── SEASON XP SYSTEM ──
-const SEASON_REWARDS = [
-  {xp:0,   reward:'100₴', emoji:'💰'},
-  {xp:100, reward:'Скін Срібло', emoji:'🥈'},
-  {xp:200, reward:'200₴', emoji:'💰'},
-  {xp:300, reward:'50 🪙', emoji:'🪙'},
-  {xp:400, reward:'300₴', emoji:'💰'},
-  {xp:500, reward:'Скін Неон', emoji:'💜'},
-  {xp:600, reward:'500₴', emoji:'💰'},
-  {xp:700, reward:'100 🪙', emoji:'🪙'},
-  {xp:800, reward:'Скін Галактика', emoji:'🌌'},
-  {xp:1000,reward:'1000₴ + Ексклюзивний скін', emoji:'👑'},
-];
-
-function awardSeasonXP(amount) {
-  if(!currentUser) return;
-  db.ref('users/'+currentUser+'/seasonXP').set(firebase.database.ServerValue.increment(amount));
-}
-
-function renderSeasons() {
-  const xp = userData?.seasonXP || 0;
-  const level = SEASON_REWARDS.filter(r=>xp>=r.xp).length - 1;
-  const nextReward = SEASON_REWARDS[level+1];
-  const progressXP = nextReward ? xp - SEASON_REWARDS[level].xp : xp;
-  const neededXP   = nextReward ? nextReward.xp - SEASON_REWARDS[level].xp : 1;
-  const pct = Math.min(100, Math.round(progressXP/neededXP*100));
-
-  const headerEl = document.getElementById('seasonHeader');
-  if(headerEl) headerEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-      <div style="font-size:32px;">🌟</div>
-      <div style="flex:1;">
-        <div style="font-size:15px;font-weight:900;color:var(--accent);">Сезон I: Зима 2025</div>
-        <div style="font-size:11px;color:#555;margin-top:2px;">Рівень ${level+1} · ${xp} XP</div>
-      </div>
-      <div style="text-align:right;"><div style="font-size:10px;color:#555;">До наступного</div><div style="font-size:13px;font-weight:900;color:#7c8eff;">${nextReward?nextReward.xp-xp+' XP':'MAX'}</div></div>
-    </div>
-    <div class="season-bar"><div class="season-bar-fill" style="width:${pct}%;"></div></div>
-    <div style="text-align:right;font-size:11px;color:#555;margin-top:4px;">${pct}%</div>`;
-
-  const trackEl = document.getElementById('seasonRewardTrack');
-  if(trackEl) trackEl.innerHTML = SEASON_REWARDS.map((r,i) => {
-    const claimed = xp >= r.xp && i <= level;
-    const available = xp >= r.xp && i === level && !claimed;
-    const locked = xp < r.xp;
-    const cls = i < level ? 'claimed' : i===level ? 'available' : 'locked';
-    return `<div class="reward-node">
-      <div class="reward-box ${cls}" onclick="claimSeasonReward(${i})">${r.emoji}</div>
-      <div style="font-size:9px;color:#555;margin-top:4px;">${r.xp} XP</div>
-      <div style="font-size:9px;color:#777;">${r.reward}</div>
-    </div>`;
-  }).join('');
-}
-
-function claimSeasonReward(idx) {
-  const xp = userData?.seasonXP || 0;
-  const reward = SEASON_REWARDS[idx];
-  if(!reward || xp < reward.xp) return notify('Недостатньо XP!', 'error');
-  const claimed = userData?.seasonClaimed || {};
-  if(claimed[idx]) return notify('Вже отримано!', 'info');
-  db.ref('users/'+currentUser+'/seasonClaimed/'+idx).set(true);
-  if(reward.reward.includes('₴')) {
-    const amt = parseInt(reward.reward);
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(amt));
-  }
-  notify('🎁 Отримано: ' + reward.reward, 'success');
-}
-
-// ── RANKS SYSTEM ──
-const RANK_DEFS = [
-  {name:'Новачок',    emoji:'🥉', min:0,     color:'#cd7f32', next:50},
-  {name:'Бронза',     emoji:'🥈', min:50,    color:'#a8a9ad', next:200},
-  {name:'Срібло',     emoji:'🥇', min:200,   color:'#d4af37', next:500},
-  {name:'Золото',     emoji:'💎', min:500,   color:'#4a9eff', next:1000},
-  {name:'Платина',    emoji:'👑', min:1000,  color:'#e5e4e2', next:2500},
-  {name:'Діамант',    emoji:'🌟', min:2500,  color:'#b347ff', next:5000},
-  {name:'Майстер',    emoji:'🔮', min:5000,  color:'#ff69b4', next:10000},
-  {name:'Легенда',    emoji:'🏆', min:10000, color:'#d4af37', next:null},
-];
-
-function getUserRank(games) {
-  let rank = RANK_DEFS[0];
-  for(const r of RANK_DEFS) { if(games >= r.min) rank = r; }
-  return rank;
-}
-
-function renderRanks() {
-  const games = userData?.totalGames || 0;
-  const myRank = getUserRank(games);
-  const myRankEl = document.getElementById('myRankCard');
-  if(myRankEl) {
-    const nextRank = RANK_DEFS.find(r=>r.min>myRank.min);
-    const pct = nextRank ? Math.min(100,Math.round((games-myRank.min)/(nextRank.min-myRank.min)*100)) : 100;
-    myRankEl.innerHTML = `<div class="box" style="border-color:${myRank.color}33;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
-        <div style="font-size:40px;">${myRank.emoji}</div>
-        <div><div style="font-size:17px;font-weight:900;color:${myRank.color};">${myRank.name}</div>
-          <div style="font-size:11px;color:#555;">${games} ігор</div></div>
-        <div style="margin-left:auto;text-align:right;font-size:11px;color:#555;">${nextRank?'До '+nextRank.name+': '+(nextRank.min-games)+' ігор':'MAX'}</div>
-      </div>
-      <div class="rank-bar"><div class="rank-bar-fill" style="width:${pct}%;background:${myRank.color};"></div></div>
-    </div>`;
-  }
-  const listEl = document.getElementById('allRanksList');
-  if(listEl) listEl.innerHTML = RANK_DEFS.map(r=>{
-    const reached = games >= r.min;
-    return `<div class="rank-row" style="opacity:${reached?1:.45};">
-      <div style="font-size:28px;">${r.emoji}</div>
-      <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:${reached?r.color:'#555'};">${r.name}</div>
-        <div style="font-size:11px;color:#555;">${r.min} ігор</div>
-        <div class="rank-bar" style="margin-top:4px;"><div class="rank-bar-fill" style="width:${reached?100:0}%;background:${r.color};"></div></div>
-      </div>
-      ${reached?'<div style="font-size:18px;">✅</div>':''}
-    </div>`;
-  }).join('');
-}
-
-// ── HALL OF FAME ──
-function renderHallOfFame() {
-  const el = document.getElementById('hofList');
-  if(!el) return;
-  el.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Завантаження...</div>';
-  db.ref('users').orderByChild('totalWon').limitToLast(10).once('value', snap => {
-    const data = snap.val() || {};
-    const sorted = Object.entries(data)
-      .map(([k,v])=>({name:k,...v}))
-      .sort((a,b)=>(b.totalWon||0)-(a.totalWon||0));
-    const medals = ['🥇','🥈','🥉'];
-    el.innerHTML = sorted.map((p,i) => `
-      <div class="hof-row" style="${i===0?'border-color:#d4af37;background:linear-gradient(135deg,rgba(212,175,55,.08),transparent);':''}">
-        <div class="hof-num" style="color:${i===0?'#d4af37':i===1?'#aaa':i===2?'#cd7f32':'#555'};">${medals[i]||('#'+(i+1))}</div>
-        <div style="flex:1;"><div style="font-weight:bold;font-size:14px;">${p.name}</div>
-          <div style="font-size:11px;color:#555;">${getUserRank(p.totalGames||0).emoji} ${getUserRank(p.totalGames||0).name}</div>
-        </div>
-        <div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:var(--accent);">₴${formatNumber(p.totalWon||0)}</div>
-          <div style="font-size:10px;color:#555;">виграно</div>
-        </div>
-      </div>`).join('');
-    if(!sorted.length) el.innerHTML = '<div style="text-align:center;color:#555;padding:30px;">Поки пусто</div>';
-  });
 }
 
 // ── PRIVATE MESSAGES ──
@@ -17861,56 +17676,6 @@ function pmReply(to) {
   const inp = document.getElementById('pmReplyInput');
   if(inp) inp.value = '';
   clearPmImg();
-}
-
-// ── WEEKLY MISSIONS ──
-const WEEKLY_MISSIONS_POOL = [
-  {id:'wm_play10',  text:'Зіграй 10 ігор',       goal:10,  field:'totalGames',  reward:200,  emoji:'🎮'},
-  {id:'wm_win5',    text:'Виграй 5 разів',        goal:5,   field:'totalWins',   reward:300,  emoji:'🏆'},
-  {id:'wm_bet1k',   text:'Постав 1000₴ загалом',  goal:1000,field:'totalBet',    reward:150,  emoji:'💰'},
-  {id:'wm_login3',  text:'Зайди 3 дні поспіль',   goal:3,   field:'dailyStreak', reward:250,  emoji:'🔥'},
-  {id:'wm_slots5',  text:'Зіграй 5 разів у слоти',goal:5,   field:'totalSlots',  reward:200,  emoji:'🎰'},
-];
-
-function getWeeklyMissions() {
-  const seed = Math.floor(Date.now() / (7*24*60*60*1000));
-  const shuffled = [...WEEKLY_MISSIONS_POOL].sort((a,b)=>
-    (parseInt(a.id,36)*seed % 97) - (parseInt(b.id,36)*seed % 97));
-  return shuffled.slice(0,3);
-}
-
-function renderWeeklyMissions() {
-  const el = document.getElementById('weeklyMissionsList');
-  if(!el || !userData) return;
-  const missions = getWeeklyMissions();
-  const claimed = userData.weeklyClaimed || {};
-  el.innerHTML = missions.map(m => {
-    const progress = Math.min(m.goal, userData[m.field]||0);
-    const pct = Math.round(progress/m.goal*100);
-    const done = progress >= m.goal;
-    const isClaimed = claimed[m.id];
-    return `<div class="box" style="${done&&!isClaimed?'border-color:var(--accent);':isClaimed?'opacity:.5;':''}">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div style="font-size:26px;">${m.emoji}</div>
-        <div style="flex:1;"><div style="font-weight:bold;font-size:13px;">${m.text}</div>
-          <div style="font-size:11px;color:#555;">Нагорода: +${m.reward}₴</div>
-        </div>
-        ${done&&!isClaimed ? `<button onclick="claimWeekly('${m.id}',${m.reward})" style="width:auto;padding:8px 14px;font-size:12px;" class="btn-gold">Забрати!</button>` : isClaimed ? '<div style="color:#4cd964;font-size:18px;">✅</div>' : ''}
-      </div>
-      <div style="background:#111;border-radius:4px;height:6px;overflow:hidden;">
-        <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:4px;transition:width .5s;"></div>
-      </div>
-      <div style="font-size:10px;color:#555;margin-top:4px;">${progress}/${m.goal}</div>
-    </div>`;
-  }).join('');
-}
-
-function claimWeekly(id, reward) {
-  if((userData?.weeklyClaimed||{})[id]) return notify('Вже забрано!','info');
-  db.ref('users/'+currentUser+'/weeklyClaimed/'+id).set(true);
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(reward));
-  notify('🎁 +'+reward+'₴ отримано!','success');
-  setTimeout(renderWeeklyMissions, 400);
 }
 
 // ── THEME GRID ──
