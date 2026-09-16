@@ -5024,10 +5024,25 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '87';
+const CURRENT_VERSION = '88';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '88',
+    title: '📜 Оновлення v88 — прибрано зайве з меню «Ще»',
+    date: Date.UTC(2026, 8, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🧹 Розділ «Прогрес та Нагороди»',
+        items: [
+          'Прибрано пункти Афілейт, Сезони, Ранги, Зал Слави і Тижневі місії — Battle Pass на Головній уже покриває прогрес і сезонні нагороди',
+        ]
+      },
+    ]
+  },
   {
     version: '87',
     title: '📜 Оновлення v87 — виправлено приєднання до онлайн-кімнат',
