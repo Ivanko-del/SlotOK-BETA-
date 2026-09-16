@@ -667,11 +667,118 @@
     .clan-role.member  { background: rgba(76,217,100,0.15); color: var(--green); }
     .clan-task   { background: #111; border: 1px solid #222; border-radius: var(--r-sm); padding: 12px; margin-bottom: 8px; box-shadow: var(--bevel), var(--elev-1); transition: border-color .15s, box-shadow .15s; }
     .clan-task.done { border-color: var(--green); box-shadow: var(--bevel), var(--elev-1), 0 0 24px -16px var(--green); }
-    /* ===== ЛІДЕРБОРД ===== */
+    /* ═════════ ЛІДЕРБОРД / РЕЙТИНГИ ═════════ */
+    #tab-leaderboard { padding: 0; }
 
-    .lb-tab.active { background: rgba(212,175,55,0.15); border-color: var(--accent); color: var(--accent); }
+    /* Шапка */
+    .lb-hero { position: relative; overflow: hidden; padding: 16px 16px 20px;
+      background: radial-gradient(ellipse 80% 90% at 50% -10%, rgba(212,175,55,.16), transparent 70%), linear-gradient(170deg,#12102a,#0a0818 60%,#07060f); }
+    .lb-hero::after { content:'🏆'; position:absolute; right:-24px; top:-30px; font-size:150px; opacity:.05; pointer-events:none; }
+    .lb-hero-top { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .lb-back { width:42px; height:42px; flex-shrink:0; padding:0; margin:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; color:var(--sub); font-size:16px; }
+    .lb-title { margin:0; font-family:'Orbitron',monospace; font-size:19px; font-weight:900; letter-spacing:2px; line-height:1;
+      background:linear-gradient(135deg,var(--accent2),var(--accent),#a9791c); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .lb-sub { font-size:11px; color:var(--sub); margin-top:4px; }
 
-    .lb-me    { border-color: var(--accent) !important; background: rgba(212,175,55,0.05) !important; }
+    /* Таймер скидання */
+    .lb-timer { display:inline-flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0;
+      background:rgba(212,175,55,.08); border:1px solid rgba(212,175,55,.22); border-radius:12px; padding:7px 11px; }
+    .lb-timer-lbl { font-size:9px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }
+    .lb-timer-val { font-size:13px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; line-height:1.1; }
+
+    /* Призи періоду */
+    .lb-prizes { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; position:relative; }
+    .lb-prize { border-radius:16px; padding:11px 6px; text-align:center; box-shadow:var(--bevel); }
+    .lb-prize-medal { font-size:19px; line-height:1; }
+    .lb-prize-val { font-size:12px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .lb-prize-lbl { font-size:9px; color:var(--sub); margin-top:1px; }
+    .lb-prize.g1 { background:linear-gradient(160deg,rgba(255,215,0,.16),rgba(255,215,0,.03)); border:1px solid rgba(255,215,0,.3); }
+    .lb-prize.g1 .lb-prize-val { color:#ffd700; }
+    .lb-prize.g2 { background:linear-gradient(160deg,rgba(200,200,215,.12),rgba(200,200,215,.02)); border:1px solid rgba(200,200,215,.22); }
+    .lb-prize.g2 .lb-prize-val { color:#d3d3de; }
+    .lb-prize.g3 { background:linear-gradient(160deg,rgba(205,127,50,.13),rgba(205,127,50,.02)); border:1px solid rgba(205,127,50,.24); }
+    .lb-prize.g3 .lb-prize-val { color:#e08a45; }
+    .lb-prizes.no-prize { display:none; }   /* «Всі часи» — призів немає, не тримаємо порожні плитки */
+
+    /* Перемикачі */
+    .lb-body { padding:14px 14px 110px; }
+    .lb-seg { display:flex; gap:3px; background:var(--box); border:1px solid var(--border); border-radius:15px; padding:4px; margin-bottom:10px; box-shadow:var(--bevel); }
+    .lb-seg-btn { flex:1; text-align:center; padding:9px 4px; border-radius:11px; font-size:12px; font-weight:700; color:var(--sub);
+      cursor:pointer; white-space:nowrap; transition:background .18s var(--ease-premium), color .18s, box-shadow .18s; -webkit-tap-highlight-color:transparent; }
+    .lb-seg-btn.active { background:linear-gradient(160deg,rgba(212,175,55,.22),rgba(212,175,55,.08)); color:var(--accent);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 16px -10px rgba(212,175,55,.6); }
+    .lb-chips { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:14px; padding-bottom:2px; }
+    .lb-chips::-webkit-scrollbar { display:none; }
+    .lb-chip { flex-shrink:0; padding:7px 13px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+      background:var(--box); border:1px solid var(--border); color:var(--sub); transition:.16s var(--ease-premium); -webkit-tap-highlight-color:transparent; }
+    .lb-chip:active { transform:scale(.95); }
+    .lb-chip.active { background:linear-gradient(160deg,rgba(212,175,55,.2),rgba(212,175,55,.06)); border-color:rgba(212,175,55,.45); color:var(--accent);
+      box-shadow:0 6px 18px -10px rgba(212,175,55,.7); }
+
+    /* Подіум */
+    .lb-podium { display:grid; grid-template-columns:1fr 1.18fr 1fr; gap:7px; align-items:end; margin-bottom:16px; }
+    .lb-pod { position:relative; border-radius:18px 18px 12px 12px; padding:12px 6px 0; text-align:center; cursor:pointer; overflow:hidden;
+      animation:lbPodIn .45s var(--ease-premium) backwards; -webkit-tap-highlight-color:transparent; transition:transform .14s var(--ease-tactile); }
+    .lb-pod:active { transform:translateY(2px) scale(.98); }
+    @keyframes lbPodIn { from { opacity:0; transform:translateY(16px); } }
+    .lb-pod.r1 { background:linear-gradient(170deg,rgba(255,215,0,.18),rgba(255,215,0,.03)); border:1px solid rgba(255,215,0,.35);
+      box-shadow:var(--bevel), 0 0 46px -18px rgba(255,215,0,.85); animation-delay:.05s; }
+    .lb-pod.r2 { background:linear-gradient(170deg,rgba(200,200,215,.13),rgba(200,200,215,.02)); border:1px solid rgba(200,200,215,.25); box-shadow:var(--bevel); }
+    .lb-pod.r3 { background:linear-gradient(170deg,rgba(205,127,50,.13),rgba(205,127,50,.02)); border:1px solid rgba(205,127,50,.26);
+      box-shadow:var(--bevel); animation-delay:.1s; }
+    .lb-pod.me { outline:2px solid var(--accent); outline-offset:-2px; }
+    .lb-crown { position:absolute; top:-2px; left:50%; transform:translateX(-50%); font-size:17px; animation:lbFloat 2.6s ease-in-out infinite; }
+    @keyframes lbFloat { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,-3px); } }
+    .lb-pod-av { width:46px; height:46px; margin:6px auto 7px; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center;
+      font-size:17px; font-weight:800; color:#1a1400; background:linear-gradient(140deg,var(--accent2),#a9791c); }
+    .lb-pod.r1 .lb-pod-av { width:54px; height:54px; font-size:20px; border:2px solid #ffd700; box-shadow:0 0 22px -6px rgba(255,215,0,.8); }
+    .lb-pod.r2 .lb-pod-av { border:2px solid #c8c8d7; background:linear-gradient(140deg,#e6e6ef,#8a8a9c); color:#15131f; }
+    .lb-pod.r3 .lb-pod-av { border:2px solid #cd7f32; background:linear-gradient(140deg,#e9a86a,#9a5a1e); color:#1d1005; }
+    .lb-pod-name { font-size:11.5px; font-weight:700; padding:0 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-pod-val { font-size:13px; font-weight:900; color:#fff; margin-top:2px; font-variant-numeric:tabular-nums; }
+    .lb-pod-base { margin-top:9px; font-family:'Orbitron',monospace; font-size:15px; font-weight:900; color:rgba(255,255,255,.22);
+      background:rgba(0,0,0,.28); border-top:1px solid rgba(255,255,255,.06); }
+    .lb-pod.r1 .lb-pod-base { height:40px; line-height:40px; color:rgba(255,215,0,.5); }
+    .lb-pod.r2 .lb-pod-base { height:28px; line-height:28px; }
+    .lb-pod.r3 .lb-pod-base { height:21px; line-height:21px; }
+
+    /* Рядки 4+ */
+    .lb-row { display:flex; align-items:center; gap:11px; padding:10px 12px; margin-bottom:6px; border-radius:15px;
+      background:linear-gradient(160deg,rgba(255,255,255,.03),rgba(255,255,255,0) 60%), var(--box); border:1px solid var(--border);
+      cursor:pointer; box-shadow:var(--bevel); animation:lbRowIn .3s var(--ease-premium) backwards;
+      transition:transform .13s var(--ease-tactile), border-color .15s; -webkit-tap-highlight-color:transparent; }
+    @keyframes lbRowIn { from { opacity:0; transform:translateX(-8px); } }
+    .lb-row:active { transform:scale(.985); }
+    .lb-row.me { border-color:rgba(212,175,55,.45); background:linear-gradient(160deg,rgba(212,175,55,.12),rgba(212,175,55,.02)); }
+    .lb-rank { min-width:24px; text-align:center; font-family:'Orbitron',monospace; font-size:13px; font-weight:900; color:var(--sub); font-variant-numeric:tabular-nums; }
+    .lb-row.me .lb-rank { color:var(--accent); }
+    .lb-av { width:34px; height:34px; flex-shrink:0; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:800; color:#1a1400; background:linear-gradient(140deg,var(--accent2),#a9791c); border:1px solid rgba(255,255,255,.12); }
+    .lb-row-main { flex:1; min-width:0; }
+    .lb-row-name { font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-row-tag { font-size:9.5px; color:var(--accent); font-weight:700; margin-left:4px; }
+    .lb-bar { height:3px; margin-top:5px; border-radius:3px; background:rgba(255,255,255,.06); overflow:hidden; }
+    .lb-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .6s var(--ease-premium); }
+    .lb-row-val { font-size:13.5px; font-weight:900; color:var(--accent); flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+    /* Моя позиція (прилипає знизу) */
+    .lb-me-card { position:sticky; bottom:96px; z-index:5; display:flex; align-items:center; gap:11px; margin-top:12px; padding:11px 13px; border-radius:16px;
+      background:linear-gradient(160deg,rgba(212,175,55,.18),rgba(20,16,10,.96)); border:1px solid rgba(212,175,55,.4);
+      box-shadow:var(--bevel), var(--elev-2); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+    .lb-me-rank { font-family:'Orbitron',monospace; font-size:17px; font-weight:900; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .lb-me-lbl { font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }
+    .lb-me-val { font-size:14px; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; }
+    .lb-me-gap { font-size:10.5px; color:var(--sub); margin-top:2px; }
+    .lb-me-gap b { color:var(--accent); }
+
+    /* Порожньо / завантаження */
+    .lb-empty { text-align:center; padding:34px 20px; color:var(--sub); font-size:13px; line-height:1.6; }
+    .lb-empty-icon { font-size:40px; opacity:.35; margin-bottom:10px; }
+    .lb-skel { height:56px; margin-bottom:6px; border-radius:15px; border:1px solid var(--border);
+      background:linear-gradient(100deg, var(--box) 30%, rgba(255,255,255,.045) 50%, var(--box) 70%); background-size:240% 100%; animation:lbShimmer 1.25s linear infinite; }
+    @keyframes lbShimmer { from { background-position:150% 0; } to { background-position:-50% 0; } }
+
     /* ===== МОНОПОЛІЯ ===== */
     .mono-board-wrap { position: relative; width: 100%; max-width: 420px; margin: 0 auto 10px; aspect-ratio: 1; background: #e8f4e8; border: 3px solid #2d5a2d; border-radius: 4px; overflow: hidden; }
     .mono-board { display: grid; grid-template-columns: 56px repeat(9,1fr) 56px; grid-template-rows: 56px repeat(9,1fr) 56px; width: 100%; height: 100%; }

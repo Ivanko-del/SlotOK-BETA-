@@ -2007,68 +2007,57 @@
     </div>
 
     <!-- ===== ЛІДЕРБОРД ===== -->
-    <div id="tab-leaderboard" class="screen hidden" style="padding:0;min-height:100vh;">
+    <div id="tab-leaderboard" class="screen hidden">
 
-      <!-- Hero шапка -->
-      <div style="background:linear-gradient(135deg,#0a0820,#120a2e);padding:20px 16px 16px;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-20px;top:-20px;font-size:120px;opacity:.04;pointer-events:none;">🏆</div>
-        <button onclick="switchTab('more')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;margin-bottom:14px;">⬅ Назад</button>
-        <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--accent);letter-spacing:2px;margin-bottom:4px;">🏆 РЕЙТИНГИ</div>
-        <div style="font-size:12px;color:var(--sub);">Топ гравців по виграшам та активності</div>
-
-        <!-- Призи поточного тижня -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;">
-          <div style="background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:10px;text-align:center;">
-            <div style="font-size:20px;">🥇</div>
-            <div style="font-size:11px;font-weight:700;color:#ffd700;margin-top:3px;" id="lbPrize1">₴50,000</div>
-            <div style="font-size:9px;color:var(--sub);">1 місце</div>
+      <!-- Шапка: назва, таймер скидання, призи періоду -->
+      <div class="lb-hero">
+        <div class="lb-hero-top">
+          <button class="lb-back" onclick="switchTab('more')" aria-label="Назад">⬅</button>
+          <div style="min-width:0;">
+            <h2 class="lb-title">РЕЙТИНГИ</h2>
+            <div class="lb-sub" id="lbSubtitle">Топ гравців за добу</div>
           </div>
-          <div style="background:rgba(192,192,192,.08);border:1px solid rgba(192,192,192,.2);border-radius:14px;padding:10px;text-align:center;">
-            <div style="font-size:20px;">🥈</div>
-            <div style="font-size:11px;font-weight:700;color:#c0c0c0;margin-top:3px;" id="lbPrize2">₴25,000</div>
-            <div style="font-size:9px;color:var(--sub);">2 місце</div>
+          <div class="lb-timer" id="lbTimer">
+            <div>
+              <div class="lb-timer-lbl">Скидання</div>
+              <div class="lb-timer-val" id="lbResetTimer">—</div>
+            </div>
           </div>
-          <div style="background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.2);border-radius:14px;padding:10px;text-align:center;">
-            <div style="font-size:20px;">🥉</div>
-            <div style="font-size:11px;font-weight:700;color:#cd7f32;margin-top:3px;" id="lbPrize3">₴10,000</div>
-            <div style="font-size:9px;color:var(--sub);">3 місце</div>
-          </div>
+        </div>
+        <div class="lb-prizes" id="lbPrizes">
+          <div class="lb-prize g1"><div class="lb-prize-medal">🥇</div><div class="lb-prize-val" id="lbPrize1">—</div><div class="lb-prize-lbl">1 місце</div></div>
+          <div class="lb-prize g2"><div class="lb-prize-medal">🥈</div><div class="lb-prize-val" id="lbPrize2">—</div><div class="lb-prize-lbl">2 місце</div></div>
+          <div class="lb-prize g3"><div class="lb-prize-medal">🥉</div><div class="lb-prize-val" id="lbPrize3">—</div><div class="lb-prize-lbl">3 місце</div></div>
         </div>
       </div>
 
-      <div style="padding:14px;padding-bottom:100px;">
+      <div class="lb-body">
 
-        <!-- Вкладки: Метрика -->
-        <div style="display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:2px;">
-          <div id="lb-metric-wager"  onclick="setLbMetric('wager',this)"  class="lb-metric-btn" style="flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.4);color:var(--accent);">💸 Ставки</div>
-          <div id="lb-metric-wins"   onclick="setLbMetric('wins',this)"   class="lb-metric-btn" style="flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;background:var(--box);border:1px solid var(--border);color:var(--sub);">🏆 Виграші</div>
-          <div id="lb-metric-profit" onclick="setLbMetric('profit',this)" class="lb-metric-btn" style="flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;background:var(--box);border:1px solid var(--border);color:var(--sub);">📈 Прибуток</div>
-          <div id="lb-metric-games"  onclick="setLbMetric('games',this)"  class="lb-metric-btn" style="flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;background:var(--box);border:1px solid var(--border);color:var(--sub);">🎮 Ігри</div>
-          <div id="lb-metric-bigwin" onclick="setLbMetric('bigwin',this)" class="lb-metric-btn" style="flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;background:var(--box);border:1px solid var(--border);color:var(--sub);">⚡ Рекорд</div>
+        <!-- Період -->
+        <div class="lb-seg" id="lbPeriods">
+          <div class="lb-seg-btn active" data-period="day">День</div>
+          <div class="lb-seg-btn" data-period="week">Тиждень</div>
+          <div class="lb-seg-btn" data-period="month">Місяць</div>
+          <div class="lb-seg-btn" data-period="all">Всі часи</div>
         </div>
 
-        <!-- Вкладки: Період -->
-        <div style="display:flex;gap:4px;background:var(--box);border-radius:14px;padding:4px;margin-bottom:16px;border:1px solid var(--border);">
-          <div id="lb-period-day"   onclick="setLbPeriod('day',this)"   style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:rgba(212,175,55,.15);color:var(--accent);">📅 День</div>
-          <div id="lb-period-week"  onclick="setLbPeriod('week',this)"  style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--sub);">📆 Тиждень</div>
-          <div id="lb-period-month" onclick="setLbPeriod('month',this)" style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--sub);">🗓 Місяць</div>
-          <div id="lb-period-all"   onclick="setLbPeriod('all',this)"   style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--sub);">🔱 Всі часи</div>
+        <!-- Метрика -->
+        <div class="lb-chips" id="lbMetrics">
+          <div class="lb-chip active" data-metric="wager">💸 Ставки</div>
+          <div class="lb-chip" data-metric="wins">🏆 Виграші</div>
+          <div class="lb-chip" data-metric="profit">📈 Прибуток</div>
+          <div class="lb-chip" data-metric="games">🎮 Ігри</div>
+          <div class="lb-chip" data-metric="bigwin">⚡ Рекорд</div>
         </div>
 
-        <!-- Скидання таймер -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div style="font-size:11px;color:var(--sub);" id="lbResetLabel">⏱ Скидання через: <b style="color:var(--accent);" id="lbResetTimer">—</b></div>
-          <div style="font-size:10px;color:var(--sub);" id="lbMyRankLabel"></div>
-        </div>
+        <!-- Топ-3 -->
+        <div class="lb-podium" id="lbPodium"></div>
 
-        <!-- Топ-3 подіум -->
-        <div id="lbPodium" style="display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px;margin-bottom:16px;align-items:end;"></div>
-
-        <!-- Список 4-20 -->
+        <!-- Місця 4+ -->
         <div id="leaderboardList"></div>
 
         <!-- Моя позиція -->
-        <div id="lbMyPosition" style="margin-top:12px;"></div>
+        <div id="lbMyPosition"></div>
 
       </div>
     </div>
