@@ -5453,7 +5453,7 @@ const BUILTIN_CHANGELOG = [
   {
     version: '72',
     title: '🛡️ Оновлення v72 — Відповідальна гра тепер реально працює',
-    date: Date.now(),
+    date: Date.UTC(2026, 8, 11),
     dev: 'SlotOK Dev',
     sections: [
       {
