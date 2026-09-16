@@ -2073,61 +2073,6 @@
       </div>
     </div>
 
-    <!-- ===== ПОДАРУНКИ ===== -->
-    <div id="tab-gifts" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
-      <h2 style="color:var(--accent);margin-bottom:4px;">🎀 Подарунки</h2>
-      <div style="color:#777;font-size:13px;margin-bottom:15px;">Надішли подарунок другу і порадуй його!</div>
-
-      <div class="box">
-        <div class="section-header" style="margin-top:0;">📦 Оберіть подарунок</div>
-        <div class="gift-grid" id="giftGrid">
-          <div class="gift-card" onclick="selectGift('bouquet',this)">
-            <div class="gift-icon">💐</div>
-            <div class="gift-name">Букет</div>
-            <div class="gift-price">50 ₴</div>
-            <div class="gift-desc">Милий знак уваги</div>
-          </div>
-          <div class="gift-card" onclick="selectGift('chest',this)">
-            <div class="gift-icon">📦</div>
-            <div class="gift-name">Звичайний ящик</div>
-            <div class="gift-price">200 ₴</div>
-            <div class="gift-desc">Готова скринька</div>
-          </div>
-          <div class="gift-card" onclick="selectGift('money500',this)">
-            <div class="gift-icon">💵</div>
-            <div class="gift-name">Конверт 500₴</div>
-            <div class="gift-price">500 ₴</div>
-            <div class="gift-desc">Прямий переказ</div>
-          </div>
-          <div class="gift-card" onclick="selectGift('diamond',this)">
-            <div class="gift-icon">💎</div>
-            <div class="gift-name">Діамант</div>
-            <div class="gift-price">1 000 ₴</div>
-            <div class="gift-desc">Рідкісний подарунок</div>
-          </div>
-          <div class="gift-card" onclick="selectGift('crown',this)">
-            <div class="gift-icon">👑</div>
-            <div class="gift-name">Золота корона</div>
-            <div class="gift-price">2 500 ₴</div>
-            <div class="gift-desc">Для справжніх VIP</div>
-          </div>
-          <div class="gift-card" onclick="selectGift('rocket',this)">
-            <div class="gift-icon">🚀</div>
-            <div class="gift-name">Ракета</div>
-            <div class="gift-price">5 000 ₴</div>
-            <div class="gift-desc">Преміум-подарунок</div>
-          </div>
-        </div>
-        <input id="giftRecipient" placeholder="Нік отримувача">
-        <input id="giftMessage" placeholder="Повідомлення (необов'язково)">
-        <button class="btn-gold" onclick="sendGift()">🎀 НАДІСЛАТИ ПОДАРУНОК</button>
-      </div>
-
-      <div class="section-header">📬 Вхідні подарунки</div>
-      <div id="inboxGifts"><div style="color:#777;font-size:13px;text-align:center;padding:15px 0;">Завантаження...</div></div>
-    </div>
-
     <!-- ===== МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
@@ -4555,36 +4500,6 @@
     <div id="pmThreadView" class="pm-thread-fullscreen hidden"></div>
   </div>
 
-  <!-- ══════════════ ТОРГІВЛЯ (TRADE) ══════════════ -->
-  <div id="tab-trade" class="screen hidden">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
-      <h2 style="margin:0;color:#ff9f43;">🔄 Торгівля</h2>
-    </div>
-
-    <!-- Надіслати пропозицію -->
-    <div class="box" style="border-color:#ff9f43;margin-bottom:14px;">
-      <div style="font-size:11px;color:#ff9f43;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;">📤 Нова пропозиція обміну</div>
-      <input id="tradeToInput" placeholder="Нік гравця">
-      <div style="font-size:12px;color:#777;margin:8px 0 4px;">💸 Ви надсилаєте (₴)</div>
-      <input id="tradeOfferAmount" type="number" placeholder="Сума (₴)" min="1">
-      <div style="font-size:12px;color:#777;margin:8px 0 4px;">💰 Ви просите (₴)</div>
-      <input id="tradeAskAmount" type="number" placeholder="Сума яку хочете отримати (₴)" min="0">
-      <div style="font-size:12px;color:#777;margin:8px 0 4px;">📝 Коментар (опціонально)</div>
-      <input id="tradeComment" placeholder="Наприклад: міняю на аккаунт і т.д." maxlength="100">
-      <button class="btn-gold" onclick="sendTradeOffer()" style="margin-top:4px;">🔄 Надіслати пропозицію</button>
-    </div>
-
-    <!-- Вхідні пропозиції -->
-    <div style="font-size:11px;color:#ff9f43;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">📥 Вхідні пропозиції <span id="tradeIncomingBadge" class="tab-badge hidden" style="background:#ff9f43;color:#000;"></span></div>
-    <div id="tradeIncoming" style="margin-bottom:14px;"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Немає вхідних пропозицій</div></div>
-
-    <!-- Мої надіслані -->
-    <div style="font-size:11px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">📤 Мої пропозиції</div>
-    <div id="tradeOutgoing"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Ви не надсилали пропозицій</div></div>
-    <div style="height:80px;"></div>
-  </div>
-
   <!-- ══════════════ DRAGON TOWER ══════════════ -->
   <div id="tab-dragon" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -4934,22 +4849,6 @@
       <button class="btn-outline" onclick="withdrawFromPool()" style="border-color:#ff6b6b;color:#ff6b6b;">💸 Вивести</button>
     </div>
     <div style="font-size:11px;color:#555;text-align:center;margin-top:14px;padding:0 16px;">Пул інвестує кошти в загальний оборот казино. Виплата = 8% від твоєї частки щотижня.</div>
-    <div style="height:80px;"></div>
-  </div>
-
-  <!-- ══════════════ WATCH MODE ══════════════ -->
-  <div id="tab-watchmode" class="screen hidden" style="padding:16px;padding-bottom:100px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
-      <h2 style="margin:0;color:#ff69b4;">👁️ Watch Mode</h2>
-    </div>
-    <div style="font-size:13px;color:#777;margin-bottom:14px;">Живий зріз казино: хто зараз найактивніше грає і що виграють/програють інші гравці в реальному часі. Це не персональне спостереження за одним гравцем — тут немає кнопки "увімкнути", просто відкрий вкладку й дивись.</div>
-    <!-- Online players to watch -->
-    <div style="font-size:11px;color:#ff69b4;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🟢 Найактивніші зараз (за к-стю ставок)</div>
-    <div id="watchPlayerList" style="margin-bottom:14px;"></div>
-    <!-- Live game feed -->
-    <div style="font-size:11px;color:#ff69b4;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">📡 Live стрічка ставок</div>
-    <div id="watchLiveFeed" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="height:80px;"></div>
   </div>
 
