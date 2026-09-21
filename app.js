@@ -552,19 +552,14 @@ function claimDailyBonus(amount) {
 // РЕКВІЗИТИ ДЛЯ ПОПОВНЕННЯ (заміни на свої!)
 // ============================================
 const DEPOSIT_REQUISITES = {
-  privat:     '5168 7450 XXXX XXXX — Іван І.',
-  mono:       '5375 4141 XXXX XXXX — Іван І.',
-  card:       'Visa/Mastercard будь-якого банку — введіть номер картки, термін дії та CVV на захищеній сторінці оплати',
-  applepay:   'Apple Pay — натисніть «Поповнити», підтвердіть оплату Face ID/Touch ID',
-  googlepay:  'Google Pay — натисніть «Поповнити», підтвердіть оплату відбитком пальця або кодом',
+  mono:       '4874 0700 7092 4301 — Іван Колодєєв',
   usdt:       'USDT (TRC20): TQn9Y2khEsLJW1ChVWFMSMeRDow5oJgVGw — вкажіть свій ID у коментарі до перекладу',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
 const DEPOSIT_METHOD_NAMES = {
-  privat: 'PrivatBank', mono: 'Monobank', card: 'Visa/Mastercard',
-  applepay: 'Apple Pay', googlepay: 'Google Pay', usdt: 'USDT (TRC20)', telegram: 'Telegram'
+  mono: 'Monobank', usdt: 'USDT (TRC20)', telegram: 'Telegram'
 };
-let selectedDepMethod = 'privat';
+let selectedDepMethod = 'mono';
 
 const BANK_LOADING_STEPS = [
   'Перевірка реквізитів...', 'З’єднання з банком...', 'Підтвердження транзакції...',
@@ -707,7 +702,7 @@ function submitDepositRequest() {
     user: userName,
     userId: userId,
     amount: amount,
-    method: selectedDepMethod || 'privat',
+    method: selectedDepMethod || 'mono',
     // Прив'язка до картки, активної на момент заявки: адмін зарахує саме на неї,
     // навіть якщо гравець згодом перемкне активну картку.
     cardId: getActiveCardId() || null,
@@ -718,7 +713,7 @@ function submitDepositRequest() {
     // Notify admin via PM
     db.ref('pm/theivankoo/' + db.ref().push().key).set({
       from: '📥 Система', to: 'theivankoo',
-      text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴ (${selectedDepMethod || 'privat'})`,
+      text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴ (${selectedDepMethod || 'mono'})`,
       ts: Date.now()
     });
     db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -735,8 +730,8 @@ function submitDepositRequest() {
         db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
       });
     });
-    showDepositLoading(amount, selectedDepMethod || 'privat', reqId);
-    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку'; }
+    showDepositLoading(amount, selectedDepMethod || 'mono', reqId);
+    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
     selectedDepAmount = 0;
     ksClearDepositAmountUI();
     if(customInput) customInput.value = '';
@@ -744,7 +739,7 @@ function submitDepositRequest() {
     loadMyDeposits();
   }).catch(err => {
     notify('Помилка подачі заявки. Спробуй ще.', 'error');
-    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
   });
 }
 
@@ -3245,6 +3240,61 @@ function sendChatMsg() {
 }
 
 // ═══════════════════════════════════════════════════════
+// 🤝 AFFILIATE
+// ═══════════════════════════════════════════════════════
+function initAffiliate() {
+  if(!currentUser) return;
+  const link = 'https://slotok.web.app/?ref='+currentUser;
+  const el = document.getElementById('affLink');
+  if(el) el.textContent = link;
+  db.ref('users').orderByChild('referredBy').equalTo(currentUser).once('value', snap => {
+    const refs = snap.val()||{};
+    const count = Object.keys(refs).length;
+    const refWager = u => u.totalWagered || u.totalWager || 0;  // totalWager — легасі-поле
+    const active = Object.values(refs).filter(u => refWager(u) > 100).length;
+    const earned = Math.floor(Object.values(refs).reduce((s,u)=>(s+refWager(u)*0.01),0));
+    const e1=document.getElementById('affRefs'), e2=document.getElementById('affEarned'), e3=document.getElementById('affActive');
+    if(e1) e1.textContent=count; if(e2) e2.textContent='₴'+formatNumber(earned); if(e3) e3.textContent=active;
+    const pending = Math.max(0, earned - (userData.affClaimed || 0));
+    const claimBtn = document.getElementById('affClaimBtn');
+    if(claimBtn) {
+      claimBtn.disabled = pending <= 0;
+      claimBtn.textContent = pending > 0 ? '💰 Отримати ₴' + formatNumber(pending) + ' на баланс' : '💰 Немає нарахувань';
+      claimBtn.onclick = () => claimAffiliateEarnings(earned);
+    }
+  });
+}
+
+// «Нараховано» — це 1% від вейджеру рефералів наростаючим підсумком, а не
+// готівка на окремому рахунку. affClaimed — межа, до якої вже виплачено;
+// щоразу зараховуємо лише різницю, щоб не платити той самий заробіток двічі.
+function claimAffiliateEarnings(earnedTotal) {
+  const claimed = userData.affClaimed || 0;
+  const pending = Math.floor(earnedTotal - claimed);
+  if(pending <= 0) return notify('Немає нарахувань для отримання', 'info');
+  db.ref('users/'+currentUser).update({
+    balance: firebase.database.ServerValue.increment(pending),
+    affClaimed: earnedTotal
+  });
+  playSound('win');
+  notify('💰 Реферальний дохід зараховано: +' + formatNumber(pending) + ' ₴', 'success');
+  addToHistory('Реферальний дохід: +'+pending);
+  addCardTransaction('in', pending, 'Реферальний дохід', 'SlotOK Casino');
+  initAffiliate();
+}
+
+function copyAffLink() {
+  const link = 'https://slotok.web.app/?ref='+currentUser;
+  navigator.clipboard.writeText(link).then(()=>notify('📋 Посилання скопійовано!','success'));
+}
+
+function shareAffLink() {
+  const link = 'https://slotok.web.app/?ref='+currentUser;
+  if(navigator.share) navigator.share({title:'SlotOK Casino',text:'Зареєструйся за моїм посиланням!',url:link});
+  else copyAffLink();
+}
+
+// ═══════════════════════════════════════════════════════
 // ⚡ QUICK BET BUTTONS helper
 // ═══════════════════════════════════════════════════════
 function setQuickBet(inputId, val) {
@@ -3662,6 +3712,8 @@ async function authRegister() {
       totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
     };
     if(promo) newUser.usedPromo = promo;
+    const refBy = localStorage.getItem('ref_by');
+    if(refBy && refBy !== n) newUser.referredBy = refBy;
 
     // Step 3: save to Firebase
     db.ref('users/' + n).set(newUser, err => {
@@ -3676,10 +3728,14 @@ async function authRegister() {
       if(btn) btn.textContent = '✅ Входимо...';
       currentUser = n;
       localStorage.setItem(SESSION_KEY, n);
+      localStorage.removeItem('ref_by');
       initTelegramLinkStatus();
 
       // Add to history (non-blocking)
       try { db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonus + '₴', date: Date.now() }); } catch(e) { console.warn(e); }
+      if(newUser.referredBy) {
+        try { db.ref('users/' + newUser.referredBy + '/referrals').set(firebase.database.ServerValue.increment(1)); } catch(e) { console.warn(e); }
+      }
 
       notify('🎉 Вітаємо! Бонус: ' + bonus + '₴ + ' + spins + ' фріспінів!' + bonusMsg, 'success');
 
@@ -5043,10 +5099,87 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '91';
+const CURRENT_VERSION = '95';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '95',
+    title: '📜 Оновлення v95 — зручніше на комп’ютері',
+    date: Date.UTC(2026, 8, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🖥️ Бокова навігація на широких екранах',
+        items: [
+          'На екранах від ~900px (ноутбук/ПК) нижня панель вкладок стала боковою колонкою зліва — мишею природніше тягнутись убік, ніж у самий низ великого монітора',
+          'Робоча область стала трохи ширшою за «телефонну» колонку, щоб лишалось менше порожнього місця обабіч',
+          'Додано підсвітку пунктів меню під курсором на ПК',
+        ]
+      },
+    ]
+  },
+  {
+    version: '94',
+    title: '📜 Оновлення v94 — реальні реквізити для донату',
+    date: Date.UTC(2026, 8, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '💳 Способи донату більше не ведуть у нікуди',
+        items: [
+          'PrivatBank і Monobank мали захардкоджений номер картки-заглушку (XXXX XXXX) — переказ на нього був би неможливий. Monobank замінено на реальну картку, PrivatBank прибрано зі списку способів',
+          'Visa/Mastercard, Apple Pay та Google Pay обіцяли «захищену сторінку оплати», якої на сайті немає — ці способи теж прибрано, лишились тільки ті, що реально працюють: Monobank, USDT (TRC-20) і Telegram-бот',
+        ]
+      },
+    ]
+  },
+  {
+    version: '93',
+    title: '📜 Оновлення v93 — Каса тепер відверто каже «донат»',
+    date: Date.UTC(2026, 8, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🤝 Поповнення = добровільний донат на проєкт',
+        items: [
+          'Розділ Каси перейменовано з «Поповнити» на «Донат»: SlotOK — некомерційний проєкт для своїх, і гроші, які ти вносиш, підтримують його, а не купують товар',
+          'Натомість за донат нараховується бонус на ігровий баланс — так само, як і раніше, просто чесніше названо',
+          'Дисклеймер у футері й повне вікно «Важлива інформація» переписано: більше немає неправдивого «реальних грошей немає» — тепер прямо сказано, що донат реальний, а виводу з нього немає',
+        ]
+      },
+    ]
+  },
+  {
+    version: '92',
+    title: '📜 Оновлення v92 — ігровий баланс і робочі реферали',
+    date: Date.UTC(2026, 8, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '💳 SlotOK — ігрова платформа без реального виводу',
+        items: [
+          'Каса тепер прямо каже «ігровий баланс»: «Поповнення ігрового балансу», мітка «Ігровий баланс» на картці',
+          'Реального виводу коштів на картку чи USDT більше немає — баланс ігровий і працює тільки всередині платформи',
+          'Прибрано товар «Пріоритетний вивід» у крамниці й усі згадки виводу в чат-боті, підказках і правилах',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🤝 Реферальна програма нарешті рахує запрошення',
+        items: [
+          'Реєстрація за реферальним посиланням раніше нікуди не записувалась — тепер друг, який зайшов за посиланням, реально прив’язується до того, хто запросив',
+          'Афілейт повертається під назвою «Реферали» (раніше меню трохи випередило подію й прибрало його як мертвий пункт) — стару однойменну вкладку, яка обіцяла 10% з першого депозиту й ніколи не платила, прибрано остаточно',
+          'Комісія скрізь показує однакову й реальну цифру — 1% з кожної ставки запрошеного, довічно (раніше на різних екранах було то 30%, то 10%, то 1%)',
+          'З’явилась кнопка «Отримати на баланс» — реферальний дохід більше не просто цифра на екрані, а справді зараховується на ігровий баланс',
+        ]
+      },
+    ]
+  },
   {
     version: '91',
     title: '📜 Оновлення v91 — рейтинги тепер видно з Головної',
@@ -8615,27 +8748,6 @@ function createTournament() {
 // ============================================
 // РЕФЕРАЛИ
 // ============================================
-function initReferrals() {
-  const id = userData.id;
-  const link = `${location.origin}${location.pathname}?ref=${id}`;
-  document.getElementById('refLinkText').textContent = link;
-  document.getElementById('refCount').textContent = userData.referrals || 0;
-  document.getElementById('refEarned').textContent = (userData.refEarned || 0) + '₴';
-
-  const list = document.getElementById('refFriendsList');
-  if(userData.refFriends) {
-    list.innerHTML = '';
-    Object.keys(userData.refFriends).forEach(name => {
-      list.innerHTML += `<div class="contact-row"><b>${name}</b></div>`;
-    });
-  }
-}
-
-function copyRefLink() {
-  const link = document.getElementById('refLinkText').textContent;
-  navigator.clipboard.writeText(link).then(() => notify('📋 Посилання скопійовано!', 'success'));
-}
-
 function checkRefParam() {
   const urlParams = new URLSearchParams(location.search);
   const ref = urlParams.get('ref');
@@ -10815,7 +10927,6 @@ function switchTab(id, el) {
   if(id==='keno')         safe(() => initKeno());
   if(id==='fortune')      safe(() => setTimeout(() => drawFortuneWheel(0), 50));
   if(id==='tournaments')  safe(() => { loadTournaments(); loadTourneyStatsBar(); });
-  if(id==='referrals')    safe(() => initReferrals());
   if(id==='scratch')      safe(() => { const g = document.getElementById('scratchGrid'); if(g && !g.children.length) scratchReset(); });
   if(id==='vip')          safe(() => updateVipUI());
   if(id==='quests')       safe(() => loadQuests());
@@ -10834,6 +10945,7 @@ function switchTab(id, el) {
   if(id==='dice')         safe(() => updateDiceUI());
   if(id==='slotiky')      safe(() => initSlotiky());
   if(id==='achievements') safe(() => { initAchievementsTab(); checkAchievements('tab', null); });
+  if(id==='affiliate')    safe(() => initAffiliate());
   if(id==='battlepass')   safe(() => initBattlePass());
   if(id==='stats')        safe(() => initStatsTab());
   if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
@@ -12538,15 +12650,14 @@ function switchCashierTab(tab, el) {
       activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   }
-  ['card','deposit','withdraw','cashback','markets'].forEach(t => {
+  ['card','deposit','cashback','markets'].forEach(t => {
     const p = document.getElementById('cashier-panel-' + t);
     if(p) p.classList.toggle('hidden', t !== tab);
   });
   if(tab === 'cashback') updateCashierCashbackUI();
   if(tab === 'markets')  buildMarketsPage();
   if(tab === 'card')     renderCardPanel();
-  if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('privat', document.getElementById('depm-privat')); renderSourceBars(); }
-  if(tab === 'withdraw') { loadMyWithdraws(); updateWithdrawAvailable(); renderSourceBars(); }
+  if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('mono', document.getElementById('depm-mono')); renderSourceBars(); }
 }
 
 // Скільки реально можна вивести — показуємо в шапці розділу, щоб гравець не
@@ -14699,7 +14810,7 @@ function initSupportChat() {
   db.ref('support_chats/'+currentUser).limitToLast(1).once('value', snap => {
     if(!snap.exists()) {
       db.ref('support_chats/'+currentUser).push({
-        text: 'Привіт! 👋 Я AI-асистент SlotOK. Запитай про поповнення, вивід коштів, VIP, бонуси чи будь-яку гру — відповім одразу. Для складних питань покличу адміністратора.',
+        text: 'Привіт! 👋 Я AI-асистент SlotOK. Запитай про донат, VIP, бонуси чи будь-яку гру — відповім одразу. Для складних питань покличу адміністратора.',
         sender: 'ai', time: Date.now()
       });
     }
@@ -14739,20 +14850,15 @@ function sendSupportMsg() {
 // reply може бути рядком або масивом варіантів (тоді береться випадковий,
 // щоб відповіді не звучали однаково у різних розмовах).
 const SUPPORT_FAQ = [
-  { keys: ['поповн','депозит','закинут','внест','вклад','поповнити'],
+  { keys: ['поповн','депозит','закинут','внест','вклад','поповнити','донат'],
     reply: [
-      '💳 Поповнення: перейди в Каса → Поповнення, обери суму й спосіб (PrivatBank/Monobank/Telegram). Після переказу натисни «Подати заявку» — адмін зарахує кошти протягом 1-24 год. Мінімум 50₴.',
-      '💳 Щоб поповнити баланс: Каса → Поповнення → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Кошти зараховуються протягом 1-24 годин після перевірки платежу.'
+      '💳 Донат: перейди в Каса → Донат, обери суму й спосіб (Monobank/USDT/Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
+      '💳 Щоб задонатити: Каса → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
     ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: [
-      '💸 Вивід коштів: Каса → Вивід, вкажи суму й реквізити. Для сум від 5000₴ треба підтвердити вивід тапом по кнопці у власному Telegram (бот пришле «Підтвердити»/«Скасувати») — тому Telegram має бути прив’язаний заздалегідь у Профіль → Сповіщення. Заявки обробляються протягом 1-24 год.',
-      '💸 Щоб вивести гроші: Каса → Вивід → сума + реквізити картки. На суми від 5000₴ прийде повідомлення в Telegram із кнопкою підтвердження — без цього тапу заявка не піде далі. Обробка — до 24 годин.'
-    ] },
-  { keys: ['мінімальн вивід','мінімум вивід','ліміт вивід','максимальн вивід','скільки можна вивести'],
-    reply: [
-      '💸 Ліміти виводу: мінімальна сума — 100₴, максимальна залежить від твого VIP-рівня (чим вищий рівень, тим більший ліміт). Точні цифри для свого рівня дивись у Профіль → VIP Статус.',
-      '💸 Мінімум на вивід — 100₴, максимум прив’язаний до VIP-рівня: що вищий рівень, то більше можна вивести за раз. Свій ліміт дивись у Профіль → VIP Статус.'
+      '🎮 SlotOK — ігрова платформа: баланс віртуальний, і вивід коштів на картку чи USDT не передбачений. Грай на здоров’я!',
+      '🎮 Виводу грошей на сайті немає — увесь баланс ігровий і використовується тільки всередині платформи.'
     ] },
   { keys: ['vip','віп','рівен','статус гравц'],
     reply: [
@@ -14943,7 +15049,7 @@ const SUPPORT_FAQ = [
   { keys: ['мут','замучен','забанили в чаті','правила чату','спам чат'],
     reply: '💬 Правила чату: без спаму, реклами, образ і читерських порад. За порушення — тимчасовий мут. Якщо вважаєш мут помилковим, опиши ситуацію — передам адміну на перевірку.' },
   { keys: ['гроші списались а не зарахувал','платіж завис','оплата пройшла а грошей нема','гроші не прийшли'],
-    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на поповнення обробляються до 24 год — кошти зарахують після перевірки платежу. Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
+    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на донат обробляються до 24 год — бонус зарахують після перевірки платежу. Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
   { keys: ['баланс не оновлюється','не бачу баланс','баланс завис','вилетіло з гри'],
     reply: '🔄 Якщо баланс не оновлюється або гру "вибило" — спробуй оновити сторінку (стан гри й баланс зберігаються на сервері, нічого не втрачається). Якщо після оновлення проблема лишається, опиши деталі — передам адміну.' },
   { keys: ['мінер','mines','сапер'],
@@ -15028,8 +15134,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['рефера','запрос','партнер'],
     reply: [
-      '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Реферали. Отримуєш відсоток з кожної ставки запрошеного гравця довічно.',
-      '🤝 Реферальне посилання шукай у «Ще» → Реферали — з кожної ставки запрошеного тобою гравця ти отримуєш відсоток довічно.'
+      '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Реферали. Отримуєш 1% з кожної ставки запрошеного гравця довічно.',
+      '🤝 Реферальне посилання шукай у «Ще» → Реферали — з кожної ставки запрошеного тобою гравця ти отримуєш 1% довічно.'
     ] },
   { keys: ['баг','глюк','не працю','зависа','помилк','лаг','зламал'],
     reply: [
@@ -15050,7 +15156,7 @@ const SUPPORT_FAQ = [
   { keys: ['правил','18+','вік','вікові обмеж'],
     reply: '📜 Правила: реєструючись, гравець підтверджує вік 18+. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
   { keys: ['телеграм бот','telegram бот','прив\'язати телеграм','підключити телеграм','бот повідомлення'],
-    reply: '📲 Telegram-бот: прив’яжи акаунт у Профіль → Сповіщення, щоб отримувати миттєві повідомлення про поповнення, вивід та відповіді підтримки прямо в Telegram.' },
+    reply: '📲 Telegram-бот: прив’яжи акаунт у Профіль → Сповіщення, щоб отримувати миттєві повідомлення про донат та відповіді підтримки прямо в Telegram.' },
   { keys: ['встановити застосунок','встановити додаток','pwa','install app','іконка на екран'],
     reply: '📱 Встановити застосунок: у більшості браузерів з’явиться кнопка «Встановити» або пункт «Додати на головний екран» у меню браузера — після цього сайт відкриватиметься як окремий додаток.' },
   { keys: ['сповіщен','notification','пуш','повідомлення не приход'],
@@ -15071,8 +15177,8 @@ const SUPPORT_FAQ = [
     reply: '👨‍💼 Звʼязатись з адміністратором: якщо він зараз онлайн — повідомлення підуть напряму йому. Якщо офлайн — просто опиши питання, воно передасться адміну і він відповість тут, щойно зможе.' },
   { keys: ['привіт','вітаю','добрий день','доброго дня','здоров'],
     reply: [
-      '👋 Привіт! Питай про поповнення, вивід, бонуси, VIP чи будь-яку гру — відповім одразу.',
-      '👋 Вітаю в SlotOK! Чим можу допомогти — поповнення, вивід, бонуси, ігри чи щось інше?',
+      '👋 Привіт! Питай про донат, бонуси, VIP чи будь-яку гру — відповім одразу.',
+      '👋 Вітаю в SlotOK! Чим можу допомогти — донат, бонуси, ігри чи щось інше?',
       '😊 Привіт-привіт! Пиши своє питання — про будь-яку гру чи розділ сайту, спробую відповісти одразу.'
     ] },
   { keys: ['дяк','дякую','спасибі','thanks'],
@@ -15104,7 +15210,7 @@ const SUPPORT_FAQ = [
   { keys: ['аватар','фото профілю','змінити фото'],
     reply: '🖼️ Аватарка: змінити можна в Профіль → редагувати — обери одну з готових ілюстрацій або завантаж власне фото.' },
   { keys: ['історія ставок','історія операцій','мої транзакції'],
-    reply: '📜 Історія: усі твої ставки, поповнення й виводи зберігаються в Профіль → Історія — можна переглянути будь-яку операцію за датою.' },
+    reply: '📜 Історія: усі твої ставки й донати зберігаються в Профіль → Історія — можна переглянути будь-яку операцію за датою.' },
   { keys: ['моя статистика','статистика гравц','кількість ігор всього'],
     reply: '📈 Статистика: Профіль → Статистика показує загальну кількість ігор, ставок, виграшів і твій вінрейт по кожній грі окремо.' },
   { keys: ['демо режим','пограти без реєстрації','спробувати без реєстрації'],
@@ -15140,9 +15246,9 @@ const SUPPORT_FAQ = [
   { keys: ['ти бот','ти справжній','ти жива людина чи бот','ти шт'],
     reply: '🤖 Я — AI-асистент SlotOK, автоматичний помічник, а не жива людина. Для складних питань завжди передаю розмову справжньому адміністратору.' },
   { keys: ['що ти вмієш','які в тебе можливості','чим можеш допомогти'],
-    reply: '💬 Я допомагаю з питаннями про поповнення, вивід, бонуси, VIP, будь-яку гру на сайті й типові технічні проблеми. Якщо питання складніше — одразу передам його адміністратору.' },
+    reply: '💬 Я допомагаю з питаннями про донат, бонуси, VIP, будь-яку гру на сайті й типові технічні проблеми. Якщо питання складніше — одразу передам його адміністратору.' },
   { keys: ['напиши код','виріши задачу','допоможи з домашкою'],
-    reply: '🎰 Я спеціалізуюсь тільки на питаннях про SlotOK — поповнення, ігри, бонуси, акаунт. З завданнями поза темою сайту, на жаль, не допоможу.' },
+    reply: '🎰 Я спеціалізуюсь тільки на питаннях про SlotOK — донат, ігри, бонуси, акаунт. З завданнями поза темою сайту, на жаль, не допоможу.' },
   { keys: ['підтвердити email','email не підтверджений','лист підтвердження'],
     reply: '✉️ Email при реєстрації необов’язковий і не потребує підтвердження — акаунт повністю прив’язаний до нікнейму й пароля.' },
   { keys: ['реклама на сайті','банери реклама','чому бачу рекламу'],
@@ -15631,7 +15737,6 @@ const SLOTIKY_SHOP_ITEMS = [
   { id:'daily_x3',        name:'Щоденний бонус x3',    icon:'🎁', price:4,  desc:'Потрійний щоденний 7 днів',        type:'boost'    },
   { id:'lucky_boost',     name:'Везіння x2',           icon:'🍀', price:6,  desc:'+50% шанс виграшу 24 год',         type:'boost'    },
   { id:'xp_boost',        name:'XP Буст x2',           icon:'⚡', price:3,  desc:'2x досягнення очки 3 дні',          type:'boost'    },
-  { id:'withdraw_fast',   name:'Пріоритетний вивід',   icon:'💳', price:3,  desc:'Вивід без черги',                  type:'feature'  },
   { id:'transfer_free',   name:'Переказ без комісії',  icon:'🔄', price:2,  desc:'10 переказів без комісії',         type:'feature'  },
   // ── ПРЕДМЕТИ ──
   { id:'lootbox_basic',   name:'Лут-бокс Basic',       icon:'📦', price:1,  desc:'Звичайний лут-бокс',               type:'item'     },
@@ -19632,8 +19737,7 @@ function renderCardQuickActions(card) {
   // інакше новий гравець не зміг би завести перші кошти. Картку вимагають
   // тільки суто карткові дії.
   var acts = [
-    { k:'topup',      icon:'down',    label:'Поповнити', needsCard:false },
-    { k:'withdraw',   icon:'up',      label:'Вивід',     needsCard:false },
+    { k:'topup',      icon:'down',    label:'Донат',      needsCard:false },
     { k:'transfer',   icon:'send',    label:'Переказ',   needsCard:true  },
     { k:'cashback',   icon:'percent', label:'Кешбек',    needsCard:false },
     { k:'buySlotyky', icon:'trend',   label:'Курси',     needsCard:false },
@@ -19915,7 +20019,7 @@ function openCardSourcePicker() {
   m.innerHTML = '<div class="ks-modal-box">' +
     '<div class="ks-modal-head"><div class="ks-modal-title">Активна картка</div>' +
       '<button class="ks-modal-x" onclick="document.getElementById(\'ksSrcModal\').remove()">' + ksIcon('x') + '</button></div>' +
-    '<p class="ks-hint" style="margin:0 0 14px;">Обрана картка живить ігри, поповнення, вивід і переказ.</p>' +
+    '<p class="ks-hint" style="margin:0 0 14px;">Обрана картка живить ігри, поповнення і переказ.</p>' +
     cards.map(function(c) {
       return '<div class="ks-row is-tappable"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') +
         ' onclick="switchActiveCard(\'' + ksEsc(c.id) + '\');document.getElementById(\'ksSrcModal\').remove()">' +
@@ -20099,10 +20203,10 @@ var TERMS_SECTIONS = [
   {
     title: 'Каса',
     items: [
-      'Поповнення й виводи обробляє адміністратор вручну — миттєвого зарахування немає.',
-      'Вивід від 5000 ₴ додатково підтверджується тапом у прив’язаному Telegram.',
-      'Заявка на поповнення й на вивід прив’язується до картки, активної на момент подачі: кошти зарахуються або повернуться саме на неї.',
-      'Одна активна заявка на вивід за раз.',
+      'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
+      'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
+      'Заявка на донат прив’язується до картки, активної на момент подачі: бонус зарахується саме на неї.',
+      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку чи USDT немає.',
     ]
   },
   {
@@ -20434,7 +20538,6 @@ function bankAction(action) {
   }
   var actions = {
     topup:      function() { switchCashierTab('deposit',  document.getElementById('ctb-deposit')); },
-    withdraw:   function() { switchCashierTab('withdraw', document.getElementById('ctb-withdraw')); },
     transfer:   function() { openTabModal('transfer-modal'); },
     buySlotyky: function() { switchCashierTab('markets',  document.getElementById('ctb-markets')); },
     skinShop:   function() { openCardColorPicker(); },
@@ -22041,7 +22144,7 @@ function claimWelcomeBackBonus(bonus) {
 
 const ONBOARDING_STEPS = [
   { selector: '.nav-item[onclick*="lobby"]', title: '🎰 Тут всі ігри', text: 'Понад 40 ігор — від слотів до шахів. Обирай будь-яку і починай грати!' },
-  { selector: '.nav-item[onclick*="cashier"]', title: '💳 Твоя картка', text: 'Тут поповнення, вивід коштів і твоя власна віртуальна картка з 26 скінами на вибір.' },
+  { selector: '.nav-item[onclick*="cashier"]', title: '💳 Твоя картка', text: 'Тут поповнення ігрового балансу і твоя власна віртуальна картка з 26 скінами на вибір.' },
   { selector: '#homeJackpot', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
   { selector: '.nav-item[onclick*="profile"]', title: '👤 Твій профіль', text: 'Статистика в реальному часі, досягнення і налаштування — все тут.' },
 ];

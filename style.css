@@ -1532,6 +1532,12 @@
     .loss-limit-warn { background:rgba(255,107,107,.1); border:1px solid rgba(255,107,107,.3); border-radius:12px; padding:12px; text-align:center; margin-bottom:10px; animation:warnPulse 1.5s ease-in-out infinite; display:none; }
     @keyframes warnPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
 
+    /* Реферали (колишній Афілейт) */
+    .aff-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    .aff-stat-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:12px; text-align:center; }
+    .aff-stat-val { font-size:20px; font-weight:900; color:var(--accent); }
+    .aff-stat-lbl { font-size:9px; color:#555; margin-top:2px; }
+
     /* Font size control */
     .font-size-row { display:flex; gap:6px; }
     .font-size-btn { flex:1; padding:8px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); border-radius:8px; font-size:11px; color:#777; cursor:pointer; text-align:center; }
@@ -3633,6 +3639,42 @@ input:focus-visible, textarea:focus-visible, .nav-item:focus-visible,
   }
   /* Легка рамка навколо "телефону", щоб було видно межу застосунку на широкому фоні */
   .header { box-shadow: 0 1px 0 rgba(212,175,55,.16), 0 14px 30px -16px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04); }
+}
+
+/* ПК (≥900px) — бокова навігація замість нижньої панелі: мишею природніше
+   тягнутись убік, ніж у самий низ великого екрана. Контент трохи ширший за
+   "телефонну" колонку, щоб лишалось менше порожнього місця обабіч. Той самий
+   .nav-item/switchTab() — тут лише інша розкладка тих самих елементів. */
+@media (min-width: 900px) {
+  body { padding-left: 220px; box-sizing: border-box; }
+  .header, .container, .screen { max-width: 680px; }
+
+  /* .screen тут — не той самий .screen, що вже поза .container вище: ці
+     повноекранні шари лежать fixed, тож центруються самі, не через body.
+     left:220px + right:0 + margin:auto — центрування в зоні ПРАВОРУЧ від
+     бічної панелі, а не по всій ширині вікна (інакше домашня вкладка проглядає
+     з-під вузького екрана входу/модалок справа). */
+  .full-modal, #auth-screen, .slotok-fullscreen-modal, .pm-thread-fullscreen {
+    left: 220px; right: 0; width: auto; max-width: 680px;
+    margin-left: auto; margin-right: auto; transform: none;
+  }
+
+  .bottom-nav {
+    left: 0; right: auto; top: 0; bottom: 0; transform: none;
+    width: 220px; max-width: none; height: 100vh;
+    flex-direction: column; justify-content: flex-start; align-items: stretch;
+    padding: 28px 10px calc(28px + env(safe-area-inset-bottom));
+    gap: 4px; border-top: none; border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .nav-item {
+    width: auto; height: 46px; flex-direction: row; justify-content: flex-start;
+    gap: 12px; padding: 0 14px; font-size: 13px;
+  }
+  .nav-item span.icon { font-size: 19px; margin-bottom: 0; }
+  .nav-item.active { transform: none; }
+  @media (hover: hover) {
+    .nav-item:hover { background: rgba(255,255,255,.05); }
+  }
 }
 
 /* Дуже вузькі екрани (старі/малі телефони, ≤360px) — трохи стискаємо
