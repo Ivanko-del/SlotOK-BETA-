@@ -29,6 +29,7 @@ try {
   if(typeof firebase === 'undefined') throw new Error('Firebase SDK не завантажився');
   if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   db = firebase.database();
+  setTimeout(initAxioma, 0); // після виконання всього app.js — тоді змінні інтеграції вже оголошені
 } catch(e) {
   console.error('Firebase init error:', e);
   // Show friendly error but DON'T block the app
@@ -108,6 +109,7 @@ function startDataSync() {
             }
             userData = data;
             migrateCardFreeze();
+            retireMigratedAxiomCard();
             syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
             // Само-виключення — раніше цей прапорець лише встановлювався і ніде
@@ -5111,12 +5113,38 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '96';
+const CURRENT_VERSION = '97';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
   {
+    version: '97',
+    title: '📜 Оновлення v97 — Аксіома Банк тепер окремий банк',
+    date: Date.UTC(2026, 8, 23),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🏦 Аксіома Банк',
+        items: [
+          'Аксіома тепер окремий банк зі своїм акаунтом. Щоб підключити її до SlotOK, відкрий «Аксіома Банк» у Касі й увійди ніком і паролем Аксіоми — без кодів',
+          'Поповнюй гру з картки Аксіоми й виводь виграш назад на картку в кілька дотиків',
+          'На головній видно картку Аксіоми з тим самим скіном, який ти обрав в Аксіомі, і її баланс',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Виправлення',
+        items: [
+          'Переказ «Аксіома → Casino» зараховував гроші на баланс, нічого ніде не списуючи — тепер гроші справді знімаються з картки Аксіоми',
+          'Коли переносиш рахунок у нову Аксіому, стара картка Аксіоми зникає з гаманця SlotOK, а її гроші переходять на іншу твою картку — нічого не губиться',
+        ]
+      },
+    ]
+  },
+  {
     version: '96',
+
     title: '📜 Оновлення v96 — PvP-кімнати більше не зависають',
     date: Date.UTC(2026, 8, 23),
     dev: 'SlotOK Dev',
@@ -6232,22 +6260,21 @@ function renderHomeLastUpdate() {
 function renderHomeAxiomWidget() {
   const el = document.getElementById('homeAxiomWidget');
   if(!el || !userData) return;
-  const linked = userData.virtualCard?.axiomLinked;
-  if(linked) {
+  if(_axAcc && axLinked()) {
     el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px solid rgba(92,110,248,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="switchTab('bank')">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'Courier New',monospace;font-weight:900;color:#fff;flex-shrink:0;">А</div>
+      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px solid rgba(92,110,248,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openAxiomLinkFlow()">
+        <div style="width:46px;height:30px;border-radius:6px;flex-shrink:0;background:${escapeHtml(axCardBg(_axAcc.card))};background-size:cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);"></div>
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:bold;color:#7c8eff;">Аксіома Банк ✅</div>
-          <div style="font-size:10px;color:#444;margin-top:1px;">Баланс: <b style="color:#fff;">₴${formatNumber(userData.balance||0)}</b> · Картка підключена</div>
+          <div style="font-size:12px;font-weight:bold;color:#7c8eff;">Аксіома Банк · ····${escapeHtml(_axAcc.card.last4)}</div>
+          <div style="font-size:10px;color:#444;margin-top:1px;">На картці: <b style="color:#fff;">₴${formatNumber(_axAcc.card.balance)}</b> · поповнити гру чи вивести</div>
         </div>
         <div style="font-size:18px;color:#333;">›</div>
       </div>`;
   } else {
     el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px dashed rgba(92,110,248,.2);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="switchTab('bank')">
+      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px dashed rgba(92,110,248,.2);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openAxiomLinkFlow()">
         <div style="width:34px;height:34px;border-radius:10px;background:#0d0d20;display:flex;align-items:center;justify-content:center;font-size:14px;color:#5c6ef8;flex-shrink:0;border:1px solid rgba(92,110,248,.2);">А</div>
-        <div style="flex:1;font-size:11px;color:#444;">Підключи <b style="color:#7c8eff;">Аксіома Банк</b> для поповнення та виписки</div>
+        <div style="flex:1;font-size:11px;color:#444;">Підключи <b style="color:#7c8eff;">Аксіома Банк</b>, щоб поповнювати гру з картки й виводити виграш</div>
         <div style="font-size:11px;background:rgba(92,110,248,.15);color:#7c8eff;border-radius:6px;padding:3px 8px;font-weight:bold;">+ Підключити</div>
       </div>`;
   }
@@ -17338,60 +17365,6 @@ function getCardData() {
   return card;
 }
 
-// ── Onboard via Axiom code ──
-function confirmAxiomLinkOnboard() {
-  const code = (document.getElementById('onboardAxiomCode')?.value||'').trim();
-  if(!code || code.length !== 6) return notify('Введи 6-значний код з Аксіоми', 'error');
-
-  db.ref('axiomLinkCodes/' + currentUser).once('value', snap => {
-    const data = snap.val();
-    if(!data)            return notify('❌ Код не знайдено. Відкрий Аксіому → Профіль → SlotOK', 'error');
-    if(data.used)        return notify('❌ Код вже використано. Згенеруй новий в Аксіомі', 'error');
-    if(data.code !== code) return notify('❌ Невірний код', 'error');
-    if(Date.now() - (data.ts||0) > 10*60*1000) return notify('❌ Код застарів. Згенеруй новий', 'error');
-
-    // Mark code used
-    db.ref('axiomLinkCodes/' + currentUser + '/used').set(true);
-
-    // Read Axiom card data and mirror to SlotOK
-    db.ref('users/' + currentUser + '/virtualCard').once('value', cardSnap => {
-      const axiomCard = cardSnap.val();
-      if(!axiomCard || !axiomCard.number) {
-        // Axiom card might not exist yet — create minimal mirror
-        notify('⚠️ Аксіома картку не знайдено. Зареєструйся в Аксіомі з тим самим ніком', 'error');
-        return;
-      }
-
-      // Build SlotOK mirror card (same number/cvv/expiry, but with SlotOK fields)
-      const updates = {
-        'axiomLinked': true,
-        'axiomLinkedAt': Date.now(),
-        // Keep existing Axiom fields, add SlotOK extras if missing
-        'skin': axiomCard.skin || 'gold',
-        'ownedSkins': axiomCard.ownedSkins || ['gold'],
-        'totalIn': axiomCard.totalIn || 0,
-        'totalOut': axiomCard.totalOut || 0,
-        'source': 'axiom',
-      };
-
-      db.ref('users/' + currentUser + '/virtualCard').update(updates);
-
-      document.getElementById('cardOnboardModal').classList.add('hidden');
-      playSound('bonus');
-      notify(`🏦 Картка Аксіоми прив'язана до SlotOK!`, 'success');
-
-      // Start freeze sync listener
-      startAxiomFreezeSync();
-
-      setTimeout(() => {
-        renderCardPanel();
-        switchTab('cashier');
-        switchCashierTab('card', document.getElementById('ctb-card'));
-      }, 600);
-    });
-  });
-}
-
 // ── Real-time freeze sync: Axiom freeze → SlotOK freeze ──
 let _freezeSyncListener = null;
 function startAxiomFreezeSync() {
@@ -17449,46 +17422,87 @@ function addCardTransaction(direction, amount, title, subtitle) {
   pushCardTx(currentUser, { dir: direction, amount: amount, title: title, subtitle: subtitle || '' }, getActiveCardId());
 }
 
-// ── Axiom Transfer UI helpers ──
-let axiomTxDir = 'toAxiom';
+// ── Переказ SlotOK ↔ Аксіома Банк ──
+// Гроші картки Аксіоми лежать у базі Аксіоми. «Поповнити з Аксіоми» списує з
+// картки (транзакцією, з її блокуванням і денним лімітом) і зараховує на
+// ігровий баланс; «Вивести на Аксіому» — навпаки. Якщо друга половина не
+// пройшла, першу повертаємо.
+let axiomTxDir = 'toCasino';
+let _axiomTxBusy = false;
 function setAxiomTxDir(dir) {
-  axiomTxDir = dir;
+  axiomTxDir = dir === 'toAxiom' ? 'toAxiom' : 'toCasino';
   const a = document.getElementById('axiomTxDirA');
   const b = document.getElementById('axiomTxDirB');
-  if(!a||!b) return;
-  if(dir === 'toAxiom') {
-    a.style.background='rgba(92,110,248,.15)'; a.style.border='1px solid rgba(92,110,248,.35)'; a.style.color='#7c8eff';
-    b.style.background='transparent'; b.style.border='none'; b.style.color='#555';
-    document.getElementById('axiomTxBtn').textContent='🏦 Переказати в Аксіому';
-  } else {
-    b.style.background='rgba(212,175,55,.15)'; b.style.border='1px solid rgba(212,175,55,.35)'; b.style.color='var(--accent)';
-    a.style.background='transparent'; a.style.border='none'; a.style.color='#555';
-    document.getElementById('axiomTxBtn').textContent='🎰 Переказати в Casino';
-  }
+  const btn = document.getElementById('axiomTxBtn');
+  if(!a || !b) return;
+  const on = axiomTxDir === 'toCasino' ? b : a, off = on === a ? b : a;
+  on.style.background = 'rgba(92,110,248,.15)'; on.style.border = '1px solid rgba(92,110,248,.35)'; on.style.color = '#7c8eff';
+  off.style.background = 'transparent'; off.style.border = 'none'; off.style.color = '#555';
+  if(btn) btn.textContent = axiomTxDir === 'toCasino' ? '🎰 Поповнити гру з картки' : '🏦 Вивести на картку Аксіоми';
 }
 function setAxiomTxAmt(n) {
   const inp = document.getElementById('axiomTxAmt');
   if(inp) inp.value = n;
 }
-function doAxiomTransfer() {
-  const amt = parseFloat(document.getElementById('axiomTxAmt')?.value);
+function openAxiomTransfer(dir) {
+  if(!axLinked()) { openAxiomLinkFlow(); return; }
+  openTabModal('axiomTransferModal');
+  setAxiomTxDir(dir);
+  updateAxiomTransferModal();
+}
+function updateAxiomTransferModal() {
+  const s = document.getElementById('axiomTxSlotBal');
+  const a = document.getElementById('axiomTxAxBal');
+  if(s && userData) s.textContent = '₴ ' + formatNumber(userData.balance || 0);
+  if(a) a.textContent = _axAcc ? '₴ ' + formatNumber(_axAcc.card.balance) : '—';
+}
+async function doAxiomTransfer() {
+  if(_axiomTxBusy) return;
+  const amt = Math.round((parseFloat(document.getElementById('axiomTxAmt')?.value) || 0) * 100) / 100;
   if(!amt || amt < 10) return notify('Мінімум ₴10', 'error');
-  const bal = userData.balance || 0;
-  if(axiomTxDir === 'toAxiom') {
-    if(amt > bal) return notify('Недостатньо коштів у Casino', 'error');
-    // Both apps share same Firebase balance — record a transaction note only
-    pushCardTx(currentUser, { title:'Переказ → Аксіома Банк', amount: amt, dir:'out', icon:'🏦' }, getActiveCardId());
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amt));
-    // Write to Axiom namespace so Axiom Bank sees it
-    db.ref('users/'+currentUser+'/axiomDeposits').push({ amount: amt, from:'slotok', ts: Date.now() });
-    notify(`✅ ₴${formatNumber(amt)} переказано в Аксіому!`, 'success');
-  } else {
-    // Axiom → Casino: credit casino balance
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(amt));
-    pushCardTx(currentUser, { title:'Поповнення ← Аксіома Банк', amount: amt, dir:'in', icon:'🏦' }, getActiveCardId());
-    notify(`✅ ₴${formatNumber(amt)} надійшло з Аксіоми!`, 'success');
+  if(!axLinked()) return notify('Спершу підключи Аксіома Банк', 'error');
+  const btn = document.getElementById('axiomTxBtn');
+  _axiomTxBusy = true;
+  if(btn) btn.disabled = true;
+  try {
+    if(axiomTxDir === 'toAxiom') {
+      if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+      if(!checkCardLimit(getActiveCardId(), amt)) return;
+      const res = await db.ref('users/' + currentUser + '/balance').transaction(cur => {
+        const v = Number(cur) || 0;
+        if(v + 1e-9 < amt) return;
+        return Math.round((v - amt) * 100) / 100;
+      }, undefined, false);
+      if(!res.committed) return notify('Недостатньо коштів у SlotOK', 'error');
+      try {
+        await AxiomaSDK.depositToCard(amt, { project: 'slotok', title: 'Виведення зі SlotOK', subtitle: '@' + currentUser });
+      } catch(e) {
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(amt));
+        return notify('❌ ' + (e.axioma ? e.message : 'Аксіома не відповідає — гроші повернуто'), 'error');
+      }
+      noteCardSpend(getActiveCardId(), amt);
+      pushCardTx(currentUser, { title: 'Виведення → Аксіома Банк', subtitle: '····' + _axAcc.card.last4, amount: amt, dir: 'out' }, getActiveCardId());
+      notify('✅ ₴' + formatNumber(amt) + ' виведено на картку Аксіоми', 'success');
+    } else {
+      try {
+        await AxiomaSDK.withdrawFromCard(amt, { project: 'slotok', title: 'Поповнення SlotOK', subtitle: '@' + currentUser });
+      } catch(e) {
+        return notify('❌ ' + (e.axioma ? e.message : 'Аксіома не відповідає. Спробуй ще раз'), 'error');
+      }
+      try {
+        await db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(amt));
+      } catch(e) {
+        AxiomaSDK.depositToCard(amt, { project: 'slotok', title: 'Повернення: SlotOK' }).catch(err => console.error(err));
+        return notify('❌ Не вдалося зарахувати — гроші повернуто на картку Аксіоми', 'error');
+      }
+      pushCardTx(currentUser, { title: 'Поповнення ← Аксіома Банк', subtitle: '····' + _axAcc.card.last4, amount: amt, dir: 'in' }, getActiveCardId());
+      notify('✅ ₴' + formatNumber(amt) + ' надійшло з Аксіоми', 'success');
+    }
+    closeTabModal('axiomTransferModal');
+  } finally {
+    _axiomTxBusy = false;
+    if(btn) btn.disabled = false;
   }
-  closeTabModal('axiomTransferModal');
 }
 
 function openTelegramBotWithCard() {
@@ -17512,92 +17526,128 @@ function selectCardTopupAmt(amt, btn) {
 // ===== SLOTOK ↔ AXIOM BANK INTEGRATION =====
 // ============================================================
 
-// Аксіома тепер просто один із рядків у переліку підключених карток —
-// окремого блоку під карткою більше немає.
+// Аксіома — окремий банк зі своєю базою й акаунтами (axioma-sdk.js).
+// Гравець входить у свій акаунт Аксіоми прямо тут; після цього SlotOK
+// бачить його основну картку (номер, баланс, скін) і може поповнювати гру
+// з неї та виводити на неї. Картка Аксіоми більше не є карткою гаманця SlotOK.
 function renderAxiomLinkCardBlock() { renderLinkedCards(); }
+
+let _axAcc = null;  // стан картки Аксіоми з SDK; null — гравець не увійшов в Аксіому
+function initAxioma() {
+  if(typeof AxiomaSDK === 'undefined') return;
+  try {
+    const emu = location.hostname === 'localhost' && /[?&]emulator=1\b/.test(location.search);
+    AxiomaSDK.init(emu ? { emulatorHost: '127.0.0.1' } : undefined);
+    AxiomaSDK.onChange(acc => {
+      _axAcc = acc;
+      renderAxiomLinkContent();
+      renderHomeAxiomWidget();
+      updateAxiomTransferModal();
+    });
+  } catch(e) { console.error('AxiomaSDK:', e); }
+}
+function axLinked() { return !!(_axAcc && _axAcc.partners && _axAcc.partners.slotok); }
+
+// Фон картки Аксіоми тим самим каталогом скінів, що й картки SlotOK.
+function axCardBg(card) {
+  if(card && card.skin === 'custom-photo' && /^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(card.customPhotoUrl || ''))
+    return 'linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.5)), center/cover no-repeat url("' + card.customPhotoUrl + '")';
+  const s = card && CARD_SKINS.find(x => x.id === card.skin);
+  return s ? s.prev : 'linear-gradient(135deg,#1b1650,#5b3aa8 55%,#c06bff)';
+}
 
 function renderAxiomLinkContent() {
   const el = document.getElementById('axiomLinkContent');
   if(!el) return;
-  const linked = userData?.virtualCard?.axiomLinked;
-  const source = userData?.virtualCard?.source;
-
-  if(linked && source === 'axiom') {
-    const card = userData.virtualCard;
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,rgba(92,110,248,.08),rgba(140,92,248,.04));border:1px solid rgba(92,110,248,.3);border-radius:16px;padding:16px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:18px;font-weight:900;color:#fff;">А</div>
-          <div>
-            <div style="font-size:13px;font-weight:bold;color:#7c8eff;">Аксіома Банк ✅</div>
-            <div style="font-size:10px;color:#444;">Картка офіційно прив'язана</div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:#666;line-height:1.8;">
-          💳 <b style="color:#aaa;">${card.number||'—'}</b><br>
-          👤 <b style="color:#aaa;">${card.holder||currentUser}</b><br>
-          ❄️ Заморозка: <b style="${card.frozen?'color:#f03e5f':'color:#4cd964'}">${card.frozen?'🔒 Заблокована':'🟢 Активна'}</b>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#444;text-align:center;line-height:1.8;margin-bottom:14px;">
-        🔄 Заморозка синхронізується автоматично між Аксіомою та SlotOK.<br>
-        🚫 SlotOK картку не можна додати в Аксіому — ви вже партнери.
-      </div>
-      <button class="btn-outline" onclick="closeTabModal('axiomLinkModal')" style="width:100%;">Закрити</button>`;
+  if(_axAcc && axLinked()) {
+    const c = _axAcc.card;
+    el.innerHTML =
+      '<div style="border-radius:16px;padding:18px;margin-bottom:14px;color:#fff;background:' + escapeHtml(axCardBg(c)) + ';background-size:cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);aspect-ratio:1.586/1;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px rgba(0,0,0,.6);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:15px;">Аксіома</b><span style="font-size:11px;opacity:.8;">' + (c.frozen ? '🔒 Заблокована' : 'debit') + '</span></div>' +
+        '<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:2px;">•••• •••• •••• ' + escapeHtml(c.last4) + '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;"><span>' + escapeHtml(c.holder || _axAcc.nick) + '</span><span>' + escapeHtml(c.expiry) + '</span></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">' +
+        '<span style="font-size:12px;color:#777;">Баланс картки · @' + escapeHtml(_axAcc.nick) + '</span>' +
+        '<b style="font-size:22px;color:#7c8eff;">₴' + formatNumber(c.balance) + '</b>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
+        '<button class="ks-btn is-primary" onclick="openAxiomTransfer(\'toCasino\')">🎰 Поповнити гру</button>' +
+        '<button class="ks-btn" onclick="openAxiomTransfer(\'toAxiom\')">🏦 Вивести на картку</button>' +
+      '</div>' +
+      '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Відключити Аксіому</button>' +
+      '<p style="font-size:11px;color:#5e6675;margin:12px 0 0;line-height:1.6;text-align:center;">Скін, блокування й денний ліміт картки налаштовуються в Аксіомі.</p>';
     return;
   }
-
-  // Not linked — show code input (redirects to onboard)
-  el.innerHTML = `
-    <div style="font-size:12px;color:#666;line-height:1.8;margin-bottom:14px;text-align:center;">
-      Відкрий <b style="color:#fff;">Аксіома Банк</b> → Профіль<br>
-      → <b style="color:#7c8eff;">SlotOK підключення</b> → скопіюй код
-    </div>
-    <input id="axiomCodeInput" type="number" placeholder="000000" maxlength="6"
-      style="text-align:center;font-size:28px;font-weight:900;letter-spacing:8px;font-family:'Courier New',monospace;margin-bottom:12px;"
-      oninput="this.value=this.value.slice(0,6)">
-    <button onclick="confirmAxiomLink()" style="width:100%;padding:15px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);color:#fff;font-weight:bold;font-size:14px;border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;">
-      🏦 Прив'язати картку Аксіоми
-    </button>
-    <div style="font-size:10px;color:#333;text-align:center;line-height:1.6;">
-      Картка Аксіоми стане твоєю картою SlotOK.<br>Заморозка синхронізується між двома додатками.
-    </div>`;
+  if(_axAcc) {
+    el.innerHTML =
+      '<p style="font-size:13px;color:#98a0af;line-height:1.6;margin:0 0 14px;">Ти увійшов в Аксіому як <b style="color:#eceff5;">@' + escapeHtml(_axAcc.nick) + '</b>, але SlotOK ще не підключено.</p>' +
+      '<button class="ks-btn is-primary is-block" style="margin-bottom:8px;" onclick="axiomLinkNow()">Підключити до SlotOK</button>' +
+      '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Вийти з Аксіоми</button>';
+    return;
+  }
+  el.innerHTML =
+    '<label class="ks-label" for="axLoginNick">Нік в Аксіомі</label>' +
+    '<input id="axLoginNick" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeHtml(currentUser || '') + '" style="margin-bottom:10px;">' +
+    '<label class="ks-label" for="axLoginPass">Пароль Аксіоми</label>' +
+    '<input id="axLoginPass" type="password" autocomplete="off" placeholder="••••••••" style="margin-bottom:6px;" onkeydown="if(event.key===\'Enter\')axiomLogin()">' +
+    '<div id="axLoginErr" style="min-height:18px;font-size:12px;color:#f0556b;margin:4px 0 10px;"></div>' +
+    '<button class="ks-btn is-primary is-block" id="axLoginBtn" onclick="axiomLogin()">🏦 Увійти й підключити</button>' +
+    '<p style="font-size:11px;color:#5e6675;margin:14px 0 0;line-height:1.6;text-align:center;">Ще не заходив в Аксіому? Відкрий Аксіома Банк і увійди там ніком і паролем від SlotOK — рахунок створиться сам.</p>';
 }
 
-function confirmAxiomLink() {
-  const code = document.getElementById('axiomCodeInput')?.value?.trim();
-  if(!code || code.length !== 6) return notify('Введи 6-значний код з Аксіоми', 'error');
+async function axiomLogin() {
+  const nick = (document.getElementById('axLoginNick')?.value || '').trim();
+  const pass = document.getElementById('axLoginPass')?.value || '';
+  const err = document.getElementById('axLoginErr');
+  const btn = document.getElementById('axLoginBtn');
+  if(err) err.textContent = '';
+  if(typeof AxiomaSDK === 'undefined') { if(err) err.textContent = 'Аксіома недоступна. Перезавантаж сторінку'; return; }
+  if(btn) { btn.disabled = true; btn.textContent = 'Входимо…'; }
+  try {
+    await AxiomaSDK.login(nick, pass);
+    await AxiomaSDK.link('slotok', currentUser);
+    playSound('bonus');
+    notify('🏦 Аксіома Банк підключено', 'success');
+  } catch(e) {
+    if(err) err.textContent = e.axioma ? e.message : 'Не вдалося увійти. Спробуй ще раз';
+  } finally {
+    if(btn && btn.isConnected) { btn.disabled = false; btn.textContent = '🏦 Увійти й підключити'; }
+  }
+}
+async function axiomLinkNow() {
+  try { await AxiomaSDK.link('slotok', currentUser); notify('🏦 Аксіома Банк підключено', 'success'); }
+  catch(e) { notify('❌ ' + (e.axioma ? e.message : 'Не вдалося підключити'), 'error'); }
+}
+async function axiomUnlink() {
+  try {
+    if(axLinked()) await AxiomaSDK.unlink('slotok');
+    await AxiomaSDK.logout();
+    notify('Аксіому відключено від SlotOK', 'info');
+  } catch(e) { notify('❌ Не вдалося відключити. Спробуй ще раз', 'error'); }
+}
 
-  db.ref('axiomLinkCodes/' + currentUser).once('value', snap => {
-    const data = snap.val();
-    if(!data) return notify('❌ Код не знайдено. Відкрий Аксіому → Профіль → SlotOK підключення', 'error');
-    if(data.used) return notify('❌ Код вже використано. Згенеруй новий в Аксіомі', 'error');
-    if(data.code !== code) return notify('❌ Невірний код', 'error');
-    if(Date.now() - (data.ts||0) > 10*60*1000) return notify('❌ Код застарів. Згенеруй новий', 'error');
-
-    db.ref('axiomLinkCodes/' + currentUser + '/used').set(true);
-
-    // Mirror Axiom card to SlotOK
-    db.ref('users/' + currentUser + '/virtualCard').once('value', cardSnap => {
-      const axiomCard = cardSnap.val() || {};
-      const updates = {
-        'axiomLinked': true,
-        'axiomLinkedAt': Date.now(),
-        'source': 'axiom',
-        'skin': axiomCard.skin || 'gold',
-        'ownedSkins': axiomCard.ownedSkins || ['gold'],
-        'totalIn': axiomCard.totalIn || 0,
-        'totalOut': axiomCard.totalOut || 0,
-      };
-      db.ref('users/' + currentUser + '/virtualCard').update(updates);
-
-      playSound('bonus');
-      notify(`🏦 Картка Аксіоми прив'язана до SlotOK!`, 'success');
-      closeTabModal('axiomLinkModal');
-      startAxiomFreezeSync();
-      setTimeout(() => { renderCardPanel(); renderAxiomLinkCardBlock(); }, 400);
-    });
-  });
+// Гравець переніс рахунок у нову Аксіому (вона прибрала за собою дані в нашій
+// базі й поставила virtualCard.migratedToAxioma). Стару картку Аксіоми один раз
+// прибираємо з гаманця SlotOK: її гроші зливаються в іншу картку, як при
+// відключенні будь-якої картки, а коли інших нема — лишаються на балансі.
+function retireMigratedAxiomCard() {
+  const vc = userData && userData.virtualCard;
+  if(!db || !currentUser || !vc || !vc.axiomLinked || !vc.migratedToAxioma) return;
+  const activeId = getActiveCardId();
+  const others = _rawCardIds().filter(x => x !== 'axiom');
+  const remBal = activeId === 'axiom' ? 0 : (Number(vc.balance) || 0); // живий баланс активної вже в userData.balance
+  const updates = { 'virtualCard/axiomLinked': false, 'virtualCard/balance': 0, 'virtualCard/frozen': false };
+  if(activeId === 'axiom' && others.length) {
+    updates['balance'] = _storedBalOf(others[0]) + (userData.balance || 0);
+    updates['activeCardId'] = others[0];
+  } else if(activeId === 'axiom') {
+    updates['activeCardId'] = null;
+  } else if(remBal) {
+    updates['balance'] = (userData.balance || 0) + remBal;
+  }
+  userData.virtualCard.axiomLinked = false;
+  db.ref('users/' + currentUser).update(updates);
 }
 
 // Перевірка реферала при старті
@@ -20464,7 +20514,7 @@ function acceptTerms() {
   notify('Дякуємо. Гарної гри!', 'success');
 }
 
-function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
+function openAxiomLinkFlow() { openTabModal('axiomLinkModal'); renderAxiomLinkContent(); }
 
 // ═══════════════════════════════════════════════════════════════════
 // ПАНЕЛЬ КАРТКИ
@@ -20699,123 +20749,126 @@ function toggleCardFreeze() {
 }
 
 // ── CARD COLOR PICKER (existing enhanced) ─────────────────────
+// Каталог скінів карток — спільний для вибору скіна і для показу картки Аксіоми.
+var CARD_SKINS = [
+  // Класика
+  {id:'gold',     name:'Золото',     accent:'#d4af37', prev:'linear-gradient(135deg,#1a0d00,#3a2200)'},
+  {id:'onyx',     name:'Онікс',      accent:'#ddd',    prev:'linear-gradient(135deg,#000,#1a1a1a)'},
+  {id:'platinum', name:'Платина',    accent:'#dcdce6', prev:'linear-gradient(135deg,#1a1a1d,#2c2c30)'},
+  {id:'copper',   name:'Мідь',       accent:'#dc823c', prev:'linear-gradient(135deg,#1f0d00,#4a2200)'},
+  {id:'minimal',  name:'Мінімал',    accent:'#333',    prev:'linear-gradient(160deg,#e8e8e8,#f5f5f5)'},
+  // Самоцвіти
+  {id:'sapphire', name:'Сапфір',     accent:'#4a9eff', prev:'linear-gradient(135deg,#000d1a,#002a55)'},
+  {id:'emerald',  name:'Смарагд',    accent:'#3dd68c', prev:'linear-gradient(135deg,#001a0f,#003d24)'},
+  {id:'amethyst', name:'Аметист',    accent:'#b450ff', prev:'linear-gradient(135deg,#1a0025,#33004d)'},
+  {id:'rosegold', name:'Рожеве золото', accent:'#e6aaa0', prev:'linear-gradient(135deg,#2a1015,#4a2a28)'},
+  {id:'coral',    name:'Корал',      accent:'#ff7f6e', prev:'linear-gradient(135deg,#1a0510,#330a1f)'},
+  // Стихії
+  {id:'fire',     name:'Вогонь',     accent:'#ff6400', prev:'linear-gradient(160deg,#1a0000,#4a1000)'},
+  {id:'ice',      name:'Лід',        accent:'#96dcff', prev:'linear-gradient(150deg,#001a2a,#003350)'},
+  {id:'mint',     name:'М\'ята',     accent:'#64ffd2', prev:'linear-gradient(135deg,#001a15,#003328)'},
+  {id:'storm',    name:'Гроза',      accent:'#9696c8', prev:'linear-gradient(160deg,#05050a,#14141f)'},
+  {id:'sunset',   name:'Захід',      accent:'#ff698c', prev:'linear-gradient(135deg,#4a1428,#3a1a08)'},
+  // Космос і футуризм
+  {id:'cyber',    name:'Кібер',      accent:'#00ffdc', prev:'linear-gradient(135deg,#000814,#001d3d)'},
+  {id:'galaxy',   name:'Галактика',  accent:'#b48cff', prev:'linear-gradient(160deg,#0a0020,#1a0040)'},
+  {id:'holo',     name:'Голограма',  accent:'#fff',    prev:'linear-gradient(120deg,#ff2ecc,#ffd12e,#2effc7,#2e6bff)'},
+  // Текстури
+  {id:'carbon',   name:'Карбон',     accent:'#aaa',    prev:'repeating-linear-gradient(45deg,#0a0a0a,#0a0a0a 4px,#1a1a1a 4px,#1a1a1a 8px)'},
+  {id:'marble',   name:'Мармур',     accent:'#eee',    prev:'linear-gradient(160deg,#26262e,#1a1a22)'},
+  {id:'denim',    name:'Джинс',      accent:'#6496dc', prev:'linear-gradient(160deg,#0a1a2e,#14304f)'},
+  {id:'snake',    name:'Змія',       accent:'#78c878', prev:'linear-gradient(150deg,#0d1a0d,#1a2e1a)'},
+  {id:'leopard',  name:'Леопард',    accent:'#c89650', prev:'linear-gradient(150deg,#3a2410,#4a3018)'},
+  // Особливі
+  {id:'pastel',   name:'Пастель',    accent:'#ffc8e6', prev:'linear-gradient(135deg,#2a1f2e,#3a2a40)'},
+  {id:'xmas',     name:'Новий рік',  accent:'#ffd700', prev:'linear-gradient(135deg,#0a1a0a,#1a0505)'},
+  {id:'ukraine',  name:'Україна',    accent:'#ffd700', prev:'linear-gradient(180deg,#0057b7 50%,#ffd700 50%)'},
+  // Класика (нові)
+  {id:'silver',   name:'Срібло',     accent:'#c8c8d2', prev:'linear-gradient(135deg,#1a1a1c,#3a3a3e)'},
+  {id:'bronze',   name:'Бронза',     accent:'#cd7f32', prev:'linear-gradient(135deg,#1f1206,#4a2e12)'},
+  {id:'obsidian', name:'Обсидіан',   accent:'#a050e0', prev:'linear-gradient(150deg,#050208,#180a2a)'},
+  {id:'steel',    name:'Сталь',      accent:'#8caac8', prev:'linear-gradient(135deg,#0d1218,#2a3642)'},
+  {id:'ivory',    name:'Слонова кістка', accent:'#3a3020', prev:'linear-gradient(160deg,#efe9dd,#f8f4ea)'},
+  {id:'charcoal', name:'Вугілля',    accent:'#ddd',    prev:'linear-gradient(135deg,#0a0a0a,#232323)'},
+  {id:'chrome',   name:'Хром',       accent:'#dcdce6', prev:'linear-gradient(120deg,#2c2c30,#dcdce6)'},
+  // Самоцвіти (нові)
+  {id:'ruby',     name:'Рубін',      accent:'#dc143c', prev:'linear-gradient(135deg,#1a0004,#4a0012)'},
+  {id:'topaz',    name:'Топаз',      accent:'#ffc440', prev:'linear-gradient(135deg,#1f1600,#4a3800)'},
+  {id:'opal',     name:'Опал',       accent:'#e6ccff', prev:'linear-gradient(120deg,#1a1a2a,#dcc8ff)'},
+  {id:'garnet',   name:'Гранат',     accent:'#8c1e2d', prev:'linear-gradient(135deg,#1a0505,#3a0a10)'},
+  {id:'turquoise',name:'Бірюза',     accent:'#40e0d0', prev:'linear-gradient(135deg,#001a1a,#003d3d)'},
+  {id:'citrine',  name:'Цитрин',     accent:'#ffa528', prev:'linear-gradient(135deg,#1a1200,#4a3200)'},
+  {id:'peridot',  name:'Перидот',    accent:'#b4dc3c', prev:'linear-gradient(135deg,#0f1a00,#2a3d00)'},
+  // Стихії (нові)
+  {id:'thunder',  name:'Грім',       accent:'#8c8cff', prev:'linear-gradient(135deg,#050510,#1a1a4a)'},
+  {id:'earth',    name:'Земля',      accent:'#96aa50', prev:'linear-gradient(135deg,#0f1005,#2a2a10)'},
+  {id:'volcano',  name:'Вулкан',     accent:'#ff5000', prev:'linear-gradient(160deg,#0a0000,#4a0a00)'},
+  {id:'blizzard', name:'Хуртовина',  accent:'#c8e6ff', prev:'linear-gradient(150deg,#0a1420,#2a4a6a)'},
+  {id:'tsunami',  name:'Цунамі',     accent:'#3c96dc', prev:'linear-gradient(150deg,#00080f,#003250)'},
+  {id:'solar',    name:'Сонце',      accent:'#ffb428', prev:'linear-gradient(135deg,#1a0e00,#4a2800)'},
+  {id:'void',     name:'Порожнеча', accent:'#a064dc', prev:'linear-gradient(150deg,#000,#150022)'},
+  // Космос і футуризм (нові)
+  {id:'nebula',   name:'Туманність', accent:'#c850ff', prev:'linear-gradient(135deg,#0a0018,#3a0050)'},
+  {id:'matrix',   name:'Матриця',    accent:'#00ff50', prev:'linear-gradient(160deg,#000800,#003300)'},
+  {id:'synthwave',name:'Синтвейв',   accent:'#ff2ea6', prev:'linear-gradient(120deg,#1a0028,#ff2ea6)'},
+  {id:'aurora',   name:'Аврора',     accent:'#00ff9c', prev:'linear-gradient(120deg,#001a12,#00ff9c)'},
+  {id:'plasma',   name:'Плазма',     accent:'#ff2ecc', prev:'linear-gradient(120deg,#1a0018,#ff2ecc)'},
+  {id:'quantum',  name:'Квант',      accent:'#50b4ff', prev:'linear-gradient(135deg,#000a1a,#0050a0)'},
+  // Текстури (нові)
+  {id:'wood',     name:'Дерево',     accent:'#a06e3c', prev:'linear-gradient(100deg,#1f1206,#3a2410)'},
+  {id:'concrete', name:'Бетон',      accent:'#a0a0a0', prev:'linear-gradient(135deg,#141414,#2e2e2e)'},
+  {id:'velvet',   name:'Оксамит',    accent:'#a01478', prev:'linear-gradient(135deg,#12000f,#3a0028)'},
+  {id:'silk',     name:'Шовк',       accent:'#c8beDC', prev:'linear-gradient(120deg,#1e1a24,#3a3244)'},
+  {id:'brushedmetal', name:'Шліфований метал', accent:'#d2d2dc', prev:'linear-gradient(95deg,#26262a,#3e3e44)'},
+  {id:'camo',     name:'Камуфляж',   accent:'#788c50', prev:'linear-gradient(120deg,#0f1a0a,#2a3318)'},
+  // Особливі (нові)
+  {id:'halloween',name:'Гелловін',   accent:'#ff8200', prev:'linear-gradient(135deg,#0a0000,#3a1500)'},
+  {id:'valentine',name:'Валентинка', accent:'#ff3c6e', prev:'linear-gradient(135deg,#1a0008,#4a001a)'},
+  {id:'easter',   name:'Великдень',  accent:'#ffd8e8', prev:'linear-gradient(120deg,#1a1420,#ffd8e8)'},
+  {id:'autumn',   name:'Осінь',      accent:'#ff8c28', prev:'linear-gradient(135deg,#1a0d00,#4a2400)'},
+  {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
+  {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
+  {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
+  // Меми (тягнуться напряму з i.imgflip.com)
+  {id:'meme-drake',            name:'Drake',           accent:'#fff', prev:"url('https://i.imgflip.com/30b1gx.jpg') center/cover"},
+  {id:'meme-distracted',       name:'Хлопець і дівчина', accent:'#fff', prev:"url('https://i.imgflip.com/1ur9b0.jpg') center/cover"},
+  {id:'meme-womancat',         name:'Жінка й кіт',     accent:'#fff', prev:"url('https://i.imgflip.com/345v97.jpg') center/cover"},
+  {id:'meme-twobuttons',       name:'Дві кнопки',      accent:'#fff', prev:"url('https://i.imgflip.com/1g8my4.jpg') center/cover"},
+  {id:'meme-changemymind',     name:'Переконай мене',  accent:'#fff', prev:"url('https://i.imgflip.com/24y43o.jpg') center/cover"},
+  {id:'meme-successkid',       name:'Success Kid',     accent:'#fff', prev:"url('https://i.imgflip.com/1bhk.jpg') center/cover"},
+  {id:'meme-doge',             name:'Doge',            accent:'#fff', prev:"url('https://i.imgflip.com/4t0m5.jpg') center/cover"},
+  {id:'meme-thisisfine',       name:'This is Fine',    accent:'#fff', prev:"url('https://i.imgflip.com/wxica.jpg') center/cover"},
+  {id:'meme-stonks',           name:'Stonks',          accent:'#fff', prev:"url('https://i.imgflip.com/3si4.jpg') center/cover"},
+  {id:'meme-rollsafe',         name:'Roll Safe',       accent:'#fff', prev:"url('https://i.imgflip.com/1h7in3.jpg') center/cover"},
+  {id:'meme-pikachu',          name:'Здивований Пікачу', accent:'#fff', prev:"url('https://i.imgflip.com/2kbn1e.jpg') center/cover"},
+  {id:'meme-disastergirl',     name:'Disaster Girl',   accent:'#fff', prev:"url('https://i.imgflip.com/23ls.jpg') center/cover"},
+  {id:'meme-grumpycat',        name:'Grumpy Cat',      accent:'#fff', prev:"url('https://i.imgflip.com/8p0a.jpg') center/cover"},
+  {id:'meme-expandingbrain',   name:'Галактичний мозок', accent:'#fff', prev:"url('https://i.imgflip.com/1jwhww.jpg') center/cover"},
+  {id:'meme-onedoesnotsimply', name:'One Does Not Simply', accent:'#fff', prev:"url('https://i.imgflip.com/1bij.jpg') center/cover"},
+  {id:'meme-ancientaliens',    name:'Древні прибульці', accent:'#fff', prev:"url('https://i.imgflip.com/26am.jpg') center/cover"},
+  {id:'meme-dicaprio',         name:'ДіКапріо',        accent:'#fff', prev:"url('https://i.imgflip.com/39t1o.jpg') center/cover"},
+  {id:'meme-pigeon',           name:'Це голуб?',       accent:'#fff', prev:"url('https://i.imgflip.com/1o00in.jpg') center/cover"},
+  {id:'meme-batman',           name:'Бетмен ляпас',    accent:'#fff', prev:"url('https://i.imgflip.com/9ehk.jpg') center/cover"},
+  {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
+  {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
+  {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
+  // Свіжі "молодіжні" тренд-меми
+  {id:'meme-67kid',       name:'6-7',               accent:'#fff', prev:"url('https://i.imgflip.com/4/a9fxer.jpg') center/cover"},
+  {id:'meme-skibidi',     name:'Skibidi Toilet',    accent:'#fff', prev:"url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover"},
+  {id:'meme-tralalero',   name:'Tralalero Tralala', accent:'#fff', prev:"url('https://i.imgflip.com/4/9p82jm.jpg') center/cover"},
+  {id:'meme-bombardiro',  name:'Bombardiro Crocodilo', accent:'#fff', prev:"url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover"},
+  {id:'meme-tungtung',    name:'Tung Tung Sahur',   accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover"},
+  {id:'meme-chimpanzini', name:'Chimpanzini Bananini', accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover"},
+  {id:'meme-gigachad',    name:'Gigachad',          accent:'#fff', prev:"url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover"},
+  {id:'meme-sigma',       name:'Sigma',             accent:'#fff', prev:"url('https://i.imgflip.com/4/5imrkq.jpg') center/cover"},
+  {id:'meme-chillguy',    name:'Chill Guy',         accent:'#fff', prev:"url('https://i.imgflip.com/4/9au02y.jpg') center/cover"},
+  {id:'meme-ohio',        name:'Ohio',              accent:'#fff', prev:"url('https://i.imgflip.com/4/46e43q.jpg') center/cover"},
+  {id:'meme-npc',         name:'NPC',               accent:'#fff', prev:"url('https://i.imgflip.com/4/2k0qad.jpg') center/cover"},
+  {id:'meme-rizzler',     name:'Rizzler',           accent:'#fff', prev:"url('https://i.imgflip.com/4/93etli.jpg') center/cover"},
+];
+
 function openCardColorPicker() {
-  var SKINS = [
-    // Класика
-    {id:'gold',     name:'Золото',     accent:'#d4af37', prev:'linear-gradient(135deg,#1a0d00,#3a2200)'},
-    {id:'onyx',     name:'Онікс',      accent:'#ddd',    prev:'linear-gradient(135deg,#000,#1a1a1a)'},
-    {id:'platinum', name:'Платина',    accent:'#dcdce6', prev:'linear-gradient(135deg,#1a1a1d,#2c2c30)'},
-    {id:'copper',   name:'Мідь',       accent:'#dc823c', prev:'linear-gradient(135deg,#1f0d00,#4a2200)'},
-    {id:'minimal',  name:'Мінімал',    accent:'#333',    prev:'linear-gradient(160deg,#e8e8e8,#f5f5f5)'},
-    // Самоцвіти
-    {id:'sapphire', name:'Сапфір',     accent:'#4a9eff', prev:'linear-gradient(135deg,#000d1a,#002a55)'},
-    {id:'emerald',  name:'Смарагд',    accent:'#3dd68c', prev:'linear-gradient(135deg,#001a0f,#003d24)'},
-    {id:'amethyst', name:'Аметист',    accent:'#b450ff', prev:'linear-gradient(135deg,#1a0025,#33004d)'},
-    {id:'rosegold', name:'Рожеве золото', accent:'#e6aaa0', prev:'linear-gradient(135deg,#2a1015,#4a2a28)'},
-    {id:'coral',    name:'Корал',      accent:'#ff7f6e', prev:'linear-gradient(135deg,#1a0510,#330a1f)'},
-    // Стихії
-    {id:'fire',     name:'Вогонь',     accent:'#ff6400', prev:'linear-gradient(160deg,#1a0000,#4a1000)'},
-    {id:'ice',      name:'Лід',        accent:'#96dcff', prev:'linear-gradient(150deg,#001a2a,#003350)'},
-    {id:'mint',     name:'М\'ята',     accent:'#64ffd2', prev:'linear-gradient(135deg,#001a15,#003328)'},
-    {id:'storm',    name:'Гроза',      accent:'#9696c8', prev:'linear-gradient(160deg,#05050a,#14141f)'},
-    {id:'sunset',   name:'Захід',      accent:'#ff698c', prev:'linear-gradient(135deg,#4a1428,#3a1a08)'},
-    // Космос і футуризм
-    {id:'cyber',    name:'Кібер',      accent:'#00ffdc', prev:'linear-gradient(135deg,#000814,#001d3d)'},
-    {id:'galaxy',   name:'Галактика',  accent:'#b48cff', prev:'linear-gradient(160deg,#0a0020,#1a0040)'},
-    {id:'holo',     name:'Голограма',  accent:'#fff',    prev:'linear-gradient(120deg,#ff2ecc,#ffd12e,#2effc7,#2e6bff)'},
-    // Текстури
-    {id:'carbon',   name:'Карбон',     accent:'#aaa',    prev:'repeating-linear-gradient(45deg,#0a0a0a,#0a0a0a 4px,#1a1a1a 4px,#1a1a1a 8px)'},
-    {id:'marble',   name:'Мармур',     accent:'#eee',    prev:'linear-gradient(160deg,#26262e,#1a1a22)'},
-    {id:'denim',    name:'Джинс',      accent:'#6496dc', prev:'linear-gradient(160deg,#0a1a2e,#14304f)'},
-    {id:'snake',    name:'Змія',       accent:'#78c878', prev:'linear-gradient(150deg,#0d1a0d,#1a2e1a)'},
-    {id:'leopard',  name:'Леопард',    accent:'#c89650', prev:'linear-gradient(150deg,#3a2410,#4a3018)'},
-    // Особливі
-    {id:'pastel',   name:'Пастель',    accent:'#ffc8e6', prev:'linear-gradient(135deg,#2a1f2e,#3a2a40)'},
-    {id:'xmas',     name:'Новий рік',  accent:'#ffd700', prev:'linear-gradient(135deg,#0a1a0a,#1a0505)'},
-    {id:'ukraine',  name:'Україна',    accent:'#ffd700', prev:'linear-gradient(180deg,#0057b7 50%,#ffd700 50%)'},
-    // Класика (нові)
-    {id:'silver',   name:'Срібло',     accent:'#c8c8d2', prev:'linear-gradient(135deg,#1a1a1c,#3a3a3e)'},
-    {id:'bronze',   name:'Бронза',     accent:'#cd7f32', prev:'linear-gradient(135deg,#1f1206,#4a2e12)'},
-    {id:'obsidian', name:'Обсидіан',   accent:'#a050e0', prev:'linear-gradient(150deg,#050208,#180a2a)'},
-    {id:'steel',    name:'Сталь',      accent:'#8caac8', prev:'linear-gradient(135deg,#0d1218,#2a3642)'},
-    {id:'ivory',    name:'Слонова кістка', accent:'#3a3020', prev:'linear-gradient(160deg,#efe9dd,#f8f4ea)'},
-    {id:'charcoal', name:'Вугілля',    accent:'#ddd',    prev:'linear-gradient(135deg,#0a0a0a,#232323)'},
-    {id:'chrome',   name:'Хром',       accent:'#dcdce6', prev:'linear-gradient(120deg,#2c2c30,#dcdce6)'},
-    // Самоцвіти (нові)
-    {id:'ruby',     name:'Рубін',      accent:'#dc143c', prev:'linear-gradient(135deg,#1a0004,#4a0012)'},
-    {id:'topaz',    name:'Топаз',      accent:'#ffc440', prev:'linear-gradient(135deg,#1f1600,#4a3800)'},
-    {id:'opal',     name:'Опал',       accent:'#e6ccff', prev:'linear-gradient(120deg,#1a1a2a,#dcc8ff)'},
-    {id:'garnet',   name:'Гранат',     accent:'#8c1e2d', prev:'linear-gradient(135deg,#1a0505,#3a0a10)'},
-    {id:'turquoise',name:'Бірюза',     accent:'#40e0d0', prev:'linear-gradient(135deg,#001a1a,#003d3d)'},
-    {id:'citrine',  name:'Цитрин',     accent:'#ffa528', prev:'linear-gradient(135deg,#1a1200,#4a3200)'},
-    {id:'peridot',  name:'Перидот',    accent:'#b4dc3c', prev:'linear-gradient(135deg,#0f1a00,#2a3d00)'},
-    // Стихії (нові)
-    {id:'thunder',  name:'Грім',       accent:'#8c8cff', prev:'linear-gradient(135deg,#050510,#1a1a4a)'},
-    {id:'earth',    name:'Земля',      accent:'#96aa50', prev:'linear-gradient(135deg,#0f1005,#2a2a10)'},
-    {id:'volcano',  name:'Вулкан',     accent:'#ff5000', prev:'linear-gradient(160deg,#0a0000,#4a0a00)'},
-    {id:'blizzard', name:'Хуртовина',  accent:'#c8e6ff', prev:'linear-gradient(150deg,#0a1420,#2a4a6a)'},
-    {id:'tsunami',  name:'Цунамі',     accent:'#3c96dc', prev:'linear-gradient(150deg,#00080f,#003250)'},
-    {id:'solar',    name:'Сонце',      accent:'#ffb428', prev:'linear-gradient(135deg,#1a0e00,#4a2800)'},
-    {id:'void',     name:'Порожнеча', accent:'#a064dc', prev:'linear-gradient(150deg,#000,#150022)'},
-    // Космос і футуризм (нові)
-    {id:'nebula',   name:'Туманність', accent:'#c850ff', prev:'linear-gradient(135deg,#0a0018,#3a0050)'},
-    {id:'matrix',   name:'Матриця',    accent:'#00ff50', prev:'linear-gradient(160deg,#000800,#003300)'},
-    {id:'synthwave',name:'Синтвейв',   accent:'#ff2ea6', prev:'linear-gradient(120deg,#1a0028,#ff2ea6)'},
-    {id:'aurora',   name:'Аврора',     accent:'#00ff9c', prev:'linear-gradient(120deg,#001a12,#00ff9c)'},
-    {id:'plasma',   name:'Плазма',     accent:'#ff2ecc', prev:'linear-gradient(120deg,#1a0018,#ff2ecc)'},
-    {id:'quantum',  name:'Квант',      accent:'#50b4ff', prev:'linear-gradient(135deg,#000a1a,#0050a0)'},
-    // Текстури (нові)
-    {id:'wood',     name:'Дерево',     accent:'#a06e3c', prev:'linear-gradient(100deg,#1f1206,#3a2410)'},
-    {id:'concrete', name:'Бетон',      accent:'#a0a0a0', prev:'linear-gradient(135deg,#141414,#2e2e2e)'},
-    {id:'velvet',   name:'Оксамит',    accent:'#a01478', prev:'linear-gradient(135deg,#12000f,#3a0028)'},
-    {id:'silk',     name:'Шовк',       accent:'#c8beDC', prev:'linear-gradient(120deg,#1e1a24,#3a3244)'},
-    {id:'brushedmetal', name:'Шліфований метал', accent:'#d2d2dc', prev:'linear-gradient(95deg,#26262a,#3e3e44)'},
-    {id:'camo',     name:'Камуфляж',   accent:'#788c50', prev:'linear-gradient(120deg,#0f1a0a,#2a3318)'},
-    // Особливі (нові)
-    {id:'halloween',name:'Гелловін',   accent:'#ff8200', prev:'linear-gradient(135deg,#0a0000,#3a1500)'},
-    {id:'valentine',name:'Валентинка', accent:'#ff3c6e', prev:'linear-gradient(135deg,#1a0008,#4a001a)'},
-    {id:'easter',   name:'Великдень',  accent:'#ffd8e8', prev:'linear-gradient(120deg,#1a1420,#ffd8e8)'},
-    {id:'autumn',   name:'Осінь',      accent:'#ff8c28', prev:'linear-gradient(135deg,#1a0d00,#4a2400)'},
-    {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
-    {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
-    {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
-    // Меми (тягнуться напряму з i.imgflip.com)
-    {id:'meme-drake',            name:'Drake',           accent:'#fff', prev:"url('https://i.imgflip.com/30b1gx.jpg') center/cover"},
-    {id:'meme-distracted',       name:'Хлопець і дівчина', accent:'#fff', prev:"url('https://i.imgflip.com/1ur9b0.jpg') center/cover"},
-    {id:'meme-womancat',         name:'Жінка й кіт',     accent:'#fff', prev:"url('https://i.imgflip.com/345v97.jpg') center/cover"},
-    {id:'meme-twobuttons',       name:'Дві кнопки',      accent:'#fff', prev:"url('https://i.imgflip.com/1g8my4.jpg') center/cover"},
-    {id:'meme-changemymind',     name:'Переконай мене',  accent:'#fff', prev:"url('https://i.imgflip.com/24y43o.jpg') center/cover"},
-    {id:'meme-successkid',       name:'Success Kid',     accent:'#fff', prev:"url('https://i.imgflip.com/1bhk.jpg') center/cover"},
-    {id:'meme-doge',             name:'Doge',            accent:'#fff', prev:"url('https://i.imgflip.com/4t0m5.jpg') center/cover"},
-    {id:'meme-thisisfine',       name:'This is Fine',    accent:'#fff', prev:"url('https://i.imgflip.com/wxica.jpg') center/cover"},
-    {id:'meme-stonks',           name:'Stonks',          accent:'#fff', prev:"url('https://i.imgflip.com/3si4.jpg') center/cover"},
-    {id:'meme-rollsafe',         name:'Roll Safe',       accent:'#fff', prev:"url('https://i.imgflip.com/1h7in3.jpg') center/cover"},
-    {id:'meme-pikachu',          name:'Здивований Пікачу', accent:'#fff', prev:"url('https://i.imgflip.com/2kbn1e.jpg') center/cover"},
-    {id:'meme-disastergirl',     name:'Disaster Girl',   accent:'#fff', prev:"url('https://i.imgflip.com/23ls.jpg') center/cover"},
-    {id:'meme-grumpycat',        name:'Grumpy Cat',      accent:'#fff', prev:"url('https://i.imgflip.com/8p0a.jpg') center/cover"},
-    {id:'meme-expandingbrain',   name:'Галактичний мозок', accent:'#fff', prev:"url('https://i.imgflip.com/1jwhww.jpg') center/cover"},
-    {id:'meme-onedoesnotsimply', name:'One Does Not Simply', accent:'#fff', prev:"url('https://i.imgflip.com/1bij.jpg') center/cover"},
-    {id:'meme-ancientaliens',    name:'Древні прибульці', accent:'#fff', prev:"url('https://i.imgflip.com/26am.jpg') center/cover"},
-    {id:'meme-dicaprio',         name:'ДіКапріо',        accent:'#fff', prev:"url('https://i.imgflip.com/39t1o.jpg') center/cover"},
-    {id:'meme-pigeon',           name:'Це голуб?',       accent:'#fff', prev:"url('https://i.imgflip.com/1o00in.jpg') center/cover"},
-    {id:'meme-batman',           name:'Бетмен ляпас',    accent:'#fff', prev:"url('https://i.imgflip.com/9ehk.jpg') center/cover"},
-    {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
-    {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
-    {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
-    // Свіжі "молодіжні" тренд-меми
-    {id:'meme-67kid',       name:'6-7',               accent:'#fff', prev:"url('https://i.imgflip.com/4/a9fxer.jpg') center/cover"},
-    {id:'meme-skibidi',     name:'Skibidi Toilet',    accent:'#fff', prev:"url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover"},
-    {id:'meme-tralalero',   name:'Tralalero Tralala', accent:'#fff', prev:"url('https://i.imgflip.com/4/9p82jm.jpg') center/cover"},
-    {id:'meme-bombardiro',  name:'Bombardiro Crocodilo', accent:'#fff', prev:"url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover"},
-    {id:'meme-tungtung',    name:'Tung Tung Sahur',   accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover"},
-    {id:'meme-chimpanzini', name:'Chimpanzini Bananini', accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover"},
-    {id:'meme-gigachad',    name:'Gigachad',          accent:'#fff', prev:"url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover"},
-    {id:'meme-sigma',       name:'Sigma',             accent:'#fff', prev:"url('https://i.imgflip.com/4/5imrkq.jpg') center/cover"},
-    {id:'meme-chillguy',    name:'Chill Guy',         accent:'#fff', prev:"url('https://i.imgflip.com/4/9au02y.jpg') center/cover"},
-    {id:'meme-ohio',        name:'Ohio',              accent:'#fff', prev:"url('https://i.imgflip.com/4/46e43q.jpg') center/cover"},
-    {id:'meme-npc',         name:'NPC',               accent:'#fff', prev:"url('https://i.imgflip.com/4/2k0qad.jpg') center/cover"},
-    {id:'meme-rizzler',     name:'Rizzler',           accent:'#fff', prev:"url('https://i.imgflip.com/4/93etli.jpg') center/cover"},
-  ];
+  var SKINS = CARD_SKINS;
   var CATEGORIES = [
     { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
     { name:'💎 Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },

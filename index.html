@@ -17,6 +17,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
@@ -4330,7 +4331,7 @@
         </div>
       </div>
       <div style="font-size:12px;color:#666;line-height:1.6;">
-        Підключи свою картку SlotOK до Аксіома Банку. Баланс та транзакції синхронізуються автоматично.
+        Увійди у свій акаунт Аксіоми — і поповнюй гру з картки Аксіоми та виводь виграш назад на картку.
       </div>
     </div>
 
@@ -4373,19 +4374,10 @@
         <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5c6ef8,#8c5cf8);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;">А</div>
         <div>
           <div style="font-size:14px;font-weight:650;color:#eceff5;">Аксіома Банк</div>
-          <div style="font-size:12px;color:#5e6675;">Профіль → SlotOK підключення → код</div>
+          <div style="font-size:12px;color:#5e6675;">Поповнюй гру з картки Аксіоми й виводь виграш назад</div>
         </div>
       </div>
-
-      <label class="ks-label" style="text-align:left;">Код з Аксіома Банку</label>
-      <input id="onboardAxiomCode" type="number" placeholder="000000" maxlength="6"
-        style="font-size:26px;font-weight:700;letter-spacing:10px;font-family:ui-monospace,Menlo,Consolas,monospace;margin-bottom:10px;padding:13px 14px;"
-        oninput="this.value=this.value.slice(0,6)">
-      <button class="ks-btn is-block" onclick="confirmAxiomLinkOnboard()">Прив’язати картку Аксіоми</button>
-
-      <p style="font-size:11px;color:#5e6675;margin:14px 0 0;line-height:1.6;">
-        Немає акаунту Аксіоми? Зареєструйтесь під <b style="color:#98a0af;">тим самим ніком</b>, що у SlotOK.
-      </p>
+      <button class="ks-btn is-block" onclick="dismissCardOnboard();openAxiomLinkFlow()">Підключити Аксіома Банк</button>
       <button class="ks-btn is-quiet is-block" style="margin-top:12px;" onclick="dismissCardOnboard()">Пізніше</button>
     </div>
   </div>
@@ -5060,17 +5052,17 @@
       </div>
       <div style="background:rgba(92,110,248,.08);border:1px solid rgba(92,110,248,.2);border-radius:16px;padding:14px;text-align:center;">
         <div style="font-size:11px;color:#888;margin-bottom:4px;">🏦 Аксіома</div>
-        <div style="font-size:20px;font-weight:900;color:#7c8eff;font-family:'Rajdhani',sans-serif;">Підключено ✓</div>
+        <div style="font-size:20px;font-weight:900;color:#7c8eff;font-family:'Rajdhani',sans-serif;" id="axiomTxAxBal">—</div>
       </div>
     </div>
 
     <!-- Direction -->
     <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:4px;display:flex;gap:4px;margin-bottom:16px;" id="axiomTxDirRow">
       <div id="axiomTxDirA" onclick="setAxiomTxDir('toAxiom')" style="flex:1;text-align:center;padding:11px 8px;border-radius:12px;background:rgba(92,110,248,.15);border:1px solid rgba(92,110,248,.35);font-size:12px;font-weight:700;color:#7c8eff;cursor:pointer;">
-        🎰 → 🏦<br><span style="font-size:10px;font-weight:600;">Casino → Axiom</span>
+        🎰 → 🏦<br><span style="font-size:10px;font-weight:600;">Вивести на картку</span>
       </div>
       <div id="axiomTxDirB" onclick="setAxiomTxDir('toCasino')" style="flex:1;text-align:center;padding:11px 8px;border-radius:12px;font-size:12px;font-weight:700;color:#555;cursor:pointer;">
-        🏦 → 🎰<br><span style="font-size:10px;font-weight:600;">Axiom → Casino</span>
+        🏦 → 🎰<br><span style="font-size:10px;font-weight:600;">Поповнити гру</span>
       </div>
     </div>
 
@@ -5082,7 +5074,7 @@
       <div onclick="setAxiomTxAmt(1000)" style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1k</div>
     </div>
 
-    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">🏦 Переказати в Аксіому</button>
+    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">🎰 Поповнити гру з картки</button>
     <div style="font-size:11px;color:#444;text-align:center;margin-top:8px;line-height:1.7;">
       Переказ миттєвий · Без комісії<br>
       Кошти спільні між SlotOK та Аксіомою
@@ -5161,5 +5153,6 @@
        завантажитись до app.js, бо той користується SlotOKPassword -->
   <script defer src="password.js"></script>
   <!-- Main app -->
+  <script defer src="axioma-sdk.js"></script>
   <script defer src="app.js"></script>
 </body>
