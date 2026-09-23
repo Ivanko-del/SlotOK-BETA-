@@ -257,7 +257,7 @@ function updateUI() {
 } // end updateProfileUI
 
 function checkAdmin() {
-    if (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true) {
+    if (currentUser.toLowerCase() === ADMIN_OWNER || userData.isAdmin === true) {
         document.getElementById('adminPanelBtnBox').classList.remove('hidden');
         document.getElementById('adminBadge').classList.remove('hidden');
         // Автозапуск бот-движка для адміна
@@ -269,7 +269,7 @@ function checkAdmin() {
 }
 
 function isAdminUser() {
-  return !!(currentUser && (currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true));
+  return !!(currentUser && (currentUser.toLowerCase() === ADMIN_OWNER || userData.isAdmin === true));
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -850,34 +850,6 @@ function selectCustomAmount() {
 // ============================================
 // ВИВІД КОШТІВ
 // ============================================
-function selectWithdrawAmount(amount, el) {
-    document.querySelectorAll('#withdrawAmountGrid .amount-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    const val = amount === 'max' ? Math.floor(userData?.balance || 0) : amount;
-    document.getElementById('withdrawAmount').value = val;
-}
-
-function selectWithdrawMethod(method, el) {
-    selectedWithdrawMethod = method;
-    // Тільки сусіди в тому ж списку: той самий обробник викликається і з Каси,
-    // і з модалки виводу з картки
-    const scope = (el && el.parentElement) || document;
-    scope.querySelectorAll('.wm-btn').forEach(b => b.classList.remove('selected'));
-    if(el) el.classList.add('selected');
-
-    const cardInput = document.getElementById('withdrawCard');
-    if(!cardInput) return;
-    if(method === 'usdt') {
-        cardInput.placeholder = 'USDT TRC20 адреса';
-    } else if(method === 'privat') {
-        cardInput.placeholder = 'Номер картки PrivatBank';
-    } else if(method === 'mono') {
-        cardInput.placeholder = 'Номер картки Monobank';
-    } else {
-        cardInput.placeholder = 'Номер картки Visa/Mastercard';
-    }
-}
-
 function submitWithdraw() {
     const card = document.getElementById('withdrawCard').value.trim();
     const amount = parseInt(document.getElementById('withdrawAmount').value);
@@ -1833,10 +1805,37 @@ function cashoutCrash() {
 }
 
 // ============================================
+// СПІЛЬНА КОЛОДА КАРТ — create/shuffle/isRed для покеру, блекджеку,
+// карт (Дурень), відеопокеру й бакари. Раніше кожна гра мала свою копію
+// цієї логіки під різними назвами (cardHTML/cardHtml/bjCardHTML/bacCardHTML,
+// {rank,suit} vs {r,s}), і половина з них тасувала колоду через
+// `deck.sort(() => Math.random()-0.5)` — цей метод дає зміщений
+// (нерівномірний) розподіл, на відміну від Fisher-Yates нижче.
+// ============================================
+const STANDARD_SUITS = ['♠', '♥', '♦', '♣'];
+const STANDARD_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+
+function createStandardDeck(ranks = STANDARD_RANKS, suits = STANDARD_SUITS) {
+  const deck = [];
+  for(const suit of suits) for(const rank of ranks) deck.push({ rank, suit });
+  return deck;
+}
+
+function shuffleDeck(deck) {
+  for(let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+function isRedSuit(suit) { return suit === '♥' || suit === '♦'; }
+
+// ============================================
 // ВІДЕОПОКЕР
 // ============================================
-const POKER_SUITS = ['♠', '♥', '♦', '♣'];
-const POKER_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const POKER_SUITS = STANDARD_SUITS;
+const POKER_RANKS = STANDARD_RANKS;
 const RANK_VALUES = {2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14};
 
 let pokerHand = [];
@@ -1845,13 +1844,11 @@ let pokerBet = 0;
 let pokerPhase = 'deal'; // 'deal' або 'draw'
 
 function createDeck() {
-    const deck = [];
-    for(const suit of POKER_SUITS) for(const rank of POKER_RANKS) deck.push({rank, suit});
-    return deck.sort(() => Math.random() - 0.5);
+    return shuffleDeck(createStandardDeck(POKER_RANKS, POKER_SUITS));
 }
 
 function cardHTML(card, index, selectable=false) {
-    const isRed = card.suit === '♥' || card.suit === '♦';
+    const isRed = isRedSuit(card.suit);
     const colorClass = isRed ? 'red-card' : '';
     const selectedClass = pokerSelectedCards.includes(index) ? 'selected' : '';
     const onclick = selectable ? `onclick="togglePokerCard(${index})"` : '';
@@ -1881,15 +1878,16 @@ function dealPoker() {
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
     addWager(b);
   trackLbStat('wager', b); trackLbStat('games', 1);
-  publishLiveBet('Scratch','🎟️', b, '');
+  publishLiveBet('Відеопокер','🎴', b, '');
     trackQuest('totalGames', 1);
     trackQuest('weekWager', b);
-    
+
     const deck = createDeck();
     pokerHand = deck.slice(0, 5);
     pokerSelectedCards = [];
     pokerPhase = 'draw';
-    
+    db.ref('users/'+currentUser+'/pokerPhase').set('draw');
+
     renderPokerHand(true);
     document.getElementById('pokerInfo').textContent = '🔄 Оберіть карти для ЗАМІНИ (або не обирайте)';
     document.getElementById('pokerDealBtn').classList.add('hidden');
@@ -1898,36 +1896,44 @@ function dealPoker() {
 }
 
 function drawPoker() {
-    // Без цієї перевірки повторний виклик (напр. спам по кнопці чи виклик
-    // напряму з консолі) знову рахував evaluatePokerHand() по ТІЙ САМІЙ
-    // руці — pokerSelectedCards вже порожній, тож карти не змінювались,
-    // і виграш нараховувався ще раз за ту саму комбінацію щоразу.
+    // Локальна перевірка — лише для чуйності UI (блокує подвійний клік по
+    // кнопці). Реальний захист від задвоєної виплати — транзакція нижче:
+    // фаза 'draw' -> 'deal' у Firebase атомарно переходить рівно один раз,
+    // тож повторний виклик drawPoker() (напр. з консолі) програє транзакцію
+    // і не дійде до нарахування виграшу.
     if(pokerPhase !== 'draw') return;
-    // Замінюємо виділені карти
-    const deck = createDeck().filter(c => !pokerHand.find(h => h.rank===c.rank && h.suit===c.suit));
-    let di = 0;
-    pokerSelectedCards.forEach(idx => { pokerHand[idx] = deck[di++]; });
-    pokerSelectedCards = [];
     pokerPhase = 'deal';
-    
-    renderPokerHand(false);
-    
-    const result = evaluatePokerHand(pokerHand);
-    const win = Math.floor(pokerBet * result.multiplier);
-    
-    if(win > 0) {
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
-        playSound('win');
-        notify(`🃏 ${result.name}! +${win} ₴`, 'success');
-        addToHistory(`Poker ${result.name}: +${win}`);
-        document.getElementById('pokerInfo').innerHTML = `<span style="color:var(--green); font-weight:bold;">🏆 ${result.name}! Виграш: +${win} ₴</span>`;
-    } else {
-        notify('😔 Нічого немає', 'error');
-        document.getElementById('pokerInfo').textContent = result.name + ' — програш';
-    }
-    
     document.getElementById('pokerDealBtn').classList.remove('hidden');
     document.getElementById('pokerDrawBtn').classList.add('hidden');
+
+    db.ref('users/'+currentUser+'/pokerPhase').transaction(cur => {
+        if(cur !== 'draw') return; // undefined -> абортує транзакцію
+        return 'deal';
+    }).then(result => {
+        if(!result.committed || result.snapshot.val() !== 'deal') return; // виплату вже видано іншим викликом
+
+        // Замінюємо виділені карти
+        const deck = createDeck().filter(c => !pokerHand.find(h => h.rank===c.rank && h.suit===c.suit));
+        let di = 0;
+        pokerSelectedCards.forEach(idx => { pokerHand[idx] = deck[di++]; });
+        pokerSelectedCards = [];
+
+        renderPokerHand(false);
+
+        const result2 = evaluatePokerHand(pokerHand);
+        const win = Math.floor(pokerBet * result2.multiplier);
+
+        if(win > 0) {
+            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+            playSound('win');
+            notify(`🃏 ${result2.name}! +${win} ₴`, 'success');
+            addToHistory(`Poker ${result2.name}: +${win}`);
+            document.getElementById('pokerInfo').innerHTML = `<span style="color:var(--green); font-weight:bold;">🏆 ${result2.name}! Виграш: +${win} ₴</span>`;
+        } else {
+            notify('😔 Нічого немає', 'error');
+            document.getElementById('pokerInfo').textContent = result2.name + ' — програш';
+        }
+    });
 }
 
 function evaluatePokerHand(hand) {
@@ -2914,7 +2920,6 @@ function spawnWinCoins(amount) {
   }
 }
 
-// Override toggleAuthMode to use new tab switcher
 // Init auth screen when shown
 function showAuthScreen() {
   document.getElementById('auth-screen').style.display = 'flex';
@@ -3907,7 +3912,6 @@ function pwrRequestViaTelegram(nick) {
   });
 }
 
-function toggleAuthMode(reg) { switchAuthTab(reg ? 'reg' : 'login'); }
 
 function switchAuthTab(mode) {
   const isLogin = mode === 'login';
@@ -4017,27 +4021,39 @@ function openAdminManage(n) {
     document.getElementById('admin-user-manage').classList.remove('hidden'); 
     document.getElementById('admManageName').textContent=n; 
 }
-function admGiveMoney() { 
+function admGiveMoney() {
     if(!requireAdminPerm('users')) return;
-    const a=parseInt(document.getElementById('admAmount').value); 
-    if(!a) return; 
-    db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a)); 
-    notify("Баланс змінено","success"); 
+    const a=parseInt(document.getElementById('admAmount').value);
+    if(!a) return;
+    db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a));
+    logAdminAction('give_money', `@${admSelectedUser}: ${a>0?'+':''}${a}₴`);
+    notify("Баланс змінено","success");
 }
-function admSetTag() { 
+function admSetTag() {
     if(!requireAdminPerm('users')) return;
-    const t=document.getElementById('admTag').value; 
-    if(t){ db.ref('users/'+admSelectedUser).update({tag:t}); notify("Статус змінено"); } 
+    const t=document.getElementById('admTag').value;
+    if(t){
+        db.ref('users/'+admSelectedUser).update({tag:t});
+        logAdminAction('set_tag', `@${admSelectedUser}: "${t}"`);
+        notify("Статус змінено");
+    }
 }
-function admBanUser() { 
+// Та сама реалізація бана, що й у вкладці "Модерація" (banPlayer вище) —
+// з причиною, перевіркою існування гравця й логом дії.
+function admBanUser(nick) {
     if(!requireAdminPerm('moderation')) return;
-    if(confirm("Заблокувати гравця?")){ db.ref('users/'+admSelectedUser).update({banned:true}); notify("ЗАБЛОКОВАНО"); } 
+    nick = nick || admSelectedUser;
+    if(nick && confirm("Заблокувати гравця?")) banPlayer(nick, 'Заблоковано з панелі гравця');
 }
-function admDeleteUser() { 
+function admDeleteUser() {
     if(!requireAdminPerm('users')) return;
-    if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")){ 
-        db.ref('users/'+admSelectedUser).remove().then(()=>{ notify("Видалено"); closeTabModal('admin-user-manage'); loadUserList(); }); 
-    } 
+    if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")){
+        const deletedUser = admSelectedUser;
+        db.ref('users/'+admSelectedUser).remove().then(()=>{
+            logAdminAction('delete_user', `@${deletedUser}`);
+            notify("Видалено"); closeTabModal('admin-user-manage'); loadUserList();
+        });
+    }
 }
 function wipeEconomy() {
     if(!requireAdminPerm('users')) return;
@@ -4329,18 +4345,15 @@ const BJ_DECK = [];
 let bjPlayerHand = [], bjDealerHand = [], bjBet = 0, bjActive = false;
 
 function bjCreateDeck() {
-  const suits = ['♠','♥','♦','♣'], ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-  const d = [];
-  for(const s of suits) for(const r of ranks) d.push({r,s});
-  return d.sort(() => Math.random()-0.5);
+  return shuffleDeck(createStandardDeck());
 }
 
 function bjValue(hand) {
   let v = 0, aces = 0;
   for(const c of hand) {
-    if(c.r === 'A') { aces++; v += 11; }
-    else if(['J','Q','K'].includes(c.r)) v += 10;
-    else v += parseInt(c.r);
+    if(c.rank === 'A') { aces++; v += 11; }
+    else if(['J','Q','K'].includes(c.rank)) v += 10;
+    else v += parseInt(c.rank);
   }
   while(v > 21 && aces > 0) { v -= 10; aces--; }
   return v;
@@ -4348,8 +4361,8 @@ function bjValue(hand) {
 
 function bjCardHTML(c, hidden=false) {
   if(hidden) return `<div class="bj-card" style="background:#1a3a6b;color:transparent;">🂠</div>`;
-  const red = c.s==='♥'||c.s==='♦';
-  return `<div class="bj-card ${red?'red':''}">${c.r}<br>${c.s}</div>`;
+  const red = isRedSuit(c.suit);
+  return `<div class="bj-card ${red?'red':''}">${c.rank}<br>${c.suit}</div>`;
 }
 
 function bjRender(hideDealer=true) {
@@ -4400,7 +4413,7 @@ function bjDeal() {
   const splitBtn = document.getElementById('bjSplitBtn');
   if(splitBtn) splitBtn.classList.toggle('hidden', !canSplit);
   const insBtn = document.getElementById('bjInsuranceBtn');
-  if(insBtn) insBtn.classList.toggle('hidden', bjDealerHand[0].r !== 'A');
+  if(insBtn) insBtn.classList.toggle('hidden', bjDealerHand[0].rank !== 'A');
   const dblBtn = document.getElementById('bjDoubleBtn');
   if(dblBtn) dblBtn.disabled = false;
   const surrBtn = document.getElementById('bjSurrenderBtn');
@@ -4615,8 +4628,7 @@ function bjEnd(result) {
 }
 
 function bjCardVal(card) {
-  const order = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-  return Math.min(10, order.indexOf(card.r)+2);
+  return Math.min(10, STANDARD_RANKS.indexOf(card.rank)+2);
 }
 
 // ============================================
@@ -5038,7 +5050,7 @@ function initLobbyChat() {
       const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteMsg(\'' + msgKey + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 3px;opacity:0.5;" title="Видалити">✕</button>' : '';
       el.innerHTML =
         '<div class="chat-header-line">' + avHtml +
-          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(\'' + m.sender + '\')">' + m.sender + '</span>' +
+          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(\'' + escapeHtml(m.sender) + '\')">' + escapeHtml(m.sender) + '</span>' +
           adminTag + botTag +
           '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
           delBtn +
@@ -5099,10 +5111,37 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '95';
+const CURRENT_VERSION = '96';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '96',
+    title: '📜 Оновлення v96 — PvP-кімнати більше не зависають',
+    date: Date.UTC(2026, 8, 23),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🎮 Ігрові баги',
+        items: [
+          'PvP-кімнати (Монополія, Дурень, Coinflip, Камінь-Ножиці-Папір, Prediction Duel, Шахи): якщо суперник або хост виходив із гри чи втрачав зв\'язок, кімната могла зависнути в очікуванні назавжди — тепер вона автоматично закривається/скасовується, а ставки повертаються',
+          'Приєднання до кімнати Монополії двома гравцями одночасно на останнє вільне місце — тепер точно приєднається лише один',
+          'Відеопокер у стрічці "Наживо" показував назву гри "Scratch" замість "Відеопокер"',
+          'Повторний виклик "Заміна карт" у відеопокері (наприклад, подвійний клік) міг задвоїти виплату — тепер виплата гарантовано одноразова',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Дрібні покращення',
+        items: [
+          'Чат і особисті повідомлення тепер захищені від зламаної верстки через спеціальні символи в ніку співрозмовника чи посиланні на фото',
+          'Сторінку знову можна масштабувати (zoom) на телефоні',
+          'Швидше завантаження екрана рулетки',
+        ]
+      },
+    ]
+  },
   {
     version: '95',
     title: '📜 Оновлення v95 — зручніше на комп’ютері',
@@ -7634,12 +7673,12 @@ function antiCheatFlag(type, details, severity) {
   }
   // Реальне сповіщення адміну — не просто мовчазний лог
   const icon = severity === 'high' ? '🔴' : severity === 'medium' ? '🟠' : '🟡';
-  db.ref('pm/theivankoo/'+db.ref().push().key).set({
-    from: '🚩 Анти-чіт', to: 'theivankoo',
+  db.ref('pm/'+ADMIN_OWNER+'/'+db.ref().push().key).set({
+    from: '🚩 Анти-чіт', to: ADMIN_OWNER,
     text: `${icon} Підозріла активність @${currentUser}\nТип: ${type}\n${details}${severity === 'high' ? '\n⛔ Акаунт автоматично призупинено до перевірки' : ''}`,
     ts: Date.now()
   });
-  db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
+  db.ref('users/'+ADMIN_OWNER+'/pmUnread').set(firebase.database.ServerValue.increment(1));
 }
 
 // Список позначених акаунтів для адмін-панелі
@@ -8003,17 +8042,6 @@ function giftVip(toNick, days) {
   });
 }
 // ── ТОП ДОНАТЕРІВ ─────────────────────────────────────────────
-// ── CRASH PROVABLY FAIR ────────────────────────────────────────
-var _crashClientSeed = localStorage.getItem('slotok_crash_seed') || Math.random().toString(36).slice(2);
-var _crashNonce = parseInt(localStorage.getItem('slotok_crash_nonce') || '0');
-async function getCrashFairMultiplier() {
-  _crashNonce++;
-  localStorage.setItem('slotok_crash_nonce', _crashNonce);
-  var hash = await sha256(_crashClientSeed + ':' + _crashNonce);
-  var h = parseInt(hash.slice(0, 8), 16);
-  if (h % 33 === 0) return 1.0; // house edge ~3%
-  return Math.max(1.0, parseFloat((1 / (1 - (h % 9999) / 10000) * 0.97).toFixed(2)));
-}
 // ── ПОРІВНЯННЯ ГРАВЦІВ ─────────────────────────────────────────
 function doComparePlayers(nick) {
   var el = document.getElementById('cmpResult');
@@ -11463,6 +11491,11 @@ window.createMpRoom = function() {
     gameOver: false
   });
 
+  // Якщо хост закриє вкладку поки кімната ще чекає на гравців — кімната не
+  // має зависнути в лобі назавжди: скасовуємо її і повертаємо ставку хосту.
+  db.ref('mp_rooms/' + roomId).onDisconnect().update({ status: 'cancelled' });
+  db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
+
   showMpWaitScreen2(roomId, bet, mpSelectedSize);
   listenMpRoom2(roomId);
 };
@@ -11517,24 +11550,47 @@ window.loadMpRooms = function() {
 
 function joinMpRoom2(roomId, bet) {
   if((userData.balance||0) < bet) return notify('Недостатньо коштів: ' + bet + '₴', 'error');
-  db.ref('mp_rooms/' + roomId).once('value', snap => {
+  // Атомарний join — без транзакції два гравці, що тиснуть "Приєднатись"
+  // одночасно, могли обидва пройти перевірку playerCount<maxPlayers за
+  // застарілим once('value') і зайняти останнє місце разом.
+  db.ref('mp_rooms/' + roomId).transaction(r => {
+    if(!r || r.status !== 'waiting') return; // кімнати нема або вже не очікує — абортуємо
+    const players = r.players || {};
+    if(players[currentUser]) return; // вже в кімнаті — нічого не міняємо
+    const maxPlayers = r.maxPlayers || 2;
+    const playerCount = Object.keys(players).length;
+    if(playerCount >= maxPlayers) return; // місць не лишилось
+
+    const colorIdx = playerCount % MP_COLORS.length;
+    players[currentUser] = { money: 3000, pos: 0, jail: 0, bankrupt: false, color: MP_COLORS[colorIdx], token: MP_TOKENS[colorIdx] };
+    r.players = players;
+
+    const newCount = playerCount + 1;
+    if(newCount >= maxPlayers) {
+      const allPlayers = Object.keys(players);
+      r.status = 'playing';
+      r.turnOrder = allPlayers;
+      r.turn = allPlayers[0];
+    }
+    return r;
+  }, (err, committed, snap) => {
+    if(err) { console.warn(err); notify('Помилка приєднання', 'error'); return; }
+    if(!committed) { notify('Кімната недоступна', 'error'); loadMpRooms(); return; }
     const r = snap.val();
-    if(!r || r.status !== 'waiting') return notify('Кімната недоступна', 'error');
-    const playerCount = r.players ? Object.keys(r.players).length : 0;
-    if(playerCount >= r.maxPlayers) return notify('Кімната заповнена', 'error');
-    if(r.players && r.players[currentUser]) return notify('Ви вже в цій кімнаті', 'error');
+    if(!r || !r.players || !r.players[currentUser]) { notify('Кімната недоступна', 'error'); return; }
 
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
     mpRoomId = roomId; mpIsHost = false;
 
-    const colorIdx = playerCount % MP_COLORS.length;
-    const playerData = { money: 3000, pos: 0, jail: 0, bankrupt: false, color: MP_COLORS[colorIdx], token: MP_TOKENS[colorIdx] };
-    db.ref('mp_rooms/' + roomId + '/players/' + currentUser).set(playerData);
-
-    const newCount = playerCount + 1;
-    if(newCount >= r.maxPlayers) {
-      const allPlayers = Object.keys(r.players || {}).concat([currentUser]);
-      db.ref('mp_rooms/' + roomId).update({ status: 'playing', turnOrder: allPlayers, turn: allPlayers[0] });
+    // Якщо гравець зникне ще до старту гри — звільняємо його місце й
+    // повертаємо ставку; якщо гра вже почалась (комплект зібрався) —
+    // на дисконнект просто відмічаємо його банкрутом (див. listenMpRoom2,
+    // де перепрограмовується цей самий onDisconnect на старті гри).
+    if(r.status === 'playing') {
+      db.ref('mp_rooms/' + roomId + '/players/' + currentUser + '/bankrupt').onDisconnect().set(true);
+    } else {
+      db.ref('mp_rooms/' + roomId + '/players/' + currentUser).onDisconnect().remove();
+      db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     }
 
     listenMpRoom2(roomId);
@@ -11557,8 +11613,26 @@ function listenMpRoom2(roomId) {
         document.getElementById('mpWaitScreen').classList.add('hidden');
         gsc.classList.remove('hidden');
         mpAddLog2('🎩 Гра почалась! Гравці: ' + Object.keys(r.players).join(', '));
+        // Гра стартувала — попередні onDisconnect ("скасувати кімнату" у
+        // хоста / "звільнити своє місце" у гостя) вже не актуальні: тепер
+        // моя ставка в загальному банку, тож на дисконнект просто стаю
+        // банкрутом (як при surrenderMp), а не забираю кімнату чи гроші.
+        db.ref('mp_rooms/' + roomId).onDisconnect().cancel();
+        db.ref('mp_rooms/' + roomId + '/players/' + currentUser).onDisconnect().cancel();
+        db.ref('users/' + currentUser + '/balance').onDisconnect().cancel();
+        db.ref('mp_rooms/' + roomId + '/players/' + currentUser + '/bankrupt').onDisconnect().set(true);
       }
       renderMpGame2(r);
+
+      // Якщо після чиєїсь відключки (бо onDisconnect вище позначив
+      // банкрутом) лишився рівно один активний гравець — завершуємо гру
+      // замість того, щоб кімната зависла в статусі "playing" назавжди.
+      const active = (r.turnOrder || Object.keys(r.players)).filter(n => r.players[n] && !r.players[n].bankrupt);
+      if(active.length === 1 && !r.gameOver) {
+        db.ref('mp_rooms/' + roomId + '/status').transaction(cur => cur === 'playing' ? 'finishing' : undefined, (err, committed) => {
+          if(!err && committed) finishMpGame2(active[0], r.bet, r.turnOrder);
+        });
+      }
     }
     if(r.status === 'finished') handleMpFinished2(r);
   });
@@ -11773,6 +11847,7 @@ function finishMpGame2(winnerName, bet, turnOrder) {
 }
 
 function handleMpFinished2(r) {
+  db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser + '/bankrupt').onDisconnect().cancel();
   const isWin = r.winner === currentUser;
   mpAddLog2(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + r.prize + '₴' : '😔 Переміг ' + r.winner, isWin?'good':'bad');
   if(isWin) { playSound('win'); notify('🎩 Монополія: +' + r.prize + '₴!', 'success'); }
@@ -11817,7 +11892,6 @@ function mpAddLog2(text, cls) {
 // ============================================
 const SUITS = ['♠','♣','♥','♦'];
 const RANKS = ['6','7','8','9','10','J','Q','K','A'];
-const RED_SUITS = new Set(['♥','♦']);
 
 let cgState = null; // { deck, playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking, selectedCard, aiMode, gameOver }
 let cgRoomId = null;
@@ -11827,9 +11901,9 @@ let cgListener = null;
 let cgSelectedCards = [];
 
 function makeCardDeck() {
-  const deck = [];
-  for(const s of SUITS) for(const r of RANKS) deck.push({ suit:s, rank:r, id:r+s });
-  return deck.sort(() => Math.random()-0.5);
+  // Дурень грається 36-карточною колодою (6..A) — на відміну від решти
+  // ігор тут ще й потрібен стабільний id для синхронізації PvP-кімнат.
+  return shuffleDeck(createStandardDeck(RANKS, SUITS)).map(c => ({ ...c, id: c.rank + c.suit }));
 }
 
 function cardValue(rank) { return RANKS.indexOf(rank); }
@@ -11839,14 +11913,14 @@ function beats(attacker, defender, trumpSuit) {
   return false;
 }
 function cardHtml(card, small, selected) {
-  const isRed = RED_SUITS.has(card.suit);
+  const isRed = isRedSuit(card.suit);
   return '<div class="card' + (small?' small':'') + (selected?' selected':'') + (isRed?' red':'') +
     '" data-id="' + card.id + '">' +
     '<span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
 }
 function tableCardHtml(card, isCover) {
   if(!card) return '<div class="cg-table-card covered" style="border:2px dashed #4cd964;background:transparent;width:44px;height:62px;border-radius:6px;"></div>';
-  const isRed = RED_SUITS.has(card.suit);
+  const isRed = isRedSuit(card.suit);
   return '<div class="cg-table-card' + (isRed?' red':'') + '"><span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
 }
 
@@ -11887,7 +11961,7 @@ function renderCgBoard() {
   const { playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking } = cgState;
 
   const tc = document.getElementById('cgTrumpCard');
-  if(tc) { const isRed = RED_SUITS.has(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'#cc0000':'#000') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
+  if(tc) { const isRed = isRedSuit(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'#cc0000':'#000') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
 
   const dc = document.getElementById('cgDeckCount');
   if(dc) dc.textContent = cgState.deck.length;
@@ -12215,6 +12289,9 @@ function createCardRoom() {
     table: [], turn: currentUser, attacker: currentUser
   }).then(() => {
     notify('🃏 Кімнату створено! Код: ' + roomId.slice(-6), 'success');
+    // Якщо хост зникне поки кімната ще чекає суперника — не має зависнути.
+    db.ref('card_rooms/' + roomId).onDisconnect().update({ status: 'cancelled' });
+    db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     // Show waiting screen in online lobby
     const roomsList = document.getElementById('cgRoomsList');
     if(roomsList) roomsList.innerHTML = '<div style="background:linear-gradient(135deg,#0d2a0d,#051505);border:1px solid var(--green);border-radius:10px;padding:15px;text-align:center;">' +
@@ -12228,6 +12305,8 @@ function createCardRoom() {
 }
 
 function cancelCardRoom(roomId, bet) {
+  db.ref('card_rooms/' + roomId).onDisconnect().cancel();
+  db.ref('users/' + currentUser + '/balance').onDisconnect().cancel();
   db.ref('card_rooms/' + roomId).update({ status: 'cancelled' });
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(bet));
   if(cgListener) { try { db.ref('card_rooms/'+roomId).off('value', cgListener); } catch(e) { console.warn(e); } cgListener = null; }
@@ -12264,6 +12343,9 @@ function joinCardRoom(roomId, bet) {
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-bet));
     cgRoomId = roomId;
     db.ref('card_rooms/' + roomId).update({ guest: currentUser, status: 'playing' });
+    // Якщо я зникну під час гри — суперник (єдиний, хто лишиться онлайн)
+    // побачить статус 'abandoned' і поверне ставки обом (див. listenCardRoom).
+    db.ref('card_rooms/' + roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
     listenCardRoom(roomId);
     document.getElementById('cgOnlineLobby').classList.add('hidden');
     document.getElementById('cgGameScreen').classList.remove('hidden');
@@ -12288,10 +12370,29 @@ function listenCardRoom(roomId) {
       cgOpponentName = cgIsHost ? r.guest : r.host;
       cgApplyRoomSnapshot(r);
       cgSelectedCards = [];
-      if(isFirstSync) cgLog('🃏 Гра з ' + cgOpponentName + ' почалась!');
+      if(isFirstSync) {
+        cgLog('🃏 Гра з ' + cgOpponentName + ' почалась!');
+        // Старт гри — попередній onDisconnect хоста ("скасувати кімнату")
+        // вже не актуальний: тепер обидві ставки в грі, і зникнення будь-
+        // кого з гравців має повертати ставки обом, а не забирати кімнату.
+        db.ref('users/' + currentUser + '/balance').onDisconnect().cancel();
+        db.ref('card_rooms/' + roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
+      }
       renderCgBoard();
     }
+    if(r.status === 'abandoned') {
+      db.ref('card_rooms/' + roomId + '/status').transaction(cur => cur === 'abandoned' ? 'finished' : undefined, (err, committed) => {
+        if(err || !committed) return;
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(r.bet));
+        if(r.abandonedBy && r.abandonedBy !== currentUser) db.ref('users/' + r.abandonedBy + '/balance').set(firebase.database.ServerValue.increment(r.bet));
+        notify('Суперник відключився. Ставку повернено.', 'info');
+        cgLog('🔌 Суперник вийшов з гри — ставки повернено.');
+      });
+      if(cgListener) { db.ref('card_rooms/'+roomId).off('value',cgListener); cgListener=null; }
+      setTimeout(cgReset, 2500);
+    }
     if(r.status === 'finished') {
+      db.ref('card_rooms/' + roomId).onDisconnect().cancel();
       const isWin = r.winner === currentUser;
       const prize = Math.floor(r.bet * 1.85);
       if(isWin) {
@@ -12658,15 +12759,6 @@ function switchCashierTab(tab, el) {
   if(tab === 'markets')  buildMarketsPage();
   if(tab === 'card')     renderCardPanel();
   if(tab === 'deposit')  { loadMyDeposits(); selectDepMethod('mono', document.getElementById('depm-mono')); renderSourceBars(); }
-}
-
-// Скільки реально можна вивести — показуємо в шапці розділу, щоб гравець не
-// підбирав суму навмання й не ловив «недостатньо коштів»
-function updateWithdrawAvailable() {
-  const el = document.getElementById('wdAvailBadge');
-  if(!el) return;
-  const bal = Math.floor((userData && userData.balance) || 0);
-  el.innerHTML = 'Доступно&nbsp;<span class="ks-num">' + formatNumber(bal) + ' ₴</span>';
 }
 
 function buildMarketsPage() {
@@ -13933,6 +14025,10 @@ function createCfRoom() {
   db.ref('pvp_coinflip').push(room).then(ref => {
     cfCurrentRoom = ref.key;
     notify('🪙 Кімнату створено! Чекаємо суперника...', 'success');
+    // Хост зникне до того, як хтось приєднається — кімната не має висіти
+    // в лобі вічно, а ставка не має пропасти.
+    db.ref('pvp_coinflip/' + ref.key).onDisconnect().update({ status: 'cancelled' });
+    db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     switchCfTab('join');
     listenCfRoom(ref.key, bet);
   });
@@ -13988,6 +14084,8 @@ function listenCfRoom(roomId, bet) {
     const r = snap.val(); if(!r) return;
     if(r.status === 'finished') {
       db.ref('pvp_coinflip/'+roomId).off();
+      db.ref('pvp_coinflip/'+roomId).onDisconnect().cancel();
+      db.ref('users/'+currentUser+'/balance').onDisconnect().cancel();
       const myWon = r.winner === currentUser;
       showCfResult(myWon, r.result, r.side, bet, r.payout, r.joiner||'???');
     }
@@ -14039,6 +14137,10 @@ function createRpsRoom() {
     document.getElementById('rps-panel-join').classList.add('hidden');
     document.getElementById('rpsGameArea').classList.remove('hidden');
     document.getElementById('rpsStatus').textContent = '⏳ Чекаємо суперника...';
+    // Хост зникне до того, як хтось приєднається — кімната не має висіти
+    // в лобі вічно, а ставка не має пропасти.
+    db.ref('pvp_rps/' + ref.key).onDisconnect().update({ status: 'cancelled' });
+    db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     listenRpsRoom(ref.key, bet, 'creator');
   });
 }
@@ -14091,8 +14193,28 @@ function playRps(choice) {
 }
 
 function listenRpsRoom(roomId, bet, role) {
+  let disconnectArmed = false;
   db.ref('pvp_rps/'+roomId).on('value', snap => {
     const r = snap.val(); if(!r) return;
+    // Щойно суперник приєднався — обидві ставки в грі, і зникнення будь-
+    // кого з гравців (не встиг зробити хід) має повертати ставки обом,
+    // а не забирати кімнату (як поки що чекали на суперника).
+    if(!disconnectArmed && r.joiner && r.status !== 'waiting') {
+      disconnectArmed = true;
+      db.ref('pvp_rps/'+roomId).onDisconnect().cancel();
+      db.ref('users/'+currentUser+'/balance').onDisconnect().cancel();
+      if(r.status !== 'finished') db.ref('pvp_rps/'+roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
+    }
+    if(r.status === 'abandoned') {
+      db.ref('pvp_rps/'+roomId+'/status').transaction(cur => cur === 'abandoned' ? 'finished' : undefined, (err, committed) => {
+        if(err || !committed) return;
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bet));
+        if(r.abandonedBy && r.abandonedBy !== currentUser) db.ref('users/'+r.abandonedBy+'/balance').set(firebase.database.ServerValue.increment(bet));
+        notify('Суперник відключився. Ставку повернено.', 'info');
+      });
+      db.ref('pvp_rps/'+roomId).off();
+      return;
+    }
     const cm = r.creatorMove, jm = r.joinerMove;
     if(cm && jm && r.status === 'active') {
       // Атомарний claim — тільки ОДИН з двох клієнтів виграє цю "гонку"
@@ -14118,6 +14240,7 @@ function listenRpsRoom(roomId, bet, role) {
     } else if(r.status === 'finished' && r.winner !== undefined) {
       // Обидва клієнти реагують на фінальний стан — тільки показ, без повторного нарахування
       db.ref('pvp_rps/'+roomId).off();
+      db.ref('pvp_rps/'+roomId).onDisconnect().cancel();
       const myMove = role === 'creator' ? cm : jm;
       const oppMove = role === 'creator' ? jm : cm;
       const myWon = r.winner === currentUser;
@@ -14181,6 +14304,10 @@ function createPdRoom() {
   db.ref('pvp_predict').push({ creator:currentUser, bet, creatorGuess:guess, secret, status:'waiting', createdAt:Date.now() }).then(ref => {
     pdCurrentRoom = ref.key; pdRole = 'creator';
     notify('🔮 Кімнату створено!', 'success');
+    // Хост зникне до того, як хтось приєднається — кімната не має висіти
+    // в лобі вічно, а ставка не має пропасти.
+    db.ref('pvp_predict/' + ref.key).onDisconnect().update({ status: 'cancelled' });
+    db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     switchPdTab('join');
     listenPdRoom(ref.key, bet, guess, 'creator');
   });
@@ -14230,8 +14357,28 @@ function submitPdGuess() {
 }
 
 function listenPdRoom(roomId, bet, myGuessIfCreator, role) {
+  let disconnectArmed = false;
   db.ref('pvp_predict/'+roomId).on('value', snap => {
     const r = snap.val(); if(!r) return;
+    // Щойно суперник приєднався — обидві ставки в грі, і зникнення будь-
+    // кого з гравців (не встиг вгадати) має повертати ставки обом, а не
+    // забирати кімнату (як поки що чекали на суперника).
+    if(!disconnectArmed && r.joiner && r.status !== 'waiting') {
+      disconnectArmed = true;
+      db.ref('pvp_predict/'+roomId).onDisconnect().cancel();
+      db.ref('users/'+currentUser+'/balance').onDisconnect().cancel();
+      if(r.status !== 'finished') db.ref('pvp_predict/'+roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
+    }
+    if(r.status === 'abandoned') {
+      db.ref('pvp_predict/'+roomId+'/status').transaction(cur => cur === 'abandoned' ? 'finished' : undefined, (err, committed) => {
+        if(err || !committed) return;
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bet));
+        if(r.abandonedBy && r.abandonedBy !== currentUser) db.ref('users/'+r.abandonedBy+'/balance').set(firebase.database.ServerValue.increment(bet));
+        notify('Суперник відключився. Ставку повернено.', 'info');
+      });
+      db.ref('pvp_predict/'+roomId).off();
+      return;
+    }
     if(r.joinerGuess && r.creatorGuess && r.secret && r.status === 'active') {
       // Атомарний claim — тільки ОДИН клієнт фактично рахує і платить
       db.ref('pvp_predict/'+roomId+'/status').transaction(current => {
@@ -14256,6 +14403,7 @@ function listenPdRoom(roomId, bet, myGuessIfCreator, role) {
       });
     } else if(r.status === 'finished' && r.winner !== undefined) {
       db.ref('pvp_predict/'+roomId).off();
+      db.ref('pvp_predict/'+roomId).onDisconnect().cancel();
       const secret = r.secret;
       const myGuess = role==='creator' ? r.creatorGuess : r.joinerGuess;
       const oppGuess= role==='creator' ? r.joinerGuess  : r.creatorGuess;
@@ -17284,10 +17432,6 @@ let cvvVisible = false;
 
 // ── BANK ACTIONS ──
 
-function switchCashierTabAndGo(tabId) {
-  switchTab('cashier');
-  setTimeout(()=>switchCashierTab(tabId, document.getElementById('ctb-'+tabId)), 150);
-}
 // ── CARD TRANSACTIONS ──
 // Кожен запис стрічки прив'язаний до картки, на яку гроші реально лягли (чи з
 // якої пішли). Без цього історія активної картки показувала б операції всього
@@ -17325,16 +17469,6 @@ function setAxiomTxDir(dir) {
 function setAxiomTxAmt(n) {
   const inp = document.getElementById('axiomTxAmt');
   if(inp) inp.value = n;
-}
-function openAxiomTransferModal() {
-  const linked = userData?.virtualCard?.axiomLinked;
-  if(!linked) { notify('Спочатку підключи Аксіома Банк 🏦', 'error'); switchTab('cashier'); return; }
-  const slBal = document.getElementById('axiomTxSlotBal');
-  if(slBal) slBal.textContent = '₴ ' + formatNumber(userData.balance||0);
-  const inp = document.getElementById('axiomTxAmt');
-  if(inp) inp.value = '';
-  setAxiomTxDir('toAxiom');
-  openTabModal('axiomTransferModal');
 }
 function doAxiomTransfer() {
   const amt = parseFloat(document.getElementById('axiomTxAmt')?.value);
@@ -17571,7 +17705,7 @@ function bacScore(hand) {
   return hand.reduce((s,c) => (s + BAC_DECK_VALS[c.rank]) % 10, 0);
 }
 function bacCardHTML(c) {
-  const isRed = c.suit === '♥' || c.suit === '♦';
+  const isRed = isRedSuit(c.suit);
   return `<div class="bac-card${isRed?' red':''}">${c.rank}${c.suit}</div>`;
 }
 
@@ -17581,9 +17715,7 @@ function playBaccarat(bet) {
   if(!betAmt || betAmt < 10) return notify('Мінімальна ставка 10₴', 'error');
   if(betAmt > (userData.balance||0)) return notify('Недостатньо коштів', 'error');
 
-  let deck = [];
-  for(const s of BAC_SUITS) for(const r of BAC_FACES) deck.push({rank:r, suit:s});
-  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  let deck = shuffleDeck(createStandardDeck(BAC_FACES, BAC_SUITS));
 
   const player = [bacDraw(deck), bacDraw(deck)];
   const banker = [bacDraw(deck), bacDraw(deck)];
@@ -17658,16 +17790,13 @@ function initVideoPoker() {
 }
 
 function vpBuildDeck() {
-  const d = [];
-  for(const s of VP_SUITS) for(const r of VP_RANKS) d.push({rank:r, suit:s});
-  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
-  return d;
+  return shuffleDeck(createStandardDeck(VP_RANKS, VP_SUITS));
 }
 
 function vpRenderHand() {
   const el = document.getElementById('vpHand');
   el.innerHTML = vpHand.map((card,i) => {
-    const isRed = card.suit==='♥'||card.suit==='♦';
+    const isRed = isRedSuit(card.suit);
     const held = vpHeld[i];
     return `<div class="vp-card${isRed?' red':''}${held?' held':''}" onclick="vpToggleHold(${i})">${card.rank}<br>${card.suit}</div>`;
   }).join('');
@@ -17978,8 +18107,15 @@ function openPmThread(otherUser) {
     el.innerHTML = msgs.map(m => {
       const isMe = m.from === currentUser;
       const timeStr = new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
+      // m.imgUrl прилітає з бази — перевіряємо, що це справді http(s) URL
+      // (а не, наприклад, "javascript:..."), перед вставкою в src/onclick,
+      // і так само екрануємо, як m.text нижче.
+      const isValidPmImgUrl = typeof m.imgUrl === 'string' && /^https?:\/\//i.test(m.imgUrl);
+      const safePmImgUrl = isValidPmImgUrl ? escapeHtml(m.imgUrl) : '';
       const contentHtml = m.imgUrl
-        ? `<img src="${m.imgUrl}" style="max-width:200px;max-height:180px;border-radius:10px;display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${m.imgUrl}','_blank')">`
+        ? (isValidPmImgUrl
+            ? `<img src="${safePmImgUrl}" style="max-width:200px;max-height:180px;border-radius:10px;display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${safePmImgUrl}','_blank')">`
+            : `<div style="font-size:12px;color:#777;">⚠️ Недійсне зображення</div>`)
         : `<div style="font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text||'')}</div>`;
       return `<div style="display:flex;flex-direction:${isMe?'row-reverse':'row'};gap:8px;margin-bottom:8px;animation:slideUp .2s ease;">
         <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgba(212,175,55,.2)':'rgba(74,158,255,.2)'};border:1.5px solid ${isMe?'rgba(212,175,55,.3)':'rgba(74,158,255,.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${m.from[0].toUpperCase()}</div>
@@ -19409,7 +19545,6 @@ function getLinkedCards() {
   return out;
 }
 function hasConnectedCard() { return getLinkedCards().length > 0; }
-function getPrimaryCard() { return getActiveCardObj() || (getLinkedCards()[0] || null); }
 
 // ═══════════════════════════════════════════════════════════════════
 // АКТИВНА КАРТКА — джерело коштів для ігор, поповнення, виводу, переказу.
@@ -20330,8 +20465,6 @@ function acceptTerms() {
 }
 
 function openAxiomLinkFlow() { openTabModal('cardOnboardModal'); }
-// Стара назва лишилась у кнопках і нагадуваннях попередніх версій
-function connectAxiomaFromCard() { openAxiomLinkFlow(); }
 
 // ═══════════════════════════════════════════════════════════════════
 // ПАНЕЛЬ КАРТКИ
@@ -20967,10 +21100,13 @@ function logAdminAction(action, details) {
 }
 
 // ── БАН / МУТ (нарешті є сторона запису — раніше тільки перевірялось) ──
-function banPlayer() {
+// Єдина точка бана гравця — і вкладка "Модерація" (нік/причина з полів
+// форми), і швидкий бан з картки гравця (admBanUser нижче) йдуть сюди,
+// щоб не було двох різних реалізацій одного й того ж запису в базу.
+function banPlayer(nickArg, reasonArg) {
   if(!requireAdminPerm('moderation')) return;
-  const nick = (document.getElementById('modUserNick')?.value || '').trim();
-  const reason = (document.getElementById('modReason')?.value || '').trim();
+  const nick = (nickArg || document.getElementById('modUserNick')?.value || '').trim();
+  const reason = (reasonArg || document.getElementById('modReason')?.value || '').trim();
   if(!nick) return notify('Введи нік гравця', 'error');
   db.ref('users/' + nick).once('value').then(snap => {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
@@ -21139,14 +21275,6 @@ function toggleGameEnabled(gameId) {
     logAdminAction('game_toggle', `${gameId}: ${newState ? 'вимкнено' : 'увімкнено'}`);
     renderGameToggleList();
   });
-}
-
-async function isGameDisabled(gameId) {
-  if(!db) return false;
-  try {
-    const snap = await db.ref('site_config/disabledGames/' + gameId).once('value');
-    return !!snap.val();
-  } catch(e) { return false; }
 }
 
 // ── ЖУРНАЛ ДІЙ АДМІНІВ ──
@@ -21866,6 +21994,10 @@ function createChessRoom() {
     createdAt: Date.now(),
   });
   notify('♟️ Кімнату створено! Очікуємо суперника...', 'info');
+  // Хост зникне до того, як хтось приєднається — кімната не має висіти
+  // в лобі вічно, а ставка не має пропасти.
+  roomRef.onDisconnect().update({ status: 'cancelled' });
+  db.ref('users/'+currentUser+'/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
   chessListenOwnRoom(roomRef.key, bet);
 }
 
@@ -21883,6 +22015,11 @@ function chessListenOwnRoom(roomId, bet) {
       document.getElementById('chessGameArea')?.classList.remove('hidden');
       chessUpdateStatusLine('🎮 Суперник приєднався! Твій хід (білі)');
       renderChessBoard();
+      // Суперник приєднався — обидві ставки в грі: зникнення будь-кого з
+      // гравців тепер має повертати ставки обом, а не забирати кімнату.
+      db.ref('pvp_chess/'+roomId).onDisconnect().cancel();
+      db.ref('users/'+currentUser+'/balance').onDisconnect().cancel();
+      db.ref('pvp_chess/'+roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
       chessListenRoomMoves(roomId);
     }
   });
@@ -21926,6 +22063,9 @@ function joinChessRoom(roomId, bet) {
     document.getElementById('chessGameArea')?.classList.remove('hidden');
     chessUpdateStatusLine('⏳ Хід суперника (білі ходять першими)');
     renderChessBoard();
+    // Якщо я зникну під час гри — суперник побачить статус 'abandoned' і
+    // поверне ставки обом (див. chessListenRoomMoves).
+    db.ref('pvp_chess/'+roomId).onDisconnect().update({ status: 'abandoned', abandonedBy: currentUser });
     chessListenRoomMoves(roomId);
   });
 }
@@ -21942,7 +22082,22 @@ function chessSyncMoveToFirebase(move, promoChoice) {
 function chessListenRoomMoves(roomId) {
   chessRoomListener = db.ref('pvp_chess/'+roomId).on('value', snap => {
     const r = snap.val();
-    if(!r || !chessGame || chessGame.gameOver) return;
+    if(!r || !chessGame) return;
+    if(r.status === 'abandoned') {
+      db.ref('pvp_chess/'+roomId+'/status').transaction(cur => cur === 'abandoned' ? 'finished' : undefined, (err, committed) => {
+        if(err || !committed) return;
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(r.bet));
+        if(r.abandonedBy && r.abandonedBy !== currentUser) db.ref('users/'+r.abandonedBy+'/balance').set(firebase.database.ServerValue.increment(r.bet));
+        notify('Суперник відключився. Ставку повернено.', 'info');
+        chessUpdateStatusLine('🔌 Суперник вийшов з гри — ставку повернено.');
+      });
+      chessGame.gameOver = true;
+      if(chessRoomListener) { chessRoomListener(); chessRoomListener = null; }
+      const setupBtn = document.getElementById('chessPlayAgainBtn');
+      if(setupBtn) setupBtn.classList.remove('hidden');
+      return;
+    }
+    if(chessGame.gameOver) return;
     // Синхронізуємось тільки якщо хід зробив СУПЕРНИК (не ми самі)
     if(r.lastMoveBy && r.lastMoveBy !== currentUser) {
       const newBoard = JSON.parse(r.board);
@@ -21961,6 +22116,10 @@ function chessListenRoomMoves(roomId) {
 // Виплата PvP-гри — той самий безпечний "хто перший встиг" патерн
 function chessResolvePvpGame(status, loserColor) {
   if(!chessGame.roomId) return;
+  // Гра природно завершилась (мат/пат) — "abandoned on disconnect" більше
+  // не актуальний для жодного з двох клієнтів, інакше пізніше закриття
+  // вкладки переписало б уже завершену кімнату назад у 'abandoned'.
+  db.ref('pvp_chess/'+chessGame.roomId).onDisconnect().cancel();
   db.ref('pvp_chess/'+chessGame.roomId+'/resolved').transaction(current => {
     if(current) return; // вже хтось виплатив
     return true;
