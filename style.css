@@ -3850,3 +3850,21 @@ input:focus-visible, textarea:focus-visible, .nav-item:focus-visible,
    перехоплювач error в app.js (IMG_FALLBACK). */
 img:not([src]),
 img[src=""] { visibility: hidden; }
+
+/* Емодзі → SVG-іконки (див. emoji-icons.js). Символ лишається в тексті, але прозорий. */
+.emj {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  line-height: 1;
+  vertical-align: -0.2em;
+  background: center / contain no-repeat;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  text-indent: -100em;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: 0;
+  font-style: normal;
+}

@@ -5113,10 +5113,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '97';
+const CURRENT_VERSION = '98';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '98',
+    title: '📜 Оновлення v98 — однакові іконки на всіх телефонах',
+    date: Date.UTC(2026, 9, 15),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎨 Іконки',
+        items: [
+          'Системні емодзі та стікери замінені на власні кольорові іконки — тепер усе виглядає однаково на Samsung, iPhone, Xiaomi та будь-якому іншому телефоні',
+          'Іконки підтягуються з самого сайту, тому не залежать від версії Android чи iOS',
+        ]
+      },
+    ]
+  },
   {
     version: '97',
     title: '📜 Оновлення v97 — Аксіома Банк тепер окремий банк',
