@@ -72,6 +72,9 @@ let audioCtx = null;
 
 // Telegram Bot Username — замінити на свій!
 const TG_BOT_USERNAME = 'SlotOK_DepositBot';
+// Одна адреса для всіх запрошень — старий slotok.web.app віддає 404
+const SITE_URL = 'https://slot-ok-beta.vercel.app';
+function referralLink() { return SITE_URL + '/?ref=' + encodeURIComponent(currentUser); }
 
 // ============================================
 // ПЕРЕВІРКА ЛОГІНУ
@@ -3251,7 +3254,7 @@ function sendChatMsg() {
 // ═══════════════════════════════════════════════════════
 function initAffiliate() {
   if(!currentUser) return;
-  const link = 'https://slotok.web.app/?ref='+currentUser;
+  const link = referralLink();
   const el = document.getElementById('affLink');
   if(el) el.textContent = link;
   db.ref('users').orderByChild('referredBy').equalTo(currentUser).once('value', snap => {
@@ -3291,13 +3294,13 @@ function claimAffiliateEarnings(earnedTotal) {
 }
 
 function copyAffLink() {
-  const link = 'https://slotok.web.app/?ref='+currentUser;
+  const link = referralLink();
   navigator.clipboard.writeText(link).then(()=>notify('📋 Посилання скопійовано!','success'));
 }
 
 function shareAffLink() {
-  const link = 'https://slotok.web.app/?ref='+currentUser;
-  if(navigator.share) navigator.share({title:'SlotOK Casino',text:'Зареєструйся за моїм посиланням!',url:link});
+  const link = referralLink();
+  if(navigator.share) navigator.share({title:'SlotOK — казино з друзями',text:'🎰 Граю в SlotOK — слоти, рулетка, краш і турніри на віртуальні гривні. Реєструйся за моїм посиланням і забирай стартовий бонус!',url:link});
   else copyAffLink();
 }
 
@@ -5113,10 +5116,34 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '98';
+const CURRENT_VERSION = '99';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '99',
+    title: '📜 Оновлення v99 — запрошуй друзів',
+    date: Date.UTC(2026, 9, 19),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '👥 Реферали',
+        items: [
+          'Реферальне посилання вело на неробочий сайт, тепер воно відкриває SlotOK',
+          'Друг, який зареєструвався за твоїм посиланням, тепер справді зараховується тобі в реферали',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🔗 Гарне прев\'ю посилання',
+        items: [
+          'Посилання на SlotOK у Telegram, Viber та інших месенджерах тепер показує картку з назвою, описом і картинкою',
+          'Кнопка «Поділитися» підставляє готовий текст запрошення',
+        ]
+      },
+    ]
+  },
   {
     version: '98',
     title: '📜 Оновлення v98 — однакові іконки на всіх телефонах',
@@ -8280,7 +8307,7 @@ function showWishlist() {
 
 function showReferralQR() {
   var refCode = currentUser;
-  var url = 'https://slot-ok-beta.vercel.app?ref=' + refCode;
+  var url = referralLink();
   var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '&bgcolor=050505&color=d4af37&margin=10';
   openModal('qr',
     modalCloseBtn('qr') +
@@ -8822,7 +8849,9 @@ function createTournament() {
 function checkRefParam() {
   const urlParams = new URLSearchParams(location.search);
   const ref = urlParams.get('ref');
-  if(ref && currentUser) {
+  // Запам'ятовуємо запрошувача для НОВОГО гостя — реєстрація потім пише referredBy.
+  // Раніше тут була умова currentUser, тож новачкам ref ніколи не зберігався.
+  if(ref && !currentUser && /^[^.#$\[\]\/]{1,40}$/.test(ref)) {
     localStorage.setItem('ref_by', ref);
   }
 }

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://slot-ok-beta.vercel.app/sitemap.xml
