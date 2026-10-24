@@ -48,6 +48,19 @@ describe('resetWithAnswer', () => {
   });
 });
 
+describe('resetWithAnswer: спадкова відповідь', () => {
+  it('SHA-256 відповідь перехешовується в pbkdf2, пароль оновлено', async () => {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('барсик'));
+    const sha = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    db.data.users = { Ivan: { pass: 'old', securityQuestion: 'pet', securityAnswerHash: sha } };
+    await resetWithAnswer('Ivan', ' БАРСИК ', 'newpass1', 'newpass1');
+    const stored = db.read('users/Ivan/securityAnswerHash');
+    expect(stored.startsWith('pbkdf2$')).toBe(true);
+    expect((await SlotOKPassword.verify('барсик', stored)).ok).toBe(true);
+    expect((await SlotOKPassword.verify('newpass1', db.read('users/Ivan/pass'))).ok).toBe(true);
+  });
+});
+
 describe('requestViaTelegram', () => {
   it('створює заявку, сповіщує бота й адмінів, повертає посилання', async () => {
     db.data.users = {

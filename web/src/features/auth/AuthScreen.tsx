@@ -14,7 +14,7 @@ export function AuthScreen() {
       <h1 className="logo center" style={{ fontSize: 32, paddingTop: 24 }}>SlotOK</h1>
       {blocked && (
         <div className="card error row between" role="alert">
-          <span>{blocked}</span>
+          <span style={{ whiteSpace: 'pre-line' }}>{blocked}</span>
           <button type="button" className="btn quiet" aria-label="Закрити повідомлення" onClick={dismissBlocked}>✕</button>
         </div>
       )}

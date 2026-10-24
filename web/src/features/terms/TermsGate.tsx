@@ -8,13 +8,17 @@ export function TermsGate() {
   const { nick, signOut } = useSession();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const all = TERMS_CHECKS.every((c) => checked[c.k]);
 
   async function accept() {
     if (!nick || !all) return;
     setBusy(true);
+    setFailed(false);
     try {
       await acceptTerms(nick);
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -36,6 +40,7 @@ export function TermsGate() {
           </label>
         ))}
         <a className="muted" href="/?open=rules" target="_blank" rel="noopener">Читати повні правила ↗</a>
+        {failed && <div className="error" role="alert">Не вдалося зберегти. Спробуй ще раз.</div>}
         <Button block disabled={!all || busy} onClick={accept}>Підтверджую</Button>
         <Button block variant="quiet" onClick={signOut}>Вийти</Button>
       </div>
