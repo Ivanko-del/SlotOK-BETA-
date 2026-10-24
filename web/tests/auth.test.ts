@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setDb } from '../src/lib/db';
 import { SlotOKPassword } from '../src/lib/password';
 import { acceptTerms, login } from '../src/services/auth';
@@ -65,6 +65,18 @@ describe('login', () => {
     db.data.site_config = { maintenance: true };
     await expect(login('Ivan', 'secret1')).rejects.toThrow('технічному обслуговуванні');
     await expect(login('Boss', 'secret1')).resolves.toBe('Boss');
+  });
+});
+
+describe('login: таймаут', () => {
+  afterEach(() => vi.useRealTimers());
+  it('через 10 с без відповіді БД кидає «Час вийшов»', async () => {
+    vi.useFakeTimers();
+    db.get = () => new Promise(() => {});
+    const p = login('Ivan', 'secret1');
+    const assertion = expect(p).rejects.toThrow('⏱ Час вийшов. Перевір інтернет.');
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
   });
 });
 

@@ -33,6 +33,11 @@ describe('валідація (тексти зі старого authRegister)', (
     expect(db.data.users).toBeUndefined();
   });
 
+  it('прототипні ключі не проходять як контрольне питання', async () => {
+    await expect(register({ ...ok, secQuestion: 'constructor' })).rejects.toThrow('Оберіть контрольне питання');
+    expect(db.data.users).toBeUndefined();
+  });
+
   it('дозволяє українські літери', async () => {
     await expect(register({ ...ok, nick: 'Їжак_Єгор-1' })).resolves.toMatchObject({ nick: 'Їжак_Єгор-1' });
   });

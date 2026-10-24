@@ -19,7 +19,16 @@ export async function login(nickRaw: string, pass: string, now: number = Date.no
   if (!NICK_PATH_RE.test(n)) throw notFound;
 
   const db = getDb();
-  const data = await db.get<Record<string, any>>('users/' + n);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new UserFacingError('⏱ Час вийшов. Перевір інтернет.')), 10_000);
+  });
+  let data: Record<string, any> | null;
+  try {
+    data = await Promise.race([db.get<Record<string, any>>('users/' + n), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
   if (!data) throw notFound;
   if (data.banned) {
     throw new UserFacingError('🚫 Акаунт заблоковано' + (data.banReason ? ': ' + data.banReason : ''));
@@ -87,7 +96,7 @@ export async function register(
   }
   if (!input.pass) throw new UserFacingError('Введіть пароль');
   if (input.pass.length < 6) throw new UserFacingError('Пароль мінімум 6 символів');
-  if (!(input.secQuestion in SECURITY_QUESTIONS)) throw new UserFacingError('Оберіть контрольне питання');
+  if (!Object.hasOwn(SECURITY_QUESTIONS, input.secQuestion)) throw new UserFacingError('Оберіть контрольне питання');
   if (!secA) {
     throw new UserFacingError('Введіть відповідь на контрольне питання (потрібна для відновлення пароля)');
   }

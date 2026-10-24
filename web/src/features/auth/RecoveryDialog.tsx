@@ -72,7 +72,7 @@ export function RecoveryDialog({ onClose }: { onClose(): void }) {
 
         {step.kind === 'question' && (
           <form className="stack" onSubmit={(e) => { e.preventDefault(); void reset(); }}>
-            <p className="muted">{SECURITY_QUESTIONS[step.question] || 'Контрольне питання'}</p>
+            <p className="muted">{Object.hasOwn(SECURITY_QUESTIONS, step.question) ? SECURITY_QUESTIONS[step.question] : 'Контрольне питання'}</p>
             <Field label="Відповідь" value={answer} onChange={(e) => setAnswer(e.target.value)} />
             <Field label="Новий пароль (мін 6 символів)" type="password" value={p1} onChange={(e) => setP1(e.target.value)} autoComplete="new-password" />
             <Field label="Повторіть новий пароль" type="password" value={p2} onChange={(e) => setP2(e.target.value)} autoComplete="new-password" />
