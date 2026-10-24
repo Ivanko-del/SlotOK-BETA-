@@ -7,10 +7,10 @@ import { hasAcceptedTerms } from '../domain/terms';
 import { Shell } from './Shell';
 import { SessionProvider, useSession } from './SessionProvider';
 
-function Gate() {
-  const { nick, user } = useSession();
+export function Gate() {
+  const { nick, user, ready } = useSession();
   if (!nick) return <AuthScreen />;
-  if (user === undefined) return <p className="page center muted">Завантаження…</p>;
+  if (!ready || !user) return <p className="page center muted">Завантаження…</p>;
   return (
     <>
       <Routes>

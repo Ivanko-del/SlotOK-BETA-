@@ -1,7 +1,7 @@
 import { activeCardId } from '../domain/cards';
 import { canClaimDaily, dailyBonusPreview } from '../domain/dailyBonus';
 import { getDb } from '../lib/db';
-import type { UserRecord } from './access';
+import { evaluateAccess, type UserRecord } from './access';
 import { UserFacingError } from './errors';
 
 export function subscribeUser(nick: string, cb: (u: UserRecord | null) => void): () => void {
@@ -25,6 +25,8 @@ export async function claimDaily(nick: string, now: number = Date.now()): Promis
   const base = 'users/' + nick;
   const user = await db.get<UserRecord>(base);
   if (!user) throw new UserFacingError('Акаунт не знайдено');
+  const verdict = evaluateAccess(nick, user, false, now);
+  if (!verdict.ok) throw new UserFacingError(verdict.message);
   if (!canClaimDaily(user.lastDailyBonus, now)) throw new UserFacingError('Бонус вже забрано, зачекай до завтра');
 
   const p = dailyBonusPreview(user);

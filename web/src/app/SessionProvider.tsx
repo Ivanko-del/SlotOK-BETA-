@@ -8,6 +8,8 @@ interface SessionValue {
   nick: string | null;
   /** undefined — ще вантажиться, null — запису немає */
   user: UserRecord | null | undefined;
+  /** true, коли користувач завантажений і пройшов перевірки доступу */
+  ready: boolean;
   blocked: string | null;
   signIn(nick: string): void;
   signOut(): void;
@@ -32,18 +34,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(undefined);
     setMaintenance(null);
     if (!nick) return;
-    const off = subscribeUser(nick, setUser);
-    getDb()
-      .get('site_config/maintenance')
-      .then((v) => setMaintenance(!!v))
-      .catch(() => setMaintenance(false));
-    return off;
+    const offUser = subscribeUser(nick, setUser);
+    const offMaintenance = getDb().subscribe('site_config/maintenance', (v) => setMaintenance(!!v));
+    return () => {
+      offUser();
+      offMaintenance();
+    };
   }, [nick]);
+
+  const verdict = useMemo(
+    () => (nick && user !== undefined && maintenance !== null ? evaluateAccess(nick, user, maintenance, Date.now()) : null),
+    [nick, user, maintenance],
+  );
+  const ready = verdict?.ok === true;
 
   // Те саме, що робить startDataSync у старому app.js при кожному оновленні користувача.
   useEffect(() => {
-    if (!nick || user === undefined || maintenance === null) return;
-    const verdict = evaluateAccess(nick, user, maintenance, Date.now());
+    if (!nick || !verdict) return;
     if (!verdict.ok) {
       clearSession();
       setBlocked(verdict.message);
@@ -51,7 +58,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } else if (verdict.clearSelfExclusion) {
       void getDb().set('users/' + nick + '/selfExcluded', false);
     }
-  }, [nick, user, maintenance]);
+  }, [nick, verdict]);
 
   const signIn = useCallback((n: string) => {
     setBlocked(null);
@@ -64,8 +71,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const dismissBlocked = useCallback(() => setBlocked(null), []);
 
   const value = useMemo(
-    () => ({ nick, user, blocked, signIn, signOut, dismissBlocked }),
-    [nick, user, blocked, signIn, signOut, dismissBlocked],
+    () => ({ nick, user, ready, blocked, signIn, signOut, dismissBlocked }),
+    [nick, user, ready, blocked, signIn, signOut, dismissBlocked],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
