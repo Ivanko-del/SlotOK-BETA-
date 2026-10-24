@@ -25,8 +25,7 @@ export async function claimDaily(nick: string, now: number = Date.now()): Promis
   const base = 'users/' + nick;
   const user = await db.get<UserRecord>(base);
   if (!user) throw new UserFacingError('Акаунт не знайдено');
-  // Без попереднього бонусу (lastDailyBonus відсутній) забрати можна завжди; з реальним now це збігається зі старою логікою.
-  if (user.lastDailyBonus && !canClaimDaily(user.lastDailyBonus, now)) throw new UserFacingError('Бонус вже забрано, зачекай до завтра');
+  if (!canClaimDaily(user.lastDailyBonus, now)) throw new UserFacingError('Бонус вже забрано, зачекай до завтра');
 
   const p = dailyBonusPreview(user);
   await db.update({ [base + '/lastDailyBonus']: now, [base + '/dailyStreak']: p.newStreak });
