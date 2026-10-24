@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install && npm --prefix web install",
+  "buildCommand": "npm --prefix web run build && rm -rf web/node_modules",
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/v2", "destination": "/v2/index.html" },
+    { "source": "/v2/(.*)", "destination": "/v2/index.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",
@@ -11,6 +18,10 @@
     },
     {
       "source": "/icons/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/v2/assets/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ]
