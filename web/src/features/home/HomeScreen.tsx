@@ -12,6 +12,7 @@ export function HomeScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);
@@ -23,12 +24,13 @@ export function HomeScreen() {
   async function claim() {
     setBusy(true);
     setMessage('');
+    setError('');
     try {
       const r = await claimDaily(nick!);
       setNow(Date.now());
       setMessage(`🎁 +${r.amount} ₴${r.streakBonus ? ` і бонус серії +${r.streakBonus} ₴` : ''}`);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Не вдалося забрати бонус');
+      setError(e instanceof Error ? e.message : 'Не вдалося забрати бонус');
     } finally {
       setBusy(false);
     }
@@ -36,7 +38,7 @@ export function HomeScreen() {
 
   return (
     <div className="stack">
-      <DailyBonusCard user={user} now={now} busy={busy} message={message} onClaim={claim} />
+      <DailyBonusCard user={user} now={now} busy={busy} message={message} error={error} onClaim={claim} />
       <StatsGrid user={user} />
       <ProgressCard user={user} now={now} />
       <WinTicker />

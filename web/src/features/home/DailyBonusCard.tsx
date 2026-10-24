@@ -8,10 +8,11 @@ interface Props {
   now: number;
   busy: boolean;
   message: string;
+  error?: string;
   onClaim(): void;
 }
 
-export function DailyBonusCard({ user, now, busy, message, onClaim }: Props) {
+export function DailyBonusCard({ user, now, busy, message, error, onClaim }: Props) {
   const can = canClaimDaily(user.lastDailyBonus, now);
   const p = dailyBonusPreview(user);
 
@@ -24,6 +25,7 @@ export function DailyBonusCard({ user, now, busy, message, onClaim }: Props) {
         <h2>🎁 Щоденний бонус</h2>
         <p className="muted">Наступний бонус через {h} год {m} хв · серія {user.dailyStreak || 0} 🔥</p>
         {message && <p className="ok">{message}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
       </Card>
     );
   }
@@ -34,6 +36,7 @@ export function DailyBonusCard({ user, now, busy, message, onClaim }: Props) {
       <div className="big">+{p.amount} монет</div>
       <div style={{ fontWeight: 700, marginBottom: 10 }}>День {p.day} серії</div>
       <Button variant="accent" disabled={busy} onClick={onClaim}>Забрати</Button>
+      {error && <p className="error" role="alert">{error}</p>}
     </Card>
   );
 }

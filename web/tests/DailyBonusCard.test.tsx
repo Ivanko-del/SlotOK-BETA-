@@ -25,4 +25,17 @@ describe('DailyBonusCard', () => {
     render(<DailyBonusCard user={{}} now={DAY_MS * 5} busy message="" onClaim={() => {}} />);
     expect(screen.getByRole('button', { name: 'Забрати' })).toBeDisabled();
   });
+
+  it('доступний: показує помилку з role alert', () => {
+    render(<DailyBonusCard user={{}} now={DAY_MS * 5} busy={false} message="" error="Мережа недоступна" onClaim={() => {}} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Мережа недоступна');
+    expect(screen.getByRole('button', { name: 'Забрати' })).toBeInTheDocument();
+  });
+
+  it('вже забрано: показує і message, і error', () => {
+    const now = DAY_MS * 5;
+    render(<DailyBonusCard user={{ lastDailyBonus: now - 3600000 }} now={now} busy={false} message="🎁 +100 ₴" error="Бонус вже забрано" onClaim={() => {}} />);
+    expect(screen.getByText('🎁 +100 ₴')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Бонус вже забрано');
+  });
 });
