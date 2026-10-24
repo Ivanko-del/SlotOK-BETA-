@@ -157,6 +157,7 @@ function startDataSync() {
             if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); watchAntiCheatConfig(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
+            if(!window._v2LinkHandled) { window._v2LinkHandled = true; setTimeout(handleV2Link, 600); }
             if(!window._initDone) {
               window._initDone = true;
               setTimeout(initHomeTab, 100);
@@ -4147,6 +4148,16 @@ function wipeEconomy_auto() {
 // ІНШІ ФУНКЦІЇ
 // ============================================
 function openGame(g) { trackRecentGame(g); switchTab(g); }
+
+// Міст із новим сайтом (/v2): ?tab=<id> відкриває екран, ?open=rules — правила.
+// Викликається один раз після першого завантаження користувача.
+function handleV2Link() {
+  var p = new URLSearchParams(location.search);
+  var tab = p.get('tab'), open = p.get('open');
+  if(tab && /^[a-z]+$/.test(tab) && document.getElementById('tab-' + tab)) switchTab(tab);
+  if(open === 'rules') openRulesModal();
+  if(tab || open) history.replaceState(null, '', location.pathname);
+}
 function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); if(id === 'transfer-modal' && typeof renderSourceBars === 'function') renderSourceBars(); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
