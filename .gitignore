@@ -7,3 +7,7 @@ package-lock.json
 .agents/
 .playwright-mcp/
 skills-lock.json
+
+v2/
+.superpowers/
+web/node_modules/
