@@ -6,6 +6,7 @@ import { Field } from '../../design/Field';
 import { ProgressBar } from '../../design/ProgressBar';
 import { getVipLevel } from '../../domain/vip';
 import { formatNumber } from '../../lib/format';
+import { isAdminAccount } from '../../services/access';
 import { downscaleImage, setAvatar, setStatus, setTag, STATUSES } from '../../services/profile';
 
 function Avatar({ user }: { user: Record<string, any> }) {
@@ -55,7 +56,7 @@ export function ProfileScreen() {
       <Card className="stack center">
         <div className="row" style={{ justifyContent: 'center' }}><Avatar user={user} /></div>
         <h1 style={{ fontSize: 22 }}>{nick}</h1>
-        <div className="muted">ID {user.id || '---'} · {vip.icon} {vip.name}{user.isAdmin ? ' · 🛡 Адмін' : ''}</div>
+        <div className="muted">ID {user.id || '---'} · {vip.icon} {vip.name}{isAdminAccount(nick, user) ? ' · 🛡 Адмін' : ''}</div>
         <Field
           label="Статус профілю"
           value={tag}
@@ -87,8 +88,8 @@ export function ProfileScreen() {
         </div>
       </Card>
 
-      {user.isAdmin && (
-        <Card><a className="btn block" href="/?tab=more">🛡 Адмін-панель (старий сайт)</a></Card>
+      {isAdminAccount(nick, user) && (
+        <Card><a className="btn block" href="/?tab=admin">🛡 Адмін-панель (старий сайт)</a></Card>
       )}
       <Button block variant="quiet" onClick={signOut}>Вийти</Button>
       <a className="muted center" href="/">Відкрити старий сайт</a>
