@@ -1,5 +1,6 @@
 node_modules/
 package-lock.json
+!web/package-lock.json
 .env
 .env.*
 .vercel
