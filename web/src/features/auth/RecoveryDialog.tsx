@@ -8,7 +8,7 @@ type Step =
   | { kind: 'nick' }
   | { kind: 'question'; question: string }
   | { kind: 'telegram' }
-  | { kind: 'done'; text: string };
+  | { kind: 'done'; text: string; url?: string };
 
 export function RecoveryDialog({ onClose }: { onClose(): void }) {
   const [step, setStep] = useState<Step>({ kind: 'nick' });
@@ -49,6 +49,7 @@ export function RecoveryDialog({ onClose }: { onClose(): void }) {
       window.open(url, '_blank', 'noopener');
       setStep({
         kind: 'done',
+        url,
         text: '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.',
       });
     });
@@ -62,37 +63,40 @@ export function RecoveryDialog({ onClose }: { onClose(): void }) {
         </div>
 
         {step.kind === 'nick' && (
-          <>
+          <form className="stack" onSubmit={(e) => { e.preventDefault(); void next(); }}>
             <p className="muted">Введіть свій нікнейм, щоб почати відновлення.</p>
             <Field label="Нікнейм" value={nick} onChange={(e) => setNick(e.target.value)} />
-            <Button block disabled={busy} onClick={next}>Далі →</Button>
-          </>
+            <Button block type="submit" disabled={busy}>Далі →</Button>
+          </form>
         )}
 
         {step.kind === 'question' && (
-          <>
+          <form className="stack" onSubmit={(e) => { e.preventDefault(); void reset(); }}>
             <p className="muted">{SECURITY_QUESTIONS[step.question] || 'Контрольне питання'}</p>
             <Field label="Відповідь" value={answer} onChange={(e) => setAnswer(e.target.value)} />
             <Field label="Новий пароль (мін 6 символів)" type="password" value={p1} onChange={(e) => setP1(e.target.value)} autoComplete="new-password" />
             <Field label="Повторіть новий пароль" type="password" value={p2} onChange={(e) => setP2(e.target.value)} autoComplete="new-password" />
-            <Button block disabled={busy} onClick={reset}>Змінити пароль</Button>
-            <Button block variant="quiet" onClick={() => setStep({ kind: 'telegram' })}>Не пам'ятаю відповідь</Button>
-          </>
+            <Button block type="submit" disabled={busy}>Змінити пароль</Button>
+            <Button block type="button" variant="quiet" onClick={() => setStep({ kind: 'telegram' })}>Не пам'ятаю відповідь</Button>
+          </form>
         )}
 
         {step.kind === 'telegram' && (
-          <>
+          <form className="stack" onSubmit={(e) => { e.preventDefault(); void telegram(); }}>
             <p className="muted">
               Автоматичне відновлення недоступне для цього акаунту. Подайте заявку — адміністратор перевірить вас у Telegram і скине пароль вручну.
             </p>
-            <Button block disabled={busy} onClick={telegram}>✈️ Подати заявку через Telegram</Button>
-          </>
+            <Button block type="submit" disabled={busy}>✈️ Подати заявку через Telegram</Button>
+          </form>
         )}
 
         {step.kind === 'done' && (
           <>
             <p className="ok">{step.text}</p>
-            <Button block onClick={onClose}>Закрити</Button>
+            {step.url && (
+              <a className="btn block" href={step.url} target="_blank" rel="noopener noreferrer">✈️ Відкрити бота в Telegram</a>
+            )}
+            <Button block type="button" onClick={onClose}>Закрити</Button>
           </>
         )}
 

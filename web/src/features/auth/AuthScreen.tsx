@@ -13,7 +13,10 @@ export function AuthScreen() {
     <main className="page stack">
       <h1 className="logo center" style={{ fontSize: 32, paddingTop: 24 }}>SlotOK</h1>
       {blocked && (
-        <div className="card error" role="alert" onClick={dismissBlocked}>{blocked}</div>
+        <div className="card error row between" role="alert">
+          <span>{blocked}</span>
+          <button type="button" className="btn quiet" aria-label="Закрити повідомлення" onClick={dismissBlocked}>✕</button>
+        </div>
       )}
       <div className="tabs" role="tablist">
         <button role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'on' : ''} onClick={() => setMode('login')}>Вхід</button>
