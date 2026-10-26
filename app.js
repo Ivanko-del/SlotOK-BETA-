@@ -5673,10 +5673,34 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '104';
+const CURRENT_VERSION = '105';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '105',
+    title: '📜 Оновлення v105 — нові сезони Battle Pass',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎫 Battle Pass',
+        items: [
+          '24 нові тематичні сезони наперед: Квітучий джекпот, Піратська гавань, Сафарі, Неонове місто, Дикий Захід, Кіберпанк, Рік дракона, Скарби фараона, Сага вікінгів, Північне сяйво і ще багато інших',
+          'Пройшов усі 50 рівнів? Сезон не закінчується: кожні 2 000 XP — бонусна скриня з лут-боксом (з VIP-пропуском — ще й 2 Слотіки)',
+          'На 50 рівні замість «Рівень 51» тепер чесно показується MAX і прогрес до наступної скрині',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Нагорода Battle Pass більше не може «з\'їсти» ставку, зроблену в ту саму секунду',
+        ]
+      },
+    ]
+  },
   {
     version: '104',
     title: '📜 Оновлення v104 — Crash, Mines і ще 3 гри на сервері',
@@ -7036,7 +7060,7 @@ function renderHomeProgressBars() {
   const bpBar = document.getElementById('homeBpBar');
   const bpPctEl = document.getElementById('homeBpPct');
   if(bpBar) bpBar.style.width = bpPct + '%';
-  if(bpPctEl) bpPctEl.textContent = 'Lv' + (bp.level + 1);
+  if(bpPctEl) bpPctEl.textContent = bp.level >= BP_MAX_LEVEL ? 'MAX' : 'Lv' + (bp.level + 1);
 }
 
 
@@ -17851,6 +17875,31 @@ const BP_SEASONS = [
   { num: 14, name: 'Крижаний джекпот', icon: '💎', color: '#9ad8ff' },
   { num: 15, name: 'Космічний рейс',   icon: '🚀', color: '#b18cff' },
   { num: 16, name: 'Корона',           icon: '👑', color: '#d4af37' },
+  // 2027–2029 — теми під пору року, коли сезон іде (сезон = 30 днів від епохи).
+  { num: 17, name: 'Квітучий джекпот', icon: '🌸', color: '#ff9ecf' },
+  { num: 18, name: 'Піратська гавань', icon: '⚓', color: '#5aa0c8' },
+  { num: 19, name: 'Сафарі',           icon: '🦁', color: '#e0a040' },
+  { num: 20, name: 'Неонове місто',    icon: '🌃', color: '#ff3cac' },
+  { num: 21, name: 'Дикий Захід',      icon: '🤠', color: '#c47a3a' },
+  { num: 22, name: 'Шлях самурая',     icon: '⛩️', color: '#e04848' },
+  { num: 23, name: 'Відьмин котел',    icon: '🧙', color: '#8e44ad' },
+  { num: 24, name: 'Кіберпанк',        icon: '🤖', color: '#00e5ff' },
+  { num: 25, name: 'Снігова казка',    icon: '⛄', color: '#b8e8ff' },
+  { num: 26, name: 'Рік дракона',      icon: '🐉', color: '#ff5a36' },
+  { num: 27, name: 'Валентинка',       icon: '💘', color: '#ff6b9a' },
+  { num: 28, name: 'Глибокий океан',   icon: '🐙', color: '#1fb5c9' },
+  { num: 29, name: 'Скарби фараона',   icon: '🏺', color: '#d9a441' },
+  { num: 30, name: 'Орбітальна станція', icon: '🛰️', color: '#9aa9ff' },
+  { num: 31, name: 'Тропічний коктейль', icon: '🍹', color: '#ff9f43' },
+  { num: 32, name: 'Олімп',            icon: '🏛️', color: '#e6c87a' },
+  { num: 33, name: 'Казкове королівство', icon: '🏰', color: '#c39bff' },
+  { num: 34, name: 'Сага вікінгів',    icon: '🛡️', color: '#8fa3b8' },
+  { num: 35, name: 'Ніч привидів',     icon: '👻', color: '#a0a0ff' },
+  { num: 36, name: 'Золота лихоманка', icon: '⛏️', color: '#f5c542' },
+  { num: 37, name: 'Північне сяйво',   icon: '🌠', color: '#6fffd2' },
+  { num: 38, name: 'Ніч у Монако',     icon: '🎲', color: '#e74c3c' },
+  { num: 39, name: 'Джунглі',          icon: '🌴', color: '#3ecf6e' },
+  { num: 40, name: 'Арена чемпіонів',  icon: '🏆', color: '#ffd700' },
 ];
 const BP_SEASON_DEFAULT = { name: '', icon: '🎫', color: '#c9a0ff' };
 
@@ -17928,6 +17977,15 @@ const BP_REWARDS = [
   {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'🔱',label:'Рамка "Supreme"',type:'cosmetic',val:'name_frame'}, milestone:true},
 ];
 
+// Після 50-го рівня сезон не «закінчується»: кожні BP_BONUS_XP досвіду дають
+// бонусну скриню (лут-бокс; з VIP-пропуском — ще й 2 Слотіки).
+const BP_BONUS_XP = 2000;
+function bpBonusInfo(bp) {
+  const extra = Math.max(0, bp.xp - BP_MAX_LEVEL * BP_XP_PER_LEVEL);
+  const earned = bp.level >= BP_MAX_LEVEL ? Math.floor(extra / BP_BONUS_XP) : 0;
+  return { earned, available: Math.max(0, earned - bp.bonusClaimed), progress: extra % BP_BONUS_XP };
+}
+
 function getBpData() {
   const season = getBpSeasonInfo();
   // undefined bpSeason = pre-season data from before this feature existed —
@@ -17944,6 +18002,7 @@ function getBpData() {
     level:    stale ? 0     : (userData.bpLevel    || 0),
     isVip:    stale ? false : (userData.bpVip      || false),
     claimed:  stale ? {}    : (userData.bpClaimed  || {}),
+    bonusClaimed: stale ? 0 : (userData.bpBonusClaimed || 0),
   };
 }
 
@@ -17956,10 +18015,13 @@ function initBattlePass() {
   const xpNext = BP_XP_PER_LEVEL;
   const pct    = Math.min(100, Math.round((xp % xpNext) / xpNext * 100));
 
-  document.getElementById('bpLevel').textContent  = level + 1;
-  document.getElementById('bpXP').textContent     = xp % xpNext;
-  document.getElementById('bpXPNext').textContent = xpNext;
-  document.getElementById('bpProgressBar').style.width = pct + '%';
+  // На 50-му рівні показуємо MAX і прогрес до наступної бонусної скрині.
+  const maxed = level >= BP_MAX_LEVEL;
+  const bonus = bpBonusInfo(bp);
+  document.getElementById('bpLevel').textContent  = maxed ? 'MAX' : level + 1;
+  document.getElementById('bpXP').textContent     = maxed ? bonus.progress : xp % xpNext;
+  document.getElementById('bpXPNext').textContent = maxed ? BP_BONUS_XP : xpNext;
+  document.getElementById('bpProgressBar').style.width = (maxed ? Math.round(bonus.progress / BP_BONUS_XP * 100) : pct) + '%';
 
   const seasonNumEl = document.getElementById('bpSeasonNum');
   if(seasonNumEl) seasonNumEl.textContent = bp.season;
@@ -18029,13 +18091,43 @@ function renderBattlePassTrack(bp) {
             : `<div style="font-size:9px;color:#333;">🔒</div>`}
         </div>
       </div>`;
-    }).join('') + `</div>`;
+    }).join('') + bpBonusCard(bp) + `</div>`;
 
   // Scroll to current level
   setTimeout(() => {
     const cur = el.querySelector('div[style*="accent"]');
     if(cur) cur.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
   }, 100);
+}
+
+function bpBonusCard(bp) {
+  const b = bpBonusInfo(bp);
+  const maxed = bp.level >= BP_MAX_LEVEL;
+  return `<div style="flex-shrink:0;width:130px;border-radius:12px;border:2px dashed ${maxed ? bp.seasonColor || '#c9a0ff' : '#1a1a1a'};padding:10px 8px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px;background:#0a0a0a;">
+      <div style="font-size:10px;font-weight:bold;color:#c9a0ff;">Після 50 рівня</div>
+      <div style="font-size:30px;">🎁</div>
+      <div style="font-size:10px;color:#aaa;line-height:1.35;">Бонусна скриня кожні ${formatNumber(BP_BONUS_XP)} XP${bp.isVip ? '<br>👑 + 2 Слотіки' : ''}</div>
+      ${!maxed ? `<div style="font-size:9px;color:#444;">🔒 Дійди до 50 рівня</div>`
+        : b.available > 0
+          ? `<button class="bp-claim-pulse" onclick="claimBpBonus()" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:5px 8px;color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">Відкрити (${b.available})</button>`
+          : `<div style="font-size:9px;color:#666;">Наступна: ${formatNumber(b.progress)} / ${formatNumber(BP_BONUS_XP)} XP</div>`}
+    </div>`;
+}
+
+let _bpBonusLock = false;
+function claimBpBonus() {
+  if(_bpBonusLock) return;
+  const bp = getBpData();
+  if(bpBonusInfo(bp).available < 1) return notify('Поки немає бонусних скринь', 'info');
+  _bpBonusLock = true;
+  const inc = firebase.database.ServerValue.increment;
+  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, lootboxes: inc(1) };
+  if(bp.isVip) updates.slotiky = inc(2);
+  db.ref('users/'+currentUser).update(updates).then(() => {
+    playSound('bonus');
+    notify('🎁 Бонусна скриня: 📦 лут-бокс' + (bp.isVip ? ' + 🪙 2 Слотіки' : '') + '!', 'success');
+  }).catch(() => notify('Не вдалося відкрити скриню', 'error'))
+    .finally(() => { _bpBonusLock = false; setTimeout(initBattlePass, 400); });
 }
 
 let _bpClaimLock = false;
@@ -18057,12 +18149,14 @@ function claimBpReward(lv, track) {
   claimed[key] = true;
   const updates = { bpClaimed: claimed };
 
-  // Apply reward
-  if(reward.type === 'balance')       updates.balance   = (userData.balance||0)   + reward.val;
-  if(reward.type === 'slotiky')       updates.slotiky   = (userData.slotiky||0)   + reward.val;
-  if(reward.type === 'freeSlots')     updates.freeSlots = (userData.freeSlots||0) + reward.val;
-  if(reward.type === 'freeFortune')   updates.freeFortune = (userData.freeFortune||0) + reward.val;
-  if(reward.type === 'minesHints')    updates.minesHints = (userData.minesHints||0) + reward.val;
+  // Apply reward. Атомарні increment: раніше баланс перезаписувався числом з
+  // локальної копії, і ставка, що встигла пройти між читанням і записом, губилась.
+  const inc = firebase.database.ServerValue.increment;
+  if(reward.type === 'balance')       updates.balance   = inc(reward.val);
+  if(reward.type === 'slotiky')       updates.slotiky   = inc(reward.val);
+  if(reward.type === 'freeSlots')     updates.freeSlots = inc(reward.val);
+  if(reward.type === 'freeFortune')   updates.freeFortune = inc(reward.val);
+  if(reward.type === 'minesHints')    updates.minesHints = inc(reward.val);
   if(reward.type === 'crashInsurance')updates.crashInsurance = true;
   if(reward.type === 'vipBoost') {
     const days = reward.val;
@@ -18072,7 +18166,7 @@ function claimBpReward(lv, track) {
     updates.slotikyItems = items;
   }
   if(reward.type === 'lootbox') {
-    updates.lootboxes = (userData.lootboxes||0) + reward.val;
+    updates.lootboxes = inc(reward.val);
   }
   if(reward.type === 'cosmetic') {
     const items = userData.slotikyItems || {};
@@ -18098,7 +18192,7 @@ function addBpXP(amount) {
   // Roll into the new season: bp.xp/level/claimed/isVip already read as 0/empty/false
   // above when stale, so this just persists that reset instead of leaving last
   // season's claimed rewards and VIP pass sitting in the DB under the new season number.
-  if(bp.stale) { updates.bpSeason = bp.season; updates.bpClaimed = {}; updates.bpVip = false; }
+  if(bp.stale) { updates.bpSeason = bp.season; updates.bpClaimed = {}; updates.bpVip = false; updates.bpBonusClaimed = 0; }
 
   if(newLevel > bp.level) {
     updates.bpLevel = newLevel;
@@ -18106,7 +18200,7 @@ function addBpXP(amount) {
     setTimeout(() => {
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
-      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Рівень ${newLevel + 1}!</div>`;
+      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">${newLevel >= BP_MAX_LEVEL ? '🏆 Сезон пройдено! Далі — бонусні скрині' : `Рівень ${newLevel + 1}!`}</div>`;
       document.body.appendChild(t);
       playSound('bonus');
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
@@ -22108,7 +22202,7 @@ function resetBannerAutoRotate() {
 function updateBannerDynamicContent() {
   // Battle Pass рівень
   var bpEl = document.getElementById('bannerBpLevel');
-  if(bpEl) bpEl.textContent = getBpData().level + 1;
+  if(bpEl) bpEl.textContent = getBpData().level + 1 > BP_MAX_LEVEL ? 'MAX' : getBpData().level + 1;
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);
