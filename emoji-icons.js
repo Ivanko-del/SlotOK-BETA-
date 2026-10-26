@@ -8,7 +8,7 @@
  * пошук працюють як раніше.
  *
  * EMOJI_ICONS: емодзі → 'назва' або 'назва тон'. Тон — pos/neg/warn/info/
- * special/accent/fg/muted (клас t-…). Порожня назва — сховати (прапори біля
+ * special/accent/fg/muted (клас tn-…). Порожня назва — сховати (прапори біля
  * кодів валют). Емодзі поза картою (напр. ті, що гравці пишуть у чаті) не
  * чіпаємо — це їхній текст.
  * Набір іконок — src/icons/icons.js; нова іконка → npm run build:icons.
@@ -116,7 +116,7 @@
     s.setAttribute('aria-hidden', 'true');
     if (!spec) { s.className = 'emj emj-hide'; return s; }
     var parts = spec.split(' ');
-    s.className = 'emj ic i-' + parts[0] + (parts[1] ? ' t-' + parts[1] : '');
+    s.className = 'emj ic i-' + parts[0] + (parts[1] ? ' tn-' + parts[1] : '');
     return s;
   }
 

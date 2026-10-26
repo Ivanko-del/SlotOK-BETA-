@@ -238,7 +238,9 @@ function toggleFavorite(gameId, el) {
   const idx = favoriteGames.indexOf(gameId);
   if(idx >= 0) { favoriteGames.splice(idx,1); if(el) el.classList.remove('active'); }
   else { favoriteGames.push(gameId); if(el) el.classList.add('active'); }
+  if(el) el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
   localStorage.setItem('slotok_favs', JSON.stringify(favoriteGames));
+  if(typeof applyLobbyFilters === 'function' && typeof lobbyState !== 'undefined' && lobbyState.mode === 'fav') applyLobbyFilters();
 }
 
 function trackRecentGame(gameId) {
@@ -253,45 +255,16 @@ function renderRecentGames() {
   const el = document.getElementById('recentGamesRow');
   if(!el || !recentlyPlayed.length) return;
   const gameMap = {slots:'🎰',crash:'🚀',mines:'💣',plinko:'🔻',blackjack:'🃏',dice:'🎲',roulette:'🎡',poker:'♠️',hilo:'🃏',limbo:'🎯',dragon:'🐉',balloon:'🎈',horseracing:'🏇',colorbet:'🎨'};
-  el.innerHTML = recentlyPlayed.map(g=>`<div class="recent-game-chip" onclick="openGame('${g}') || switchTab('${g}')">${gameMap[g]||'🎮'} ${g}</div>`).join('');
+  el.innerHTML = recentlyPlayed.map(g=>`<button type="button" class="chip recent-game-chip" onclick="openGame('${g}')">${gameMap[g]||'🎮'} ${g}</button>`).join('');
 }
 
-function sortGames(mode, el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const grid = document.getElementById('casinoGamesGrid');
-  if(!grid) return;
-  const cards = [...grid.querySelectorAll('.casino-game-card')];
-  if(mode==='hot') {
-    cards.sort((a,b)=>{ const ah=a.querySelector('.casino-badge-hot')?.textContent; const bh=b.querySelector('.casino-badge-hot')?.textContent; return (bh?1:0)-(ah?1:0); });
-  } else if(mode==='new') {
-    cards.sort((a,b)=>{ const an=a.querySelector('.casino-badge-new'); const bn=b.querySelector('.casino-badge-new'); return (bn?1:0)-(an?1:0); });
-  } else if(mode==='rtp') {
-    // Use RTP order — Blackjack first
-    const rtpOrder = ['blackjack','poker','roulette','crash','limbo','dice','mines','plinko','slots'];
-    cards.sort((a,b)=>{ const acat=a.getAttribute('data-cat')||''; const bcat=b.getAttribute('data-cat')||''; return rtpOrder.indexOf(bcat)-rtpOrder.indexOf(acat); });
-  }
-  cards.forEach(c=>grid.appendChild(c));
-}
-
-function showFavorites(el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const favs = JSON.parse(localStorage.getItem('slotok_favs')||'[]');
-  document.querySelectorAll('.casino-game-card').forEach(card=>{
-    const onclick = card.getAttribute('onclick')||'';
-    const hasFav = favs.some(f=>onclick.includes(f));
-    card.style.display = (favs.length===0||hasFav)?'':'none';
-  });
-}
-
+// Старі точки входу фільтрів — тепер усе йде через спільний стан лоббі
+// (applyLobbyFilters у src/app/31-…), щоб пошук і фільтри поєднувались.
+function sortGames(mode, el) { lobbySetMode(mode === 'rtp' ? 'all' : mode, el); }
+function showFavorites(el) { lobbySetMode('fav', el); }
 function searchGames(query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll('.casino-game-card').forEach(card => {
-    const name = card.querySelector('.casino-game-card-name')?.textContent.toLowerCase()||'';
-    const prov = card.querySelector('.casino-game-card-prov')?.textContent.toLowerCase()||'';
-    card.style.display = (!q || name.includes(q) || prov.includes(q)) ? '' : 'none';
-  });
+  lobbyState.q = String(query || '').trim().toLowerCase();
+  applyLobbyFilters();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -332,9 +305,13 @@ let _rgSessionStartTime = null;
 // ліміт, який гравець може обійти простим очищенням даних сайту, не є
 // реальним запобіжником. userData.rgLimits синхронізується тим самим
 // realtime-слухачем, що й решта userData.
-function saveRGLimits() {
-  const loss = parseInt(document.getElementById('rgLossLimit')?.value || 0);
-  const session = parseInt(document.getElementById('rgSessionLimit')?.value || 0);
+async function saveRGLimits() {
+  const loss = Math.max(0, parseInt(document.getElementById('rgLossLimit')?.value || 0) || 0);
+  const session = Math.max(0, parseInt(document.getElementById('rgSessionLimit')?.value || 0) || 0);
+  const parts = [loss ? 'програш за сесію — до ₴' + formatNumber(loss) : 'ліміт програшу вимкнено',
+                 session ? 'тривалість сесії — до ' + session + ' хв' : 'ліміт часу вимкнено'];
+  const ok = await confirmAction({ title: 'Зберегти ліміти?', text: 'Нові ліміти: ' + parts.join('; ') + '.', confirm: 'Зберегти' });
+  if(!ok) return;
   db.ref('users/' + currentUser + '/rgLimits').set({ loss, session }).then(() => {
     notify('✅ Ліміти збережено', 'success');
     updateRGLossWarnUI();
@@ -373,8 +350,14 @@ function isRGLimitReached() {
   return false;
 }
 
-function selfExclude(days) {
-  if(!confirm('Ви впевнені що хочете заблокувати себе на '+days+' день/днів?')) return;
+async function selfExclude(days) {
+  const word = days === 1 ? '24 години' : days + ' днів';
+  const ok = await confirmAction({
+    title: 'Пауза на ' + word + '?',
+    text: 'Ти вийдеш з акаунту й не зможеш грати ' + word + '. Скасувати паузу раніше не вийде.',
+    confirm: 'Так, увімкнути паузу', danger: true,
+  });
+  if(!ok) return;
   db.ref('users/'+currentUser+'/selfExcludeUntil').set(Date.now()+days*86400000);
   db.ref('users/'+currentUser+'/selfExcluded').set(true);
   notify('Само-виключення активовано на '+days+' д.','success');

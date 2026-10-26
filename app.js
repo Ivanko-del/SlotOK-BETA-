@@ -3862,7 +3862,9 @@ function toggleFavorite(gameId, el) {
   const idx = favoriteGames.indexOf(gameId);
   if(idx >= 0) { favoriteGames.splice(idx,1); if(el) el.classList.remove('active'); }
   else { favoriteGames.push(gameId); if(el) el.classList.add('active'); }
+  if(el) el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
   localStorage.setItem('slotok_favs', JSON.stringify(favoriteGames));
+  if(typeof applyLobbyFilters === 'function' && typeof lobbyState !== 'undefined' && lobbyState.mode === 'fav') applyLobbyFilters();
 }
 
 function trackRecentGame(gameId) {
@@ -3877,45 +3879,16 @@ function renderRecentGames() {
   const el = document.getElementById('recentGamesRow');
   if(!el || !recentlyPlayed.length) return;
   const gameMap = {slots:'🎰',crash:'🚀',mines:'💣',plinko:'🔻',blackjack:'🃏',dice:'🎲',roulette:'🎡',poker:'♠️',hilo:'🃏',limbo:'🎯',dragon:'🐉',balloon:'🎈',horseracing:'🏇',colorbet:'🎨'};
-  el.innerHTML = recentlyPlayed.map(g=>`<div class="recent-game-chip" onclick="openGame('${g}') || switchTab('${g}')">${gameMap[g]||'🎮'} ${g}</div>`).join('');
+  el.innerHTML = recentlyPlayed.map(g=>`<button type="button" class="chip recent-game-chip" onclick="openGame('${g}')">${gameMap[g]||'🎮'} ${g}</button>`).join('');
 }
 
-function sortGames(mode, el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const grid = document.getElementById('casinoGamesGrid');
-  if(!grid) return;
-  const cards = [...grid.querySelectorAll('.casino-game-card')];
-  if(mode==='hot') {
-    cards.sort((a,b)=>{ const ah=a.querySelector('.casino-badge-hot')?.textContent; const bh=b.querySelector('.casino-badge-hot')?.textContent; return (bh?1:0)-(ah?1:0); });
-  } else if(mode==='new') {
-    cards.sort((a,b)=>{ const an=a.querySelector('.casino-badge-new'); const bn=b.querySelector('.casino-badge-new'); return (bn?1:0)-(an?1:0); });
-  } else if(mode==='rtp') {
-    // Use RTP order — Blackjack first
-    const rtpOrder = ['blackjack','poker','roulette','crash','limbo','dice','mines','plinko','slots'];
-    cards.sort((a,b)=>{ const acat=a.getAttribute('data-cat')||''; const bcat=b.getAttribute('data-cat')||''; return rtpOrder.indexOf(bcat)-rtpOrder.indexOf(acat); });
-  }
-  cards.forEach(c=>grid.appendChild(c));
-}
-
-function showFavorites(el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const favs = JSON.parse(localStorage.getItem('slotok_favs')||'[]');
-  document.querySelectorAll('.casino-game-card').forEach(card=>{
-    const onclick = card.getAttribute('onclick')||'';
-    const hasFav = favs.some(f=>onclick.includes(f));
-    card.style.display = (favs.length===0||hasFav)?'':'none';
-  });
-}
-
+// Старі точки входу фільтрів — тепер усе йде через спільний стан лоббі
+// (applyLobbyFilters у src/app/31-…), щоб пошук і фільтри поєднувались.
+function sortGames(mode, el) { lobbySetMode(mode === 'rtp' ? 'all' : mode, el); }
+function showFavorites(el) { lobbySetMode('fav', el); }
 function searchGames(query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll('.casino-game-card').forEach(card => {
-    const name = card.querySelector('.casino-game-card-name')?.textContent.toLowerCase()||'';
-    const prov = card.querySelector('.casino-game-card-prov')?.textContent.toLowerCase()||'';
-    card.style.display = (!q || name.includes(q) || prov.includes(q)) ? '' : 'none';
-  });
+  lobbyState.q = String(query || '').trim().toLowerCase();
+  applyLobbyFilters();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3956,9 +3929,13 @@ let _rgSessionStartTime = null;
 // ліміт, який гравець може обійти простим очищенням даних сайту, не є
 // реальним запобіжником. userData.rgLimits синхронізується тим самим
 // realtime-слухачем, що й решта userData.
-function saveRGLimits() {
-  const loss = parseInt(document.getElementById('rgLossLimit')?.value || 0);
-  const session = parseInt(document.getElementById('rgSessionLimit')?.value || 0);
+async function saveRGLimits() {
+  const loss = Math.max(0, parseInt(document.getElementById('rgLossLimit')?.value || 0) || 0);
+  const session = Math.max(0, parseInt(document.getElementById('rgSessionLimit')?.value || 0) || 0);
+  const parts = [loss ? 'програш за сесію — до ₴' + formatNumber(loss) : 'ліміт програшу вимкнено',
+                 session ? 'тривалість сесії — до ' + session + ' хв' : 'ліміт часу вимкнено'];
+  const ok = await confirmAction({ title: 'Зберегти ліміти?', text: 'Нові ліміти: ' + parts.join('; ') + '.', confirm: 'Зберегти' });
+  if(!ok) return;
   db.ref('users/' + currentUser + '/rgLimits').set({ loss, session }).then(() => {
     notify('✅ Ліміти збережено', 'success');
     updateRGLossWarnUI();
@@ -3997,8 +3974,14 @@ function isRGLimitReached() {
   return false;
 }
 
-function selfExclude(days) {
-  if(!confirm('Ви впевнені що хочете заблокувати себе на '+days+' день/днів?')) return;
+async function selfExclude(days) {
+  const word = days === 1 ? '24 години' : days + ' днів';
+  const ok = await confirmAction({
+    title: 'Пауза на ' + word + '?',
+    text: 'Ти вийдеш з акаунту й не зможеш грати ' + word + '. Скасувати паузу раніше не вийде.',
+    confirm: 'Так, увімкнути паузу', danger: true,
+  });
+  if(!ok) return;
   db.ref('users/'+currentUser+'/selfExcludeUntil').set(Date.now()+days*86400000);
   db.ref('users/'+currentUser+'/selfExcluded').set(true);
   notify('Само-виключення активовано на '+days+' д.','success');
@@ -11925,16 +11908,18 @@ function renderFavoriteHearts() {
     const gameId = match[1];
     let heart = el.querySelector('.fav-heart-btn');
     if(!heart) {
-      heart = document.createElement('div');
+      heart = document.createElement('button');
+      heart.type = 'button';
       heart.className = 'fav-heart-btn';
-      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgb(var(--shade-rgb) / 0.6));';
-      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this); this.textContent = this.classList.contains('active') ? '❤️' : '🤍';`);
-      el.style.position = el.style.position || 'relative';
+      heart.setAttribute('aria-label', 'Додати в обрані');
+      heart.innerHTML = '<span class="ic i-heart fav-off" aria-hidden="true"></span><span class="ic i-heart-fill fav-on" aria-hidden="true"></span>';
+      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this)`);
+      heart.addEventListener('keydown', e => e.stopPropagation());
       el.appendChild(heart);
     }
     const isFav = favoriteGames.includes(gameId);
     heart.classList.toggle('active', isFav);
-    heart.textContent = isFav ? '❤️' : '🤍';
+    heart.setAttribute('aria-pressed', isFav ? 'true' : 'false');
   });
 }
 
@@ -12253,6 +12238,19 @@ function syncThemeButtons(theme) {
     b.classList.toggle('active', on);
     b.setAttribute('aria-checked', on ? 'true' : 'false');
   });
+}
+
+// Відповідальна гра — окремий вхід з «Ще» й Профілю: відкриває Налаштування
+// одразу на блоці лімітів, щоб його не треба було шукати.
+function openResponsibleGaming() {
+  switchTab('settings');
+  setTimeout(() => {
+    const el = document.getElementById('rgSection');
+    if(!el) return;
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    el.classList.add('is-highlight');
+    setTimeout(() => el.classList.remove('is-highlight'), 1600);
+  }, 120);
 }
 
 function setTheme(theme, el) {
@@ -13641,7 +13639,7 @@ function updateCurrencyDisplay() {
   const curEl = document.getElementById('headerCurrencyCode');
   if(curEl) {
     const cur = CURRENCIES[currentCurrency] || CURRENCIES.UAH;
-    curEl.textContent = cur.flag + ' ' + currentCurrency;
+    curEl.textContent = currentCurrency;
   }
   updateRateTicker();
   buildMiniRatesList();
@@ -13669,21 +13667,15 @@ function updateRateTicker() {
   }).filter(Boolean);
 
   if(headerLine) {
-    headerLine.textContent = items.slice(0,4).map(i=>`${i.flag} ${i.code} = ${i.rateStr}₴`).join('  •  ');
+    headerLine.textContent = items.slice(0,4).map(i=>`${i.code} ${i.rateStr} ₴`).join('  ·  ');
   }
 
   if(tickerInner) {
-    tickerInner.innerHTML = '<span style="color:var(--fg-4);font-size:10px;margin-right:8px;">📊</span>' +
-      items.map(i =>
-        `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
-        `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>') +
-      // Duplicate for seamless loop
-      '<span style="color:var(--on-accent);margin:0 24px;">│</span>' +
-      items.map(i =>
-        `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
-        `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>');
+    // Статичний ряд чипів замість біжучої стрічки: читається з першого погляду
+    // і не рухається (зручніше й з prefers-reduced-motion).
+    tickerInner.innerHTML = items.map(i =>
+      `<span class="rate-chip"><b>${i.code}</b> <span class="num">${i.rateStr} ₴</span></span>`
+    ).join('');
   }
 }
 
@@ -17542,6 +17534,7 @@ const LOBBY_WIN_POOL = [
 ];
 
 function startLobbyTimers() {
+  try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
   // Jackpot counter
   _lobbyJackpotTimer = setInterval(() => {
     _lobbyJackpot += Math.floor(Math.random()*180 + 40);
@@ -17550,18 +17543,21 @@ function startLobbyTimers() {
   }, 1200);
 
   // Wins feed rotation
-  _lobbyWinsTimer = setInterval(() => {
+  const pushWin = () => {
     const feed = document.getElementById('lobbyWinsFeed');
     if(!feed) return;
     const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
     const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
     const row = document.createElement('div');
-    row.className = 'win-feed-row';
-    row.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">${p.avatar}</div><div><div class="win-feed-user">${p.user}</div><div class="win-feed-game">${p.game}</div></div></div><div class="win-feed-amount">+₴ ${amt}</div>`;
+    row.className = 'win-feed-row list-row';
+    row.innerHTML = `<div class="win-feed-avatar">${p.avatar}</div><div class="list-row-main"><div class="win-feed-user list-row-title">${p.user}</div><div class="win-feed-game list-row-sub">${p.game}</div></div><div class="win-feed-amount num">+₴ ${amt}</div>`;
     feed.insertBefore(row, feed.firstChild);
     const rows = feed.querySelectorAll('.win-feed-row');
     if(rows.length > 5) rows[rows.length-1].remove();
-  }, 3000);
+  };
+  const feedEl = document.getElementById('lobbyWinsFeed');
+  if(feedEl && !feedEl.children.length) { for(let i = 0; i < 4; i++) pushWin(); }
+  _lobbyWinsTimer = setInterval(pushWin, 3000);
 }
 
 function stopLobbyTimers() {
@@ -17569,15 +17565,74 @@ function stopLobbyTimers() {
   clearInterval(_lobbyWinsTimer);
 }
 
-// Category filter for casino grid
-function filterCasinoGames(cat, btn) {
-  document.querySelectorAll('.casino-cat-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  const cards = document.querySelectorAll('#casinoGamesGrid .casino-game-card');
-  cards.forEach(c => {
-    const cardCat = c.getAttribute('data-cat') || 'all';
-    c.style.display = (cat === 'all' || cardCat === cat) ? '' : 'none';
+// ── Фільтри лоббі ────────────────────────────────────────────────
+// Один стан на пошук, категорію й режим (усі/популярні/нові/обрані),
+// щоб фільтри поєднувались, а не скидали одне одного.
+const lobbyState = { cat: 'all', mode: 'all', q: '' };
+
+function lobbyCardId(card) {
+  const m = (card.getAttribute('onclick') || '').match(/(?:openGame|switchTab)\('(\w+)'\)/);
+  return m ? m[1] : '';
+}
+
+function applyLobbyFilters() {
+  const grid = document.getElementById('casinoGamesGrid');
+  if(!grid) return;
+  const favs = JSON.parse(localStorage.getItem('slotok_favs') || '[]');
+  const q = lobbyState.q;
+  let shown = 0;
+  grid.querySelectorAll('.casino-game-card').forEach(card => {
+    const cat = card.getAttribute('data-cat') || 'all';
+    const name = (card.querySelector('.casino-game-card-name')?.textContent || '').toLowerCase();
+    const sub = (card.querySelector('.casino-game-card-prov')?.textContent || '').toLowerCase();
+    const okCat = lobbyState.cat === 'all' || cat === lobbyState.cat;
+    const okQ = !q || name.includes(q) || sub.includes(q);
+    let okMode = true;
+    if(lobbyState.mode === 'hot') okMode = !!card.querySelector('.casino-badge-hot');
+    else if(lobbyState.mode === 'new') okMode = !!card.querySelector('.casino-badge-new');
+    else if(lobbyState.mode === 'fav') okMode = favs.includes(lobbyCardId(card));
+    const ok = okCat && okQ && okMode;
+    card.style.display = ok ? '' : 'none';
+    if(ok) shown++;
   });
+  const count = document.getElementById('lobbyGridCount');
+  if(count) count.textContent = shown;
+  const empty = document.getElementById('lobbyEmpty');
+  if(empty) {
+    empty.classList.toggle('hidden', shown > 0);
+    const t = empty.querySelector('.empty-state-title');
+    if(t) t.textContent = lobbyState.mode === 'fav' && !favs.length ? 'Обраних поки немає' : 'Нічого не знайдено';
+  }
+  const title = document.getElementById('lobbyGridTitle');
+  if(title) title.textContent = { all: 'Усі ігри', hot: 'Популярні', new: 'Нові', fav: 'Обрані' }[lobbyState.mode];
+}
+
+function setChipGroup(selector, el) {
+  document.querySelectorAll(selector).forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+  if(el) { el.classList.add('active'); el.setAttribute('aria-pressed', 'true'); }
+}
+
+// Категорія; повторне натискання знімає фільтр.
+function filterCasinoGames(cat, btn) {
+  if(btn && btn.classList.contains('active') && cat !== 'all') { cat = 'all'; btn = null; }
+  lobbyState.cat = cat;
+  setChipGroup('.casino-cat-btn', btn);
+  applyLobbyFilters();
+}
+
+function lobbySetMode(mode, el) {
+  lobbyState.mode = mode;
+  setChipGroup('.game-sort-btn', el);
+  applyLobbyFilters();
+}
+
+function lobbyReset() {
+  lobbyState.cat = 'all'; lobbyState.mode = 'all'; lobbyState.q = '';
+  const inp = document.getElementById('lobbySearch');
+  if(inp) inp.value = '';
+  setChipGroup('.casino-cat-btn', null);
+  setChipGroup('.game-sort-btn', document.querySelector('.game-sort-btn'));
+  applyLobbyFilters();
 }
 
 // Casino game info modal
@@ -23842,4 +23897,58 @@ function timeAgoShort(ts) {
   const hrs = Math.floor(mins / 60);
   if(hrs < 24) return hrs + 'г';
   return Math.floor(hrs/24) + 'д';
+}
+// ─── src/app/41-ui-confirm.js ───
+// ============================================================
+// Діалог підтвердження в стилі застосунку (замість системного confirm()).
+// confirmAction({ title, text, confirm, cancel, danger }) → Promise<boolean>
+// Для критичних дій: ліміти, самовиключення, вивід, поповнення.
+// Esc / клік по тлу — скасування; фокус ставиться на «Скасувати», щоб
+// випадковий Enter не підтверджував небезпечну дію.
+// ============================================================
+function confirmAction(opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const prevFocus = document.activeElement;
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-backdrop is-sheet';
+    wrap.setAttribute('role', 'presentation');
+    const id = 'cfm' + Date.now();
+    wrap.innerHTML = `
+      <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="${id}-t" aria-describedby="${id}-d">
+        <h2 class="dialog-title" id="${id}-t"></h2>
+        <p class="dialog-text" id="${id}-d"></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary" data-act="no"></button>
+          <button type="button" class="btn ${opts.danger ? 'btn-danger is-solid' : 'btn-primary'}" data-act="yes"></button>
+        </div>
+      </div>`;
+    wrap.querySelector('.dialog-title').textContent = opts.title || 'Підтвердити дію?';
+    wrap.querySelector('.dialog-text').textContent = opts.text || '';
+    wrap.querySelector('[data-act="no"]').textContent = opts.cancel || 'Скасувати';
+    wrap.querySelector('[data-act="yes"]').textContent = opts.confirm || 'Підтвердити';
+    const done = (val) => {
+      document.removeEventListener('keydown', onKey, true);
+      wrap.remove();
+      if (prevFocus && prevFocus.focus) try { prevFocus.focus(); } catch (e) {}
+      resolve(val);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); done(false); }
+      if (e.key === 'Tab') { // утримуємо фокус у діалозі
+        const f = [...wrap.querySelectorAll('button')];
+        const i = f.indexOf(document.activeElement);
+        e.preventDefault();
+        f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
+      }
+    };
+    wrap.addEventListener('click', (e) => {
+      if (e.target === wrap) return done(false);
+      const act = e.target.closest('[data-act]');
+      if (act) done(act.getAttribute('data-act') === 'yes');
+    });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-act="no"]').focus();
+  });
 }

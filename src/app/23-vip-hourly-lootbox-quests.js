@@ -782,16 +782,18 @@ function renderFavoriteHearts() {
     const gameId = match[1];
     let heart = el.querySelector('.fav-heart-btn');
     if(!heart) {
-      heart = document.createElement('div');
+      heart = document.createElement('button');
+      heart.type = 'button';
       heart.className = 'fav-heart-btn';
-      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgb(var(--shade-rgb) / 0.6));';
-      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this); this.textContent = this.classList.contains('active') ? '❤️' : '🤍';`);
-      el.style.position = el.style.position || 'relative';
+      heart.setAttribute('aria-label', 'Додати в обрані');
+      heart.innerHTML = '<span class="ic i-heart fav-off" aria-hidden="true"></span><span class="ic i-heart-fill fav-on" aria-hidden="true"></span>';
+      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this)`);
+      heart.addEventListener('keydown', e => e.stopPropagation());
       el.appendChild(heart);
     }
     const isFav = favoriteGames.includes(gameId);
     heart.classList.toggle('active', isFav);
-    heart.textContent = isFav ? '❤️' : '🤍';
+    heart.setAttribute('aria-pressed', isFav ? 'true' : 'false');
   });
 }
 

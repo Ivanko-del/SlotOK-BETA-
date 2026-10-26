@@ -666,7 +666,7 @@ function updateCurrencyDisplay() {
   const curEl = document.getElementById('headerCurrencyCode');
   if(curEl) {
     const cur = CURRENCIES[currentCurrency] || CURRENCIES.UAH;
-    curEl.textContent = cur.flag + ' ' + currentCurrency;
+    curEl.textContent = currentCurrency;
   }
   updateRateTicker();
   buildMiniRatesList();
@@ -694,21 +694,15 @@ function updateRateTicker() {
   }).filter(Boolean);
 
   if(headerLine) {
-    headerLine.textContent = items.slice(0,4).map(i=>`${i.flag} ${i.code} = ${i.rateStr}₴`).join('  •  ');
+    headerLine.textContent = items.slice(0,4).map(i=>`${i.code} ${i.rateStr} ₴`).join('  ·  ');
   }
 
   if(tickerInner) {
-    tickerInner.innerHTML = '<span style="color:var(--fg-4);font-size:10px;margin-right:8px;">📊</span>' +
-      items.map(i =>
-        `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
-        `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>') +
-      // Duplicate for seamless loop
-      '<span style="color:var(--on-accent);margin:0 24px;">│</span>' +
-      items.map(i =>
-        `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
-        `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>');
+    // Статичний ряд чипів замість біжучої стрічки: читається з першого погляду
+    // і не рухається (зручніше й з prefers-reduced-motion).
+    tickerInner.innerHTML = items.map(i =>
+      `<span class="rate-chip"><b>${i.code}</b> <span class="num">${i.rateStr} ₴</span></span>`
+    ).join('');
   }
 }
 

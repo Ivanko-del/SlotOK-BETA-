@@ -150,6 +150,19 @@ function syncThemeButtons(theme) {
   });
 }
 
+// Відповідальна гра — окремий вхід з «Ще» й Профілю: відкриває Налаштування
+// одразу на блоці лімітів, щоб його не треба було шукати.
+function openResponsibleGaming() {
+  switchTab('settings');
+  setTimeout(() => {
+    const el = document.getElementById('rgSection');
+    if(!el) return;
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    el.classList.add('is-highlight');
+    setTimeout(() => el.classList.remove('is-highlight'), 1600);
+  }, 120);
+}
+
 function setTheme(theme, el) {
   if (!THEMES[theme]) theme = 'auto';
   saveSetting('theme', theme);

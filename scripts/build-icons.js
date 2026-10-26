@@ -30,9 +30,9 @@ function build() {
   css += '.emj { -webkit-text-fill-color: transparent; text-indent: -100em; overflow: hidden; white-space: nowrap;\n' +
     '  letter-spacing: 0; font-style: normal; text-shadow: none; line-height: 1; }\n';
   css += '.emj-hide { display: none !important; }\n';
-  css += '.t-pos { color: var(--pos); } .t-neg { color: var(--neg); } .t-warn { color: var(--warn); }\n' +
-    '.t-info { color: var(--info); } .t-special { color: var(--special); } .t-accent { color: var(--accent); }\n' +
-    '.t-fg { color: var(--fg); } .t-muted { color: var(--fg-3); }\n';
+  css += '.tn-pos { color: var(--pos); } .tn-neg { color: var(--neg); } .tn-warn { color: var(--warn); }\n' +
+    '.tn-info { color: var(--info); } .tn-special { color: var(--special); } .tn-accent { color: var(--accent); }\n' +
+    '.tn-fg { color: var(--fg); } .tn-muted { color: var(--fg-3); }\n';
   for (const n of names) css += `.i-${n} { --ic: url("${dataUri(svg(icons[n]))}"); }\n`;
   return css;
 }

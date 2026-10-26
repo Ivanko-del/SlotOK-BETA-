@@ -93,14 +93,6 @@
 
   <div class="container" id="main" tabindex="-1">
     
-    <!-- ГОЛОВНА -->
-    <!-- Live курс тікер -->
-  <div id="rateTicker" onclick="openCurrencyPicker()" style="background:var(--bg);border-bottom:1px solid var(--line);overflow:hidden;height:22px;position:relative;cursor:pointer;flex-shrink:0;">
-    <div id="rateTickerInner" style="display:flex;gap:0;position:absolute;white-space:nowrap;animation:tickerScroll 50s linear infinite;align-items:center;height:22px;padding:0 16px;">
-      <span style="color:var(--fg-4);font-size:10px;">📊 Курси:</span>
-    </div>
-  </div>
-
   <div id="tab-home" class="screen">
       <h1 class="sr-only">Головна</h1>
       <!-- Під-вкладки Головної -->
@@ -340,9 +332,9 @@
         <!-- Казино зараз -->
         <div class="section-header"><span>Казино зараз</span></div>
         <div class="panel stat-trio anim-cascade">
-          <div class="stat"><div class="stat-val t-pos" id="casinoOnlineCount">—</div><div class="stat-lbl">Онлайн</div></div>
-          <div class="stat"><div class="stat-val t-accent" id="casinoTodayWins">—</div><div class="stat-lbl">Виграшів</div></div>
-          <div class="stat"><div class="stat-val t-info" id="casinoTotalPlayers">—</div><div class="stat-lbl">Гравців</div></div>
+          <div class="stat"><div class="stat-val tn-pos" id="casinoOnlineCount">—</div><div class="stat-lbl">Онлайн</div></div>
+          <div class="stat"><div class="stat-val tn-accent" id="casinoTodayWins">—</div><div class="stat-lbl">Виграшів</div></div>
+          <div class="stat"><div class="stat-val tn-info" id="casinoTotalPlayers">—</div><div class="stat-lbl">Гравців</div></div>
         </div>
 
         <div class="panel anim-cascade">
@@ -434,311 +426,232 @@
 
     <!-- ЛОБІ (CASINO v2) -->
     <div id="tab-lobby" class="screen hidden">
+      <h1 class="screen-title">Ігри</h1>
 
-      <!-- Game open modal (overlay) -->
-      <div id="casinoGameModal" class="game-open-modal hidden" style="position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.96 * var(--recess-k)));z-index:8500;display:none;flex-direction:column;">
-        <div class="game-open-header">
-          <span id="casinoGameModalTitle" style="font-size:15px;font-weight:800;"></span>
-          <button onclick="closeCasinoModal()" style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-2);padding:6px 12px;font-size:12px;cursor:pointer;">✕ Закрити</button>
-        </div>
-        <div class="game-open-body">
-          <div id="casinoGameModalEmoji" class="game-open-emoji"></div>
-          <div id="casinoGameModalName" class="game-open-name"></div>
-          <div id="casinoGameModalMeta" class="game-open-meta"></div>
-          <button class="game-open-play" id="casinoGameModalPlayBtn">🎮 Грати на гроші</button>
-          <button class="game-open-demo" onclick="closeCasinoModal()">Демо режим (скоро)</button>
-        </div>
-      </div>
-
-      <!-- Hero -->
-      <div class="casino-hero-banner" id="casinoHeroBanner">
-        <div class="hero-parallax-layer hero-parallax-glow" id="heroParallaxGlow"></div>
-        <div class="hero-parallax-layer hero-parallax-icon" id="heroParallaxIcon">🎰</div>
-        <div class="casino-hero-content">
-          <div class="casino-hero-label">🎰 Казино SlotOK</div>
-          <div class="casino-hero-title">БОНУС<br><span>+100%</span></div>
-          <div class="casino-hero-sub">На перший депозит до ₴ 10 000</div>
-          <button class="casino-hero-btn" onclick="switchTab('cashier')">💳 Отримати бонус</button>
-        </div>
-      </div>
-
-      <!-- Session bar -->
-      <div class="session-bar" id="sessionBar">
-        <div class="session-stat"><div style="color:var(--fg-4);font-size:9px;">СЕСІЯ</div><div class="session-stat-val" id="sessionBarTime">0хв</div></div>
-        <div class="session-stat"><div style="color:var(--fg-4);font-size:9px;">СТАВОК</div><div class="session-stat-val" id="sessionBarBets">0</div></div>
-        <div class="session-stat"><div style="color:var(--fg-4);font-size:9px;">WIN RATE</div><div class="session-stat-val" id="sessionBarWR">—</div></div>
-        <div class="session-stat"><div style="color:var(--fg-4);font-size:9px;">СЕРІЯ</div><div class="session-stat-val" style="color:var(--accent);" id="sessionBarStreak">🔥0</div></div>
-      </div>
-
-      <!-- Streak banner (hidden until streak 2+) -->
-      <div class="streak-banner" id="streakBanner" style="display:none;">
-        <div style="font-size:22px;">🔥</div>
-        <div style="flex:1;"><div id="streakText" style="font-size:12px;font-weight:700;color:var(--accent);"></div></div>
-      </div>
-
-      <!-- Game search -->
-      <div class="game-search-wrap">
-        <span class="game-search-icon">🔍</span>
-        <input class="game-search-input" placeholder="Пошук ігор..." oninput="searchGames(this.value)">
-      </div>
-      <!-- Recently played -->
-      <div id="recentGamesSection" style="margin-bottom:8px;display:none;">
-        <div style="font-size:10px;color:var(--fg-4);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">🕐 Нещодавно грав</div>
-        <div class="recent-games-scroll" id="recentGamesRow"></div>
-      </div>
-      <!-- Category tabs -->
-      <div class="casino-cats">
-        <div class="casino-cat-btn active" onclick="filterCasinoGames('all',this)">🔥 Топ</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('slots',this)">🎰 Слоти</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('cards',this)">🃏 Карти</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('crash',this)">🚀 Краш</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('pvp',this)">⚔️ PvP</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('mini',this)">🎯 Міні</div>
-        <div class="casino-cat-btn" onclick="filterCasinoGames('sport',this)">⚽ Спорт</div>
-      </div>
-
-      <!-- Jackpot live -->
-      <div class="jackpot-strip">
-        <div>
-          <div style="font-size:9px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;">🏆 Поточний джекпот</div>
-          <div class="jackpot-num">₴ <span id="lobbyJackpotNum">4 287 341</span></div>
-          <div style="font-size:9px;color:var(--fg-4);margin-top:1px;">Оновлюється в реальному часі</div>
-        </div>
-        <button class="jackpot-play-btn" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Spribe • до x∞')">Грати</button>
-      </div>
-
-      <!-- Featured game of the day -->
-      <div class="section-header">⚡ Гра дня</div>
-      <div class="casino-featured" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Spribe • RTP 97%')">
-        <div class="casino-featured-badge">ТОП</div>
-        <div class="casino-featured-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🚀</div>
-        <div class="casino-featured-info">
-          <div>
-            <div class="casino-featured-name">Crash Aviator</div>
-            <div style="font-size:10px;color:var(--fg-3);margin-top:2px;">Spribe</div>
+      <!-- Картка гри перед стартом -->
+      <div id="casinoGameModal" class="game-open-modal modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="casinoGameModalTitle" onclick="if(event.target===this)closeCasinoModal()">
+        <div class="dialog game-open-dialog">
+          <div class="game-open-header">
+            <span id="casinoGameModalTitle" class="dialog-title"></span>
+            <button type="button" class="close-btn" onclick="closeCasinoModal()" aria-label="Закрити"><span class="ic i-close" aria-hidden="true"></span></button>
           </div>
-          <div class="casino-featured-rtp">RTP 97.0%</div>
+          <div class="game-open-body">
+            <div id="casinoGameModalEmoji" class="game-open-emoji"></div>
+            <div id="casinoGameModalName" class="game-open-name"></div>
+            <div id="casinoGameModalMeta" class="game-open-meta"></div>
+            <button type="button" class="btn btn-primary btn-lg game-open-play" id="casinoGameModalPlayBtn">Грати</button>
+          </div>
         </div>
       </div>
 
-      <!-- Sort buttons -->
-      <div class="game-sort-row">
-        <div class="game-sort-btn active" onclick="sortGames('hot',this)">🔥 Популярні</div>
-        <div class="game-sort-btn" onclick="sortGames('new',this)">✨ Нові</div>
-        <div class="game-sort-btn" onclick="filterCasinoGames('all',document.querySelector('.casino-cat-btn'))">🎮 Всі</div>
-        <div class="game-sort-btn" onclick="showFavorites(this)">❤️ Обрані</div>
-        <div class="game-sort-btn" onclick="sortGames('rtp',this)">📊 По RTP</div>
-      </div>
-      <!-- All games grid -->
-      <div class="section-header">🎮 Всі ігри</div>
-      <div class="casino-grid-3" id="casinoGamesGrid">
-        <div class="casino-game-card" data-cat="slots" onclick="openGame('slots')">
-          <span class="casino-badge-hot">HOT</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎰</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Classic 777</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="slots" onclick="openGame('diamond')">
-          <span class="casino-badge-hot">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 9%, var(--surface-1)),var(--bg));">💎</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Diamond Rush</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="crash" onclick="openGame('crash')">
-          <span class="casino-badge-hot">HOT</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🚀</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash Aviator</div><div class="casino-game-card-prov">Spribe</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('mines')">
-          <span class="casino-badge-hot">HOT</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">💣</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Mines</div><div class="casino-game-card-prov">Spribe</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('blackjack')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🃏</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Blackjack</div><div class="casino-game-card-prov">Класика</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('plinko')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🔻</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko</div><div class="casino-game-card-prov">BGaming</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('dice')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎲</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Dice Roll</div><div class="casino-game-card-prov">BGaming</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="slots" onclick="openGame('fortune')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎡</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Колесо Фортуни</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('poker')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">♠️</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Video Poker</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('hilo')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🃏</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Hi-Lo Cards</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="slots" onclick="openGame('scratch')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎟️</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Скретч</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('limbo')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎯</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Limbo</div><div class="casino-game-card-prov">Spribe</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="crash" onclick="openGame('tower')">
-          <span class="casino-badge-hot">HOT</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🗼</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Tower Climb</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="slots" onclick="openGame('roulette')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎡</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Roulette</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('keno')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🔢</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Keno</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('monopoly')">
-          <span class="casino-badge-hot">HOT</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎩</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Монополія</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('cardgame')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🃏</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Карти (Дурень)</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('chests')">
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">📦</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Magic Chests</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="pvp" onclick="switchTab('coinflip')">
-          <span class="casino-badge-new" style="background:linear-gradient(135deg,var(--accent),var(--neg));">PvP</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)));">🪙</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Coinflip</div><div class="casino-game-card-prov">Гравець vs Гравець</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="pvp" onclick="switchTab('rps')">
-          <span class="casino-badge-new" style="background:var(--special);">PvP</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">✊</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Камінь-Ножиці</div><div class="casino-game-card-prov">Гравець vs Гравець</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="pvp" onclick="switchTab('predict')">
-          <span class="casino-badge-new" style="background:linear-gradient(135deg,var(--info),var(--primary));">PvP</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,color-mix(in srgb, var(--info) 10%, var(--surface-1)),var(--bg));">🔮</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Prediction Duel</div><div class="casino-game-card-prov">Вгадай число</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="crash" onclick="openGame('double')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎰</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Double</div><div class="casino-game-card-prov">SlotOK</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="sport" onclick="switchTab('sports')">
-          <span style="position:absolute;top:5px;right:5px;background:var(--neg);color:var(--on-neg);font-size:8px;font-weight:800;padding:2px 5px;border-radius:var(--r-xs);">LIVE</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">⚽</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Sport Betting</div><div class="casino-game-card-prov">Реальні матчі</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="crash" onclick="openGame('dragon')">
-          <span class="casino-badge-new" style="background:var(--neg);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 10%, var(--surface-1)),var(--surface-1));">🐉</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Dragon Tower</div><div class="casino-game-card-prov">Кожен рівень = більший ризик</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('penalty')">
-          <span class="casino-badge-new" style="background:var(--pos);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">⚽</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Penalty Kick</div><div class="casino-game-card-prov">Пробий пенальті → x1.16</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('bowling')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎳</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Bowling</div><div class="casino-game-card-prov">Страйк = x3.5</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('archery')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎯</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Archery</div><div class="casino-game-card-prov">Центр = x9.7</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('sicbo')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎲</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Sic Bo</div><div class="casino-game-card-prov">Три кубики • Класика Азії</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('cardwar')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">⚔️</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Card War</div><div class="casino-game-card-prov">Твоя карта vs Дилер</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="cards" onclick="openGame('chess')">
-          <span class="casino-badge-new" style="background:var(--accent);color:var(--on-accent);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">♟️</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Шахи</div><div class="casino-game-card-prov">Проти AI або гравця • До ×5</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="openGame('duckshoot')">
-          <span class="casino-badge-new">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🦆</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Duck Shoot</div><div class="casino-game-card-prov">Збий всіх качок → джекпот</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="crash" onclick="switchTab('balloon')">
-          <span class="casino-badge-new" style="background:var(--info);color:var(--on-info);">NEW</span>
-          <div class="casino-game-card-img" style="background:var(--surface-1);">🎈</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Balloon Pop</div><div class="casino-game-card-prov">Лопни і забери</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="switchTab('russianroulette')">
-          <span class="casino-badge-new" style="background:var(--neg);color:var(--on-neg);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🔫</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Рулетка Ризику</div><div class="casino-game-card-prov">1 куля на 6 • ×5.5</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="pvp" onclick="switchTab('quiz')">
-          <span class="casino-badge-new" style="background:var(--special);color:var(--on-special);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🧠</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Quiz Battle</div><div class="casino-game-card-prov">10 питань • знання = гроші</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="switchTab('horseracing')">
-          <span class="casino-badge-new" style="background:var(--pos);color:var(--on-pos);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🏇</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Horse Racing</div><div class="casino-game-card-prov">4 коні • до ×8.0</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="mini" onclick="switchTab('colorbet')">
-          <span class="casino-badge-new" style="background:linear-gradient(135deg,var(--neg),var(--special));color:var(--fg);">NEW</span>
-          <div class="casino-game-card-img" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));">🎨</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Color Bet</div><div class="casino-game-card-prov">Червоний/Білий/Зелений</div></div>
+      <!-- Пошук і фільтри — липкі над сіткою -->
+      <div class="lobby-tools">
+        <label class="game-search-wrap">
+          <span class="ic i-search game-search-icon" aria-hidden="true"></span>
+          <span class="sr-only">Пошук ігор</span>
+          <input class="game-search-input" id="lobbySearch" type="search" placeholder="Знайти гру…" autocomplete="off" oninput="searchGames(this.value)">
+        </label>
+        <div class="chips lobby-filters" role="toolbar" aria-label="Фільтри ігор">
+          <button type="button" class="chip game-sort-btn active" aria-pressed="true" onclick="lobbySetMode('all',this)">Усі</button>
+          <button type="button" class="chip game-sort-btn" aria-pressed="false" onclick="lobbySetMode('hot',this)"><span class="ic i-fire" aria-hidden="true"></span>Популярні</button>
+          <button type="button" class="chip game-sort-btn" aria-pressed="false" onclick="lobbySetMode('new',this)"><span class="ic i-sparkle" aria-hidden="true"></span>Нові</button>
+          <button type="button" class="chip game-sort-btn" aria-pressed="false" onclick="lobbySetMode('fav',this)"><span class="ic i-heart" aria-hidden="true"></span>Обрані</button>
+          <span class="chips-sep" aria-hidden="true"></span>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('slots',this)">Слоти</button>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('cards',this)">Карти</button>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('crash',this)">Множник</button>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('pvp',this)">PvP</button>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('mini',this)">Міні</button>
+          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('sport',this)">Спорт</button>
         </div>
       </div>
 
-      <!-- Providers -->
-      <div class="section-header">🏢 Провайдери</div>
-      <div class="providers-scroll">
-        <div class="provider-pill">Pragmatic Play</div>
-        <div class="provider-pill">NetEnt</div>
-        <div class="provider-pill">Spribe</div>
-        <div class="provider-pill">BGaming</div>
-        <div class="provider-pill">Evolution</div>
-        <div class="provider-pill">Hacksaw</div>
-        <div class="provider-pill">Novomatic</div>
-        <div class="provider-pill">Microgaming</div>
+      <!-- Нещодавно грав -->
+      <div id="recentGamesSection" style="display:none;">
+        <div class="section-header"><span>Нещодавно грав</span></div>
+        <div class="recent-games-scroll chips" id="recentGamesRow"></div>
       </div>
 
-      <!-- Last wins feed -->
-      <div class="section-header">🏆 Останні виграші</div>
-      <div class="wins-feed" id="lobbyWinsFeed">
-        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🦁</div><div><div class="win-feed-user">Олег Р.</div><div class="win-feed-game">Crash Aviator</div></div></div><div class="win-feed-amount">+₴ 12 450</div></div>
-        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🦊</div><div><div class="win-feed-user">Катя М.</div><div class="win-feed-game">Mines</div></div></div><div class="win-feed-amount">+₴ 3 280</div></div>
-        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐯</div><div><div class="win-feed-user">Ігор В.</div><div class="win-feed-game">Classic 777</div></div></div><div class="win-feed-amount">+₴ 8 900</div></div>
-        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐻</div><div><div class="win-feed-user">Аня К.</div><div class="win-feed-game">Blackjack</div></div></div><div class="win-feed-amount">+₴ 5 150</div></div>
-        <div class="win-feed-row"><div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">🐺</div><div><div class="win-feed-user">Марк С.</div><div class="win-feed-game">Plinko</div></div></div><div class="win-feed-amount">+₴ 21 000</div></div>
+      <!-- Усі ігри -->
+      <div class="section-header"><span id="lobbyGridTitle">Усі ігри</span><span class="section-count num" id="lobbyGridCount"></span></div>
+      <div class="casino-grid-3" id="casinoGamesGrid" role="list">
+        <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('slots')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🎰</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Classic 777</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('diamond')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">💎</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Diamond Rush</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('crash')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🚀</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash Aviator</div><div class="casino-game-card-prov">Множник</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('mines')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">💣</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Mines</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('blackjack')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Blackjack</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('plinko')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🔻</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('dice')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎲</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Dice Roll</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('fortune')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🎡</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Колесо Фортуни</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('poker')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">♠️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Video Poker</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('hilo')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Hi-Lo Cards</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('scratch')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🎟️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Скретч</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('limbo')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🎯</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Limbo</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('tower')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🗼</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Tower Climb</div><div class="casino-game-card-prov">Множник</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('roulette')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🎡</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Roulette</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('keno')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">🔢</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Keno</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('monopoly')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🎩</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Монополія</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('cardgame')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🃏</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Карти (Дурень)</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('chests')" onkeydown="if(event.key==='Enter')this.click()">
+          <div class="casino-game-card-img">📦</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Magic Chests</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="switchTab('coinflip')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">PvP</span><div class="casino-game-card-img">🪙</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Coinflip</div><div class="casino-game-card-prov">PvP-дуель</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="switchTab('rps')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">PvP</span><div class="casino-game-card-img">✊</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Камінь-Ножиці</div><div class="casino-game-card-prov">PvP-дуель</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="switchTab('predict')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">PvP</span><div class="casino-game-card-img">🔮</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Prediction Duel</div><div class="casino-game-card-prov">PvP-дуель</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('double')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎰</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Double</div><div class="casino-game-card-prov">Множник</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="sport" role="listitem" tabindex="0" onclick="switchTab('sports')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-hot is-live">LIVE</span><div class="casino-game-card-img">⚽</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Sport Betting</div><div class="casino-game-card-prov">Спорт</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('dragon')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🐉</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Dragon Tower</div><div class="casino-game-card-prov">Множник</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('penalty')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">⚽</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Penalty Kick</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('bowling')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎳</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Bowling</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('archery')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎯</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Archery</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('sicbo')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎲</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Sic Bo</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('cardwar')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">⚔️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Card War</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('chess')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">♟️</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Шахи</div><div class="casino-game-card-prov">Карти</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('duckshoot')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🦆</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Duck Shoot</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="switchTab('balloon')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎈</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Balloon Pop</div><div class="casino-game-card-prov">Множник</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="switchTab('russianroulette')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🔫</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Рулетка Ризику</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="switchTab('quiz')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🧠</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Quiz Battle</div><div class="casino-game-card-prov">PvP-дуель</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="switchTab('horseracing')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🏇</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Horse Racing</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="switchTab('colorbet')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎨</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Color Bet</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+      </div>
+      <div class="empty-state hidden" id="lobbyEmpty">
+        <span class="ic i-search" aria-hidden="true"></span>
+        <div class="empty-state-title">Нічого не знайдено</div>
+        <div>Спробуй іншу назву або скинь фільтри.</div>
+        <button type="button" class="btn btn-secondary btn-inline" onclick="lobbyReset()">Скинути фільтри</button>
       </div>
 
-      <!-- NEW MULTIPLIER GAMES -->
-      <div style="font-size:11px;color:var(--fg-4);text-transform:uppercase;letter-spacing:1px;font-weight:bold;padding:8px 0 4px;">🎯 Мультиплаєр ігри</div>
-      <div class="game-card" onclick="openGame('tower')"><span class="game-icon">🗼</span><div class="game-info"><div class="game-title">Tower Climb</div><div class="game-desc">Піднімайся вище • до x500</div></div><span style="background:var(--accent);color:var(--on-accent);font-size:10px;font-weight:bold;padding:3px 8px;border-radius:var(--r-md);margin-left:auto;">HOT</span></div>
-      <div class="game-card" onclick="openGame('hilo')"><span class="game-icon">🃏</span><div class="game-info"><div class="game-title">Hi-Lo Cards</div><div class="game-desc">Вище чи нижче • до x100</div></div><span style="background:var(--info);color:var(--on-info);font-size:10px;font-weight:bold;padding:3px 8px;border-radius:var(--r-md);margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('dice')"><span class="game-icon">🎲</span><div class="game-info"><div class="game-title">Dice Roll</div><div class="game-desc">Кубик • вибери число</div></div><span style="background:var(--pos);color:var(--on-pos);font-size:10px;font-weight:bold;padding:3px 8px;border-radius:var(--r-md);margin-left:auto;">NEW</span></div>
-      <div class="game-card" onclick="openGame('double')"><span class="game-icon">🎰</span><div class="game-info"><div class="game-title">Double</div><div class="game-desc">Чорне/Червоне/Зелене • x2/x14</div></div><span style="background:var(--special);color:var(--on-special);font-size:10px;font-weight:bold;padding:3px 8px;border-radius:var(--r-md);margin-left:auto;">NEW</span></div>
+      <!-- Сесія -->
+      <div class="section-header"><span>Твоя сесія</span></div>
+      <div class="session-bar panel stat-quad" id="sessionBar">
+        <div class="stat session-stat"><div class="stat-val session-stat-val" id="sessionBarTime">0хв</div><div class="stat-lbl">Час</div></div>
+        <div class="stat session-stat"><div class="stat-val session-stat-val" id="sessionBarBets">0</div><div class="stat-lbl">Ставок</div></div>
+        <div class="stat session-stat"><div class="stat-val session-stat-val" id="sessionBarWR">—</div><div class="stat-lbl">Win rate</div></div>
+        <div class="stat session-stat"><div class="stat-val session-stat-val tn-accent" id="sessionBarStreak">🔥0</div><div class="stat-lbl">Серія</div></div>
+      </div>
+      <div class="streak-banner callout callout-warn" id="streakBanner" style="display:none;">
+        <span class="callout-ic">🔥</span><span class="callout-body"><span class="callout-title" id="streakText"></span></span>
+      </div>
 
-      <!-- SPORT BETTING -->
-      <div style="font-size:11px;color:var(--fg-4);text-transform:uppercase;letter-spacing:1px;font-weight:bold;padding:8px 0 4px;">⚽ Ставки на спорт</div>
-      <div class="game-card" onclick="openGame('sports')"><span class="game-icon">⚽</span><div class="game-info"><div class="game-title">Sports Betting</div><div class="game-desc">Реальний спорт • AI прогнози</div></div><span style="background:var(--pos);color:var(--on-pos);font-size:10px;font-weight:bold;padding:3px 8px;border-radius:var(--r-md);margin-left:auto;">LIVE</span></div>
+      <!-- Джекпот -->
+      <div class="jackpot-strip panel is-featured">
+        <div>
+          <div class="hero-label">Поточний джекпот</div>
+          <div class="jackpot-num num">₴ <span id="lobbyJackpotNum">4 287 341</span></div>
+          <div class="field-hint">Оновлюється наживо</div>
+        </div>
+        <button type="button" class="btn btn-primary btn-inline jackpot-play-btn" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Множник до ×∞ · RTP 97%')">Грати</button>
+      </div>
+
+      <!-- Останні виграші -->
+      <div class="section-header"><span>Останні виграші</span></div>
+      <div class="wins-feed list" id="lobbyWinsFeed"></div>
     </div>
 
     <!-- ІГРИ -->
@@ -1377,6 +1290,9 @@
 
       <!-- ═══ КУРСИ ═══ -->
       <div id="cashier-panel-markets" class="hidden">
+        <div id="rateTicker" class="rate-ticker" role="button" tabindex="0" onclick="openCurrencyPicker()" aria-label="Курси валют — змінити валюту відображення">
+          <div id="rateTickerInner" class="rate-ticker-inner"><span class="rate-ticker-lbl">Курси:</span></div>
+        </div>
 
         <section class="ks-panel">
           <div class="ks-panel-head"><div class="ks-panel-title">Відображення балансу</div></div>
@@ -1779,66 +1695,59 @@
 
     <!-- ЩЕ -->
     <div id="tab-more" class="screen ledger hidden">
+      <h1 class="screen-title">Ще</h1>
 
-      <!-- ── ⚙️ СИСТЕМА ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">⚙️ Система</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('settings')">⚙️ Налаштування</button>
-        <button class="btn-outline" onclick="openRulesModal()">📜 Правила та політика</button>
-        <button class="btn-outline" onclick="installPWA()">📱 Встановити застосунок на телефон</button>
-      </div>
+      <!-- Відповідальна гра — завжди на видноті -->
+      <button type="button" class="callout callout-warn rg-entry" onclick="openResponsibleGaming()">
+        <span class="callout-ic"><span class="ic i-shield-check" aria-hidden="true"></span></span>
+        <span class="callout-body"><span class="callout-title">Відповідальна гра</span><span class="callout-sub">Ліміти програшу й часу, пауза, самовиключення</span></span>
+        <span class="ic i-chevron-right callout-go" aria-hidden="true"></span>
+      </button>
 
-      <!-- ── 👥 СОЦІАЛЬНЕ ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">👥 Соціальне</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('pm')">✉️ Приватні повідомлення <span id="pmBadge" class="tab-badge hidden">!</span></button>
-        <button class="btn-outline" onclick="switchTab('contacts')">🤝 Знайомі</button>
-        <button class="btn-outline" onclick="switchTab('clans')">🛡️ Клани</button>
-        <button class="btn-outline" onclick="openSupportModal()">💬 Чат Підтримки <span class="htbadge hidden" id="supportUnreadBadge" style="background:var(--neg);color:var(--on-neg);border-radius:var(--r-md);padding:1px 6px;font-size:10px;">0</span></button>
-        <button class="btn-outline" onclick="showReferralQR()">📲 QR-код реферала</button>
-      </div>
-
-      <!-- ── ⚔️ PvP / КОНКУРСИ ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">⚔️ PvP та Конкурси</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('tournaments')">🏆 Турніри</button>
-        <button class="btn-outline" onclick="switchTab('leaderboard')">📊 Рейтинги (День/Тиждень/Місяць)</button>
-      </div>
-
-      <!-- ── 🏆 ПРОГРЕС ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">🏆 Прогрес та Нагороди</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('affiliate')">👥 Реферали</button>
-        <button class="btn-outline" onclick="switchTab('achievements')">🏆 Досягнення</button>
-        <button class="btn-outline" onclick="switchTab('quests')">📋 Завдання <span id="questsBadge" class="tab-badge hidden">!</span></button>
-      </div>
-      <div class="ks-hint" style="padding:0 4px 10px;">VIP, Battle Pass і статистику дивись на Головній — там вони вже під рукою.</div>
-
-      <!-- ── 💰 ФІНАНСИ ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">💰 Фінансові інструменти</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="switchTab('lottery')">🎟️ Лотерея</button>
-        <button class="btn-outline" onclick="switchTab('investpool')">📈 Інвест-Пул</button>
-        <button class="btn-outline" onclick="openCryptoSimulator()">📈 Крипто-симулятор</button>
-      </div>
-
-      <!-- ── 🎁 БОНУСИ ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">🎁 Бонуси та Магазин</div>
-      <div class="ks-panel" style="padding:8px;">
-        <button class="btn-outline" onclick="openDailyBonus()">🎁 Щоденний бонус</button>
-        <button class="btn-outline" onclick="openDailySpinModal()">🎡 Щоденний безкоштовний спін</button>
-        <button class="btn-outline" onclick="switchTab('hourly')">⏰ Погодинний бонус</button>
-        <button class="btn-outline" onclick="switchTab('lootboxes')">📦 Лут-Бокси</button>
-        <button class="btn-outline" onclick="switchTab('slotiky')">🪙 Слотіки / Магазин</button>
-      </div>
-
-      <!-- ── ❤️ ПІДТРИМКА ПРОЄКТУ ── -->
-      <div class="ks-label" style="padding:18px 2px 8px;">❤️ Підтримка проєкту</div>
-      <div class="ks-panel" style="padding:8px;">
-        <a class="btn-gold" style="display:block;text-align:center;text-decoration:none;" href="https://send.monobank.ua/jar/3iLuXEs9Uz" target="_blank" rel="noopener">💜 Задонатити на оновлення SlotOK</a>
-      </div>
-
-      <div style="height:80px;"></div>
+      <div class="section-header"><span>Система</span></div>
+      <nav class="list menu-group" aria-label="Система">
+          <button type="button" class="list-row menu-item" onclick="switchTab('settings')"><span class="menu-ic">⚙️</span><span class="list-row-main"><span class="list-row-title">Налаштування</span><span class="list-row-sub">Тема, звук, сповіщення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openRulesModal()"><span class="menu-ic">📜</span><span class="list-row-main"><span class="list-row-title">Правила та політика</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="installPWA()"><span class="menu-ic">📱</span><span class="list-row-main"><span class="list-row-title">Встановити застосунок</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Спілкування</span></div>
+      <nav class="list menu-group" aria-label="Спілкування">
+          <button type="button" class="list-row menu-item" onclick="switchTab('pm')"><span class="menu-ic">✉️</span><span class="list-row-main"><span class="list-row-title">Приватні повідомлення</span></span> <span id="pmBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('contacts')"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Знайомі</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('clans')"><span class="menu-ic">🛡️</span><span class="list-row-main"><span class="list-row-title">Клани</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Чат підтримки</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="showReferralQR()"><span class="menu-ic">📲</span><span class="list-row-main"><span class="list-row-title">QR-код запрошення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Змагання</span></div>
+      <nav class="list menu-group" aria-label="Змагання">
+          <button type="button" class="list-row menu-item" onclick="switchTab('tournaments')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Турніри</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('leaderboard')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Рейтинги</span><span class="list-row-sub">День, тиждень, місяць</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Прогрес і нагороди</span></div>
+      <nav class="list menu-group" aria-label="Прогрес і нагороди">
+          <button type="button" class="list-row menu-item" onclick="switchTab('affiliate')"><span class="menu-ic">👥</span><span class="list-row-main"><span class="list-row-title">Реферали</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('achievements')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Досягнення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('quests')"><span class="menu-ic">📋</span><span class="list-row-main"><span class="list-row-title">Завдання</span></span> <span id="questsBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('vip')"><span class="menu-ic">👑</span><span class="list-row-main"><span class="list-row-title">VIP-клуб</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('battlepass')"><span class="menu-ic">🎫</span><span class="list-row-main"><span class="list-row-title">Battle Pass</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('stats')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Моя статистика</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Бонуси й магазин</span></div>
+      <nav class="list menu-group" aria-label="Бонуси й магазин">
+          <button type="button" class="list-row menu-item" onclick="openDailyBonus()"><span class="menu-ic">🎁</span><span class="list-row-main"><span class="list-row-title">Щоденний бонус</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openDailySpinModal()"><span class="menu-ic">🎡</span><span class="list-row-main"><span class="list-row-title">Щоденний безкоштовний спін</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('hourly')"><span class="menu-ic">⏰</span><span class="list-row-main"><span class="list-row-title">Погодинний бонус</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('lootboxes')"><span class="menu-ic">📦</span><span class="list-row-main"><span class="list-row-title">Лут-бокси</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('slotiky')"><span class="menu-ic">🪙</span><span class="list-row-main"><span class="list-row-title">Слотіки й магазин</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Інструменти</span></div>
+      <nav class="list menu-group" aria-label="Інструменти">
+          <button type="button" class="list-row menu-item" onclick="switchTab('lottery')"><span class="menu-ic">🎟️</span><span class="list-row-main"><span class="list-row-title">Лотерея</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('investpool')"><span class="menu-ic">📈</span><span class="list-row-main"><span class="list-row-title">Інвест-пул</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openCryptoSimulator()"><span class="menu-ic">📈</span><span class="list-row-main"><span class="list-row-title">Крипто-симулятор</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+      </nav>
+      <div class="section-header"><span>Підтримати проєкт</span></div>
+      <a class="btn btn-secondary" href="https://send.monobank.ua/jar/3iLuXEs9Uz" target="_blank" rel="noopener">💜 Задонатити на оновлення SlotOK</a>
     </div>
 
     <!-- ===== КЛАНИ ===== -->
@@ -2101,358 +2010,296 @@
     <!-- ===== НАЛАШТУВАННЯ ===== -->
     <!-- Структурні класи .settings-* перефарбовано в мову «Ledger»; кольорові
          вибірники акценту/теми/фону лишаються яскравими навмисно. -->
-    <div id="tab-settings" class="screen hidden" style="font-family:var(--ks-sans);">
-      <div style="display:flex;align-items:center;gap:12px;margin:6px 0 16px;">
-        <button class="ks-btn is-quiet is-sm" style="width:auto;flex:0 0 auto;padding:9px 11px;" onclick="switchTab('profile')" aria-label="Назад">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <div style="font-size:20px;font-weight:650;letter-spacing:-.01em;color:var(--ks-fg);font-family:var(--ks-sans);">Налаштування</div>
-      </div>
-
-      <!-- Звук -->
-      <div class="settings-section">
-        <div class="settings-row">
-          <span class="settings-icon">🔊</span>
-          <div style="flex:1;"><div class="settings-label">Звукові ефекти</div><div class="settings-sub">Звуки виграшу і натискань</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingSounds" checked onchange="saveSetting('sounds',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <span class="settings-icon">🎵</span>
-          <div style="flex:1;"><div class="settings-label">Фонова музика</div><div class="settings-sub">Музика в казино</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingMusic" onchange="saveSetting('music',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <span class="settings-icon">📳</span>
-          <div style="flex:1;"><div class="settings-label">Вібрація</div><div class="settings-sub">Тактильний відгук</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingVibrate" checked onchange="saveSetting('vibrate',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <span class="settings-icon">🔔</span>
-          <div style="flex:1;"><div class="settings-label">Сповіщення</div><div class="settings-sub">Toast-повідомлення про виграші, депозити, бонуси</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingNotifs" checked onchange="saveSetting('notifs',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Стример / Фокус -->
-      <div class="settings-section">
-        <div class="settings-row">
-          <span class="settings-icon">📺</span>
-          <div style="flex:1;"><div class="settings-label">Режим стримера</div><div class="settings-sub">Приховати баланс і нік для OBS</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingStreamer" onchange="toggleStreamerMode(this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <span class="settings-icon">🎯</span>
-          <div style="flex:1;"><div class="settings-label">Режим фокусу</div><div class="settings-sub">Приховати відволікаючі елементи</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingFocus" onchange="toggleFocusMode(this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <span class="settings-icon">🌅</span>
-          <div style="flex:1;"><div class="settings-label">Динамічний фон</div><div class="settings-sub">Змінюється залежно від часу доби</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingDynBg" checked onchange="saveSetting('dynBg',this.checked);applyDynamicBg(this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Telegram -->
-      <div class="settings-section">
-        <div class="settings-row">
-          <span class="settings-icon">✈️</span>
-          <div style="flex:1;">
-            <div class="settings-label">Telegram</div>
-            <div class="settings-sub" id="tgLinkStatus">Не прив'язано</div>
-          </div>
-          <button class="btn-outline" id="tgLinkBtn" style="width:auto;padding:8px 14px;margin:0;" onclick="linkTelegram()">Прив'язати</button>
-        </div>
+    <div id="tab-settings" class="screen hidden">
+      <div class="screen-head">
+        <button type="button" class="close-btn" onclick="switchTab('profile')" aria-label="Назад до профілю"><span class="ic i-arrow-left" aria-hidden="true"></span></button>
+        <h1 class="screen-title" style="margin:0">Налаштування</h1>
       </div>
 
       <!-- Telegram link modal -->
-      <div id="tgLinkModal" class="hidden" style="position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.7 * var(--recess-k)));z-index:9999;display:flex;align-items:center;justify-content:center;">
-        <div style="background:var(--surface-1);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:20px;max-width:320px;width:90%;text-align:center;">
-          <h3 style="margin:0 0 10px;color:var(--info);">✈️ Прив'язка Telegram</h3>
-          <button class="btn-primary" id="tgLinkOpenBtn" style="width:100%;margin-bottom:10px;">Відкрити Telegram</button>
-          <div style="font-size:12px;color:var(--fg-3);margin-bottom:6px;">Або напиши боту вручну:</div>
-          <div style="font-family:var(--font-mono);font-size:18px;font-weight:900;letter-spacing:2px;color:var(--fg);background:var(--surface-2);border-radius:var(--r-md);padding:8px;margin-bottom:12px;" id="tgLinkCode"></div>
-          <button class="btn-outline" style="width:100%;" onclick="document.getElementById('tgLinkModal').classList.add('hidden')">Закрити</button>
+      <div id="tgLinkModal" class="hidden modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tgLinkTitle">
+        <div class="dialog" style="text-align:center;">
+          <h3 class="dialog-title" id="tgLinkTitle">✈️ Прив'язка Telegram</h3>
+          <button type="button" class="btn btn-info" id="tgLinkOpenBtn">Відкрити Telegram</button>
+          <p class="field-hint">Або напиши боту цей код вручну:</p>
+          <div class="code-box num" id="tgLinkCode"></div>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('tgLinkModal').classList.add('hidden')">Закрити</button>
         </div>
       </div>
-      <!-- Акцент-колір -->
+
+      <h2 class="settings-group-title">Відповідальна гра</h2>
+      <div class="settings-section" id="rgSection">
+        <div class="settings-block">
+          <p class="rg-lead">Встанови межі заздалегідь — так легше зупинитись вчасно. Ліміти діють одразу після збереження.</p>
+          <div class="rg-fields">
+            <label class="field">
+              <span class="field-label">Ліміт програшу за сесію, ₴</span>
+              <input type="number" id="rgLossLimit" inputmode="numeric" min="0" placeholder="Без ліміту">
+              <span class="field-hint">0 або порожньо — вимкнено</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Ліміт часу сесії, хв</span>
+              <input type="number" id="rgSessionLimit" inputmode="numeric" min="0" placeholder="Без ліміту">
+              <span class="field-hint">Нагадаємо, коли час вийде</span>
+            </label>
+          </div>
+          <div class="loss-limit-warn note is-neg" id="rgLossWarn">⚠️ Ви досягли встановленого ліміту програшів! Зробіть перерву.</div>
+          <button type="button" class="btn btn-primary" onclick="saveRGLimits()">Зберегти ліміти</button>
+          <div class="field-label">Пауза від гри (самовиключення)</div>
+          <p class="field-hint">Акаунт буде заблоковано для гри на обраний строк. Скасувати раніше не можна.</p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-danger" onclick="selfExclude(1)">24 години</button>
+            <button type="button" class="btn btn-danger" onclick="selfExclude(7)">7 днів</button>
+            <button type="button" class="btn btn-danger" onclick="selfExclude(30)">30 днів</button>
+          </div>
+        </div>
+      </div>
+      <h2 class="settings-group-title">Вигляд</h2>
       <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
-          <div style="display:flex;align-items:center;gap:10px;width:100%;">
-            <span class="settings-icon">🎨</span>
-            <div class="settings-label" style="flex:1;">Акцент-колір</div>
-            <div id="accentColorPreview" style="width:30px;height:30px;border-radius:var(--r-md);background:var(--accent);border:2px solid rgb(var(--tint-rgb) / 0.2);"></div>
+        <div class="settings-block">
+          <div class="field-label">Тема</div>
+          <div class="seg" role="radiogroup" aria-label="Тема інтерфейсу">
+            <button type="button" class="seg-item" role="radio" data-theme-option="auto" onclick="setTheme('auto',this)"><span class="seg-label">Авто</span><span class="seg-hint">Як у системі</span></button>
+            <button type="button" class="seg-item" role="radio" data-theme-option="dark" onclick="setTheme('dark',this)"><span class="seg-label">Темна</span><span class="seg-hint">Нічний друк</span></button>
+            <button type="button" class="seg-item" role="radio" data-theme-option="light" onclick="setTheme('light',this)"><span class="seg-label">Світла</span><span class="seg-hint">Папір</span></button>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;width:100%;">
-            <div onclick="setAccentColor('#d4af37',this)" style="height:30px;border-radius:var(--r-md);background:var(--accent);cursor:pointer;" class="accent-dot active"></div>
-            <div onclick="setAccentColor('#c9a0ff',this)" style="height:30px;border-radius:var(--r-md);background:var(--special);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#4a9eff',this)" style="height:30px;border-radius:var(--r-md);background:var(--info);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#3dd68c',this)" style="height:30px;border-radius:var(--r-md);background:var(--pos);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#ff6b6b',this)" style="height:30px;border-radius:var(--r-md);background:var(--neg);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#ff9f43',this)" style="height:30px;border-radius:var(--r-md);background:var(--accent);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#00e5ff',this)" style="height:30px;border-radius:var(--r-md);background:var(--primary);cursor:pointer;" class="accent-dot"></div>
-            <div onclick="setAccentColor('#ff4081',this)" style="height:30px;border-radius:var(--r-md);background:var(--neg);cursor:pointer;" class="accent-dot"></div>
+          <div class="field-label">Акцент — колір головних кнопок</div>
+          <div class="swatches" role="radiogroup" aria-label="Колір акценту"><button type="button" class="swatch accent-dot" role="radio" aria-checked="false" data-accent-option="coral" style="--swatch:#FF7A3D" onclick="setAccentColor('coral',this)"><span class="swatch-dot" aria-hidden="true"></span><span>Помаранч</span></button><button type="button" class="swatch accent-dot" role="radio" aria-checked="false" data-accent-option="blue" style="--swatch:#6FA8FF" onclick="setAccentColor('blue',this)"><span class="swatch-dot" aria-hidden="true"></span><span>Синя</span></button><button type="button" class="swatch accent-dot" role="radio" aria-checked="false" data-accent-option="neon" style="--swatch:#C38BFF" onclick="setAccentColor('neon',this)"><span class="swatch-dot" aria-hidden="true"></span><span>Неон</span></button><button type="button" class="swatch accent-dot" role="radio" aria-checked="false" data-accent-option="matrix" style="--swatch:#6BEA8C" onclick="setAccentColor('matrix',this)"><span class="swatch-dot" aria-hidden="true"></span><span>Матриця</span></button><button type="button" class="swatch accent-dot" role="radio" aria-checked="false" data-accent-option="sakura" style="--swatch:#FF8CC6" onclick="setAccentColor('sakura',this)"><span class="swatch-dot" aria-hidden="true"></span><span>Сакура</span></button>
+            <label class="swatch swatch-custom" title="Свій колір"><input type="color" id="accentColorCustom" value="#ff7a3d" oninput="setAccentColor(this.value,null)" aria-label="Свій колір акценту"><span>Свій</span></label>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;width:100%;">
-            <div style="font-size:12px;color:var(--fg-3);flex:1;">Або будь-який колір:</div>
-            <input type="color" id="accentColorCustom" value="#d4af37" oninput="setAccentColor(this.value,null)" style="width:42px;height:34px;border:none;border-radius:var(--r-md);cursor:pointer;padding:2px;">
+          <div class="field-label">Розмір тексту</div>
+          <div class="seg font-size-row" role="radiogroup" aria-label="Розмір тексту">
+            <button type="button" class="seg-item font-size-btn" id="fs_12" onclick="setFontSize(12)"><span class="seg-label" style="font-size:12px">A</span><span class="seg-hint">Дрібний</span></button>
+            <button type="button" class="seg-item font-size-btn active" id="fs_14" onclick="setFontSize(14)"><span class="seg-label">Aa</span><span class="seg-hint">Звичайний</span></button>
+            <button type="button" class="seg-item font-size-btn" id="fs_16" onclick="setFontSize(16)"><span class="seg-label" style="font-size:17px">Aa</span><span class="seg-hint">Великий</span></button>
+            <button type="button" class="seg-item font-size-btn" id="fs_18" onclick="setFontSize(18)"><span class="seg-label" style="font-size:19px">Aa</span><span class="seg-hint">Дуже великий</span></button>
           </div>
-        </div>
-      </div>
-
-      <!-- Фон -->
-      <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
-          <div style="display:flex;align-items:center;gap:10px;width:100%;">
-            <span class="settings-icon">🖼️</span>
-            <div class="settings-label">Фон інтерфейсу</div>
+          <div class="field-label">Фон</div>
+          <div class="bg-presets"><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('dark',this)" style="--pv:var(--bg)">Чисте</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('navy',this)" style="--pv:color-mix(in srgb, var(--info) 18%, var(--bg))">Ніч</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('forest',this)" style="--pv:color-mix(in srgb, var(--pos) 16%, var(--bg))">Ліс</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('crimson',this)" style="--pv:color-mix(in srgb, var(--neg) 16%, var(--bg))">Крімсон</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('purple',this)" style="--pv:color-mix(in srgb, var(--special) 18%, var(--bg))">Фіолет</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('ocean',this)" style="--pv:color-mix(in srgb, var(--primary) 16%, var(--bg))">Океан</button><button type="button" class="bg-preset" aria-pressed="false" onclick="setBgPreset('sunset',this)" style="--pv:color-mix(in srgb, var(--accent) 16%, var(--bg))">Захід</button>
+            <button type="button" class="bg-preset is-custom" id="bgCustomColorDot" onclick="document.getElementById('bgColorPicker').click()">Свій колір</button>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;">
-            <div onclick="setBgPreset('dark',this)" class="bg-preset active" style="height:42px;border-radius:var(--r-md);background:var(--bg);border:2px solid rgb(var(--tint-rgb) / 0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🌑 Чорний</div>
-            <div onclick="setBgPreset('navy',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--info) 12%, var(--surface-1)));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🌌 Ніч</div>
-            <div onclick="setBgPreset('forest',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--bg),var(--surface-1));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🌲 Ліс</div>
-            <div onclick="setBgPreset('crimson',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--neg) 11%, var(--surface-1)));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🔴 Крімсон</div>
-            <div onclick="setBgPreset('purple',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--special) 11%, var(--surface-1)));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">💜 Фіолет</div>
-            <div onclick="setBgPreset('ocean',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--info) 11%, var(--surface-1)));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🌊 Океан</div>
-            <div onclick="setBgPreset('sunset',this)" class="bg-preset" style="height:42px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)));border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🌅 Захід</div>
-            <div onclick="document.getElementById('bgColorPicker').click()" class="bg-preset" id="bgCustomColorDot" style="height:42px;border-radius:var(--r-md);background:var(--surface-2);border:2px dashed var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-2);">🎨 Колір</div>
+          <input type="color" id="bgColorPicker" value="#0e1020" hidden oninput="setBgCustomColor(this.value)">
+          <input type="file" id="bgPhotoInput" accept="image/*" hidden onchange="setBgPhoto(this)">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('bgPhotoInput').click()">📷 Фото з галереї</button>
+          <div id="bgPhotoPreview" class="bg-photo-preview" style="display:none;">
+            <img id="bgPhotoImg" alt="Фото фону">
+            <button type="button" class="close-btn" onclick="removeBgPhoto()" aria-label="Прибрати фото"><span class="ic i-close" aria-hidden="true"></span></button>
           </div>
-          <input type="color" id="bgColorPicker" value="#050505" style="display:none;" oninput="setBgCustomColor(this.value)">
-          <!-- Photo from gallery -->
-          <input type="file" id="bgPhotoInput" accept="image/*" style="display:none;" onchange="setBgPhoto(this)">
-          <button onclick="document.getElementById('bgPhotoInput').click()" style="width:100%;background:rgb(var(--tint-rgb) / 0.05);border:2px dashed rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-lg);padding:13px;color:var(--fg-2);font-size:13px;cursor:pointer;">📷 Обрати фото з галереї</button>
-          <div id="bgPhotoPreview" style="display:none;position:relative;border-radius:var(--r-lg);overflow:hidden;">
-            <img id="bgPhotoImg" alt="Фон профілю" style="width:100%;height:80px;object-fit:cover;">
-            <button onclick="removeBgPhoto()" style="position:absolute;top:5px;right:5px;background:rgb(var(--recess-rgb) / calc(0.75 * var(--recess-k)));border:none;color:var(--fg);border-radius:var(--r-xl);padding:3px 10px;font-size:12px;cursor:pointer;">✕</button>
+          <div class="field-label">Живі шпалери</div>
+          <div class="btn-row">
+            <button type="button" class="chip live-wallpaper-btn" data-wp="stars" onclick="toggleLiveWallpaper('stars')">✨ Зірки</button>
+            <button type="button" class="chip live-wallpaper-btn" data-wp="matrix" onclick="toggleLiveWallpaper('matrix')">💚 Матриця</button>
+            <button type="button" class="chip live-wallpaper-btn" data-wp="rain" onclick="toggleLiveWallpaper('rain')">🌧 Дощ</button>
           </div>
         </div>
-      </div>
-      <!-- Sound & Vibration -->
-      <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
-          <div style="display:flex;align-items:center;gap:10px;width:100%;">
-            <span class="settings-icon">🔊</span>
-            <div class="settings-label" style="flex:1;">Гучність</div>
-            <span id="volumeLabel" style="font-size:11px;color:var(--accent);">70%</span>
-          </div>
-          <div class="sound-row" style="width:100%;">
-            <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.7" oninput="setVolume(parseFloat(this.value))">
-          </div>
-          <button onclick="toggleTurbo()" style="background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:9px 14px;color:var(--accent);font-size:12px;cursor:pointer;width:100%;">⚡ Турбо режим (пришвидшити анімації)</button>
-          <button onclick="toggleCompactMode()" style="background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.08);border-radius:var(--r-md);padding:9px 14px;color:var(--fg-2);font-size:12px;cursor:pointer;width:100%;">📐 Компактний режим</button>
-        </div>
-      </div>
-
-      <!-- Rakeback = VIP-кешбек; відсоток і сума приходять з updateRakebackUI() -->
-      <div class="settings-section">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;" id="rakebackTitle">💰 Ракебек</div>
-        <div style="font-size:22px;font-weight:900;color:var(--accent);" id="rakebackAmount">₴0</div>
-        <div class="rakeback-bar-wrap"><div class="rakeback-bar" id="rakebackBar" style="width:0;"></div></div>
-        <div style="font-size:10px;color:var(--fg-4);" id="rakebackNext"></div>
-        <button class="btn-gold" onclick="claimCashback()" style="margin-top:8px;">💰 Вивести ракебек</button>
-      </div>
-
-      <!-- Responsible Gambling -->
-      <div class="rg-section">
-        <div class="rg-title">🛡️ Відповідальна гра</div>
-        <div class="rg-limit-row">
-          <div style="font-size:11px;color:var(--fg-2);flex:1;">Ліміт програшів/сесію (₴)</div>
-          <input type="number" id="rgLossLimit" placeholder="0=вимкн." value="" style="width:90px;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 6px;color:var(--fg);font-size:15px;">
-        </div>
-        <div class="rg-limit-row">
-          <div style="font-size:11px;color:var(--fg-2);flex:1;">Ліміт сесії (хв)</div>
-          <input type="number" id="rgSessionLimit" placeholder="0=вимкн." value="" style="width:90px;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 6px;color:var(--fg);font-size:15px;">
-        </div>
-        <button onclick="saveRGLimits()" style="background:rgb(var(--neg-rgb) / 0.12);border:1px solid rgb(var(--neg-rgb) / 0.3);border-radius:var(--r-md);padding:9px;color:var(--neg);font-size:12px;cursor:pointer;width:100%;margin-bottom:6px;">💾 Зберегти ліміти</button>
-        <button onclick="if(confirm('Заблокувати себе на 24 години?')) selfExclude(1)" style="background:var(--surface-1);border:1px solid rgb(var(--neg-rgb) / 0.2);border-radius:var(--r-md);padding:9px;color:var(--neg);font-size:11px;cursor:pointer;width:100%;">🚫 Само-виключення (24г)</button>
-        <div class="loss-limit-warn" id="rgLossWarn">⚠️ Ви досягли встановленого ліміту програшів! Зробіть перерву.</div>
-      </div>
-
-      <!-- PWA Install -->
-      <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;gap:8px;align-items:flex-start;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span class="settings-icon">📱</span>
-            <div class="settings-label">Додаток на телефон</div>
-          </div>
-          <button id="pwaInstallBtn" onclick="installPWA()">📱 Встановити SlotOK як додаток</button>
-          <button onclick="requestPushPermission()" id="pushToggle" style="width:100%;background:rgb(var(--tint-rgb) / 0.05);border:1px solid rgb(var(--tint-rgb) / 0.1);border-radius:var(--r-lg);padding:11px;color:var(--fg-2);font-size:13px;cursor:pointer;">🔔 Push-сповіщення</button>
-
-        <div style="font-size:10px;color:var(--info);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">🔐 Безпека та акаунт</div>
-        <button onclick="openChangePasswordModal()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">🔑 Змінити пароль</button>
-        <button onclick="openSecurityQuestionModal()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">❓ Контрольне питання для відновлення</button>
-        <button onclick="showSecurityLog()" style="width:100%;background:rgb(var(--neg-rgb) / 0.06);border:1px solid rgb(var(--neg-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--neg);font-size:13px;cursor:pointer;margin-top:8px;">📋 Журнал безпеки</button>
-
-        <div style="font-size:10px;color:var(--pos);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">💰 Фінанси</div>
-        <button onclick="openCryptoSimulator()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">📈 Крипто-симулятор</button>
-        <button onclick="exportHistoryCSV()" style="width:100%;background:rgb(var(--pos-rgb) / 0.06);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--pos);font-size:13px;cursor:pointer;margin-top:8px;">📥 Експорт історії CSV</button>
-
-        <div style="font-size:10px;color:var(--special);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">🎨 Персоналізація</div>
-        <button onclick="openSoundThemePicker()" style="width:100%;background:rgb(var(--info-rgb) / 0.06);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--info);font-size:13px;cursor:pointer;margin-top:8px;">🎵 Звукові теми</button>
-        <button onclick="openProfileEffectShop()" style="width:100%;background:rgb(var(--special-rgb) / 0.06);border:1px solid rgb(var(--special-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--special);font-size:13px;cursor:pointer;margin-top:8px;">🎭 Ефекти профілю</button>
-        <button onclick="openCustomTagShop()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">🏷️ Купити тег</button>
-
-        <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">👥 Соціальне</div>
-        <button onclick="openGiftVIPModal()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">🎁 Подарувати VIP</button>
-        <button onclick="comparePlayersModal()" style="width:100%;background:rgb(var(--info-rgb) / 0.06);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--info);font-size:13px;cursor:pointer;margin-top:8px;">📊 Порівняти гравців</button>
-        <button onclick="showTopDonators()" style="width:100%;background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px;">🏆 Топ донатерів</button>
-        <button onclick="showWishlist()" style="width:100%;background:rgb(var(--neg-rgb) / 0.06);border:1px solid rgb(var(--neg-rgb) / 0.2);border-radius:var(--r-lg);padding:11px;color:var(--neg);font-size:13px;cursor:pointer;margin-top:8px;">❤️ Список побажань</button>
-
-        <div style="height:1px;background:var(--surface-2);margin:14px 0;"></div>
-        <div style="font-size:10px;color:var(--fg-4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Онлайн: <span id="onlineTimeDisplay">—</span></div>
-        </div>
-      </div>
-
-      <!-- Animation speed -->
-      <div class="settings-section">
+        <label class="settings-row">
+          <span class="settings-icon">🌅</span>
+          <span class="settings-text"><span class="settings-label">Динамічний фон</span><span class="settings-sub">Змінюється залежно від часу доби</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingDynBg" checked onchange="saveSetting('dynBg',this.checked);applyDynamicBg(this.checked)"><span class="toggle-slider"></span></span>
+        </label>
         <div class="settings-row">
           <span class="settings-icon">⚡</span>
-          <div style="flex:1;"><div class="settings-label">Швидкість анімацій</div></div>
-          <select id="animSpeedSelect" onchange="setAnimSpeed(parseFloat(this.value))" style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-md);color:var(--fg);padding:6px 10px;font-size:12px;">
-            <option value="0.5">🐢 Повільно</option>
-            <option value="1" selected>🚶 Нормально</option>
-            <option value="2">🏃 Швидко</option>
-            <option value="0">⚡ Миттєво</option>
+          <span class="settings-text"><label class="settings-label" for="animSpeedSelect">Швидкість анімацій</label></span>
+          <select id="animSpeedSelect" class="settings-select-inline" onchange="setAnimSpeed(parseFloat(this.value))">
+            <option value="0.5">Повільно</option>
+            <option value="1" selected>Нормально</option>
+            <option value="2">Швидко</option>
+            <option value="0">Миттєво</option>
           </select>
         </div>
+        <button type="button" class="settings-row is-link" onclick="toggleCompactMode()">
+          <span class="settings-icon">📐</span>
+          <span class="settings-text"><span class="settings-label">Компактний режим</span><span class="settings-sub">Менше відступів</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="toggleTurbo()">
+          <span class="settings-icon">⚡</span>
+          <span class="settings-text"><span class="settings-label">Турбо-режим</span><span class="settings-sub">Пришвидшити анімації в іграх</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
       </div>
-
-      <!-- Live wallpapers -->
+      <h2 class="settings-group-title">Звук і вібрація</h2>
       <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;gap:8px;align-items:flex-start;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span class="settings-icon">🌌</span>
-            <div class="settings-label">Живі шпалери</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%;">
-            <button class="live-wallpaper-btn" data-wp="stars" onclick="toggleLiveWallpaper('stars')">✨ Зірки</button>
-            <button class="live-wallpaper-btn" data-wp="matrix" onclick="toggleLiveWallpaper('matrix')">💚 Матриця</button>
-            <button class="live-wallpaper-btn" data-wp="rain" onclick="toggleLiveWallpaper('rain')">🌧 Дощ</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Тема -->
-
-      <div class="settings-section">
+        <label class="settings-row">
+          <span class="settings-icon">🔊</span>
+          <span class="settings-text"><span class="settings-label">Звукові ефекти</span><span class="settings-sub">Звуки виграшу й натискань</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingSounds" checked onchange="saveSetting('sounds',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
         <div class="settings-row">
-          <span class="settings-icon">🎨</span>
-          <div style="flex:1;">
-            <div class="settings-label">Тема</div>
-            <div style="margin-top:10px;" class="theme-preview">
-              <div class="theme-dot active" id="theme-dark" style="background:var(--bg);border:2px solid var(--line);" onclick="setTheme('dark',this)" title="Темна"></div>
-              <div class="theme-dot" id="theme-light" style="background:var(--paper);border:2px solid var(--fg-3);" onclick="setTheme('light',this)" title="Світла"></div>
-              <div class="theme-dot" id="theme-blue"  style="background:linear-gradient(135deg,color-mix(in srgb, var(--info) 12%, var(--surface-1)),color-mix(in srgb, var(--info) 26%, var(--surface-1)));" onclick="setTheme('blue',this)" title="Синя ніч"></div>
-              <div class="theme-dot" id="theme-green" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--pos) 14%, var(--surface-1)));" onclick="setTheme('green',this)" title="Зелена"></div>
-              <div class="theme-dot" id="theme-red"   style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--neg) 14%, var(--surface-1)));" onclick="setTheme('red',this)" title="Червона"></div>
-              <div class="theme-dot" id="theme-neon"   style="background:linear-gradient(135deg,var(--bg),var(--special));" onclick="setTheme('neon',this)" title="Неон"></div>
-              <div class="theme-dot" id="theme-matrix" style="background:linear-gradient(135deg,var(--bg),color-mix(in srgb, var(--pos) 11%, var(--surface-1)));" onclick="setTheme('matrix',this)" title="Матриця"></div>
-              <div class="theme-dot" id="theme-sakura" style="background:linear-gradient(135deg,var(--bg),color-mix(in srgb, var(--neg) 16%, var(--surface-1)));" onclick="setTheme('sakura',this)" title="Сакура"></div>
-            </div>
-          </div>
+          <span class="settings-icon">🎚️</span>
+          <span class="settings-text"><span class="settings-label">Гучність</span>
+            <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.7" oninput="setVolume(parseFloat(this.value))" aria-label="Гучність"></span>
+          <span id="volumeLabel" class="num settings-value">70%</span>
         </div>
-        <div class="settings-row">
-          <span class="settings-icon">🔡</span>
-          <div style="flex:1;"><div class="settings-label">Розмір шрифту</div></div>
-          <div class="font-size-row" style="display:flex;gap:4px;">
-            <div class="font-size-btn" id="fs_12" onclick="setFontSize(12)">A</div>
-            <div class="font-size-btn active" id="fs_14" onclick="setFontSize(14)">Aa</div>
-            <div class="font-size-btn" id="fs_16" onclick="setFontSize(16)">AA</div>
-            <div class="font-size-btn" id="fs_18" onclick="setFontSize(18)">А+</div>
-          </div>
-        </div>
+        <label class="settings-row">
+          <span class="settings-icon">🎵</span>
+          <span class="settings-text"><span class="settings-label">Фонова музика</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingMusic" onchange="saveSetting('music',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <label class="settings-row">
+          <span class="settings-icon">📳</span>
+          <span class="settings-text"><span class="settings-label">Вібрація</span><span class="settings-sub">Тактильний відгук на телефоні</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingVibrate" checked onchange="saveSetting('vibrate',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <button type="button" class="settings-row is-link" onclick="openSoundThemePicker()">
+          <span class="settings-icon">🎵</span>
+          <span class="settings-text"><span class="settings-label">Звукові теми</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
       </div>
-
-      <!-- Валюта -->
+      <h2 class="settings-group-title">Сповіщення</h2>
       <div class="settings-section">
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;width:100%;">
-            <span class="settings-icon">💱</span>
-            <div>
-              <div class="settings-label">Валюта відображення</div>
-              <div class="settings-sub" id="settingRateInfo">Завантаження курсу...</div>
-            </div>
-          </div>
-          <button onclick="openCurrencyPicker()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--input),var(--surface-2));border:1px solid var(--border);border-radius:var(--r-md);color:var(--accent);font-size:14px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" id="currencySettingBtn">
-            <span id="settingCurrencyFlag">🇺🇦</span>
-            <span id="settingCurrencyName">Гривня (UAH)</span>
-            <span style="margin-left:auto;color:var(--fg-4);">›</span>
-          </button>
-          <div style="margin-top:10px;width:100%;background:var(--input);border-radius:var(--r-md);padding:10px;box-sizing:border-box;">
-            <div style="font-size:11px;color:var(--fg-4);margin-bottom:6px;">📊 Курси до ₴ (оновлюються кожні 5 хв)</div>
-            <div id="miniRatesList" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Сповіщення -->
-      <div class="settings-section">
-        <div class="settings-row">
+        <label class="settings-row">
+          <span class="settings-icon">🔔</span>
+          <span class="settings-text"><span class="settings-label">Сповіщення в застосунку</span><span class="settings-sub">Про виграші, поповнення, бонуси</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingNotifs" checked onchange="saveSetting('notifs',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <label class="settings-row">
           <span class="settings-icon">🎁</span>
-          <div style="flex:1;"><div class="settings-label">Сповіщення про подарунки</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingGiftNotifs" checked onchange="saveSetting('giftNotifs',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row">
+          <span class="settings-text"><span class="settings-label">Подарунки від гравців</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingGiftNotifs" checked onchange="saveSetting('giftNotifs',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <label class="settings-row">
           <span class="settings-icon">⏰</span>
-          <div style="flex:1;"><div class="settings-label">Нагадування про бонус</div><div class="settings-sub">Погодинний і щоденний бонуси</div></div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="settingBonusNotifs" checked onchange="saveSetting('bonusNotifs',this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+          <span class="settings-text"><span class="settings-label">Нагадування про бонус</span><span class="settings-sub">Погодинний і щоденний</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingBonusNotifs" checked onchange="saveSetting('bonusNotifs',this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <button type="button" class="settings-row is-link" onclick="requestPushPermission()" id="pushToggle">
+          <span class="settings-icon">📲</span>
+          <span class="settings-text"><span class="settings-label">Push-сповіщення</span><span class="settings-sub">Навіть коли застосунок закрито</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
       </div>
-
-      <!-- Акаунт -->
+      <h2 class="settings-group-title">Кешбек</h2>
       <div class="settings-section">
-        <div class="settings-row" onclick="openDailyBonus()" style="cursor:pointer;">
-          <span class="settings-icon">🎁</span>
-          <div class="settings-label">Щоденний бонус</div>
-          <span style="color:var(--fg-4);font-size:18px;">›</span>
-        </div>
-        <div class="settings-row" onclick="openHistoryModal()" style="cursor:pointer;">
-          <span class="settings-icon">📜</span>
-          <div class="settings-label">Історія транзакцій</div>
-          <span style="color:var(--fg-4);font-size:18px;">›</span>
-        </div>
-        <div class="settings-row" onclick="openTabModal('promo-modal')" style="cursor:pointer;">
-          <span class="settings-icon">🎟️</span>
-          <div class="settings-label">Ввести промокод</div>
-          <span style="color:var(--fg-4);font-size:18px;">›</span>
-        </div>
-        <div class="settings-row" onclick="logout()" style="cursor:pointer;">
-          <span class="settings-icon">🚪</span>
-          <div class="settings-label" style="color:var(--fg-2);">Вийти з акаунту</div>
-        </div>
-        <div class="settings-row" onclick="deleteAccount()" style="cursor:pointer;">
-          <span class="settings-icon">🗑️</span>
-          <div class="settings-label" style="color:var(--red);">Видалити акаунт</div>
+        <div class="settings-block">
+          <div class="field-label" id="rakebackTitle">💰 Ракебек</div>
+          <div class="rakeback-amount num" id="rakebackAmount">₴0</div>
+          <div class="progress"><div class="progress-bar rakeback-bar" id="rakebackBar" style="width:0;"></div></div>
+          <div class="field-hint" id="rakebackNext"></div>
+          <button type="button" class="btn btn-secondary" onclick="claimCashback()">Вивести ракебек</button>
         </div>
       </div>
+      <h2 class="settings-group-title">Валюта</h2>
+      <div class="settings-section">
+        <button type="button" class="settings-row is-link" onclick="openCurrencyPicker()" id="currencySettingBtn">
+          <span class="settings-icon">💱</span>
+          <span class="settings-text"><span class="settings-label"><span id="settingCurrencyFlag"></span> <span id="settingCurrencyName">Гривня (UAH)</span></span><span class="settings-sub" id="settingRateInfo">Завантаження курсу…</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <div class="settings-block">
+          <div class="field-label">Курси до ₴ · оновлюються кожні 5 хв</div>
+          <div id="miniRatesList" class="mini-rates num"></div>
+        </div>
+      </div>
+      <h2 class="settings-group-title">Акаунт і безпека</h2>
+      <div class="settings-section">
+        <div class="settings-row">
+          <span class="settings-icon">✈️</span>
+          <span class="settings-text"><span class="settings-label">Telegram</span><span class="settings-sub" id="tgLinkStatus">Не прив'язано</span></span>
+          <button type="button" class="btn btn-secondary btn-sm btn-inline" id="tgLinkBtn" onclick="linkTelegram()">Прив'язати</button>
+        </div>
+        <button type="button" class="settings-row is-link" onclick="openChangePasswordModal()">
+          <span class="settings-icon">🔑</span>
+          <span class="settings-text"><span class="settings-label">Змінити пароль</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openSecurityQuestionModal()">
+          <span class="settings-icon">❓</span>
+          <span class="settings-text"><span class="settings-label">Контрольне питання</span><span class="settings-sub">Для відновлення пароля</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="showSecurityLog()">
+          <span class="settings-icon">📋</span>
+          <span class="settings-text"><span class="settings-label">Журнал безпеки</span><span class="settings-sub">Входи й важливі дії</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openHistoryModal()">
+          <span class="settings-icon">📜</span>
+          <span class="settings-text"><span class="settings-label">Історія транзакцій</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="exportHistoryCSV()">
+          <span class="settings-icon">📥</span>
+          <span class="settings-text"><span class="settings-label">Експорт історії (CSV)</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openTabModal('promo-modal')">
+          <span class="settings-icon">🎟️</span>
+          <span class="settings-text"><span class="settings-label">Ввести промокод</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openDailyBonus()">
+          <span class="settings-icon">🎁</span>
+          <span class="settings-text"><span class="settings-label">Щоденний бонус</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="logout()">
+          <span class="settings-icon">🚪</span>
+          <span class="settings-text"><span class="settings-label">Вийти з акаунту</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link is-danger" onclick="deleteAccount()">
+          <span class="settings-icon">🗑️</span>
+          <span class="settings-text"><span class="settings-label">Видалити акаунт</span><span class="settings-sub">Безповоротно</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+      </div>
+      <h2 class="settings-group-title">Інше</h2>
+      <div class="settings-section">
+        <label class="settings-row">
+          <span class="settings-icon">📺</span>
+          <span class="settings-text"><span class="settings-label">Режим стримера</span><span class="settings-sub">Сховати баланс і нік для трансляції</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingStreamer" onchange="toggleStreamerMode(this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <label class="settings-row">
+          <span class="settings-icon">🎯</span>
+          <span class="settings-text"><span class="settings-label">Режим фокусу</span><span class="settings-sub">Сховати другорядні елементи</span></span>
+          <span class="toggle-switch"><input type="checkbox" id="settingFocus" onchange="toggleFocusMode(this.checked)"><span class="toggle-slider"></span></span>
+        </label>
+        <button type="button" class="settings-row is-link" id="pwaInstallBtn" onclick="installPWA()">
+          <span class="settings-icon">📱</span>
+          <span class="settings-text"><span class="settings-label">Встановити SlotOK як застосунок</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openProfileEffectShop()">
+          <span class="settings-icon">🎭</span>
+          <span class="settings-text"><span class="settings-label">Ефекти профілю</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openCustomTagShop()">
+          <span class="settings-icon">🏷️</span>
+          <span class="settings-text"><span class="settings-label">Купити тег</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openGiftVIPModal()">
+          <span class="settings-icon">🎁</span>
+          <span class="settings-text"><span class="settings-label">Подарувати VIP</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="comparePlayersModal()">
+          <span class="settings-icon">📊</span>
+          <span class="settings-text"><span class="settings-label">Порівняти гравців</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="showTopDonators()">
+          <span class="settings-icon">🏆</span>
+          <span class="settings-text"><span class="settings-label">Топ донатерів</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="showWishlist()">
+          <span class="settings-icon">❤️</span>
+          <span class="settings-text"><span class="settings-label">Список побажань</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="settings-row is-link" onclick="openCryptoSimulator()">
+          <span class="settings-icon">📈</span>
+          <span class="settings-text"><span class="settings-label">Крипто-симулятор</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
+      </div>
 
-      <div style="text-align:center;color:var(--fg-4);font-size:11px;padding:10px 0;">SlotOK v70 • Made with ❤️</div>
+      <p class="settings-foot">SlotOK · онлайн: <span id="onlineTimeDisplay">—</span> · 18+ · грай відповідально</p>
     </div>
 
     <!-- ===== КАРТИ (ДУРЕНЬ) ===== -->

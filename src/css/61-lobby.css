@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ЛОББІ (#tab-lobby): липкий пошук + один ряд фільтрів → сітка ігор.
+   Від відкриття сайту до раунду: «Ігри» → картка гри → гра (2 дії).
+   Відтінок плитки задає категорія (data-cat), щоб сітку було легко
+   «читати» кольором, а не лише текстом.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.screen-title {
+  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-black);
+  letter-spacing: -0.02em; margin: var(--sp-1) 0 var(--sp-4);
+}
+
+.lobby-tools {
+  position: sticky; top: var(--header-h); z-index: var(--z-raised);
+  display: grid; gap: var(--sp-2);
+  margin: 0 calc(-1 * var(--gutter)) var(--sp-2); padding: var(--sp-2) var(--gutter) var(--sp-2);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.game-search-wrap { position: relative; display: block; margin: 0; }
+.game-search-icon { position: absolute; left: var(--sp-4); top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--fg-3); pointer-events: none; }
+.game-search-input { margin: 0; padding-left: 46px; min-height: 48px; border-radius: var(--r-lg); background: var(--surface-1); }
+.game-search-input::-webkit-search-cancel-button { cursor: pointer; }
+.chips-sep { flex: none; width: 1px; align-self: stretch; margin: var(--sp-1) var(--sp-1); background: var(--line-strong); }
+.lobby-filters .chip .ic { width: 16px; height: 16px; }
+.section-count { margin-left: var(--sp-2); color: var(--fg-4); letter-spacing: 0; }
+.section-header .section-count { order: 3; }
+
+/* ── Сітка ігор ─────────────────────────────────────────────────── */
+.casino-grid-3 {
+  display: grid; gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  margin-bottom: var(--stack);
+}
+@media (min-width: 600px) { .casino-grid-3 { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); } }
+@media (min-width: 1200px) { .casino-grid-3 { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-4); } }
+
+.casino-game-card {
+  --tone: var(--accent); --tone-rgb: var(--accent-rgb);
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+  overflow: hidden; cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.casino-game-card[data-cat="slots"] { --tone: var(--accent); --tone-rgb: var(--accent-rgb); }
+.casino-game-card[data-cat="cards"] { --tone: var(--info); --tone-rgb: var(--info-rgb); }
+.casino-game-card[data-cat="crash"] { --tone: var(--neg); --tone-rgb: var(--neg-rgb); }
+.casino-game-card[data-cat="pvp"] { --tone: var(--special); --tone-rgb: var(--special-rgb); }
+.casino-game-card[data-cat="mini"] { --tone: var(--primary); --tone-rgb: var(--primary-rgb); }
+.casino-game-card[data-cat="sport"] { --tone: var(--pos); --tone-rgb: var(--pos-rgb); }
+@media (hover: hover) {
+  .casino-game-card:hover { border-color: var(--fg); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 0 rgb(var(--tone-rgb) / .8); }
+}
+.casino-game-card:active { transform: translate(1px, 1px); box-shadow: none; }
+.casino-game-card:focus-visible { outline: var(--bw-strong) solid var(--primary); outline-offset: 2px; }
+.casino-game-card-img {
+  position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3;
+  font-size: clamp(34px, 9vw, 46px); line-height: 1; color: var(--tone);
+  background:
+    radial-gradient(circle, rgb(var(--tone-rgb) / .2) 1.2px, transparent 1.6px) 0 0 / 9px 9px,
+    color-mix(in srgb, var(--tone) 10%, var(--surface-1));
+  border-bottom: 1px solid var(--line);
+}
+.casino-game-card-img .ic { width: 1.1em; height: 1.1em; }
+.casino-game-card-info { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+.casino-game-card-name { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casino-game-card-prov { font-size: var(--fs-xs); color: var(--fg-3); margin-top: 1px; }
+.casino-badge-hot, .casino-badge-new {
+  position: absolute; top: var(--sp-2); right: var(--sp-2); z-index: 1;
+  padding: 2px 6px; border-radius: var(--r-xs); border: 1px solid var(--ink-shadow);
+  font-size: 10px; font-weight: var(--fw-black); letter-spacing: .04em; line-height: 1.3;
+}
+.casino-badge-hot { background: var(--accent); color: var(--on-accent); }
+.casino-badge-hot.is-live { background: var(--neg); color: var(--on-neg); }
+.casino-badge-new { background: var(--surface-1); color: var(--fg); }
+.casino-badge-new.is-pvp { background: var(--special); color: var(--on-special); }
+
+/* Обране — серце в кутку картки */
+.fav-heart-btn {
+  position: absolute; top: var(--sp-1); left: var(--sp-1); z-index: 2;
+  width: 36px; height: 36px; min-height: 0; margin: 0; padding: 0;
+  --btn-bg: rgb(var(--surface-1-rgb) / .85); --btn-bd: transparent; --btn-sh: none; --btn-fg: var(--fg-2);
+  border-radius: 50%;
+}
+.fav-heart-btn .ic { width: 18px; height: 18px; }
+.fav-heart-btn .fav-on { display: none; }
+.fav-heart-btn.active { --btn-fg: var(--neg); }
+.fav-heart-btn.active .fav-on { display: inline-block; }
+.fav-heart-btn.active .fav-off { display: none; }
+
+/* Вимкнена адміном гра */
+.game-card-disabled { opacity: .45; filter: grayscale(1); pointer-events: none; }
+.game-card-disabled-admin { outline: var(--bw) dashed var(--neg); outline-offset: -3px; }
+.game-disabled-badge {
+  position: absolute; left: var(--sp-2); right: var(--sp-2); bottom: var(--sp-2); z-index: 2;
+  padding: 2px 6px; border-radius: var(--r-xs); background: var(--neg); color: var(--on-neg);
+  font-size: var(--fs-2xs); font-weight: var(--fw-bold); text-align: center;
+}
+
+/* ── Сесія, джекпот, стрічка ───────────────────────────────────── */
+.stat-quad { display: grid; grid-template-columns: repeat(4, 1fr); padding: var(--sp-3) var(--sp-1); }
+.jackpot-strip { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+.jackpot-num { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: 1.1; margin: var(--sp-1) 0; }
+.jackpot-play-btn { min-width: 112px; }
+.wins-feed { margin-bottom: var(--stack); }
+.win-feed-row { animation: rise-in var(--dur-3) var(--ease-out); }
+.win-feed-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 50%; background: var(--surface-3); font-size: 18px; }
+.win-feed-amount { color: var(--pos); font-weight: var(--fw-bold); white-space: nowrap; }
+.recent-games-scroll { margin-bottom: var(--sp-2); }
+
+/* ── Картка гри перед стартом ──────────────────────────────────── */
+.game-open-modal { display: none; }
+.game-open-modal:not(.hidden) { display: flex; }
+.game-open-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.game-open-header .dialog-title { margin: 0; }
+.game-open-body { display: grid; justify-items: center; gap: var(--sp-2); text-align: center; }
+.game-open-emoji {
+  display: grid; place-items: center; width: 112px; height: 112px; margin-bottom: var(--sp-2);
+  font-size: 64px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  border: var(--bw) solid var(--ink-shadow); border-radius: var(--r-xl); box-shadow: var(--sh-misreg);
+}
+.game-open-name { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-bold); }
+.game-open-meta { color: var(--fg-3); font-size: var(--fs-sm); margin-bottom: var(--sp-3); }
+.game-open-play { width: 100%; }
