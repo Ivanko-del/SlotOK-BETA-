@@ -3,19 +3,7 @@
    All styles combined from index.html
    ============================================================ */
 
-:root {
-      --bg: #06050c; --text: #f0e8ff; --box: #110f1c; --border: #252035;
-      --accent: #d4af37; --input: #1a1730; --green: #3dd68c; --red: #f04060;
-      --accent2: #ffdb6a; --sub: #8878aa; --glow: rgba(212,175,55,.15);
-      --r-sm: 13px; --r-md: 20px; --r-lg: 26px;
-      --bevel: inset 0 1px 0 rgba(255,255,255,.06), inset 0 -1px 0 rgba(0,0,0,.4);
-      --elev-1: 0 10px 24px -10px rgba(0,0,0,.65), 0 2px 6px rgba(0,0,0,.35);
-      --elev-2: 0 18px 44px -14px rgba(0,0,0,.7), 0 4px 12px rgba(0,0,0,.4);
-      --ease-tactile: cubic-bezier(.22,.9,.32,1.24);
-      --ease-premium: cubic-bezier(.16,1,.3,1);
-      --glow-accent-soft: 0 0 40px -10px rgba(212,175,55,.35);
-      --glow-accent-strong: 0 0 70px -14px rgba(212,175,55,.6);
-    }
+
     body { font-family: 'Rajdhani', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; user-select: none; }
     body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
       background: radial-gradient(ellipse 70% 40% at 50% 100%, rgba(180,120,0,.09), transparent),
@@ -584,9 +572,6 @@
     .support-unread { background: var(--accent); color: #000; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
 
     /* ===== VIP СИСТЕМА ===== */
-    :root {
-      --bronze: #cd7f32; --silver-c: #aaa; --gold-c: var(--accent); --plat: #e5e4e2;
-    }
     .vip-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     .vip-bronze { background: rgba(205,127,50,0.2); border: 1px solid var(--bronze); color: var(--bronze); }
     .vip-silver { background: rgba(170,170,170,0.15); border: 1px solid var(--silver-c); color: var(--silver-c); }
@@ -1100,10 +1085,6 @@
     .big-win-glow{position:fixed;inset:0;background:radial-gradient(circle at 50% 50%,rgba(212,175,55,.22),transparent 70%);z-index:99997;animation:glowpop .8s ease-out forwards;pointer-events:none;}
     @keyframes glowpop{0%{opacity:1;}100%{opacity:0;}}
 
-    /* ─── EXTRA THEMES ─── */
-    [data-theme="neon"]   {--bg:#010110;--box:#07071e;--border:#1a0050;--input:#0a0a25;--text:#e0d0ff;--accent:#b347ff;--green:#00ff88;--red:#ff2060;}
-    [data-theme="matrix"] {--bg:#000a00;--box:#001000;--border:#003300;--input:#001500;--text:#00ff41;--accent:#00ff41;--green:#00ff41;--red:#ff3030;}
-    [data-theme="sakura"] {--bg:#110008;--box:#1e0012;--border:#4a0030;--input:#180010;--text:#ffddee;--accent:#ff69b4;--green:#ff9fc8;--red:#ff3070;}
 
     /* ─── BACCARAT ─── */
     .bac-table{background:linear-gradient(135deg,#0a200a,#051205);border:1px solid #1a4a1a;border-radius:16px;padding:14px;margin-bottom:12px;}
@@ -2201,25 +2182,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 /* Токени живуть на :root, а не на #tab-cashier: модалки Каси портуються
    в <body>, тож у вкладці вони б їх не бачили й лишались безбарвними. */
-:root {
-  --ks-surface:   #12141a;
-  --ks-surface-2: #191c24;
-  --ks-surface-3: #222630;
-  --ks-line:      rgba(255,255,255,.07);
-  --ks-line-2:    rgba(255,255,255,.14);
-  --ks-fg:        #eceff5;
-  --ks-fg-2:      #98a0af;
-  --ks-fg-3:      #5e6675;
-  --ks-acc:       #7c8cff;
-  --ks-acc-dim:   rgba(124,140,255,.12);
-  --ks-pos:       #31c48d;
-  --ks-neg:       #f0556b;
-  --ks-warn:      #e8b339;
-  --ks-r:         12px;
-  --ks-r-lg:      18px;
-  --ks-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --ks-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
-}
+
 #tab-cashier, .ledger {
   font-family: var(--ks-sans);
   color: var(--ks-fg);
