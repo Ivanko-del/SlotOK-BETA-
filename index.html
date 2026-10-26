@@ -3510,112 +3510,96 @@
 
   </div><!-- /container -->
 
-  <div id="auth-screen" class="full-modal">
-    <canvas class="auth-canvas" id="authCanvas"></canvas>
-    <!-- Floating coins bg -->
-    <div id="authCoins" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;"></div>
+  <div id="auth-screen" class="full-modal auth-screen" role="main">
+    <canvas class="auth-canvas" id="authCanvas" aria-hidden="true"></canvas>
+    <div id="authCoins" aria-hidden="true" hidden></div>
 
     <div class="auth-wrapper">
-
-      <!-- Logo block -->
-      <div class="auth-logo-block" style="animation:slideUp .4s ease both;">
-        <span class="auth-logo-icon" style="font-size:72px;display:block;margin-bottom:8px;">🎰</span>
-        <div class="auth-logo-name" style="font-size:40px;letter-spacing:8px;">SLOTOK</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;">
-          <div style="height:1px;width:30px;background:linear-gradient(90deg,transparent,var(--accent));"></div>
-          <div class="auth-logo-sub" style="font-size:10px;color:var(--fg-3);letter-spacing:3px;">ОНЛАЙН КАЗИНО</div>
-          <div style="height:1px;width:30px;background:linear-gradient(90deg,var(--accent),transparent);"></div>
-        </div>
-      </div>
-
-      <!-- Live jackpot counter -->
-      <div style="text-align:center;margin-bottom:14px;">
-        <div style="font-size:10px;color:var(--fg-4);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">🏆 Поточний джекпот</div>
-        <div class="hero-jackpot-counter" id="authJackpot">₴ 0</div>
-      </div>
-
-      <!-- Live win ticker -->
-      <div class="auth-win-ticker" id="authWinTicker">
-        <div class="auth-win-ticker-inner" id="authWinTickerInner"></div>
-      </div>
-
-      <!-- Feature pills -->
-      <div class="auth-features">
-        <div class="auth-feature-pill">🎮 <span>30+</span> ігор</div>
-        <div class="auth-feature-pill">🏆 <span>Джекпот</span> щодня</div>
-        <div class="auth-feature-pill">⚡ <span>Миттєво</span></div>
-        <div class="auth-feature-pill">🎁 Бонус <span>+100%</span></div>
-        <div class="auth-feature-pill">🔒 <span>Безпечно</span></div>
-      </div>
-
-      <!-- Bonus badge -->
-      <div class="auth-bonus-badge" style="position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgb(var(--tint-rgb) / 0.1),transparent);animation:btnShine 3s ease infinite;"></div>
-        🎁 Новачку: <b>+100% до першого депозиту</b> · 10 безкоштовних спінів
-      </div>
-
-      <!-- Form card -->
-      <div class="auth-card" style="animation:slideUp .4s ease both;">
-        <!-- Tabs -->
-        <div class="auth-tabs" id="authTabs">
-          <button class="auth-tab-btn active" id="authTabLogin" onclick="switchAuthTab('login')">🔑 Вхід</button>
-          <button class="auth-tab-btn" id="authTabReg" onclick="switchAuthTab('reg')">✨ Реєстрація</button>
-        </div>
-        <!-- Error -->
-        <div class="auth-error" id="authError"></div>
-
-        <!-- LOGIN FORM -->
-        <div id="loginForm">
-          <div class="auth-input-group">
-            <span class="auth-input-icon">👤</span>
-            <input class="auth-input" id="loginName" placeholder="Нікнейм" autocomplete="username"
-              onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
-          </div>
-          <div class="auth-input-group">
-            <span class="auth-input-icon">🔒</span>
-            <input class="auth-input" id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password" style="padding-right:44px;"
-              onkeydown="if(event.key==='Enter')authLogin()">
-            <span class="auth-pass-toggle" onclick="toggleAuthPassVisibility('loginPass', this)">👁</span>
-          </div>
-          <button class="auth-btn-main" onclick="authLogin()" id="loginBtn" style="font-size:16px;padding:16px;">
-            🚀 УВІЙТИ
-          </button>
-          <div style="text-align:center;margin-top:8px;">
-            <span onclick="openPasswordRecovery()" style="color:var(--fg-3);font-size:12px;cursor:pointer;text-decoration:underline;">Забули пароль?</span>
-          </div>
-          <div class="auth-divider">або</div>
-          <div style="text-align:center;font-size:12px;color:var(--fg-4);">
-            Немає акаунту?
-            <span onclick="switchAuthTab('reg')" style="color:var(--accent);cursor:pointer;font-weight:700;">Зареєструватись →</span>
+      <!-- Афіша: бренд, обіцянка, живі цифри -->
+      <section class="auth-poster" aria-label="Про SlotOK">
+        <div class="auth-logo-block">
+          <span class="brand-mark auth-mark" aria-hidden="true">S</span>
+          <div>
+            <div class="auth-logo-name">SlotOK</div>
+            <div class="auth-logo-sub">Казино для своїх · віртуальні гривні</div>
           </div>
         </div>
+        <h1 class="auth-headline">Грай з друзями.<br><span>Без реальних грошей.</span></h1>
+        <ul class="auth-features" aria-label="Що всередині">
+          <li class="auth-feature-pill">🎮 30+ ігор</li>
+          <li class="auth-feature-pill">🏆 Щоденні турніри</li>
+          <li class="auth-feature-pill">⚔️ Дуелі з друзями</li>
+          <li class="auth-feature-pill">🎁 Стартовий бонус</li>
+        </ul>
+        <div class="auth-jackpot">
+          <div class="hero-label">Поточний джекпот</div>
+          <div class="hero-jackpot-counter num" id="authJackpot">₴ 0</div>
+        </div>
+        <div class="auth-win-ticker" id="authWinTicker" aria-live="off">
+          <div class="auth-win-ticker-inner" id="authWinTickerInner"></div>
+        </div>
+        <div class="auth-stats-row">
+          <div class="auth-stat"><div class="auth-stat-val num" id="authStatPlayers">—</div><div class="auth-stat-lbl">Гравців</div></div>
+          <div class="auth-stat"><div class="auth-stat-val num" id="authStatOnline">—</div><div class="auth-stat-lbl">Онлайн</div></div>
+          <div class="auth-stat"><div class="auth-stat-val num" id="authStatPaid">—</div><div class="auth-stat-lbl">Виплачено</div></div>
+        </div>
+      </section>
 
-        <!-- REGISTER FORM -->
-        <div id="regForm" class="hidden">
-          <div class="auth-bonus-badge" style="margin-bottom:14px;">
-            🎁 Новий гравець отримує <b>500₴ бонусу</b> + 10 безкоштовних спінів!
+      <!-- Форма -->
+      <section class="auth-card" aria-label="Вхід і реєстрація">
+        <div class="seg auth-tabs" id="authTabs" role="tablist">
+          <button type="button" class="seg-item auth-tab-btn active" id="authTabLogin" role="tab" onclick="switchAuthTab('login')"><span class="seg-label">Вхід</span></button>
+          <button type="button" class="seg-item auth-tab-btn" id="authTabReg" role="tab" onclick="switchAuthTab('reg')"><span class="seg-label">Реєстрація</span></button>
+        </div>
+        <div class="auth-error note is-neg" id="authError" role="alert"></div>
+
+        <!-- ВХІД -->
+        <form id="loginForm" class="auth-form" onsubmit="event.preventDefault();authLogin();" novalidate>
+          <label class="field">
+            <span class="field-label">Нікнейм</span>
+            <input class="auth-input" id="loginName" autocomplete="username" autocapitalize="off" spellcheck="false" required
+              onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginPass').focus()}">
+          </label>
+          <label class="field">
+            <span class="field-label">Пароль</span>
+            <span class="auth-input-group">
+              <input class="auth-input" id="loginPass" type="password" autocomplete="current-password" required>
+              <button type="button" class="auth-pass-toggle" onclick="toggleAuthPassVisibility('loginPass', this)" aria-label="Показати пароль"><span class="ic i-eye" aria-hidden="true"></span></button>
+            </span>
+          </label>
+          <button type="submit" class="btn btn-primary btn-lg auth-btn-main" id="loginBtn">Увійти</button>
+          <div class="auth-links">
+            <button type="button" class="link-btn" onclick="openPasswordRecovery()">Забули пароль?</button>
+            <span>Немає акаунту? <button type="button" class="link-btn" onclick="switchAuthTab('reg')">Зареєструватись</button></span>
           </div>
-          <div class="auth-input-group">
-            <span class="auth-input-icon">✉️</span>
-            <input class="auth-input" id="regEmail" placeholder="Email (необов'язково)" type="email">
-          </div>
-          <div class="auth-input-group">
-            <span class="auth-input-icon">👤</span>
-            <input class="auth-input" id="regName" placeholder="Нікнейм (без пробілів)" autocomplete="username">
-          </div>
-          <div class="auth-input-group">
-            <span class="auth-input-icon">🔒</span>
-            <input class="auth-input" id="regPass" type="password" placeholder="Пароль (мін 6 символів)" autocomplete="new-password" style="padding-right:44px;">
-            <span class="auth-pass-toggle" onclick="toggleAuthPassVisibility('regPass', this)">👁</span>
-          </div>
-          <!-- Password strength -->
-          <div id="passStrengthBar" style="height:3px;border-radius:var(--r-xs);background:var(--surface-2);margin:-8px 0 10px;overflow:hidden;">
-            <div id="passStrengthFill" style="height:100%;width:0;transition:.3s;background:var(--neg);border-radius:var(--r-xs);"></div>
-          </div>
-          <!-- Контрольне питання (для відновлення пароля) -->
-          <div class="auth-input-group">
-            <span class="auth-input-icon">❓</span>
-            <select class="auth-input" id="regSecQuestion" style="appearance:auto;" onchange="secQuestionChanged('reg')">
+        </form>
+
+        <!-- РЕЄСТРАЦІЯ -->
+        <form id="regForm" class="auth-form hidden" onsubmit="event.preventDefault();authRegister();" novalidate>
+          <div class="auth-bonus-badge note">🎁 Новачку — <b>500 ₴ бонусу</b> і 10 безкоштовних спінів</div>
+          <label class="field">
+            <span class="field-label">Нікнейм</span>
+            <input class="auth-input" id="regName" autocomplete="username" autocapitalize="off" spellcheck="false" required aria-describedby="regNameHint">
+            <span class="field-hint" id="regNameHint">Без пробілів — так тебе бачитимуть інші гравці</span>
+          </label>
+          <label class="field">
+            <span class="field-label">Пароль</span>
+            <span class="auth-input-group">
+              <input class="auth-input" id="regPass" type="password" autocomplete="new-password" minlength="6" required aria-describedby="passStrengthText">
+              <button type="button" class="auth-pass-toggle" onclick="toggleAuthPassVisibility('regPass', this)" aria-label="Показати пароль"><span class="ic i-eye" aria-hidden="true"></span></button>
+            </span>
+            <span id="passStrengthBar" class="pass-meter" aria-hidden="true"><span id="passStrengthFill"></span></span>
+            <span class="field-hint" id="passStrengthText">Мінімум 6 символів. Цифри й знаки роблять пароль надійнішим.</span>
+          </label>
+          <label class="field">
+            <span class="field-label">Email <span class="field-optional">— необов'язково</span></span>
+            <input class="auth-input" id="regEmail" type="email" autocomplete="email">
+          </label>
+          <fieldset class="auth-fieldset">
+            <legend class="field-label">Відновлення пароля</legend>
+            <label class="field">
+              <span class="sr-only">Контрольне питання</span>
+              <select class="auth-input" id="regSecQuestion" onchange="secQuestionChanged('reg')">
               <option value="custom">✍️ Своє питання (найнадійніше)</option>
               <option value="first_phone">Модель вашого першого телефона?</option>
               <option value="first_teacher">Ім'я та по батькові першої вчительки?</option>
@@ -3623,75 +3607,36 @@
               <option value="childhood_nick">Ваше дитяче прізвисько?</option>
               <option value="first_concert">Перший концерт або матч, на який ви ходили?</option>
               <option value="dream_job">Ким ви мріяли стати в дитинстві?</option>
-            </select>
-          </div>
-          <div class="auth-input-group" id="regSecCustomBox">
-            <span class="auth-input-icon">✍️</span>
-            <input class="auth-input" id="regSecCustom" maxlength="120" placeholder="Своє питання (напр. «Що лежало в моїй першій скарбничці?»)">
-          </div>
-          <div style="font-size:11px;color:var(--fg-3);margin:-4px 4px 10px;line-height:1.4;">Обирай те, чого не знайти в соцмережах і не вгадати друзям. Відповідь регістр не враховує.</div>
-          <div class="auth-input-group">
-            <span class="auth-input-icon">🔑</span>
-            <input class="auth-input" id="regSecAnswer" placeholder="Відповідь (для відновлення пароля)">
-          </div>
-          <div class="auth-promo-row auth-input-group">
-            <span class="auth-input-icon">🎟️</span>
-            <input class="auth-input auth-promo-input" id="regPromo" placeholder="Промокод (необов'язково)">
-          </div>
-          <button class="auth-btn-secondary" onclick="authRegister()" id="regBtn" style="font-size:15px;padding:15px;">
-            ✨ СТВОРИТИ АКАУНТ
-          </button>
-          <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--fg-4);">
-            Вже є акаунт?
-            <span onclick="switchAuthTab('login')" style="color:var(--accent);cursor:pointer;font-weight:700;">← Увійти</span>
-          </div>
-          <div style="text-align:center;margin-top:8px;font-size:9px;color:var(--on-accent);">
-            Реєструючись, ви підтверджуєте вік 18+ та приймаєте правила казино
-          </div>
-        </div>
-      </div>
+              </select>
+            </label>
+            <label class="field" id="regSecCustomBox">
+              <span class="sr-only">Своє питання</span>
+              <input class="auth-input" id="regSecCustom" maxlength="120" placeholder="Своє питання, напр. «Що лежало в першій скарбничці?»">
+            </label>
+            <label class="field">
+              <span class="sr-only">Відповідь</span>
+              <input class="auth-input" id="regSecAnswer" placeholder="Відповідь" autocomplete="off">
+              <span class="field-hint">Обирай те, чого не знайти в соцмережах. Регістр не важливий.</span>
+            </label>
+          </fieldset>
+          <label class="field auth-promo-row">
+            <span class="field-label">Промокод <span class="field-optional">— якщо є</span></span>
+            <input class="auth-input auth-promo-input" id="regPromo" autocapitalize="characters">
+          </label>
+          <button type="submit" class="btn btn-primary btn-lg auth-btn-secondary" id="regBtn">Створити акаунт</button>
+          <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі 18+, і приймаєш правила.</p>
+          <div class="auth-links"><span>Вже є акаунт? <button type="button" class="link-btn" onclick="switchAuthTab('login')">Увійти</button></span></div>
+        </form>
 
-      <!-- Demo mode -->
-      <div style="text-align:center;margin-top:12px;">
-        <button onclick="startDemoMode()" style="background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.08);border-radius:var(--r-lg);padding:10px 24px;color:var(--fg-4);font-size:12px;cursor:pointer;transition:.15s;">🎮 Спробувати без реєстрації (Демо)</button>
-      </div>
+        <button type="button" class="btn btn-ghost auth-demo" onclick="startDemoMode()">Спробувати без реєстрації</button>
+      </section>
 
-      <!-- Live stats -->
-      <div class="auth-stats-row">
-        <div class="auth-stat">
-          <div class="auth-stat-val" id="authStatPlayers">—</div>
-          <div class="auth-stat-lbl">ГРАВЦІВ</div>
-        </div>
-        <div style="width:1px;background:var(--surface-2);"></div>
-        <div class="auth-stat">
-          <div class="auth-stat-val" id="authStatOnline">—</div>
-          <div class="auth-stat-lbl">ОНЛАЙН</div>
-        </div>
-        <div style="width:1px;background:var(--surface-2);"></div>
-        <div class="auth-stat">
-          <div class="auth-stat-val" id="authStatPaid">—</div>
-          <div class="auth-stat-lbl">ВИПЛАЧЕНО</div>
-        </div>
-      </div>
-
-      <div style="margin-top:14px;font-size:9px;color:var(--on-accent);text-align:center;">
-        🔞 18+ · Грайте відповідально · SlotOK v70
-      </div>
-
-      <!-- DISCLAIMER -->
-      <div style="margin-top:20px;padding:12px 16px;background:rgb(var(--tint-rgb) / 0.02);border:1px solid var(--line);border-radius:var(--r-lg);text-align:center;max-width:380px;width:100%;box-sizing:border-box;">
-        <div style="font-size:10px;color:var(--fg-4);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚠️ Важлива інформація</div>
-        <div style="font-size:10px;color:var(--fg-4);line-height:1.6;">
-          SlotOK — це <b style="color:var(--fg-3);">розважальна ігрова платформа</b> для дозвілля та розваг.
-          Всі монети, баланси та виграші є <b style="color:var(--fg-3);">віртуальними</b> і не мають реальної грошової цінності.
-          Жодних реальних грошей тут не задіяно.
-          Платформа не є азартним закладом і не проводить реальних фінансових операцій.
-        </div>
-      </div>
-
+      <p class="auth-disclaimer">
+        <b>18+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
+      </p>
     </div>
   </div>
-  
+
   <!-- MODALS -->
   <div id="admin-user-manage" class="full-modal hidden">
       <button class="btn-outline" onclick="closeTabModal('admin-user-manage')" style="width:50px;">⬅</button>

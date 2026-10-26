@@ -203,8 +203,8 @@ function switchAuthTab(mode) {
   const errEl     = document.getElementById('authError');
   if(loginForm) loginForm.classList.toggle('hidden', !isLogin);
   if(regForm)   regForm.classList.toggle('hidden', isLogin);
-  if(tabLogin)  tabLogin.classList.toggle('active', isLogin);
-  if(tabReg)    tabReg.classList.toggle('active', !isLogin);
+  if(tabLogin)  { tabLogin.classList.toggle('active', isLogin); tabLogin.setAttribute('aria-selected', isLogin); }
+  if(tabReg)    { tabReg.classList.toggle('active', !isLogin); tabReg.setAttribute('aria-selected', !isLogin); }
   if(tabsWrap)  tabsWrap.classList.toggle('reg-active', !isLogin);
   if(errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
 }
@@ -215,7 +215,10 @@ function toggleAuthPassVisibility(inputId, btnEl) {
   if(!inp) return;
   const shown = inp.type === 'text';
   inp.type = shown ? 'password' : 'text';
-  if(btnEl) btnEl.textContent = shown ? '👁' : '🙈';
+  if(btnEl) {
+    btnEl.setAttribute('aria-label', shown ? 'Показати пароль' : 'Сховати пароль');
+    btnEl.classList.toggle('is-on', !shown);
+  }
 }
 
 function setPlayerStatus(status) {

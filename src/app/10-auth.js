@@ -9,12 +9,8 @@
 function showAuthError(msg) {
   const el = document.getElementById('authError');
   if(!el) return;
-  el.textContent = '⚠️ ' + msg;
-  el.style.display = 'block';
-  el.style.color = 'var(--neg)';
-  el.style.padding = '10px';
-  el.style.borderRadius = 'var(--r-md)';
-  el.style.background = 'rgb(var(--neg-rgb) / 0.1)';
+  el.textContent = msg;
+  el.style.display = 'flex';
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }
@@ -27,11 +23,11 @@ async function authLogin() {
   if(!db) return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
 
   const btn = document.getElementById('loginBtn');
-  if(btn) { btn.textContent = '⏳ Перевірка...'; btn.disabled = true; }
-  const reset = () => { if(btn) { btn.textContent = '🚀 УВІЙТИ'; btn.disabled = false; } };
+  if(btn) { btn.textContent = 'Перевіряємо…'; btn.disabled = true; }
+  const reset = () => { if(btn) { btn.textContent = 'Увійти'; btn.disabled = false; } };
 
   const finishLogin = lastSeen => {
-    if(btn) btn.textContent = '✅ Входимо...';
+    if(btn) btn.textContent = 'Входимо…';
     currentUser = n;
     localStorage.setItem(SESSION_KEY, n);
     initTelegramLinkStatus();
@@ -122,8 +118,8 @@ async function authRegister() {
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
 
   const btn = document.getElementById('regBtn');
-  if(btn) { btn.textContent = '⏳ Реєстрація...'; btn.disabled = true; }
-  const reset = () => { if(btn) { btn.textContent = '✨ СТВОРИТИ АКАУНТ'; btn.disabled = false; } };
+  if(btn) { btn.textContent = 'Створюємо акаунт…'; btn.disabled = true; }
+  const reset = () => { if(btn) { btn.textContent = 'Створити акаунт'; btn.disabled = false; } };
 
   // Серверна реєстрація: акаунт і стартовий бонус створює сервер, а не браузер.
   const refByLs = localStorage.getItem('ref_by');
@@ -133,7 +129,7 @@ async function authRegister() {
   if(srv.status === 200 && srv.data.token) {
     try { await serverSignIn(srv.data.token); }
     catch(e) { reset(); console.error('Server sign-in error:', e); return showAuthError('✅ Акаунт створено, але ' + friendlySignInError(e).toLowerCase()); }
-    if(btn) btn.textContent = '✅ Входимо...';
+    if(btn) btn.textContent = 'Входимо…';
     currentUser = n;
     localStorage.setItem(SESSION_KEY, n);
     localStorage.removeItem('ref_by');
@@ -196,7 +192,7 @@ async function authRegister() {
       }
 
       // Step 4: success!
-      if(btn) btn.textContent = '✅ Входимо...';
+      if(btn) btn.textContent = 'Входимо…';
       currentUser = n;
       localStorage.setItem(SESSION_KEY, n);
       localStorage.removeItem('ref_by');

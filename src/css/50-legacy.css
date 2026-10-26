@@ -1163,10 +1163,6 @@
       100% { transform:scale(1)   rotate(0deg);   opacity:1; }
     }
     /* Floating coins rain */
-    @keyframes coinRain {
-      0%  { transform:translateY(-20px) rotate(0deg); opacity:1; }
-      100%{ transform:translateY(120vh) rotate(720deg); opacity:0; }
-    }
     /* Win shimmer */
     @keyframes winShimmer {
       0%,100%{ background-position:0% 50%; }
@@ -1343,29 +1339,6 @@
        Сітка статистики тепер збирається з .ks-stat (див. .ks-statgrid нижче). */
 
     /* Auth screen redesign */
-    .auth-floating-coin {
-      position:absolute;
-      font-size:20px;
-      animation:coinRain linear infinite;
-      pointer-events:none; z-index:0;
-      opacity:.6;
-    }
-    .auth-logo-icon {
-      animation:authSpin 6s ease-in-out infinite, authPulse 2s ease-in-out infinite alternate;
-    }
-    .auth-card {
-      animation:slideUp .6s ease !important;
-    }
-    .auth-btn-main {
-      position:relative; overflow:hidden;
-    }
-    .auth-btn-main::after {
-      content:'';
-      position:absolute; top:0; left:-100%;
-      width:60%; height:100%;
-      background:linear-gradient(90deg,transparent,rgb(var(--tint-rgb) / 0.2),transparent);
-      animation:btnShine 2.5s ease infinite;
-    }
     @keyframes btnShine {
       0%  { left:-100%; }
       50%,100%{ left:150%; }
@@ -1398,15 +1371,6 @@
     }
 
     /* Lobby hero jackpot counter */
-    .hero-jackpot-counter {
-      font-family:var(--font-display);
-      font-size:28px; font-weight:900;
-      background:var(--accent);
-      background-size:200% 100%;
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text;
-      animation:winShimmer 2s ease infinite;
-    }
 
     /* Amount buttons premium */
     .amount-btn {
@@ -1463,197 +1427,21 @@
     .slotok-modal-close:active{transform:scale(.9);}
 
     /* ═══ AUTH SCREEN ═══ */
-    #auth-screen {
-      background: var(--bg) !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      padding: 0 !important;
-      /* showAuthScreen() перемикає це на display:flex через JS (лише display,
-         без flex-direction) — без цього правила воно за замовчуванням стає
-         РЯДКОВИМ флексом, і єдина дитина (.auth-wrapper) розтягується/стискається
-         по висоті замість природного росту з вмістом. Це раніше стискало
-         майже все на екрані (плашки, бейдж бонусу і т.д.) непомітно, тому й
-         виглядало "тісно". flex-direction:column тут узгоджує розтягування
-         по ширині (як і треба для одного повноширинного блоку), а не по висоті. */
-      display: flex;
-      flex-direction: column;
-    }
-    .auth-canvas { position:fixed;inset:0;z-index:0;pointer-events:none; }
-    .auth-wrapper {
-      position: relative; z-index:1;
-      min-height: 100vh;
-      display: flex; flex-direction:column; align-items:center;
-      justify-content:flex-start;
-      padding: 24px 20px 50px;
-      box-sizing: border-box;
-    }
-    .auth-logo-block { text-align:center; margin-bottom:28px; }
-    .auth-logo-icon {
-      font-size: 64px;
-      display: block;
-      animation: authSpin 6s linear infinite, authPulse 2s ease-in-out infinite alternate;
-      filter: none;
-      margin-bottom: 8px;
-    }
     @keyframes authSpin { 0%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} 100%{transform:rotate(-3deg)} }
     @keyframes authPulse { from{filter:none} to{filter:none} }
-    .auth-logo-name {
-      font-family: var(--font-display);
-      font-size: 36px; font-weight: 900; letter-spacing: 6px;
-      background: var(--accent);
-      background-size: 200% 100%;
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: winShimmer 3s ease infinite;
-    }
-    .auth-logo-sub { font-size:11px; color:var(--fg-4); letter-spacing:2px; margin-top:4px; }
 
     /* Live win ticker — той самий принцип, що й #rateTicker (стрічка курсів на головній) */
-    .auth-win-ticker {
-      background: rgb(var(--tint-rgb) / 0.03); border:1px solid rgb(var(--tint-rgb) / 0.08);
-      border-radius: var(--r-md); overflow:hidden; height:26px; margin-bottom:16px;
-      max-width: 380px; width:100%; position:relative;
-      /* showAuthScreen() перемикає #auth-screen на display:flex через JS без
-         flex-direction, тож воно за замовчуванням стає row-флексом і стискає
-         .auth-wrapper по висоті — а той, своєю чергою, стискає власних дітей.
-         Елементи з overflow:hidden і без "живого" вмісту (як ця стрічка) мають
-         "автоматичний мінімальний розмір" 0 і стискаються першими. flex-shrink:0
-         прибирає це для стрічки, не займаючи чужий (уже усталений) код. */
-      flex-shrink: 0;
-    }
-    .auth-win-ticker-inner {
-      display:flex; gap:0; position:absolute; white-space:nowrap;
-      animation: tickerScroll 22s linear infinite;
-      align-items:center; height:26px;
-    }
-    .auth-win-ticker-item {
-      display:inline-flex; align-items:center; gap:6px;
-      padding: 0 16px; font-size:11px; color:var(--fg-3);
-      border-right: 1px solid rgb(var(--tint-rgb) / 0.06);
-    }
-    .auth-win-ticker-item b { color: var(--green); font-weight:800; }
-    .auth-win-ticker-item .awt-user { color: var(--accent); font-weight:700; }
 
     /* Feature pills */
-    .auth-features {
-      display: flex; gap:6px; flex-wrap:wrap; justify-content:center;
-      margin-bottom: 24px;
-    }
-    .auth-feature-pill {
-      background: rgb(var(--tint-rgb) / 0.05);
-      border: 1px solid rgb(var(--tint-rgb) / 0.1);
-      border-radius: var(--r-xl); padding: 5px 12px;
-      font-size: 11px; color: var(--fg-3);
-      animation: authFadeIn .5s ease both;
-    }
-    .auth-feature-pill span { color:var(--accent); }
     @keyframes authFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
     /* Form card */
-    .auth-card {
-      position: relative;
-      background: rgb(var(--tint-rgb) / 0.04);
-      border: 1px solid rgb(var(--accent-rgb) / 0.2);
-      border-radius: var(--r-xl);
-      padding: 24px 20px;
-      width: 100%; max-width: 380px;
-      box-shadow: 0 20px 60px rgb(var(--shade-rgb) / 0.8);
-    }
     /* Повільна "жива" рамка, що обертається навколо картки — суто CSS,
        через conic-gradient обрізаний до тонкого кільця маскою */
-    .auth-card::before {
-      content:''; position:absolute; inset:-1.5px; border-radius:var(--r-xl); padding:1.5px;
-      background: conic-gradient(from 0deg, transparent 0%, rgb(var(--accent-rgb) / 0.9) 12%, transparent 24%, transparent 76%, rgb(var(--accent-rgb) / 0.7) 88%, transparent 100%);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      animation: authBorderSpin 5s linear infinite;
-      pointer-events: none;
-    }
     @keyframes authBorderSpin { to { transform: rotate(360deg); } }
-    .auth-tabs {
-      position: relative;
-      display: flex; background:var(--surface-1); border-radius:var(--r-lg); padding:3px; margin-bottom:20px; gap:3px;
-    }
     /* Слайдер-індикатор під активною вкладкою — рухається transform'ом
        замість перемальовування фону кожної кнопки окремо */
-    .auth-tabs::before {
-      content:''; position:absolute; top:3px; left:3px; bottom:3px;
-      width: calc(50% - 4.5px);
-      background: linear-gradient(135deg,rgb(var(--accent-rgb) / 0.22),rgb(var(--accent-rgb) / 0.08));
-      border: 1px solid rgb(var(--accent-rgb) / 0.35); border-radius:var(--r-md);
-      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
-      z-index: 0;
-    }
-    .auth-tabs.reg-active::before { transform: translateX(calc(100% + 3px)); }
-    .auth-tab-btn {
-      position: relative; z-index: 1;
-      flex:1; padding:10px; border:none; border-radius:var(--r-md);
-      font-size:13px; font-weight:700; cursor:pointer;
-      transition: color .2s; color:var(--fg-3); background:transparent;
-    }
-    .auth-tab-btn.active { color: var(--accent); }
-    .auth-input-group { margin-bottom:12px; position:relative; }
-    .auth-pass-toggle {
-      position:absolute; right:14px; top:50%; transform:translateY(-50%);
-      font-size:15px; cursor:pointer; opacity:.5; transition:opacity .15s; user-select:none;
-    }
-    .auth-pass-toggle:active { opacity:1; }
-    .auth-input-icon {
-      position:absolute; left:14px; top:50%; transform:translateY(-50%);
-      font-size:16px; pointer-events:none;
-    }
-    .auth-input {
-      width:100%; padding:15px 14px 15px 42px;
-      background: rgb(var(--tint-rgb) / 0.06);
-      border: 1px solid rgb(var(--tint-rgb) / 0.1);
-      border-radius: var(--r-lg); color:var(--fg); font-size:16px;
-      box-sizing:border-box;
-      transition: border-color .2s, box-shadow .2s;
-      outline:none;
-    }
-    .auth-input:focus {
-      border-color: rgb(var(--accent-rgb) / 0.5);
-      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.08);
-    }
-    .auth-input::placeholder { color:var(--fg-4); }
-    .auth-btn-main {
-      width:100%; padding:15px;
-      background: var(--accent);
-      border:none; border-radius:var(--r-lg);
-      color:var(--on-accent); font-size:15px; font-weight:900;
-      letter-spacing:1px; cursor:pointer;
-      font-family:var(--font-display);
-      box-shadow: none;
-      transition: .2s; margin-top:4px;
-    }
-    .auth-btn-main:active { transform:scale(.97); }
-    .auth-btn-secondary {
-      width:100%; padding:13px;
-      background: rgb(var(--pos-rgb) / 0.1);
-      border: 1px solid rgb(var(--pos-rgb) / 0.3);
-      border-radius:var(--r-lg); color:var(--pos);
-      font-size:14px; font-weight:700; cursor:pointer;
-      transition:.2s; margin-top:4px;
-    }
-    .auth-divider { display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--fg-4);font-size:11px; }
-    .auth-divider::before,.auth-divider::after { content:'';flex:1;height:1px;background:var(--surface-2); }
-    .auth-error { background:rgb(var(--neg-rgb) / 0.1);border:1px solid rgb(var(--neg-rgb) / 0.3);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--neg);margin-bottom:10px;display:none; }
-    .auth-promo-row { margin-top:10px; }
-    .auth-promo-input { padding-left:42px !important; border-style:dashed !important; }
-    .auth-bonus-badge {
-      background: linear-gradient(135deg,rgb(var(--pos-rgb) / 0.15),rgb(var(--pos-rgb) / 0.05));
-      border:1px solid rgb(var(--pos-rgb) / 0.3); border-radius:var(--r-lg);
-      padding:10px 14px; text-align:center; margin-bottom:14px;
-      font-size:12px; color:var(--pos);
-    }
     /* Stats row at bottom of auth */
-    .auth-stats-row {
-      display:flex; gap:16px; justify-content:center;
-      margin-top:20px;
-    }
-    .auth-stat { text-align:center; }
-    .auth-stat-val { font-size:18px;font-weight:900;color:var(--accent);font-family:var(--font-display); }
-    .auth-stat-lbl { font-size:9px;color:var(--fg-4);letter-spacing:1px; }
 
 @keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}
 
