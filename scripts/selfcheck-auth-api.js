@@ -110,15 +110,22 @@ function decodeJwt(token) {
   assert.strictEqual(jwt.claims.iss, SA.client_email);
   assert.ok(jwt.claims.exp - jwt.claims.iat <= 3600);
   assert.ok(dbRequests.every((q) => q.token === "test-access"), "сервер ходить у базу з адмін-токеном");
+  assert.strictEqual(tree.users.alice.pass, undefined, "хеш прибрано з публічного users/<нік>");
+  assert.ok(tree.user_secrets.alice.pass.startsWith("pbkdf2$"), "хеш тепер у закритому user_secrets");
+  assert.strictEqual((await call("POST", { action: "login", nick: "alice", password: "secret1" })).status, 200, "вхід після переносу");
+  // Адмін скинув пароль старим шляхом (пише в users/<нік>/pass) — новий має вигравати.
+  tree.users.alice.pass = await SlotOKPassword.hash("temp777");
+  assert.strictEqual((await call("POST", { action: "login", nick: "alice", password: "temp777" })).status, 200, "тимчасовий пароль від адміна");
+  assert.strictEqual((await call("POST", { action: "login", nick: "alice", password: "secret1" })).status, 401);
 
   // Старий формат пароля мігрує при вході.
   tree.users.legacy = { pass: crypto.createHash("sha256").update("oldpass").digest("hex") };
   assert.strictEqual((await call("POST", { action: "login", nick: "legacy", password: "oldpass" })).status, 200);
-  assert.ok(tree.users.legacy.pass.startsWith("pbkdf2$"), "legacy-хеш переписано в PBKDF2");
+  assert.ok(tree.user_secrets.legacy.pass.startsWith("pbkdf2$"), "legacy-хеш переписано в PBKDF2");
 
   // Техобслуговування: гравця не пускає, власника пускає.
   tree.site_config = { maintenance: true };
-  assert.strictEqual((await call("POST", { action: "login", nick: "alice", password: "secret1" })).status, 403);
+  assert.strictEqual((await call("POST", { action: "login", nick: "alice", password: "temp777" })).status, 403);
   tree.users.theivankoo = { pass: await SlotOKPassword.hash("ownerpw") };
   assert.strictEqual((await call("POST", { action: "login", nick: "theivankoo", password: "ownerpw" })).status, 200);
   delete tree.site_config;
@@ -141,7 +148,9 @@ function decodeJwt(token) {
   assert.strictEqual(tree.users.newbie.balance, 3000, "бонус рахує сервер; balance з тіла запиту ігнорується");
   assert.strictEqual(tree.users.newbie.referredBy, "alice");
   assert.strictEqual(tree.users.alice.referrals, 1);
-  assert.ok(tree.users.newbie.pass.startsWith("pbkdf2$"));
+  assert.strictEqual(tree.users.newbie.pass, undefined, "у публічному вузлі нового гравця хешів немає");
+  assert.ok(tree.user_secrets.newbie.pass.startsWith("pbkdf2$"));
+  assert.ok(tree.user_secrets.newbie.securityAnswerHash.startsWith("pbkdf2$"));
   assert.strictEqual(decodeJwt(r.data.token).claims.uid, "newbie");
   for (let i = 0; i < 5; i++) await reg({ nick: "spam" + i, password: "123456" }, "30.0.0.1");
   assert.strictEqual((await reg({ nick: "spam9", password: "123456" }, "30.0.0.1")).status, 429, "масова реєстрація з однієї IP");
@@ -150,12 +159,13 @@ function decodeJwt(token) {
   tree.users.bob = { pass: await SlotOKPassword.hash("old111"), securityAnswerHash: await SlotOKPassword.hash("kyiv") };
   assert.strictEqual((await call("POST", { action: "reset", nick: "bob", answer: "lviv", newPassword: "new222" })).status, 401);
   assert.strictEqual((await call("POST", { action: "reset", nick: "bob", answer: " Kyiv ", newPassword: "new222" })).status, 200);
-  assert.ok((await SlotOKPassword.verify("new222", tree.users.bob.pass)).ok);
+  assert.ok((await SlotOKPassword.verify("new222", tree.user_secrets.bob.pass)).ok);
+  assert.strictEqual(tree.users.bob.securityAnswerHash, undefined);
 
   // --- зміна пароля ---
   assert.strictEqual((await call("POST", { action: "change-password", nick: "bob", password: "nope", newPassword: "zzz999" })).status, 401);
   assert.strictEqual((await call("POST", { action: "change-password", nick: "bob", password: "new222", newPassword: "zzz999" })).status, 200);
-  assert.ok((await SlotOKPassword.verify("zzz999", tree.users.bob.pass)).ok);
+  assert.ok((await SlotOKPassword.verify("zzz999", tree.user_secrets.bob.pass)).ok);
 
   console.log("OK — api/auth: 503 без ключа, перевірка пароля на сервері, підписаний custom token, ліміти, безпечна реєстрація");
 })().catch((e) => {

@@ -141,6 +141,10 @@
       ".read": false,
       ".write": false
     },
+    "user_secrets": {
+      ".read": false,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
     "notify_rate": {
       ".read": false,
       ".write": false

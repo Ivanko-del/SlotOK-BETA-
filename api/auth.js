@@ -21,9 +21,10 @@
 // set — the app then falls back to its old client-side login.
 // ============================================================
 
-const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
+const { dbGet, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
 const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
+const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
 const SlotOKPassword = require("../password.js");
 
 const OWNER = "theivankoo";
@@ -63,7 +64,7 @@ async function login(req, res, body) {
     return fail(res, 429, "rate_limited", "Забагато спроб входу. Зачекай 10 хвилин.");
   }
   const [pass, banned, banReason, isAdmin] = await Promise.all([
-    dbGet(`users/${nick}/pass`),
+    getSecret(nick, "pass"),
     dbGet(`users/${nick}/banned`),
     dbGet(`users/${nick}/banReason`),
     dbGet(`users/${nick}/isAdmin`),
@@ -73,7 +74,9 @@ async function login(req, res, body) {
 
   const check = await SlotOKPassword.verify(password, pass);
   if (!check.ok) return fail(res, 401, "wrong_password", "Невірний пароль");
-  if (check.needsUpgrade) await dbUpdate(`users/${nick}`, { pass: await SlotOKPassword.hash(password) });
+  // Хеш їде з публічного users/<нік> у закритий user_secrets/<нік>.
+  if (check.needsUpgrade) await setSecrets(nick, { pass: await SlotOKPassword.hash(password) });
+  await migrateSecrets(nick);
 
   const admin = nick.toLowerCase() === OWNER || isAdmin === true;
   if (!admin && (await dbGet("site_config/maintenance"))) {
@@ -107,10 +110,8 @@ async function register(req, res, body) {
 
   const now = Date.now();
   const newUser = {
-    pass: await SlotOKPassword.hash(password),
     email,
     securityQuestion: secQ,
-    securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
     balance: bonus, freeSlots: spins,
     id: Math.floor(Math.random() * 900000) + 100000,
     tag: "Новачок 🌱", avatar: "👤",
@@ -119,13 +120,17 @@ async function register(req, res, body) {
     totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
   };
   if (promo) newUser.usedPromo = promo;
-  if (ref && ref !== nick && /^[^.#$[\]/]{1,40}$/.test(ref) && (await dbGet(`users/${ref}/pass`))) {
+  if (ref && ref !== nick && /^[^.#$[\]/]{1,40}$/.test(ref) && (await getSecret(ref, "pass"))) {
     newUser.referredBy = ref;
   }
 
   // Create-if-absent: two simultaneous sign-ups for one nick can't both win.
   const { committed } = await dbTransaction(`users/${nick}`, (cur) => (cur ? undefined : newUser));
   if (!committed) return fail(res, 409, "nick_taken", `Нікнейм "${nick}" вже зайнятий`);
+  await setSecrets(nick, {
+    pass: await SlotOKPassword.hash(password),
+    securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
+  });
 
   await Promise.allSettled([
     dbPush(`users/${nick}/history`, { text: "🎉 Реєстрація! Бонус: +" + bonus + "₴", date: now }),
@@ -143,13 +148,14 @@ async function reset(req, res, body) {
   if (!(await throttle(req, "reset", nick))) {
     return fail(res, 429, "rate_limited", "Забагато спроб. Зачекай 10 хвилин.");
   }
-  const stored = await dbGet(`users/${nick}/securityAnswerHash`);
+  const stored = await getSecret(nick, "securityAnswerHash");
   if (!stored) return fail(res, 404, "not_found", "Для цього акаунту немає контрольного питання");
   const check = await SlotOKPassword.verify(answer.trim().toLowerCase(), stored);
   if (!check.ok) return fail(res, 401, "wrong_answer", "Невірна відповідь");
   const updates = { pass: await SlotOKPassword.hash(newPassword) };
   if (check.needsUpgrade) updates.securityAnswerHash = await SlotOKPassword.hash(answer.trim().toLowerCase());
-  await dbUpdate(`users/${nick}`, updates);
+  await setSecrets(nick, updates);
+  await migrateSecrets(nick);
   res.status(200).json({ ok: true });
 }
 
@@ -160,11 +166,12 @@ async function changePassword(req, res, body) {
   if (!nick || !password || !/^[^.#$[\]/]{1,40}$/.test(nick)) return fail(res, 400, "bad_request", "Введіть поточний пароль");
   if (!newPassword || newPassword.length < 6) return fail(res, 400, "weak_password", "Мінімум 6 символів");
   if (!(await throttle(req, "change", nick))) return fail(res, 429, "rate_limited", "Забагато спроб. Зачекай 10 хвилин.");
-  const pass = await dbGet(`users/${nick}/pass`);
+  const pass = await getSecret(nick, "pass");
   if (!pass || !(await SlotOKPassword.verify(password, pass)).ok) {
     return fail(res, 401, "wrong_password", "Поточний пароль невірний");
   }
-  await dbUpdate(`users/${nick}`, { pass: await SlotOKPassword.hash(newPassword) });
+  await setSecrets(nick, { pass: await SlotOKPassword.hash(newPassword) });
+  await migrateSecrets(nick);
   res.status(200).json({ ok: true });
 }
 

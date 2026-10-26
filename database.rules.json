@@ -62,6 +62,10 @@
       ".read": false,
       ".write": false
     },
+    "user_secrets": {
+      ".read": false,
+      ".write": "false"
+    },
     "notify_rate": {
       ".read": false,
       ".write": false

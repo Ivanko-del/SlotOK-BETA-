@@ -129,6 +129,9 @@ function build(strict) {
 
     // ── Лише сервер (api/*, бот). Адмін-токен сервера правила оминає. ──
     bot_config: { ".read": false, ".write": false },
+    // Хеші паролів/відповідей (lib/secrets.js). Адмін у строгому режимі може
+    // записати сюди тимчасовий пароль; прочитати — ніхто, крім сервера.
+    user_secrets: { ".read": false, ".write": strict ? isAdmin : "false" },
     notify_rate: { ".read": false, ".write": false },
     telegram_state: { ".read": false, ".write": false },
     promo_redemptions: { ".read": false, ".write": false },

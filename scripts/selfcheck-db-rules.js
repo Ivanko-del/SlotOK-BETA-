@@ -67,6 +67,7 @@ async function seed(ns) {
       theivankoo: { balance: 0 },
     },
     bot_config: { adminChatId: 1 },
+    user_secrets: { alice: { pass: "pbkdf2$1$aa$bb" } },
     telegram_links: { 111: "alice" },
     deposit_requests: { d1: { user: "alice", amount: 100, status: "pending" }, d2: { user: "bob", amount: 5, status: "pending" } },
     support_chats: { alice: { m1: { sender: "user", text: "hi" } } },
@@ -84,6 +85,8 @@ async function phase1() {
   assert.strictEqual(await anon.get(""), NO, "корінь бази не має читатись");
   assert.strictEqual(await anon.get("users"), OK, "users читається (поки клієнт без Auth)");
   assert.strictEqual(await anon.get("bot_config"), NO, "bot_config — лише сервер");
+  assert.strictEqual(await anon.get("user_secrets/alice"), NO, "хеші паролів");
+  assert.strictEqual(await anon.put("user_secrets/alice/pass", "x"), NO, "підміна хешу пароля");
   assert.strictEqual(await anon.put("bot_config/adminChatId", 666), NO, "підміна адмін-чату бота");
   assert.strictEqual(await anon.put("telegram_links/999", "alice"), NO, "прив'язка чужого Telegram");
   assert.strictEqual(await anon.del("telegram_links/111"), OK, "відв'язати можна");
@@ -127,6 +130,8 @@ async function strict() {
   assert.strictEqual(await alice.put("users/alice/isAdmin", true), NO, "самопризначення адміном");
   assert.strictEqual(await alice.put("users/alice/banned", false), NO, "самозняття бану");
   assert.strictEqual(await alice.put("users/alice/pass", "x"), NO, "пароль міняє лише сервер");
+  assert.strictEqual(await alice.get("user_secrets/alice"), NO, "навіть свій хеш браузер не читає");
+  assert.strictEqual(await bob.put("user_secrets/alice/pass", "x"), NO, "чужий хеш");
   assert.strictEqual(await bob.put("users/alice/tag", "lol"), NO, "чужий тег");
   assert.strictEqual(await alice.put("users/alice/lastSeen", 5), OK);
   assert.strictEqual(await alice.patch("users/alice", { lastSeen: 6, avatar: "😎" }), OK, "update() кількох полів");
