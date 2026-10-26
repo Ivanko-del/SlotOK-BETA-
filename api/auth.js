@@ -14,6 +14,7 @@
 // POST { action: "register", nick, password, email?, promo?, secQ, secA, ref? }
 // POST { action: "reset",    nick, answer, newPassword }      (security question)
 // POST { action: "change-password", nick, password, newPassword }
+// POST { action: "set-security", nick, password, question, answer }
 //
 // Success → 200 { token, nick }   (reset/change-password → 200 { ok: true })
 // Errors  → 4xx { error: <code>, message: <Ukrainian text for the player> }
@@ -21,7 +22,7 @@
 // set — the app then falls back to its old client-side login.
 // ============================================================
 
-const { dbGet, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
+const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
 const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
 const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
@@ -30,6 +31,18 @@ const SlotOKPassword = require("../password.js");
 const OWNER = "theivankoo";
 const NICK_RE = /^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_-]{3,20}$/;
 const MAX_PASSWORD = 200;
+const MIN_ANSWER = 3;
+
+// Питання — або ключ зі списку в app.js (SECURITY_QUESTIONS), або власний
+// текст гравця. Текст показується в розмітці, тож без HTML-символів.
+function cleanQuestion(v) {
+  if (typeof v !== "string") return null;
+  const q = v.trim().replace(/[<>"'`]/g, "");
+  return q.length >= 3 && q.length <= 120 ? q : null;
+}
+async function dbPatchQuestion(nick, question) {
+  await dbUpdate(`users/${nick}`, { securityQuestion: question, hasSecurityAnswer: true });
+}
 
 function fail(res, status, error, message) {
   res.status(status).json({ error, message });
@@ -89,7 +102,7 @@ async function register(req, res, body) {
   const nick = str(body.nick, 20);
   const password = str(body.password, MAX_PASSWORD);
   const secA = str(body.secA, 200);
-  const secQ = str(body.secQ, 200) || "";
+  const secQ = cleanQuestion(body.secQ);
   const email = (str(body.email, 120) || "").trim();
   const promo = (str(body.promo, 40) || "").trim().toUpperCase();
   const ref = str(body.ref, 40);
@@ -97,7 +110,8 @@ async function register(req, res, body) {
     return fail(res, 400, "bad_nick", 'Нікнейм: 3–20 символів, лише літери, цифри, "_" та "-"');
   }
   if (!password || password.length < 6) return fail(res, 400, "weak_password", "Пароль мінімум 6 символів");
-  if (!secA || !secA.trim()) return fail(res, 400, "no_answer", "Введіть відповідь на контрольне питання");
+  if (!secA || secA.trim().length < MIN_ANSWER) return fail(res, 400, "no_answer", `Відповідь на контрольне питання — мінімум ${MIN_ANSWER} символи`);
+  if (!secQ) return fail(res, 400, "no_question", "Оберіть або напишіть контрольне питання");
   if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) return fail(res, 400, "bad_email", "Невірний email");
   if (!(await throttle(req, "register", null))) {
     return fail(res, 429, "rate_limited", "Забагато реєстрацій з цієї мережі. Спробуй пізніше.");
@@ -112,6 +126,7 @@ async function register(req, res, body) {
   const newUser = {
     email,
     securityQuestion: secQ,
+    hasSecurityAnswer: true,
     balance: bonus, freeSlots: spins,
     id: Math.floor(Math.random() * 900000) + 100000,
     tag: "Новачок 🌱", avatar: "👤",
@@ -175,7 +190,27 @@ async function changePassword(req, res, body) {
   res.status(200).json({ ok: true });
 }
 
-const ACTIONS = { login, register, reset, "change-password": changePassword };
+// Нове контрольне питання/відповідь — лише з поточним паролем.
+async function setSecurity(req, res, body) {
+  const nick = str(body.nick, 40);
+  const password = str(body.password, MAX_PASSWORD);
+  const question = cleanQuestion(body.question);
+  const answer = str(body.answer, 200);
+  if (!nick || !password || !/^[^.#$[\]/]{1,40}$/.test(nick)) return fail(res, 400, "bad_request", "Введіть поточний пароль");
+  if (!question) return fail(res, 400, "no_question", "Оберіть або напишіть контрольне питання");
+  if (!answer || answer.trim().length < MIN_ANSWER) return fail(res, 400, "no_answer", `Відповідь — мінімум ${MIN_ANSWER} символи`);
+  if (!(await throttle(req, "change", nick))) return fail(res, 429, "rate_limited", "Забагато спроб. Зачекай 10 хвилин.");
+  const pass = await getSecret(nick, "pass");
+  if (!pass || !(await SlotOKPassword.verify(password, pass)).ok) {
+    return fail(res, 401, "wrong_password", "Поточний пароль невірний");
+  }
+  await setSecrets(nick, { securityAnswerHash: await SlotOKPassword.hash(answer.trim().toLowerCase()) });
+  await dbPatchQuestion(nick, question);
+  await migrateSecrets(nick);
+  res.status(200).json({ ok: true });
+}
+
+const ACTIONS = { login, register, reset, "change-password": changePassword, "set-security": setSecurity };
 
 module.exports = async (req, res) => {
   const configured = !!getServiceAccount();

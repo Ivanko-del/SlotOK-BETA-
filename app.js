@@ -143,6 +143,13 @@ async function serverAuthCall(action, payload) {
 function serverAuthIsFinal(r) {
   return r.status >= 400 && r.status < 500 && !!(r.data && r.data.error);
 }
+// Технічний текст помилки Firebase (JSON, коди) — у консоль; гравцю — людською мовою.
+function friendlySignInError(e) {
+  const raw = String((e && (e.code || e.message)) || '');
+  if(/network|offline|timeout|unavailable/i.test(raw)) return 'Немає зʼєднання. Перевір інтернет і спробуй ще раз.';
+  if(/too-many|TOO_MANY/i.test(raw)) return 'Забагато спроб. Зачекай кілька хвилин.';
+  return 'Вхід тимчасово недоступний. Спробуй за кілька хвилин, а якщо не минеться — напиши в підтримку.';
+}
 async function serverSignIn(token) {
   if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
   await firebase.auth().signInWithCustomToken(token);
@@ -3755,7 +3762,7 @@ async function authLogin() {
     } catch(e) {
       reset();
       console.error('Server sign-in error:', e);
-      return showAuthError('❌ Не вдалося увійти: ' + (e.message || 'помилка'));
+      return showAuthError('❌ ' + friendlySignInError(e));
     }
   }
   if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
@@ -3811,7 +3818,7 @@ async function authRegister() {
   const n        = (document.getElementById('regName')?.value  || '').trim();
   const p        = (document.getElementById('regPass')?.value  || '');
   const promo    = (document.getElementById('regPromo')?.value || '').trim().toUpperCase();
-  const secQ     = document.getElementById('regSecQuestion')?.value || '';
+  const secQ     = readSecQuestion('reg');
   const secA     = (document.getElementById('regSecAnswer')?.value || '').trim();
 
   // Validation
@@ -3822,7 +3829,8 @@ async function authRegister() {
   if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return showAuthError('Нікнейм може містити лише літери, цифри, "_" та "-"');
   if(!p)             return showAuthError('Введіть пароль');
   if(p.length < 6)   return showAuthError('Пароль мінімум 6 символів');
-  if(!secA)          return showAuthError('Введіть відповідь на контрольне питання (потрібна для відновлення пароля)');
+  if(secQ.length < 3) return showAuthError('Напиши своє контрольне питання (мінімум 3 символи) або обери зі списку');
+  if(secA.length < 3) return showAuthError('Відповідь на контрольне питання — мінімум 3 символи (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
 
   const btn = document.getElementById('regBtn');
@@ -3836,7 +3844,7 @@ async function authRegister() {
   });
   if(srv.status === 200 && srv.data.token) {
     try { await serverSignIn(srv.data.token); }
-    catch(e) { reset(); return showAuthError('❌ Акаунт створено, але вхід не вдався: ' + (e.message || '') + '. Спробуй увійти.'); }
+    catch(e) { reset(); console.error('Server sign-in error:', e); return showAuthError('✅ Акаунт створено, але ' + friendlySignInError(e).toLowerCase()); }
     if(btn) btn.textContent = '✅ Входимо...';
     currentUser = n;
     localStorage.setItem(SESSION_KEY, n);
@@ -3932,12 +3940,35 @@ async function authRegister() {
 // ВІДНОВЛЕННЯ ПАРОЛЯ
 // ============================================================
 const SECURITY_QUESTIONS = {
+  first_phone:    "Модель вашого першого телефона?",
+  first_teacher:  "Ім'я та по батькові першої вчительки?",
+  first_job:      "Де ви вперше заробили гроші?",
+  childhood_nick: "Ваше дитяче прізвисько?",
+  first_concert:  "Перший концерт або матч, на який ви ходили?",
+  dream_job:      "Ким ви мріяли стати в дитинстві?",
+  // Старі питання — більше не пропонуються (відповіді легко знайти в
+  // соцмережах), але лишаються, щоб старі акаунти бачили своє питання.
   pet:    "Кличка вашого першого улюбленця?",
   city:   "Місто, де ви народились?",
   school: "Назва вашої школи?",
   friend: "Ім'я найкращого друга дитинства?",
   book:   "Улюблена книга/фільм?"
 };
+// Ключ зі списку або власний текст гравця (тоді показуємо сам текст).
+function securityQuestionText(q) {
+  return SECURITY_QUESTIONS[q] || (typeof q === 'string' && q.trim() ? q : 'Контрольне питання');
+}
+// prefix 'reg' (реєстрація) або 'sq' (модалка в налаштуваннях)
+function secQuestionChanged(prefix) {
+  const sel = document.getElementById(prefix + 'SecQuestion');
+  const box = document.getElementById(prefix + 'SecCustomBox');
+  if(sel && box) box.style.display = sel.value === 'custom' ? '' : 'none';
+}
+function readSecQuestion(prefix) {
+  const sel = document.getElementById(prefix + 'SecQuestion')?.value || '';
+  if(sel !== 'custom') return sel;
+  return (document.getElementById(prefix + 'SecCustom')?.value || '').trim().replace(/[<>"'`]/g, '');
+}
 
 function openPasswordRecovery() {
   const existing = document.getElementById('pwrModal');
@@ -3978,7 +4009,10 @@ function pwrLookup() {
   db.ref('users/' + nick).once('value', snap => {
     if(!snap.exists()) return pwrErr('Гравця не знайдено');
     const data = snap.val();
-    if(data.securityQuestion && data.securityAnswerHash) {
+    // Хеш відповіді сервер переносить у закритий user_secrets, тож тут його
+    // вже може не бути — орієнтуємось на саме питання. Якщо відповіді насправді
+    // немає, сервер скаже not_found і ми перейдемо на Telegram.
+    if(data.securityQuestion && (data.securityAnswerHash || data.hasSecurityAnswer || !data.pass)) {
       pwrShowQuestion(nick, data.securityQuestion);
     } else {
       pwrShowTelegramFallback(nick);
@@ -3989,9 +4023,9 @@ function pwrLookup() {
 function pwrShowQuestion(nick, qKey) {
   const body = document.getElementById('pwrBody');
   if(!body) return;
-  const qText = SECURITY_QUESTIONS[qKey] || 'Контрольне питання';
+  const qText = securityQuestionText(qKey);
   body.innerHTML = `
-    <div style="font-size:12px;color:#888;margin-bottom:10px;">${qText}</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px;">${escapeHtml(qText)}</div>
     <input class="auth-input" id="pwrAnswer" placeholder="Відповідь" style="margin-bottom:10px;">
     <input class="auth-input" id="pwrNewPass" type="password" placeholder="Новий пароль (мін 6 символів)" style="margin-bottom:10px;">
     <input class="auth-input" id="pwrNewPass2" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">
@@ -4020,6 +4054,7 @@ async function pwrVerifyAndReset(nick) {
   // з публічної бази більше не допомагає.
   const srv = await serverAuthCall('reset', { nick, answer, newPassword: p1 });
   if(srv.status === 200) return pwrDone();
+  if(srv.status === 404 && srv.data.error === 'not_found') return pwrShowTelegramFallback(nick);
   if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
   if(await serverAuthEnabled()) return pwrErr('Сервер недоступний. Спробуй за хвилину.');
 
@@ -5313,10 +5348,35 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '100';
+const CURRENT_VERSION = '101';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '101',
+    title: '📜 Оновлення v101 — надійніше відновлення пароля',
+    date: Date.UTC(2026, 9, 26),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '❓ Контрольне питання',
+        items: [
+          'Нові контрольні питання, відповіді на які не знайти в соцмережах',
+          'Можна написати своє питання — це найнадійніший варіант',
+          'Питання й відповідь тепер можна змінити: Налаштування → Безпека та акаунт → Контрольне питання',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Відновлення пароля через контрольне питання знову працює для всіх акаунтів',
+          'Якщо вхід тимчасово не вдається, показується зрозуміле повідомлення замість технічного тексту',
+        ]
+      },
+    ]
+  },
   {
     version: '100',
     title: '📜 Оновлення v100 — безпека і швидкість',
@@ -8483,6 +8543,51 @@ function openChangePasswordModal() {
     '<div id="cpError" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
     '<button onclick="doChangePassword()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Змінити пароль</button>'
   );
+}
+
+function openSecurityQuestionModal() {
+  const cur = userData && userData.securityQuestion ? securityQuestionText(userData.securityQuestion) : null;
+  const opts = document.getElementById('regSecQuestion');
+  openModal('secq',
+    modalCloseBtn('secq') +
+    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:8px;font-family:Orbitron,monospace;padding-right:36px;">❓ Контрольне питання</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:12px;line-height:1.4;">' +
+      (cur ? 'Зараз: <b style="color:#ccc;">' + escapeHtml(cur) + '</b><br>' : 'Контрольного питання ще немає.<br>') +
+      'Потрібне, щоб відновити пароль без адміна. Обирай те, чого не знайти в соцмережах.</div>' +
+    '<select id="sqSecQuestion" onchange="secQuestionChanged(\'sq\')" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:8px;font-size:13px;">' +
+      (opts ? opts.innerHTML : '<option value="custom">✍️ Своє питання</option>') + '</select>' +
+    '<div id="sqSecCustomBox"><input id="sqSecCustom" maxlength="120" placeholder="Своє питання" style="margin-bottom:8px;"></div>' +
+    '<input id="sqAnswer" placeholder="Відповідь (мін. 3 символи)" style="margin-bottom:8px;">' +
+    '<input id="sqPass" type="password" placeholder="Поточний пароль" style="margin-bottom:10px;">' +
+    '<div id="sqError" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
+    '<button onclick="doSetSecurityQuestion()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Зберегти</button>'
+  );
+  secQuestionChanged('sq');
+}
+
+async function doSetSecurityQuestion() {
+  const errEl = document.getElementById('sqError');
+  const showErr = m => { if(errEl) errEl.textContent = m; };
+  const question = readSecQuestion('sq');
+  const answer = (document.getElementById('sqAnswer')?.value || '').trim();
+  const password = document.getElementById('sqPass')?.value || '';
+  if(question.length < 3) return showErr('Напиши питання (мін. 3 символи) або обери зі списку');
+  if(answer.length < 3) return showErr('Відповідь — мінімум 3 символи');
+  if(!password) return showErr('Введіть поточний пароль');
+  const done = () => { notify('✅ Контрольне питання оновлено', 'success'); closeModal('secq'); };
+  const srv = await serverAuthCall('set-security', { nick: currentUser, password, question, answer });
+  if(srv.status === 200) return done();
+  if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
+  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
+  // Серверний вхід ще не ввімкнено — старий шлях у браузері.
+  try {
+    if(!(await SlotOKPassword.verify(password, userData.pass)).ok) return showErr('Поточний пароль невірний');
+    await db.ref('users/' + currentUser).update({
+      securityQuestion: question,
+      securityAnswerHash: await SlotOKPassword.hash(answer.toLowerCase()),
+    });
+    done();
+  } catch(e) { console.error(e); showErr('Не вдалося зберегти'); }
 }
 
 function openGiftVIPModal() {

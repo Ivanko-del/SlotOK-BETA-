@@ -138,7 +138,7 @@ function decodeJwt(token) {
   assert.strictEqual((await call("POST", { action: "login", nick: "victim", password: "hunter22" }, { "x-real-ip": "9.9.9.9" })).status, 429);
 
   // --- реєстрація ---
-  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "Q", secA: "answer", ...body }, { "x-real-ip": ip });
+  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "first_phone", secA: "answer", ...body }, { "x-real-ip": ip });
   assert.strictEqual((await reg({ nick: "<img>", password: "123456" })).status, 400, "нік з HTML");
   assert.strictEqual((await reg({ nick: "ok_nick", password: "123" })).status, 400, "короткий пароль");
   assert.strictEqual((await reg({ nick: "alice", password: "123456" })).status, 409, "зайнятий нік не перезаписується");
@@ -166,6 +166,20 @@ function decodeJwt(token) {
   assert.strictEqual((await call("POST", { action: "change-password", nick: "bob", password: "nope", newPassword: "zzz999" })).status, 401);
   assert.strictEqual((await call("POST", { action: "change-password", nick: "bob", password: "new222", newPassword: "zzz999" })).status, 200);
   assert.ok((await SlotOKPassword.verify("zzz999", tree.user_secrets.bob.pass)).ok);
+
+  // --- контрольне питання ---
+  assert.strictEqual((await reg({ nick: "noq", password: "123456", secQ: "", secA: "abc" }, "40.0.0.1")).status, 400, "без питання");
+  assert.strictEqual((await reg({ nick: "shorta", password: "123456", secQ: "pet", secA: "ab" }, "40.0.0.2")).status, 400, "коротка відповідь");
+  r = await reg({ nick: "customq", password: "123456", secQ: 'Що було в "скарбничці"? <b>', secA: "Ґудзик" }, "40.0.0.3");
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(tree.users.customq.securityQuestion, "Що було в скарбничці? b", "HTML-символи з питання прибрано");
+  assert.strictEqual(tree.users.customq.hasSecurityAnswer, true);
+  const setq = (b) => call("POST", { action: "set-security", nick: "customq", ...b }, { "x-real-ip": "40.0.0.9" });
+  assert.strictEqual((await setq({ password: "bad", question: "first_phone", answer: "nokia" })).status, 401, "без пароля питання не змінити");
+  assert.strictEqual((await setq({ password: "123456", question: "first_phone", answer: "Nokia 3310" })).status, 200);
+  assert.strictEqual(tree.users.customq.securityQuestion, "first_phone");
+  assert.strictEqual((await call("POST", { action: "reset", nick: "customq", answer: "nokia 3310", newPassword: "fresh99" }, { "x-real-ip": "40.0.0.10" })).status, 200, "нова відповідь працює");
+  assert.strictEqual((await call("POST", { action: "reset", nick: "alice", answer: "x", newPassword: "fresh99" }, { "x-real-ip": "40.0.0.11" })).status, 404, "немає відповіді — 404 (клієнт піде в Telegram)");
 
   console.log("OK — api/auth: 503 без ключа, перевірка пароля на сервері, підписаний custom token, ліміти, безпечна реєстрація");
 })().catch((e) => {
