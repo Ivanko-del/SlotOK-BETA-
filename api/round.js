@@ -25,6 +25,12 @@ const { rng, fail, authNick, tooFast, blockedReason, moveBalance } = require("..
 
 const sessionPath = (nick, game) => `game_sessions/${nick}/${game}`;
 
+// Скільки платити за завершений раунд: Blackjack рахує сам (def.payout),
+// решта — ставка × множник.
+function payoutOf(def, cur, state) {
+  return def.payout ? def.payout(state) : payFor(cur.bet, def.mult(state));
+}
+
 // Сесія з бази → з відновленими порожніми масивами (див. fix у lib/sessions.js).
 function load(def, raw) {
   return raw && raw.state ? { ...raw, state: def.fix(raw.state) } : raw;
@@ -55,6 +61,13 @@ async function settlePrevious(nick, game) {
       if (r.status === "lost") return { ...cur, status: "lost", doneAt: Date.now() };
       action = "pay";
       return { ...cur, status: "cashing", payout: payFor(cur.bet, r.mult) };
+    }
+    if (def.abandon) {
+      // Покинута роздача Blackjack: руки «стоп», дилер добирає, розрахунок.
+      const st = def.abandon(cur.state);
+      const pay = def.payout(st);
+      if (pay > 0) { action = "pay"; return { ...cur, state: st, status: "cashing", payout: pay }; }
+      return { ...cur, state: st, status: "lost", doneAt: Date.now() };
     }
     const mult = def.mult(cur.state);
     if (mult > 0) { action = "pay"; return { ...cur, status: "cashing", payout: payFor(cur.bet, mult) }; }
@@ -98,31 +111,79 @@ async function start(req, res, nick, game, def, body) {
     await dbUpdate(path, { status: "void" });
     return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: debit.balance });
   }
-  const ctx = def.timed ? { luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : {};
-  const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now() };
+  const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
+  const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0 };
+  if (def.finished(session.state)) {
+    // Раунд завершився одразу (blackjack з роздачі) — розраховуємось тут же.
+    const pay = payoutOf(def, session, session.state);
+    const done = pay > 0 ? { ...session, status: "cashing", payout: pay } : { ...session, status: "lost", doneAt: Date.now() };
+    await dbUpdate(path, done);
+    const balance = pay > 0 ? await payOut(nick, game, done) : debit.balance;
+    return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance });
+  }
   await dbUpdate(path, session);
   res.status(200).json({ ...publicView(def, session, false), balance: debit.balance });
 }
 
 async function move(req, res, nick, game, def, body) {
   if (def.timed) return poll(req, res, nick, game, def);
-  let outcome = null; // "invalid" | "inactive" | "bust" | "ok" | "finished"
-  const tx = await dbTransaction(sessionPath(nick, game), (raw) => {
-    const cur = load(def, raw);
-    if (!cur || cur.status !== "active") { outcome = "inactive"; return undefined; }
-    const r = def.move(cur.state, body.move, rng);
-    if (!r) { outcome = "invalid"; return undefined; }
-    if (r.bust) { outcome = "bust"; return { ...cur, state: r.state, status: "lost", doneAt: Date.now() }; }
-    if (def.finished(r.state)) {
-      outcome = "finished";
-      return { ...cur, state: r.state, status: "cashing", payout: payFor(cur.bet, def.mult(r.state)) };
+  const path = sessionPath(nick, game);
+
+  // Хід з доплатою (Blackjack: double, split, страховка). Ходи детерміновані
+  // (колода в стані), тож: 1) рахуємо хід на прочитаному стані; 2) списуємо
+  // доплату; 3) застосовуємо хід, лише якщо стан не змінився (версія v) —
+  // інакше повертаємо доплату і просимо повторити.
+  let cost = 0, expectV = null, balanceAfterCost = null;
+  if (def.payout) {
+    const cur = load(def, await dbGet(path));
+    if (!cur || cur.status !== "active") return fail(res, 409, "no_round", "Раунд уже завершено — почни новий");
+    const pre = def.move(cur.state, body.move, rng);
+    if (!pre) return fail(res, 400, "bad_move", "Такий хід неможливий");
+    cost = pre.cost || 0;
+    expectV = cur.v || 0;
+    if (cost > 0) {
+      const d = await moveBalance(nick, -cost);
+      if (!d.ok) return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: d.balance });
+      balanceAfterCost = d.balance;
     }
-    outcome = "ok";
-    return { ...cur, state: r.state };
-  });
+  }
+
+  let outcome = null; // "invalid" | "inactive" | "conflict" | "bust" | "lost" | "ok" | "finished"
+  let tx;
+  try {
+    tx = await dbTransaction(path, (raw) => {
+      const cur = load(def, raw);
+      if (!cur || cur.status !== "active") { outcome = "inactive"; return undefined; }
+      if (expectV !== null && (cur.v || 0) !== expectV) { outcome = "conflict"; return undefined; }
+      const r = def.move(cur.state, body.move, rng);
+      if (!r) { outcome = "invalid"; return undefined; }
+      const v = (cur.v || 0) + 1;
+      if (r.bust) { outcome = "bust"; return { ...cur, v, state: r.state, status: "lost", doneAt: Date.now() }; }
+      if (def.finished(r.state)) {
+        const pay = payoutOf(def, cur, r.state);
+        if (!(pay > 0)) { outcome = "lost"; return { ...cur, v, state: r.state, status: "lost", doneAt: Date.now() }; }
+        outcome = "finished";
+        return { ...cur, v, state: r.state, status: "cashing", payout: pay };
+      }
+      outcome = "ok";
+      return { ...cur, v, state: r.state };
+    });
+  } catch (e) {
+    // База не відповіла. Якщо хід так і не записався (версія та сама) — доплату повертаємо.
+    if (cost > 0) {
+      const after = await dbGet(path).catch(() => null);
+      if (after && (after.v || 0) === expectV) await moveBalance(nick, cost);
+    }
+    throw e;
+  }
+  if (cost > 0 && outcome !== "ok" && outcome !== "bust" && outcome !== "lost" && outcome !== "finished") {
+    await moveBalance(nick, cost); // хід не відбувся — доплату повертаємо
+  }
   if (outcome === "inactive") return fail(res, 409, "no_round", "Раунд уже завершено — почни новий");
+  if (outcome === "conflict") return fail(res, 409, "conflict", "Хід перетнувся з іншим — спробуй ще раз");
   if (outcome === "invalid") return fail(res, 400, "bad_move", "Такий хід неможливий");
   const s = load(def, tx.value);
+  if (outcome === "lost") return res.status(200).json({ ...publicView(def, s, true), payout: 0, ...(balanceAfterCost !== null ? { balance: balanceAfterCost } : {}) });
   if (outcome === "finished") {
     const balance = await payOut(nick, game, s);
     return res.status(200).json({ ...publicView(def, { ...s, status: "done" }, true), payout: s.payout, balance });

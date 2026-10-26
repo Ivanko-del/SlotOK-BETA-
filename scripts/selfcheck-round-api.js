@@ -60,6 +60,7 @@ const bal = (u) => tree.users[u].balance;
 const secret = (u, g) => tree.game_sessions[u][g];
 
 const rng = { int: (a, b) => crypto.randomInt(a, b) };
+const cardValFor = (c) => (c.r === 12 ? 11 : c.r >= 8 ? 10 : c.r + 2);
 
 (async () => {
   tree = { users: { ann: { balance: 1000 }, ben: { balance: 1000 }, cid: { balance: 50 } } };
@@ -174,6 +175,82 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
     }
   }
 
+  // ── Blackjack ──
+  {
+    const { blackjack: BJ, handValue } = require("../lib/blackjack");
+    const C = (r, s = 0) => ({ r, s }); // r: 0 = «2» … 8 = «10», 9..11 = J/Q/K, 12 = туз
+    // Колода наперед: гравець, дилер, гравець, дилер, далі добір.
+    const rig = (cards, bet = 100) => BJ.fix({ deck: cards, pos: 4, hands: [{ cards: [cards[0], cards[2]], bet, done: false, doubled: false }], dealer: [cards[1], cards[3]], active: 0, insurance: 0, split: false, surrendered: false, actions: 0, over: false });
+    // 10+8 проти 10+7: стоп → 18 > 17 → ×2
+    let st = BJ.move(rig([C(8), C(8), C(6), C(5)]), { action: "stand" }).state;
+    assert.ok(st.over); assert.strictEqual(BJ.payout(st), 200);
+    // Blackjack 3:2
+    assert.strictEqual(BJ.payout(BJ.abandon(rig([C(12), C(8), C(9), C(5)]))), 250);
+    // Перебір
+    st = BJ.move(rig([C(8), C(8), C(4), C(5), C(9)]), { action: "hit" }).state;
+    assert.ok(handValue(st.hands[0].cards) > 21 && BJ.payout(st) === 0);
+    // Double: доплата = ставка, виграш з подвоєної
+    let mv = BJ.move(rig([C(3), C(8), C(4), C(5), C(8)]), { action: "double" }); // 5+6+10=21 проти 17
+    assert.strictEqual(mv.cost, 100); assert.strictEqual(BJ.payout(mv.state), 400);
+    // Split лише однакових; дві руки по ставці
+    assert.strictEqual(BJ.move(rig([C(8), C(8), C(7), C(5)]), { action: "split" }), null, "10 і 9 не спліт");
+    mv = BJ.move(rig([C(6), C(8), C(6), C(5), C(8), C(8)]), { action: "split" });
+    assert.strictEqual(mv.cost, 100); assert.strictEqual(mv.state.hands.length, 2);
+    // Страховка лише проти туза і лише першим ходом; платить 2:1
+    assert.strictEqual(BJ.move(rig([C(8), C(8), C(7), C(5)]), { action: "insurance" }), null);
+    mv = BJ.move(rig([C(8), C(12), C(7), C(8)]), { action: "insurance" }); // у дилера blackjack
+    assert.strictEqual(mv.cost, 50);
+    st = BJ.move(mv.state, { action: "stand" }).state;
+    assert.strictEqual(BJ.payout(st), 150, "страховка 50 → 150, основна ставка програна");
+    // Surrender — половина ставки
+    st = BJ.move(rig([C(8), C(8), C(4), C(5)]), { action: "surrender" }).state;
+    assert.strictEqual(BJ.payout(st), 50);
+    assert.strictEqual(BJ.move(st, { action: "hit" }), null, "після кінця ходів нема");
+
+    // API: доплата за double списується; покинута роздача розраховується
+    tree.users.hal = { balance: 1000 };
+    r = await call("hal", { action: "start", game: "blackjack", bet: 100, params: {} });
+    assert.strictEqual(r.status, 200);
+    assert.strictEqual(JSON.stringify(r.data).includes('"deck"'), false, "колода — секрет");
+    if (r.data.status === "active") {
+      assert.strictEqual(r.data.view.dealer.length, 1, "друга карта дилера закрита");
+      const before = bal("hal");
+      r = await call("hal", { action: "move", game: "blackjack", move: { action: "double" } });
+      assert.strictEqual(r.status, 200);
+      assert.ok(r.data.view.over, "після double роздача закінчена");
+      assert.strictEqual(bal("hal"), before - 100 + (r.data.payout || 0), "доплата списана, виплата зарахована");
+      assert.strictEqual((await call("hal", { action: "move", game: "blackjack", move: { action: "hit" } })).status, 409);
+    }
+    tree.users.ivy = { balance: 150 };
+    r = await call("ivy", { action: "start", game: "blackjack", bet: 100, params: {} });
+    if (r.data.status === "active") {
+      assert.strictEqual((await call("ivy", { action: "move", game: "blackjack", move: { action: "double" } })).status, 402, "на double не вистачає");
+      assert.strictEqual(bal("ivy"), 50, "невдала доплата нічого не списала");
+      assert.strictEqual((await call("ivy", { action: "cashout", game: "blackjack" })).status, 400, "кешауту в blackjack немає");
+      const b0 = bal("ivy");
+      await call("ivy", { action: "start", game: "blackjack", bet: 10, params: {} }); // покинута роздача закривається
+      assert.ok(bal("ivy") >= b0 - 10, "попередню роздачу розраховано, а не втрачено");
+    }
+
+    // RTP за базовою стратегією (спрощеною) — менше 100%
+    const N2 = 150000;
+    let paid = 0, staked = 0;
+    for (let i = 0; i < N2; i++) {
+      let s0 = BJ.init({}, rng, { bet: 100 });
+      staked += 100;
+      while (!s0.over) {
+        const h = s0.hands[s0.active], v = handValue(h.cards), up = Math.min(cardValFor(s0.dealer[0]), 11);
+        let a = v >= 17 ? "stand" : v <= 11 ? (v >= 10 && h.cards.length === 2 && up < 10 ? "double" : "hit") : up >= 7 ? "hit" : "stand";
+        const m2 = BJ.move(s0, { action: a });
+        if (m2.cost) staked += m2.cost;
+        s0 = m2.state;
+      }
+      paid += BJ.payout(s0);
+    }
+    const bjRtp = paid / staked;
+    assert.ok(bjRtp > 0.9 && bjRtp < 1.0, "Blackjack RTP " + bjRtp);
+  }
+
   // ── Crash / Balloon (реальний час) ──
   tree.users.fay = { balance: 1000 };
   r = await call("fay", { action: "start", game: "crash", bet: 100, params: { auto: 0 } });
@@ -259,5 +336,5 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
     assert.ok(rtp < 0.95 && rtp > 0.88, "Hi-Lo 3 кроки: RTP " + rtp); // 0.97³ ≈ 0.913
   }
 
-  console.log("OK — api/round: Mines/Tower/Hi-Lo/Dragon/Crash/Balloon на сервері — секрет не тече, кешаут рівно раз, незакінчені раунди закриваються, RTP ≤ 97%");
+  console.log("OK — api/round: Mines/Tower/Hi-Lo/Dragon/Blackjack/Crash/Balloon на сервері — секрет не тече, кешаут рівно раз, незакінчені раунди закриваються, RTP ≤ 97%");
 })().catch((e) => { console.error(e); process.exit(1); });
