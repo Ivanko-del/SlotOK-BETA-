@@ -4,7 +4,7 @@
   "version": "70.0.0",
   "description": "SlotOK — браузерне казино (Firebase RTDB + Vercel serverless + Telegram-бот)",
   "scripts": {
-    "test": "node scripts/selfcheck-bp-season.js && node scripts/selfcheck-telegram-bot.js && node scripts/selfcheck-password-hash.js && node scripts/selfcheck-notify-ratelimit.js && node scripts/selfcheck-card-ledger.js && node scripts/selfcheck-progress-sources.js && node scripts/selfcheck-auth-api.js && node scripts/selfcheck-play-api.js && node scripts/selfcheck-notify-auth.js && node scripts/build-rules.js --check && node scripts/selfcheck-db-rules.js",
+    "test": "node scripts/selfcheck-bp-season.js && node scripts/selfcheck-telegram-bot.js && node scripts/selfcheck-password-hash.js && node scripts/selfcheck-notify-ratelimit.js && node scripts/selfcheck-card-ledger.js && node scripts/selfcheck-progress-sources.js && node scripts/selfcheck-auth-api.js && node scripts/selfcheck-play-api.js && node scripts/selfcheck-round-api.js && node scripts/selfcheck-notify-auth.js && node scripts/build-rules.js --check && node scripts/selfcheck-db-rules.js",
     "build:rules": "node scripts/build-rules.js",
     "lint": "node --check app.js && node --check password.js && node --check emoji-icons.js && node --check sw.js && for f in api/*.js lib/*.js scripts/*.js; do node --check $f || exit 1; done"
   },
