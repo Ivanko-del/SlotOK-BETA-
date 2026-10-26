@@ -492,8 +492,6 @@
       background: radial-gradient(ellipse 80% 90% at 50% -10%, rgb(var(--accent-rgb) / 0.16), transparent 70%), linear-gradient(170deg,var(--surface-2),var(--surface-1) 60%,var(--surface-1)); }
     .lb-hero::after { content:'🏆'; position:absolute; right:-24px; top:-30px; font-size:150px; opacity:.05; pointer-events:none; }
     .lb-hero-top { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-    .lb-back { width:42px; height:42px; flex-shrink:0; padding:0; margin:0; display:flex; align-items:center; justify-content:center;
-      background:rgb(var(--tint-rgb) / 0.05); border:1px solid rgb(var(--tint-rgb) / 0.1); border-radius:var(--r-lg); color:var(--sub); font-size:16px; }
     .lb-title { margin:0; font-family:var(--font-display); font-size:19px; font-weight:900; letter-spacing:2px; line-height:1;
       background:linear-gradient(135deg,var(--accent2),var(--accent),var(--accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     .lb-sub { font-size:11px; color:var(--sub); margin-top:4px; }
@@ -1287,23 +1285,6 @@
       15%  { opacity:1; }
       100% { opacity:0; }
     }
-    .btn-spin-premium {
-      width:100%; padding:18px;
-      background:var(--accent);
-      background-size:200% 200%;
-      border:none; border-radius:var(--r-lg);
-      color:var(--on-accent); font-size:18px; font-weight:900;
-      font-family:var(--font-display); letter-spacing:2px;
-      cursor:pointer;
-      box-shadow:none;
-      transition:.15s;
-      animation:winShimmer 3s ease infinite;
-    }
-    .btn-spin-premium:active { transform:scale(.96); }
-    .btn-spin-premium:disabled {
-      opacity:.5; animation:none;
-      background:linear-gradient(135deg,var(--line-strong),var(--surface-3));
-    }
 
     /* Chat image preview */
     .chat-img-msg {
@@ -1392,14 +1373,6 @@
        градієнтні перебивки тут прибрані, щоб не протікали в новий дизайн. */
 
     /* Game tab back button */
-    .game-back-btn {
-      display:inline-flex; align-items:center; gap:6px;
-      background:rgb(var(--tint-rgb) / 0.06); border:1px solid rgb(var(--tint-rgb) / 0.1);
-      border-radius:var(--r-lg); padding:8px 14px;
-      color:var(--fg-3); font-size:13px; cursor:pointer;
-      transition:.15s;
-    }
-    .game-back-btn:active { transform:scale(.94); }
 
     /* Slotiky premium */
     .slotiky-pkg {

@@ -27,6 +27,7 @@ button,
   justify-content: center;
   gap: var(--sp-2);
   width: 100%;
+  min-width: 0;                    /* у рядах (flex) кнопки стискаються, текст переноситься */
   min-height: var(--hit);
   margin: 0 0 var(--sp-2);
   padding: var(--sp-2) var(--sp-4);

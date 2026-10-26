@@ -226,3 +226,5 @@
 .event-mini { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-1); scrollbar-width: none; }
 #activityFeed .feed-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
 #activityFeed .feed-item:last-child { border-bottom: 0; }
+/* Декоративні великі іконки беруть тон контейнера, а не власний */
+.banner-deco .emj, .banner-deco .ic { color: inherit; }

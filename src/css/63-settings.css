@@ -69,3 +69,6 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 .rakeback-amount { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
 .mini-rates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); }
 .code-box { padding: var(--sp-3); margin: var(--sp-2) 0 var(--sp-4); border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md); font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: .12em; }
+/* Вкладка «Теми» (renderThemeGrid) */
+.theme-grid { display: grid; gap: var(--sp-3); }
+.theme-grid .swatches { margin-bottom: var(--sp-2); }

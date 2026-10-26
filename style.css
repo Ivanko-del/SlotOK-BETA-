@@ -463,6 +463,7 @@ button,
   justify-content: center;
   gap: var(--sp-2);
   width: 100%;
+  min-width: 0;                    /* у рядах (flex) кнопки стискаються, текст переноситься */
   min-height: var(--hit);
   margin: 0 0 var(--sp-2);
   padding: var(--sp-2) var(--sp-4);
@@ -1889,8 +1890,6 @@ body > .screen, .container ~ .screen {
       background: radial-gradient(ellipse 80% 90% at 50% -10%, rgb(var(--accent-rgb) / 0.16), transparent 70%), linear-gradient(170deg,var(--surface-2),var(--surface-1) 60%,var(--surface-1)); }
     .lb-hero::after { content:'🏆'; position:absolute; right:-24px; top:-30px; font-size:150px; opacity:.05; pointer-events:none; }
     .lb-hero-top { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-    .lb-back { width:42px; height:42px; flex-shrink:0; padding:0; margin:0; display:flex; align-items:center; justify-content:center;
-      background:rgb(var(--tint-rgb) / 0.05); border:1px solid rgb(var(--tint-rgb) / 0.1); border-radius:var(--r-lg); color:var(--sub); font-size:16px; }
     .lb-title { margin:0; font-family:var(--font-display); font-size:19px; font-weight:900; letter-spacing:2px; line-height:1;
       background:linear-gradient(135deg,var(--accent2),var(--accent),var(--accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     .lb-sub { font-size:11px; color:var(--sub); margin-top:4px; }
@@ -2684,23 +2683,6 @@ body > .screen, .container ~ .screen {
       15%  { opacity:1; }
       100% { opacity:0; }
     }
-    .btn-spin-premium {
-      width:100%; padding:18px;
-      background:var(--accent);
-      background-size:200% 200%;
-      border:none; border-radius:var(--r-lg);
-      color:var(--on-accent); font-size:18px; font-weight:900;
-      font-family:var(--font-display); letter-spacing:2px;
-      cursor:pointer;
-      box-shadow:none;
-      transition:.15s;
-      animation:winShimmer 3s ease infinite;
-    }
-    .btn-spin-premium:active { transform:scale(.96); }
-    .btn-spin-premium:disabled {
-      opacity:.5; animation:none;
-      background:linear-gradient(135deg,var(--line-strong),var(--surface-3));
-    }
 
     /* Chat image preview */
     .chat-img-msg {
@@ -2789,14 +2771,6 @@ body > .screen, .container ~ .screen {
        градієнтні перебивки тут прибрані, щоб не протікали в новий дизайн. */
 
     /* Game tab back button */
-    .game-back-btn {
-      display:inline-flex; align-items:center; gap:6px;
-      background:rgb(var(--tint-rgb) / 0.06); border:1px solid rgb(var(--tint-rgb) / 0.1);
-      border-radius:var(--r-lg); padding:8px 14px;
-      color:var(--fg-3); font-size:13px; cursor:pointer;
-      transition:.15s;
-    }
-    .game-back-btn:active { transform:scale(.94); }
 
     /* Slotiky premium */
     .slotiky-pkg {
@@ -3983,6 +3957,8 @@ body > .screen, .container ~ .screen {
 .event-mini { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-1); scrollbar-width: none; }
 #activityFeed .feed-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
 #activityFeed .feed-item:last-child { border-bottom: 0; }
+/* Декоративні великі іконки беруть тон контейнера, а не власний */
+.banner-deco .emj, .banner-deco .ic { color: inherit; }
 /* ─── src/css/61-lobby.css ─── */
 /* ═══════════════════════════════════════════════════════════════════
    ЛОББІ (#tab-lobby): липкий пошук + один ряд фільтрів → сітка ігор.
@@ -4650,6 +4626,9 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 .rakeback-amount { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
 .mini-rates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); }
 .code-box { padding: var(--sp-3); margin: var(--sp-2) 0 var(--sp-4); border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md); font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: .12em; }
+/* Вкладка «Теми» (renderThemeGrid) */
+.theme-grid { display: grid; gap: var(--sp-3); }
+.theme-grid .swatches { margin-bottom: var(--sp-2); }
 /* ─── src/css/64-auth.css ─── */
 /* ═══════════════════════════════════════════════════════════════════
    ВХІД / РЕЄСТРАЦІЯ (#auth-screen)
@@ -4756,3 +4735,69 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
   .auth-disclaimer { max-width: 640px; margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) { .auth-win-ticker-inner { animation: none; } }
+/* ─── src/css/65-games.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   ІГРИ — спільний каркас усіх ігрових екранів.
+   Порядок на екрані: шапка (← Ігри · Правила) → ігрове поле → результат
+   → поле ставки → велика кнопка дії. Поле ставки й кнопку уніфікує
+   src/app/42-game-ui.js (класи .bet-field, .game-cta).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Шапка гри / кнопка «назад» ─────────────────────────────────── */
+.game-back, .back-btn, .game-help {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  width: auto; min-height: 40px; margin: 0; padding: 0 var(--sp-3);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); border-radius: var(--r-md);
+}
+.game-back .ic, .back-btn .ic, .game-help .ic { width: 18px; height: 18px; }
+.game-help { --btn-bg: transparent; --btn-fg: var(--fg-2); }
+.screen > div:first-child:has(> .game-back) {
+  display: flex !important; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  margin-bottom: var(--sp-4) !important;
+}
+
+/* ── Поле ставки ────────────────────────────────────────────────── */
+.bet-field {
+  display: grid; gap: var(--sp-2); margin: var(--sp-3) 0;
+  padding: var(--sp-3); background: var(--surface-1);
+  border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.bet-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); }
+.bet-field-head .field-label { margin: 0; }
+.bet-field-bal { font-size: var(--fs-xs); color: var(--fg-3); white-space: nowrap; }
+.bet-field-bal .bal { font-family: var(--font-mono); color: var(--fg-2); font-weight: var(--fw-semibold); }
+.bet-input-row { display: grid; grid-template-columns: var(--hit-lg) 1fr var(--hit-lg); gap: var(--sp-2); align-items: stretch; }
+.bet-input-wrap { position: relative; display: block; min-width: 0; }
+.bet-cur { position: absolute; left: var(--sp-4); top: 50%; transform: translateY(-50%); color: var(--fg-3); font-family: var(--font-mono); font-weight: var(--fw-bold); pointer-events: none; }
+.bet-field input.bet-input {
+  width: 100%; margin: 0 !important; min-height: var(--hit-lg); padding-left: calc(var(--sp-4) + 1.2em) !important;
+  font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: var(--fw-bold); text-align: left;
+  background: var(--surface-2); border-radius: var(--r-md);
+}
+.bet-step {
+  margin: 0; min-height: var(--hit-lg); padding: 0; font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-lg);
+  --btn-bg: var(--surface-2); --btn-sh: none;
+}
+.bet-chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-1); }
+.bet-chip {
+  margin: 0; min-height: 38px; padding: 0 2px; font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  --btn-bg: transparent; --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg-2); border-radius: var(--r-sm);
+}
+.bet-chip.is-max { --btn-fg: var(--accent); --btn-bd: rgb(var(--accent-rgb) / .6); }
+@media (hover: hover) { .bet-chip:hover:not(:disabled) { --btn-fg: var(--fg); --btn-bd: var(--fg-3); } }
+
+/* ── Головна кнопка гри ─────────────────────────────────────────── */
+.game-cta, .btn-spin-premium {
+  --btn-bg: var(--accent); --btn-fg: var(--on-accent); --btn-bd: var(--ink-shadow); --btn-sh: var(--sh-2);
+  min-height: var(--hit-lg); padding: var(--sp-3) var(--sp-6);
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: .01em;
+  border-radius: var(--r-lg);
+}
+.game-cta:active:not(:disabled), .btn-spin-premium:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: none; }
+.game-cta:disabled, .btn-spin-premium:disabled { opacity: .55; }
+.btn-spin-premium { width: 100%; }
+
+/* Дві кнопки дії поруч (Більше/Менше, Взяти/Стоп) не мають вилазити за екран */
+.game-cta { min-width: 0; padding-inline: var(--sp-3); }
+@media (max-width: 420px) { .game-cta { font-size: var(--fs-md); } }

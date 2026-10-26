@@ -657,8 +657,8 @@
     <!-- ІГРИ -->
     <div id="tab-slots" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('slots')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('slots')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
 
       <!-- Free spins indicator -->
@@ -715,14 +715,6 @@
 
       <!-- Bet + Spin row -->
       <div style="background:rgb(var(--tint-rgb) / 0.03);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-xl);padding:14px;margin-bottom:12px;">
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-          <button onclick="setQuickBet('betAmountSlots',50)"   style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">50</button>
-          <button onclick="setQuickBet('betAmountSlots',100)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">100</button>
-          <button onclick="setQuickBet('betAmountSlots',250)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">250</button>
-          <button onclick="setQuickBet('betAmountSlots',500)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">500</button>
-          <button onclick="setQuickBet('betAmountSlots',1000)" style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">1k</button>
-          <button onclick="setQuickBet('betAmountSlots','max')"style="flex:1;background:var(--accent);border:1px solid rgb(var(--accent-rgb) / 0.4);border-radius:var(--r-sm);padding:7px 4px;color:var(--on-accent);font-size:11px;cursor:pointer;font-weight:800;min-width:40px;box-shadow:inset 0 -2px 4px rgb(var(--shade-rgb) / 0.25);transition:transform .14s var(--ease-tactile),box-shadow .14s;">MAX</button>
-        </div>
         <input id="betAmountSlots" type="number" value="100" style="margin-bottom:10px;">
         <button class="btn-spin-premium" id="slotsSpinBtn" onclick="spinSlots()">🎰 КРУТИТИ</button>
         <div style="font-size:10px;color:var(--fg-4);text-align:center;margin-top:6px;" id="slotsHint"></div>
@@ -732,8 +724,8 @@
     <!-- 💎 DIAMOND RUSH — другий слот -->
     <div id="tab-diamond" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('diamond')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('diamond')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
 
       <div style="background:linear-gradient(135deg,var(--bg),color-mix(in srgb, var(--special) 9%, var(--surface-1)),var(--bg));border:2px solid rgb(var(--special-rgb) / 0.35);border-radius:var(--r-xl);padding:18px;margin-bottom:12px;box-shadow:none;position:relative;overflow:hidden;">
@@ -767,14 +759,6 @@
       </div>
 
       <div style="background:rgb(var(--tint-rgb) / 0.03);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-xl);padding:14px;margin-bottom:12px;">
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-          <button onclick="setQuickBet('betAmountDiamond',50)"   style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">50</button>
-          <button onclick="setQuickBet('betAmountDiamond',100)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">100</button>
-          <button onclick="setQuickBet('betAmountDiamond',250)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">250</button>
-          <button onclick="setQuickBet('betAmountDiamond',500)"  style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">500</button>
-          <button onclick="setQuickBet('betAmountDiamond',1000)" style="flex:1;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 4px;color:var(--fg-2);font-size:11px;cursor:pointer;min-width:40px;box-shadow:var(--bevel), var(--elev-1);transition:transform .14s var(--ease-tactile),box-shadow .14s;">1k</button>
-          <button onclick="setQuickBet('betAmountDiamond','max')"style="flex:1;background:linear-gradient(155deg,color-mix(in srgb, var(--special) 16%, var(--surface-1)),var(--special) 45%,var(--special));border:1px solid rgb(var(--special-rgb) / 0.4);border-radius:var(--r-sm);padding:7px 4px;color:var(--on-special);font-size:11px;cursor:pointer;font-weight:800;min-width:40px;box-shadow:inset 0 -2px 4px rgb(var(--shade-rgb) / 0.25);transition:transform .14s var(--ease-tactile),box-shadow .14s;">MAX</button>
-        </div>
         <input id="betAmountDiamond" type="number" value="100" style="margin-bottom:10px;">
         <button class="btn-spin-premium" id="diamondSpinBtn" onclick="spinDiamondSlots()" style="background:linear-gradient(155deg,color-mix(in srgb, var(--special) 16%, var(--surface-1)),var(--special) 45%,var(--special));">💎 КРУТИТИ</button>
       </div>
@@ -789,7 +773,7 @@
         <picture><source srcset="/icons/roulette-hero.webp" type="image/webp"><img src="/icons/roulette-hero.jpg" loading="lazy" decoding="async" width="600" height="400" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="roulette"></picture>
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgb(var(--recess-rgb) / calc(0.35 * var(--recess-k))) 0%,rgb(var(--recess-rgb) / calc(0.98 * var(--recess-k))) 100%);"></div>
         <!-- Back btn -->
-        <button onclick="switchTab('lobby')" style="position:absolute;top:14px;left:14px;background:rgb(var(--recess-rgb) / calc(0.5 * var(--recess-k)));border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-lg);padding:8px 14px;color:var(--fg);font-size:13px;font-weight:700;cursor:pointer;z-index:10;">⬅</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <!-- Title overlay -->
         <div style="position:absolute;bottom:16px;left:0;right:0;text-align:center;">
           <div style="font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--fg);letter-spacing:3px;text-shadow:none;">GLOBAL ROULETTE</div>
@@ -905,8 +889,8 @@
     
     <div id="tab-crash" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('crash')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('crash')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <div class="crash-screen">
         <canvas class="crash-graph" id="crashCanvas" style="border-radius:var(--r-lg);"></canvas>
@@ -929,7 +913,7 @@
 
     <!-- ПОКЕР -->
     <div id="tab-poker" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div class="poker-table">
         <div style="text-align:center; color:var(--fg-2); font-size:12px; margin-bottom:10px;">🃏 VIDEO POKER — Оберіть карти для заміни</div>
         <div class="poker-cards" id="pokerCards"></div>
@@ -960,16 +944,16 @@
     </div>
     
     <div id="tab-chests" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div class="box"><div class="chests-grid" id="chestsGrid"></div></div>
       <div class="box"><input id="betAmountChests" type="number" value="100"><button class="btn-gold" id="chestsPlayBtn" onclick="startChests()">ГРАТИ 📦</button></div>
     </div>
     
     <div id="tab-mines" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">💣 MINES</div>
-        <button onclick="showGameHelp('mines')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-help" onclick="showGameHelp('mines')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
 
       <!-- Статус -->
@@ -1024,8 +1008,8 @@
     
     <div id="tab-plinko" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('plinko')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('plinko')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <div class="box">
         <div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div>
@@ -1338,7 +1322,7 @@
 
     <!-- TOWER CLIMB -->
     <div id="tab-tower" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="color:var(--accent);margin-bottom:4px;">🗼 Tower Climb</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Вибирай безпечні клітинки і піднімайся вище. Чим вище — тим більший множник!</div>
       <div class="box" style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
@@ -1382,8 +1366,8 @@
     <!-- HI-LO CARDS -->
     <div id="tab-hilo" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('hilo')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('hilo')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <h2 style="color:var(--info);margin-bottom:4px;">🃏 Hi-Lo Cards</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Вгадай: наступна карта вища чи нижча? Кожен раз правильна відповідь множить ставку!</div>
@@ -1418,8 +1402,8 @@
     <!-- DICE ROLL -->
     <div id="tab-dice" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('dice')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('dice')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <h2 style="color:var(--pos);margin-bottom:4px;">🎲 Dice Roll</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Вибери: випаде БІЛЬШЕ або МЕНШЕ вибраного числа. Чим рідший результат — тим більший виграш!</div>
@@ -1453,7 +1437,7 @@
 
     <!-- DOUBLE GAME -->
     <div id="tab-double" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="color:var(--special);margin-bottom:4px;">🎰 Double</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Постав на колір і отримай множник! Зелений — x14!</div>
       <div class="box" style="text-align:center;margin-bottom:12px;">
@@ -1752,7 +1736,7 @@
 
     <!-- ===== КЛАНИ ===== -->
     <div id="tab-clans" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="color:var(--accent);margin-bottom:4px;">🛡️ Клани</h2>
       <div style="color:var(--fg-3);font-size:13px;margin-bottom:15px;">Об'єднуйся з гравцями, виконуй спільні завдання</div>
 
@@ -1810,7 +1794,7 @@
       <!-- Шапка: назва, таймер скидання, призи періоду -->
       <div class="lb-hero">
         <div class="lb-hero-top">
-          <button class="lb-back" onclick="switchTab('more')" aria-label="Назад">⬅</button>
+          <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
           <div style="min-width:0;">
             <h2 class="lb-title">РЕЙТИНГИ</h2>
             <div class="lb-sub" id="lbSubtitle">Топ гравців за добу</div>
@@ -1862,7 +1846,7 @@
 
     <!-- ===== МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:10px;">Купуй нерухомість, збирай ренту, обанкруть суперника!</div>
 
@@ -2304,7 +2288,7 @@
 
     <!-- ===== КАРТИ (ДУРЕНЬ) ===== -->
     <div id="tab-cardgame" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="color:var(--accent);margin-bottom:4px;">🃏 Карти — Дурень</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:10px;">Класичний Дурень. Програв — платиш ставку!</div>
 
@@ -2386,7 +2370,7 @@
 
     <!-- ===== VIP СТАТУС ===== -->
     <div id="tab-vip" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="color:var(--accent); margin-bottom:4px;">👑 VIP Статус</h2>
       <div style="color:var(--fg-3); font-size:13px; margin-bottom:15px;">Чим більше граєш — тим вищий статус і більше привілеїв</div>
 
@@ -2416,7 +2400,7 @@
 
     <!-- ===== КВЕСТИ ===== -->
     <div id="tab-quests" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
         <h2 style="margin:0; color:var(--accent);">📋 Завдання</h2>
         <div id="questTimerDisplay" class="quest-timer"></div>
@@ -2429,7 +2413,7 @@
 
     <!-- ===== ЛУТ-БОКСИ ===== -->
     <div id="tab-lootboxes" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="color:var(--accent); margin-bottom:4px;">📦 Лут-Бокси</h2>
       <div style="color:var(--fg-3); font-size:13px; margin-bottom:20px;">Відкрий скриньку — отримай приз</div>
 
@@ -2480,7 +2464,7 @@
 
     <!-- ===== ПОГОДИННИЙ БОНУС ===== -->
     <div id="tab-hourly" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="color:var(--accent); margin-bottom:4px;">⏰ Погодинний бонус</h2>
       <div style="color:var(--fg-3); font-size:13px; margin-bottom:20px;">Заходь щогодини і забирай бонус</div>
 
@@ -2508,7 +2492,7 @@
     <div id="tab-admin" class="screen hidden" style="padding:0 0 100px;">
       <!-- Admin header -->
       <div style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)));padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid rgb(var(--accent-rgb) / 0.3);box-shadow:0 8px 20px -10px rgb(var(--shade-rgb) / 0.7);">
-        <button onclick="switchTab('profile')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:0;">⬅</button>
+        <button type="button" class="back-btn" onclick="switchTab('profile')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
         <div style="font-family:var(--font-display);font-size:15px;font-weight:900;color:var(--accent);text-shadow:none;">⚙️ АДМІН-ПАНЕЛЬ</div>
         <div style="font-size:11px;color:var(--fg-3);" id="adminPendingBadge"></div>
       </div>
@@ -3013,7 +2997,7 @@
     </div><!-- /tab-admin -->
     <div id="tab-blackjack" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">🃏 BLACKJACK</div>
         <div style="text-align:right;font-size:12px;color:var(--sub);">RTP: 99.5%<br><span style="color:var(--accent);">BJ платить 3:2</span></div>
       </div>
@@ -3094,8 +3078,8 @@
     <!-- КЕНО -->
     <div id="tab-keno" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('keno')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('keno')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <div class="box">
         <div style="color:var(--fg-2);font-size:12px;text-align:center;margin-bottom:10px;">Обери від 1 до 10 чисел (1–40)</div>
@@ -3112,8 +3096,8 @@
     <!-- СКРЕТЧ -->
     <div id="tab-scratch" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('scratch')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('scratch')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <div class="box">
         <div style="color:var(--fg-2);font-size:12px;text-align:center;margin-bottom:12px;">Натискай на клітинки щоб стерти 👆</div>
@@ -3129,9 +3113,9 @@
     <!-- LIMBO -->
     <div id="tab-limbo" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">🌀 LIMBO</div>
-        <button onclick="showGameHelp('limbo')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-help" onclick="showGameHelp('limbo')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
 
       <!-- Великий дисплей результату -->
@@ -3188,8 +3172,8 @@
     <!-- КОЛЕСО ФОРТУНИ -->
     <div id="tab-fortune" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button class="btn-outline" onclick="switchTab('lobby')" style="width:auto;padding:8px 14px;margin:0;">⬅ Лобі</button>
-        <button onclick="showGameHelp('fortune')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">❓ Правила</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <button type="button" class="game-help" onclick="showGameHelp('fortune')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
       <div class="box" style="text-align:center;">
         <div class="fortune-wheel-wrap">
@@ -3249,7 +3233,7 @@
 
     <!-- СЛОТІКИ — внутрішня валюта казино -->
     <div id="tab-slotiky" class="screen hidden">
-      <button class="btn-outline" onclick="switchTab('more')">⬅ Назад</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
 
       <!-- Balance -->
       <div style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);border-radius:var(--r-xl);padding:20px;margin:12px 0;text-align:center;position:relative;overflow:hidden;">
@@ -3771,7 +3755,7 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-horseracing" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--pos);">🏇 ГОНКИ</div>
         <div></div>
       </div>
@@ -3798,7 +3782,7 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-colorbet" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--neg);">🎨 COLOR BET</div>
         <div></div>
       </div>
@@ -3826,7 +3810,7 @@
     <div id="tab-chat" class="screen hidden" style="display:flex;flex-direction:column;position:fixed;inset:0;z-index:10;padding:0;padding-bottom:60px;">
       <!-- Header -->
       <div style="background:var(--surface-1);border-bottom:1px solid rgb(var(--info-rgb) / 0.15);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-        <button class="btn-outline" style="width:auto;padding:6px 12px;margin:0;font-size:13px;" onclick="switchTab('more')">⬅</button>
+        <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
         <div>
           <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--info);text-align:center;">💬 ЧАТИК</div>
           <div id="chatOnlineCount" style="font-size:10px;color:var(--pos);text-align:center;">● 0 онлайн</div>
@@ -3881,7 +3865,7 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-affiliate" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('more')">⬅ Назад</button>
+        <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
         <div style="font-family:var(--font-display);font-size:13px;font-weight:900;color:var(--accent);">👥 РЕФЕРАЛИ</div>
         <div></div>
       </div>
@@ -3911,9 +3895,9 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-balloon" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:15px;font-weight:900;color:var(--info);">🎈 BALLOON POP</div>
-        <button onclick="showGameHelp('balloon')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+        <button type="button" class="game-help" onclick="showGameHelp('balloon')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
 
       <!-- Multiplier display -->
@@ -3953,7 +3937,7 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-russianroulette" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
         <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--neg);">🔫 РУЛЕТКА РИЗИКУ</div>
         <div></div>
       </div>
@@ -3989,7 +3973,7 @@
     <!-- ═══════════════════════════════════ -->
     <div id="tab-quiz" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('more')">⬅ Назад</button>
+        <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
         <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--special);">🧠 QUIZ BATTLE</div>
         <div></div>
       </div>
@@ -4124,9 +4108,9 @@
   <!-- ══════════════ BACCARAT ══════════════ -->
   <div id="tab-baccarat" class="screen hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin:0;">⬅</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="margin:0;color:var(--accent);">🃏 Бакара</h2>
-      <button onclick="showGameHelp('baccarat')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓ Правила</button>
+      <button type="button" class="game-help" onclick="showGameHelp('baccarat')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="color:var(--fg-3);font-size:12px;margin-bottom:14px;">Зроби ставку: Гравець / Банкір / Нічия</div>
     <div class="box" style="margin-bottom:10px;">
@@ -4163,9 +4147,9 @@
   <!-- ══════════════ VIDEO POKER ══════════════ -->
   <div id="tab-videpoker" class="screen hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin:0;">⬅</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <h2 style="margin:0;color:var(--accent);">🎴 Відео Покер</h2>
-      <button onclick="showGameHelp('videpoker')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓ Правила</button>
+      <button type="button" class="game-help" onclick="showGameHelp('videpoker')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Jacks or Better — утримуй карти, замінюй решту</div>
     <div class="box" style="margin-bottom:10px;">
@@ -4199,7 +4183,7 @@
   <!-- ══════════════ ПРИВАТНІ ПОВІДОМЛЕННЯ ══════════════ -->
   <div id="tab-pm" class="screen hidden" style="padding:0;padding-bottom:100px;">
     <div style="background:var(--surface-1);border-bottom:1px solid rgb(var(--info-rgb) / 0.15);padding:12px 16px;display:flex;align-items:center;gap:12px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="margin:0;color:var(--info);font-family:var(--font-display);font-size:16px;">✉️ Повідомлення</h2>
     </div>
 
@@ -4248,9 +4232,9 @@
   <!-- ══════════════ DRAGON TOWER ══════════════ -->
   <div id="tab-dragon" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--neg);">🐉 DRAGON TOWER</div>
-      <button onclick="showGameHelp('dragon')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('dragon')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
       <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;">
@@ -4288,9 +4272,9 @@
   <!-- ══════════════ PENALTY KICK ══════════════ -->
   <div id="tab-penalty" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--pos);">⚽ PENALTY</div>
-      <button onclick="showGameHelp('penalty')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('penalty')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <!-- Goal visual -->
     <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:2px solid var(--pos);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;text-align:center;">
@@ -4315,9 +4299,9 @@
   <!-- ══════════════ BOWLING ══════════════ -->
   <div id="tab-bowling" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--info);">🎳 BOWLING</div>
-      <button onclick="showGameHelp('bowling')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('bowling')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <!-- Pins display -->
     <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:2px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;text-align:center;">
@@ -4342,9 +4326,9 @@
   <!-- ══════════════ ARCHERY ══════════════ -->
   <div id="tab-archery" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">🎯 ARCHERY</div>
-      <button onclick="showGameHelp('archery')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('archery')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <!-- Target -->
     <div style="background:var(--bg);border:2px solid rgb(var(--accent-rgb) / 0.3);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;text-align:center;">
@@ -4369,9 +4353,9 @@
   <!-- ══════════════ SIC BO ══════════════ -->
   <div id="tab-sicbo" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">🎲 SIC BO</div>
-      <button onclick="showGameHelp('sicbo')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('sicbo')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:2px solid rgb(var(--accent-rgb) / 0.3);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;text-align:center;">
       <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
@@ -4411,9 +4395,9 @@
   <!-- ══════════════ CARD WAR ══════════════ -->
   <div id="tab-cardwar" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--special);">⚔️ CARD WAR</div>
-      <button onclick="showGameHelp('cardwar')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('cardwar')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="display:flex;gap:12px;margin-bottom:14px;">
       <div style="flex:1;background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;">
@@ -4437,9 +4421,9 @@
   <!-- ══════════════ ШАХИ ══════════════ -->
   <div id="tab-chess" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">♟️ ШАХИ</div>
-      <button onclick="showGameHelp('chess')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('chess')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
 
     <!-- SETUP PANEL -->
@@ -4514,9 +4498,9 @@
   <!-- ══════════════ DUCK SHOOT ══════════════ -->
   <div id="tab-duckshoot" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button class="btn-outline" style="width:auto;padding:8px 14px;margin:0;" onclick="switchTab('lobby')">⬅ Лобі</button>
+      <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
       <div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--pos);">🦆 DUCK SHOOT</div>
-      <button onclick="showGameHelp('duckshoot')" style="background:rgb(var(--tint-rgb) / 0.07);border:1px solid rgb(var(--tint-rgb) / 0.15);border-radius:var(--r-xl);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">❓</button>
+      <button type="button" class="game-help" onclick="showGameHelp('duckshoot')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
     </div>
     <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:2px solid rgb(var(--pos-rgb) / 0.3);border-radius:var(--r-lg);padding:16px;margin-bottom:14px;">
       <div style="font-size:11px;color:var(--fg-4);margin-bottom:8px;">Клікай на качок! 10 качок пролітають по черзі</div>
@@ -4534,7 +4518,7 @@
   <!-- ══════════════ ЛОТЕРЕЯ ══════════════ -->
   <div id="tab-lottery" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="margin:0;color:var(--accent);">🎟️ Лотерея</h2>
     </div>
     <!-- Prize pool -->
@@ -4565,7 +4549,7 @@
   <!-- ══════════════ ІНВЕСТ-ПУЛ ══════════════ -->
   <div id="tab-investpool" class="screen hidden" style="padding:16px;padding-bottom:100px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button class="btn-outline" onclick="switchTab('more')" style="width:44px;padding:10px;margin:0;">⬅</button>
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
       <h2 style="margin:0;color:var(--pos);">📈 Інвест-Пул</h2>
     </div>
     <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:2px solid rgb(var(--pos-rgb) / 0.3);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;text-align:center;">
@@ -4602,7 +4586,7 @@
     <button class="btn-outline" onclick="switchTab('settings')" style="width:44px;padding:10px;margin-bottom:12px;">⬅</button>
     <h2 style="color:var(--accent);margin-bottom:4px;">🎨 Теми інтерфейсу</h2>
     <div style="color:var(--fg-3);font-size:12px;margin-bottom:14px;">Змінюй вигляд казіно</div>
-    <div id="themeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+    <div id="themeGrid" class="theme-grid"></div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════
@@ -4610,7 +4594,7 @@
   ══════════════════════════════════════════════════════ -->
   <!-- ══════════════ COINFLIP ══════════════ -->
   <div id="tab-coinflip" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
     <div style="text-align:center;margin-bottom:18px;">
       <div style="font-size:44px;margin-bottom:6px;">🪙</div>
       <h2 style="margin:0;font-family:var(--font-display);font-size:18px;color:var(--accent);">COINFLIP PvP</h2>
@@ -4627,13 +4611,7 @@
     <div id="cf-panel-create">
       <div class="box">
         <div class="section-header">💰 Сума ставки</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
-          <div onclick="setCfBet(50)"   class="cf-bet-btn" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴50</div>
-          <div onclick="setCfBet(100)"  class="cf-bet-btn" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴100</div>
-          <div onclick="setCfBet(250)"  class="cf-bet-btn" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴250</div>
-          <div onclick="setCfBet(500)"  class="cf-bet-btn" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴500</div>
-        </div>
-        <input type="number" id="cfBetInput" placeholder="Або введи суму..." style="text-align:center;">
+        <input type="number" id="cfBetInput" placeholder="Сума" style="text-align:center;">
         <div class="section-header">🪙 Оберіть сторону</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
           <div id="cf-side-heads" onclick="selectCfSide('heads')" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)));border:2px solid rgb(var(--accent-rgb) / 0.3);border-radius:var(--r-lg);padding:18px;text-align:center;cursor:pointer;transition:.15s;">
@@ -4662,7 +4640,7 @@
        ✊ ROCK-PAPER-SCISSORS PVP
   ══════════════════════════════════════════════════════ -->
   <div id="tab-rps" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
     <div style="text-align:center;margin-bottom:18px;">
       <div style="font-size:44px;margin-bottom:6px;">✊</div>
       <h2 style="margin:0;font-family:var(--font-display);font-size:18px;color:var(--accent);">КАМІНЬ-НОЖИЦІ</h2>
@@ -4676,13 +4654,7 @@
     <div id="rps-panel-create">
       <div class="box">
         <div class="section-header">💰 Ставка</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
-          <div onclick="setRpsBet(50)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴50</div>
-          <div onclick="setRpsBet(100)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴100</div>
-          <div onclick="setRpsBet(200)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴200</div>
-          <div onclick="setRpsBet(500)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴500</div>
-        </div>
-        <input type="number" id="rpsBetInput" placeholder="Або введи суму...">
+        <input type="number" id="rpsBetInput" placeholder="Сума">
         <button class="btn-gold" onclick="createRpsRoom()">✊ Знайти суперника</button>
       </div>
     </div>
@@ -4709,7 +4681,7 @@
        🔮 PREDICTION DUEL
   ══════════════════════════════════════════════════════ -->
   <div id="tab-predict" class="screen hidden">
-    <button class="btn-outline" onclick="switchTab('lobby')" style="width:44px;padding:10px;margin-bottom:14px;">⬅</button>
+    <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
     <div style="text-align:center;margin-bottom:18px;">
       <div style="font-size:44px;margin-bottom:6px;">🔮</div>
       <h2 style="margin:0;font-family:var(--font-display);font-size:18px;color:var(--accent);">PREDICTION DUEL</h2>
@@ -4723,13 +4695,7 @@
     <div id="pd-panel-create">
       <div class="box">
         <div class="section-header">💰 Ставка</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
-          <div onclick="setPdBet(100)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴100</div>
-          <div onclick="setPdBet(250)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴250</div>
-          <div onclick="setPdBet(500)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴500</div>
-          <div onclick="setPdBet(1000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;">₴1k</div>
-        </div>
-        <input type="number" id="pdBetInput" placeholder="Сума ставки...">
+        <input type="number" id="pdBetInput" placeholder="Сума">
         <div class="section-header" style="margin-top:4px;">🔢 Вгадай число від 1 до 100</div>
         <input type="number" id="pdGuessInput" placeholder="Число (1–100)" min="1" max="100">
         <button class="btn-gold" onclick="createPdRoom()">🔮 Створити кімнату</button>
