@@ -190,6 +190,24 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   assert.ok(tableSrc, "PLINKO_TABLE не знайдено в app.js");
   assert.deepStrictEqual(new Function("return " + tableSrc[1])(), GAMES.plinko.TABLE, "PLINKO_TABLE в app.js ≠ lib/games.js");
   assert.strictEqual(GAMES.plinko.parse({ risk: "insane" }), null);
+  // Keno: точний RTP для кожної кількості чисел (гіпергеометричний розподіл).
+  const Cn = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1); return r; };
+  for (let k = 1; k <= 10; k++) {
+    let e = 0;
+    for (let h = 0; h <= k; h++) e += ((Cn(k, h) * Cn(40 - k, 20 - h)) / Cn(40, 20)) * (GAMES.keno.PAY[k][h] || 0);
+    assert.ok(e > 0.9 && e < 0.97, `Keno ${k} чисел: RTP ${e}`);
+  }
+  const kr = GAMES.keno.play(100, { picks: [1, 2, 3] }, rng);
+  assert.strictEqual(new Set(kr.drawn).size, 20, "20 різних кульок");
+  assert.ok(kr.drawn.every((n) => n >= 1 && n <= 40));
+  assert.strictEqual(GAMES.keno.parse({ picks: [1, 1] }), null, "повтор числа");
+  assert.strictEqual(GAMES.keno.parse({ picks: [0] }), null);
+  assert.strictEqual(GAMES.keno.parse({ picks: Array.from({ length: 11 }, (_, i) => i + 1) }), null);
+  const appKeno = /const KENO_PAY = (\{[\s\S]*?\n\});/.exec(appSrc);
+  assert.deepStrictEqual(new Function("return " + appKeno[1])(), GAMES.keno.PAY, "KENO_PAY в app.js ≠ lib/games.js");
+  // Скретч: 96,4% звичайно; «удача новачка» лише для перших ігор.
+  const rs = rtpOf("scratch", {}, 300000);
+  assert.ok(rs > 0.93 && rs < 0.99, "Scratch RTP " + rs);
   assert.strictEqual(GAMES.bowling.parse({ power: 101 }), null);
   assert.strictEqual(GAMES.bowling.parse({ power: 50.5 }), null);
   assert.strictEqual(GAMES.penalty.parse({ zone: "center" }), null);

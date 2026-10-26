@@ -92,7 +92,8 @@ module.exports = async (req, res) => {
     }
 
     // 3) Результат і атомарний запис балансу (списання + виграш разом).
-    const outcome = game.play(bet, params, rng);
+    const ctx = body.game === "scratch" ? { luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : {};
+    const outcome = game.play(bet, params, rng, ctx);
     let insufficient = false;
     const tx = await dbTransaction(`users/${nick}/balance`, (cur) => {
       const balance = Number(cur) || 0;

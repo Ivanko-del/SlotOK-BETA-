@@ -1890,7 +1890,8 @@ function startChests(){
         d.className = "chest-item"; 
         d.textContent = "📦"; 
         d.onclick = () => { 
-            const w = Math.random() > 0.6 ? b*2.5 : 0; 
+            // 40% × 2.4 = 96% (було × 2.5 = рівно 100%, без переваги закладу)
+            const w = Math.random() > 0.6 ? Math.floor(b*2.4) : 0; 
             d.textContent = w ? "💰" : "💨"; 
             if(w){ db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w)); playSound('win'); notify(`+${w} ₴`, "success"); addToHistory(`Chests: +${w}`); } 
             else { playSound('click'); }
@@ -1923,10 +1924,14 @@ function startCrash() {
     document.getElementById('crashCashoutBtn').classList.remove('hidden'); 
     let m = 1.00; 
     // crashPoint: переважно 1.0–2.5x, зрідка вище
+    // 3% раундів — миттєвий краш на 1.00x (як у звичайних краш-іграх). Без
+    // нього автокешаут на ~1.05x давав RTP трохи понад 100% — гарантований плюс.
+    const instantCrash = Math.random() < 0.03;
     const crashRng = Math.random();
     const newPLuck = getNewPlayerLuck();
     let crashPoint;
-    if(newPLuck) { crashPoint = 1.3 + Math.random() * 5; }        // нові гравці: 1.3–6.3x
+    if(instantCrash && !newPLuck) { crashPoint = 1.0; }
+    else if(newPLuck) { crashPoint = 1.3 + Math.random() * 5; }        // нові гравці: 1.3–6.3x
     else if(crashRng < 0.45) { crashPoint = 1 + Math.random() * 0.5; }  // 45%: краш 1.0–1.5x
     else if(crashRng < 0.75) { crashPoint = 1.5 + Math.random() * 1.5; }// 30%: 1.5–3.0x
     else if(crashRng < 0.92) { crashPoint = 3 + Math.random() * 4; }    // 17%: 3–7x
@@ -2335,7 +2340,13 @@ function startBalloon() {
   document.getElementById('balloonStartMsg').style.display = 'none';
   document.getElementById('balloonBetDisplay').textContent = '₴'+formatNumber(b);
   spawnBalloons();
-  const popIn = 4000 + Math.random() * 12000;
+  // Раніше кулька лопалась через 4–16 с, а множник росте на 0.12 кожні 0.5 с —
+  // кешаут на 3.5 с давав гарантовані ×1.84. Тепер точка вибуху — як у Crash:
+  // P(дожити до ×x) = 0.97 / x, тобто RTP 97% за будь-якої стратегії.
+  const popMult = 0.97 / (1 - Math.random());               // (0.97, ∞)
+  const popTicks = Math.max(0, Math.ceil((popMult - 1) / 0.12));
+  // За 250 мс до тіку, на якому множник досяг би точки вибуху (перший тік — 500 мс).
+  const popIn = popTicks === 0 ? 300 : Math.min(popTicks * 500 - 250, 120000);
   balloonPopTimeout = setTimeout(() => { if(balloonActive) burstBalloon(); }, popIn);
   balloonInterval = setInterval(updateBalloonMult, 500);
 }
@@ -4952,26 +4963,39 @@ function clearKeno() {
   document.getElementById('kenoSelected').textContent = 'Обрано: 0 / 10';
 }
 
-function playKeno() {
+// Виплати Keno (20 кульок із 40) — та сама таблиця, що в lib/games.js.
+// Стара була від Keno «20 із 80» і при 20 із 40 давала RTP 150–763%.
+const KENO_PAY = {
+  1: [0, 1.9], 2: [0, 0.5, 2.8], 3: [0, 0, 1, 5], 4: [0, 0, 0.4, 1.5, 8],
+  5: [0, 0, 0.3, 0.8, 2.2, 10], 6: [0, 0, 0, 0.5, 1.2, 4, 16], 7: [0, 0, 0, 0.2, 0.7, 2, 6, 24],
+  8: [0, 0, 0, 0.2, 0.4, 1, 3, 10, 40], 9: [0, 0, 0, 0, 0.3, 0.6, 1.5, 5, 16, 80],
+  10: [0, 0, 0, 0, 0.1, 0.4, 1, 2.5, 7.5, 25, 125],
+};
+let kenoBusy = false;
+async function playKeno() {
+  if(kenoBusy) return;
   if(kenoSelected.size < 1) return notify('Оберіть хоча б 1 число', 'error');
   const b = validateBet(document.getElementById('betAmountKeno').value);
   if(!b) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  kenoBusy = true;
+  let srv;
+  try { srv = await serverPlay('keno', b, { picks: [...kenoSelected] }); } finally { kenoBusy = false; }
+  if(srv.mode === 'error') return;
 
-  // Тягнемо 20 чисел
-  const drawn = new Set();
-  while(drawn.size < 20) drawn.add(Math.floor(Math.random()*40)+1);
+  let drawn;
+  if(srv.mode === 'server') {
+    drawn = new Set(srv.r.drawn);
+  } else {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+    // Тягнемо 20 чисел
+    drawn = new Set();
+    while(drawn.size < 20) drawn.add(Math.floor(Math.random()*40)+1);
+  }
 
   const hits = [...kenoSelected].filter(n => drawn.has(n)).length;
   const total = kenoSelected.size;
-
-  // Мультиплікатори залежно від кількості вгадних
-  const multTable = {1:[0,3], 2:[0,1,5], 3:[0,0,2,10], 4:[0,0,1,4,20], 5:[0,0,1,3,8,40],
-    6:[0,0,0,2,5,15,60], 7:[0,0,0,1,3,8,25,100], 8:[0,0,0,1,2,5,15,50,200],
-    9:[0,0,0,0,2,4,10,30,100,500], 10:[0,0,0,0,1,3,8,20,60,200,1000]};
-  const mults = multTable[total] || [0];
-  const mult = mults[Math.min(hits, mults.length-1)] || 0;
-  const win = Math.floor(b * mult);
+  const mult = (KENO_PAY[total] || [0])[hits] || 0;
+  const win = srv.mode === 'server' ? srv.r.payout : Math.floor(b * mult);
 
   // Показати результат
   document.querySelectorAll('.keno-num').forEach(el => {
@@ -4984,7 +5008,7 @@ function playKeno() {
   document.getElementById('kenoSelected').innerHTML = `<b style="color:${win>0?'var(--green)':'var(--red)'}">Вгадано: ${hits}/${total} → ${win>0?'+'+win+' ₴':'Програш'}</b>`;
 
   if(win > 0) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+    if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     playSound('win'); notify(`🔢 Кено: +${win} ₴ (${hits} влучань)`, 'success');
     addToHistory(`Keno ${hits}/${total}: +${win}`);
   } else { addToHistory(`Keno ${hits}/${total}: -${b}`); }
@@ -4996,29 +5020,36 @@ function playKeno() {
 // СКРЕТЧ-КАРТКА
 // ============================================
 let scratchRevealed = 0, scratchValues = [], scratchBetAmt = 0, scratchDone = false;
+let scratchServerPaid = false; // виграш уже зарахував сервер при купівлі
 
-function buyScratch() {
+async function buyScratch() {
   const btn = document.getElementById('scratchBuyBtn');
   if(btn && btn.disabled) return;  // запобігаємо подвійному кліку
   if(btn) btn.disabled = true;
   const b = validateBet(document.getElementById('betAmountScratch').value);
   if(!b) { if(btn) btn.disabled = false; return; }
+  const srv = await serverPlay('scratch', b, {});
+  if(srv.mode === 'error') { if(btn) btn.disabled = false; return; }
   scratchBetAmt = b;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  scratchServerPaid = srv.mode === 'server';
+  if(!scratchServerPaid) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
   if(btn) btn.classList.add('hidden');
   if(btn) btn.disabled = false;
   scratchRevealed = 0; scratchDone = false;
   const symbols = ['💰','💎','7️','🍒','🔔','⭐','🍋','🎯','🃏','🎪'];
   scratchValues = [];
-  const r = Math.random();
-  const luck = getNewPlayerLuck();
-
-  // WIN RATES: Diamond 2%, Money 6%, Star 10%, else pure random (no 3-match)
-  const winChance = luck ? r * 0.4 : r; // lucky players have better odds
   let winSym = null;
-  if(winChance < 0.02)       winSym = '💎';
-  else if(winChance < 0.08)  winSym = '💰';
-  else if(winChance < 0.18)  winSym = '⭐';
+  if(scratchServerPaid) {
+    winSym = srv.r.symbol;
+  } else {
+    const r = Math.random();
+    const luck = getNewPlayerLuck();
+    const winChance = luck ? r * 0.4 : r; // lucky players have better odds
+    // ⭐ 8,8% замість 10%: раніше RTP був рівно 100% (як у lib/games.js scratch).
+    if(winChance < 0.02)       winSym = '💎';
+    else if(winChance < 0.08)  winSym = '💰';
+    else if(winChance < 0.168) winSym = '⭐';
+  }
   // 82%+ → no winning combination
 
   if(winSym) {
@@ -5076,7 +5107,7 @@ function finishScratch() {
 
   document.getElementById('scratchResult').innerHTML = `<b style="color:${win>0?'var(--green)':'#777'}">${msg}</b>`;
   if(win > 0) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+    if(!scratchServerPaid) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     playSound('win'); addToHistory(`Scratch: +${win}`);
   } else { addToHistory(`Scratch: -${scratchBetAmt}`); }
   setTimeout(() => document.getElementById('scratchBuyBtn').classList.remove('hidden'), 1500);
@@ -5416,18 +5447,23 @@ const BUILTIN_CHANGELOG = [
         type: 'improve',
         title: '⚖️ Ребаланс',
         items: [
-          'Penalty, Archery, Bowling і Plinko віддавали більше, ніж ставилось (до ×5 у середньому) — це ламало рейтинги й економіку. Тепер виплати як у решті ігор',
+          'Кілька ігор віддавали більше, ніж ставилось (Keno — до ×7,6 у середньому, Bowling — ×5, Penalty і Archery — ×2,5), а в Balloon і Hi-Lo був гарантований виграш. Це ламало рейтинги й економіку — тепер виплати як у решті ігор',
           'Penalty: гол — ×1.16 (шанс 5 із 6)',
           'Archery: 55% → ×1.75, 30% → ×3.2, центр 10% → ×9.7',
           'Bowling: страйк ×3.5, спейр ×1.25; надто сильний кидок може піти в жолоб — шукай правильну силу',
           'Plinko: нові коефіцієнти кошиків для всіх рівнів ризику; крайні кошики знову справді випадають',
+          'Keno: нова таблиця виплат для 20 кульок із 40',
+          'Hi-Lo: множник за кожне вгадування тепер залежить від шансу (ризиковане вгадування дає більше), а не завжди ×1.5',
+          'Balloon: кулька може лопнути будь-коли, а не лише після 4 секунд',
+          'Crash: зрідка ракета вибухає одразу на ×1.00, як у звичайному Crash',
+          'Скретч-картки і Magic Chests: виплати трохи знижено, щоб гра не була «в нуль»',
         ]
       },
       {
         type: 'improve',
         title: '🎲 Чесна гра',
         items: [
-          'Sic Bo, Card War, Plinko, Penalty, Archery і Bowling тепер теж рахує сервер, а не телефон',
+          'Sic Bo, Card War, Plinko, Keno, скретч-картки, Penalty, Archery і Bowling тепер теж рахує сервер, а не телефон',
         ]
       },
     ]
@@ -13687,8 +13723,22 @@ function renderHiloCard(card) {
   el.textContent = rank + card.suit;
 }
 
+// Множник кроку: 0.97 / P(вгадати), де P рахується по картах, що лишались у
+// колоді перед ходом (нічиї перетягуються, тому не враховуються).
+function hiloStepMult(curVal, dir, deck) {
+  let win = 0, lose = 0;
+  deck.forEach(c => { const v = cardValue(c.rank); if(v === curVal) return; ((dir === 'high') === (v > curVal)) ? win++ : lose++; });
+  if(win === 0) return 0;
+  // Без нижньої межі 1.0: «гарантований» хід (вище від двійки) дає ×0.97 —
+  // інакше на ньому можна було б безкоштовно накручувати множник.
+  return 0.97 * (win + lose) / win;
+}
 function hiloGuess(dir) {
   if(!hiloState || !hiloState.deck.length) return;
+  // Вгадати неможливо (напр. «вище» від туза) — не спалюємо ставку даремно.
+  if(hiloStepMult(cardValue(hiloState.currentCard.rank), dir, hiloState.deck) === 0) {
+    return notify(dir === 'high' ? 'Вищої карти вже не буде — обери «нижче»' : 'Нижчої карти вже не буде — обери «вище»', 'info');
+  }
   playSound('deal');
   const next = hiloState.deck.pop();
   const curVal = cardValue(hiloState.currentCard.rank);
@@ -13701,7 +13751,9 @@ function hiloGuess(dir) {
 
   if(correct) {
     hiloState.streak++;
-    hiloState.multiplier = parseFloat((hiloState.multiplier * 1.5).toFixed(2));
+    // Множник за реальним шансом вгадати (97%), а не фіксований ×1.5: раніше
+    // на двійці/тузі виграш був гарантований, а в середньому крок давав ~112%.
+    hiloState.multiplier = parseFloat((hiloState.multiplier * hiloStepMult(curVal, dir, hiloState.deck.concat([next]))).toFixed(2));
     hiloState.currentCard = next;
     renderHiloCard(next);
     playSound('win');
