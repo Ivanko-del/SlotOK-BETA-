@@ -2,25 +2,36 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0E1020">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3EEE4">
   <title>Сторінку не знайдено — SlotOK</title>
   <link rel="icon" href="/icons/icon-192.png">
+  <!-- Окрема статична сторінка без style.css: кольори — ті самі токени «Нічної друкарні» (DESIGN_SYSTEM.md). -->
   <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-           background: #050505; color: #eee; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; padding: 16px; box-sizing: border-box; }
-    .box { max-width: 360px; }
-    .code { font-size: 64px; font-weight: 800; color: #d4af37; letter-spacing: 2px; }
-    p { color: #aaa; line-height: 1.5; }
-    a { display: inline-block; margin-top: 12px; padding: 12px 22px; border-radius: 12px; background: #d4af37; color: #000; font-weight: 700; text-decoration: none; }
+    :root { color-scheme: dark light; --bg:#0E1020; --surface:#161A2D; --fg:#F2EDE3; --fg-2:#C3BFD0; --accent:#FF7A3D; --on-accent:#1A0E08; --primary:#3CCFBD; --ink:#05060E; }
+    @media (prefers-color-scheme: light) { :root { --bg:#F3EEE4; --surface:#FBF8F2; --fg:#1B1A2E; --fg-2:#45435C; --accent:#B23A0A; --on-accent:#fff; --primary:#096A5F; --ink:#1B1A2E; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px;
+      background: radial-gradient(circle, color-mix(in srgb, var(--primary) 22%, transparent) 1.2px, transparent 1.6px) 0 0 / 18px 18px, var(--bg);
+      color: var(--fg); font-family: Onest, system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; }
+    .box { max-width: 380px; padding: 32px 24px; background: var(--surface); border: 1.5px solid var(--fg); border-radius: 20px; box-shadow: 6px 6px 0 0 color-mix(in srgb, var(--accent) 75%, transparent); }
+    .code { font: 800 72px/1 Unbounded, system-ui, sans-serif; letter-spacing: -.04em; text-shadow: 3px 3px 0 color-mix(in srgb, var(--primary) 60%, transparent); }
+    h1 { font-size: 20px; margin: 16px 0 8px; }
+    p { color: var(--fg-2); line-height: 1.5; margin: 0 0 20px; }
+    a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border-radius: 12px;
+      background: var(--accent); color: var(--on-accent); border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 0 var(--ink); font-weight: 700; text-decoration: none; }
+    a:active { transform: translate(3px,3px); box-shadow: none; }
+    a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <div class="code">404</div>
-    <p>Такої сторінки немає. Можливо, посилання застаріло.</p>
+  <main class="box">
+    <div class="code" aria-hidden="true">404</div>
+    <h1>Такої сторінки немає</h1>
+    <p>Можливо, посилання застаріло або в ньому помилка.</p>
     <a href="/">На головну SlotOK</a>
-  </div>
+  </main>
 </body>
 </html>

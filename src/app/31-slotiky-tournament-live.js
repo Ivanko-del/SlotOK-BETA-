@@ -745,19 +745,12 @@ function drawBall(x, y, sport) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const bx = x * W, by = y * H;
-  const ballEmoji = { basketball:'🏀', hockey:'🏒', tennis:'🎾', csgo:'💀' };
-  const emoji = ballEmoji[sport] || null;
-
-  if(emoji) {
-    ctx.font = '14px serif';
-    ctx.fillText(emoji, bx-7, by+5);
-  } else {
-    ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
-  }
+  // Без емодзі на canvas (на різних телефонах вони різні) — м'яч малюємо самі.
+  ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
 
   ctx.beginPath(); ctx.ellipse(bx, by+8, 6, 2, 0, 0, Math.PI*2);
   ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();

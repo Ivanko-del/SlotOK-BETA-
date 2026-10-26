@@ -2,23 +2,11 @@
    SlotOK Casino — style.css
    All styles combined from index.html
    ============================================================ */
-
-    .hero-banner { width: 100%; min-height: 130px; background: linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--accent) 6%, var(--surface-1)), var(--bg)); border-radius: var(--r-xl); margin-bottom: 16px; border: 1px solid rgb(var(--accent-rgb) / 0.2); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; position:relative; overflow:hidden; box-shadow: none; }
-    .hero-title { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 5px; font-family:var(--font-display); letter-spacing:1px; }
     .game-thumb:hover, .game-card:hover { border-color: rgb(var(--accent-rgb) / 0.35); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
-
-    .game-card { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.04), transparent 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; margin-bottom: 10px; display:flex; align-items:center; gap:15px; cursor: pointer; transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; box-shadow: var(--bevel), var(--elev-1); }
-    .game-card:active { transform:scale(.98) translateY(1px); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
-    .game-icon { font-size: 36px; } .game-title { font-size: 15px; font-weight: 700; } .game-desc { font-size: 11px; color: var(--sub); margin-top:2px; }
 
     /* ІГРИ */
     .reels-container { background: var(--bg); border: 1px solid var(--accent); border-radius: var(--r-md); padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; box-shadow: inset 0 4px 14px rgb(var(--shade-rgb) / 0.7); }
     .reel { font-size: 45px; width: 70px; height: 90px; line-height: 90px; background: var(--paper); color: var(--paper-ink); border-radius: var(--r-sm); text-align: center; box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.08), 0 6px 14px -6px rgb(var(--shade-rgb) / 0.5); }
-
-    .bet-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; }
-    .bet-btn { padding: 10px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--fg-3); font-size: 11px; text-align: center; border: 1px solid var(--line); cursor: pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; }
-    .bet-btn:active { transform: translateY(1px) scale(.97); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
-    .bet-btn.selected { border-color: var(--accent); color: var(--fg); background: var(--surface-3); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.25); }
 
     .chests-grid { display: grid; gap: 8px; margin-bottom: 15px; grid-template-columns: repeat(3, 1fr); }
     .chest-item { background: var(--surface-2); border-radius: var(--r-sm); height: 70px; display: flex; align-items: center; justify-content: center; font-size: 35px; border:1px solid var(--line); cursor:pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s;}
@@ -66,8 +54,6 @@
     .avatar-large { width: 72px; height: 72px; background: linear-gradient(135deg,color-mix(in srgb, var(--accent) 9%, var(--surface-1)),color-mix(in srgb, var(--accent) 16%, var(--surface-1))); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; box-shadow: 0 6px 18px -6px rgb(var(--shade-rgb) / 0.5); }
     .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
 
-    .pay-btn.selected { border-color: var(--accent); color: var(--accent); background: rgb(var(--accent-rgb) / 0.1); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
-
     /* TELEGRAM ДЕПОЗИТ */
 
     .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
@@ -75,13 +61,9 @@
     .amount-btn.selected { border-color: var(--info); color: var(--info); background: rgb(var(--info-rgb) / 0.1); }
 
     /* ВИВІД */
-    .withdraw-method { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .wm-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: var(--fg-2); cursor: pointer; box-shadow: var(--bevel), var(--elev-1); }
     .wm-btn.selected { border-color: var(--green); color: var(--green); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
     /* Withdraw-panel-specific method chips (scoped so the shared deposit-panel .wm-btn base rule stays untouched) */
-    .withdraw-method .wm-btn { flex: 1; text-align: center; transition: transform .14s var(--ease-tactile), box-shadow .14s ease, background .15s ease, color .15s ease, border-color .15s ease; }
-    .withdraw-method .wm-btn:active { transform: scale(.94); }
-    .withdraw-method .wm-btn.selected { background: linear-gradient(155deg,var(--pos),var(--green) 45%,color-mix(in srgb, var(--pos) 26%, var(--surface-1))); border-color: transparent; color: var(--on-accent); font-weight: 800; box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
     .pending-withdraw { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 45%), var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--bevel), var(--elev-1); }
     .pw-status { font-size: 11px; padding: 4px 10px; border-radius: var(--r-xl); box-shadow: 0 2px 6px rgb(var(--shade-rgb) / 0.25); font-weight:700; white-space:nowrap; }
     .pw-pending { background: rgb(var(--accent-rgb) / 0.16); color: var(--accent); border: 1px solid rgb(var(--accent-rgb) / 0.3); }
@@ -100,7 +82,6 @@
     @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(var(--pos-rgb) / 0.4); } 50% { box-shadow: 0 0 0 8px transparent; } }
 
     /* СТАТУС ЗАЯВКИ */
-    .request-card { background: var(--surface-2); border-radius: var(--r-sm); border: 1px solid var(--line); padding: 12px; margin-bottom: 8px; box-shadow: var(--bevel), var(--elev-1); }
 
     /* БЛЕКДЖЕК */
     .bj-table { background: radial-gradient(ellipse, color-mix(in srgb, var(--pos) 14%, var(--surface-1)) 0%, var(--surface-1) 100%); border-radius: var(--r-lg); border: 3px solid var(--accent); padding: 15px; margin-bottom: 15px; box-shadow: inset 0 4px 20px rgb(var(--shade-rgb) / 0.5), 0 12px 30px -12px rgb(var(--shade-rgb) / 0.6); }
@@ -110,7 +91,6 @@
     .bj-card { width: 46px; height: 68px; background: var(--paper); border-radius: var(--r-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border: 1px solid var(--fg); box-shadow: 0 6px 16px -6px rgb(var(--shade-rgb) / 0.5); }
     .bj-card.red { color: var(--neg); }
     .bj-score { font-size: 18px; font-weight: bold; color: var(--accent); margin-top: 5px; }
-    .bj-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     /* КЕНО */
     .keno-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-bottom: 15px; }
@@ -129,7 +109,6 @@
 
     /* КОЛЕСО ФОРТУНИ */
     .fortune-wheel-wrap { position: relative; width: 260px; height: 260px; margin: 0 auto 15px; }
-    .fortune-wheel { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--accent); transition: 4s cubic-bezier(0.17,0.67,0.12,0.99); position: relative; box-shadow: var(--bevel), var(--elev-2); }
     .wheel-arrow { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 28px; z-index: 10; filter: drop-shadow(0 2px 4px rgb(var(--shade-rgb) / 1)); }
     .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; background: var(--accent); border-radius: 50%; border: 3px solid var(--accent); z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: var(--bevel), var(--elev-1); }
 
@@ -190,7 +169,6 @@
     .tower-row { display:flex;gap:6px; }
 
     /* ===== HILO GAME ===== */
-    .hilo-card { width:80px;height:110px;background:var(--paper);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;box-shadow: var(--bevel), var(--elev-1); }
 
     /* ===== DICE ===== */
     .dice-result-dot { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:var(--fg); box-shadow: 0 2px 4px rgb(var(--shade-rgb) / 0.4); }
@@ -257,16 +235,12 @@
     .bot-card { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--surface-1); border:1px solid var(--line); border-radius:var(--r-sm); margin-bottom:6px; box-shadow: var(--bevel), var(--elev-1); }
     .bot-avatar { width:36px; height:36px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; overflow:hidden; }
     .bot-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-    .bot-status { font-size:9px; padding:2px 7px; border-radius:var(--r-md); font-weight:bold; }
-    .bot-status.active   { background:rgb(var(--pos-rgb) / 0.2); color:var(--green); }
-    .bot-status.inactive { background:rgb(var(--recess-rgb) / calc(0.2 * var(--recess-k))); color:var(--fg-3); }
 
     /* ===== CHAT IMPROVEMENTS ===== */
     .chat-box { height: 300px; overflow-y: auto; background: rgb(var(--recess-rgb) / calc(0.3 * var(--recess-k))); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px; margin-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
     .chat-msg { margin-bottom: 10px; padding: 9px 12px; background: rgb(var(--tint-rgb) / 0.03); border-radius: var(--r-lg); border-left: 2px solid rgb(var(--tint-rgb) / 0.07); }
     .chat-msg.mine { border-left-color: var(--accent); background: rgb(var(--accent-rgb) / 0.05); }
     .chat-msg.admin-msg { border-left-color: var(--red); background: rgb(var(--neg-rgb) / 0.04); }
-    .chat-msg.bot-msg { border-left-color: var(--special); background: rgb(var(--special-rgb) / 0.05); }
     .chat-avatar-sm { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; vertical-align:middle; margin-right:5px; overflow:hidden; flex-shrink:0; }
     .chat-avatar-sm img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
     .chat-header-line { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
@@ -280,14 +254,8 @@
     .chat-nick:hover { text-decoration: underline; }
     .chat-time { color: var(--fg-4); font-size: 10px; margin-left: 5px; }
     .chat-input-row { display: flex; gap: 8px; }
-    .chat-system { color: var(--fg-4); font-style: italic; font-size: 12px; text-align: center; padding: 4px 0; }
-    .online-badge { display: inline-block; width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-right: 4px; }
 
     /* ДУЕЛІ */
-    .duel-card { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px; margin-bottom: 8px; }
-
-    .ds-waiting { background: rgb(var(--accent-rgb) / 0.2); color: var(--accent); }
-    .ds-active { background: rgb(var(--pos-rgb) / 0.2); color: var(--green); }
 
     /* ═══════════════════════════════════════
        CASINO LOBBY v2
@@ -309,10 +277,6 @@
     .t-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 
     /* РЕФЕРАЛИ */
-    .ref-link-box { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; word-break: break-all; font-size: 12px; color: var(--fg-2); }
-    .ref-stat { text-align: center; flex: 1; }
-    .ref-stat-num { font-size: 24px; font-weight: bold; color: var(--accent); }
-    .ref-stat-label { font-size: 11px; color: var(--fg-3); }
 
     /* ПУБЛІЧНИЙ ПРОФІЛЬ */
     .pub-profile { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.035), transparent 45%), var(--box); border-radius: var(--r-md); padding: 20px; box-shadow: var(--bevel), var(--elev-1); }
@@ -468,7 +432,6 @@
     }
     @media (prefers-reduced-motion: reduce) { .clan-banner.member { animation: none; } }
     .clan-name   { font-size: 22px; font-weight: 900; }
-    .clan-tag    { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
     .clan-stats  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
     .clan-stat   { background: rgb(var(--recess-rgb) / calc(0.3 * var(--recess-k))); border-radius: var(--r-md); padding: 10px 6px; text-align: center; box-shadow: inset 0 2px 6px rgb(var(--shade-rgb) / 0.35); }
     .clan-stat-v { font-size: 18px; font-weight: bold; color: var(--accent); }
@@ -618,7 +581,6 @@
     .mono-log-item.good  { color: var(--green); }
     .mono-log-item.bad   { color: var(--red); }
     .mono-log-item.info  { color: var(--accent); font-weight: bold; }
-    .mono-action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 
     /* ===== NAV DOT ===== */
 
@@ -653,7 +615,6 @@
     .mp-player-slot.empty  { border-style:dashed; color:var(--fg-4); }
     .mp-status-badge { font-size:10px; padding:3px 8px; border-radius:var(--r-md); font-weight:bold; }
     .mp-waiting { background:rgb(var(--accent-rgb) / 0.2); color:var(--accent); }
-    .mp-playing  { background:rgb(var(--pos-rgb) / 0.2); color:var(--green); }
 
     /* ===== СЛОТІКИ ===== */
     #tab-slotiky .section-header { color:var(--special); }
@@ -673,7 +634,6 @@
     #cashierCashbackPanel .btn-green:disabled { background:var(--surface-2);color:var(--fg-4); }
 
     /* ===== ESPORTS BADGE ===== */
-    .esport-badge { background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);color:var(--special);font-size:9px;font-weight:bold;padding:2px 6px;border-radius:var(--r-md);display:inline-block;margin-left:4px; }
 
     /* ===== LIVE MATCH TRACKER ===== */
     .tracker-container {
@@ -752,17 +712,6 @@
     .ev-text { color: var(--fg-2); }
     .ev-side-home { text-align: left; }
     .ev-side-away { text-align: right; margin-left: auto; }
-    .tracker-score-bar {
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid var(--line);
-      background: var(--surface-1);
-    }
-    .tracker-team { font-size: 12px; font-weight: bold; max-width: 100px; text-align: center; }
-    .tracker-score { font-size: 28px; font-weight: 900; color: var(--fg); }
-    .tracker-minute { font-size: 11px; color: var(--accent); text-align: center; }
     @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
     @keyframes ballMove {
       0% { transform: translate(var(--bx0), var(--by0)); }
@@ -827,13 +776,6 @@
     .vcard-back-logo { text-align:right; margin-top:8px; }
 
     /* CARD SKINS SHOP */
-    .skin-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .skin-item { border-radius:var(--r-lg); overflow:hidden; cursor:pointer; border:2px solid transparent; transition:0.2s; position:relative; }
-    .skin-item.active { border-color:var(--accent); }
-    .skin-item.locked { opacity:0.5; cursor:default; }
-    .skin-preview { height:70px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; color:rgba(255,255,255,0.8); }
-    .skin-info { background:rgb(var(--recess-rgb) / calc(0.4 * var(--recess-k))); padding:6px 10px; display:flex; justify-content:space-between; align-items:center; }
-    .skin-locked-overlay { position:absolute; inset:0; background:rgb(var(--recess-rgb) / calc(0.4 * var(--recess-k))); display:flex; align-items:center; justify-content:center; font-size:18px; }
 
     /* CARD ONBOARDING MODAL */
     .card-onboard-modal { position:fixed; inset:0; background:rgb(var(--recess-rgb) / calc(0.84 * var(--recess-k))); z-index:9900; display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -844,12 +786,6 @@
     .card-onboard-box button { box-shadow:none; letter-spacing:0; }
     
     /* BANK TAB */
-    .bank-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-
-    .bank-action-btn .ba-icon { font-size:26px; margin-bottom:6px; }
-    .bank-action-btn .ba-label { font-size:12px; font-weight:bold; color:var(--fg-2); }
-
-    .bank-tx-amount.plus  { color:var(--green); }
 
     /* Shimmer animation for card */
     @keyframes cardShimmer {
@@ -894,8 +830,6 @@
     /* ─── PRIVATE MESSAGES ─── */
     .pm-thread{display:flex;align-items:center;gap:12px;padding:12px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:6px;cursor:pointer;}
     .pm-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--on-accent);flex-shrink:0;cursor:pointer;}
-    .pm-bubble{max-width:80%;padding:9px 13px;border-radius:var(--r-lg);font-size:13px;line-height:1.5;word-break:break-word;margin-bottom:6px;}
-    .pm-bubble.mine{background:linear-gradient(135deg,color-mix(in srgb, var(--pos) 18%, var(--surface-1)),color-mix(in srgb, var(--pos) 22%, var(--surface-1)));border-bottom-right-radius:var(--r-xs);align-self:flex-end;margin-left:auto;}
 
     /* ─── ACTIVITY FEED ─── */
     .feed-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgb(var(--tint-rgb) / 0.03);border-radius:var(--r-sm);margin-bottom:5px;font-size:12px;animation:fadeIn .4s ease;box-shadow: var(--bevel);}
@@ -959,7 +893,6 @@
       position: relative;
       transition: transform .8s cubic-bezier(.36,.07,.19,.97);
     }
-    .rr-chamber { position:absolute; width:18px; height:18px; border-radius:50%; background:var(--surface-2); border:2px solid var(--line); }
 
     /* QUIZ BATTLE */
     .quiz-option {
@@ -1006,7 +939,6 @@
       padding:3px 9px 3px 11px; border-radius:0 0 0 var(--r-md);
       box-shadow: none;
     }
-    .dep-package-icon { font-size:19px; margin-bottom:4px; opacity:.9; }
     .dep-package-amount { font-size:23px; font-weight:900; color:var(--fg); font-family:var(--font-display); letter-spacing:.3px; }
     .dep-package-bonus { font-size:11px; color:var(--pos); font-weight:800; margin-top:5px; background:rgb(var(--pos-rgb) / 0.12); border-radius:var(--r-sm); padding:2px 7px; display:inline-block; }
     .dep-package-bonus.none { color:var(--fg-4); background:none; padding:0; font-weight:600; }
@@ -1023,16 +955,6 @@
     @keyframes returnBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
     /* SMART AUTOBET */
-    .autobet-condition {
-      background: rgb(var(--tint-rgb) / 0.03);
-      border: 1px solid rgb(var(--tint-rgb) / 0.08);
-      border-radius: var(--r-md);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
-    }
 
     /* PWA install btn */
     #pwaInstallBtn {
@@ -1053,20 +975,10 @@
     /* ═══ 50 NEW FEATURES — CSS ═══ */
 
     /* Quick bet buttons */
-    .quick-bet-row { display:flex; gap:5px; margin-bottom:6px; }
-    .quick-bet-btn {
-      flex:1; padding:7px 4px; background:rgb(var(--accent-rgb) / 0.08);
-      border:1px solid rgb(var(--accent-rgb) / 0.2); border-radius:var(--r-md);
-      font-size:11px; font-weight:700; color:var(--accent); cursor:pointer;
-      transition:.15s;
-    }
-    .quick-bet-btn:active { background:rgb(var(--accent-rgb) / 0.2); }
 
     /* Game search bar */
 
     /* Favorite games */
-    .fav-btn { position:absolute; bottom:5px; right:5px; font-size:14px; cursor:pointer; z-index:3; opacity:.5; transition:.2s; }
-    .fav-btn.active { opacity:1; filter:none; }
 
     /* Game sort tabs */
 
@@ -1075,10 +987,8 @@
     /* Sound control */
 
     /* Chat */
-    .chat-wrap { display:flex; flex-direction:column; height:320px; background:rgb(var(--recess-rgb) / calc(0.3 * var(--recess-k))); border:1px solid rgb(var(--tint-rgb) / 0.06); border-radius:var(--r-lg); overflow:hidden; }
     .chat-messages { flex:1; overflow-y:auto; padding:10px; scrollbar-width:thin; }
     .chat-msg { display:flex; gap:8px; margin-bottom:8px; animation:fadeIn .3s ease; }
-    .chat-msg-avatar { width:26px; height:26px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; }
     .chat-msg-body { background:rgb(var(--tint-rgb) / 0.04); border-radius:var(--r-md); padding:6px 10px; flex:1; }
     .chat-msg-user { font-size:10px; font-weight:700; color:var(--accent); margin-bottom:2px; }
     .chat-msg-text { font-size:12px; color:var(--fg-2); word-break:break-word; }
@@ -1101,13 +1011,8 @@
     .color-bet-btn.selected { border-color:var(--fg); transform:scale(1.08); }
 
     /* Virtual slots reel */
-    .slot-reel-wrap { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
-    .slot-reel { width:68px; height:90px; background:var(--bg); border:2px solid var(--line); border-radius:var(--r-md); overflow:hidden; position:relative; }
-    .slot-reel-inner { position:absolute; top:0; left:0; width:100%; transition:top .6s cubic-bezier(.22,1,.36,1); }
-    .slot-reel-symbol { height:90px; display:flex; align-items:center; justify-content:center; font-size:40px; }
 
     /* Turbo mode */
-    .turbo-indicator { display:flex; align-items:center; gap:6px; background:rgb(var(--accent-rgb) / 0.08); border:1px solid rgb(var(--accent-rgb) / 0.2); border-radius:var(--r-md); padding:5px 10px; font-size:11px; color:var(--accent); }
 
     /* Rakeback */
 
@@ -1129,23 +1034,15 @@
     .vip-progress-bar { height:100%; background:var(--special); border-radius:var(--r-md); transition:width 1s ease; }
 
     /* Turbo bet (double/half) */
-    .bet-adjust-row { display:flex; gap:4px; margin-top:4px; }
-    .bet-adj-btn { flex:1; padding:6px; background:rgb(var(--tint-rgb) / 0.04); border:1px solid rgb(var(--tint-rgb) / 0.06); border-radius:var(--r-sm); font-size:11px; color:var(--fg-3); cursor:pointer; text-align:center; transition:.15s; }
-    .bet-adj-btn:active { background:rgb(var(--accent-rgb) / 0.1); color:var(--accent); }
 
     /* Leaderboard sparkline */
-    .lb-spark { width:50px; height:16px; }
 
     /* Hot/cold badge */
-    .hot-badge { background:rgb(var(--neg-rgb) / 0.15); color:var(--neg); border:1px solid rgb(var(--neg-rgb) / 0.3); border-radius:var(--r-xs); font-size:8px; padding:1px 5px; font-weight:800; }
 
     /* Autobet strategies */
-    .strategy-card { background:rgb(var(--tint-rgb) / 0.03); border:1px solid rgb(var(--tint-rgb) / 0.07); border-radius:var(--r-lg); padding:12px; margin-bottom:6px; cursor:pointer; transition:.2s; }
-    .strategy-card.selected { border-color:var(--accent); background:rgb(var(--accent-rgb) / 0.06); }
 
     /* Real-time deposit approve animation */
     @keyframes reqFlash { 0%,100%{background:transparent} 50%{background:rgb(var(--pos-rgb) / 0.08)} }
-    .req-card.new-req { animation:reqFlash 1s ease 2; }
 
     /* ══════════════════════════════════════════════════
        ГЛОБАЛЬНІ АНІМАЦІЇ v69
@@ -1226,14 +1123,6 @@
     /* Winning jackpot banner */
 
     /* Premium slot machine */
-    .slot-machine-premium {
-      background:linear-gradient(135deg,var(--bg),var(--surface-1),var(--bg));
-      border:2px solid rgb(var(--accent-rgb) / 0.5);
-      border-radius:var(--r-xl);
-      padding:20px;
-      box-shadow:none;
-      animation:pulseGlow 3s ease-in-out infinite;
-    }
     .slot-reel-premium {
       background:linear-gradient(180deg,var(--bg),var(--surface-1),var(--bg));
       border:2px solid rgb(var(--accent-rgb) / 0.3);
@@ -1336,17 +1225,8 @@
     }
 
     /* Notification improved */
-    .notif-toast {
-      animation:notifIn .3s cubic-bezier(.34,1.56,.64,1) both;
-    }
-    .notif-toast.out {
-      animation:notifOut .3s ease forwards;
-    }
 
     /* Tab icons animate on select */
-    .nav-btn.active .nav-icon {
-      animation:heartbeat .5s ease;
-    }
 
     /* Lobby hero jackpot counter */
 
@@ -1372,13 +1252,6 @@
     /* Game tab back button */
 
     /* Slotiky premium */
-    .slotiky-pkg {
-      background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));
-      border:2px solid var(--special); border-radius:var(--r-lg);
-      padding:16px; text-align:center; cursor:pointer;
-      position:relative; overflow:hidden;
-      transition:.2s; animation:slideUp .4s ease both;
-    }
 
     /* Screen entry animation - only for non-auth screens */
     .screen:not(.hidden):not(#auth-screen) {
@@ -2195,9 +2068,6 @@
 }
 
 /* Анімоване число виграшу — рахує вгору */
-.win-number-countup {
-  font-variant-numeric: tabular-nums;
-}
 
 /* ═══════════════════════════════════════════════════════
    ОНБОРДИНГ — підсвітка + тултіп
@@ -2229,22 +2099,15 @@
    ЗАГАЛЬНІ МІКРО-АНІМАЦІЇ — більше "живого" по всьому сайту
 ═══════════════════════════════════════════════════════ */
 @keyframes softBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-.anim-bob { animation: softBob 2.4s ease-in-out infinite; }
 
 @keyframes ringPing {
   0%   { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.5); }
   100% { box-shadow: 0 0 0 12px transparent; }
 }
-.anim-ping { animation: ringPing 1.8s ease-out infinite; }
 
 @keyframes shimmerSweep {
   0%   { background-position: -150% 0; }
   100% { background-position: 250% 0; }
-}
-.anim-shimmer {
-  background: linear-gradient(100deg, transparent 30%, rgb(var(--tint-rgb) / 0.12) 45%, transparent 60%);
-  background-size: 200% 100%;
-  animation: shimmerSweep 2.8s ease-in-out infinite;
 }
 
 /* Кнопки — легкий тактильний відгук на будь-якому елементі з цим класом */
