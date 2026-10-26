@@ -326,9 +326,6 @@
     /* АДМІН РОЗШИРЕНИЙ — premium casino-lux treatment (v74) */
     .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     /* Admin panel tabs */
-    .adm-tab-btn { background:linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 55%), var(--bg);border:1px solid rgb(var(--accent-rgb) / 0.15);color:var(--accent);border-radius:var(--r-md);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
-    .adm-tab-btn:hover { border-color:rgb(var(--accent-rgb) / 0.4); color:var(--accent); box-shadow:var(--bevel), var(--glow-accent-soft); }
-    .adm-tab-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow:inset 0 -2px 5px rgb(var(--shade-rgb) / 0.2); }
     .adm-panel { display:none !important; }
     .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
 

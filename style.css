@@ -1724,9 +1724,6 @@ body > .screen, .container ~ .screen {
     /* АДМІН РОЗШИРЕНИЙ — premium casino-lux treatment (v74) */
     .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     /* Admin panel tabs */
-    .adm-tab-btn { background:linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 55%), var(--bg);border:1px solid rgb(var(--accent-rgb) / 0.15);color:var(--accent);border-radius:var(--r-md);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:var(--bevel); }
-    .adm-tab-btn:hover { border-color:rgb(var(--accent-rgb) / 0.4); color:var(--accent); box-shadow:var(--bevel), var(--glow-accent-soft); }
-    .adm-tab-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow:inset 0 -2px 5px rgb(var(--shade-rgb) / 0.2); }
     .adm-panel { display:none !important; }
     .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
 
@@ -3959,6 +3956,11 @@ body > .screen, .container ~ .screen {
 #activityFeed .feed-item:last-child { border-bottom: 0; }
 /* Декоративні великі іконки беруть тон контейнера, а не власний */
 .banner-deco .emj, .banner-deco .ic { color: inherit; }
+@media (max-width: 360px) {
+  .hero-card { padding: var(--sp-4); }
+  .hero-actions { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .hero-actions .btn-lg { font-size: var(--fs-md); padding-inline: var(--sp-2); min-height: 52px; }
+}
 /* ─── src/css/61-lobby.css ─── */
 /* ═══════════════════════════════════════════════════════════════════
    ЛОББІ (#tab-lobby): липкий пошук + один ряд фільтрів → сітка ігор.
@@ -4801,3 +4803,26 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 /* Дві кнопки дії поруч (Більше/Менше, Взяти/Стоп) не мають вилазити за екран */
 .game-cta { min-width: 0; padding-inline: var(--sp-3); }
 @media (max-width: 420px) { .game-cta { font-size: var(--fs-md); } }
+/* ─── src/css/66-admin.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   АДМІН-ПАНЕЛЬ (#tab-admin). Робочий інструмент: щільніше, ніж гравцю,
+   але ті самі токени. Вкладки — горизонтальна стрічка зі скролом
+   (на телефоні не стискаються в нечитабельне), таблиці — у .table-wrap.
+   ═══════════════════════════════════════════════════════════════════ */
+#tab-admin { font-size: var(--fs-sm); }
+.adm-tabs, #tab-admin .adm-tabs-row {
+  display: flex !important; flex-wrap: nowrap !important; gap: var(--sp-1) !important; overflow-x: auto; scrollbar-width: none;
+  margin: 0 0 var(--sp-4) !important; padding: var(--sp-2) 0 !important;
+  position: sticky; top: var(--header-h); z-index: var(--z-raised); background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.adm-tab-btn {
+  flex: none !important; width: auto !important; margin: 0 !important; min-height: 40px;
+  padding: 0 var(--sp-3) !important; font-size: var(--fs-sm) !important; font-weight: var(--fw-semibold); white-space: nowrap;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg-2);
+}
+.adm-tab-btn.active { --btn-bg: var(--fg); --btn-fg: var(--bg); --btn-bd: var(--fg); }
+#tab-admin table { min-width: 560px; }
+#tab-admin input, #tab-admin select, #tab-admin textarea { font-size: 16px; }
+@media (min-width: 1024px) {
+  #tab-admin .adm-panel.active { display: block; }
+}

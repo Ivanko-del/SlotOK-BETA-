@@ -2498,7 +2498,7 @@
       </div>
 
       <!-- Admin tab switcher -->
-      <div style="display:flex;gap:4px;padding:10px 12px;overflow-x:auto;border-bottom:1px solid var(--line);">
+      <div class="adm-tabs" role="tablist" aria-label="Розділи адмінки">
         <button class="adm-tab-btn active" id="admtb-requests" onclick="switchAdminTab('requests',this)">📥 Заявки <span id="adminRequestsBadge" style="background:var(--neg);color:var(--on-neg);border-radius:var(--r-md);padding:1px 6px;font-size:10px;display:none;">0</span></button>
         <button class="adm-tab-btn" id="admtb-stats"    onclick="switchAdminTab('stats',this)">📊 Статистика</button>
         <button class="adm-tab-btn" id="admtb-users"    onclick="switchAdminTab('users',this)">👥 Гравці</button>

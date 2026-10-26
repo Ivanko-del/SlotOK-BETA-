@@ -1,0 +1,22 @@
+/* ═══════════════════════════════════════════════════════════════════
+   АДМІН-ПАНЕЛЬ (#tab-admin). Робочий інструмент: щільніше, ніж гравцю,
+   але ті самі токени. Вкладки — горизонтальна стрічка зі скролом
+   (на телефоні не стискаються в нечитабельне), таблиці — у .table-wrap.
+   ═══════════════════════════════════════════════════════════════════ */
+#tab-admin { font-size: var(--fs-sm); }
+.adm-tabs, #tab-admin .adm-tabs-row {
+  display: flex !important; flex-wrap: nowrap !important; gap: var(--sp-1) !important; overflow-x: auto; scrollbar-width: none;
+  margin: 0 0 var(--sp-4) !important; padding: var(--sp-2) 0 !important;
+  position: sticky; top: var(--header-h); z-index: var(--z-raised); background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.adm-tab-btn {
+  flex: none !important; width: auto !important; margin: 0 !important; min-height: 40px;
+  padding: 0 var(--sp-3) !important; font-size: var(--fs-sm) !important; font-weight: var(--fw-semibold); white-space: nowrap;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg-2);
+}
+.adm-tab-btn.active { --btn-bg: var(--fg); --btn-fg: var(--bg); --btn-bd: var(--fg); }
+#tab-admin table { min-width: 560px; }
+#tab-admin input, #tab-admin select, #tab-admin textarea { font-size: 16px; }
+@media (min-width: 1024px) {
+  #tab-admin .adm-panel.active { display: block; }
+}

@@ -228,3 +228,8 @@
 #activityFeed .feed-item:last-child { border-bottom: 0; }
 /* Декоративні великі іконки беруть тон контейнера, а не власний */
 .banner-deco .emj, .banner-deco .ic { color: inherit; }
+@media (max-width: 360px) {
+  .hero-card { padding: var(--sp-4); }
+  .hero-actions { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .hero-actions .btn-lg { font-size: var(--fs-md); padding-inline: var(--sp-2); min-height: 52px; }
+}
