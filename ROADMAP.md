@@ -21,10 +21,23 @@
 Dice, Limbo (v102), Sic Bo, Card War, Plinko, Keno, Scratch, Penalty, Archery,
 Bowling (v103), Mines, Tower, Hi-Lo, Crash, Balloon (v104, `api/round.js`).
 Classic 777, Diamond Rush, Double, Fortune, Chests, Dragon Tower (v106),
-Blackjack (v107).
-Аудит RTP — BUGS.md B15/B17/B18. Ще на клієнті: покер, рулетка,
-PvP і мультиплеєр (там гроші переходять між гравцями — потрібен окремий
-серверний арбітр), бонуси/VIP/Battle Pass (нараховуються за даними клієнта).
+Blackjack (v107). Бонуси, кешбек, нагороди Battle Pass, VIP-пропуск і облік
+ставок серверних ігор (VIP/XP/кешбек) — `api/reward.js` + `lib/progress.js` (v108).
+Аудит RTP — BUGS.md B15/B17/B18.
+
+**Ще на клієнті** (функції в `app.js`, які досі пишуть баланс самі):
+- ігри: `dealPoker` (покер), `placeGrBet` (глобальна рулетка), `shootRR`
+  (російська рулетка), `startHorseRace`, `spinColorWheel`, `startQuiz`,
+  `startDuckShoot`, `startMonopoly`, `openLootbox` (лут-бокси),
+  `startChessVsAi`, `confirmRealSportBet` (спорт — див. №1);
+- PvP/мультиплеєр (`startCardGame`, `createCardRoom`, `createChessRoom`,
+  `joinChessRoom`, кімнати `mp_rooms`) — гроші переходять між гравцями,
+  потрібен окремий серверний арбітр;
+- квести (`trackQuest` → `claimQuest`), завдання клану (`claimClanTask`),
+  партнерські виплати (`claimAffiliateEarnings`), промокоди, магазин Слотіків,
+  перекази між гравцями;
+- прогрес від ігор зі списку вище (`addWager` пише вейджер/XP/кешбек сам,
+  якщо ставку не врахував сервер).
 
 **Що робити далі:** покроковий план — у SECURITY.md, розділ «План переносу ігор
 на сервер (C5)»: решта ігор «одним запитом» → ігри з кількома кроками →

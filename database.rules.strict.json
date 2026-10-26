@@ -134,6 +134,33 @@
         },
         "clanId": {
           ".write": "auth != null"
+        },
+        "lastDailyBonus": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "dailyStreak": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lastHourlyBonus": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "dailySpinDate": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lastPlayedAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "welcomeBackAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "cashbackTotalClaimed": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "bpClaimed": {
+          ".write": "auth != null && ((auth.uid === $u && !newData.exists()) || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        },
+        "bpBonusClaimed": {
+          ".write": "auth != null && ((auth.uid === $u && newData.val() === 0) || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
         }
       }
     },

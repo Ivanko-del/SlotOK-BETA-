@@ -22,6 +22,7 @@ const { getServiceAccount } = require("../lib/google-auth");
 const { parseBet, payFor } = require("../lib/games");
 const { SESSION_GAMES } = require("../lib/sessions");
 const { rng, fail, authNick, tooFast, blockedReason, moveBalance } = require("../lib/player");
+const { safeRecordWager } = require("../lib/progress");
 
 const sessionPath = (nick, game) => `game_sessions/${nick}/${game}`;
 
@@ -111,6 +112,8 @@ async function start(req, res, nick, game, def, body) {
     await dbUpdate(path, { status: "void" });
     return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: debit.balance });
   }
+  // Ставка списана — облік вейджеру/XP/кешбеку йде паралельно з роздачею.
+  const progressP = safeRecordWager(nick, bet);
   const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
   const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0 };
   if (def.finished(session.state)) {
@@ -119,10 +122,11 @@ async function start(req, res, nick, game, def, body) {
     const done = pay > 0 ? { ...session, status: "cashing", payout: pay } : { ...session, status: "lost", doneAt: Date.now() };
     await dbUpdate(path, done);
     const balance = pay > 0 ? await payOut(nick, game, done) : debit.balance;
-    return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance });
+    const progress = await progressP;
+    return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance, progress });
   }
-  await dbUpdate(path, session);
-  res.status(200).json({ ...publicView(def, session, false), balance: debit.balance });
+  const [progress] = await Promise.all([progressP, dbUpdate(path, session)]);
+  res.status(200).json({ ...publicView(def, session, false), balance: debit.balance, progress });
 }
 
 async function move(req, res, nick, game, def, body) {
@@ -183,12 +187,14 @@ async function move(req, res, nick, game, def, body) {
   if (outcome === "conflict") return fail(res, 409, "conflict", "Хід перетнувся з іншим — спробуй ще раз");
   if (outcome === "invalid") return fail(res, 400, "bad_move", "Такий хід неможливий");
   const s = load(def, tx.value);
-  if (outcome === "lost") return res.status(200).json({ ...publicView(def, s, true), payout: 0, ...(balanceAfterCost !== null ? { balance: balanceAfterCost } : {}) });
+  // Доплата (double/split/страховка) — теж ставка.
+  const progress = cost > 0 ? await safeRecordWager(nick, cost) : undefined;
+  if (outcome === "lost") return res.status(200).json({ ...publicView(def, s, true), payout: 0, ...(balanceAfterCost !== null ? { balance: balanceAfterCost } : {}), progress });
   if (outcome === "finished") {
     const balance = await payOut(nick, game, s);
-    return res.status(200).json({ ...publicView(def, { ...s, status: "done" }, true), payout: s.payout, balance });
+    return res.status(200).json({ ...publicView(def, { ...s, status: "done" }, true), payout: s.payout, balance, progress });
   }
-  res.status(200).json(publicView(def, s, outcome === "bust"));
+  res.status(200).json({ ...publicView(def, s, outcome === "bust"), progress });
 }
 
 // Crash/Balloon: «ще летить?» і кешаут за серверним часом.

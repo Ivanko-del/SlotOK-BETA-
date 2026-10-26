@@ -40,8 +40,8 @@ assert.strictEqual(shownLevel(0), 1);        // новий гравець — "�
 assert.strictEqual(shownLevel(999), 1);
 assert.strictEqual(shownLevel(1000), 2);     // рівно на межі вже другий рівень
 assert.strictEqual(shownLevel(2500), 3);
-assert.ok(new RegExp("const BP_XP_PER_LEVEL = " + BP_XP_PER_LEVEL + ";").test(app),
-  "BP_XP_PER_LEVEL in app.js drifted from the value pinned here");
+assert.strictEqual(require("../shared/rewards").BP_XP_PER_LEVEL, BP_XP_PER_LEVEL,
+  "BP_XP_PER_LEVEL in shared/rewards.js drifted from the value pinned here");
 
 // Назви сезонів доїжджають до шапки. (Суцільність самої таблиці BP_SEASONS
 // перевіряє selfcheck-bp-season.js.)

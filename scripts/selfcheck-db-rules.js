@@ -136,6 +136,12 @@ async function strict() {
   assert.strictEqual(await alice.put("users/alice/lastSeen", 5), OK);
   assert.strictEqual(await alice.patch("users/alice", { lastSeen: 6, avatar: "😎" }), OK, "update() кількох полів");
   assert.strictEqual(await alice.put("users/mallory", { balance: 1e9 }), NO, "створення акаунта в обхід сервера");
+  assert.strictEqual(await alice.put("users/alice/lastDailyBonus", 0), NO, "скинути таймер щоденного бонусу");
+  assert.strictEqual(await alice.put("users/alice/welcomeBackAt", 0), NO, "повторний бонус повернення");
+  assert.strictEqual(await alice.put("users/alice/bpClaimed/f50", null), OK, "обнулити нагороди нового сезону");
+  assert.strictEqual(await alice.put("users/alice/bpClaimed", { f50: true }), NO, "відмітити нагороду без сервера");
+  assert.strictEqual(await alice.put("users/alice/bpBonusClaimed", 0), OK);
+  assert.strictEqual(await alice.put("users/alice/bpBonusClaimed", -5), NO, "відкрити скрині вдруге");
   assert.strictEqual(await owner.put("users/alice/isAdmin", true), OK, "власник сайту призначає адміна");
   assert.strictEqual(await alice.put("users/bob/banned", true), OK, "новий адмін банить");
   assert.strictEqual(await bob.post("users/alice/history", { text: "PvP" }), OK, "запис в історію суперника");

@@ -112,6 +112,19 @@ function build(strict) {
       cardTx: { ...userFieldOwner, $t: { ".write": "auth != null && !data.exists()" } },
       // Вступ до клану підтверджує власник/офіцер клану, тобто чужий гравець.
       clanId: { ".write": "auth != null" },
+      // Відмітки «нагороду вже забрано» ставить сервер (api/reward.js). Строгі
+      // правила вмикаються лише разом із серверним входом, тобто браузер у
+      // цьому режимі нагороди сам не видає — і не може скинути собі таймер.
+      lastDailyBonus: adminOnly,
+      dailyStreak: adminOnly,
+      lastHourlyBonus: adminOnly,
+      dailySpinDate: adminOnly,
+      lastPlayedAt: adminOnly,
+      welcomeBackAt: adminOnly,
+      cashbackTotalClaimed: adminOnly,
+      // Нагороди Battle Pass: власник може лише обнулити (новий сезон у addBpXP).
+      bpClaimed: { ".write": `auth != null && ((auth.uid === $u && !newData.exists()) || ${isAdmin})` },
+      bpBonusClaimed: { ".write": `auth != null && ((auth.uid === $u && newData.val() === 0) || ${isAdmin})` },
     });
     // Іменовані поля не підпадають під "$field", тож кожне поле без власного
     // .write (аватарки, email, …) явно віддаємо власнику.
