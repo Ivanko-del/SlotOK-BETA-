@@ -149,6 +149,10 @@
       ".read": false,
       ".write": false
     },
+    "game_rounds": {
+      ".read": false,
+      ".write": false
+    },
     "telegram_state": {
       ".read": false,
       ".write": false
@@ -183,7 +187,7 @@
         "time"
       ],
       "$m": {
-        ".write": "auth != null",
+        ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('sender').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000)) || (!newData.exists() && data.child('sender').val() === auth.uid))",
         "sender": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -222,7 +226,7 @@
         "ts"
       ],
       "$m": {
-        ".write": "auth != null",
+        ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('user').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000)) || (!newData.exists() && data.child('user').val() === auth.uid))",
         "user": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -253,6 +257,13 @@
         "msg": {
           ".validate": "newData.isString() && newData.val().length <= 4000"
         }
+      }
+    },
+    "chat_rate": {
+      ".read": false,
+      "$u": {
+        ".write": "auth != null && auth.uid === $u",
+        ".validate": "newData.isNumber() && newData.val() === now"
       }
     },
     "clan_chats": {

@@ -150,6 +150,35 @@ function friendlySignInError(e) {
   if(/too-many|TOO_MANY/i.test(raw)) return 'Забагато спроб. Зачекай кілька хвилин.';
   return 'Вхід тимчасово недоступний. Спробуй за кілька хвилин, а якщо не минеться — напиши в підтримку.';
 }
+// ── Серверні ігри (api/play.js) ──
+// Результат і баланс рахує сервер. Повертає:
+//   { mode: 'server', r }  — зіграно на сервері, баланс уже змінено там;
+//   { mode: 'legacy' }     — серверні ігри не налаштовані, граємо як раніше;
+//   { mode: 'error' }      — помилку вже показано гравцю, ставку не прийнято.
+async function serverPlay(game, bet, params) {
+  if(!(await serverAuthEnabled())) return { mode: 'legacy' };
+  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error' }; }
+  const id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2))).replace(/[^A-Za-z0-9_-]/g, '');
+  const send = async () => fetch('/api/play', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() },
+    body: JSON.stringify({ game, bet, params, id }),
+  });
+  let res;
+  try { res = await send(); }
+  catch(e) {
+    // Обрив мережі: повтор з тим самим id безпечний — сервер не зіграє двічі.
+    try { res = await send(); } catch(e2) { notify('Немає зʼєднання. Перевір інтернет.', 'error'); return { mode: 'error' }; }
+  }
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  if(res.status === 200) return { mode: 'server', r: data };
+  if(res.status === 503 && data.error === 'not_configured') return { mode: 'legacy' };
+  notify(data.message || 'Ставку не прийнято. Спробуй ще раз.', 'error');
+  return { mode: 'error' };
+}
+
 async function serverSignIn(token) {
   if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
   await firebase.auth().signInWithCustomToken(token);
@@ -786,11 +815,38 @@ document.addEventListener('error', e => {
   el.src = IMG_FALLBACK;
 }, true);
 
-function notifyBot(type, id, extra) {
+// Заголовок з Firebase ID token, якщо гравець увійшов через сервер (api/auth).
+// Сервер за ним знає, ХТО надсилає — без цього будь-хто міг слати чужим
+// гравцям у Telegram фейкові «виграш +N₴».
+async function authHeaders() {
   try {
+    const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    return u ? { Authorization: 'Bearer ' + await u.getIdToken() } : {};
+  } catch(e) { return {}; }
+}
+// Повідомлення гравця в загальний чат разом з міткою часу chat_rate/<нік>.
+// У строгих правилах база пропускає повідомлення, лише якщо попереднє було
+// щонайменше 2 с тому — антиспам, який не обійти з консолі браузера.
+function postChatMessage(node, msg) {
+  const key = db.ref(node).push().key;
+  return db.ref().update({
+    [node + '/' + key]: msg,
+    ['chat_rate/' + currentUser]: firebase.database.ServerValue.TIMESTAMP,
+  }).catch(e => {
+    if(!/permission/i.test(String(e && (e.code || e.message)))) return console.warn(e);
+    // Опубліковані правила ще не знають chat_rate — пишемо як раніше. У строгих
+    // правилах такий запис без мітки часу не пройде, тож антиспам не обійти.
+    return db.ref(node + '/' + key).set(msg)
+      .catch(() => notify('⏳ Не так швидко — зачекай пару секунд', 'error'));
+  });
+}
+
+async function notifyBot(type, id, extra) {
+  try {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, type === 'player-ping' ? await authHeaders() : {});
     fetch('/api/notify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(Object.assign({ type, id }, extra)),
     }).catch(() => {});
   } catch(e) { console.warn(e); }
@@ -1834,7 +1890,8 @@ function startChests(){
         d.className = "chest-item"; 
         d.textContent = "📦"; 
         d.onclick = () => { 
-            const w = Math.random() > 0.6 ? b*2.5 : 0; 
+            // 40% × 2.4 = 96% (було × 2.5 = рівно 100%, без переваги закладу)
+            const w = Math.random() > 0.6 ? Math.floor(b*2.4) : 0; 
             d.textContent = w ? "💰" : "💨"; 
             if(w){ db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w)); playSound('win'); notify(`+${w} ₴`, "success"); addToHistory(`Chests: +${w}`); } 
             else { playSound('click'); }
@@ -1867,10 +1924,14 @@ function startCrash() {
     document.getElementById('crashCashoutBtn').classList.remove('hidden'); 
     let m = 1.00; 
     // crashPoint: переважно 1.0–2.5x, зрідка вище
+    // 3% раундів — миттєвий краш на 1.00x (як у звичайних краш-іграх). Без
+    // нього автокешаут на ~1.05x давав RTP трохи понад 100% — гарантований плюс.
+    const instantCrash = Math.random() < 0.03;
     const crashRng = Math.random();
     const newPLuck = getNewPlayerLuck();
     let crashPoint;
-    if(newPLuck) { crashPoint = 1.3 + Math.random() * 5; }        // нові гравці: 1.3–6.3x
+    if(instantCrash && !newPLuck) { crashPoint = 1.0; }
+    else if(newPLuck) { crashPoint = 1.3 + Math.random() * 5; }        // нові гравці: 1.3–6.3x
     else if(crashRng < 0.45) { crashPoint = 1 + Math.random() * 0.5; }  // 45%: краш 1.0–1.5x
     else if(crashRng < 0.75) { crashPoint = 1.5 + Math.random() * 1.5; }// 30%: 1.5–3.0x
     else if(crashRng < 0.92) { crashPoint = 3 + Math.random() * 4; }    // 17%: 3–7x
@@ -2201,20 +2262,29 @@ function cashoutMines() {
 
 // --- Плінко ---
 let plinkoRisk = 'med';
+// Одна таблиця на всі варіанти Plinko; така сама — у lib/games.js (сервер).
+// Було RTP понад 100% на всіх рівнях (а ваги low/med в сумі давали 1,2 і 1,05,
+// тож крайні кошики не випадали взагалі); тепер ваги = 1 і RTP ≈ 96–97%.
+const PLINKO_TABLE = {
+  low:  { weights: [0.04, 0.12, 0.20, 0.28, 0.20, 0.12, 0.04],   mults: [1.4, 1.2, 1.0, 0.6, 1.0, 1.2, 1.4] },
+  med:  { weights: [0.07, 0.11, 0.19, 0.26, 0.19, 0.11, 0.07],   mults: [3, 1.3, 0.6, 0.1, 0.6, 1.3, 3] },
+  high: { weights: [0.008, 0.03, 0.115, 0.694, 0.115, 0.03, 0.008], mults: [20, 5, 1.5, 0, 1.5, 5, 20] },
+};
+function plinkoBucketFor(r, risk) {
+  const w = PLINKO_TABLE[risk].weights;
+  let acc = 0;
+  for(let i = 0; i < w.length; i++) { acc += w[i]; if(r < acc) return i; }
+  return w.length - 1;
+}
 function setPlinkoRisk(r, el) {
   plinkoRisk = r;
   document.querySelectorAll('.plinko-risk').forEach(b=>{
     b.style.opacity='0.5'; b.classList.remove('active');
   });
   if(el){el.style.opacity='1'; el.classList.add('active');}
-  const mults = {
-    low:   [1.5,1.3,1.1,0.6,1.1,1.3,1.5],
-    med:   [5,2,1,0.2,1,2,5],
-    high:  [20,5,1.5,0,1.5,5,20]
-  };
   const bkts = document.querySelectorAll('.plinko-buckets .bucket');
   if(bkts.length) {
-    mults[r].forEach((m,i)=>{ if(bkts[i]) bkts[i].textContent='x'+m; });
+    PLINKO_TABLE[r].mults.forEach((m,i)=>{ if(bkts[i]) bkts[i].textContent='x'+m; });
   }
 }
 
@@ -2227,22 +2297,11 @@ function dropPlinko() {
   playSound('click');
   const ball = document.getElementById('plinkoBall');
   ball.style.display = 'block';
-  // Risk-based distribution
-  const riskWeights = {
-    low:  [0.05,0.15,0.25,0.35,0.25,0.15,0.05],
-    med:  [0.08,0.12,0.20,0.25,0.20,0.12,0.08],
-    high: [0.12,0.08,0.12,0.20,0.12,0.08,0.12]
-  };
-  const w = riskWeights[plinkoRisk];
-  const r = Math.random(), cum = [];
-  w.reduce((s,v,i)=>{ cum[i]=(s+v); return s+v; }, 0);
-  let bucketIndex = cum.findIndex(c=>r<c);
-  if(bucketIndex<0) bucketIndex=3;
+  const bucketIndex = plinkoBucketFor(Math.random(), plinkoRisk);
   const targetLeft=(bucketIndex*14)+7;
   ball.animate([{top:'0',left:'50%'},{top:'100%',left:targetLeft+'%'}],{duration:1200,fill:'forwards',easing:'ease-in'});
-  const mults = {low:[1.5,1.3,1.1,0.6,1.1,1.3,1.5],med:[5,2,1,0.2,1,2,5],high:[20,5,1.5,0,1.5,5,20]};
   setTimeout(()=>{
-    const mult = mults[plinkoRisk][bucketIndex];
+    const mult = PLINKO_TABLE[plinkoRisk].mults[bucketIndex];
     const win = Math.floor(bet*mult);
     if(mult>0){ db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win)); }
     if(win>bet){ playSound('win'); notify('🔻 +'+win+'₴ (×'+mult+')', 'success'); addToHistory('Plinko: +'+win); trackLbStat('wins',win); }
@@ -2281,7 +2340,13 @@ function startBalloon() {
   document.getElementById('balloonStartMsg').style.display = 'none';
   document.getElementById('balloonBetDisplay').textContent = '₴'+formatNumber(b);
   spawnBalloons();
-  const popIn = 4000 + Math.random() * 12000;
+  // Раніше кулька лопалась через 4–16 с, а множник росте на 0.12 кожні 0.5 с —
+  // кешаут на 3.5 с давав гарантовані ×1.84. Тепер точка вибуху — як у Crash:
+  // P(дожити до ×x) = 0.97 / x, тобто RTP 97% за будь-якої стратегії.
+  const popMult = 0.97 / (1 - Math.random());               // (0.97, ∞)
+  const popTicks = Math.max(0, Math.ceil((popMult - 1) / 0.12));
+  // За 250 мс до тіку, на якому множник досяг би точки вибуху (перший тік — 500 мс).
+  const popIn = popTicks === 0 ? 300 : Math.min(popTicks * 500 - 250, 120000);
   balloonPopTimeout = setTimeout(() => { if(balloonActive) burstBalloon(); }, popIn);
   balloonInterval = setInterval(updateBalloonMult, 500);
 }
@@ -3370,7 +3435,7 @@ function sendChatMsg() {
     msg.imgUrl = chatPendingImage;
     if(chatPendingIsVideo) msg.isVideo = true;
   }
-  db.ref('global_chat').push(msg);
+  postChatMessage('global_chat', msg);
   inp.value = '';
   clearChatImage();
 }
@@ -4898,26 +4963,39 @@ function clearKeno() {
   document.getElementById('kenoSelected').textContent = 'Обрано: 0 / 10';
 }
 
-function playKeno() {
+// Виплати Keno (20 кульок із 40) — та сама таблиця, що в lib/games.js.
+// Стара була від Keno «20 із 80» і при 20 із 40 давала RTP 150–763%.
+const KENO_PAY = {
+  1: [0, 1.9], 2: [0, 0.5, 2.8], 3: [0, 0, 1, 5], 4: [0, 0, 0.4, 1.5, 8],
+  5: [0, 0, 0.3, 0.8, 2.2, 10], 6: [0, 0, 0, 0.5, 1.2, 4, 16], 7: [0, 0, 0, 0.2, 0.7, 2, 6, 24],
+  8: [0, 0, 0, 0.2, 0.4, 1, 3, 10, 40], 9: [0, 0, 0, 0, 0.3, 0.6, 1.5, 5, 16, 80],
+  10: [0, 0, 0, 0, 0.1, 0.4, 1, 2.5, 7.5, 25, 125],
+};
+let kenoBusy = false;
+async function playKeno() {
+  if(kenoBusy) return;
   if(kenoSelected.size < 1) return notify('Оберіть хоча б 1 число', 'error');
   const b = validateBet(document.getElementById('betAmountKeno').value);
   if(!b) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  kenoBusy = true;
+  let srv;
+  try { srv = await serverPlay('keno', b, { picks: [...kenoSelected] }); } finally { kenoBusy = false; }
+  if(srv.mode === 'error') return;
 
-  // Тягнемо 20 чисел
-  const drawn = new Set();
-  while(drawn.size < 20) drawn.add(Math.floor(Math.random()*40)+1);
+  let drawn;
+  if(srv.mode === 'server') {
+    drawn = new Set(srv.r.drawn);
+  } else {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+    // Тягнемо 20 чисел
+    drawn = new Set();
+    while(drawn.size < 20) drawn.add(Math.floor(Math.random()*40)+1);
+  }
 
   const hits = [...kenoSelected].filter(n => drawn.has(n)).length;
   const total = kenoSelected.size;
-
-  // Мультиплікатори залежно від кількості вгадних
-  const multTable = {1:[0,3], 2:[0,1,5], 3:[0,0,2,10], 4:[0,0,1,4,20], 5:[0,0,1,3,8,40],
-    6:[0,0,0,2,5,15,60], 7:[0,0,0,1,3,8,25,100], 8:[0,0,0,1,2,5,15,50,200],
-    9:[0,0,0,0,2,4,10,30,100,500], 10:[0,0,0,0,1,3,8,20,60,200,1000]};
-  const mults = multTable[total] || [0];
-  const mult = mults[Math.min(hits, mults.length-1)] || 0;
-  const win = Math.floor(b * mult);
+  const mult = (KENO_PAY[total] || [0])[hits] || 0;
+  const win = srv.mode === 'server' ? srv.r.payout : Math.floor(b * mult);
 
   // Показати результат
   document.querySelectorAll('.keno-num').forEach(el => {
@@ -4930,7 +5008,7 @@ function playKeno() {
   document.getElementById('kenoSelected').innerHTML = `<b style="color:${win>0?'var(--green)':'var(--red)'}">Вгадано: ${hits}/${total} → ${win>0?'+'+win+' ₴':'Програш'}</b>`;
 
   if(win > 0) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+    if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     playSound('win'); notify(`🔢 Кено: +${win} ₴ (${hits} влучань)`, 'success');
     addToHistory(`Keno ${hits}/${total}: +${win}`);
   } else { addToHistory(`Keno ${hits}/${total}: -${b}`); }
@@ -4942,29 +5020,36 @@ function playKeno() {
 // СКРЕТЧ-КАРТКА
 // ============================================
 let scratchRevealed = 0, scratchValues = [], scratchBetAmt = 0, scratchDone = false;
+let scratchServerPaid = false; // виграш уже зарахував сервер при купівлі
 
-function buyScratch() {
+async function buyScratch() {
   const btn = document.getElementById('scratchBuyBtn');
   if(btn && btn.disabled) return;  // запобігаємо подвійному кліку
   if(btn) btn.disabled = true;
   const b = validateBet(document.getElementById('betAmountScratch').value);
   if(!b) { if(btn) btn.disabled = false; return; }
+  const srv = await serverPlay('scratch', b, {});
+  if(srv.mode === 'error') { if(btn) btn.disabled = false; return; }
   scratchBetAmt = b;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  scratchServerPaid = srv.mode === 'server';
+  if(!scratchServerPaid) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
   if(btn) btn.classList.add('hidden');
   if(btn) btn.disabled = false;
   scratchRevealed = 0; scratchDone = false;
   const symbols = ['💰','💎','7️','🍒','🔔','⭐','🍋','🎯','🃏','🎪'];
   scratchValues = [];
-  const r = Math.random();
-  const luck = getNewPlayerLuck();
-
-  // WIN RATES: Diamond 2%, Money 6%, Star 10%, else pure random (no 3-match)
-  const winChance = luck ? r * 0.4 : r; // lucky players have better odds
   let winSym = null;
-  if(winChance < 0.02)       winSym = '💎';
-  else if(winChance < 0.08)  winSym = '💰';
-  else if(winChance < 0.18)  winSym = '⭐';
+  if(scratchServerPaid) {
+    winSym = srv.r.symbol;
+  } else {
+    const r = Math.random();
+    const luck = getNewPlayerLuck();
+    const winChance = luck ? r * 0.4 : r; // lucky players have better odds
+    // ⭐ 8,8% замість 10%: раніше RTP був рівно 100% (як у lib/games.js scratch).
+    if(winChance < 0.02)       winSym = '💎';
+    else if(winChance < 0.08)  winSym = '💰';
+    else if(winChance < 0.168) winSym = '⭐';
+  }
   // 82%+ → no winning combination
 
   if(winSym) {
@@ -5022,7 +5107,7 @@ function finishScratch() {
 
   document.getElementById('scratchResult').innerHTML = `<b style="color:${win>0?'var(--green)':'#777'}">${msg}</b>`;
   if(win > 0) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+    if(!scratchServerPaid) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     playSound('win'); addToHistory(`Scratch: +${win}`);
   } else { addToHistory(`Scratch: -${scratchBetAmt}`); }
   setTimeout(() => document.getElementById('scratchBuyBtn').classList.remove('hidden'), 1500);
@@ -5331,7 +5416,7 @@ function sendLobbyMsg() {
   if(!txt || txt.length > 200) return;
   if(userData.muted) return notify('Вас замутовано в чаті', 'error');
   const isAdmin = isAdminUser();
-  db.ref('lobby_chat').push({
+  postChatMessage('lobby_chat', {
     sender: currentUser,
     text: txt,
     time: Date.now(),
@@ -5348,10 +5433,65 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '101';
+const CURRENT_VERSION = '103';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '103',
+    title: '📜 Оновлення v103 — чесний баланс міні-ігор',
+    date: Date.UTC(2026, 9, 26),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '⚖️ Ребаланс',
+        items: [
+          'Кілька ігор віддавали більше, ніж ставилось (Keno — до ×7,6 у середньому, Bowling — ×5, Penalty і Archery — ×2,5), а в Balloon і Hi-Lo був гарантований виграш. Це ламало рейтинги й економіку — тепер виплати як у решті ігор',
+          'Penalty: гол — ×1.16 (шанс 5 із 6)',
+          'Archery: 55% → ×1.75, 30% → ×3.2, центр 10% → ×9.7',
+          'Bowling: страйк ×3.5, спейр ×1.25; надто сильний кидок може піти в жолоб — шукай правильну силу',
+          'Plinko: нові коефіцієнти кошиків для всіх рівнів ризику; крайні кошики знову справді випадають',
+          'Keno: нова таблиця виплат для 20 кульок із 40',
+          'Hi-Lo: множник за кожне вгадування тепер залежить від шансу (ризиковане вгадування дає більше), а не завжди ×1.5',
+          'Balloon: кулька може лопнути будь-коли, а не лише після 4 секунд',
+          'Crash: зрідка ракета вибухає одразу на ×1.00, як у звичайному Crash',
+          'Скретч-картки і Magic Chests: виплати трохи знижено, щоб гра не була «в нуль»',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🎲 Чесна гра',
+        items: [
+          'Sic Bo, Card War, Plinko, Keno, скретч-картки, Penalty, Archery і Bowling тепер теж рахує сервер, а не телефон',
+        ]
+      },
+    ]
+  },
+  {
+    version: '102',
+    title: '📜 Оновлення v102 — чесні Кості й Limbo',
+    date: Date.UTC(2026, 9, 26),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎲 Чесна гра',
+        items: [
+          'Результат у Костях і Limbo тепер визначає сервер, а не телефон — підкрутити його неможливо',
+          'Подвійний клік або обрив інтернету більше не списують ставку двічі',
+          'Решта ігор переїде на сервер поступово — для тебе нічого не зміниться, крім чесності',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🛡️ Захист від спаму',
+        items: [
+          'Сповіщення про чужі «великі виграші» в Telegram більше не можна підробити',
+        ]
+      },
+    ]
+  },
   {
     version: '101',
     title: '📜 Оновлення v101 — надійніше відновлення пароля',
@@ -7364,6 +7504,9 @@ function submitWithdrawWith2FA() { submitWithdraw(); }
 // ║  ФІЧА 6: Provably Fair — Dice і Plinko з seed-перевіркою   ║
 // ╚══════════════════════════════════════════════════════════════╝
 async function rollDiceFair(dir) {
+  // Коли серверні ігри ввімкнено, результат кидає сервер (api/play.js) —
+  // це справжня чесність, на відміну від seed, який генерує сам браузер.
+  if(await serverAuthEnabled()) return rollDiceClassic(dir);
   if(!checkBetRateLimit('dice')) return;
   const bet = validateBet(document.getElementById('diceBet').value);
   if(!bet) return;
@@ -7398,33 +7541,30 @@ async function rollDiceFair(dir) {
   updateStreak(win); recordBalanceHistory();
 }
 
+let plinkoBusy = false;
 async function dropPlinkoFair() {
+  if(plinkoBusy) return;
   if(!checkBetRateLimit('plinko')) return;
   const bet = validateBet(document.getElementById('betAmountPlinko').value);
   if(!bet) return;
+  const risk = PLINKO_TABLE[plinkoRisk] ? plinkoRisk : 'med';
+  plinkoBusy = true;
+  let srv;
+  try { srv = await serverPlay('plinko', bet, { risk }); } finally { plinkoBusy = false; }
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'server') return animatePlinkoServerRound(bet, risk, srv.r);
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   addWager(bet); trackQuest('totalGames',1);
   publishLiveBet('Plinko ⚖️', '🔻', bet, '');
   playSound('click');
   const ball = document.getElementById('plinkoBall');
   if(ball) ball.style.display = 'block';
-  const bucketCount = 7;
   const fairNum = await getProvablyFairResult(0, 999);
-  const riskWeights = {
-    low:  [0.05,0.15,0.25,0.30,0.25,0.15,0.05],
-    med:  [0.08,0.12,0.20,0.25,0.20,0.12,0.08],
-    high: [0.12,0.08,0.12,0.20,0.12,0.08,0.12]
-  };
-  const w = riskWeights[plinkoRisk] || riskWeights.med;
-  const cum = []; w.reduce((s,v,i) => { cum[i] = s + v; return s + v; }, 0);
-  const r = fairNum / 1000;
-  let bucketIndex = cum.findIndex(c => r < c);
-  if(bucketIndex < 0) bucketIndex = 3;
+  const bucketIndex = plinkoBucketFor(fairNum / 1000, risk);
   const targetLeft = (bucketIndex * 14) + 7;
   if(ball) ball.animate([{top:'0',left:'50%'},{top:'100%',left:targetLeft+'%'}], {duration:1200,fill:'forwards',easing:'ease-in'});
-  const mults = {low:[1.5,1.3,1.1,0.6,1.1,1.3,1.5], med:[5,2,1,0.2,1,2,5], high:[20,5,1.5,0,1.5,5,20]};
   setTimeout(() => {
-    const mult = mults[plinkoRisk][bucketIndex];
+    const mult = PLINKO_TABLE[risk].mults[bucketIndex];
     const win = Math.floor(bet * mult);
     if(mult > 0) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     if(win > bet) { playSound('win'); notify(`🔻 +${win}₴ (×${mult}) `, 'success'); addToHistory('Plinko: +'+win); }
@@ -7433,6 +7573,26 @@ async function dropPlinkoFair() {
     if(ball) ball.style.display = 'none';
     // Show verify button
     notify(`⚖️ <span onclick="showProvablyFairModal('Plinko','${_serverSeed}','${_clientSeed}',${_nonce},${fairNum})" style="cursor:pointer;text-decoration:underline;color:#4a9eff;">Перевірити чесність гри</span>`, 'info');
+  }, 1200);
+}
+
+// Раунд Plinko, який уже зіграв сервер: лише анімація й статистика.
+function animatePlinkoServerRound(bet, risk, r) {
+  addWager(bet); trackQuest('totalGames',1);
+  publishLiveBet('Plinko', '🔻', bet, '');
+  playSound('click');
+  const ball = document.getElementById('plinkoBall');
+  if(ball) {
+    ball.style.display = 'block';
+    const targetLeft = (r.bucket * 14) + 7;
+    ball.animate([{top:'0',left:'50%'},{top:'100%',left:targetLeft+'%'}], {duration:1200,fill:'forwards',easing:'ease-in'});
+  }
+  setTimeout(() => {
+    const win = r.payout;
+    if(win > bet) { playSound('win'); notify(`🔻 +${win}₴ (×${r.mult})`, 'success'); addToHistory('Plinko: +'+win); trackLbStat('wins', win); }
+    else { notify(`🔻 ×${r.mult} — ${win}₴`, r.mult > 0 ? 'info' : 'error'); addToHistory('Plinko: '+win); }
+    updateStreak(win >= bet); recordBalanceHistory();
+    if(ball) ball.style.display = 'none';
   }, 1200);
 }
 
@@ -7467,6 +7627,10 @@ async function runCleanup() {
     toDelete.forEach(k => { updates['live_bets/' + k] = null; cleaned++; });
     if(Object.keys(updates).length) db.ref().update(updates);
   });
+
+  // Чати чистить лише адмін: раніше кожен гравець раз на 10 хв качав увесь
+  // global_chat і lobby_chat, а строгі правила й не дадуть гравцю видаляти чуже.
+  if(!isAdminUser()) return;
 
   // Clean global_chat older than 6 hours (keep last 200 messages)
   db.ref('global_chat').orderByChild('ts').once('value', snap => {
@@ -13559,8 +13723,22 @@ function renderHiloCard(card) {
   el.textContent = rank + card.suit;
 }
 
+// Множник кроку: 0.97 / P(вгадати), де P рахується по картах, що лишались у
+// колоді перед ходом (нічиї перетягуються, тому не враховуються).
+function hiloStepMult(curVal, dir, deck) {
+  let win = 0, lose = 0;
+  deck.forEach(c => { const v = cardValue(c.rank); if(v === curVal) return; ((dir === 'high') === (v > curVal)) ? win++ : lose++; });
+  if(win === 0) return 0;
+  // Без нижньої межі 1.0: «гарантований» хід (вище від двійки) дає ×0.97 —
+  // інакше на ньому можна було б безкоштовно накручувати множник.
+  return 0.97 * (win + lose) / win;
+}
 function hiloGuess(dir) {
   if(!hiloState || !hiloState.deck.length) return;
+  // Вгадати неможливо (напр. «вище» від туза) — не спалюємо ставку даремно.
+  if(hiloStepMult(cardValue(hiloState.currentCard.rank), dir, hiloState.deck) === 0) {
+    return notify(dir === 'high' ? 'Вищої карти вже не буде — обери «нижче»' : 'Нижчої карти вже не буде — обери «вище»', 'info');
+  }
   playSound('deal');
   const next = hiloState.deck.pop();
   const curVal = cardValue(hiloState.currentCard.rank);
@@ -13573,7 +13751,9 @@ function hiloGuess(dir) {
 
   if(correct) {
     hiloState.streak++;
-    hiloState.multiplier = parseFloat((hiloState.multiplier * 1.5).toFixed(2));
+    // Множник за реальним шансом вгадати (97%), а не фіксований ×1.5: раніше
+    // на двійці/тузі виграш був гарантований, а в середньому крок давав ~112%.
+    hiloState.multiplier = parseFloat((hiloState.multiplier * hiloStepMult(curVal, dir, hiloState.deck.concat([next]))).toFixed(2));
     hiloState.currentCard = next;
     renderHiloCard(next);
     playSound('win');
@@ -13630,17 +13810,30 @@ function updateDiceUI() {
   document.getElementById('diceMult').textContent = 'x' + mult.toFixed(2);
 }
 
-function rollDice(dir) {
+let diceBusy = false;
+// Називалась rollDice, але window.rollDice перевизначено на rollDiceFair нижче.
+async function rollDiceClassic(dir) {
+  if(diceBusy) return;
   const bet = validateBet(document.getElementById('diceBet').value);
   if(!bet) return;
   const target = parseInt(document.getElementById('diceSlider').value);
-  const result = Math.floor(Math.random()*99)+1;
-  const win = (dir==='over') ? result > target : result < target;
-  const chance = dir==='over' ? (99-target)/99 : (target-1)/99;
-  const mult = parseFloat((0.97/chance).toFixed(2));
-  const winAmt = Math.floor(bet * mult);
-
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  diceBusy = true;
+  let srv;
+  try { srv = await serverPlay('dice', bet, { target, dir }); } finally { diceBusy = false; }
+  if(srv.mode === 'error') return;
+  let result, win, mult, winAmt;
+  if(srv.mode === 'server') {
+    // Ставку й виграш уже записав сервер одним атомарним записом.
+    ({ result, win, mult } = srv.r);
+    winAmt = srv.r.payout;
+  } else {
+    result = Math.floor(Math.random()*99)+1;
+    win = (dir==='over') ? result > target : result < target;
+    const chance = dir==='over' ? (99-target)/99 : (target-1)/99;
+    mult = parseFloat((0.97/chance).toFixed(2));
+    winAmt = Math.floor(bet * mult);
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  }
   addWager(bet);
   trackLbStat('wager', bet); trackLbStat('games', 1);
   publishLiveBet('Dice','🎲', bet, '');
@@ -13652,7 +13845,7 @@ function rollDice(dir) {
 
   setTimeout(() => {
     if(win) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
+      if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
       playSound('win');
       resEl.innerHTML = `<span style="color:var(--green);font-weight:900;">🎲 ${result} — ВИГРАШ! +${formatNumber(winAmt)} ₴</span>`;
       notify('🎲 ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success');
@@ -15218,7 +15411,7 @@ function updateLimboChance() {
   if(pyEl) pyEl.textContent = '₴' + formatNumber(payout);
 }
 
-function playLimbo() {
+async function playLimbo() {
   if(limboRunning) return;
   const bet = validateBet(document.getElementById('limboAmount').value);
   if(!bet) return;
@@ -15230,7 +15423,9 @@ function playLimbo() {
   const btn = document.getElementById('limboBtn');
   if(btn) btn.disabled = true;
 
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  const srv = await serverPlay('limbo', bet, { target });
+  if(srv.mode === 'error') { limboRunning = false; if(btn) btn.disabled = false; return; }
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   addWager(bet); trackQuest('totalGames',1); trackQuest('weekWager',bet);
   trackLbStat('wager',bet); trackLbStat('games',1);
   publishLiveBet('Limbo','🌀', bet, '×'+target);
@@ -15240,13 +15435,14 @@ function playLimbo() {
   if(resEl) { resEl.style.color = '#c9a0ff'; resEl.textContent = '...'; }
   if(msgEl) msgEl.textContent = '';
 
-  // Генерація результату (розподіл як у Crash)
-  const rand = Math.random();
-  const result = parseFloat(Math.max(1.00, (97 / (rand * 100))).toFixed(2));
+  // Генерація результату (розподіл як у Crash) — на сервері, якщо він налаштований
+  const result = srv.mode === 'server'
+    ? srv.r.result
+    : parseFloat(Math.max(1.00, (97 / (Math.random() * 100))).toFixed(2));
 
   setTimeout(() => {
-    const win = result >= target;
-    const payout = win ? Math.floor(bet * target) : 0;
+    const win = srv.mode === 'server' ? srv.r.win : result >= target;
+    const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet * target) : 0);
 
     // Анімація числа
     let counter = 1.0;
@@ -15266,7 +15462,7 @@ function playLimbo() {
           resEl.style.textShadow = win ? '0 0 30px rgba(61,214,140,.5)' : '0 0 30px rgba(240,64,96,.5)';
         }
         if(win) {
-          db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+          if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
           playSound('win');
           if(msgEl) msgEl.innerHTML = `<span style="color:var(--green);font-weight:700;">✅ ВИГРАШ! +₴${formatNumber(payout - bet)} (ціль ×${target} ✓)</span>`;
           notify(`🌀 +₴${formatNumber(payout - bet)}`,'success');
@@ -15574,8 +15770,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['bowling','боулінг','кеглі'],
     reply: [
-      '🎳 Bowling: обери силу кидка і кидай — страйк дає x10, спер x3. Результат залежить і від сили, і трохи від удачі.',
-      '🎳 У Bowling обираєш силу кидка: страйк платить x10, спер — x3, а решта залежить від удачі.'
+      '🎳 Bowling: обери силу кидка і кидай — страйк дає x3.5, спер x1.25, а надто сильний кидок може піти в жолоб. Результат залежить і від сили, і трохи від удачі.',
+      '🎳 У Bowling обираєш силу кидка: страйк платить x3.5, спер — x1.25, а решта залежить від удачі.'
     ] },
   { keys: ['archery','стрільба з лука','лучник'],
     reply: [
@@ -15584,8 +15780,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['penalty','пенальті','пробити пенальті'],
     reply: [
-      '⚽ Penalty Kick: обери зону удару — якщо воротар вгадав інший кут, це гол і виграш x3. Просто і швидко.',
-      '⚽ У Penalty Kick обираєш зону удару — якщо воротар не вгадав твій кут, це гол і x3 до ставки.'
+      '⚽ Penalty Kick: обери зону удару — якщо воротар вгадав інший кут, це гол і виграш x1.16. Просто і швидко.',
+      '⚽ У Penalty Kick обираєш зону удару — якщо воротар не вгадав твій кут, це гол і виплата x1.16.'
     ] },
   { keys: ['balloon','кульк','лопнути кульку'],
     reply: [
@@ -19066,17 +19262,25 @@ function cashoutDragon() {
 // ══════════════════════════════════════════════════════
 const PENALTY_ZONES = ['tl','tc','tr','bl','bc','br'];
 function initPenalty() { document.getElementById('penaltyResult').textContent=''; }
-function shootPenalty(zone) {
+// ×1.16 при шансі 5/6 = RTP 96,7%. Було ×3 (RTP 250%) — гра друкувала гроші.
+const PENALTY_MULT = 1.16;
+let penaltyBusy = false;
+async function shootPenalty(zone) {
+  if(penaltyBusy) return;
   const bet = parseInt(document.getElementById('penaltyBet').value)||0;
   if(!validateBet(bet)) return;
-  // ставка ніколи не списувалась — гра платила x3 на перемогу і НІЧОГО
-  // не забирала на програш, тобто була безкоштовною лотереєю з чистим плюсом
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
+  penaltyBusy = true;
+  let srv;
+  try { srv = await serverPlay('penalty', bet, { zone }); } finally { penaltyBusy = false; }
+  if(srv.mode === 'error') return;
+  if(srv.mode !== 'server') {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    userData.balance = (userData.balance||0) - bet; updateUI();
+  }
   addWager(bet);
-  const gkZone = PENALTY_ZONES[Math.floor(Math.random()*PENALTY_ZONES.length)];
+  const gkZone = srv.mode === 'server' ? srv.r.keeper : PENALTY_ZONES[Math.floor(Math.random()*PENALTY_ZONES.length)];
   const win = zone !== gkZone;
-  const payout = win ? bet*3 : 0;
+  const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet*PENALTY_MULT) : 0);
   // Animate GK
   document.getElementById('penaltyGoalkeeper').textContent = gkZone.startsWith('t') ? '🦵' : '🧤';
   setTimeout(() => document.getElementById('penaltyGoalkeeper').textContent = '🧤', 800);
@@ -19086,9 +19290,12 @@ function shootPenalty(zone) {
   document.getElementById('penaltyResult').textContent = win ? '⚽ ГОЛ! +₴'+formatNumber(payout) : '🧤 Воротар схопив!';
   document.getElementById('penaltyResult').style.color = win ? '#3dd68c' : '#ff6b6b';
   if(win) {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-    userData.balance = (userData.balance||0) + payout;
-    updateUI(); triggerWinReaction(payout,'Penalty Kick');
+    if(srv.mode !== 'server') {
+      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+      userData.balance = (userData.balance||0) + payout;
+      updateUI();
+    }
+    triggerWinReaction(payout,'Penalty Kick');
   }
   addToHistory(`⚽ Penalty: ${win?'+₴'+formatNumber(payout):'Промах'}`);
   const log = document.getElementById('penaltyLog');
@@ -19099,23 +19306,34 @@ function shootPenalty(zone) {
 // 🎳 BOWLING
 // ══════════════════════════════════════════════════════
 function initBowling() { document.getElementById('bowlingResult').textContent = ''; }
-function throwBowl() {
+// Було: страйк ×10, спейр ×3 … — на силі 100% гра повертала 524% ставки.
+// Тепер ті самі правила кеглів + ризик жолоба на сильному кидку, RTP ≤ 97%.
+const BOWL_MULT = { strike: 3.5, spare: 1.25, mid: 0.7, low: 0.2 };
+async function throwBowl() {
   const bet = parseInt(document.getElementById('bowlingBet').value)||0;
   if(!validateBet(bet)) return;
   const power = parseInt(document.getElementById('bowlingPower').value);
   const btn = document.getElementById('bowlingBtn');
   btn.disabled = true;
-  // ставка ніколи не списувалась — так само як у Penalty/Archery/SicBo/Card War/Duck Shoot
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
+  const srv = await serverPlay('bowling', bet, { power });
+  if(srv.mode === 'error') { btn.disabled = false; return; }
+  if(srv.mode !== 'server') {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    userData.balance = (userData.balance||0) - bet; updateUI();
+  }
   addWager(bet);
-  // Calculate pins knocked based on power + randomness
-  const base = power / 100;
-  const knocked = Math.min(10, Math.floor((base * 10 * (0.5 + Math.random()*0.8))));
+  let knocked, gutter;
+  if(srv.mode === 'server') {
+    ({ knocked, gutter } = srv.r);
+  } else {
+    const gutterChance = power > 60 ? Math.pow((power - 60) / 40, 2) * 0.75 : 0;
+    gutter = Math.random() < gutterChance;
+    knocked = gutter ? 0 : Math.min(10, Math.floor((power / 100) * 10 * (0.5 + Math.random()*0.8)));
+  }
   const strike = knocked === 10;
   const spare = knocked >= 7 && !strike;
-  let mult = knocked === 0 ? 0 : strike ? 10 : spare ? 3 : knocked >= 4 ? 1.5 : 0.5;
-  const payout = Math.floor(bet * mult);
+  let mult = knocked === 0 ? 0 : strike ? BOWL_MULT.strike : spare ? BOWL_MULT.spare : knocked >= 4 ? BOWL_MULT.mid : BOWL_MULT.low;
+  const payout = srv.mode === 'server' ? srv.r.payout : Math.floor(bet * mult);
   // Animate pins
   const pinsDiv = document.getElementById('bowlingPins');
   pinsDiv.innerHTML = `<div style="font-size:36px;animation:spin 0.5s;">🎳</div>`;
@@ -19127,12 +19345,14 @@ function throwBowl() {
     const mkRow = (n,total) => Array(total).fill(0).map((_,i)=>i<n?'🎳':'<span style="opacity:.1">🎳</span>').join(' ');
     pinsHtml = `<div>${mkRow(row4,4)}</div><div style="margin-left:12px;">${mkRow(row3,3)}</div><div style="margin-left:24px;">${mkRow(row2,2)}</div><div style="margin-left:36px;">${mkRow(row1,1)}</div>`;
     pinsDiv.innerHTML = pinsHtml;
-    const label = strike ? '🎳 СТРАЙК! x10' : spare ? '🎳 Спейр! x3' : knocked>0 ? `${knocked}/10 кеглів x${mult}` : 'Мімо! x0';
+    const label = strike ? '🎳 СТРАЙК! x' + BOWL_MULT.strike : spare ? '🎳 Спейр! x' + BOWL_MULT.spare : knocked>0 ? `${knocked}/10 кеглів x${mult}` : gutter ? 'У жолоб! Надто сильно x0' : 'Мімо! x0';
     document.getElementById('bowlingResult').textContent = label;
     document.getElementById('bowlingResult').style.color = strike?'#d4af37':spare?'#4a9eff':knocked>0?'#3dd68c':'#ff6b6b';
     if(payout > 0) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-      userData.balance=(userData.balance||0)+payout; updateUI();
+      if(srv.mode !== 'server') {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+        userData.balance=(userData.balance||0)+payout; updateUI();
+      }
       if(strike) triggerWinReaction(payout,'Bowling');
     }
     addToHistory(`🎳 Bowling: ${knocked}/10 кеглів → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}`);
@@ -19145,23 +19365,27 @@ function throwBowl() {
 // ══════════════════════════════════════════════════════
 // 🎯 ARCHERY
 // ══════════════════════════════════════════════════════
-let archRisk = { chance:0.55, mult:3.5 };
+// Коефіцієнти — RTP ≈ 96–97% (було 193–250%). Сервер рахує за рівнем (level).
+let archRisk = { chance:0.55, mult:1.75, level:'low' };
 function setArchRisk(chance, mult, el) {
-  archRisk = {chance, mult};
+  archRisk = { chance, mult, level: chance >= 0.5 ? 'low' : chance >= 0.2 ? 'mid' : 'high' };
   document.querySelectorAll('.arch-risk').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
 }
 function initArchery() { document.getElementById('archeryResult').textContent=''; }
-function shootArchery() {
+async function shootArchery() {
   const bet = parseInt(document.getElementById('archeryBet').value)||0;
   if(!validateBet(bet)) return;
   const btn = document.getElementById('archeryBtn');
   btn.disabled = true;
-  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/SicBo/Card War/Duck Shoot
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
+  const srv = await serverPlay('archery', bet, { level: archRisk.level });
+  if(srv.mode === 'error') { btn.disabled = false; return; }
+  if(srv.mode !== 'server') {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    userData.balance = (userData.balance||0) - bet; updateUI();
+  }
   addWager(bet);
-  const win = Math.random() < archRisk.chance;
+  const win = srv.mode === 'server' ? srv.r.win : Math.random() < archRisk.chance;
   const arrow = document.getElementById('archeryArrow');
   const target = document.querySelector('#tab-archery div[style*="radial-gradient"]');
   if(arrow && target) {
@@ -19171,12 +19395,15 @@ function shootArchery() {
     arrow.style.top = (20 + Math.random()*60)+'%';
   }
   setTimeout(() => {
-    const payout = win ? Math.floor(bet * archRisk.mult) : 0;
+    const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet * archRisk.mult) : 0);
     document.getElementById('archeryResult').textContent = win ? `🎯 Попадання! +₴${formatNumber(payout)}` : '💨 Промах!';
     document.getElementById('archeryResult').style.color = win ? '#3dd68c' : '#ff6b6b';
     if(win) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-      userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Archery');
+      if(srv.mode !== 'server') {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+        userData.balance=(userData.balance||0)+payout; updateUI();
+      }
+      triggerWinReaction(payout,'Archery');
     }
     addToHistory(`🎯 Archery: ${win?'+₴'+formatNumber(payout):'Промах'}`);
     const log = document.getElementById('archeryLog');
@@ -19197,13 +19424,19 @@ function setSicBoType(t, el) {
   document.getElementById('sicboSumPicker').classList.toggle('hidden', t!=='sum');
 }
 function initSicBo() {}
-function rollSicBo() {
+async function rollSicBo() {
   const bet = parseInt(document.getElementById('sicboBet').value)||0;
   if(!validateBet(bet)) return;
   const btn = document.getElementById('sicboBtn'); btn.disabled=true;
-  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/Card War/Duck Shoot
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
+  const sbParams = sicboType === 'sum'
+    ? { type: 'sum', sum: parseInt(document.getElementById('sicboSumValue').value) }
+    : { type: sicboType };
+  const srv = await serverPlay('sicbo', bet, sbParams);
+  if(srv.mode === 'error') { btn.disabled = false; return; }
+  if(srv.mode !== 'server') {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    userData.balance = (userData.balance||0) - bet; updateUI();
+  }
   addWager(bet);
   // Roll dice
   let anim = 0;
@@ -19212,7 +19445,9 @@ function rollSicBo() {
     if(++anim > 10) clearInterval(animInterval);
   }, 80);
   setTimeout(() => {
-    const d1=Math.ceil(Math.random()*6), d2=Math.ceil(Math.random()*6), d3=Math.ceil(Math.random()*6);
+    const [d1, d2, d3] = srv.mode === 'server'
+      ? srv.r.dice
+      : [Math.ceil(Math.random()*6), Math.ceil(Math.random()*6), Math.ceil(Math.random()*6)];
     ['sbc1','sbc2','sbc3'].forEach((id,i)=>document.getElementById(id).textContent=DICE_FACES[[d1,d2,d3][i]-1]);
     const sum = d1+d2+d3;
     const triple = d1===d2 && d2===d3;
@@ -19226,12 +19461,16 @@ function rollSicBo() {
       const multMap={4:60,5:30,6:17,7:12,8:8,9:6,10:6,11:6,12:6,13:8,14:12,15:17,16:30,17:60};
       win=sum===target; mult=multMap[target]||6; label='Сума '+target;
     }
-    const payout = win ? Math.floor(bet*mult) : 0;
+    if(srv.mode === 'server') win = srv.r.win;
+    const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet*mult) : 0);
     document.getElementById('sicboResult').textContent = win?`✅ ${label}! +₴${formatNumber(payout)}`:`❌ Програш`;
     document.getElementById('sicboResult').style.color = win?'#3dd68c':'#ff6b6b';
     if(win) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-      userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Sic Bo');
+      if(srv.mode !== 'server') {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+        userData.balance=(userData.balance||0)+payout; updateUI();
+      }
+      triggerWinReaction(payout,'Sic Bo');
     }
     addToHistory(`🎲 Sic Bo: ${win?'+₴'+formatNumber(payout):'−₴'+formatNumber(bet)}`);
     const log=document.getElementById('sicboLog');
@@ -19248,19 +19487,24 @@ const CW_SUITS = ['♠','♥','♦','♣'];
 function initCardWar() { document.getElementById('cwResult').textContent=''; }
 function randCard() { return { rank:Math.floor(Math.random()*13), suit:CW_SUITS[Math.floor(Math.random()*4)] }; }
 function cardStr(c) { return CW_RANKS[c.rank]+c.suit; }
-function playCardWar() {
+async function playCardWar() {
   const bet = parseInt(document.getElementById('cwBet').value)||0;
   if(!validateBet(bet)) return;
   const btn=document.getElementById('cwBtn'); btn.disabled=true;
-  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Duck Shoot
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
+  const srv = await serverPlay('cardwar', bet, {});
+  if(srv.mode === 'error') { btn.disabled = false; return; }
+  if(srv.mode !== 'server') {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    userData.balance = (userData.balance||0) - bet; updateUI();
+  }
   addWager(bet);
   document.getElementById('cwPlayerCard').textContent='🂠';
   document.getElementById('cwDealerCard').textContent='🂠';
   document.getElementById('cwResult').textContent='';
   setTimeout(()=>{
-    const p=randCard(), d=randCard();
+    const toCard = c => ({ rank: c.rank, suit: CW_SUITS[c.suit] });
+    const p = srv.mode === 'server' ? toCard(srv.r.player) : randCard();
+    const d = srv.mode === 'server' ? toCard(srv.r.dealer) : randCard();
     const pEl=document.getElementById('cwPlayerCard'), dEl=document.getElementById('cwDealerCard');
     pEl.textContent=cardStr(p); pEl.style.color=p.suit.includes('♥')||p.suit.includes('♦')?'#e74c3c':'#fff';
     dEl.textContent=cardStr(d); dEl.style.color=d.suit.includes('♥')||d.suit.includes('♦')?'#e74c3c':'#fff';
@@ -19271,8 +19515,10 @@ function playCardWar() {
     document.getElementById('cwResult').textContent=label;
     document.getElementById('cwResult').style.color=p.rank>d.rank?'#3dd68c':p.rank<d.rank?'#ff6b6b':'#ff9f43';
     if(payout>0) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-      userData.balance=(userData.balance||0)+payout; updateUI();
+      if(srv.mode !== 'server') {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+        userData.balance=(userData.balance||0)+payout; updateUI();
+      }
       if(p.rank>d.rank) triggerWinReaction(payout,'Card War');
     }
     addToHistory(`⚔️ Card War: ${cardStr(p)} vs ${cardStr(d)} → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}`);
@@ -19738,9 +19984,9 @@ function renderMiniBalanceChart() {
 // ══════════════════════════════════════════════════════
 Object.assign(GAME_HELP, {
   dragon: { title:'🐉 Dragon Tower', rules:`<b>Мета:</b> Піднімайся по вежі — кожен рівень безпечно пройдений = більший множник.<br><br><b>Як грати:</b><br>1. Вибери складність: скільки драконів на ряд<br>2. Натискай на яйця — якщо не потрапив на дракона, множник зростає<br>3. Натисни "Забрати" в будь-який момент<br><br><b>Складність:</b><br>Легка (1/3) → Mid → Хардкор (3/4)<br>8 рівнів всього, пройди всі = AUTO кешаут` },
-  penalty: { title:'⚽ Penalty Kick', rules:`<b>Мета:</b> Вибери куток і бий — воротар рандомно стрибає.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Вибери один з 6 кутків<br>3. Воротар блокує рандомний куток<br>4. Вгадав = x3 виплата!<br><br><b>Шанс:</b> 5/6 = 83.3%` },
-  bowling: { title:'🎳 Bowling', rules:`<b>Мета:</b> Вибери силу кидка і збий якомога більше кеглів.<br><br><b>Виплати:</b><br>🎳 СТРАЙК (10) → x10<br>7-9 кеглів → x3<br>4-6 кеглів → x1.5<br>1-3 кеглі → x0.5<br>0 кеглів → x0<br><br><b>Порада:</b> Сила 70-80% найстабільніша!` },
-  archery: { title:'🎯 Archery', rules:`<b>Мета:</b> Вибери ризик і стріляй — чим менший шанс, тим більший виграш.<br><br><b>Рівні ризику:</b><br>🟢 Низький: 55% шанс → x3.5<br>🟡 Середній: 30% шанс → x8<br>🔴 Центр: 10% шанс → x25` },
+  penalty: { title:'⚽ Penalty Kick', rules:`<b>Мета:</b> Вибери куток і бий — воротар рандомно стрибає.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Вибери один з 6 кутків<br>3. Воротар блокує рандомний куток<br>4. Забив = x1.16 виплата!<br><br><b>Шанс:</b> 5/6 = 83.3%` },
+  bowling: { title:'🎳 Bowling', rules:`<b>Мета:</b> Вибери силу кидка і збий якомога більше кеглів.<br><br><b>Виплати:</b><br>🎳 СТРАЙК (10) → x3.5<br>7-9 кеглів → x1.25<br>4-6 кеглів → x0.7<br>1-3 кеглі → x0.2<br>0 кеглів → x0<br><br><b>Порада:</b> Надто сильний кидок (понад 60%) може піти в жолоб — шукай баланс між силою і точністю!` },
+  archery: { title:'🎯 Archery', rules:`<b>Мета:</b> Вибери ризик і стріляй — чим менший шанс, тим більший виграш.<br><br><b>Рівні ризику:</b><br>🟢 Низький: 55% шанс → x1.75<br>🟡 Середній: 30% шанс → x3.2<br>🔴 Центр: 10% шанс → x9.7` },
   sicbo: { title:'🎲 Sic Bo', rules:`<b>Мета:</b> Поставити на результат трьох кубиків.<br><br><b>Ставки:</b><br>📈 Велике (11-17) → x2<br>📉 Мале (4-10) → x2<br>🎰 Трипл → x24<br>🔢 Точна сума → x6-x60<br><br><b>Увага:</b> Трипл скасовує Велике/Мале!` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
   duckshoot: { title:'🦆 Duck Shoot', rules:`<b>Мета:</b> Клікни на кожну качку до того як вона пролетить.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Качки з'являються по черзі (10 штук)<br>3. Кожна збита качка = x1.2 до множника<br>4. Пропустив — гра закінчена!<br><br><b>Страйк всіх 10:</b> ~x6.2 від ставки!` },

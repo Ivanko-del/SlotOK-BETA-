@@ -50,6 +50,12 @@ function build(strict) {
   const owner = (v_) => (strict ? `auth != null && (auth.uid === ${v_} || ${isAdmin})` : "true");
   // Запис лише на рівні елемента колекції: push()/update() працюють як і
   // раніше, а стерти чи перезаписати всю колекцію одним запитом — ні.
+  const chatWrite = (senderField) => strict
+    ? `auth != null && (${isAdmin}` +
+      ` || (!data.exists() && newData.child('${senderField}').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now` +
+      ` && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000))` +
+      ` || (!newData.exists() && data.child('${senderField}').val() === auth.uid))`
+    : "true";
   const openNode = (extra = {}) => ({ ".read": true, $k: { ".write": authed }, ...extra });
   const adminNode = (extra = {}) => ({ ".read": true, ".write": admin, ...extra });
 
@@ -133,6 +139,8 @@ function build(strict) {
     // записати сюди тимчасовий пароль; прочитати — ніхто, крім сервера.
     user_secrets: { ".read": false, ".write": strict ? isAdmin : "false" },
     notify_rate: { ".read": false, ".write": false },
+    // Журнал серверних раундів (api/play.js) — лише сервер.
+    game_rounds: { ".read": false, ".write": false },
     telegram_state: { ".read": false, ".write": false },
     promo_redemptions: { ".read": false, ".write": false },
     // Хто володіє Telegram-чатом, вирішує сервер; клієнт може лише відв'язати.
@@ -148,8 +156,15 @@ function build(strict) {
     },
 
     // ── Чати й соціальне ──
-    lobby_chat: { ".read": true, ".write": admin, ".indexOn": ["time"], $m: { ".write": authed, ...chatMessage(["sender"]) } },
-    global_chat: { ".read": true, ".indexOn": ["ts"], $m: { ".write": authed, ...chatMessage(["user"]) } },
+    // Антиспам (строгий режим): нове повідомлення гравця проходить лише разом
+    // з оновленням chat_rate/<нік> = now (postChatMessage в app.js), і лише якщо
+    // попереднє було ≥ 2 с тому. Видалити можна лише своє; адмін — будь-що.
+    lobby_chat: { ".read": true, ".write": admin, ".indexOn": ["time"], $m: { ".write": chatWrite("sender"), ...chatMessage(["sender"]) } },
+    global_chat: { ".read": true, ".indexOn": ["ts"], $m: { ".write": chatWrite("user"), ...chatMessage(["user"]) } },
+    chat_rate: {
+      ".read": false,
+      $u: { ".write": strict ? "auth != null && auth.uid === $u" : "true", ".validate": "newData.isNumber() && newData.val() === now" },
+    },
     clan_chats: { ".read": true, $c: { $m: { ".write": authed, ...chatMessage(["user", "sender"]) } } },
     pm: { ".read": true, $u: { $m: { ".write": authed, ...chatMessage(["from", "to"]) } } },
     support_chats: {

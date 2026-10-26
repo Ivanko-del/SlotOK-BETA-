@@ -18,6 +18,31 @@ const { dbGet, dbUpdate } = require("../lib/firebase");
 const { sendMessage, esc } = require("../lib/telegram");
 const { sendPushToUser } = require("../lib/fcm");
 const { allow } = require("../lib/rate-limit");
+const { getServiceAccount } = require("../lib/google-auth");
+const { verifyIdToken } = require("../lib/id-token");
+
+const OWNER = "theivankoo";
+// Хто може надіслати сповіщення якого типу (коли серверний вхід увімкнено):
+//   self  — лише собі (власний великий виграш, VIP, Battle Pass);
+//   admin — лише адмін (бонус усім, джекпот);
+//   any   — будь-кому (ПМ, клан-чат), але текст ПМ сервер бере з бази сам.
+const PING_ACL = { bigwin: "self", vipup: "self", bplevel: "self", bonus: "admin", jackpot: "admin", pm: "any", "clan-chat": "any" };
+
+// null = перевірку пройдено; інакше HTTP-статус відмови.
+async function checkPingSender(req, to, kind) {
+  if (!getServiceAccount()) return null; // серверний вхід ще не ввімкнено — як раніше
+  let sender;
+  try {
+    sender = await verifyIdToken(String((req.headers || {}).authorization || "").replace(/^Bearer\s+/i, ""));
+  } catch (e) {
+    return e.code === "bad_token" ? 401 : 503;
+  }
+  const acl = PING_ACL[kind];
+  if (!acl) return 400;
+  if (acl === "self" && sender !== to) return 403;
+  if (acl === "admin" && sender.toLowerCase() !== OWNER && (await dbGet(`users/${sender}/isAdmin`)) !== true) return 403;
+  return null;
+}
 
 const PATHS = {
   deposit: "deposit_requests",
@@ -36,6 +61,8 @@ module.exports = async (req, res) => {
 
     if (type === "player-ping") {
       if (!to || !kind) { res.status(400).end(); return; }
+      const denied = await checkPingSender(req, String(to), String(kind));
+      if (denied) { res.status(denied).end(); return; }
       // Гравцю — не більше 10 сповіщень на хвилину, скільки б разів
       // не повторювали POST ззовні.
       if (!(await allow(`ping:${to}`, 10, 60000))) { res.status(429).end(); return; }
