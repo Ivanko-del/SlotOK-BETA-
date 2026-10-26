@@ -107,8 +107,8 @@ function setAxiomTxDir(dir) {
   const btn = document.getElementById('axiomTxBtn');
   if(!a || !b) return;
   const on = axiomTxDir === 'toCasino' ? b : a, off = on === a ? b : a;
-  on.style.background = 'rgba(92,110,248,.15)'; on.style.border = '1px solid rgba(92,110,248,.35)'; on.style.color = '#7c8eff';
-  off.style.background = 'transparent'; off.style.border = 'none'; off.style.color = '#555';
+  on.style.background = 'rgb(var(--info-rgb) / 0.15)'; on.style.border = '1px solid rgb(var(--info-rgb) / 0.35)'; on.style.color = 'var(--info)';
+  off.style.background = 'transparent'; off.style.border = 'none'; off.style.color = 'var(--fg-4)';
   if(btn) btn.textContent = axiomTxDir === 'toCasino' ? '🎰 Поповнити гру з картки' : '🏦 Вивести на картку Аксіоми';
 }
 function setAxiomTxAmt(n) {

@@ -61,12 +61,12 @@ function openGlobalSearch() {
   if(ex) { ex.remove(); return; }
   var m = document.createElement('div');
   m.id = 'globalSearchModal';
-  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:9997;padding:16px;overflow-y:auto;';
+  m.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.96 * var(--recess-k)));z-index:9997;padding:16px;overflow-y:auto;';
   m.innerHTML = '<div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">'
     + '<div style="position:relative;flex:1;"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;">🔍</span>'
     + '<input id="globalSearchInput" placeholder="Пошук гравців, ігор..." style="padding-left:40px;font-size:15px;" oninput="onGlobalSearch(this.value)"></div>'
-    + '<button onclick="document.getElementById(\'globalSearchModal\').remove()" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:10px 14px;color:#777;cursor:pointer;">✕</button></div>'
-    + '<div id="searchResults" style="color:#555;text-align:center;padding:30px;font-size:13px;">Введіть запит</div>';
+    + '<button onclick="document.getElementById(\'globalSearchModal\').remove()" style="background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 14px;color:var(--fg-3);cursor:pointer;">✕</button></div>'
+    + '<div id="searchResults" style="color:var(--fg-4);text-align:center;padding:30px;font-size:13px;">Введіть запит</div>';
   document.body.appendChild(m);
   setTimeout(function() { var el = document.getElementById('globalSearchInput'); if(el) el.focus(); }, 100);
 }
@@ -74,7 +74,7 @@ function onGlobalSearch(query) {
   clearTimeout(_searchDebounce);
   var res = document.getElementById('searchResults');
   if(!res) return;
-  if(query.length < 2) { res.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Мін. 2 символи</div>'; return; }
+  if(query.length < 2) { res.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">Мін. 2 символи</div>'; return; }
   _searchDebounce = setTimeout(function() { runGlobalSearch(query); }, 400);
 }
 function runGlobalSearch(q) {
@@ -109,12 +109,12 @@ function runGlobalSearch(q) {
   });
 }
 function showSearchResults(results, res) {
-  if(!results.length) { res.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
+  if(!results.length) { res.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
   res.innerHTML = results.slice(0,20).map(function(r) {
-    return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:8px;cursor:pointer;">'
-      + '<div style="width:40px;height:40px;border-radius:10px;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
-      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:#666;">' + r.sub + '</div>' : '') + '</div>'
-      + '<div style="font-size:9px;color:#444;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px;">' + r.type + '</div>'
+    return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer;">'
+      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + r.sub + '</div>' : '') + '</div>'
+      + '<div style="font-size:9px;color:var(--fg-4);background:rgb(var(--tint-rgb) / 0.04);border-radius:var(--r-sm);padding:3px 8px;">' + r.type + '</div>'
       + '</div>';
   }).join('');
 }
@@ -151,33 +151,33 @@ function renderCryptoAssets() {
     var isPos  = parseFloat(chg) >= 0;
     var sym    = a.sym;
     var ownedHtml = owned > 0
-      ? '<div style="font-size:11px;color:#777;margin-bottom:8px;">У портфелі: '
+      ? '<div style="font-size:11px;color:var(--fg-3);margin-bottom:8px;">У портфелі: '
         + owned.toFixed(6) + ' ' + sym + ' ≈ ₴' + formatNumber(Math.round(owned*price)) + '</div>'
       : '';
     var sellBtn = owned > 0
       ? '<button data-sym="' + sym + '" onclick="sellCryptoFromBtn(this)" '
-        + 'style="flex:1;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.2);'
-        + 'border-radius:8px;padding:8px;color:#e74c3c;cursor:pointer;font-size:12px;font-weight:700;">Продати</button>'
+        + 'style="flex:1;background:rgb(var(--neg-rgb) / 0.1);border:1px solid rgb(var(--neg-rgb) / 0.2);'
+        + 'border-radius:8px;padding:8px;color:var(--neg);cursor:pointer;font-size:12px;font-weight:700;">Продати</button>'
       : '';
-    return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:10px;">'
+    return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
       + '<div style="display:flex;align-items:center;gap:10px;">'
-      + '<div style="width:40px;height:40px;border-radius:12px;background:rgba(212,175,55,.1);'
+      + '<div style="width:40px;height:40px;border-radius:var(--r-lg);background:rgb(var(--accent-rgb) / 0.1);'
       + 'display:flex;align-items:center;justify-content:center;font-size:20px;">' + a.emoji + '</div>'
       + '<div><div style="font-weight:800;">' + sym + '</div>'
-      + '<div style="font-size:10px;color:#555;">' + a.name + '</div></div></div>'
+      + '<div style="font-size:10px;color:var(--fg-4);">' + a.name + '</div></div></div>'
       + '<div style="text-align:right;">'
       + '<div style="font-weight:900;font-size:15px;">₴' + formatNumber(Math.round(price)) + '</div>'
-      + '<div style="font-size:11px;color:' + (isPos ? '#3dd68c' : '#e74c3c') + ';">'
+      + '<div style="font-size:11px;color:' + (isPos ? 'var(--pos)' : 'var(--neg)') + ';">'
       + (isPos ? '+' : '') + chg + '%</div></div></div>'
       + ownedHtml
       + '<div style="display:flex;gap:6px;">'
       + '<button data-sym="' + sym + '" data-amt="100" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);'
-      + 'border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;font-weight:700;">+100₴</button>'
+      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);'
+      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;font-weight:700;">+100₴</button>'
       + '<button data-sym="' + sym + '" data-amt="500" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgba(61,214,140,.08);border:1px solid rgba(61,214,140,.15);'
-      + 'border-radius:8px;padding:8px;color:#3dd68c;cursor:pointer;font-size:12px;">+500₴</button>'
+      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.08);border:1px solid rgb(var(--pos-rgb) / 0.15);'
+      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;">+500₴</button>'
       + sellBtn
       + '</div></div>';
   }).join('');
@@ -251,8 +251,8 @@ function startDemoMode() {
   notify('🎮 Демо-режим! Баланс: ₴50 000 (не зберігається)', 'info');
   var banner = document.createElement('div');
   banner.id = 'demoBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#1a0040,#2a0060);border-bottom:1px solid #5a20c0;padding:6px 16px;text-align:center;z-index:8000;font-size:11px;color:#c9a0ff;display:flex;justify-content:space-between;align-items:center;';
-  banner.innerHTML = '<span>🎮 ДЕМО-РЕЖИМ · Всі дані скидаються</span><button onclick="document.getElementById(\'demoBanner\').remove();showAuthScreen()" style="background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:6px;padding:4px 10px;color:#000;font-weight:800;cursor:pointer;font-size:11px;">Реєстрація →</button>';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,color-mix(in srgb, var(--special) 14%, var(--surface-1)),color-mix(in srgb, var(--special) 21%, var(--surface-1)));border-bottom:1px solid var(--special);padding:6px 16px;text-align:center;z-index:8000;font-size:11px;color:var(--special);display:flex;justify-content:space-between;align-items:center;';
+  banner.innerHTML = '<span>🎮 ДЕМО-РЕЖИМ · Всі дані скидаються</span><button onclick="document.getElementById(\'demoBanner\').remove();showAuthScreen()" style="background:var(--accent);border:none;border-radius:var(--r-sm);padding:4px 10px;color:var(--on-accent);font-weight:800;cursor:pointer;font-size:11px;">Реєстрація →</button>';
   document.body.insertBefore(banner, document.body.firstChild);
 }
 
@@ -303,20 +303,20 @@ function showPlayerCard(nick, event) {
     var y = event ? Math.min(event.clientY, window.innerHeight - 250) : 50;
     card.style.cssText = 'position:fixed;top:' + y + 'px;left:' + x + 'px;background:#111;border:1.5px solid rgba(212,175,55,.3);border-radius:16px;padding:14px;z-index:9000;width:200px;animation:popIn .2s ease;box-shadow:0 8px 32px rgba(0,0,0,.8);';
     var avHtml = (u.avatarUrl || (u.avatar && u.avatar.startsWith('http')))
-      ? '<img src="' + safeUrl(u.avatarUrl || u.avatar) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(212,175,55,.3);">'
-      : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:24px;">' + escapeHtml(u.avatar || '👤') + '</div>';
+      ? '<img src="' + safeUrl(u.avatarUrl || u.avatar) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgb(var(--accent-rgb) / 0.3);">'
+      : '<div style="width:48px;height:48px;border-radius:50%;background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:24px;">' + escapeHtml(u.avatar || '👤') + '</div>';
     card.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
       + avHtml
       + '<div><div style="font-weight:800;font-size:13px;">' + escapeHtml(nick) + '</div>'
-      + '<div style="font-size:10px;color:#666;">' + escapeHtml(u.tag || 'Гравець') + '</div></div></div>'
+      + '<div style="font-size:10px;color:var(--fg-3);">' + escapeHtml(u.tag || 'Гравець') + '</div></div></div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:10px;">'
-      + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#d4af37;font-weight:800;">' + formatNumber(u.totalGames||0) + '</div><div style="color:#555;">Ігор</div></div>'
-      + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#3dd68c;font-weight:800;">₴' + formatNumber(u.totalWagered||0) + '</div><div style="color:#555;">Ставок</div></div>'
+      + '<div style="background:var(--bg);border-radius:var(--r-sm);padding:6px;text-align:center;"><div style="color:var(--accent);font-weight:800;">' + formatNumber(u.totalGames||0) + '</div><div style="color:var(--fg-4);">Ігор</div></div>'
+      + '<div style="background:var(--bg);border-radius:var(--r-sm);padding:6px;text-align:center;"><div style="color:var(--pos);font-weight:800;">₴' + formatNumber(u.totalWagered||0) + '</div><div style="color:var(--fg-4);">Ставок</div></div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-      + '<button onclick="switchTab(\'pm\');document.getElementById(\'pmToInput\').value=' + jsArg(nick) + ';document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:8px;padding:7px;color:#4a9eff;cursor:pointer;font-size:11px;">✉️ ПМ</button>'
-      + '<button onclick="followPlayer(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:11px;">👥 Follow</button>'
-      + '<button onclick="blockUser(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="background:rgba(231,76,60,.08);border:1px solid #222;border-radius:8px;padding:7px;color:#555;cursor:pointer;font-size:11px;">🚫</button>'
+      + '<button onclick="switchTab(\'pm\');document.getElementById(\'pmToInput\').value=' + jsArg(nick) + ';document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgb(var(--info-rgb) / 0.1);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-md);padding:7px;color:var(--info);cursor:pointer;font-size:11px;">✉️ ПМ</button>'
+      + '<button onclick="followPlayer(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-md);padding:7px;color:var(--pos);cursor:pointer;font-size:11px;">👥 Follow</button>'
+      + '<button onclick="blockUser(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-md);padding:7px;color:var(--fg-4);cursor:pointer;font-size:11px;">🚫</button>'
       + '</div>';
     document.body.appendChild(card);
     // Close on outside click
@@ -406,8 +406,8 @@ function initClanChat(clanId) {
         : escapeHtml(avatarEmoji);
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
         + '<div style="font-size:20px;flex-shrink:0;">' + avHtml + '</div>'
-        + '<div style="background:' + (isMe ? 'rgba(212,175,55,.08)' : 'rgba(255,255,255,.04)') + ';border:1px solid ' + (isMe ? 'rgba(212,175,55,.15)' : 'rgba(255,255,255,.07)') + ';border-radius:12px;padding:8px 10px;max-width:72%;">'
-        + '<div style="font-size:10px;color:#666;margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
+        + '<div style="background:' + (isMe ? 'rgb(var(--accent-rgb) / 0.08)' : 'rgb(var(--tint-rgb) / 0.04)') + ';border:1px solid ' + (isMe ? 'rgb(var(--accent-rgb) / 0.15)' : 'rgb(var(--tint-rgb) / 0.07)') + ';border-radius:var(--r-lg);padding:8px 10px;max-width:72%;">'
+        + '<div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
         + '</div></div>';
     }).join('');
@@ -466,9 +466,9 @@ function enterShadowMode(targetNick) {
     userData = data;
     var banner = document.createElement('div');
     banner.id = 'shadowBanner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#3a0000,#600);border-bottom:2px solid #e74c3c;padding:8px 16px;z-index:9999;display:flex;justify-content:space-between;align-items:center;';
-    banner.innerHTML = '<span style="color:#ff6b6b;font-size:12px;font-weight:800;">👁️ SHADOW: @' + targetNick + '</span>'
-      + '<button onclick="exitShadowMode()" style="background:#e74c3c;border:none;border-radius:6px;padding:4px 12px;color:#fff;cursor:pointer;font-size:11px;font-weight:800;">Вийти</button>';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 13%, var(--surface-1)),color-mix(in srgb, var(--neg) 22%, var(--surface-1)));border-bottom:2px solid var(--neg);padding:8px 16px;z-index:9999;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML = '<span style="color:var(--neg);font-size:12px;font-weight:800;">👁️ SHADOW: @' + targetNick + '</span>'
+      + '<button onclick="exitShadowMode()" style="background:var(--neg);border:none;border-radius:var(--r-sm);padding:4px 12px;color:var(--on-neg);cursor:pointer;font-size:11px;font-weight:800;">Вийти</button>';
     document.body.insertBefore(banner, document.body.firstChild);
     updateUI();
     notify('👁️ Shadow режим: @' + targetNick, 'info');
@@ -564,19 +564,19 @@ function antiCheatFlag(type, details, severity) {
 function loadFlaggedPlayers() {
   const el = document.getElementById('flaggedPlayersList');
   if(!el) return;
-  el.innerHTML = '<div style="color:#555;text-align:center;padding:14px;">Завантаження...</div>';
+  el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;">Завантаження...</div>';
   db.ref('users').orderByChild('flagged').equalTo(true).limitToLast(30).once('value').then(snap => {
     const users = snap.val() || {};
     const entries = Object.entries(users);
-    if(!entries.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:14px;">🎉 Немає позначених гравців</div>'; return; }
+    if(!entries.length) { el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;">🎉 Немає позначених гравців</div>'; return; }
     el.innerHTML = entries.map(([nick, u]) => `
-      <div style="background:#0d0d0d;border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:10px;margin-bottom:8px;">
+      <div style="background:var(--surface-1);border:1px solid rgb(var(--neg-rgb) / 0.25);border-radius:var(--r-md);padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgba(231,76,60,.18);color:#e74c3c;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
-          <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
+          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
+          <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-sm);color:var(--pos);font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
-        <div style="font-size:10px;color:#888;">${u.flagReason || 'без деталей'}</div>
-        <div style="font-size:10px;color:#555;margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
+        <div style="font-size:10px;color:var(--fg-3);">${u.flagReason || 'без деталей'}</div>
+        <div style="font-size:10px;color:var(--fg-4);margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
       </div>`).join('');
   });
 }
@@ -600,7 +600,7 @@ const ADMIN_PRESET_DEFAULT = { requests:true, stats:true, users:false, bots:fals
 function loadAdminsList() {
   const el = document.getElementById('adminsList');
   if(!el) return;
-  el.innerHTML = '<div style="color:#555;text-align:center;padding:14px;font-size:12px;">Завантаження...</div>';
+  el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;font-size:12px;">Завантаження...</div>';
   db.ref('users').orderByChild('isAdmin').equalTo(true).once('value').then(snap => {
     const users = snap.val() || {};
     // Власник може не мати isAdmin у базі — права в нього за ніком
@@ -635,7 +635,7 @@ function loadAdminsList() {
         ${owner ? '' : `<div class="adm-perm-toggles" id="admPerms-${escapeHtml(nick)}" style="display:none;">
           ${ADMIN_PERMS.map(p => `<label class="adm-perm-row">
             <input type="checkbox" data-admin-nick="${escapeHtml(nick)}" data-perm="${p.key}" ${(!legacy && perms[p.key] === true) ? 'checked' : ''}>
-            <span><b>${p.icon} ${p.name}</b><br><span style="color:#666;font-size:10px;">${p.desc}</span></span>
+            <span><b>${p.icon} ${p.name}</b><br><span style="color:var(--fg-3);font-size:10px;">${p.desc}</span></span>
           </label>`).join('')}
           <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="saveAdminPerms(${jsArg(nick)})">💾 Зберегти права</button>
         </div>
@@ -643,7 +643,7 @@ function loadAdminsList() {
       </div>`;
     }).join('');
   }).catch(() => {
-    el.innerHTML = '<div style="color:#e74c3c;text-align:center;padding:14px;font-size:12px;">Не вдалось завантажити список</div>';
+    el.innerHTML = '<div style="color:var(--neg);text-align:center;padding:14px;font-size:12px;">Не вдалось завантажити список</div>';
   });
 }
 
@@ -769,7 +769,7 @@ function updateAntiCheatStatusLine(c) {
     ? (c.autoFreeze ? '✅ Увімкнено · підозрілі акаунти призупиняються автоматично'
                     : '✅ Увімкнено · лише сповіщення, без автопризупинення')
     : '⛔ Вимкнено — порушення не відстежуються';
-  el.style.color = c.enabled ? '#3dd68c' : '#e74c3c';
+  el.style.color = c.enabled ? 'var(--pos)' : 'var(--neg)';
 }
 
 function saveAntiCheatSettings() {
@@ -938,9 +938,9 @@ function giftVip(toNick, days) {
 function doComparePlayers(nick) {
   var el = document.getElementById('cmpResult');
   if (!el || !nick) return;
-  el.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Завантаження...</div>';
+  el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">Завантаження...</div>';
   db.ref('users/' + nick).once('value').then(function(snap) {
-    if (!snap.exists()) { el.innerHTML = '<div style="color:#e74c3c;text-align:center;">Гравця не знайдено</div>'; return; }
+    if (!snap.exists()) { el.innerHTML = '<div style="color:var(--neg);text-align:center;">Гравця не знайдено</div>'; return; }
     var them = snap.val();
     var me = userData;
     var stats = [
@@ -951,13 +951,13 @@ function doComparePlayers(nick) {
       {label:'Серія', me: me.dailyStreak||0, them: them.dailyStreak||0},
     ];
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:11px;text-align:center;">'
-      + '<div style="color:#d4af37;font-weight:800;">@' + currentUser + '</div><div></div><div style="color:#4a9eff;font-weight:800;">@' + nick + '</div></div>'
+      + '<div style="color:var(--accent);font-weight:800;">@' + currentUser + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + nick + '</div></div>'
       + stats.map(function(s) {
           var meWins = s.me >= s.them;
-          return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #111;">'
-            + '<div style="text-align:center;font-weight:' + (meWins?'900':'400') + ';color:' + (meWins?'#d4af37':'#666') + ';">' + formatNumber(s.me) + '</div>'
-            + '<div style="text-align:center;font-size:10px;color:#555;">' + s.label + '</div>'
-            + '<div style="text-align:center;font-weight:' + (!meWins?'900':'400') + ';color:' + (!meWins?'#4a9eff':'#666') + ';">' + formatNumber(s.them) + '</div>'
+          return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">'
+            + '<div style="text-align:center;font-weight:' + (meWins?'900':'400') + ';color:' + (meWins?'var(--accent)':'var(--fg-3)') + ';">' + formatNumber(s.me) + '</div>'
+            + '<div style="text-align:center;font-size:10px;color:var(--fg-4);">' + s.label + '</div>'
+            + '<div style="text-align:center;font-weight:' + (!meWins?'900':'400') + ';color:' + (!meWins?'var(--info)':'var(--fg-3)') + ';">' + formatNumber(s.them) + '</div>'
             + '</div>';
         }).join('');
   });

@@ -136,8 +136,8 @@ function checkAchievements(trigger, value) {
     newOnes.forEach((a, i) => {
       setTimeout(() => {
         const t = document.createElement('div');
-        t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7000;background:linear-gradient(135deg,#1a1200,#2a2000);border:2px solid var(--accent);border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(212,175,55,0.4);min-width:250px;animation:slideIn 0.4s ease;';
-        t.innerHTML = `<div style="font-size:32px;">${a.icon}</div><div><div style="font-size:11px;color:var(--accent);font-weight:bold;text-transform:uppercase;letter-spacing:1px;">🏆 НОВЕ ДОСЯГНЕННЯ!</div><div style="font-size:14px;font-weight:bold;color:#fff;margin-top:2px;">${a.name}</div><div style="font-size:11px;color:#777;margin-top:1px;">${a.desc}</div><div style="font-size:10px;color:var(--accent);margin-top:3px;">+${a.xp} XP</div></div>`;
+        t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7000;background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 9%, var(--surface-1)));border:2px solid var(--accent);border-radius:var(--r-lg);padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:none;min-width:250px;animation:slideIn 0.4s ease;';
+        t.innerHTML = `<div style="font-size:32px;">${a.icon}</div><div><div style="font-size:11px;color:var(--accent);font-weight:bold;text-transform:uppercase;letter-spacing:1px;">🏆 НОВЕ ДОСЯГНЕННЯ!</div><div style="font-size:14px;font-weight:bold;color:var(--fg);margin-top:2px;">${a.name}</div><div style="font-size:11px;color:var(--fg-3);margin-top:1px;">${a.desc}</div><div style="font-size:10px;color:var(--accent);margin-top:3px;">+${a.xp} XP</div></div>`;
         document.body.appendChild(t);
         setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.5s'; setTimeout(()=>t.remove(),500); }, 3500);
       }, i * 1200);
@@ -156,21 +156,21 @@ function initAchievementsTab() {
   const header = document.getElementById('achievementsHeader');
   if(header) header.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
+      <div style="text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;">
         <div style="font-size:22px;font-weight:900;color:var(--accent);">${unlockedCount}</div>
-        <div style="font-size:10px;color:#555;">з ${totalCount}</div>
+        <div style="font-size:10px;color:var(--fg-4);">з ${totalCount}</div>
       </div>
-      <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
+      <div style="text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;">
         <div style="font-size:22px;font-weight:900;color:var(--green);">${totalXp}</div>
-        <div style="font-size:10px;color:#555;">XP</div>
+        <div style="font-size:10px;color:var(--fg-4);">XP</div>
       </div>
-      <div style="text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:12px;">
-        <div style="font-size:22px;font-weight:900;color:#c17eea;">${Math.round(unlockedCount/totalCount*100)}%</div>
-        <div style="font-size:10px;color:#555;">Виконано</div>
+      <div style="text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;">
+        <div style="font-size:22px;font-weight:900;color:var(--special);">${Math.round(unlockedCount/totalCount*100)}%</div>
+        <div style="font-size:10px;color:var(--fg-4);">Виконано</div>
       </div>
     </div>
-    <div style="background:#111;border-radius:8px;height:8px;overflow:hidden;margin-bottom:16px;">
-      <div style="height:100%;width:${Math.round(unlockedCount/totalCount*100)}%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:8px;transition:width 0.5s;"></div>
+    <div style="background:var(--surface-1);border-radius:var(--r-md);height:8px;overflow:hidden;margin-bottom:16px;">
+      <div style="height:100%;width:${Math.round(unlockedCount/totalCount*100)}%;background:var(--accent);border-radius:var(--r-md);transition:width 0.5s;"></div>
     </div>`;
 
   const cats = {};
@@ -186,12 +186,12 @@ function initAchievementsTab() {
       items.map(a => {
         const unlocked = !!owned[a.id];
         const ts = owned[a.id]?.unlockedAt ? new Date(owned[a.id].unlockedAt).toLocaleDateString('uk') : '';
-        return `<div style="background:${unlocked?'linear-gradient(135deg,#1a1200,#2a2000)':'#0a0a0a'};border:1px solid ${unlocked?'var(--accent)':'#1a1a1a'};border-radius:12px;padding:12px;opacity:${unlocked?1:0.55};position:relative;overflow:hidden;">
+        return `<div style="background:${unlocked?'linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 9%, var(--surface-1)))':'var(--bg)'};border:1px solid ${unlocked?'var(--accent)':'var(--line)'};border-radius:var(--r-lg);padding:12px;opacity:${unlocked?1:0.55};position:relative;overflow:hidden;">
           ${unlocked?'<div style="position:absolute;top:4px;right:6px;font-size:9px;color:var(--accent);">✓</div>':''}
           <div style="font-size:24px;margin-bottom:4px;">${a.icon}</div>
-          <div style="font-size:11px;font-weight:bold;color:${unlocked?'#fff':'#666'};">${a.name}</div>
-          <div style="font-size:9px;color:#555;margin-top:2px;line-height:1.4;">${a.desc}</div>
-          <div style="font-size:9px;color:${unlocked?'var(--accent)':'#333'};margin-top:4px;font-weight:bold;">+${a.xp} XP ${ts?'• '+ts:''}</div>
+          <div style="font-size:11px;font-weight:bold;color:${unlocked?'var(--fg)':'var(--fg-3)'};">${a.name}</div>
+          <div style="font-size:9px;color:var(--fg-4);margin-top:2px;line-height:1.4;">${a.desc}</div>
+          <div style="font-size:9px;color:${unlocked?'var(--accent)':'var(--fg-4)'};margin-top:4px;font-weight:bold;">+${a.xp} XP ${ts?'• '+ts:''}</div>
         </div>`;
       }).join('')
     }</div>`;
@@ -297,7 +297,7 @@ function openStreamViewer(sport, matchTitle) {
   // Build source buttons
   if(sourcesEl) {
     sourcesEl.innerHTML = sources.map((s,i) =>
-      `<button onclick="loadStreamSource(${i},'${sport}')" style="flex-shrink:0;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 14px;color:#ccc;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" id="streamBtn_${i}">
+      `<button onclick="loadStreamSource(${i},'${sport}')" style="flex-shrink:0;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;color:var(--fg-2);font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;" id="streamBtn_${i}">
         ${s.icon} ${s.name}
       </button>`
     ).join('');
@@ -317,8 +317,8 @@ function loadStreamSource(idx, sport) {
 
   // Highlight active button
   document.querySelectorAll('[id^="streamBtn_"]').forEach((b,i) => {
-    b.style.borderColor = i === idx ? 'var(--accent)' : '#333';
-    b.style.color = i === idx ? 'var(--accent)' : '#ccc';
+    b.style.borderColor = i === idx ? 'var(--accent)' : 'var(--line)';
+    b.style.color = i === idx ? 'var(--accent)' : 'var(--fg-2)';
   });
 
   const area = document.getElementById('streamEmbedArea');
@@ -338,8 +338,8 @@ function loadStreamSource(idx, sport) {
       area.innerHTML = `
         <div class="stream-fallback-ui">
           <div style="font-size:50px;">📡</div>
-          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">Трансляція недоступна</div>
-          <div style="font-size:12px;color:#777;text-align:center;max-width:270px;line-height:1.5;">Відео заблоковано або недоступне в embed-режимі. Спробуйте інше джерело.</div>
+          <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">Трансляція недоступна</div>
+          <div style="font-size:12px;color:var(--fg-3);text-align:center;max-width:270px;line-height:1.5;">Відео заблоковано або недоступне в embed-режимі. Спробуйте інше джерело.</div>
           <button class="retry-btn" onclick="loadStreamSource(${idx},'${sport}')">🔄 Спробувати знову</button>
           <a href="${extUrl}" target="_blank" style="text-decoration:none;"><button class="open-ext-btn">↗ Відкрити на сайті</button></a>
         </div>`;
@@ -361,8 +361,8 @@ function loadStreamSource(idx, sport) {
     area.innerHTML = `
       <div style="text-align:center;padding:30px;">
         <div style="font-size:36px;margin-bottom:12px;">${s.icon}</div>
-        <div style="font-size:14px;color:#ccc;margin-bottom:16px;">${s.name}</div>
-        <a href="${s.url}" target="_blank" style="display:inline-block;background:var(--accent);color:#000;font-weight:bold;padding:12px 24px;border-radius:12px;font-size:14px;text-decoration:none;">
+        <div style="font-size:14px;color:var(--fg-2);margin-bottom:16px;">${s.name}</div>
+        <a href="${s.url}" target="_blank" style="display:inline-block;background:var(--accent);color:var(--on-accent);font-weight:bold;padding:12px 24px;border-radius:var(--r-lg);font-size:14px;text-decoration:none;">
           📺 Відкрити трансляцію ↗
         </a>
       </div>`;

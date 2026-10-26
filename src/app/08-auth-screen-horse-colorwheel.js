@@ -341,7 +341,7 @@ function spinColorWheel() {
 function renderColorHistory() {
   const el = document.getElementById('colorHistory');
   if(!el) return;
-  el.innerHTML = colorHistoryArr.map(c=>`<div style="width:16px;height:16px;border-radius:50%;background:${c==='red'?'#e74c3c':c==='green'?'#3dd68c':'#fff'};flex-shrink:0;"></div>`).join('');
+  el.innerHTML = colorHistoryArr.map(c=>`<div style="width:16px;height:16px;border-radius:50%;background:${c==='red'?'var(--neg)':c==='green'?'var(--pos)':'var(--paper)'};flex-shrink:0;"></div>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════

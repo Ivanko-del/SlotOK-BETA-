@@ -5,9 +5,9 @@ let cfSelectedSide = 'heads';
 let cfCurrentRoom = null;
 
 function switchCfTab(tab) {
-  document.getElementById('cftab-create').style.background = tab==='create' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('cftab-create').style.background = tab==='create' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('cftab-create').style.color = tab==='create' ? 'var(--accent)' : 'var(--sub)';
-  document.getElementById('cftab-join').style.background = tab==='join' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('cftab-join').style.background = tab==='join' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('cftab-join').style.color = tab==='join' ? 'var(--accent)' : 'var(--sub)';
   document.getElementById('cf-panel-create').classList.toggle('hidden', tab!=='create');
   document.getElementById('cf-panel-join').classList.toggle('hidden', tab!=='join');
@@ -25,10 +25,10 @@ function selectCfSide(side) {
   const heads = document.getElementById('cf-side-heads');
   const tails = document.getElementById('cf-side-tails');
   if(side==='heads') {
-    heads.style.border='2px solid var(--accent)'; heads.style.background='linear-gradient(135deg,#1a1200,#2d2000)';
+    heads.style.border='2px solid var(--accent)'; heads.style.background='linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)))';
     tails.style.border='2px solid var(--border)'; tails.style.background='var(--box)';
   } else {
-    tails.style.border='2px solid var(--accent)'; tails.style.background='linear-gradient(135deg,#001a2e,#000d14)';
+    tails.style.border='2px solid var(--accent)'; tails.style.background='linear-gradient(135deg,color-mix(in srgb, var(--info) 10%, var(--surface-1)),var(--bg))';
     heads.style.border='2px solid var(--border)'; heads.style.background='var(--box)';
   }
 }
@@ -60,12 +60,12 @@ function loadCfRooms() {
     const list = Object.entries(rooms).filter(([id, r]) => r.creator !== currentUser);
     if(!list.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub);padding:30px;font-size:13px;">Немає кімнат. Перевір пізніше!</div>'; return; }
     el.innerHTML = list.map(([id, r]) => `
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-size:14px;font-weight:700;">${r.creator} 🆚 ?</div>
           <div style="font-size:11px;color:var(--sub);margin-top:3px;">Ставка: <b style="color:var(--accent);">₴${formatNumber(r.bet)}</b> · ${r.side==='heads'?'🌕 Орел':'🌑 Решка'}</div>
         </div>
-        <button onclick="joinCfRoom('${id}',${r.bet},'${r.creator}','${r.side}')" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
+        <button onclick="joinCfRoom('${id}',${r.bet},'${r.creator}','${r.side}')" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--on-accent);border:none;border-radius:var(--r-md);padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
       </div>`).join('');
   });
 }
@@ -131,9 +131,9 @@ const RPS_BEATS = { rock:'scissors', scissors:'paper', paper:'rock' };
 const RPS_EMOJI = { rock:'✊', scissors:'✌️', paper:'🖐️' };
 
 function switchRpsTab(tab) {
-  document.getElementById('rpstab-create').style.background = tab==='create' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('rpstab-create').style.background = tab==='create' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('rpstab-create').style.color = tab==='create' ? 'var(--accent)' : 'var(--sub)';
-  document.getElementById('rpstab-join').style.background = tab==='join' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('rpstab-join').style.background = tab==='join' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('rpstab-join').style.color = tab==='join' ? 'var(--accent)' : 'var(--sub)';
   document.getElementById('rps-panel-create').classList.toggle('hidden', tab!=='create');
   document.getElementById('rps-panel-join').classList.toggle('hidden', tab!=='join');
@@ -171,10 +171,10 @@ function loadRpsRooms() {
     const list = Object.entries(rooms).filter(([,r]) => r.creator !== currentUser);
     if(!list.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub);padding:30px;font-size:13px;">Немає кімнат!</div>'; return; }
     el.innerHTML = list.map(([id, r]) => `
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div><div style="font-size:14px;font-weight:700;">${r.creator} ✊ ?</div>
         <div style="font-size:11px;color:var(--sub);margin-top:3px;">Ставка: <b style="color:var(--accent);">₴${formatNumber(r.bet)}</b></div></div>
-        <button onclick="joinRpsRoom('${id}',${r.bet},'${r.creator}')" style="background:linear-gradient(135deg,#8e44ad,#9b59b6);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
+        <button onclick="joinRpsRoom('${id}',${r.bet},'${r.creator}')" style="background:var(--special);color:var(--on-special);border:none;border-radius:var(--r-md);padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
       </div>`).join('');
   });
 }
@@ -299,9 +299,9 @@ let pdCurrentRoom = null;
 let pdRole = null;
 
 function switchPdTab(tab) {
-  document.getElementById('pdtab-create').style.background = tab==='create' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('pdtab-create').style.background = tab==='create' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('pdtab-create').style.color = tab==='create' ? 'var(--accent)' : 'var(--sub)';
-  document.getElementById('pdtab-join').style.background = tab==='join' ? 'rgba(212,175,55,.15)' : 'transparent';
+  document.getElementById('pdtab-join').style.background = tab==='join' ? 'rgb(var(--accent-rgb) / 0.15)' : 'transparent';
   document.getElementById('pdtab-join').style.color = tab==='join' ? 'var(--accent)' : 'var(--sub)';
   document.getElementById('pd-panel-create').classList.toggle('hidden', tab!=='create');
   document.getElementById('pd-panel-join').classList.toggle('hidden', tab!=='join');
@@ -339,10 +339,10 @@ function loadPdRooms() {
     const list = Object.entries(rooms).filter(([,r])=>r.creator!==currentUser);
     if(!list.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub);padding:30px;font-size:13px;">Немає кімнат!</div>'; return; }
     el.innerHTML = list.map(([id,r])=>`
-      <div style="background:var(--box);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div><div style="font-size:14px;font-weight:700;">${r.creator} 🔮 ?</div>
         <div style="font-size:11px;color:var(--sub);margin-top:3px;">Ставка: <b style="color:var(--accent);">₴${formatNumber(r.bet)}</b></div></div>
-        <button onclick="joinPdRoom('${id}',${r.bet},'${r.creator}')" style="background:linear-gradient(135deg,#0077b6,#00b4d8);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
+        <button onclick="joinPdRoom('${id}',${r.bet},'${r.creator}')" style="background:linear-gradient(135deg,var(--info),var(--primary));color:var(--fg);border:none;border-radius:var(--r-md);padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;margin:0;">Прийняти</button>
       </div>`).join('');
   });
 }
@@ -442,15 +442,15 @@ function showPdResult(won, draw, secret, myGuess, oppGuess, myDist, oppDist, bet
   const label = draw ? '🤝 НІЧИЯ!' : won ? '🏆 ВИГРАШ!' : '😞 ПРОГРАШ';
   const amtStr = draw ? '±₴0' : won ? '+₴'+formatNumber(payout) : '-₴'+formatNumber(bet);
   box.innerHTML = `
-    <div style="font-size:50px;font-weight:900;color:var(--accent);font-family:'Orbitron',monospace;margin-bottom:6px;">${secret}</div>
+    <div style="font-size:50px;font-weight:900;color:var(--accent);font-family:var(--font-display);margin-bottom:6px;">${secret}</div>
     <div style="font-size:12px;color:var(--sub);margin-bottom:16px;">Загадане число</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div style="background:rgba(${won?'61,214,140':'240,64,96'},.1);border:1px solid rgba(${won?'61,214,140':'240,64,96'},.3);border-radius:14px;padding:12px;text-align:center;">
+      <div style="background:rgba(${won?'61,214,140':'240,64,96'},.1);border:1px solid rgba(${won?'61,214,140':'240,64,96'},.3);border-radius:var(--r-lg);padding:12px;text-align:center;">
         <div style="font-size:22px;font-weight:900;color:${won&&!draw?'var(--green)':draw?'var(--accent)':'var(--red)'};">${myGuess}</div>
         <div style="font-size:10px;color:var(--sub);">Твоє число</div>
         <div style="font-size:11px;color:var(--sub);">відстань: ${myDist}</div>
       </div>
-      <div style="background:rgba(140,140,140,.08);border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center;">
+      <div style="background:rgb(var(--tint-rgb) / 0.08);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;text-align:center;">
         <div style="font-size:22px;font-weight:900;">${oppGuess}</div>
         <div style="font-size:10px;color:var(--sub);">${opponent}</div>
         <div style="font-size:11px;color:var(--sub);">відстань: ${oppDist}</div>
@@ -814,7 +814,7 @@ async function playLimbo() {
 
   const resEl = document.getElementById('limboResultDisplay');
   const msgEl = document.getElementById('limboResultMsg');
-  if(resEl) { resEl.style.color = '#c9a0ff'; resEl.textContent = '...'; }
+  if(resEl) { resEl.style.color = 'var(--special)'; resEl.textContent = '...'; }
   if(msgEl) msgEl.textContent = '';
 
   // Генерація результату (розподіл як у Crash) — на сервері, якщо він налаштований
@@ -841,7 +841,7 @@ async function playLimbo() {
         if(resEl) {
           resEl.textContent = '×' + finalVal.toFixed(2);
           resEl.style.color = win ? 'var(--green)' : 'var(--red)';
-          resEl.style.textShadow = win ? '0 0 30px rgba(61,214,140,.5)' : '0 0 30px rgba(240,64,96,.5)';
+          resEl.style.textShadow = win ? 'none' : 'none';
         }
         if(win) {
           if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -860,7 +860,7 @@ async function playLimbo() {
         const hist = document.getElementById('limboHistory');
         if(hist) {
           const pill = document.createElement('div');
-          pill.style.cssText = `padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;background:${win?'rgba(61,214,140,.15)':'rgba(240,64,96,.15)'};border:1px solid ${win?'rgba(61,214,140,.4)':'rgba(240,64,96,.3)'};color:${win?'var(--green)':'var(--red)'};`;
+          pill.style.cssText = `padding:4px 10px;border-radius:var(--r-xl);font-size:12px;font-weight:700;background:${win?'rgb(var(--pos-rgb) / 0.15)':'rgb(var(--neg-rgb) / 0.15)'};border:1px solid ${win?'rgb(var(--pos-rgb) / 0.4)':'rgb(var(--neg-rgb) / 0.3)'};color:${win?'var(--green)':'var(--red)'};`;
           pill.textContent = '×' + finalVal.toFixed(2);
           hist.insertBefore(pill, hist.firstChild);
           if(hist.children.length > 20) hist.removeChild(hist.lastChild);
@@ -868,7 +868,7 @@ async function playLimbo() {
         limboRunning = false;
         if(btn) btn.disabled = false;
         setTimeout(() => {
-          if(resEl) { resEl.style.color = '#c9a0ff'; resEl.style.textShadow = ''; }
+          if(resEl) { resEl.style.color = 'var(--special)'; resEl.style.textShadow = ''; }
         }, 1500);
       }
     }, 30);

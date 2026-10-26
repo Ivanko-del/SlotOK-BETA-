@@ -145,7 +145,7 @@ async function loadRealSportMatches(sport, btnEl) {
   const listEl = document.getElementById('sportMatchesList');
   const loadEl = document.getElementById('sportsLoadingEl');
   if(listEl) listEl.innerHTML = '';
-  if(loadEl) { loadEl.classList.remove('hidden'); loadEl.innerHTML = '<div style="text-align:center;padding:30px;color:#555;font-size:13px;">📡 Завантаження матчів...</div>'; }
+  if(loadEl) { loadEl.classList.remove('hidden'); loadEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--fg-4);font-size:13px;">📡 Завантаження матчів...</div>'; }
 
   const meta = SPORT_META[sport];
   let matches = [];
@@ -260,7 +260,7 @@ function renderRealMatches(matches) {
   const listEl = document.getElementById('sportMatchesList');
   if(!listEl) return;
   if(!matches.length) {
-    listEl.innerHTML = '<div style="text-align:center;color:#555;padding:40px 0;font-size:13px;">Матчів не знайдено. Спробуйте інший вид спорту.</div>';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--fg-4);padding:40px 0;font-size:13px;">Матчів не знайдено. Спробуйте інший вид спорту.</div>';
     return;
   }
   listEl.innerHTML = '';
@@ -282,22 +282,22 @@ function buildMatchCardHTML(m) {
   const aiTeam     = m.aiPick==='home' ? shortName2(m.home) : m.aiPick==='away' ? shortName2(m.away) : 'Нічия';
 
   const timeStr = isFinal ? '🏁 Завершено' :
-    isLive ? `<span style="color:#e74c3c;font-weight:bold;animation:pulse2 1s infinite;">🔴 LIVE ${m.liveMinute||''}</span>` :
+    isLive ? `<span style="color:var(--neg);font-weight:bold;animation:pulse2 1s infinite;">🔴 LIVE ${m.liveMinute||''}</span>` :
     m.matchTime ? '🕐 ' + new Date(m.matchTime).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '📅 Незабаром';
 
   const scoreHtml = (isLive || isFinal) && m.liveScore
     ? `<div class="live-score-badge">${m.liveScore.home} : ${m.liveScore.away}</div>`
-    : `<div style="padding:8px 14px;color:#555;font-size:12px;">vs</div>`;
+    : `<div style="padding:8px 14px;color:var(--fg-4);font-size:12px;">vs</div>`;
 
   // Team logos (if from ESPN)
-  const homeLogo = m.homeLogo ? `<img src="${safeUrl(m.homeLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
-  const awayLogo = m.awayLogo ? `<img src="${safeUrl(m.awayLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
+  const homeLogo = m.homeLogo ? `<img src="${safeUrl(m.homeLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:var(--r-xs);" onerror="this.style.display='none'">` : '';
+  const awayLogo = m.awayLogo ? `<img src="${safeUrl(m.awayLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:var(--r-xs);" onerror="this.style.display='none'">` : '';
 
   const disabled = isFinal ? 'pointer-events:none;opacity:0.5;' : '';
 
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-size:11px;color:#555;font-weight:bold;">${sport.icon} ${m.league}</span>
+      <span style="font-size:11px;color:var(--fg-4);font-weight:bold;">${sport.icon} ${m.league}</span>
       <span style="font-size:11px;">${timeStr}</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin-bottom:10px;">
@@ -322,22 +322,22 @@ function buildMatchCardHTML(m) {
         <div class="odds-label">${shortName2(m.away)}</div><div class="odds-val">${parseFloat(m.awayOdds).toFixed(2)}</div>
       </div>
     </div>
-    <div style="background:#0a0a0a;border-left:3px solid ${confColor};border-radius:0 8px 8px 0;padding:8px 10px;margin-top:8px;">
+    <div style="background:var(--bg);border-left:3px solid ${confColor};border-radius:0 var(--r-md) var(--r-md) 0;padding:8px 10px;margin-top:8px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
         <span style="font-size:11px;font-weight:bold;color:${confColor};">🤖 ШІ: ${aiTeam}</span>
         <span style="font-size:11px;font-weight:bold;color:${confColor};">${m.confidence||65}%</span>
       </div>
-      <div style="font-size:10px;color:#666;">${m.analysis||m.aiAnalysis||''}</div>
-      <div style="background:#111;border-radius:4px;height:4px;margin-top:6px;overflow:hidden;">
+      <div style="font-size:10px;color:var(--fg-3);">${m.analysis||m.aiAnalysis||''}</div>
+      <div style="background:var(--surface-1);border-radius:var(--r-xs);height:4px;margin-top:6px;overflow:hidden;">
         <div style="height:100%;background:${confColor};width:${m.confidence||65}%;transition:width 1s;"></div>
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-      ${isLive ? `<button onclick="openLiveView('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;border-radius:8px;color:#e74c3c;font-size:11px;font-weight:bold;cursor:pointer;">🔴 LIVE</button>` : ''}
-      <button onclick="openMatchTracker('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgba(0,119,182,0.15);border:1px solid #0077b6;border-radius:8px;color:#00b4d8;font-size:11px;font-weight:bold;cursor:pointer;">📡 ТРЕКЕР</button>
-      <button onclick="openStreamViewer('${m.sport}','${m.home.replace(/'/g,"\'")} vs ${m.away.replace(/'/g,"\'")} ')" style="flex:1;min-width:70px;padding:8px;background:#1a0a2e;border:1px solid #5a20c0;border-radius:8px;color:#c9a0ff;font-size:11px;font-weight:bold;cursor:pointer;">📺 СТРІМ</button>
+      ${isLive ? `<button onclick="openLiveView('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgb(var(--neg-rgb) / 0.12);border:1px solid var(--neg);border-radius:var(--r-md);color:var(--neg);font-size:11px;font-weight:bold;cursor:pointer;">🔴 LIVE</button>` : ''}
+      <button onclick="openMatchTracker('${m.id}')" style="flex:1;min-width:70px;padding:8px;background:rgb(var(--info-rgb) / 0.15);border:1px solid var(--info);border-radius:var(--r-md);color:var(--primary);font-size:11px;font-weight:bold;cursor:pointer;">📡 ТРЕКЕР</button>
+      <button onclick="openStreamViewer('${m.sport}','${m.home.replace(/'/g,"\'")} vs ${m.away.replace(/'/g,"\'")} ')" style="flex:1;min-width:70px;padding:8px;background:color-mix(in srgb, var(--special) 12%, var(--surface-1));border:1px solid var(--special);border-radius:var(--r-md);color:var(--special);font-size:11px;font-weight:bold;cursor:pointer;">📺 СТРІМ</button>
     </div>
-    ${isFinal ? `<div style="text-align:center;margin-top:6px;font-size:11px;color:#555;">🏁 Матч завершено</div>` : ''}
+    ${isFinal ? `<div style="text-align:center;margin-top:6px;font-size:11px;color:var(--fg-4);">🏁 Матч завершено</div>` : ''}
   `;
 }
 
@@ -418,7 +418,7 @@ function openLiveView(matchId) {
   const match = realMatches[matchId]; if(!match) return;
   activeLiveMatchId = matchId;
   let modal = document.getElementById('liveViewModal');
-  if(!modal) { modal = document.createElement('div'); modal.id='liveViewModal'; modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#030303;z-index:9500;overflow-y:auto;'; document.body.appendChild(modal); }
+  if(!modal) { modal = document.createElement('div'); modal.id='liveViewModal'; modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:9500;overflow-y:auto;'; document.body.appendChild(modal); }
   modal.innerHTML = buildLiveViewHTML(match);
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -427,32 +427,32 @@ function openLiveView(matchId) {
 function buildLiveViewHTML(m) {
   const h = m.liveScore?.home ?? 0, a = m.liveScore?.away ?? 0;
   const sport = SPORT_META[m.sport] || SPORT_META.soccer;
-  return `<div style="background:#030303;min-height:100vh;padding:16px;padding-bottom:100px;box-sizing:border-box;">
+  return `<div style="background:var(--bg);min-height:100vh;padding:16px;padding-bottom:100px;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <button onclick="closeLiveView()" style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 14px;color:#aaa;font-size:13px;cursor:pointer;">⬅ Назад</button>
-      <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;background:#e74c3c;border-radius:50%;animation:pulse2 1s infinite;"></div><span style="color:#e74c3c;font-size:12px;font-weight:bold;">LIVE</span></div>
-      <div style="font-size:11px;color:#555;">${sport.icon} ${m.league}</div>
+      <button onclick="closeLiveView()" style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;color:var(--fg-2);font-size:13px;cursor:pointer;">⬅ Назад</button>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;background:var(--neg);border-radius:50%;animation:pulse2 1s infinite;"></div><span style="color:var(--neg);font-size:12px;font-weight:bold;">LIVE</span></div>
+      <div style="font-size:11px;color:var(--fg-4);">${sport.icon} ${m.league}</div>
     </div>
-    <div style="background:linear-gradient(180deg,#0d1a14,#000);border:1px solid #1a3a1a;border-radius:20px;padding:24px 16px;text-align:center;margin-bottom:16px;">
-      <div style="font-size:11px;color:#555;margin-bottom:12px;" id="liveMatchMinute">⏱ ${m.liveMinute||'0'}'</div>
+    <div style="background:linear-gradient(180deg,var(--surface-1),var(--bg));border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-xl);padding:24px 16px;text-align:center;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--fg-4);margin-bottom:12px;" id="liveMatchMinute">⏱ ${m.liveMinute||'0'}'</div>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:16px;">
         <div><div style="font-size:14px;font-weight:bold;">${m.home}</div></div>
-        <div id="liveScoreBoard" style="background:#000;border:2px solid #1a3a1a;border-radius:16px;padding:12px 20px;">
-          <div style="font-size:44px;font-weight:900;font-family:monospace;letter-spacing:4px;">${h}<span style="color:#333;margin:0 4px;">:</span>${a}</div>
+        <div id="liveScoreBoard" style="background:var(--bg);border:2px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:12px 20px;">
+          <div style="font-size:44px;font-weight:900;font-family:var(--font-mono);letter-spacing:4px;">${h}<span style="color:var(--fg-4);margin:0 4px;">:</span>${a}</div>
         </div>
         <div><div style="font-size:14px;font-weight:bold;">${m.away}</div></div>
       </div>
-      <div id="liveStatsBar" style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:8px;">
+      <div id="liveStatsBar" style="display:flex;height:6px;border-radius:var(--r-xs);overflow:hidden;margin-bottom:8px;">
         <div style="background:var(--green);flex:${50};transition:flex 1s;"></div>
-        <div style="background:#e74c3c;flex:${50};transition:flex 1s;"></div>
+        <div style="background:var(--neg);flex:${50};transition:flex 1s;"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;"><span id="liveHomePoss">50%</span><span>Позиція</span><span id="liveAwayPoss">50%</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--fg-4);"><span id="liveHomePoss">50%</span><span>Позиція</span><span id="liveAwayPoss">50%</span></div>
     </div>
-    <div style="background:#0d0d0d;border-radius:16px;padding:14px;margin-bottom:14px;">
+    <div style="background:var(--surface-1);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
       <div style="font-size:13px;font-weight:bold;margin-bottom:8px;">📋 Події матчу</div>
-      <div id="liveEventsList"><div style="color:#555;font-size:12px;text-align:center;padding:20px;">⏳ Очікуємо події...</div></div>
+      <div id="liveEventsList"><div style="color:var(--fg-4);font-size:12px;text-align:center;padding:20px;">⏳ Очікуємо події...</div></div>
     </div>
-    <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:16px;padding:14px;">
+    <div style="background:var(--surface-1);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:14px;">
       <div style="font-size:13px;font-weight:bold;color:var(--accent);margin-bottom:10px;">⚡ Швидка ставка</div>
       <div class="match-odds-row" style="gap:6px;">
         <div class="odds-btn" onclick="openBetSlip('${m.id}','home','${m.home.replace(/'/g,"\\'")}')"><div class="odds-label">${shortName2(m.home)}</div><div class="odds-val">${m.homeOdds}</div></div>
@@ -471,13 +471,13 @@ function updateLiveView(match, score) {
   const hpEl  = document.getElementById('liveHomePoss');
   const apEl  = document.getElementById('liveAwayPoss');
   if(minEl) minEl.textContent = `⏱ ${score.minute||match.liveMinute||0}'`;
-  if(sbEl) sbEl.innerHTML = `<div style="font-size:44px;font-weight:900;font-family:monospace;letter-spacing:4px;">${score.homeScore}<span style="color:#333;margin:0 4px;">:</span>${score.awayScore}</div>`;
+  if(sbEl) sbEl.innerHTML = `<div style="font-size:44px;font-weight:900;font-family:var(--font-mono);letter-spacing:4px;">${score.homeScore}<span style="color:var(--fg-4);margin:0 4px;">:</span>${score.awayScore}</div>`;
   if(evEl && score.events?.length) {
     const icons = {goal:'⚽',yellowCard:'🟨',redCard:'🟥',substitution:'🔄',penalty:'⚡'};
-    evEl.innerHTML = [...score.events].reverse().map(ev => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #111;"><div style="min-width:28px;font-size:10px;color:#555;">${ev.minute}'</div><div style="font-size:16px;">${icons[ev.type]||'📌'}</div><div><div style="font-size:12px;font-weight:bold;">${ev.player||''}</div><div style="font-size:10px;color:#555;">${ev.team==='home'?match.home:match.away}</div></div></div>`).join('');
+    evEl.innerHTML = [...score.events].reverse().map(ev => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);"><div style="min-width:28px;font-size:10px;color:var(--fg-4);">${ev.minute}'</div><div style="font-size:16px;">${icons[ev.type]||'📌'}</div><div><div style="font-size:12px;font-weight:bold;">${ev.player||''}</div><div style="font-size:10px;color:var(--fg-4);">${ev.team==='home'?match.home:match.away}</div></div></div>`).join('');
   }
   const hP = score.homeScore > score.awayScore ? 55 : score.awayScore > score.homeScore ? 45 : 50;
-  if(statEl) statEl.innerHTML = `<div style="background:var(--green);flex:${hP};transition:flex 1s;"></div><div style="background:#e74c3c;flex:${100-hP};transition:flex 1s;"></div>`;
+  if(statEl) statEl.innerHTML = `<div style="background:var(--green);flex:${hP};transition:flex 1s;"></div><div style="background:var(--neg);flex:${100-hP};transition:flex 1s;"></div>`;
   if(hpEl) hpEl.textContent = hP+'%'; if(apEl) apEl.textContent = (100-hP)+'%';
 }
 
@@ -495,7 +495,7 @@ function openBetSlip(matchId, outcome, team) {
   currentBetSlip = { matchId, outcome, team, odds: parseFloat(odds), match };
   const modal = document.getElementById('betSlipModal');
   document.getElementById('betSlipMatchInfo').innerHTML =
-    `<div style="font-size:11px;color:#555;margin-bottom:4px;">${SPORT_META[match.sport]?.icon||'🏆'} ${match.league}</div>
+    `<div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">${SPORT_META[match.sport]?.icon||'🏆'} ${match.league}</div>
      <div style="font-weight:bold;">${match.home} vs ${match.away}</div>
      <div style="color:var(--green);margin-top:4px;font-size:13px;">Ваша ставка: <b>${team}</b></div>`;
   document.getElementById('betSlipOdds').textContent = '×' + parseFloat(odds).toFixed(2);
@@ -549,15 +549,15 @@ function loadSportMyBets() {
   const el = document.getElementById('sportMyBets'); if(!el) return;
   db.ref('sport_bets').orderByChild('userId').equalTo(currentUser).limitToLast(10).once('value', snap => {
     const bets = snap.val();
-    if(!bets) { el.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Немає ставок</div>'; return; }
+    if(!bets) { el.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px 0;">Немає ставок</div>'; return; }
     const sorted = Object.values(bets).sort((a,b) => b.placedAt - a.placedAt);
     el.innerHTML = sorted.map(b => {
       const sc = b.status==='won'?'var(--green)':b.status==='lost'?'var(--red)':'var(--accent)';
       const st = b.status==='won'?`✅ +${formatNumber(b.potential)}₴`:b.status==='lost'?`❌ -${formatNumber(b.amount)}₴`:'⏳ Очікує';
-      return `<div style="background:var(--input);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-        <div><div style="font-size:12px;font-weight:bold;">${(SPORT_META[b.sport]?.icon||'🏆')} ${b.team} <span style="font-size:10px;color:#555;">×${b.odds}</span></div>
-        <div style="font-size:10px;color:#555;">${b.matchTitle||''}</div></div>
-        <div style="text-align:right;"><div style="font-size:13px;font-weight:bold;color:${sc};">${st}</div><div style="font-size:10px;color:#555;">${b.amount}₴</div></div>
+      return `<div style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:12px;font-weight:bold;">${(SPORT_META[b.sport]?.icon||'🏆')} ${b.team} <span style="font-size:10px;color:var(--fg-4);">×${b.odds}</span></div>
+        <div style="font-size:10px;color:var(--fg-4);">${b.matchTitle||''}</div></div>
+        <div style="text-align:right;"><div style="font-size:13px;font-weight:bold;color:${sc};">${st}</div><div style="font-size:10px;color:var(--fg-4);">${b.amount}₴</div></div>
       </div>`;
     }).join('');
   });

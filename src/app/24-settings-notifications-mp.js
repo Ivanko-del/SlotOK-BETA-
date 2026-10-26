@@ -40,7 +40,7 @@ function buildMiniRatesList() {
     const uahPer1 = 1/rate;
     const fmt = uahPer1 >= 1 ? uahPer1.toLocaleString('uk-UA',{maximumFractionDigits:1}) : uahPer1.toFixed(6);
     const div = document.createElement('div');
-    div.style.cssText = 'display:flex;justify-content:space-between;color:#888;padding:2px 0;';
+    div.style.cssText = 'display:flex;justify-content:space-between;color:var(--fg-3);padding:2px 0;';
     div.innerHTML = '<span>' + cur.flag + ' ' + code + '</span><span style="color:var(--accent);">' + fmt + '₴</span>';
     el.appendChild(div);
   });
@@ -85,63 +85,77 @@ function applyAllSettings() {
   document.querySelectorAll('.font-size-btn').forEach(b=>b.classList.remove('active'));
   const fsBtn = document.getElementById('fs_' + fs);
   if(fsBtn) fsBtn.classList.add('active');
-  const theme = getSetting('theme', 'dark');
+  const theme = normalizeThemeSetting(getSetting('theme', 'auto'));
   applyThemeVars(theme);
-  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
-  const td = document.getElementById('theme-' + theme);
-  if(td) td.classList.add('active');
+  syncThemeButtons(theme);
   loadAnimSpeed();
   loadLiveWallpaper();
 }
 
+// ── Тема інтерфейсу ──────────────────────────────────────────────────
+// Дві теми — темна й світла (токени в src/css/00-tokens.css) плюс «Авто»,
+// що йде за системою (prefers-color-scheme). Колишні кольорові теми
+// (синя/неон/матриця/сакура…) тепер — варіанти акценту, див. setAccentColor().
 const THEMES = {
-  dark:     { bg:'#050505', box:'#141414', border:'#333',    input:'#1a1a1a', text:'#fff',    accent:'#d4af37', label:'🌑 Темна', emoji:'🌑' },
-  light:    { bg:'#f0f0f0', box:'#ffffff', border:'#ddd',    input:'#e8e8e8', text:'#111',    accent:'#d4af37', label:'☀️ Світла', emoji:'☀️' },
-  blue:     { bg:'#050518', box:'#0d0d2e', border:'#1a1a55', input:'#0a0a22', text:'#e0e8ff', accent:'#4a9eff', label:'💙 Синя', emoji:'💙' },
-  green:    { bg:'#030e03', box:'#071407', border:'#0d2a0d', input:'#051005', text:'#d0f0d0', accent:'#4cd964', label:'💚 Зелена', emoji:'💚' },
-  red:      { bg:'#0e0303', box:'#1a0505', border:'#3a0a0a', input:'#120404', text:'#ffe0e0', accent:'#ff5050', label:'❤️ Червона', emoji:'❤️' },
-  neon:     { bg:'#010110', box:'#07071e', border:'#1a0050', input:'#0a0a25', text:'#e0d0ff', accent:'#b347ff', label:'💜 Неон', emoji:'💜' },
-  matrix:   { bg:'#000a00', box:'#001000', border:'#003300', input:'#001500', text:'#00ff41', accent:'#00ff41', label:'💚 Матриця', emoji:'🟩' },
-  sakura:   { bg:'#110008', box:'#1e0012', border:'#4a0030', input:'#180010', text:'#ffddee', accent:'#ff69b4', label:'🌸 Сакура', emoji:'🌸' },
+  auto:  { label: 'Авто', hint: 'Як у системі' },
+  dark:  { label: 'Темна', hint: 'Нічний друк' },
+  light: { label: 'Світла', hint: 'Папір' },
 };
+// Старе значення теми → [тема, акцент]
+const LEGACY_THEME_ACCENT = { blue: 'blue', green: 'matrix', red: 'coral', neon: 'neon', matrix: 'matrix', sakura: 'sakura' };
+
+function normalizeThemeSetting(theme) {
+  if (THEMES[theme]) return theme;
+  // Гравець мав одну зі старих кольорових тем — переносимо її в акцент.
+  const acc = LEGACY_THEME_ACCENT[theme];
+  if (acc && !localStorage.getItem('slotok_accent')) setAccentColor(acc, null, true);
+  try { saveSetting('theme', 'dark'); } catch (e) {}
+  return 'dark';
+}
+
+function resolvedTheme(theme) {
+  if (theme === 'dark' || theme === 'light') return theme;
+  return window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
 
 function applyThemeVars(theme) {
-  const t = THEMES[theme] || THEMES.dark;
+  theme = THEMES[theme] ? theme : 'auto';
   const root = document.documentElement;
-  root.style.setProperty('--bg', t.bg);
-  root.style.setProperty('--box', t.box);
-  root.style.setProperty('--border', t.border);
-  root.style.setProperty('--input', t.input);
-  root.style.setProperty('--text', t.text);
-  document.body.style.background = t.bg;
-  document.body.style.color = t.text;
-  document.body.setAttribute('data-theme', theme);
+  if (theme === 'auto') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', theme);
+  // Колір смуги браузера / PWA під поточне тло
+  const meta = document.querySelector('meta[name="theme-color"]:not([media])');
+  if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim() || '#0E1020');
+  // Прибираємо сліди старої системи (інлайнові змінні й !important-оверрайд)
+  ['--bg', '--box', '--border', '--input', '--text'].forEach((v) => root.style.removeProperty(v));
+  document.getElementById('theme-override-style')?.remove();
+  document.body.removeAttribute('data-theme');
+  if (!localStorage.getItem('slotok_bg_type')) document.body.style.background = '';
+  document.body.style.color = '';
+}
 
-  // Apply theme-specific overrides inline for elements that use hardcoded colors
-  const styleId = 'theme-override-style';
-  let styleEl = document.getElementById(styleId);
-  if(!styleEl) { styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
-  styleEl.textContent = `
-    body, .header, .bottom-nav, .screen, .modal-content { background-color: ${t.bg} !important; color: ${t.text} !important; }
-    .box, .game-card, .game-thumb, .home-tabs, .home-tab-btn, .mp-size-btn,
-    .chat-box, .chat-msg, .mono-log, .news-card, .settings-section, .settings-row,
-    .bot-card, .cg-room-card, .mp-room-card, .vip-card, .notif-item { background-color: ${t.box} !important; border-color: ${t.border} !important; color: ${t.text} !important; }
-    input, select, textarea { background-color: ${t.input} !important; border-color: ${t.border} !important; color: ${t.text} !important; }
-    .home-tab-btn.active { background-color: ${t.input} !important; }
-    .chat-msg.mine { background: ${theme==='dark'?'rgba(212,175,55,0.06)':theme==='blue'?'rgba(100,150,255,0.1)':theme==='green'?'rgba(76,217,100,0.1)':theme==='red'?'rgba(255,100,80,0.1)':'rgba(0,100,200,0.1)'} !important; }
-    .chat-body-text { color: ${theme==='light'?'#333':'#ccc'} !important; }
-    .section-header { color: ${theme==='light'?'#555':'#777'} !important; }
-    .nav-item span:last-child { color: ${theme==='light'?'#555':'#777'} !important; }
-    .nav-item.active span { color: var(--accent) !important; }
-  `;
+if (window.matchMedia) {
+  try {
+    matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+      if (normalizeThemeSetting(getSetting('theme', 'auto')) === 'auto') applyThemeVars('auto');
+    });
+  } catch (e) {}
+}
+
+function syncThemeButtons(theme) {
+  document.querySelectorAll('[data-theme-option]').forEach((b) => {
+    const on = b.getAttribute('data-theme-option') === theme;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
 }
 
 function setTheme(theme, el) {
+  if (!THEMES[theme]) theme = 'auto';
   saveSetting('theme', theme);
   applyThemeVars(theme);
-  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
-  el.classList.add('active');
-  notify('🎨 Тема змінена', 'info');
+  syncThemeButtons(theme);
+  notify('Тема: ' + THEMES[theme].label, 'info');
 }
 
 
@@ -187,7 +201,7 @@ function renderNotifs() {
   if(!list) return;
   const filtered = notifFilter === 'all' ? allNotifs : allNotifs.filter(n => n.type === notifFilter);
   if(!filtered.length) {
-    list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:30px 0;">Немає сповіщень</div>';
+    list.innerHTML = '<div style="color:var(--fg-3);font-size:13px;text-align:center;padding:30px 0;">Немає сповіщень</div>';
     return;
   }
   list.innerHTML = filtered.map(n => {
@@ -366,10 +380,10 @@ const _origLoadComments = loadComments;
 window.loadComments = function(newsId) {
   const list = document.getElementById('cmtlist-' + newsId);
   if(!list) return;
-  list.innerHTML = '<div style="color:#555;font-size:12px;padding:5px 0;">Завантаження...</div>';
+  list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:5px 0;">Завантаження...</div>';
   db.ref('casino_news/' + newsId + '/comments').orderByChild('time').limitToLast(30).once('value', snap => {
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Коментарів ще немає!</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px 0;">Коментарів ще немає!</div>'; return; }
     list.innerHTML = '';
     const isAdminUserLocal = isAdminUser();
     Object.entries(data).forEach(([cid, c]) => {
@@ -377,7 +391,7 @@ window.loadComments = function(newsId) {
       const avHtml = c.avatarUrl
         ? '<div class="comment-avatar"><img src="' + safeUrl(c.avatarUrl) + '"></div>'
         : '<div class="comment-avatar">' + escapeHtml(c.avatarEmoji||'👤') + '</div>';
-      const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteComment(\'' + newsId + '\',\'' + cid + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 4px;opacity:0.6;" title="Видалити">✕</button>' : '';
+      const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteComment(\'' + newsId + '\',\'' + cid + '\')" style="background:none;border:none;color:var(--neg);font-size:11px;cursor:pointer;padding:0 4px;opacity:0.6;" title="Видалити">✕</button>' : '';
       const div = document.createElement('div');
       div.className = 'comment-item';
       div.innerHTML = avHtml +
@@ -483,7 +497,7 @@ function renderWaitPlayers(players, maxPlayers) {
     div.className = 'mp-player-slot ' + (filled[i] ? 'filled' : 'empty');
     div.innerHTML = filled[i]
       ? '<div style="font-size:16px;">' + (players[filled[i]].token||'👤') + '</div><div style="font-size:11px;margin-top:3px;">' + filled[i] + '</div>'
-      : '<div style="font-size:20px;color:#333;">+</div><div style="font-size:11px;color:#555;margin-top:3px;">Чекаємо...</div>';
+      : '<div style="font-size:20px;color:var(--fg-4);">+</div><div style="font-size:11px;color:var(--fg-4);margin-top:3px;">Чекаємо...</div>';
     el.appendChild(div);
   }
 }
@@ -494,7 +508,7 @@ window.loadMpRooms = function() {
     const list = document.getElementById('mpRoomsList');
     if(!list) return;
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-3);font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([id, r]) => {
       if(r.host === currentUser) return;
@@ -506,11 +520,11 @@ window.loadMpRooms = function() {
           '<span style="font-weight:bold;">🧑 ' + r.host + '</span>' +
           '<span class="mp-status-badge mp-waiting">' + playerCount + '/' + r.maxPlayers + ' 👥</span>' +
         '</div>' +
-        '<div style="color:#777;font-size:12px;margin-bottom:8px;">Ставка: <b style="color:var(--accent);">' + r.bet + '₴</b> • Вільних місць: <b style="color:var(--green);">' + spotsLeft + '</b></div>' +
+        '<div style="color:var(--fg-3);font-size:12px;margin-bottom:8px;">Ставка: <b style="color:var(--accent);">' + r.bet + '₴</b> • Вільних місць: <b style="color:var(--green);">' + spotsLeft + '</b></div>' +
         '<button class="btn-gold" style="padding:10px;" onclick="joinMpRoom2(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button>' +
       '</div>';
     });
-    if(!list.innerHTML) list.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>';
+    if(!list.innerHTML) list.innerHTML = '<div style="color:var(--fg-3);font-size:13px;text-align:center;padding:20px;">Немає відкритих кімнат</div>';
   });
 };
 
@@ -616,8 +630,8 @@ function renderMpGame2(r) {
       div.className = 'mp-player-info' + (isCurrent ? ' my-turn' : '') + (p.bankrupt ? ' bankrupt' : '');
       div.innerHTML =
         '<div style="font-size:18px;">' + (p.token||'👤') + '</div>' +
-        '<div style="font-size:10px;font-weight:bold;color:' + (isMe?'var(--accent)':'#ccc') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;">' + name + (isMe?' (я)':'') + '</div>' +
-        '<div style="font-size:11px;color:' + (p.bankrupt?'#ff3b30':'var(--green)') + ';font-weight:bold;">' + (p.bankrupt?'БАНКРУТ':formatNumber(p.money||0)+'₴') + '</div>';
+        '<div style="font-size:10px;font-weight:bold;color:' + (isMe?'var(--accent)':'var(--fg-2)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;">' + name + (isMe?' (я)':'') + '</div>' +
+        '<div style="font-size:11px;color:' + (p.bankrupt?'var(--neg)':'var(--green)') + ';font-weight:bold;">' + (p.bankrupt?'БАНКРУТ':formatNumber(p.money||0)+'₴') + '</div>';
       if(p.bankrupt) div.style.opacity = '0.4';
       bar.appendChild(div);
     });
@@ -626,9 +640,9 @@ function renderMpGame2(r) {
   const myTurn = r.turn === currentUser;
   const turnEl = document.getElementById('mpTurnInfo');
   if(turnEl) {
-    if(r.gameOver) { turnEl.textContent = '🏁 Гра завершена!'; turnEl.style.color = '#777'; }
+    if(r.gameOver) { turnEl.textContent = '🏁 Гра завершена!'; turnEl.style.color = 'var(--fg-3)'; }
     else if(myTurn) { turnEl.textContent = '⚡ Ваш хід!'; turnEl.style.color = 'var(--green)'; }
-    else { turnEl.textContent = '⏳ Хід гравця ' + r.turn; turnEl.style.color = '#777'; }
+    else { turnEl.textContent = '⏳ Хід гравця ' + r.turn; turnEl.style.color = 'var(--fg-3)'; }
   }
 
   const rollBtn = document.getElementById('mpRollBtn');
@@ -681,7 +695,7 @@ function renderMpBoard2(r) {
       else if(owner) ownerClass = 'owned-ai';
 
       div.className = 'mono-cell ' + (cell.type==='corner'?'corner':'') + ' ' + stripeClass + ' ' + ownerClass;
-      if(cell.color && MONO_COLORS) div.style.borderColor = MONO_COLORS[cell.color]||'#999';
+      if(cell.color && MONO_COLORS) div.style.borderColor = MONO_COLORS[cell.color]||'var(--fg-3)';
 
       const cornerIcons = {0:'🏁',10:'⛓️',20:'🌳',30:'👮'};
       if(cell.type==='corner') div.innerHTML='<span style="font-size:11px;">'+(cornerIcons[cell.pos]||'')+'</span><span style="font-size:7px;white-space:pre-line;">'+cell.label+'</span>';

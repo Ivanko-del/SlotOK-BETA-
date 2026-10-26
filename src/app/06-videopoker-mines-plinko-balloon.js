@@ -228,7 +228,7 @@ function minesRevealFromServer(mines, exceptIdx) {
         minesGrid[i] = 1;
         if(i === exceptIdx || !cells[i] || cells[i].classList.contains('revealed')) return;
         cells[i].innerHTML = '<span style="font-size:20px;opacity:.5;">💣</span>';
-        cells[i].style.background = 'rgba(240,64,96,.12)';
+        cells[i].style.background = 'rgb(var(--neg-rgb) / 0.12)';
     });
 }
 async function clickMineCellServer(idx, el) {
@@ -245,8 +245,8 @@ async function clickMineCellServer(idx, el) {
     if(r.status === 'lost') {
         minesGrid[idx] = 1;
         el.innerHTML = '<span style="font-size:20px;">💣</span>';
-        el.style.background = 'rgba(240,64,96,.3)';
-        el.style.border = '2px solid rgba(240,64,96,.6)';
+        el.style.background = 'rgb(var(--neg-rgb) / 0.3)';
+        el.style.border = '2px solid rgb(var(--neg-rgb) / 0.6)';
         playSound('loss');
         notify('💣 Бум! Програш', 'error');
         isMinesPlaying = false;
@@ -259,8 +259,8 @@ async function clickMineCellServer(idx, el) {
         return;
     }
     el.innerHTML = '<span style="font-size:20px;">💎</span>';
-    el.style.background = 'rgba(61,214,140,.15)';
-    el.style.border = '2px solid rgba(61,214,140,.4)';
+    el.style.background = 'rgb(var(--pos-rgb) / 0.15)';
+    el.style.border = '2px solid rgb(var(--pos-rgb) / 0.4)';
     playSound('click');
     movesMade = r.view.opened.length;
     currentMinesProfit = Math.floor(minesBet * r.mult);
@@ -301,8 +301,8 @@ function clickMineCell(idx, el) {
     el.classList.add('revealed');
     if(minesGrid[idx]===1){
         el.innerHTML = '<span style="font-size:20px;">💣</span>';
-        el.style.background = 'rgba(240,64,96,.3)';
-        el.style.border = '2px solid rgba(240,64,96,.6)';
+        el.style.background = 'rgb(var(--neg-rgb) / 0.3)';
+        el.style.border = '2px solid rgb(var(--neg-rgb) / 0.6)';
         playSound('loss');
         notify('💣 Бум! Програш', 'error');
         isMinesPlaying = false;
@@ -310,7 +310,7 @@ function clickMineCell(idx, el) {
         for(let i=0;i<25;i++){
             if(minesGrid[i]===1 && i!==idx){
                 cells[i].innerHTML = '<span style="font-size:20px;opacity:.5;">💣</span>';
-                cells[i].style.background = 'rgba(240,64,96,.12)';
+                cells[i].style.background = 'rgb(var(--neg-rgb) / 0.12)';
             }
         }
         addToHistory('Mines: -'+minesBet);
@@ -320,8 +320,8 @@ function clickMineCell(idx, el) {
         }, 2000);
     } else {
         el.innerHTML = '<span style="font-size:20px;">💎</span>';
-        el.style.background = 'rgba(61,214,140,.15)';
-        el.style.border = '2px solid rgba(61,214,140,.4)';
+        el.style.background = 'rgb(var(--pos-rgb) / 0.15)';
+        el.style.border = '2px solid rgb(var(--pos-rgb) / 0.4)';
         playSound('click');
         movesMade++;
         const safe = 25 - minesCount;

@@ -592,11 +592,11 @@ function chessShowPromotionPicker(move) {
   const names = { Q:'Ферзь', R:'Тура', B:'Слон', N:'Кінь' };
   const color = chessGame.color;
   const html = modalCloseBtn('chessPromo') +
-    '<div style="font-family:Orbitron,monospace;font-size:14px;color:#d4af37;margin-bottom:14px;padding-right:36px;">♟️ Оберіть фігуру для перетворення</div>' +
+    '<div style="font-family:var(--font-display);font-size:14px;color:var(--accent);margin-bottom:14px;padding-right:36px;">♟️ Оберіть фігуру для перетворення</div>' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">' +
-    pieces.map(p => `<div onclick="chessConfirmPromotion('${p}')" style="background:#111;border:1px solid #333;border-radius:12px;padding:16px 4px;text-align:center;cursor:pointer;">
+    pieces.map(p => `<div onclick="chessConfirmPromotion('${p}')" style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 4px;text-align:center;cursor:pointer;">
       <div style="font-size:36px;">${CHESS_PIECE_UNICODE[color+p]}</div>
-      <div style="font-size:10px;color:#888;margin-top:4px;">${names[p]}</div>
+      <div style="font-size:10px;color:var(--fg-3);margin-top:4px;">${names[p]}</div>
     </div>`).join('') +
     '</div>';
   window._chessPendingPromoMove = move;
@@ -615,7 +615,7 @@ function chessAddMoveToHistory(piece, move) {
   if(!el) return;
   const notation = chessMoveNotation(piece, move);
   const span = document.createElement('span');
-  span.style.cssText = 'display:inline-block;padding:2px 6px;margin:2px;background:#111;border-radius:4px;font-size:11px;color:#aaa;';
+  span.style.cssText = 'display:inline-block;padding:2px 6px;margin:2px;background:var(--surface-1);border-radius:var(--r-xs);font-size:11px;color:var(--fg-2);';
   span.textContent = notation;
   el.appendChild(span);
   el.scrollLeft = el.scrollWidth;
@@ -655,7 +655,7 @@ function renderChessBoard() {
       html += `<div class="chess-sq" onclick="chessSquareClick(${r},${c})" style="background:${bg};position:relative;">`;
       if(piece) {
         const isWhite = chessColorOf(piece) === 'w';
-        html += `<span style="font-size:min(8.5vw,32px);color:${isWhite?'#f5f5f0':'#1a1a1a'};text-shadow:${isWhite?'0 1px 2px rgba(0,0,0,.6)':'0 1px 1px rgba(255,255,255,.15)'};user-select:none;">${CHESS_PIECE_UNICODE[piece]}</span>`;
+        html += `<span style="font-size:min(8.5vw,32px);color:${isWhite?'var(--fg)':'var(--on-accent)'};text-shadow:${isWhite?'0 1px 2px rgb(var(--shade-rgb) / 0.6)':'0 1px 1px rgb(var(--tint-rgb) / 0.15)'};user-select:none;">${CHESS_PIECE_UNICODE[piece]}</span>`;
       }
       if(isLegalTarget) {
         html += piece ? '<div class="chess-capture-ring"></div>' : '<div class="chess-move-dot"></div>';
@@ -728,11 +728,11 @@ function loadChessRooms() {
   db.ref('pvp_chess').orderByChild('status').equalTo('waiting').limitToLast(20).once('value').then(snap => {
     const rooms = snap.val() || {};
     const entries = Object.entries(rooms).filter(([,r]) => r.creator !== currentUser);
-    if(!entries.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:16px;">Немає активних кімнат. Створи свою!</div>'; return; }
+    if(!entries.length) { el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:16px;">Немає активних кімнат. Створи свою!</div>'; return; }
     el.innerHTML = entries.map(([id, r]) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;background:#111;border-radius:10px;padding:10px 12px;margin-bottom:8px;">
-        <div><div style="font-weight:700;font-size:13px;">${r.creator}</div><div style="font-size:11px;color:#666;">Ставка: ₴${formatNumber(r.bet)}</div></div>
-        <button onclick="joinChessRoom('${id}',${r.bet})" style="background:linear-gradient(135deg,#8e44ad,#9b59b6);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-weight:800;font-size:12px;cursor:pointer;">Прийняти</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface-1);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;">
+        <div><div style="font-weight:700;font-size:13px;">${r.creator}</div><div style="font-size:11px;color:var(--fg-3);">Ставка: ₴${formatNumber(r.bet)}</div></div>
+        <button onclick="joinChessRoom('${id}',${r.bet})" style="background:var(--special);color:var(--on-special);border:none;border-radius:var(--r-md);padding:8px 16px;font-weight:800;font-size:12px;cursor:pointer;">Прийняти</button>
       </div>`).join('');
   });
 }

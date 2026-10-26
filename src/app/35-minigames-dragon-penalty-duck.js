@@ -16,11 +16,11 @@ function renderDragonGrid() {
     for(let c=0; c<dragonState.cols; c++) {
       const cell = document.createElement('div');
       cell.id = `dr-${r}-${c}`;
-      cell.style.cssText = 'flex:1;height:48px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:.3s;';
+      cell.style.cssText = 'flex:1;height:48px;background:rgb(var(--tint-rgb) / 0.05);border:1px solid rgb(var(--tint-rgb) / 0.1);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:.3s;';
       cell.textContent = r < dragonState.level ? '' : '🥚';
       if(dragonState.active && r === dragonState.level) {
-        cell.style.borderColor = 'rgba(212,175,55,.5)';
-        cell.style.background = 'rgba(212,175,55,.1)';
+        cell.style.borderColor = 'rgb(var(--accent-rgb) / 0.5)';
+        cell.style.background = 'rgb(var(--accent-rgb) / 0.1)';
         cell.onclick = () => pickDragonCell(r, c);
       }
       row.appendChild(cell);
@@ -82,12 +82,12 @@ async function pickDragonCell(row, col) {
     c.style.transition = '.4s';
     if(dragonCols.includes(i)) {
       c.textContent = '🐉';
-      c.style.background = 'rgba(231,76,60,.3)';
-      c.style.borderColor = '#e74c3c';
+      c.style.background = 'rgb(var(--neg-rgb) / 0.3)';
+      c.style.borderColor = 'var(--neg)';
     } else {
       c.textContent = '💎';
-      c.style.background = 'rgba(61,214,140,.2)';
-      c.style.borderColor = '#3dd68c';
+      c.style.background = 'rgb(var(--pos-rgb) / 0.2)';
+      c.style.borderColor = 'var(--pos)';
     }
   });
   if(dragonCols.includes(col)) {
@@ -169,9 +169,9 @@ async function shootPenalty(zone) {
   setTimeout(() => document.getElementById('penaltyGoalkeeper').textContent = '🧤', 800);
   // Flash chosen zone
   const el = document.getElementById('pz-'+zone);
-  if(el) { el.style.background=win?'rgba(39,174,96,.5)':'rgba(231,76,60,.4)'; setTimeout(()=>el.style.background='rgba(39,174,96,.1)',700); }
+  if(el) { el.style.background=win?'rgb(var(--pos-rgb) / 0.5)':'rgb(var(--neg-rgb) / 0.4)'; setTimeout(()=>el.style.background='rgb(var(--pos-rgb) / 0.1)',700); }
   document.getElementById('penaltyResult').textContent = win ? '⚽ ГОЛ! +₴'+formatNumber(payout) : '🧤 Воротар схопив!';
-  document.getElementById('penaltyResult').style.color = win ? '#3dd68c' : '#ff6b6b';
+  document.getElementById('penaltyResult').style.color = win ? 'var(--pos)' : 'var(--neg)';
   if(win) {
     if(srv.mode !== 'server') {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -230,7 +230,7 @@ async function throwBowl() {
     pinsDiv.innerHTML = pinsHtml;
     const label = strike ? '🎳 СТРАЙК! x' + BOWL_MULT.strike : spare ? '🎳 Спейр! x' + BOWL_MULT.spare : knocked>0 ? `${knocked}/10 кеглів x${mult}` : gutter ? 'У жолоб! Надто сильно x0' : 'Мімо! x0';
     document.getElementById('bowlingResult').textContent = label;
-    document.getElementById('bowlingResult').style.color = strike?'#d4af37':spare?'#4a9eff':knocked>0?'#3dd68c':'#ff6b6b';
+    document.getElementById('bowlingResult').style.color = strike?'var(--accent)':spare?'var(--info)':knocked>0?'var(--pos)':'var(--neg)';
     if(payout > 0) {
       if(srv.mode !== 'server') {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -280,7 +280,7 @@ async function shootArchery() {
   setTimeout(() => {
     const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet * archRisk.mult) : 0);
     document.getElementById('archeryResult').textContent = win ? `🎯 Попадання! +₴${formatNumber(payout)}` : '💨 Промах!';
-    document.getElementById('archeryResult').style.color = win ? '#3dd68c' : '#ff6b6b';
+    document.getElementById('archeryResult').style.color = win ? 'var(--pos)' : 'var(--neg)';
     if(win) {
       if(srv.mode !== 'server') {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -347,7 +347,7 @@ async function rollSicBo() {
     if(srv.mode === 'server') win = srv.r.win;
     const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet*mult) : 0);
     document.getElementById('sicboResult').textContent = win?`✅ ${label}! +₴${formatNumber(payout)}`:`❌ Програш`;
-    document.getElementById('sicboResult').style.color = win?'#3dd68c':'#ff6b6b';
+    document.getElementById('sicboResult').style.color = win?'var(--pos)':'var(--neg)';
     if(win) {
       if(srv.mode !== 'server') {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -389,14 +389,14 @@ async function playCardWar() {
     const p = srv.mode === 'server' ? toCard(srv.r.player) : randCard();
     const d = srv.mode === 'server' ? toCard(srv.r.dealer) : randCard();
     const pEl=document.getElementById('cwPlayerCard'), dEl=document.getElementById('cwDealerCard');
-    pEl.textContent=cardStr(p); pEl.style.color=p.suit.includes('♥')||p.suit.includes('♦')?'#e74c3c':'#fff';
-    dEl.textContent=cardStr(d); dEl.style.color=d.suit.includes('♥')||d.suit.includes('♦')?'#e74c3c':'#fff';
+    pEl.textContent=cardStr(p); pEl.style.color=p.suit.includes('♥')||p.suit.includes('♦')?'var(--neg)':'var(--fg)';
+    dEl.textContent=cardStr(d); dEl.style.color=d.suit.includes('♥')||d.suit.includes('♦')?'var(--neg)':'var(--fg)';
     let win=false,payout=0,label='';
     if(p.rank>d.rank) { win=true; payout=Math.floor(bet*2); label='⚔️ Перемога! Твоя карта вища!'; }
     else if(p.rank<d.rank) { payout=0; label='💀 Дилер переміг!'; }
     else { win=true; payout=bet; label='🤝 Нічия — повернення!'; }
     document.getElementById('cwResult').textContent=label;
-    document.getElementById('cwResult').style.color=p.rank>d.rank?'#3dd68c':p.rank<d.rank?'#ff6b6b':'#ff9f43';
+    document.getElementById('cwResult').style.color=p.rank>d.rank?'var(--pos)':p.rank<d.rank?'var(--neg)':'var(--accent)';
     if(payout>0) {
       if(srv.mode !== 'server') {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
@@ -461,7 +461,7 @@ function missedDuck() {
   duckState.active=false;
   document.getElementById('duckArea').innerHTML='<div style="font-size:48px;text-align:center;width:100%;">🦆💨</div>';
   document.getElementById('duckResult').textContent='Пропустив! Гра закінчена!';
-  document.getElementById('duckResult').style.color='#ff6b6b';
+  document.getElementById('duckResult').style.color='var(--neg)';
   addToHistory(`🦆 Duck Shoot: Програш на ${duckState.duckIndex}/${duckState.totalDucks}`);
   document.getElementById('duckBtn').textContent='🦆 ПОЧАТИ ЗНОВУ';
   document.getElementById('duckBtn').onclick=startDuckShoot;
@@ -471,7 +471,7 @@ function finishDuckShoot(allHit) {
   const payout=Math.floor(duckState.bet*duckState.mult);
   document.getElementById('duckArea').innerHTML='<div style="font-size:48px;text-align:center;width:100%;">🏆</div>';
   document.getElementById('duckResult').textContent=`🏆 Всіх збив! +₴${formatNumber(payout)}`;
-  document.getElementById('duckResult').style.color='#d4af37';
+  document.getElementById('duckResult').style.color='var(--accent)';
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
   userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Duck Shoot');
   addToHistory(`🦆 Duck Shoot: +₴${formatNumber(payout)} (x${duckState.mult.toFixed(2)})`);

@@ -16,10 +16,10 @@ function initChat() {
         : `<div class="chat-msg-avatar-emoji">${escapeHtml(m.avatar||'👤')}</div>`;
       const contentHtml = m.imgUrl
         ? (m.isVideo
-            ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
+            ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:var(--r-lg);display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
             : `<img src="${escapeHtml(m.imgUrl)}" class="chat-img-msg" data-open-img="${escapeHtml(m.imgUrl)}">`)
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
-      const nameBadge = isAdmin ? ' <span style="background:#d4af37;color:#000;font-size:8px;font-weight:900;padding:1px 5px;border-radius:3px;">ADMIN</span>' : '';
+      const nameBadge = isAdmin ? ' <span style="background:var(--accent);color:var(--on-accent);font-size:8px;font-weight:900;padding:1px 5px;border-radius:var(--r-xs);">ADMIN</span>' : '';
       const headerHtml = showHeader
         ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${escapeHtml(m.user)}${nameBadge}</div>`
         : '';
@@ -28,7 +28,7 @@ function initChat() {
         <div class="chat-msg-body" style="${isMe?'align-items:flex-end;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.15);':''}border-radius:${isMe?'14px 4px 14px 14px':'4px 14px 14px 14px'};padding:8px 10px;">
           ${headerHtml}
           ${contentHtml}
-          <div style="font-size:9px;color:#333;margin-top:3px;">${new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
+          <div style="font-size:9px;color:var(--fg-4);margin-top:3px;">${new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
       </div>`;
     }).join('');
@@ -83,7 +83,7 @@ function handleChatImage(input) {
         if(!vidEl) {
           vidEl = document.createElement('video');
           vidEl.id = 'chatVideoPreview';
-          vidEl.style.cssText = 'max-height:80px;border-radius:8px;border:1px solid #222;display:block;';
+          vidEl.style.cssText = 'max-height:80px;border-radius:var(--r-md);border:1px solid var(--line);display:block;';
           vidEl.controls = true;
           vidEl.muted = true;
           img.parentElement.appendChild(vidEl);
@@ -457,15 +457,15 @@ function openQuickDeposit() {
   const amounts = [100,250,500,1000,2500,5000];
   const modal = document.createElement('div');
   modal.id = 'quickDepOverlay';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;display:flex;align-items:flex-end;';
+  modal.style.cssText='position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9000;display:flex;align-items:flex-end;';
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
   modal.innerHTML=`
-    <div style="background:#111;border-radius:20px 20px 0 0;padding:20px;width:100%;border-top:1px solid rgba(212,175,55,.3);">
+    <div style="background:var(--surface-1);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px;width:100%;border-top:1px solid rgb(var(--accent-rgb) / 0.3);">
       <div style="text-align:center;font-weight:900;font-size:16px;color:var(--accent);margin-bottom:14px;">⚡ Швидкий депозит</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
+        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
       </div>
-      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:#222;border:none;border-radius:10px;padding:12px;color:#777;cursor:pointer;">Скасувати</button>
+      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:var(--surface-2);border:none;border-radius:var(--r-md);padding:12px;color:var(--fg-3);cursor:pointer;">Скасувати</button>
     </div>`;
   document.body.appendChild(modal);
 }

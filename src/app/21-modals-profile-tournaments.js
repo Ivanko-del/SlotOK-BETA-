@@ -50,12 +50,12 @@ function modalCloseBtn(id) {
 function openChangePasswordModal() {
   openModal('changepass',
     modalCloseBtn('changepass') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🔑 Зміна пароля</div>' +
+    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🔑 Зміна пароля</div>' +
     '<input id="cpOld" type="password" placeholder="Поточний пароль" style="margin-bottom:8px;">' +
     '<input id="cpNew" type="password" placeholder="Новий пароль (мін. 6)" style="margin-bottom:8px;">' +
     '<input id="cpConf" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">' +
-    '<div id="cpError" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
-    '<button onclick="doChangePassword()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Змінити пароль</button>'
+    '<div id="cpError" style="color:var(--neg);font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
+    '<button onclick="doChangePassword()" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;cursor:pointer;font-size:14px;">✅ Змінити пароль</button>'
   );
 }
 
@@ -64,17 +64,17 @@ function openSecurityQuestionModal() {
   const opts = document.getElementById('regSecQuestion');
   openModal('secq',
     modalCloseBtn('secq') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:8px;font-family:Orbitron,monospace;padding-right:36px;">❓ Контрольне питання</div>' +
-    '<div style="font-size:12px;color:#888;margin-bottom:12px;line-height:1.4;">' +
-      (cur ? 'Зараз: <b style="color:#ccc;">' + escapeHtml(cur) + '</b><br>' : 'Контрольного питання ще немає.<br>') +
+    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:8px;font-family:var(--font-display);padding-right:36px;">❓ Контрольне питання</div>' +
+    '<div style="font-size:12px;color:var(--fg-3);margin-bottom:12px;line-height:1.4;">' +
+      (cur ? 'Зараз: <b style="color:var(--fg-2);">' + escapeHtml(cur) + '</b><br>' : 'Контрольного питання ще немає.<br>') +
       'Потрібне, щоб відновити пароль без адміна. Обирай те, чого не знайти в соцмережах.</div>' +
-    '<select id="sqSecQuestion" onchange="secQuestionChanged(\'sq\')" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:8px;font-size:13px;">' +
+    '<select id="sqSecQuestion" onchange="secQuestionChanged(\'sq\')" style="width:100%;background:var(--surface-1);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:9px;margin-bottom:8px;font-size:13px;">' +
       (opts ? opts.innerHTML : '<option value="custom">✍️ Своє питання</option>') + '</select>' +
     '<div id="sqSecCustomBox"><input id="sqSecCustom" maxlength="120" placeholder="Своє питання" style="margin-bottom:8px;"></div>' +
     '<input id="sqAnswer" placeholder="Відповідь (мін. 3 символи)" style="margin-bottom:8px;">' +
     '<input id="sqPass" type="password" placeholder="Поточний пароль" style="margin-bottom:10px;">' +
-    '<div id="sqError" style="color:#e74c3c;font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
-    '<button onclick="doSetSecurityQuestion()" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">✅ Зберегти</button>'
+    '<div id="sqError" style="color:var(--neg);font-size:11px;min-height:14px;margin-bottom:8px;"></div>' +
+    '<button onclick="doSetSecurityQuestion()" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;cursor:pointer;font-size:14px;">✅ Зберегти</button>'
   );
   secQuestionChanged('sq');
 }
@@ -107,21 +107,21 @@ async function doSetSecurityQuestion() {
 function openGiftVIPModal() {
   openModal('giftvip',
     modalCloseBtn('giftvip') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🎁 Подарувати VIP</div>' +
+    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🎁 Подарувати VIP</div>' +
     '<input id="gvNick" placeholder="Нік отримувача" style="margin-bottom:10px;">' +
-    '<select id="gvDays" style="width:100%;background:#111;border:1px solid #333;color:#fff;border-radius:8px;padding:9px;margin-bottom:14px;font-size:13px;">' +
+    '<select id="gvDays" style="width:100%;background:var(--surface-1);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:9px;margin-bottom:14px;font-size:13px;">' +
     '<option value="1">1 день — 100₴</option><option value="7">7 днів — 700₴</option>' +
     '<option value="30">30 днів — 3 000₴</option></select>' +
-    '<button onclick="giftVip(document.getElementById(\'gvNick\').value.trim(),parseInt(document.getElementById(\'gvDays\').value));closeModal(\'giftvip\')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:12px;padding:13px;color:#000;font-weight:900;cursor:pointer;">🎁 Подарувати</button>'
+    '<button onclick="giftVip(document.getElementById(\'gvNick\').value.trim(),parseInt(document.getElementById(\'gvDays\').value));closeModal(\'giftvip\')" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;cursor:pointer;">🎁 Подарувати</button>'
   );
 }
 
 function comparePlayersModal() {
   var html = modalCloseBtn('compare') +
-    '<div style="font-size:15px;font-weight:900;color:#4a9eff;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">📊 Порівняння гравців</div>' +
+    '<div style="font-size:15px;font-weight:900;color:var(--info);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">📊 Порівняння гравців</div>' +
     '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
     '<input id="cmpNick" placeholder="Нік суперника" style="flex:1;">' +
-    '<button onclick="doComparePlayers(document.getElementById(\'cmpNick\').value.trim())" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap;">🔍 Порівняти</button>' +
+    '<button onclick="doComparePlayers(document.getElementById(\'cmpNick\').value.trim())" style="background:var(--info);border:none;border-radius:var(--r-md);padding:10px 14px;color:var(--on-info);font-weight:900;cursor:pointer;white-space:nowrap;">🔍 Порівняти</button>' +
     '</div>' +
     '<div id="cmpResult"></div>';
   openModal('compare', html);
@@ -130,22 +130,22 @@ function comparePlayersModal() {
 function showTopDonators() {
   openModal('topdonators',
     modalCloseBtn('topdonators') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🏆 Топ Донатерів</div>' +
-    '<div id="topDonatorsList" style="color:#555;text-align:center;padding:20px;">Завантаження...</div>'
+    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏆 Топ Донатерів</div>' +
+    '<div id="topDonatorsList" style="color:var(--fg-4);text-align:center;padding:20px;">Завантаження...</div>'
   );
   db.ref('users').orderByChild('totalDeposits').limitToLast(20).once('value').then(function(snap) {
     var el = document.getElementById('topDonatorsList'); if(!el) return;
     var sorted = Object.entries(snap.val()||{}).filter(function(e){return !e[1].isBot&&(e[1].totalDeposits||0)>0;})
       .sort(function(a,b){return (b[1].totalDeposits||0)-(a[1].totalDeposits||0);}).slice(0,10);
-    if(!sorted.length){el.innerHTML='<div style="color:#444;">Даних немає</div>';return;}
+    if(!sorted.length){el.innerHTML='<div style="color:var(--fg-4);">Даних немає</div>';return;}
     var medals=['🥇','🥈','🥉'];
     el.innerHTML=sorted.map(function(e,i){
       var u=e[1];
-      return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#0d0d0d;border-radius:10px;margin-bottom:8px;">'
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
         +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
         +'<div style="font-size:18px;">'+(u.avatar||'👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e[0]+'</div><div style="font-size:10px;color:#555;">'+(u.tag||'')+'</div></div>'
-        +'<div style="font-weight:900;color:#d4af37;font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
+        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e[0]+'</div><div style="font-size:10px;color:var(--fg-4);">'+(u.tag||'')+'</div></div>'
+        +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
         +'</div>';
     }).join('');
   });
@@ -154,20 +154,20 @@ function showTopDonators() {
 function showSecurityLog() {
   openModal('seclog',
     modalCloseBtn('seclog') +
-    '<div style="font-size:15px;font-weight:900;color:#ff6b6b;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">📋 Журнал безпеки</div>' +
-    '<div id="securityLogList" style="color:#555;font-size:12px;">Завантаження...</div>'
+    '<div style="font-size:15px;font-weight:900;color:var(--neg);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">📋 Журнал безпеки</div>' +
+    '<div id="securityLogList" style="color:var(--fg-4);font-size:12px;">Завантаження...</div>'
   );
   db.ref('users/'+currentUser+'/securityLog').limitToLast(20).once('value').then(function(snap) {
     var el = document.getElementById('securityLogList'); if(!el) return;
     var data = snap.val();
-    if(!data){el.innerHTML='<div style="color:#444;text-align:center;padding:20px;">Подій немає</div>';return;}
+    if(!data){el.innerHTML='<div style="color:var(--fg-4);text-align:center;padding:20px;">Подій немає</div>';return;}
     var icons={login:'🔑',register:'📝',passChange:'🔑',largeWithdraw:'💸',failed_login:'⚠️'};
     el.innerHTML=Object.values(data).sort(function(a,b){return b.ts-a.ts;}).map(function(e){
-      return '<div style="display:flex;gap:10px;padding:10px;background:#0a0a0a;border-radius:10px;margin-bottom:8px;">'
+      return '<div style="display:flex;gap:10px;padding:10px;background:var(--bg);border-radius:var(--r-md);margin-bottom:8px;">'
         +'<div style="font-size:16px;">'+(icons[e.type]||'📋')+'</div>'
         +'<div><div style="font-size:12px;font-weight:700;">'+e.type+'</div>'
-        +'<div style="font-size:10px;color:#555;">'+new Date(e.ts).toLocaleString('uk-UA')+'</div>'
-        +(e.details?'<div style="font-size:10px;color:#666;margin-top:2px;">'+e.details+'</div>':'')
+        +'<div style="font-size:10px;color:var(--fg-4);">'+new Date(e.ts).toLocaleString('uk-UA')+'</div>'
+        +(e.details?'<div style="font-size:10px;color:var(--fg-3);margin-top:2px;">'+e.details+'</div>':'')
         +'</div></div>';
     }).join('');
   });
@@ -176,15 +176,15 @@ function showSecurityLog() {
 function showWishlist() {
   var items = _wishlist.length
     ? _wishlist.map(function(i){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:10px;margin-bottom:8px;">'
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:8px;">'
           +'<span style="font-size:13px;">'+i+'</span>'
-          +'<button onclick="toggleWishlist(\''+i+'\');this.parentElement.remove()" style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.2);border-radius:6px;padding:4px 10px;color:#e74c3c;cursor:pointer;font-size:11px;">✕</button>'
+          +'<button onclick="toggleWishlist(\''+i+'\');this.parentElement.remove()" style="background:rgb(var(--neg-rgb) / 0.1);border:1px solid rgb(var(--neg-rgb) / 0.2);border-radius:var(--r-sm);padding:4px 10px;color:var(--neg);cursor:pointer;font-size:11px;">✕</button>'
           +'</div>';
       }).join('')
-    : '<div style="color:#555;text-align:center;padding:30px;">Список порожній</div>';
+    : '<div style="color:var(--fg-4);text-align:center;padding:30px;">Список порожній</div>';
   openModal('wishlist',
     modalCloseBtn('wishlist') +
-    '<div style="font-size:15px;font-weight:900;color:#ff69b4;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">❤️ Список побажань</div>' +
+    '<div style="font-size:15px;font-weight:900;color:var(--neg);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">❤️ Список побажань</div>' +
     items
   );
 }
@@ -195,10 +195,10 @@ function showReferralQR() {
   var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '&bgcolor=050505&color=d4af37&margin=10';
   openModal('qr',
     modalCloseBtn('qr') +
-    '<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;text-align:center;">📲 QR-код реферала</div>' +
-    '<img src="'+qrUrl+'" style="width:180px;height:180px;border-radius:12px;display:block;margin:0 auto 12px;">' +
-    '<div style="font-size:10px;color:#555;word-break:break-all;background:#0a0a0a;border-radius:8px;padding:8px;margin-bottom:12px;">'+url+'</div>' +
-    '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+url+'\').then(()=>notify(\'✅ Скопійовано!\',\'success\'));closeModal(\'qr\')" style="width:100%;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:11px;color:#d4af37;cursor:pointer;font-size:13px;font-weight:700;">📋 Копіювати посилання</button>'
+    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;text-align:center;">📲 QR-код реферала</div>' +
+    '<img src="'+qrUrl+'" style="width:180px;height:180px;border-radius:var(--r-lg);display:block;margin:0 auto 12px;">' +
+    '<div style="font-size:10px;color:var(--fg-4);word-break:break-all;background:var(--bg);border-radius:var(--r-md);padding:8px;margin-bottom:12px;">'+url+'</div>' +
+    '<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+url+'\').then(()=>notify(\'✅ Скопійовано!\',\'success\'));closeModal(\'qr\')" style="width:100%;background:rgb(var(--accent-rgb) / 0.1);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:11px;color:var(--accent);cursor:pointer;font-size:13px;font-weight:700;">📋 Копіювати посилання</button>'
   );
 }
 
@@ -206,12 +206,12 @@ function openCryptoSimulator() {
   updateCryptoPrices();
   openModal('crypto',
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
-    '<button onclick="closeModal(\'crypto\')" style="background:rgba(255,255,255,.06);border:1px solid #333;border-radius:10px;padding:8px 14px;color:#777;cursor:pointer;">⬅</button>' +
-    '<div style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#d4af37;">📈 Крипто</div></div>' +
-    '<div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px;margin-bottom:14px;">' +
-    '<div style="font-size:11px;color:#777;margin-bottom:4px;">Портфель (₴)</div>' +
-    '<div style="font-size:24px;font-weight:900;color:#d4af37;" id="cryptoPortfolioVal">₴ 0</div>' +
-    '<div style="font-size:11px;color:#555;">Баланс: ₴<span id="cryptoCasBal">'+formatNumber(userData.balance||0)+'</span></div></div>' +
+    '<button onclick="closeModal(\'crypto\')" style="background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;color:var(--fg-3);cursor:pointer;">⬅</button>' +
+    '<div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">📈 Крипто</div></div>' +
+    '<div style="background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.15);border-radius:var(--r-lg);padding:12px;margin-bottom:14px;">' +
+    '<div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">Портфель (₴)</div>' +
+    '<div style="font-size:24px;font-weight:900;color:var(--accent);" id="cryptoPortfolioVal">₴ 0</div>' +
+    '<div style="font-size:11px;color:var(--fg-4);">Баланс: ₴<span id="cryptoCasBal">'+formatNumber(userData.balance||0)+'</span></div></div>' +
     '<div id="cryptoAssets"></div>',
     {fullscreen: true}
   );
@@ -225,14 +225,14 @@ function openCryptoSimulator() {
 function openProfileEffectShop() {
   var currentEffect = userData.profileEffect || '';
   var html = modalCloseBtn('profileeffect')
-    +'<div style="font-size:15px;font-weight:900;color:#c9a0ff;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🎭 Ефекти профілю</div>'
+    +'<div style="font-size:15px;font-weight:900;color:var(--special);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🎭 Ефекти профілю</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
     + PROFILE_EFFECTS.map(function(e){
         var owned = currentEffect === e.id;
-        return '<div style="background:#0d0d0d;border:1.5px solid '+(owned?'rgba(212,175,55,.4)':'rgba(255,255,255,.07)')+';border-radius:14px;padding:14px;text-align:center;cursor:pointer;" onclick="buyProfileEffect(\''+e.id+'\','+e.price+');closeModal(\'profileeffect\')">'
+        return '<div style="background:var(--surface-1);border:1.5px solid '+(owned?'rgb(var(--accent-rgb) / 0.4)':'rgb(var(--tint-rgb) / 0.07)')+';border-radius:var(--r-lg);padding:14px;text-align:center;cursor:pointer;" onclick="buyProfileEffect(\''+e.id+'\','+e.price+');closeModal(\'profileeffect\')">'
           +'<div style="font-size:32px;margin-bottom:6px;">'+e.emoji+'</div>'
           +'<div style="font-size:12px;font-weight:700;margin-bottom:4px;">'+e.name+'</div>'
-          +'<div style="font-size:11px;color:'+(owned?'#d4af37':'#666')+';">'+(owned?'✅ Активний':'🪙 '+formatNumber(e.price))+'</div>'
+          +'<div style="font-size:11px;color:'+(owned?'var(--accent)':'var(--fg-3)')+';">'+(owned?'✅ Активний':'🪙 '+formatNumber(e.price))+'</div>'
           +'</div>';
       }).join('')
     +'</div>';
@@ -247,13 +247,13 @@ function openCustomTagShop() {
     {tag:'🎭 Маестро',price:2500},{tag:'🧊 Крижаний',price:600},{tag:'☠️ Череп',price:700},
   ];
   var html = modalCloseBtn('tagshop')
-    +'<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🏷️ Магазин тегів</div>'
+    +'<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏷️ Магазин тегів</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
     + TAGS.map(function(t){
         var safetag = t.tag.replace(/'/g, "\\'");
-        return '<div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;cursor:pointer;" onclick="buyCustomTag(\''+safetag+'\','+t.price+');closeModal(\'tagshop\')">'
+        return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;" onclick="buyCustomTag(\''+safetag+'\','+t.price+');closeModal(\'tagshop\')">'
           +'<div style="font-size:18px;margin-bottom:6px;">'+t.tag+'</div>'
-          +'<div style="font-size:11px;color:#d4af37;font-weight:700;">🪙 '+formatNumber(t.price)+'</div>'
+          +'<div style="font-size:11px;color:var(--accent);font-weight:700;">🪙 '+formatNumber(t.price)+'</div>'
           +'</div>';
       }).join('')
     +'</div>';
@@ -262,13 +262,13 @@ function openCustomTagShop() {
 
 function openSoundThemePicker() {
   var html = modalCloseBtn('soundtheme')
-    +'<div style="font-size:15px;font-weight:900;color:#d4af37;margin-bottom:14px;font-family:Orbitron,monospace;padding-right:36px;">🎵 Звукові теми</div>'
+    +'<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🎵 Звукові теми</div>'
     + Object.keys(SOUND_THEMES).map(function(t){
         var labels = {default:'🔔 Стандартна',retro:'👾 Ретро (8-bit)',casino:'🎰 Казино',minimal:'🔇 Мінімальна'};
         var active = t === _soundTheme;
-        return '<div onclick="setSoundTheme(\''+t+'\');closeModal(\'soundtheme\')" style="display:flex;justify-content:space-between;align-items:center;padding:13px;background:'+(active?'rgba(212,175,55,.1)':'rgba(255,255,255,.04)')+';border:1px solid '+(active?'rgba(212,175,55,.3)':'rgba(255,255,255,.07)')+';border-radius:10px;margin-bottom:8px;cursor:pointer;">'
-          +'<span style="font-size:14px;color:'+(active?'#d4af37':'#aaa')+';font-weight:'+(active?'800':'400')+';"> '+(labels[t]||t)+'</span>'
-          +(active?'<span style="color:#d4af37;font-size:18px;">✓</span>':'')
+        return '<div onclick="setSoundTheme(\''+t+'\');closeModal(\'soundtheme\')" style="display:flex;justify-content:space-between;align-items:center;padding:13px;background:'+(active?'rgb(var(--accent-rgb) / 0.1)':'rgb(var(--tint-rgb) / 0.04)')+';border:1px solid '+(active?'rgb(var(--accent-rgb) / 0.3)':'rgb(var(--tint-rgb) / 0.07)')+';border-radius:var(--r-md);margin-bottom:8px;cursor:pointer;">'
+          +'<span style="font-size:14px;color:'+(active?'var(--accent)':'var(--fg-2)')+';font-weight:'+(active?'800':'400')+';"> '+(labels[t]||t)+'</span>'
+          +(active?'<span style="color:var(--accent);font-size:18px;">✓</span>':'')
           +'</div>';
       }).join('');
   openModal('soundtheme', html);
@@ -287,7 +287,7 @@ function adminStartBotEngine() {
   setTimeout(() => {
     const count = Object.keys(_activeBotData).length;
     const el = document.getElementById('botEngineStatus');
-    if(el) el.innerHTML = `<span style="color:#3dd68c;">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
+    if(el) el.innerHTML = `<span style="color:var(--pos);">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
     notify('▶ Бот-движок запущено для ' + count + ' ботів', 'success');
   }, 1500);
 }
@@ -296,18 +296,18 @@ function adminStopBotEngine() {
   stopBotEngine();
   _activeBotData = {};
   const el = document.getElementById('botEngineStatus');
-  if(el) el.innerHTML = '<span style="color:#e74c3c;">⏹ Зупинено</span>';
+  if(el) el.innerHTML = '<span style="color:var(--neg);">⏹ Зупинено</span>';
   notify('⏹ Бот-движок зупинено', 'info');
 }
 
 function loadBots() {
   const listEl = document.getElementById('botList');
   if(!listEl) return;
-  listEl.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Завантаження...</div>';
+  listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Завантаження...</div>';
   db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
     const bots = snap.val() || {};
     const entries = Object.entries(bots);
-    if(!entries.length) { listEl.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Ботів немає</div>'; return; }
+    if(!entries.length) { listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>'; return; }
     const persIcons = { aggressive:'🔥', balanced:'⚖️', conservative:'🛡️', whale:'🐋' };
     listEl.innerHTML = entries.map(([nick, b]) => {
       const isActive = !!_activeBotData[nick];
@@ -316,19 +316,19 @@ function loadBots() {
         <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${safeUrl(b.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : escapeHtml(b.avatar||'🤖')}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:13px;">${escapeHtml(nick)} ${persIcon}</div>
-          <div style="font-size:10px;color:#666;">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:#3dd68c;">● Активний</span>':'<span style="color:#555;">⚫ Стоп</span>'}</div>
+          <div style="font-size:10px;color:var(--fg-3);">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:var(--pos);">● Активний</span>':'<span style="color:var(--fg-4);">⚫ Стоп</span>'}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isActive?'#e74c3c':'#3dd68c'};border-radius:6px;color:${isActive?'#e74c3c':'#3dd68c'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
-          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
+          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgb(var(--neg-rgb) / 0.15)':'rgb(var(--pos-rgb) / 0.15)'};border:1px solid ${isActive?'var(--neg)':'var(--pos)'};border-radius:var(--r-sm);color:${isActive?'var(--neg)':'var(--pos)'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
+          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
         </div>
       </div>`;
     }).join('');
     const el = document.getElementById('botEngineStatus');
     const activeCount = Object.keys(_activeBotData).length;
     if(el) el.innerHTML = _botEngine
-      ? `<span style="color:#3dd68c;">● Запущено</span> — ${activeCount} ботів активні`
-      : `<span style="color:#555;">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
+      ? `<span style="color:var(--pos);">● Запущено</span> — ${activeCount} ботів активні`
+      : `<span style="color:var(--fg-4);">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
   });
 }
 
@@ -540,10 +540,10 @@ function showOnlineUsers() {
   if(isOpen) { dropdown.classList.add('hidden'); return; }
 
   dropdown.classList.remove('hidden');
-  listEl.innerHTML = '<div style="color:#555;font-size:12px;">Завантаження...</div>';
+  listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;">Завантаження...</div>';
 
   const users = window._onlineUsers || [];
-  if(!users.length) { listEl.innerHTML = '<div style="color:#555;font-size:12px;">Немає онлайн</div>'; return; }
+  if(!users.length) { listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;">Немає онлайн</div>'; return; }
 
   // Fetch avatars for online users
   listEl.innerHTML = '';
@@ -555,10 +555,10 @@ function showOnlineUsers() {
         ? '<img src="' + safeUrl(av) + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">'
         : escapeHtml(av || '👤');
       const pill = document.createElement('div');
-      pill.style.cssText = 'display:flex;align-items:center;gap:6px;background:var(--box);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 4px;cursor:pointer;';
+      pill.style.cssText = 'display:flex;align-items:center;gap:6px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-xl);padding:4px 10px 4px 4px;cursor:pointer;';
       pill.onclick = () => { dropdown.classList.add('hidden'); openPublicProfile(name); };
       pill.innerHTML =
-        '<div style="width:28px;height:28px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;">' + avHtml + '</div>' +
+        '<div style="width:28px;height:28px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;">' + avHtml + '</div>' +
         '<span style="font-size:12px;font-weight:bold;' + (name===currentUser?'color:var(--accent);':'') + '">' + escapeHtml(name) + (name===currentUser?' (я)':'') + '</span>' +
         '<span style="width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;"></span>';
       listEl.appendChild(pill);
@@ -613,10 +613,10 @@ function openPublicProfile(name) {
           <div class="avatar-large">${av}</div>
           <div>
             <div style="font-size:22px;font-weight:bold;">${name}</div>
-            <div style="color:#777;font-size:13px;">${d.tag||'Гравець'}</div>
+            <div style="color:var(--fg-3);font-size:13px;">${d.tag||'Гравець'}</div>
           </div>
         </div>
-        <div style="color:#555;font-size:12px;margin-bottom:10px;">ID: ${d.id||'—'} • Реєстрація: ${d.regDate ? new Date(d.regDate).toLocaleDateString('uk-UA') : 'Невідомо'}</div>
+        <div style="color:var(--fg-4);font-size:12px;margin-bottom:10px;">ID: ${d.id||'—'} • Реєстрація: ${d.regDate ? new Date(d.regDate).toLocaleDateString('uk-UA') : 'Невідомо'}</div>
         <div class="pub-stats-grid">
           <div class="pub-stat"><div class="pub-stat-val">${formatNumber(d.balance)}</div><div class="pub-stat-label">₴ Баланс</div></div>
           <div class="pub-stat"><div class="pub-stat-val">${d.dailyStreak||0}</div><div class="pub-stat-label">🔥 Серія</div></div>
@@ -666,7 +666,7 @@ function loadTournaments() {
   db.ref('tournaments').once('value', snap => {
     const data = snap.val();
     const list = document.getElementById('tournamentsList');
-    if(!data) { list.innerHTML = '<div style="color:#777;padding:20px;text-align:center;">Немає активних турнірів</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-3);padding:20px;text-align:center;">Немає активних турнірів</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([id, t]) => {
       const endTime = t.startTime + t.duration * 3600000;
@@ -677,12 +677,12 @@ function loadTournaments() {
       list.innerHTML += `<div class="tournament-card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:16px;font-weight:bold;">${t.name}</div>
-          <span style="font-size:11px;background:${isActive?'rgba(76,217,100,0.2)':'rgba(255,59,48,0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:10px;">${isActive?'🟢 Активний':'🔴 Завершено'}</span>
+          <span style="font-size:11px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);">${isActive?'🟢 Активний':'🔴 Завершено'}</span>
         </div>
         <div class="t-prize">🏆 ${formatNumber(t.prize)} ₴</div>
         <div class="t-info">${isActive ? `Закінчується через ${hoursLeft}год ${minsLeft}хв` : 'Турнір завершено'}</div>
         <div class="t-leaderboard" id="t-lb-${id}">
-          <div style="color:#555;font-size:12px;margin-top:8px;">Завантаження рейтингу...</div>
+          <div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Завантаження рейтингу...</div>
         </div>
         ${isActive ? `<button class="btn-gold" style="margin-top:10px;padding:10px;" onclick="joinTournament('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
       </div>`;
@@ -696,7 +696,7 @@ function loadTournamentLeaderboard(tId) {
     const el = document.getElementById('t-lb-'+tId);
     if(!el) return;
     const data = snap.val();
-    if(!data) { el.innerHTML = '<div style="color:#555;font-size:12px;margin-top:8px;">Ще немає учасників</div>'; return; }
+    if(!data) { el.innerHTML = '<div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Ще немає учасників</div>'; return; }
     const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]);
     el.innerHTML = sorted.map(([name, score], i) =>
       `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${name}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
@@ -783,11 +783,11 @@ function loadPromos() {
   db.ref('promos').once('value', snap => {
     const data = snap.val();
     const list = document.getElementById('promoList');
-    if(!data) { list.innerHTML='<div style="color:#777;font-size:13px;">Немає промокодів</div>'; return; }
+    if(!data) { list.innerHTML='<div style="color:var(--fg-3);font-size:13px;">Немає промокодів</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([code, p]) => {
       list.innerHTML += `<div class="promo-row">
-        <div><b style="color:var(--accent);">${code}</b> <span style="color:#777;font-size:12px;">(${p.value}₴, ${p.uses} раз)</span></div>
+        <div><b style="color:var(--accent);">${code}</b> <span style="color:var(--fg-3);font-size:12px;">(${p.value}₴, ${p.uses} раз)</span></div>
         <button class="btn-red" style="width:auto;padding:6px 12px;margin:0;font-size:12px;" onclick="deletePromo('${code}')">🗑️</button>
       </div>`;
     });
@@ -807,7 +807,7 @@ function loadSupportThreads() {
   if(_supportThreadsListener) { db.ref('support_chats').off('value', _supportThreadsListener); _supportThreadsListener = null; }
   _supportThreadsListener = db.ref('support_chats').on('value', snap => {
     const data = snap.val();
-    if(!data) { list.innerHTML='<div style="color:#777;font-size:13px;">Немає чатів</div>'; return; }
+    if(!data) { list.innerHTML='<div style="color:var(--fg-3);font-size:13px;">Немає чатів</div>'; return; }
     const threads = Object.entries(data)
       .map(([user, msgs]) => [user, Object.values(msgs).pop()])
       .filter(([,lastMsg]) => lastMsg)
@@ -820,7 +820,7 @@ function loadSupportThreads() {
           <b>${escapeHtml(user)}</b>
           ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
         </div>
-        <div style="color:#777;font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
+        <div style="color:var(--fg-3);font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
       </div>`;
     }).join('');
   });
@@ -844,12 +844,12 @@ function openAdminSupport(user) {
     let mediaHtml = '';
     if(m.mediaUrl) {
       mediaHtml = m.isVideo
-        ? `<video src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;" controls muted playsinline></video>`
-        : `<img src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;" onclick="window.open(this.src,'_blank','noopener')">`;
+        ? `<video src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;" controls muted playsinline></video>`
+        : `<img src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;cursor:pointer;" onclick="window.open(this.src,'_blank','noopener')">`;
     }
     const div = document.createElement('div');
-    div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
-    div.innerHTML = `${m.text ? senderLabel + escapeHtml(m.text) : (senderLabel ? senderLabel : '')}${mediaHtml}<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:4px;">${timeStr}</div>`;
+    div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'color-mix(in srgb, var(--primary) 20%, var(--surface-1))':'var(--info)'};border-radius:var(--r-md);width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
+    div.innerHTML = `${m.text ? senderLabel + escapeHtml(m.text) : (senderLabel ? senderLabel : '')}${mediaHtml}<div style="font-size:9px;color:rgb(var(--fg-rgb) / 0.5);margin-top:4px;">${timeStr}</div>`;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
   });
@@ -895,7 +895,7 @@ function renderDepositCard(id, req) {
         <div class="req-card-meta">ID: ${req.userId||'—'} • ${methodIcon} ${methodName}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:#3dd68c;">+${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">+${req.amount}₴</div>
     </div>
     <div class="req-actions">
       <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount},'${req.cardId||''}')">✅ Зарахувати</button>
@@ -912,10 +912,10 @@ function renderWithdrawCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:monospace;font-size:11px;">${req.card||'—'}</span></div>
+        <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:var(--font-mono);font-size:11px;">${req.card||'—'}</span></div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:#ff9f43;">−${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--accent);">−${req.amount}₴</div>
     </div>
     <div class="req-actions">
       <button class="req-approve" onclick="approveWithdraw('${id}','${req.user}')">✅ Виплачено</button>
@@ -977,7 +977,7 @@ function startAdminRequestListeners() {
     if(_depListener) { db.ref('deposit_requests').off('value', _depListener); _depListener = null; }
     _depListener = db.ref('deposit_requests').limitToLast(200).on('value', function(snap) {
       var all = snap.val() || {};
-      if(depInd) depInd.style.background = '#3dd68c';
+      if(depInd) depInd.style.background = 'var(--pos)';
       if(depSt)  depSt.textContent = 'live ●';
       var pending = Object.entries(all)
         .filter(function(e){ return e[1].status === 'pending'; })
@@ -995,7 +995,7 @@ function startAdminRequestListeners() {
     if(_wdListener) { db.ref('withdraw_requests').off('value', _wdListener); _wdListener = null; }
     _wdListener = db.ref('withdraw_requests').limitToLast(200).on('value', function(snap) {
       var all = snap.val() || {};
-      if(wdInd) wdInd.style.background = '#ff9f43';
+      if(wdInd) wdInd.style.background = 'var(--accent)';
       if(wdSt)  wdSt.textContent = 'live ●';
       var pending = Object.entries(all)
         .filter(function(e){ return e[1].status === 'pending'; })
@@ -1014,7 +1014,7 @@ function startAdminRequestListeners() {
     if(_pwrListener) { db.ref('password_reset_requests').off('value', _pwrListener); _pwrListener = null; }
     _pwrListener = db.ref('password_reset_requests').limitToLast(200).on('value', function(snap) {
       var all = snap.val() || {};
-      if(pwrInd) pwrInd.style.background = '#c9a0ff';
+      if(pwrInd) pwrInd.style.background = 'var(--special)';
       if(pwrSt)  pwrSt.textContent = 'live ●';
       var pending = Object.entries(all)
         .filter(function(e){ return e[1].status === 'pending'; })

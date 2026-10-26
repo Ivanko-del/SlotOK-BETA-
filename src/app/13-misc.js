@@ -18,11 +18,11 @@ function formatCardInput(inp) {
   } else if(raw.replace(/^@/,'').length < 3) {
     return clear();
   }
-  if(info) { info.textContent = 'Пошук…'; info.style.color = '#98a0af'; }
+  if(info) { info.textContent = 'Пошук…'; info.style.color = 'var(--info)'; }
   resolveTransferRecipient(inp.value, name => {
     if(!info) return;
     info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
-    info.style.color = name ? '#31c48d' : '#f0556b';
+    info.style.color = name ? 'var(--pos)' : 'var(--neg)';
   });
 }
 
@@ -126,7 +126,7 @@ function addContact() {
 
 function loadContacts() { 
     const l=document.getElementById('contactsList'); 
-    if(!userData.contacts){ l.innerHTML="<div style='color:#777'>Список порожній</div>"; return; } 
+    if(!userData.contacts){ l.innerHTML="<div style='color:var(--fg-3)'>Список порожній</div>"; return; } 
     l.innerHTML=""; 
     for(let n in userData.contacts){ 
         l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
@@ -156,8 +156,8 @@ function openHistoryModal() {
     const c=document.getElementById('historyList'); c.innerHTML="Завантаження...";
     db.ref('users/'+currentUser+'/history').limitToLast(20).once('value', s=>{ 
         c.innerHTML=""; 
-        if(s.val()) Object.values(s.val()).reverse().forEach(i=>{ c.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #333;color:#ccc;">${escapeHtml(i.text||'')}</div>`; });
-        else c.innerHTML="<div style='padding:10px;color:#777;'>Порожньо</div>"; 
+        if(s.val()) Object.values(s.val()).reverse().forEach(i=>{ c.innerHTML+=`<div style="padding:10px;border-bottom:1px solid var(--line);color:var(--fg-2);">${escapeHtml(i.text||'')}</div>`; });
+        else c.innerHTML="<div style='padding:10px;color:var(--fg-3);'>Порожньо</div>"; 
     }); 
 }
 // openSupportModal() — визначено нижче, єдина версія (стару дублюючу прибрано)

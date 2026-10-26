@@ -6,11 +6,11 @@ const NEWS_REACTIONS = ['❤️','🔥','👏','😮','😂','💎'];
 function loadNews() {
   const container = document.getElementById('newsListContainer');
   if(!container) return;
-  container.innerHTML = '<div style="text-align:center;color:#555;padding:30px 0;">Завантаження...</div>';
+  container.innerHTML = '<div style="text-align:center;color:var(--fg-4);padding:30px 0;">Завантаження...</div>';
   db.ref('casino_news').orderByChild('time').limitToLast(20).once('value', snap => {
     const data = snap.val();
     if(!data) {
-      container.innerHTML = '<div style="text-align:center;color:#555;padding:30px 0;font-size:13px;">Новин ще немає.<br>Слідкуй за оновленнями!</div>';
+      container.innerHTML = '<div style="text-align:center;color:var(--fg-4);padding:30px 0;font-size:13px;">Новин ще немає.<br>Слідкуй за оновленнями!</div>';
       return;
     }
     const items = Object.entries(data).map(([id,n])=>({id,...n})).reverse();
@@ -91,10 +91,10 @@ function toggleComments(newsId) {
 function loadComments(newsId) {
   const list = document.getElementById('cmtlist-' + newsId);
   if(!list) return;
-  list.innerHTML = '<div style="color:#555;font-size:12px;padding:5px 0;">Завантаження...</div>';
+  list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:5px 0;">Завантаження...</div>';
   db.ref('casino_news/' + newsId + '/comments').orderByChild('time').limitToLast(30).once('value', snap => {
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px 0;">Коментарів ще немає. Будь першим!</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px 0;">Коментарів ще немає. Будь першим!</div>'; return; }
     list.innerHTML = '';
     Object.values(data).forEach(c => {
       const t = timeAgo(c.time);
@@ -170,17 +170,17 @@ function loadAdminNews() {
   if(!list) return;
   db.ref('casino_news').orderByChild('author').equalTo(currentUser).limitToLast(10).once('value', snap => {
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:8px;">Новин немає</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Новин немає</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).reverse().forEach(([id,n]) => {
       const div = document.createElement('div');
-      div.style.cssText = 'padding:8px;background:#111;border-radius:8px;margin-bottom:5px;border:1px solid #222;';
+      div.style.cssText = 'padding:8px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:5px;border:1px solid var(--line);';
       div.innerHTML =
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<div style="font-size:13px;font-weight:bold;">' + (n.emoji||'📢') + ' ' + n.title + '</div>' +
-          '<button onclick="deleteNews(\'' + id + '\')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">🗑️</button>' +
+          '<button onclick="deleteNews(\'' + id + '\')" style="background:var(--red);color:var(--fg);border:none;border-radius:var(--r-sm);padding:4px 10px;font-size:11px;cursor:pointer;">🗑️</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:#555;margin-top:3px;">' + timeAgo(n.time) + ' · 💬' + (n.commentCount||0) + '</div>';
+        '<div style="font-size:11px;color:var(--fg-4);margin-top:3px;">' + timeAgo(n.time) + ' · 💬' + (n.commentCount||0) + '</div>';
       list.appendChild(div);
     });
   });

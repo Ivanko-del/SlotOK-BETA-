@@ -1322,7 +1322,7 @@ function switchNewsTab(tab) {
     const btn = document.getElementById('ntab-' + t);
     const panel = document.getElementById('np-' + t);
     const isActive = t === tab;
-    if(btn) { btn.style.background = isActive ? 'var(--accent)' : 'none'; btn.style.color = isActive ? '#000' : '#666'; }
+    if(btn) { btn.style.background = isActive ? 'var(--accent)' : 'none'; btn.style.color = isActive ? 'var(--on-accent)' : 'var(--fg-3)'; }
     if(panel) panel.classList.toggle('hidden', !isActive);
   });
   if(tab === 'changelog') loadChangelog();
@@ -1332,7 +1332,7 @@ function switchNewsTab(tab) {
 function loadChangelog() {
   const el = document.getElementById('changelogList');
   if(!el) return;
-  el.innerHTML = '<div style="text-align:center;color:#555;padding:20px 0;">Завантаження...</div>';
+  el.innerHTML = '<div style="text-align:center;color:var(--fg-4);padding:20px 0;">Завантаження...</div>';
 
   db.ref('changelog').orderByChild('date').limitToLast(20).once('value', snap => {
     const data = snap.val();
@@ -1375,8 +1375,8 @@ function buildChangelogCard(item, isLatest) {
   const statsHtml = Object.keys(stats).length ? `
     <div class="cl-stats-row">
       ${stats.features ? `<div class="cl-stat"><div class="cl-stat-num">${stats.features}</div><div class="cl-stat-lbl">Нові функції</div></div>` : ''}
-      ${stats.fixes    ? `<div class="cl-stat"><div class="cl-stat-num" style="color:#4a9eff">${stats.fixes}</div><div class="cl-stat-lbl">Виправлень</div></div>` : ''}
-      ${stats.games    ? `<div class="cl-stat"><div class="cl-stat-num" style="color:#f39c12">${stats.games}</div><div class="cl-stat-lbl">Ігор перевірено</div></div>` : ''}
+      ${stats.fixes    ? `<div class="cl-stat"><div class="cl-stat-num" style="color:var(--info)">${stats.fixes}</div><div class="cl-stat-lbl">Виправлень</div></div>` : ''}
+      ${stats.games    ? `<div class="cl-stat"><div class="cl-stat-num" style="color:var(--accent)">${stats.games}</div><div class="cl-stat-lbl">Ігор перевірено</div></div>` : ''}
     </div>` : '';
 
   return `
@@ -1406,7 +1406,7 @@ function renderHomeLastUpdate() {
     if(!item) { el.textContent = 'Немає даних'; return; }
     const allItems = (item.sections||[]).flatMap(s => s.items||[]);
     const dateStr = item.date ? new Date(item.date).toLocaleDateString('uk-UA',{day:'numeric',month:'short'}) : '';
-    el.innerHTML = `<b style="color:#4cd964;">v${item.version}</b> <span style="color:#333;">${dateStr}</span><br><span style="color:#666;">${allItems[0]||''}</span>${allItems.length>1?`<span style="color:#333;"> +ще ${allItems.length-1}</span>`:''}`;
+    el.innerHTML = `<b style="color:var(--pos);">v${item.version}</b> <span style="color:var(--fg-4);">${dateStr}</span><br><span style="color:var(--fg-3);">${allItems[0]||''}</span>${allItems.length>1?`<span style="color:var(--fg-4);"> +ще ${allItems.length-1}</span>`:''}`;
   });
 }
 
@@ -1415,20 +1415,20 @@ function renderHomeAxiomWidget() {
   if(!el || !userData) return;
   if(_axAcc && axLinked()) {
     el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px solid rgba(92,110,248,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openAxiomLinkFlow()">
-        <div style="width:46px;height:30px;border-radius:6px;flex-shrink:0;background:${escapeHtml(axCardBg(_axAcc.card))};background-size:cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);"></div>
+      <div style="background:linear-gradient(135deg,var(--bg),var(--surface-1));border:1px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-lg);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openAxiomLinkFlow()">
+        <div style="width:46px;height:30px;border-radius:var(--r-sm);flex-shrink:0;background:${escapeHtml(axCardBg(_axAcc.card))};background-size:cover;box-shadow:none;"></div>
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:bold;color:#7c8eff;">Аксіома Банк · ····${escapeHtml(_axAcc.card.last4)}</div>
-          <div style="font-size:10px;color:#444;margin-top:1px;">На картці: <b style="color:#fff;">₴${formatNumber(_axAcc.card.balance)}</b> · поповнити гру чи вивести</div>
+          <div style="font-size:12px;font-weight:bold;color:var(--info);">Аксіома Банк · ····${escapeHtml(_axAcc.card.last4)}</div>
+          <div style="font-size:10px;color:var(--fg-4);margin-top:1px;">На картці: <b style="color:var(--fg);">₴${formatNumber(_axAcc.card.balance)}</b> · поповнити гру чи вивести</div>
         </div>
-        <div style="font-size:18px;color:#333;">›</div>
+        <div style="font-size:18px;color:var(--fg-4);">›</div>
       </div>`;
   } else {
     el.innerHTML = `
-      <div style="background:linear-gradient(135deg,#05050f,#0a0a1e);border:1px dashed rgba(92,110,248,.2);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openAxiomLinkFlow()">
-        <div style="width:34px;height:34px;border-radius:10px;background:#0d0d20;display:flex;align-items:center;justify-content:center;font-size:14px;color:#5c6ef8;flex-shrink:0;border:1px solid rgba(92,110,248,.2);">А</div>
-        <div style="flex:1;font-size:11px;color:#444;">Підключи <b style="color:#7c8eff;">Аксіома Банк</b>, щоб поповнювати гру з картки й виводити виграш</div>
-        <div style="font-size:11px;background:rgba(92,110,248,.15);color:#7c8eff;border-radius:6px;padding:3px 8px;font-weight:bold;">+ Підключити</div>
+      <div style="background:linear-gradient(135deg,var(--bg),var(--surface-1));border:1px dashed rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openAxiomLinkFlow()">
+        <div style="width:34px;height:34px;border-radius:var(--r-md);background:var(--surface-1);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--info);flex-shrink:0;border:1px solid rgb(var(--info-rgb) / 0.2);">А</div>
+        <div style="flex:1;font-size:11px;color:var(--fg-4);">Підключи <b style="color:var(--info);">Аксіома Банк</b>, щоб поповнювати гру з картки й виводити виграш</div>
+        <div style="font-size:11px;background:rgb(var(--info-rgb) / 0.15);color:var(--info);border-radius:var(--r-sm);padding:3px 8px;font-weight:bold;">+ Підключити</div>
       </div>`;
   }
 }

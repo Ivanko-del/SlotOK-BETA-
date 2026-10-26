@@ -11,10 +11,10 @@ function showAuthError(msg) {
   if(!el) return;
   el.textContent = '⚠️ ' + msg;
   el.style.display = 'block';
-  el.style.color = '#e74c3c';
+  el.style.color = 'var(--neg)';
   el.style.padding = '10px';
-  el.style.borderRadius = '8px';
-  el.style.background = 'rgba(231,76,60,.1)';
+  el.style.borderRadius = 'var(--r-md)';
+  el.style.background = 'rgb(var(--neg-rgb) / 0.1)';
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }

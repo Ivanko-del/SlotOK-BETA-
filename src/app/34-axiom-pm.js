@@ -38,26 +38,26 @@ function renderAxiomLinkContent() {
   if(_axAcc && axLinked()) {
     const c = _axAcc.card;
     el.innerHTML =
-      '<div style="border-radius:16px;padding:18px;margin-bottom:14px;color:#fff;background:' + escapeHtml(axCardBg(c)) + ';background-size:cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);aspect-ratio:1.586/1;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px rgba(0,0,0,.6);">' +
+      '<div style="border-radius:var(--r-lg);padding:18px;margin-bottom:14px;color:var(--fg);background:' + escapeHtml(axCardBg(c)) + ';background-size:cover;box-shadow:none;aspect-ratio:1.586/1;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px rgb(var(--shade-rgb) / 0.6);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:15px;">Аксіома</b><span style="font-size:11px;opacity:.8;">' + (c.frozen ? '🔒 Заблокована' : 'debit') + '</span></div>' +
-        '<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:2px;">•••• •••• •••• ' + escapeHtml(c.last4) + '</div>' +
+        '<div style="font-family:var(--font-mono);font-size:18px;letter-spacing:2px;">•••• •••• •••• ' + escapeHtml(c.last4) + '</div>' +
         '<div style="display:flex;justify-content:space-between;font-size:12px;"><span>' + escapeHtml(c.holder || _axAcc.nick) + '</span><span>' + escapeHtml(c.expiry) + '</span></div>' +
       '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">' +
-        '<span style="font-size:12px;color:#777;">Баланс картки · @' + escapeHtml(_axAcc.nick) + '</span>' +
-        '<b style="font-size:22px;color:#7c8eff;">₴' + formatNumber(c.balance) + '</b>' +
+        '<span style="font-size:12px;color:var(--fg-3);">Баланс картки · @' + escapeHtml(_axAcc.nick) + '</span>' +
+        '<b style="font-size:22px;color:var(--info);">₴' + formatNumber(c.balance) + '</b>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
         '<button class="ks-btn is-primary" onclick="openAxiomTransfer(\'toCasino\')">🎰 Поповнити гру</button>' +
         '<button class="ks-btn" onclick="openAxiomTransfer(\'toAxiom\')">🏦 Вивести на картку</button>' +
       '</div>' +
       '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Відключити Аксіому</button>' +
-      '<p style="font-size:11px;color:#5e6675;margin:12px 0 0;line-height:1.6;text-align:center;">Скін, блокування й денний ліміт картки налаштовуються в Аксіомі.</p>';
+      '<p style="font-size:11px;color:var(--fg-3);margin:12px 0 0;line-height:1.6;text-align:center;">Скін, блокування й денний ліміт картки налаштовуються в Аксіомі.</p>';
     return;
   }
   if(_axAcc) {
     el.innerHTML =
-      '<p style="font-size:13px;color:#98a0af;line-height:1.6;margin:0 0 14px;">Ти увійшов в Аксіому як <b style="color:#eceff5;">@' + escapeHtml(_axAcc.nick) + '</b>, але SlotOK ще не підключено.</p>' +
+      '<p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 14px;">Ти увійшов в Аксіому як <b style="color:var(--fg);">@' + escapeHtml(_axAcc.nick) + '</b>, але SlotOK ще не підключено.</p>' +
       '<button class="ks-btn is-primary is-block" style="margin-bottom:8px;" onclick="axiomLinkNow()">Підключити до SlotOK</button>' +
       '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Вийти з Аксіоми</button>';
     return;
@@ -67,9 +67,9 @@ function renderAxiomLinkContent() {
     '<input id="axLoginNick" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeHtml(currentUser || '') + '" style="margin-bottom:10px;">' +
     '<label class="ks-label" for="axLoginPass">Пароль Аксіоми</label>' +
     '<input id="axLoginPass" type="password" autocomplete="off" placeholder="••••••••" style="margin-bottom:6px;" onkeydown="if(event.key===\'Enter\')axiomLogin()">' +
-    '<div id="axLoginErr" style="min-height:18px;font-size:12px;color:#f0556b;margin:4px 0 10px;"></div>' +
+    '<div id="axLoginErr" style="min-height:18px;font-size:12px;color:var(--neg);margin:4px 0 10px;"></div>' +
     '<button class="ks-btn is-primary is-block" id="axLoginBtn" onclick="axiomLogin()">🏦 Увійти й підключити</button>' +
-    '<p style="font-size:11px;color:#5e6675;margin:14px 0 0;line-height:1.6;text-align:center;">Ще не заходив в Аксіому? Відкрий Аксіома Банк і увійди там ніком і паролем від SlotOK — рахунок створиться сам.</p>';
+    '<p style="font-size:11px;color:var(--fg-3);margin:14px 0 0;line-height:1.6;text-align:center;">Ще не заходив в Аксіому? Відкрий Аксіома Банк і увійди там ніком і паролем від SlotOK — рахунок створиться сам.</p>';
 }
 
 async function axiomLogin() {
@@ -192,7 +192,7 @@ function triggerWinReaction(amount, gameName) {
     setTimeout(()=>{
       const shareBtn = document.createElement('button');
       shareBtn.textContent = '📣 Поділитись виграшем';
-      shareBtn.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#d4af37,#b8941c);color:#000;border:none;border-radius:25px;padding:12px 24px;font-size:14px;font-weight:bold;cursor:pointer;z-index:8000;animation:fadeIn .3s;';
+      shareBtn.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--on-accent);border:none;border-radius:var(--r-xl);padding:12px 24px;font-size:14px;font-weight:bold;cursor:pointer;z-index:8000;animation:fadeIn .3s;';
       shareBtn.onclick = () => { openShareWin(amount, gameName||'Гра', ''); shareBtn.remove(); };
       document.body.appendChild(shareBtn);
       setTimeout(()=>shareBtn.remove(), 6000);
@@ -296,7 +296,7 @@ function playBaccarat(bet) {
   const colors3 = {player:'#4a9eff', banker:'#e74c3c', tie:'#4cd964'};
   document.getElementById('bacHistory').innerHTML =
     '<div style="display:flex;gap:5px;flex-wrap:wrap;">' +
-    bacHistory.map(w=>`<div style="width:22px;height:22px;border-radius:50%;background:${colors3[w]};font-size:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;">${w[0].toUpperCase()}</div>`).join('') +
+    bacHistory.map(w=>`<div style="width:22px;height:22px;border-radius:50%;background:${colors3[w]};font-size:10px;display:flex;align-items:center;justify-content:center;color:var(--fg);font-weight:bold;">${w[0].toUpperCase()}</div>`).join('') +
     '</div>';
 }
 
@@ -410,7 +410,7 @@ function vpEvaluate(hand) {
 function renderPmInbox() {
   const el = document.getElementById('pmInbox');
   if(!el || !currentUser) return;
-  el.innerHTML = '<div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Вхідні</div>';
+  el.innerHTML = '<div style="font-size:11px;color:var(--fg-4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Вхідні</div>';
   // Wider window than the original 20 — with only 20, a busy conversation
   // could push an entire OTHER conversation's last message out of the
   // fetched set, making that thread silently vanish from the inbox even
@@ -428,7 +428,7 @@ function renderPmInbox() {
       if(!threads[other] || threads[other].ts < m.ts) threads[other] = m;
     });
     const list = Object.entries(threads).sort((a,b)=>b[1].ts-a[1].ts);
-    if(!list.length) { el.innerHTML += '<div style="color:#555;font-size:13px;padding:10px;">Немає повідомлень. Напиши першим!</div>'; return; }
+    if(!list.length) { el.innerHTML += '<div style="color:var(--fg-4);font-size:13px;padding:10px;">Немає повідомлень. Напиши першим!</div>'; return; }
     list.forEach(([name, msg]) => {
       const div = document.createElement('div');
       div.className = 'pm-thread';
@@ -436,12 +436,12 @@ function renderPmInbox() {
       const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
       const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
       div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile('${name}')" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4a9eff;margin-left:4px;"></span>':''}</div>
-          <div style="font-size:11px;color:${isUnread?'#aaa':'#555'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
+          <div style="font-size:11px;color:${isUnread?'var(--fg-2)':'var(--fg-4)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-          <div style="font-size:10px;color:#444;">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
-          <button onclick="event.stopPropagation();deletePmThread('${name}')" style="background:none;border:none;color:#333;font-size:13px;cursor:pointer;padding:2px;line-height:1;" title="Видалити переписку">🗑</button>
+          <div style="font-size:10px;color:var(--fg-4);">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
+          <button onclick="event.stopPropagation();deletePmThread('${name}')" style="background:none;border:none;color:var(--fg-4);font-size:13px;cursor:pointer;padding:2px;line-height:1;" title="Видалити переписку">🗑</button>
         </div>`;
       div.onclick = () => openPmThread(name);
       el.appendChild(div);
@@ -479,17 +479,17 @@ function pmSearchRecipient(query) {
   query = (query || '').trim();
   if(query.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
   box.classList.remove('hidden');
-  box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#555;">\ud83d\udd0d \u041f\u043e\u0448\u0443\u043a...</div>';
+  box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:var(--fg-4);">\ud83d\udd0d \u041f\u043e\u0448\u0443\u043a...</div>';
   _pmSearchDebounce = setTimeout(() => {
     const isNumeric = /^\d+$/.test(query);
     const render = (results) => {
       if(!results.length) {
-        box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#555;">\u041d\u0456\u043a\u043e\u0433\u043e \u043d\u0435 \u0437\u043d\u0430\u0439\u0434\u0435\u043d\u043e</div>';
+        box.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:var(--fg-4);">\u041d\u0456\u043a\u043e\u0433\u043e \u043d\u0435 \u0437\u043d\u0430\u0439\u0434\u0435\u043d\u043e</div>';
         return;
       }
       box.innerHTML = results.slice(0, 8).map(nick => `
-        <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;display:flex;align-items:center;gap:8px;">
-          <span style="width:26px;height:26px;border-radius:50%;background:rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#4a9eff;">${nick[0].toUpperCase()}</span>
+        <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);font-size:13px;display:flex;align-items:center;gap:8px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--info);">${nick[0].toUpperCase()}</span>
           ${nick}
         </div>`).join('');
     };
@@ -582,28 +582,28 @@ function openPmThread(otherUser) {
   if(currentUser) db.ref('users/'+currentUser+'/pmLastRead/'+otherUser).set(Date.now());
 
   threadView.innerHTML = `
-    <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+    <div style="background:var(--surface-1);border-bottom:1px solid rgb(var(--info-rgb) / 0.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
       <div onclick="openPublicProfile(${jsArg(otherUser)})" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,color-mix(in srgb, var(--info) 19%, var(--surface-1)),var(--info));border:2px solid rgb(var(--info-rgb) / 0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
         <div style="min-width:0;">
           <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
-          <div id="pmThreadStatus" style="font-size:10px;color:#555;">● ...</div>
+          <div id="pmThreadStatus" style="font-size:10px;color:var(--fg-4);">● ...</div>
         </div>
       </div>
     </div>
-    <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:#050505;min-height:0;"></div>
-    <div id="pmImgPreview" style="display:none;padding:6px 14px;background:#0a0a0a;border-top:1px solid #111;flex-shrink:0;">
+    <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:var(--bg);min-height:0;"></div>
+    <div id="pmImgPreview" style="display:none;padding:6px 14px;background:var(--bg);border-top:1px solid var(--line);flex-shrink:0;">
       <div style="position:relative;display:inline-block;max-width:90px;">
-        <img id="pmImgPreviewImg" style="max-height:60px;max-width:90px;border-radius:8px;display:block;object-fit:cover;">
-        <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
+        <img id="pmImgPreviewImg" style="max-height:60px;max-width:90px;border-radius:var(--r-md);display:block;object-fit:cover;">
+        <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:var(--neg);color:var(--on-neg);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
-    <div style="background:#0a0a0a;border-top:1px solid #1a1a1a;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
+    <div style="background:var(--bg);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgb(var(--tint-rgb) / 0.08);border:1px solid rgb(var(--tint-rgb) / 0.12);border-radius:var(--r-md);padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
       <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
-      <button onclick="pmReply(${jsArg(otherUser)})" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
+      <button onclick="pmReply(${jsArg(otherUser)})" style="background:var(--info);border:none;border-radius:var(--r-md);padding:10px 14px;color:var(--on-info);font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
 
   // Реальний онлайн-статус замість того, що раніше було намертво
@@ -614,7 +614,7 @@ function openPmThread(otherUser) {
     const el = document.getElementById('pmThreadStatus');
     if(!el) return;
     const isOnline = !!snap.val();
-    el.style.color = isOnline ? '#3dd68c' : '#555';
+    el.style.color = isOnline ? 'var(--pos)' : 'var(--fg-4)';
     el.textContent = isOnline ? '● Онлайн' : '○ Офлайн';
   });
 
@@ -640,14 +640,14 @@ function openPmThread(otherUser) {
       const safePmImgUrl = isValidPmImgUrl ? escapeHtml(m.imgUrl) : '';
       const contentHtml = m.imgUrl
         ? (isValidPmImgUrl
-            ? `<img src="${safePmImgUrl}" style="max-width:200px;max-height:180px;border-radius:10px;display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${safePmImgUrl}','_blank')">`
-            : `<div style="font-size:12px;color:#777;">⚠️ Недійсне зображення</div>`)
+            ? `<img src="${safePmImgUrl}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${safePmImgUrl}','_blank')">`
+            : `<div style="font-size:12px;color:var(--fg-3);">⚠️ Недійсне зображення</div>`)
         : `<div style="font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text||'')}</div>`;
       return `<div style="display:flex;flex-direction:${isMe?'row-reverse':'row'};gap:8px;margin-bottom:8px;animation:slideUp .2s ease;">
-        <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgba(212,175,55,.2)':'rgba(74,158,255,.2)'};border:1.5px solid ${isMe?'rgba(212,175,55,.3)':'rgba(74,158,255,.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${m.from[0].toUpperCase()}</div>
-        <div style="max-width:72%;background:${isMe?'rgba(212,175,55,.08)':'rgba(255,255,255,.05)'};border:1px solid ${isMe?'rgba(212,175,55,.15)':'rgba(255,255,255,.07)'};border-radius:${isMe?'12px 4px 12px 12px':'4px 12px 12px 12px'};padding:8px 10px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgb(var(--accent-rgb) / 0.2)':'rgb(var(--info-rgb) / 0.2)'};border:1.5px solid ${isMe?'rgb(var(--accent-rgb) / 0.3)':'rgb(var(--info-rgb) / 0.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${m.from[0].toUpperCase()}</div>
+        <div style="max-width:72%;background:${isMe?'rgb(var(--accent-rgb) / 0.08)':'rgb(var(--tint-rgb) / 0.05)'};border:1px solid ${isMe?'rgb(var(--accent-rgb) / 0.15)':'rgb(var(--tint-rgb) / 0.07)'};border-radius:${isMe?'12px 4px 12px 12px':'4px 12px 12px 12px'};padding:8px 10px;">
           ${contentHtml}
-          <div style="font-size:9px;color:#333;margin-top:3px;text-align:${isMe?'right':'left'};">${timeStr}</div>
+          <div style="font-size:9px;color:var(--fg-4);margin-top:3px;text-align:${isMe?'right':'left'};">${timeStr}</div>
         </div>
       </div>`;
     }).join('');
@@ -714,18 +714,28 @@ function pmReply(to) {
   clearPmImg();
 }
 
-// ── THEME GRID ──
+// ── THEME GRID ── (вкладка «Теми»: тема + акцент)
 function renderThemeGrid() {
   const el = document.getElementById('themeGrid');
   if(!el) return;
-  const current = localStorage.getItem('slotok_theme') || 'dark';
-  el.innerHTML = Object.entries(THEMES).map(([id,t]) => `
-    <div onclick="applyThemeVars('${id}');localStorage.setItem('slotok_theme','${id}');renderThemeGrid();"
-      style="padding:16px;border-radius:14px;border:2px solid ${id===current?'var(--accent)':'#333'};background:${t.box};cursor:pointer;text-align:center;transition:.2s;">
-      <div style="font-size:28px;margin-bottom:6px;">${t.emoji}</div>
-      <div style="font-size:12px;font-weight:700;color:${t.text};">${t.label}</div>
-      ${id===current?'<div style="font-size:10px;color:var(--green);margin-top:4px;">✅ Активна</div>':''}
-    </div>`).join('');
+  const current = normalizeThemeSetting(getSetting('theme', 'auto'));
+  const acc = currentAccentName();
+  el.innerHTML = `
+    <div class="seg" role="radiogroup" aria-label="Тема інтерфейсу">
+      ${Object.entries(THEMES).map(([id, t]) => `
+        <button type="button" class="seg-item${id === current ? ' active' : ''}" role="radio" aria-checked="${id === current}"
+          data-theme-option="${id}" onclick="setTheme('${id}', this); renderThemeGrid();">
+          <span class="seg-label">${t.label}</span><span class="seg-hint">${t.hint}</span>
+        </button>`).join('')}
+    </div>
+    <div class="field-label">Акцент</div>
+    <div class="swatches" role="radiogroup" aria-label="Колір акценту">
+      ${Object.entries(ACCENT_PRESETS).map(([id, a]) => `
+        <button type="button" class="swatch${id === acc ? ' active' : ''}" role="radio" aria-checked="${id === acc}"
+          data-accent-option="${id}" style="--swatch:${a.dark}" onclick="setAccentColor('${id}', this); renderThemeGrid();">
+          <span class="swatch-dot" aria-hidden="true"></span><span>${a.label}</span>
+        </button>`).join('')}
+    </div>`;
 }
 
 // ── LOGIN STREAK EXTENDED: 7d = x2, 30d = skin ──
@@ -751,8 +761,8 @@ function renderActivityFeed() {
       <div class="feed-item">
         <div style="font-size:20px;">🎰</div>
         <div style="flex:1;"><b style="color:var(--accent);">${escapeHtml(item.user)}</b> виграв <b style="color:var(--green);">+₴${formatNumber(item.amount)}</b> у ${escapeHtml(item.game||'')}</div>
-        <div style="font-size:10px;color:#444;">${getRelativeTime(item.time)}</div>
-      </div>`).join('') || '<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Поки немає великих виграшів</div>';
+        <div style="font-size:10px;color:var(--fg-4);">${getRelativeTime(item.time)}</div>
+      </div>`).join('') || '<div style="color:var(--fg-4);font-size:12px;text-align:center;padding:12px;">Поки немає великих виграшів</div>';
   });
 }
 
@@ -984,16 +994,16 @@ function showGameHelp(gameId) {
   if(!modal) {
     modal = document.createElement('div');
     modal.id = 'gameHelpModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9800;display:flex;align-items:flex-end;';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.88 * var(--recess-k)));z-index:9800;display:flex;align-items:flex-end;';
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
-    <div style="background:linear-gradient(135deg,#0d0520,#1a0a35);border:1px solid rgba(212,175,55,0.3);border-radius:24px 24px 0 0;padding:24px;width:100%;box-sizing:border-box;max-height:85vh;overflow-y:auto;">
+    <div style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--special) 14%, var(--surface-1)));border:1px solid rgb(var(--accent-rgb) / 0.3);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:24px;width:100%;box-sizing:border-box;max-height:85vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <h3 style="margin:0;color:var(--accent);">${h.title}</h3>
-        <button onclick="document.getElementById('gameHelpModal').style.display='none'" style="background:rgba(255,255,255,.1);border:none;color:#aaa;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('gameHelpModal').style.display='none'" style="background:rgb(var(--tint-rgb) / 0.1);border:none;color:var(--fg-2);border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>
       </div>
-      <div style="font-size:14px;color:#ccc;line-height:1.7;">${h.rules}</div>
+      <div style="font-size:14px;color:var(--fg-2);line-height:1.7;">${h.rules}</div>
     </div>`;
   modal.style.display = 'flex';
   modal.onclick = e => { if(e.target===modal) modal.style.display='none'; };

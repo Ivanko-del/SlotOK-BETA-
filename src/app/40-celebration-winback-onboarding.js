@@ -139,13 +139,13 @@ function showWelcomeBackModal(days, bonus) {
   const html = `
     <div style="text-align:center;padding-right:0;">
       <div style="font-size:52px;margin-bottom:10px;animation:float 2.5s ease-in-out infinite;">🥺</div>
-      <div style="font-family:'Orbitron',monospace;font-size:19px;font-weight:900;color:#4a9eff;margin-bottom:8px;">Ми скучили за тобою!</div>
-      <div style="font-size:13px;color:#999;margin-bottom:18px;line-height:1.5;">Тебе не було ${days} ${days===1?'день':days<5?'дні':'днів'}.<br>Ось бонус щоб повернутись у гру:</div>
-      <div class="welcome-back-card" style="background:linear-gradient(135deg,#0a1428,#1a2848);border:2px solid rgba(74,158,255,.4);border-radius:18px;padding:18px;margin-bottom:16px;">
-        <div style="font-size:11px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Бонус повернення</div>
-        <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:#fff;">+₴${formatNumber(bonus)}</div>
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:900;color:var(--info);margin-bottom:8px;">Ми скучили за тобою!</div>
+      <div style="font-size:13px;color:var(--fg-3);margin-bottom:18px;line-height:1.5;">Тебе не було ${days} ${days===1?'день':days<5?'дні':'днів'}.<br>Ось бонус щоб повернутись у гру:</div>
+      <div class="welcome-back-card" style="background:linear-gradient(135deg,color-mix(in srgb, var(--info) 11%, var(--surface-1)),color-mix(in srgb, var(--info) 21%, var(--surface-1)));border:2px solid rgb(var(--info-rgb) / 0.4);border-radius:var(--r-xl);padding:18px;margin-bottom:16px;">
+        <div style="font-size:11px;color:var(--info);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Бонус повернення</div>
+        <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:var(--fg);">+₴${formatNumber(bonus)}</div>
       </div>
-      <button onclick="claimWelcomeBackBonus(${bonus})" style="width:100%;background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:900;cursor:pointer;font-size:15px;">🎁 Забрати бонус</button>
+      <button onclick="claimWelcomeBackBonus(${bonus})" style="width:100%;background:var(--info);border:none;border-radius:var(--r-lg);padding:15px;color:var(--on-info);font-weight:900;cursor:pointer;font-size:15px;">🎁 Забрати бонус</button>
     </div>`;
   openModal('welcomeBack', html);
 }
@@ -215,13 +215,13 @@ function showOnboardStep() {
   const tooltipTop = rect.top > window.innerHeight/2 ? rect.top - 150 : rect.bottom + 12;
   tooltip.style.cssText = `top:${Math.max(12,tooltipTop)}px;left:${Math.min(Math.max(12,rect.left-40),window.innerWidth-292)}px;`;
   tooltip.innerHTML = `
-    <div style="font-weight:900;color:#d4af37;font-size:15px;margin-bottom:6px;">${step.title}</div>
-    <div style="font-size:13px;color:#ccc;line-height:1.5;margin-bottom:14px;">${step.text}</div>
+    <div style="font-weight:900;color:var(--accent);font-size:15px;margin-bottom:6px;">${step.title}</div>
+    <div style="font-size:13px;color:var(--fg-2);line-height:1.5;margin-bottom:14px;">${step.text}</div>
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:11px;color:#555;">${_onboardStepIdx+1}/${ONBOARDING_STEPS.length}</div>
+      <div style="font-size:11px;color:var(--fg-4);">${_onboardStepIdx+1}/${ONBOARDING_STEPS.length}</div>
       <div style="display:flex;gap:8px;">
-        <button onclick="skipOnboarding()" style="background:none;border:1px solid #333;border-radius:8px;color:#666;font-size:12px;padding:7px 12px;cursor:pointer;">Пропустити</button>
-        <button onclick="nextOnboardStep()" style="background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:8px;color:#000;font-weight:800;font-size:12px;padding:7px 14px;cursor:pointer;">${_onboardStepIdx===ONBOARDING_STEPS.length-1?'Готово':'Далі →'}</button>
+        <button onclick="skipOnboarding()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);font-size:12px;padding:7px 12px;cursor:pointer;">Пропустити</button>
+        <button onclick="nextOnboardStep()" style="background:var(--accent);border:none;border-radius:var(--r-md);color:var(--on-accent);font-weight:800;font-size:12px;padding:7px 14px;cursor:pointer;">${_onboardStepIdx===ONBOARDING_STEPS.length-1?'Готово':'Далі →'}</button>
       </div>
     </div>`;
   document.body.appendChild(tooltip);
@@ -255,9 +255,9 @@ function renderMysteryBoxWidget() {
   el.innerHTML = `
     <div class="mystery-box-card anim-press" onclick="openMysteryBox()">
       <div class="mystery-box-icon">🎁</div>
-      <div style="font-family:'Orbitron',monospace;font-weight:900;color:#c9a0ff;font-size:15px;margin-top:8px;">MYSTERY BOX</div>
-      <div style="font-size:11px;color:#999;margin-top:4px;">Ексклюзивно для нових гравців · 24 години</div>
-      <div style="font-size:10px;color:#666;margin-top:6px;">Натисни щоб відкрити 🔓</div>
+      <div style="font-family:var(--font-display);font-weight:900;color:var(--special);font-size:15px;margin-top:8px;">MYSTERY BOX</div>
+      <div style="font-size:11px;color:var(--fg-3);margin-top:4px;">Ексклюзивно для нових гравців · 24 години</div>
+      <div style="font-size:10px;color:var(--fg-3);margin-top:6px;">Натисни щоб відкрити 🔓</div>
     </div>`;
 }
 
@@ -287,9 +287,9 @@ function openMysteryBox() {
   const html = `
     <div style="text-align:center;">
       <div style="font-size:60px;margin-bottom:10px;animation:popIn .5s cubic-bezier(.34,1.56,.64,1);">🎉</div>
-      <div style="font-family:'Orbitron',monospace;font-size:17px;font-weight:900;color:#c9a0ff;margin-bottom:8px;">Вітаємо!</div>
-      <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:16px;">${chosen.label}</div>
-      <button onclick="closeModal('mysteryBox')" style="width:100%;background:linear-gradient(135deg,#8e44ad,#c9a0ff);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-size:14px;">✅ Забрати</button>
+      <div style="font-family:var(--font-display);font-size:17px;font-weight:900;color:var(--special);margin-bottom:8px;">Вітаємо!</div>
+      <div style="font-size:20px;font-weight:900;color:var(--fg);margin-bottom:16px;">${chosen.label}</div>
+      <button onclick="closeModal('mysteryBox')" style="width:100%;background:var(--special);border:none;border-radius:var(--r-lg);padding:14px;color:var(--on-special);font-weight:900;cursor:pointer;font-size:14px;">✅ Забрати</button>
     </div>`;
   openModal('mysteryBox', html);
   spawnConfettiRain(35, 'mega');
@@ -313,14 +313,14 @@ function renderFriendsFeed() {
       if(!relevant.length) { el.classList.add('hidden'); return; }
       el.classList.remove('hidden');
       el.innerHTML = `
-        <div style="font-size:11px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Твої друзі</div>
+        <div style="font-size:11px;color:var(--info);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Твої друзі</div>
         ${relevant.map(w => `
-          <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-            <div style="width:32px;height:32px;border-radius:50%;background:rgba(74,158,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#4a9eff;flex-shrink:0;">${w.user[0].toUpperCase()}</div>
+          <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${w.user[0].toUpperCase()}</div>
             <div style="flex:1;min-width:0;font-size:12px;">
-              <b>${escapeHtml(w.user)}</b> виграв <b style="color:#3dd68c;">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
+              <b>${escapeHtml(w.user)}</b> виграв <b style="color:var(--pos);">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
             </div>
-            <div style="font-size:10px;color:#555;flex-shrink:0;">${timeAgoShort(w.time)}</div>
+            <div style="font-size:10px;color:var(--fg-4);flex-shrink:0;">${timeAgoShort(w.time)}</div>
           </div>`).join('')}
       `;
     });

@@ -30,7 +30,7 @@ function cardHtml(card, small, selected) {
     '<span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
 }
 function tableCardHtml(card, isCover) {
-  if(!card) return '<div class="cg-table-card covered" style="border:2px dashed #4cd964;background:transparent;width:44px;height:62px;border-radius:6px;"></div>';
+  if(!card) return '<div class="cg-table-card covered" style="border:2px dashed var(--pos);background:transparent;width:44px;height:62px;border-radius:var(--r-sm);"></div>';
   const isRed = isRedSuit(card.suit);
   return '<div class="cg-table-card' + (isRed?' red':'') + '"><span>' + card.rank + '</span><span>' + card.suit + '</span></div>';
 }
@@ -72,7 +72,7 @@ function renderCgBoard() {
   const { playerHand, aiHand, table, trump, trumpSuit, isPlayerAttacking } = cgState;
 
   const tc = document.getElementById('cgTrumpCard');
-  if(tc) { const isRed = isRedSuit(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'#cc0000':'#000') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
+  if(tc) { const isRed = isRedSuit(trump.suit); tc.innerHTML = '<span style="color:' + (isRed?'var(--neg)':'var(--on-accent)') + ';font-size:18px;">' + trump.rank + trump.suit + '</span>'; }
 
   const dc = document.getElementById('cgDeckCount');
   if(dc) dc.textContent = cgState.deck.length;
@@ -99,13 +99,13 @@ function renderCgBoard() {
 
   const bf = document.getElementById('cgBattleField');
   if(bf) {
-    if(!table.length) { bf.innerHTML = '<div style="color:#333;font-size:12px;font-style:italic;width:100%;text-align:center;">Поле порожнє</div>'; }
+    if(!table.length) { bf.innerHTML = '<div style="color:var(--fg-4);font-size:12px;font-style:italic;width:100%;text-align:center;">Поле порожнє</div>'; }
     else {
       bf.innerHTML = '';
       table.forEach(pair => {
         const wrap = document.createElement('div');
         wrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;align-items:center;';
-        wrap.innerHTML = tableCardHtml(pair.attack) + (pair.defend ? tableCardHtml(pair.defend) : '<div class="cg-table-card" style="border:2px dashed #555;background:transparent;"></div>');
+        wrap.innerHTML = tableCardHtml(pair.attack) + (pair.defend ? tableCardHtml(pair.defend) : '<div class="cg-table-card" style="border:2px dashed var(--line-strong);background:transparent;"></div>');
         bf.appendChild(wrap);
       });
     }
@@ -405,10 +405,10 @@ function createCardRoom() {
     db.ref('users/' + currentUser + '/balance').onDisconnect().set(firebase.database.ServerValue.increment(bet));
     // Show waiting screen in online lobby
     const roomsList = document.getElementById('cgRoomsList');
-    if(roomsList) roomsList.innerHTML = '<div style="background:linear-gradient(135deg,#0d2a0d,#051505);border:1px solid var(--green);border-radius:10px;padding:15px;text-align:center;">' +
+    if(roomsList) roomsList.innerHTML = '<div style="background:linear-gradient(135deg,var(--surface-2),var(--surface-1));border:1px solid var(--green);border-radius:var(--r-md);padding:15px;text-align:center;">' +
       '<div style="font-size:28px;margin-bottom:8px;">⏳</div>' +
       '<div style="color:var(--green);font-weight:bold;margin-bottom:4px;">Кімната створена!</div>' +
-      '<div style="color:#777;font-size:12px;margin-bottom:12px;">Ставка: ' + bet + '₴ • Чекаємо суперника...</div>' +
+      '<div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Ставка: ' + bet + '₴ • Чекаємо суперника...</div>' +
       '<button class="btn-red" onclick="cancelCardRoom(\'' + roomId + '\',' + bet + ')" style="padding:10px;">❌ Скасувати</button>' +
       '</div>';
     listenCardRoom(roomId);
@@ -430,7 +430,7 @@ function loadCardRooms() {
   db.ref('card_rooms').orderByChild('status').equalTo('waiting').limitToLast(10).once('value', snap => {
     const list = document.getElementById('cgRoomsList'); if(!list) return;
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#555;font-size:12px;padding:10px 0;">Немає кімнат</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:10px 0;">Немає кімнат</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([id, r]) => {
       if(r.host === currentUser) return;
@@ -438,7 +438,7 @@ function loadCardRooms() {
         '<span style="font-weight:bold;">🧑 ' + r.host + '</span><span style="color:var(--accent);font-weight:bold;">' + r.bet + '₴</span>' +
         '</div><button class="btn-gold" style="margin-top:8px;" onclick="joinCardRoom(\'' + id + '\',' + r.bet + ')">➕ ПРИЄДНАТИСЬ</button></div>';
     });
-    if(!list.innerHTML) list.innerHTML = '<div style="color:#555;font-size:12px;padding:10px 0;">Немає кімнат</div>';
+    if(!list.innerHTML) list.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:10px 0;">Немає кімнат</div>';
   });
 }
 
@@ -698,17 +698,17 @@ function updateRateTicker() {
   }
 
   if(tickerInner) {
-    tickerInner.innerHTML = '<span style="color:#555;font-size:10px;margin-right:8px;">📊</span>' +
+    tickerInner.innerHTML = '<span style="color:var(--fg-4);font-size:10px;margin-right:8px;">📊</span>' +
       items.map(i =>
         `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
         `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:#222;margin:0 8px;">│</span>') +
+      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>') +
       // Duplicate for seamless loop
-      '<span style="color:#222;margin:0 24px;">│</span>' +
+      '<span style="color:var(--on-accent);margin:0 24px;">│</span>' +
       items.map(i =>
         `<span style="font-size:10px;color:#${i.code==='BTC'?'f7931a':i.code==='ETH'?'627eea':i.code.match(/USD|USDT/)?'26a17b':'aaa'};">` +
         `${i.flag} <b>${i.code}</b> = ${i.rateStr}₴</span>`
-      ).join('<span style="color:#222;margin:0 8px;">│</span>');
+      ).join('<span style="color:var(--on-accent);margin:0 8px;">│</span>');
   }
 }
 
@@ -730,34 +730,34 @@ function openCurrencyPicker() {
   if(!modal) {
     modal = document.createElement('div');
     modal.id = 'currencyPickerModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:9000;display:flex;align-items:flex-end;backdrop-filter:blur(4px);';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgb(var(--recess-rgb) / calc(0.88 * var(--recess-k)));z-index:9000;display:flex;align-items:flex-end;';
     modal.innerHTML = `
-      <div style="width:100%;background:var(--box);border-radius:24px 24px 0 0;padding:0;max-height:90vh;overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,0.8);box-sizing:border-box;">
+      <div style="width:100%;background:var(--box);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:0;max-height:90vh;overflow:hidden;box-shadow:0 -8px 40px rgb(var(--shade-rgb) / 0.8);box-sizing:border-box;">
         <!-- Header -->
         <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-size:20px;font-weight:900;color:var(--accent);">💱 Валюта</div>
-            <div style="font-size:11px;color:#555;margin-top:2px;">Баланс відображається у вибраній валюті</div>
+            <div style="font-size:11px;color:var(--fg-4);margin-top:2px;">Баланс відображається у вибраній валюті</div>
           </div>
           <button onclick="document.getElementById('currencyPickerModal').classList.add('hidden')"
-            style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid #333;font-size:16px;color:#777;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+            style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);font-size:16px;color:var(--fg-3);cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <!-- Content (scrollable) -->
         <div style="overflow-y:auto;max-height:calc(90vh - 80px);padding:16px 20px 30px;">
-          <div style="font-size:10px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">💵 Фіатні валюти</div>
+          <div style="font-size:10px;color:var(--fg-4);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">💵 Фіатні валюти</div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;" id="fiatCurrencyGrid"></div>
 
-          <div style="font-size:10px;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">🪙 Криптовалюти</div>
+          <div style="font-size:10px;color:var(--fg-4);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">🪙 Криптовалюти</div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;" id="cryptoCurrencyGrid"></div>
 
           <!-- Live rates table -->
-          <div style="background:#080808;border-radius:16px;border:1px solid #1a1a1a;overflow:hidden;">
-            <div style="padding:12px 16px;border-bottom:1px solid #111;display:flex;justify-content:space-between;align-items:center;">
+          <div style="background:var(--bg);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
               <div style="font-size:13px;font-weight:bold;">📊 Курс до гривні</div>
-              <button onclick="fetchRates().then(()=>{buildRatesList();buildCurrencyGrid();})" style="background:#1a1a1a;border:1px solid #333;color:#aaa;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;">🔄 Оновити</button>
+              <button onclick="fetchRates().then(()=>{buildRatesList();buildCurrencyGrid();})" style="background:var(--surface-2);border:1px solid var(--line);color:var(--fg-2);border-radius:var(--r-md);padding:4px 10px;font-size:11px;cursor:pointer;">🔄 Оновити</button>
             </div>
             <div id="ratesList" style="padding:4px 0;"></div>
-            <div id="ratesTimestamp" style="font-size:10px;color:#333;padding:6px 16px 10px;text-align:right;"></div>
+            <div id="ratesTimestamp" style="font-size:10px;color:var(--fg-4);padding:6px 16px 10px;text-align:right;"></div>
           </div>
         </div>
       </div>
@@ -787,12 +787,12 @@ function buildCurrencyGrid() {
     const btn = document.createElement('div');
     btn.className = 'currency-btn' + (cur.code === currentCurrency ? ' active' : '');
     btn.dataset.code = cur.code;
-    btn.style.cssText = 'padding:12px;background:var(--input);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.15s;text-align:center;';
+    btn.style.cssText = 'padding:12px;background:var(--input);border:2px solid var(--border);border-radius:var(--r-lg);cursor:pointer;transition:all 0.15s;text-align:center;';
     btn.innerHTML =
       '<div style="font-size:22px;margin-bottom:4px;">' + cur.flag + '</div>' +
       '<div style="font-size:13px;font-weight:bold;">' + cur.symbol + ' ' + cur.code + '</div>' +
-      '<div style="font-size:10px;color:#777;margin-top:2px;">' + rateStr + '</div>';
-    if(cur.code === currentCurrency) { btn.style.borderColor='var(--accent)'; btn.style.background='rgba(212,175,55,0.12)'; }
+      '<div style="font-size:10px;color:var(--fg-3);margin-top:2px;">' + rateStr + '</div>';
+    if(cur.code === currentCurrency) { btn.style.borderColor='var(--accent)'; btn.style.background='rgb(var(--accent-rgb) / 0.12)'; }
     btn.onclick = () => setCurrency(cur.code);
     (cur.isCrypto ? cryptoGrid : fiatGrid).appendChild(btn);
   });
@@ -819,12 +819,12 @@ function buildRatesList() {
     row.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px;">' +
         '<span style="font-size:20px;">' + cur.flag + '</span>' +
-        '<div><div style="font-size:13px;font-weight:bold;color:#ddd;">1 ' + cur.code + '</div>' +
-          '<div style="font-size:10px;color:#555;">' + cur.name + '</div></div>' +
+        '<div><div style="font-size:13px;font-weight:bold;color:var(--fg-2);">1 ' + cur.code + '</div>' +
+          '<div style="font-size:10px;color:var(--fg-4);">' + cur.name + '</div></div>' +
       '</div>' +
       '<div style="text-align:right;">' +
         '<div style="font-size:15px;font-weight:900;color:' + accentColor + ';">' + fmt + ' ₴</div>' +
-        (cur.isCrypto ? '<div style="font-size:10px;color:#555;">≈ ' + (uahPer1/42).toFixed(2) + ' $</div>' : '') +
+        (cur.isCrypto ? '<div style="font-size:10px;color:var(--fg-4);">≈ ' + (uahPer1/42).toFixed(2) + ' $</div>' : '') +
       '</div>';
     list.appendChild(row);
   });

@@ -43,16 +43,16 @@ function showFirebaseRules() {
   if(existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'fbRulesModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box;';
   modal.innerHTML = `
     <div style="max-width:600px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-family:'Orbitron',monospace;font-size:16px;color:#d4af37;">🛡️ Firebase Security Rules</div>
-        <button onclick="document.getElementById('fbRulesModal').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:6px 14px;cursor:pointer;">✕ Закрити</button>
+        <div style="font-family:var(--font-display);font-size:16px;color:var(--accent);">🛡️ Firebase Security Rules</div>
+        <button onclick="document.getElementById('fbRulesModal').remove()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);padding:6px 14px;cursor:pointer;">✕ Закрити</button>
       </div>
-      <div style="background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:12px;font-family:monospace;font-size:11px;color:#aaa;white-space:pre-wrap;overflow-x:auto;max-height:60vh;overflow-y:auto;">${FIREBASE_SECURITY_RULES}</div>
-      <button onclick="navigator.clipboard.writeText(FIREBASE_SECURITY_RULES);notify('✅ Rules скопійовано!','success')" style="width:100%;background:linear-gradient(135deg,#d4af37,#f0c040);border:none;border-radius:10px;padding:12px;color:#000;font-weight:900;cursor:pointer;font-size:14px;">📋 Копіювати правила</button>
-      <div style="font-size:10px;color:#444;margin-top:8px;text-align:center;">Вставте ці правила в Firebase Console → Realtime Database → Rules</div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;font-family:var(--font-mono);font-size:11px;color:var(--fg-2);white-space:pre-wrap;overflow-x:auto;max-height:60vh;overflow-y:auto;">${FIREBASE_SECURITY_RULES}</div>
+      <button onclick="navigator.clipboard.writeText(FIREBASE_SECURITY_RULES);notify('✅ Rules скопійовано!','success')" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-md);padding:12px;color:var(--on-accent);font-weight:900;cursor:pointer;font-size:14px;">📋 Копіювати правила</button>
+      <div style="font-size:10px;color:var(--fg-4);margin-top:8px;text-align:center;">Вставте ці правила в Firebase Console → Realtime Database → Rules</div>
     </div>`;
   document.body.appendChild(modal);
 }
@@ -100,22 +100,22 @@ function showProvablyFairModal(game, serverSeed, clientSeed, nonce, result) {
   if(existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'provablyFairModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.9 * var(--recess-k)));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
   modal.innerHTML = `
-    <div style="background:#111;border:1.5px solid rgba(61,214,140,.3);border-radius:20px;padding:20px;max-width:380px;width:100%;">
-      <div style="font-family:'Orbitron',monospace;font-size:15px;color:#3dd68c;margin-bottom:14px;">🔐 Provably Fair — ${game}</div>
-      <div style="font-size:11px;color:#555;margin-bottom:6px;">Server Seed (hashed):</div>
-      <div style="background:#0a0a0a;border-radius:8px;padding:8px 10px;font-family:monospace;font-size:11px;color:#888;word-break:break-all;margin-bottom:10px;">${serverSeed.slice(0,16)}...${serverSeed.slice(-8)}</div>
-      <div style="font-size:11px;color:#555;margin-bottom:6px;">Client Seed:</div>
-      <div style="background:#0a0a0a;border-radius:8px;padding:8px 10px;font-family:monospace;font-size:12px;color:#d4af37;margin-bottom:10px;">${clientSeed}</div>
+    <div style="background:var(--surface-1);border:1.5px solid rgb(var(--pos-rgb) / 0.3);border-radius:var(--r-xl);padding:20px;max-width:380px;width:100%;">
+      <div style="font-family:var(--font-display);font-size:15px;color:var(--pos);margin-bottom:14px;">🔐 Provably Fair — ${game}</div>
+      <div style="font-size:11px;color:var(--fg-4);margin-bottom:6px;">Server Seed (hashed):</div>
+      <div style="background:var(--bg);border-radius:var(--r-md);padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--fg-3);word-break:break-all;margin-bottom:10px;">${serverSeed.slice(0,16)}...${serverSeed.slice(-8)}</div>
+      <div style="font-size:11px;color:var(--fg-4);margin-bottom:6px;">Client Seed:</div>
+      <div style="background:var(--bg);border-radius:var(--r-md);padding:8px 10px;font-family:var(--font-mono);font-size:12px;color:var(--accent);margin-bottom:10px;">${clientSeed}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div style="background:#0a0a0a;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;">Nonce</div><div style="font-weight:900;color:#4a9eff;">${nonce}</div></div>
-        <div style="background:#0a0a0a;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;">Результат</div><div style="font-weight:900;color:#3dd68c;">${result}</div></div>
+        <div style="background:var(--bg);border-radius:var(--r-md);padding:8px;text-align:center;"><div style="font-size:10px;color:var(--fg-4);">Nonce</div><div style="font-weight:900;color:var(--info);">${nonce}</div></div>
+        <div style="background:var(--bg);border-radius:var(--r-md);padding:8px;text-align:center;"><div style="font-size:10px;color:var(--fg-4);">Результат</div><div style="font-weight:900;color:var(--pos);">${result}</div></div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="generateNewClientSeed();document.getElementById('provablyFairModal').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.3);border-radius:10px;padding:10px;color:#3dd68c;cursor:pointer;font-size:12px;">🔄 Новий seed</button>
-        <button onclick="document.getElementById('provablyFairModal').remove()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid #222;border-radius:10px;padding:10px;color:#666;cursor:pointer;font-size:12px;">✕ Закрити</button>
+        <button onclick="generateNewClientSeed();document.getElementById('provablyFairModal').remove()" style="flex:1;background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.3);border-radius:var(--r-md);padding:10px;color:var(--pos);cursor:pointer;font-size:12px;">🔄 Новий seed</button>
+        <button onclick="document.getElementById('provablyFairModal').remove()" style="flex:1;background:rgb(var(--tint-rgb) / 0.05);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;color:var(--fg-3);cursor:pointer;font-size:12px;">✕ Закрити</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -256,18 +256,18 @@ function showWithdraw2FAWait(amount, requestId) {
   if(existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'modal2FA';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.innerHTML = `
-    <div style="background:linear-gradient(135deg,#0a0d18,#0d1224);border:2px solid rgba(74,158,255,.3);border-radius:20px;padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;text-align:center;">
+    <div style="background:linear-gradient(135deg,var(--surface-1),var(--surface-2));border:2px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-xl);padding:22px;max-width:340px;width:100%;animation:slideUp .3s ease;text-align:center;">
       <div id="wd2faIcon" style="font-size:42px;margin-bottom:8px;animation:pulse2 1.5s ease infinite;">🔐</div>
-      <div style="font-family:'Orbitron',monospace;font-size:15px;color:#4a9eff;font-weight:900;">Підтвердь вивід у Telegram</div>
-      <div style="font-size:12px;color:#666;margin-top:6px;">Сума: <b style="color:#d4af37;">${formatNumber(amount)}₴</b></div>
-      <div id="wd2faMsg" style="font-size:13px;color:#aaa;margin-top:14px;line-height:1.5;">Ми надіслали повідомлення у твій Telegram із кнопками «Підтвердити» / «Скасувати». Відкрий бота і натисни потрібну.</div>
+      <div style="font-family:var(--font-display);font-size:15px;color:var(--info);font-weight:900;">Підтвердь вивід у Telegram</div>
+      <div style="font-size:12px;color:var(--fg-3);margin-top:6px;">Сума: <b style="color:var(--accent);">${formatNumber(amount)}₴</b></div>
+      <div id="wd2faMsg" style="font-size:13px;color:var(--fg-2);margin-top:14px;line-height:1.5;">Ми надіслали повідомлення у твій Telegram із кнопками «Підтвердити» / «Скасувати». Відкрий бота і натисни потрібну.</div>
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button onclick="notifyBot('withdraw-2fa', '${requestId}');notify('🔄 Надіслано ще раз','info')" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:12px;padding:12px;color:#4a9eff;font-weight:700;cursor:pointer;font-size:13px;">🔄 Надіслати ще раз</button>
-        <button onclick="closeWithdraw2FAWait()" style="background:rgba(255,255,255,.05);border:1px solid #222;border-radius:12px;padding:12px;color:#666;cursor:pointer;font-size:13px;">Закрити</button>
+        <button onclick="notifyBot('withdraw-2fa', '${requestId}');notify('🔄 Надіслано ще раз','info')" style="flex:1;background:rgb(var(--info-rgb) / 0.1);border:1px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-lg);padding:12px;color:var(--info);font-weight:700;cursor:pointer;font-size:13px;">🔄 Надіслати ще раз</button>
+        <button onclick="closeWithdraw2FAWait()" style="background:rgb(var(--tint-rgb) / 0.05);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;color:var(--fg-3);cursor:pointer;font-size:13px;">Закрити</button>
       </div>
-      <div style="font-size:10px;color:#333;margin-top:10px;">Заявка нікуди не зникає — можна повернутись і підтвердити пізніше</div>
+      <div style="font-size:10px;color:var(--fg-4);margin-top:10px;">Заявка нікуди не зникає — можна повернутись і підтвердити пізніше</div>
     </div>`;
   document.body.appendChild(modal);
 
@@ -282,12 +282,12 @@ function showWithdraw2FAWait(amount, requestId) {
     const msg = document.getElementById('wd2faMsg');
     if(status === 'pending') {
       if(icon) icon.textContent = '✅';
-      if(msg) msg.innerHTML = '<span style="color:#3dd68c;">Підтверджено!</span> Заявку передано адміністратору — обробка 1-24 год.';
+      if(msg) msg.innerHTML = '<span style="color:var(--pos);">Підтверджено!</span> Заявку передано адміністратору — обробка 1-24 год.';
       loadMyWithdraws();
       setTimeout(closeWithdraw2FAWait, 2500);
     } else if(status === 'cancelled') {
       if(icon) icon.textContent = '❌';
-      if(msg) msg.innerHTML = '<span style="color:#e74c3c;">Скасовано.</span> Кошти повернуто на баланс.';
+      if(msg) msg.innerHTML = '<span style="color:var(--neg);">Скасовано.</span> Кошти повернуто на баланс.';
       loadMyWithdraws();
       setTimeout(closeWithdraw2FAWait, 2500);
     }
@@ -332,8 +332,8 @@ async function rollDiceFair(dir) {
   const resEl = document.getElementById('diceResult');
   const histEl = document.getElementById('diceHistory');
   if(resEl) resEl.innerHTML = win
-    ? `<span style="color:var(--green);font-weight:900;">🎲 ${result} — ВИГРАШ! +${formatNumber(winAmt)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`
-    : `<span style="color:var(--red);font-weight:900;">🎲 ${result} — Програш -${formatNumber(bet)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`;
+    ? `<span style="color:var(--green);font-weight:900;">🎲 ${result} — ВИГРАШ! +${formatNumber(winAmt)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-sm);color:var(--pos);font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`
+    : `<span style="color:var(--red);font-weight:900;">🎲 ${result} — Програш -${formatNumber(bet)}₴ <button onclick="showProvablyFairModal('Dice','${_serverSeed}','${_clientSeed}',${_nonce},${result})" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:2px 8px;cursor:pointer;margin-left:6px;">⚖️ Verify</button></span>`;
   if(win) { notify('🎲 ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success'); addToHistory('Dice: +'+winAmt); }
   else { notify('🎲 ' + result + ' — Програш', 'error'); addToHistory('Dice: -'+bet); }
   if(histEl) {
@@ -378,7 +378,7 @@ async function dropPlinkoFair() {
     updateStreak(win >= bet); recordBalanceHistory();
     if(ball) ball.style.display = 'none';
     // Show verify button
-    notify(`⚖️ <span onclick="showProvablyFairModal('Plinko','${_serverSeed}','${_clientSeed}',${_nonce},${fairNum})" style="cursor:pointer;text-decoration:underline;color:#4a9eff;">Перевірити чесність гри</span>`, 'info');
+    notify(`⚖️ <span onclick="showProvablyFairModal('Plinko','${_serverSeed}','${_clientSeed}',${_nonce},${fairNum})" style="cursor:pointer;text-decoration:underline;color:var(--info);">Перевірити чесність гри</span>`, 'info');
   }, 1200);
 }
 

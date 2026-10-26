@@ -320,12 +320,12 @@ function loadHourlyHistory() {
     const el = document.getElementById('hourlyHistory');
     if(!el) return;
     const data = snap.val();
-    if(!data) { el.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:10px 0;">Немає записів</div>'; return; }
+    if(!data) { el.innerHTML = '<div style="color:var(--fg-3);font-size:13px;text-align:center;padding:10px 0;">Немає записів</div>'; return; }
     el.innerHTML = '';
     Object.values(data).reverse().forEach(h => {
       const t = new Date(h.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
-      el.innerHTML += `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:#111;border-radius:8px;margin-bottom:5px;font-size:13px;">
-        <span style="color:#777;">${t}</span>
+      el.innerHTML += `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:5px;font-size:13px;">
+        <span style="color:var(--fg-3);">${t}</span>
         <span style="color:var(--green);font-weight:bold;">+${h.amount} ₴</span>
       </div>`;
     });
@@ -590,9 +590,9 @@ function loadLootboxHistory() {
       const t = new Date(h.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
       const profit = h.win - h.price;
       const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
-      el.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#111;border-radius:8px;margin-bottom:5px;font-size:13px;">
+      el.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:5px;font-size:13px;">
         <span>${cfg ? cfg.icon : '📦'} ${cfg ? cfg.name : h.type}</span>
-        <span style="color:#777;">${t}</span>
+        <span style="color:var(--fg-3);">${t}</span>
         <span style="color:${color};font-weight:bold;">${profit >= 0 ? '+' : ''}${profit} ₴</span>
       </div>`;
     });
@@ -784,7 +784,7 @@ function renderFavoriteHearts() {
     if(!heart) {
       heart = document.createElement('div');
       heart.className = 'fav-heart-btn';
-      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));';
+      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgb(var(--shade-rgb) / 0.6));';
       heart.setAttribute('onclick', `toggleFavorite('${gameId}', this); this.textContent = this.classList.contains('active') ? '❤️' : '🤍';`);
       el.style.position = el.style.position || 'relative';
       el.appendChild(heart);
@@ -801,11 +801,11 @@ function showAdminBypassBanner(gameId) {
   const gameName = (ADMIN_TOGGLEABLE_GAMES.find(g => g.id === gameId) || {}).name || gameId;
   const banner = document.createElement('div');
   banner.id = 'adminBypassBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#3a0000,#5a0a0a);border-bottom:2px solid #e74c3c;padding:10px 16px;z-index:9997;display:flex;justify-content:space-between;align-items:center;gap:10px;';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 13%, var(--surface-1)),color-mix(in srgb, var(--neg) 22%, var(--surface-1)));border-bottom:2px solid var(--neg);padding:10px 16px;z-index:9997;display:flex;justify-content:space-between;align-items:center;gap:10px;';
   banner.innerHTML = `
-    <div style="font-size:12px;color:#ff8888;flex:1;">🛠 <b>${gameName}</b> вимкнена для гравців — ти бачиш її, бо ти адмін</div>
-    <button onclick="toggleGameEnabled('${gameId}');document.getElementById('adminBypassBanner').remove();switchTab('lobby')" style="background:#3dd68c;border:none;border-radius:8px;padding:6px 12px;color:#000;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Увімкнути</button>
-    <button onclick="document.getElementById('adminBypassBanner').remove()" style="background:none;border:1px solid #666;border-radius:8px;padding:6px 10px;color:#aaa;font-size:11px;cursor:pointer;">✕</button>
+    <div style="font-size:12px;color:var(--neg);flex:1;">🛠 <b>${gameName}</b> вимкнена для гравців — ти бачиш її, бо ти адмін</div>
+    <button onclick="toggleGameEnabled('${gameId}');document.getElementById('adminBypassBanner').remove();switchTab('lobby')" style="background:var(--pos);border:none;border-radius:var(--r-md);padding:6px 12px;color:var(--on-pos);font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Увімкнути</button>
+    <button onclick="document.getElementById('adminBypassBanner').remove()" style="background:none;border:1px solid var(--line-strong);border-radius:var(--r-md);padding:6px 10px;color:var(--fg-2);font-size:11px;cursor:pointer;">✕</button>
   `;
   document.body.appendChild(banner);
 }
@@ -934,13 +934,15 @@ function switchTab(id, el) {
 
   try {
     const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(n => n.classList.remove('active'));
+    navItems.forEach(n => { n.classList.remove('active'); n.removeAttribute('aria-current'); });
+    let activeNav = null;
     if(el && el.classList && el.classList.contains('nav-item')) {
-      el.classList.add('active');
+      activeNav = el;
     } else {
       const navIdx = NAV_TAB_MAP[id];
-      if(navIdx !== undefined && navItems[navIdx]) navItems[navIdx].classList.add('active');
+      if(navIdx !== undefined && navItems[navIdx]) activeNav = navItems[navIdx];
     }
+    if(activeNav) { activeNav.classList.add('active'); activeNav.setAttribute('aria-current', 'page'); }
   } catch(e) { console.error('switchTab nav error:', e); }
 
   // Stop crash if leaving
@@ -1039,7 +1041,7 @@ function switchTab(id, el) {
 }
 
 function scratchReset() {
-  document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:#777;grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
+  document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:var(--fg-3);grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
   document.getElementById('scratchBuyBtn').classList.remove('hidden');
 }
 

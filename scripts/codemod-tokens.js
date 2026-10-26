@@ -163,7 +163,30 @@ function mapColor(raw, ctx, env) {
 const COLOR_RE = /#[0-9a-fA-F]{3,8}(?![0-9a-zA-Z_])|rgba?\((?:[^()]|\$\{[^}]*\})*\)|(?<=^|[\s:,('"])(?:white|black|gold|red|green|lime|orange|yellow|cyan|silver|gray|grey|purple|pink|blue)(?=$|[\s;,)'"!])/g;
 
 function replaceColors(value, ctx, env) {
+  // Усередині ${…} — це код: іменовані кольори там бувають порівняннями
+  // (c === 'red'), тож там міняємо лише #hex і rgba().
+  if (value.includes('${')) {
+    let out = '', i = 0;
+    while (i < value.length) {
+      const k = value.indexOf('${', i);
+      if (k === -1) { out += replaceColorsPlain(value.slice(i), ctx, env, true); break; }
+      out += replaceColorsPlain(value.slice(i, k), ctx, env, true);
+      let depth = 1, j = k + 2;
+      while (j < value.length && depth) { if (value[j] === '{') depth++; else if (value[j] === '}') depth--; j++; }
+      out += replaceColorsPlain(value.slice(k, j), ctx, env, false);
+      i = j;
+    }
+    return out;
+  }
+  return replaceColorsPlain(value, ctx, env, true);
+}
+
+let NO_NAMED = false;   // увімкнено, коли «значення» насправді склеєне з JS-коду
+
+function replaceColorsPlain(value, ctx, env, allowNamed) {
+  if (NO_NAMED) allowNamed = false;
   return value.replace(COLOR_RE, (m) => {
+    if (!allowNamed && /^[a-z]+$/i.test(m)) return m;
     if (m.startsWith('rgb') && m.includes('${')) {
       // rgba(212,175,55,${a}) — канали відомі, прозорість — вираз
       const inner = m.slice(m.indexOf('(') + 1, -1).split(',');
@@ -381,7 +404,9 @@ function processStyleAttrs(src) {
     }
     if (j >= src.length) continue;
     const inner = src.slice(start, j);
+    NO_NAMED = /['"`]\s*\+|\+\s*['"`]/.test(inner);
     out += src.slice(i, start) + processDeclList(inner);
+    NO_NAMED = false;
     i = j;
     re.lastIndex = j + q.length;
   }
@@ -395,7 +420,9 @@ function processJsStyleProps(src) {
   src = src.replace(/\.style\.([a-zA-Z]+)(\s*=\s*)([^;\n]+)/g, (all, prop, eq, rhs) => {
     if (prop === 'cssText' || prop === 'setProperty') return all;
     const kebab = camelToKebab(prop);
-    const rhs2 = rhs.replace(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/g, (lit, q, body) => {
+    const rhs2 = rhs.replace(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/g, (lit, q, body, off, whole) => {
+      // 'red' у порівнянні (c === 'red') — це дані, а не стиль
+      if (/[=!]=\s*$/.test(whole.slice(0, off)) || /^\s*[=!]==?/.test(whole.slice(off + lit.length))) return lit;
       const v = processDecl(kebab, body, {});
       return q + v + q;
     });
