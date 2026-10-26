@@ -4969,9 +4969,99 @@ let bjPlayingHand2 = false, bjHand1Outcome = null, bjHand1Profit = 0;
 
 function bjCurrentHand() { return bjPlayingHand2 ? bjSplitHand : bjPlayerHand; }
 
-function bjDeal() {
+// ── Blackjack на сервері (api/round.js + lib/blackjack.js) ──
+// Колода, друга карта дилера й добір живуть на сервері; клієнт лише малює
+// стан, який повернув сервер, і шле дії (hit/stand/double/split/...).
+let bjServer = false, bjBusy = false;
+function bjToggleButtons(can) {
+  const show = (id, on) => { const el = document.getElementById(id); if(el) el.classList.toggle('hidden', !on); };
+  show('bjSplitBtn', can.split);
+  show('bjInsuranceBtn', can.insurance);
+  const dbl = document.getElementById('bjDoubleBtn'); if(dbl) dbl.disabled = !can.double;
+  const sur = document.getElementById('bjSurrenderBtn'); if(sur) { sur.disabled = !can.surrender; sur.classList.toggle('hidden', !can.surrender); }
+}
+function bjApplyServer(r) {
+  const v = r.view;
+  bjSplitActive = !!v.split;
+  bjPlayerHand = v.hands[0].cards.slice();
+  bjSplitHand = v.hands[1] ? v.hands[1].cards.slice() : [];
+  bjPlayingHand2 = bjSplitActive && v.active === 1;
+  bjBet = v.hands[0].bet; bjSplitBet = v.hands[1] ? v.hands[1].bet : 0;
+  bjInsuranceBet = v.insurance || 0; bjInsurancePaid = !!v.insurance;
+  // Закрита карта дилера — заглушка (bjRender її однаково не показує).
+  bjDealerHand = v.dealer.length === 1 ? [v.dealer[0], { rank: '2', suit: '♠' }] : v.dealer.slice();
+  const sa = document.getElementById('bjSplitArea'); if(sa) sa.classList.toggle('hidden', !bjSplitActive);
+  const betEl = document.getElementById('bjBetDisplay'); if(betEl) betEl.textContent = '₴' + formatNumber(bjBet + bjSplitBet);
+  if(v.over || r.status === 'done' || r.status === 'lost') return bjServerEnd(r);
+  bjToggleButtons(v.can || {});
+  bjRender(true);
+}
+function bjServerEnd(r) {
+  const v = r.view;
+  bjActive = false;
+  document.getElementById('bjDealArea').classList.remove('hidden');
+  document.getElementById('bjActions').classList.add('hidden');
+  bjRender(false);
+  const staked = v.hands.reduce((s, h) => s + h.bet, 0) + (v.insurance || 0);
+  const payout = r.payout || v.payout || 0;
+  const profit = payout - staked;
+  const natural = !v.split && v.hands[0].cards.length === 2 && v.hands[0].value === 21 && payout > staked;
+  const text = natural ? `🎉 BLACKJACK! +₴${formatNumber(profit)}`
+    : v.surrendered ? `🏳️ Здався — повернуто ₴${formatNumber(payout)}`
+    : profit > 0 ? `🏆 Виграш! +₴${formatNumber(profit)}`
+    : profit === 0 ? '🤝 Нічия — ставку повернуто'
+    : v.hands.every(h => h.value > 21) ? `💥 Перебір! (${v.hands[0].value})` : `😔 Дилер виграв (−₴${formatNumber(-profit)})`;
+  const color = profit > 0 ? (natural ? '#ffd700' : 'var(--green)') : profit === 0 ? 'var(--accent)' : 'var(--red)';
+  document.getElementById('bjResult').innerHTML = `<span style="color:${color}">${text}</span>`;
+  if(v.insurance && v.dealerValue === 21 && v.dealer.length === 2) notify('🛡️ Страховка спрацювала!', 'success');
+  playSound(profit > 0 ? (natural ? 'bonus' : 'win') : profit < 0 ? 'loss' : 'click');
+  if(profit > 0) {
+    trackLbStat('wins', payout); trackLbStat('profit', profit); trackQuest('bjWins', 1);
+    notify(`🃏 +₴${formatNumber(profit)}`, 'success');
+    if(profit >= 1000) addToWinFeed('Blackjack', profit, payout / staked);
+  }
+  addToHistory('Blackjack: ' + (profit >= 0 ? '+' : '') + profit);
+  updateStreak(profit >= 0); recordBalanceHistory();
+  bjSplitActive = false; bjPlayingHand2 = false;
+}
+async function bjServerMove(action) {
+  if(!bjActive || bjBusy) return;
+  bjBusy = true;
+  let srv;
+  try { srv = await serverRound('move', 'blackjack', { move: { action } }); } finally { bjBusy = false; }
+  if(srv.mode !== 'server') {
+    if(srv.status === 409 && srv.r && srv.r.error === 'no_round') { bjActive = false; document.getElementById('bjDealArea').classList.remove('hidden'); document.getElementById('bjActions').classList.add('hidden'); }
+    return;
+  }
+  if(action === 'double' || action === 'split') {
+    const extra = srv.r.view.hands.reduce((s, h) => s + h.bet, 0) - (bjBet + bjSplitBet);
+    if(extra > 0) addWager(extra);
+  }
+  if(action === 'insurance') notify(`🛡️ Страховка куплена за ₴${formatNumber(srv.r.view.insurance)}`, 'info');
+  if(action === 'split') notify('✂️ Split! Спочатку грай Руку 1 (підсвічена).', 'info');
+  bjApplyServer(srv.r);
+}
+
+async function bjDeal() {
+  if(bjBusy || bjActive) return;
   const b = validateBet(document.getElementById('betAmountBJ').value);
   if(!b) return;
+  bjBusy = true;
+  let srv;
+  try { srv = await serverRound('start', 'blackjack', { bet: b, params: {} }); } finally { bjBusy = false; }
+  if(srv.mode === 'error') return;
+  bjServer = srv.mode === 'server';
+  if(bjServer) {
+    bjActive = true;
+    addWager(b); trackQuest('totalGames', 1); trackQuest('weekWager', b);
+    trackLbStat('wager', b); trackLbStat('games', 1);
+    publishLiveBet('Blackjack','🃏', b, '');
+    document.getElementById('bjDealArea').classList.add('hidden');
+    document.getElementById('bjActions').classList.remove('hidden');
+    document.getElementById('bjResult').textContent = '';
+    playSound('click');
+    return bjApplyServer(srv.r);
+  }
   bjBet = b; bjSplitBet = 0; bjSplitHand = []; bjSplitActive = false; bjInsurancePaid = false; bjInsuranceBet = 0;
   bjPlayingHand2 = false; bjHand1Outcome = null; bjHand1Profit = 0;
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
@@ -5008,6 +5098,7 @@ function bjDeal() {
 
 function bjHit() {
   if(!bjActive) return;
+  if(bjServer) return bjServerMove('hit');
   const deck = bjCreateDeck();
   const hand = bjCurrentHand();
   hand.push(deck[0]);
@@ -5037,6 +5128,7 @@ function bjHandBust() {
 
 function bjStand() {
   if(!bjActive) return;
+  if(bjServer) return bjServerMove('stand');
   if(bjSplitActive && !bjPlayingHand2) {
     // Рука 1 зафіксована — переходимо до Руки 2, дилер ще не грає
     bjHand1Outcome = 'stand';
@@ -5056,6 +5148,7 @@ function bjStand() {
 
 function bjDouble() {
   if(!bjActive) return;
+  if(bjServer) return bjServerMove('double');
   const hand = bjCurrentHand();
   if(hand.length !== 2) return;
   const curBet = bjPlayingHand2 ? bjSplitBet : bjBet;
@@ -5072,6 +5165,7 @@ function bjDouble() {
 }
 
 function bjSplit() {
+  if(bjServer && bjActive) return bjServerMove('split');
   if(!bjActive || bjPlayerHand.length !== 2 || bjSplitActive) return;
   if(bjCardVal(bjPlayerHand[0]) !== bjCardVal(bjPlayerHand[1])) return;
   if((userData.balance||0) < bjBet) return notify('Недостатньо коштів для Split', 'error');
@@ -5150,6 +5244,7 @@ function bjSettleSplitRound(profit1, profit2) {
 }
 
 function bjSurrender() {
+  if(bjServer && bjActive) return bjServerMove('surrender');
   if(!bjActive || bjPlayerHand.length !== 2 || bjSplitActive) return;
   const ret = Math.floor(bjBet / 2);
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(ret));
@@ -5163,6 +5258,7 @@ function bjSurrender() {
 }
 
 function bjInsurance() {
+  if(bjServer && bjActive) return bjServerMove('insurance');
   if(!bjActive || bjInsurancePaid || bjSplitActive) return;
   const insCost = Math.floor(bjBet / 2);
   if((userData.balance||0) < insCost) return notify('Недостатньо коштів', 'error');
@@ -5715,10 +5811,27 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '106';
+const CURRENT_VERSION = '107';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '107',
+    title: '🃏 Оновлення v107 — Blackjack на сервері',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🃏 Blackjack',
+        items: [
+          'Колоду тасує і карти роздає сервер — друга карта дилера справді закрита до кінця роздачі',
+          'Double, Split, страховка і «Здатися» працюють як раніше, доплата списується лише якщо хід відбувся',
+          'Якщо закрити гру посеред роздачі, вона дограється автоматично (твої руки — «стоп») і виграш зарахується',
+        ]
+      },
+    ]
+  },
   {
     version: '106',
     title: '📜 Оновлення v106 — слоти та ще 4 гри на сервері',
