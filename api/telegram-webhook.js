@@ -22,6 +22,8 @@ const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } 
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 const { startDeposit, startWithdraw, withdrawButtons, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 const SlotOKPassword = require("../password.js");
+const { setSecrets } = require("../lib/secrets");
+const { getServiceAccount } = require("../lib/google-auth");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -625,7 +627,10 @@ async function actOnPasswordReset(action, id) {
   if (action === "approve") {
     const tempPass = randomTempPassword();
     const tempPassHash = await SlotOKPassword.hash(tempPass);
-    await dbSet(`users/${r.user}/pass`, tempPassHash);
+    // З ключем сервісного акаунта хеш іде в закритий user_secrets (див. lib/secrets.js);
+    // без нього застосунок ще перевіряє пароль у браузері й читає users/<нік>/pass.
+    if (getServiceAccount()) await setSecrets(r.user, { pass: tempPassHash });
+    else await dbSet(`users/${r.user}/pass`, tempPassHash);
     await dbUpdate(`password_reset_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
     await notifyPlayer(
       r.user,

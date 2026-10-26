@@ -39,6 +39,21 @@ this and silently went stale. It was removed and its historical content
 merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 `BUILTIN_CHANGELOG` is the one source of truth for "what's new."
 
+## Security model (since the October 2026 audit — see SECURITY.md)
+
+- **Login** goes through `api/auth.js` (server checks the password, returns a
+  Firebase custom token, uid = nick). Until `FIREBASE_SERVICE_ACCOUNT_KEY` is
+  set it answers 503 and `app.js` falls back to the old in-browser check —
+  keep both paths working when touching `authLogin`/`authRegister`.
+- **Password hashes** move to `user_secrets/<nick>` (server-only) via
+  `lib/secrets.js`; never read `pass`/`securityAnswerHash` from new client code.
+- **Database rules** are generated: edit `scripts/build-rules.js`, run
+  `npm run build:rules`, and `npm test` (includes an emulator test of both
+  rule sets). A new top-level DB node must be added there, or it will be
+  denied once the rules are deployed.
+- **Rendering data from the DB:** use `escapeHtml()` for text, `safeUrl()` for
+  `src`/`href`, and `jsArg()` for values inside `onclick="…"`.
+
 ## Push notifications (FCM) — two manual steps left to fully activate
 
 Client (`app.js`) and server (`api/notify.js` + `lib/fcm.js`) plumbing for

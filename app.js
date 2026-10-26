@@ -90,7 +90,79 @@ if(!savedUser) {
   if(legacy) { savedUser = legacy; localStorage.setItem(SESSION_KEY, legacy); }
 }
 localStorage.removeItem(LEGACY_SESSION_KEY);
-if(savedUser) { currentUser = savedUser; startDataSync(); }
+if(savedUser) { currentUser = savedUser; whenAuthReady(startDataSync); }
+
+// Firebase Auth відновлює збережену сесію асинхронно. Якщо підписатись на
+// закриті вузли раніше, строгі правила відмовлять і підписка вже не оживе —
+// тож чекаємо першої відповіді Auth (не довше 3 с; без входу через сервер
+// вона приходить одразу з null).
+function whenAuthReady(cb) {
+  let done = false;
+  const go = () => { if(!done) { done = true; cb(); } };
+  try {
+    if(typeof firebase !== 'undefined' && firebase.auth) {
+      const unsub = firebase.auth().onAuthStateChanged(() => { unsub(); go(); });
+      setTimeout(go, 3000);
+      return;
+    }
+  } catch(e) { console.warn(e); }
+  go();
+}
+
+// ── Серверний вхід (api/auth.js) ──────────────────────────────
+// Пароль перевіряє сервер і видає Firebase custom token (uid = нік), після
+// чого правила бази бачать auth.uid. Поки на Vercel не задано
+// FIREBASE_SERVICE_ACCOUNT_KEY, сервер відповідає 503 і все працює по-старому
+// (перевірка пароля в браузері).
+let _serverAuthStatusPromise = null;
+function serverAuthEnabled() {
+  if(!_serverAuthStatusPromise) {
+    _serverAuthStatusPromise = fetch('/api/auth', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : { serverAuth: false })
+      .then(d => !!(d && d.serverAuth))
+      .catch(() => false);
+  }
+  return _serverAuthStatusPromise;
+}
+async function serverAuthCall(action, payload) {
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ action }, payload)),
+    });
+    let data = {};
+    try { data = await r.json(); } catch(e) {}
+    return { status: r.status, data: data || {} };
+  } catch(e) {
+    return { status: 0, data: {} }; // мережа / локальний запуск без api
+  }
+}
+// Відповідь сервера, яку треба показати гравцю як є (невірний пароль, бан,
+// ліміт спроб). 0/404 без коду/5xx/503 — сервер недоступний, працюємо по-старому.
+function serverAuthIsFinal(r) {
+  return r.status >= 400 && r.status < 500 && !!(r.data && r.data.error);
+}
+async function serverSignIn(token) {
+  if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
+  await firebase.auth().signInWithCustomToken(token);
+}
+// Збережена сесія — це лише нік у localStorage. Коли серверний вхід увімкнено,
+// вимагаємо ще й справжню Firebase Auth-сесію з тим самим uid; інакше (нік
+// вписали руками, або сесія з часів до серверного входу) — просимо увійти знову.
+async function verifyServerSession(nick) {
+  if(!(await serverAuthEnabled())) return;
+  if(typeof firebase === 'undefined' || !firebase.auth) return;
+  const unsub = firebase.auth().onAuthStateChanged(user => {
+    unsub();
+    if(!user || user.uid !== nick) {
+      localStorage.removeItem(SESSION_KEY);
+      alert('🔐 Для безпеки акаунту увійди, будь ласка, ще раз.');
+      location.reload();
+    }
+  });
+}
+if(savedUser) verifyServerSession(savedUser);
 
 function startDataSync() {
     try {
@@ -194,11 +266,11 @@ function updateUI() {
     document.getElementById('cashierUserId').textContent = userData.id || '---';
     const avDiv = document.getElementById('currentAvatar');
     if(userData.avatarUrl) {
-      avDiv.innerHTML = `<img src="${userData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      avDiv.innerHTML = `<img src="${safeUrl(userData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     } else if(userData.avatar && userData.avatar.length > 2) {
-      avDiv.innerHTML = `<img src="${userData.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      avDiv.innerHTML = `<img src="${safeUrl(userData.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     } else {
-      avDiv.innerHTML = userData.avatar || '👤';
+      avDiv.innerHTML = escapeHtml(userData.avatar || '👤');
     }
     if(userData.bioInput) {
       const bio = document.getElementById('bioInput');
@@ -247,19 +319,45 @@ function updateUI() {
     if(hs) hs.textContent = (userData.dailyStreak||0) + '🔥';
     const vipLevel = getVipLevel ? getVipLevel(userData.totalWagered||0) : null;
     if(hv) hv.textContent = vipLevel ? vipLevel.name : 'Немає';
-    db.ref('users').once('value', snap => {
-      const users = snap.val()||{};
-      const total = Object.keys(users).filter(k=>!users[k].isBot).length;
-      const online = Object.values(users).filter(u=>u.lastSeen && Date.now()-u.lastSeen < 300000).length;
-      const wins = Object.values(users).reduce((s,u)=>s+(u.totalWins||0),0);
-      const ce = document.getElementById('casinoOnlineCount');
-      const cw = document.getElementById('casinoTodayWins');
-      const ct = document.getElementById('casinoTotalPlayers');
-      if(ce) ce.textContent = Math.max(online,1)+'';
-      if(cw) cw.textContent = formatNumber(wins);
-      if(ct) ct.textContent = total+'';
-    });
+    refreshCasinoCounters();
 } // end updateProfileUI
+
+// Лічильники «онлайн / гравців / виграшів» рахуються з усього вузла users.
+// Раніше це робилось у updateUI(), яка викликається на КОЖНУ зміну власного
+// балансу, тобто кожна ставка качала всю базу гравців (мегабайти, з паролями
+// й історією). Тепер — не частіше ніж раз на 5 хвилин, а в проміжку показуємо
+// останні пораховані значення.
+let _casinoCountersAt = 0, _casinoCountersCache = null, _casinoCountersBusy = false;
+function refreshCasinoCounters() {
+  const paint = c => {
+    if(!c) return;
+    const ce = document.getElementById('casinoOnlineCount');
+    const cw = document.getElementById('casinoTodayWins');
+    const ct = document.getElementById('casinoTotalPlayers');
+    if(ce) ce.textContent = Math.max(c.online,1)+'';
+    if(cw) cw.textContent = formatNumber(c.wins);
+    if(ct) ct.textContent = c.total+'';
+  };
+  paint(_casinoCountersCache);
+  if(_casinoCountersBusy || Date.now() - _casinoCountersAt < 300000) return;
+  _casinoCountersBusy = true;
+  db.ref('users').once('value', snap => {
+    _casinoCountersBusy = false;
+    _casinoCountersAt = Date.now();
+    const users = snap.val()||{};
+    _casinoCountersCache = {
+      total: Object.keys(users).filter(k=>!users[k].isBot).length,
+      online: Object.values(users).filter(u=>u.lastSeen && Date.now()-u.lastSeen < 300000).length,
+      wins: Object.values(users).reduce((s,u)=>s+(u.totalWins||0),0),
+    };
+    paint(_casinoCountersCache);
+    // Екран входу показує суму ставок з цього агрегату, а не качає users сам.
+    if(isAdminUser()) {
+      const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
+      db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
+    }
+  }, () => { _casinoCountersBusy = false; });
+}
 
 function checkAdmin() {
     if (currentUser.toLowerCase() === ADMIN_OWNER || userData.isAdmin === true) {
@@ -435,8 +533,10 @@ function validateBet(amount) {
         notify('🛡️ Досягнуто ліміт "Відповідальної гри" — деталі в Налаштуваннях', 'error');
         return false;
     }
-    const bet = Math.abs(parseInt(amount));
-    if(isNaN(bet) || bet <= 0 || bet > MAX_BET || userData.balance < bet) {
+    // Без Math.abs: раніше -500 «валідувалось» як 500, а викликач далі списував
+    // сирий -500 через increment(-bet), тобто НАРАХОВУВАВ гравцю гроші.
+    const bet = Number.parseInt(amount, 10);
+    if(!Number.isSafeInteger(bet) || bet <= 0 || bet > MAX_BET || !((userData.balance || 0) >= bet)) {
         notify("Недостатньо коштів або невірна сума!", "error");
         return false;
     }
@@ -2556,7 +2656,7 @@ function runFraudCheck() {
         <div style="font-size:12px;font-weight:700;color:#ff6b6b;">⚠️ ${escapeHtml(s.user)}</div>
         <div style="font-size:10px;color:#777;">Причина: ${s.reason}</div>
         <div style="font-size:10px;color:#555;">Баланс: ₴${formatNumber(s.balance||0)}</div>
-        <button class="btn-red" style="padding:6px 12px;font-size:11px;margin-top:6px;" onclick="admBanUser('${s.user}',this)">🚫 Заблокувати</button>
+        <button class="btn-red" style="padding:6px 12px;font-size:11px;margin-top:6px;" onclick="admBanUser(${jsArg(s.user)},this)">🚫 Заблокувати</button>
       </div>
     `).join('');
   });
@@ -2817,18 +2917,23 @@ function stopAuthStatsListeners() {
   stopAuthWinTicker();
 }
 function loadAuthStats() {
-  db.ref('users').once('value', snap => {
-    const users = snap.val()||{};
-    const count = Object.keys(users).length;
-    const online = Math.max(1, Math.floor(count*0.12 + Math.random()*3));
-    const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
-    const el1 = document.getElementById('authStatPlayers');
-    const el2 = document.getElementById('authStatOnline');
+  // Екран входу бачить кожен анонімний відвідувач. Раніше тут качався весь
+  // вузол users (з хешами паролів, історією, IP) лише щоб порахувати кількість
+  // гравців. ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
+  fetch(firebaseConfig.databaseURL + '/users.json?shallow=true')
+    .then(r => r.ok ? r.json() : {})
+    .then(users => {
+      const count = Object.keys(users || {}).length;
+      const online = Math.max(1, Math.floor(count*0.12 + Math.random()*3));
+      const el1 = document.getElementById('authStatPlayers');
+      const el2 = document.getElementById('authStatOnline');
+      if(el1) el1.textContent = count+'';
+      if(el2) el2.textContent = online+'';
+    }).catch(() => {});
+  db.ref('casino_stats/totalWagered').once('value', snap => {
     const el3 = document.getElementById('authStatPaid');
-    if(el1) el1.textContent = count+'';
-    if(el2) el2.textContent = online+'';
-    if(el3) el3.textContent = '₴'+formatNumber(Math.max(paid, 1500000));
-  });
+    if(el3) el3.textContent = '₴'+formatNumber(Math.max(Number(snap.val())||0, 1500000));
+  }, () => {});
   // Real jackpot
   if(_authJackpotListener) db.ref('casino_stats/jackpot').off('value', _authJackpotListener);
   _authJackpotListener = snap => {
@@ -3150,6 +3255,20 @@ function initChat() {
 
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// URL з бази (аватарки, медіа в чатах) — пишеться будь-ким, тож у src="…"
+// пускаємо лише https:/http:, data:image|video і blob:, і екрануємо, щоб лапка
+// в «URL» не розірвала атрибут і не дописала onerror=…
+function safeUrl(u) {
+  if(typeof u !== 'string') return '';
+  const t = u.trim();
+  if(!/^(https?:|data:(image|video)\/|blob:)/i.test(t)) return '';
+  return escapeHtml(t);
+}
+// Рядок як аргумент JS усередині onclick="…": escapeHtml сам по собі тут не
+// рятує — браузер декодує &#39; назад в ' ще до розбору JS.
+function jsArg(v) {
+  return escapeHtml(JSON.stringify(String(v == null ? '' : v)));
 }
 
 function handleChatImage(input) {
@@ -3595,7 +3714,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function showAuthError(msg) {
   const el = document.getElementById('authError');
   if(!el) return;
-  el.innerHTML = '⚠️ ' + msg;
+  el.textContent = '⚠️ ' + msg;
   el.style.display = 'block';
   el.style.color = '#e74c3c';
   el.style.padding = '10px';
@@ -3615,6 +3734,37 @@ async function authLogin() {
   const btn = document.getElementById('loginBtn');
   if(btn) { btn.textContent = '⏳ Перевірка...'; btn.disabled = true; }
   const reset = () => { if(btn) { btn.textContent = '🚀 УВІЙТИ'; btn.disabled = false; } };
+
+  const finishLogin = lastSeen => {
+    if(btn) btn.textContent = '✅ Входимо...';
+    currentUser = n;
+    localStorage.setItem(SESSION_KEY, n);
+    initTelegramLinkStatus();
+    _capturedLastSeen = lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
+    db.ref('users/' + n).update({ lastSeen: Date.now() });
+    setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync:', e); } }, 100);
+  };
+
+  // Спершу — серверна перевірка пароля (ліміт спроб, хеш не їде в браузер).
+  const srv = await serverAuthCall('login', { nick: n, password: p });
+  if(srv.status === 200 && srv.data.token) {
+    try {
+      await serverSignIn(srv.data.token);
+      const ls = await db.ref('users/' + n + '/lastSeen').once('value');
+      return finishLogin(ls.val());
+    } catch(e) {
+      reset();
+      console.error('Server sign-in error:', e);
+      return showAuthError('❌ Не вдалося увійти: ' + (e.message || 'помилка'));
+    }
+  }
+  if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
+  if(await serverAuthEnabled()) {
+    // Серверний вхід увімкнено, але зараз він не відповідає — старий шлях у
+    // браузері тут не допоможе: правила бази однаково вимагають Auth-сесію.
+    reset();
+    return showAuthError('⚠️ Сервер входу недоступний. Спробуй за хвилину.');
+  }
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 10000);
 
@@ -3646,13 +3796,7 @@ async function authLogin() {
         reset();
         return showAuthError('🚧 Сайт тимчасово на технічному обслуговуванні. Спробуй пізніше.');
       }
-      if(btn) btn.textContent = '✅ Входимо...';
-      currentUser = n;
-      localStorage.setItem(SESSION_KEY, n);
-      initTelegramLinkStatus();
-      _capturedLastSeen = data.lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
-      db.ref('users/' + n).update({ lastSeen: Date.now() });
-      setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync:', e); } }, 100);
+      finishLogin(data.lastSeen);
     });
   }, err => {
     clearTimeout(timeout);
@@ -3684,6 +3828,27 @@ async function authRegister() {
   const btn = document.getElementById('regBtn');
   if(btn) { btn.textContent = '⏳ Реєстрація...'; btn.disabled = true; }
   const reset = () => { if(btn) { btn.textContent = '✨ СТВОРИТИ АКАУНТ'; btn.disabled = false; } };
+
+  // Серверна реєстрація: акаунт і стартовий бонус створює сервер, а не браузер.
+  const refByLs = localStorage.getItem('ref_by');
+  const srv = await serverAuthCall('register', {
+    nick: n, password: p, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
+  });
+  if(srv.status === 200 && srv.data.token) {
+    try { await serverSignIn(srv.data.token); }
+    catch(e) { reset(); return showAuthError('❌ Акаунт створено, але вхід не вдався: ' + (e.message || '') + '. Спробуй увійти.'); }
+    if(btn) btn.textContent = '✅ Входимо...';
+    currentUser = n;
+    localStorage.setItem(SESSION_KEY, n);
+    localStorage.removeItem('ref_by');
+    initTelegramLinkStatus();
+    const bonusMsg = promo === 'SLOTOK' ? ' +500₴ промокод!' : promo === 'VIP' ? ' +2000₴ VIP!' : '';
+    notify('🎉 Вітаємо! Бонус: ' + srv.data.bonus + '₴ + ' + srv.data.spins + ' фріспінів!' + bonusMsg, 'success');
+    setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync err:', e); } }, 200);
+    return;
+  }
+  if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
+  if(await serverAuthEnabled()) { reset(); return showAuthError('⚠️ Сервер реєстрації недоступний. Спробуй за хвилину.'); }
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
 
@@ -3831,9 +3996,9 @@ function pwrShowQuestion(nick, qKey) {
     <input class="auth-input" id="pwrNewPass" type="password" placeholder="Новий пароль (мін 6 символів)" style="margin-bottom:10px;">
     <input class="auth-input" id="pwrNewPass2" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">
     <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
-    <button class="auth-btn-main" onclick="pwrVerifyAndReset('${nick}')">Змінити пароль</button>
+    <button class="auth-btn-main" onclick="pwrVerifyAndReset(${jsArg(nick)})">Змінити пароль</button>
     <div style="text-align:center;margin-top:10px;">
-      <span onclick="pwrShowTelegramFallback('${nick}')" style="color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Не пам'ятаю відповідь</span>
+      <span onclick="pwrShowTelegramFallback(${jsArg(nick)})" style="color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Не пам'ятаю відповідь</span>
     </div>`;
 }
 
@@ -3844,6 +4009,19 @@ async function pwrVerifyAndReset(nick) {
   if(!answer) return pwrErr('Введіть відповідь');
   if(p1.length < 6) return pwrErr('Пароль мінімум 6 символів');
   if(p1 !== p2) return pwrErr('Паролі не збігаються');
+
+  const pwrDone = () => {
+    document.getElementById('pwrModal')?.remove();
+    notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
+    const loginName = document.getElementById('loginName');
+    if(loginName) loginName.value = nick;
+  };
+  // Сервер перевіряє відповідь з лімітом спроб — офлайн-перебір хешу відповіді
+  // з публічної бази більше не допомагає.
+  const srv = await serverAuthCall('reset', { nick, answer, newPassword: p1 });
+  if(srv.status === 200) return pwrDone();
+  if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
+  if(await serverAuthEnabled()) return pwrErr('Сервер недоступний. Спробуй за хвилину.');
 
   db.ref('users/' + nick + '/securityAnswerHash').once('value', async snap => {
     let check, newPassHash;
@@ -3877,7 +4055,7 @@ function pwrShowTelegramFallback(nick) {
     </div>
     <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
     <div id="pwrTgStatus" style="color:#3dd68c;font-size:12px;margin-bottom:8px;display:none;"></div>
-    <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram('${nick}')">✈️ Подати заявку через Telegram</button>`;
+    <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram(${jsArg(nick)})">✈️ Подати заявку через Telegram</button>`;
 }
 
 function pwrRequestViaTelegram(nick) {
@@ -3952,7 +4130,14 @@ function setPlayerStatus(status) {
 function logout(){
   stopBgMusic();
   localStorage.removeItem(SESSION_KEY);
-  location.reload();
+  const done = () => location.reload();
+  try {
+    if(typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+      firebase.auth().signOut().then(done, done);
+      return;
+    }
+  } catch(e) { console.warn(e); }
+  done();
 }
 
 // ============================================
@@ -3970,7 +4155,7 @@ function loadUserList() {
       .filter(([n,u]) => !u.isBot)
       .sort((a,b) => (b[1].balance||0)-(a[1].balance||0));
     d.innerHTML = entries.map(([n,u]) =>
-      `<div class="admin-user-card" onclick="openAdminManage('${n}')">
+      `<div class="admin-user-card" onclick="openAdminManage(${jsArg(n)})">
         <div>
           <b>${n}</b>
           ${u.isAdmin?'<span style="color:#d4af37;font-size:10px;"> 👑</span>':''}
@@ -4179,6 +4364,18 @@ function resolveTransferRecipient(raw, cb) {
   const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
   const nick = str.replace(/^@/,'');
   if(!byCard && nick.length < 3) return cb(null, null);
+  // Нік із точним регістром — один прямий запит замість усього вузла users.
+  // Повний перебір лишається для пошуку за карткою й без урахування регістру.
+  if(!byCard && !/[.#$\[\]\/]/.test(nick)) {
+    db.ref('users/' + nick).once('value', s => {
+      if(s.exists()) cb(nick, s.val());
+      else resolveTransferRecipientScan(byCard, digits, nick, cb);
+    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb));
+    return;
+  }
+  resolveTransferRecipientScan(byCard, digits, nick, cb);
+}
+function resolveTransferRecipientScan(byCard, digits, nick, cb) {
   db.ref('users').once('value', snap => {
     const users = snap.val() || {};
     let found = null;
@@ -4262,7 +4459,7 @@ function loadContacts() {
     if(!userData.contacts){ l.innerHTML="<div style='color:#777'>Список порожній</div>"; return; } 
     l.innerHTML=""; 
     for(let n in userData.contacts){ 
-        l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend('${n}')">💸</button></div>`; 
+        l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
     } 
 }
 
@@ -4338,7 +4535,7 @@ window.openUserProfile = function(name) {
             document.getElementById('viewUserId').textContent=d.id; 
             document.getElementById('viewUserBal').textContent=formatNumber(d.balance); 
             document.getElementById('viewUserTag').textContent=d.tag||"Гравець"; 
-            document.getElementById('viewUserAvatar').innerHTML=(d.avatar&&d.avatar.length>20)?`<img src="${d.avatar}">`:'👤'; 
+            document.getElementById('viewUserAvatar').innerHTML=(d.avatar&&d.avatar.length>20)?`<img src="${safeUrl(d.avatar)}">`:'👤'; 
             openTabModal('view-user-modal'); 
         } 
     }); 
@@ -5046,8 +5243,8 @@ function initLobbyChat() {
       const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : '#4a9eff');
       const av = m.avatarEmoji || '👤';
       const avHtml = m.avatarUrl
-        ? '<div class="chat-avatar-sm"><img src="' + m.avatarUrl + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
-        : '<div class="chat-avatar-sm">' + av + '</div>';
+        ? '<div class="chat-avatar-sm"><img src="' + safeUrl(m.avatarUrl) + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
+        : '<div class="chat-avatar-sm">' + escapeHtml(av) + '</div>';
       const adminTag = isAdmin ? '<span style="background:#ff4444;color:#fff;font-size:8px;padding:1px 5px;border-radius:6px;margin-left:3px;">ADMIN</span>' : '';
       const botTag = '';  // bots look like regular players
       const msgKey = snap.key;
@@ -5055,7 +5252,7 @@ function initLobbyChat() {
       const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteMsg(\'' + msgKey + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 3px;opacity:0.5;" title="Видалити">✕</button>' : '';
       el.innerHTML =
         '<div class="chat-header-line">' + avHtml +
-          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(\'' + escapeHtml(m.sender) + '\')">' + escapeHtml(m.sender) + '</span>' +
+          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(' + jsArg(m.sender) + ')">' + escapeHtml(m.sender) + '</span>' +
           adminTag + botTag +
           '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
           delBtn +
@@ -5116,10 +5313,43 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '99';
+const CURRENT_VERSION = '100';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '100',
+    title: '📜 Оновлення v100 — безпека і швидкість',
+    date: Date.UTC(2026, 9, 26),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '⚡ Швидкість',
+        items: [
+          'Сайт відкривається значно швидше: перша сторінка важить ~0,6 МБ замість ~24 МБ',
+          'GIF-реакції в чаті показуються легкими прев\'ю й вантажаться лише коли відкриваєш панель',
+          'Рейтинг і лічильники гравців більше не завантажують усю базу при кожній ставці',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🔐 Безпека акаунту',
+        items: [
+          'Аватарки, ніки й повідомлення в чатах, новинах і профілях більше не можуть містити шкідливий код',
+          'IP-адреси гравців більше не зберігаються у відкритому вигляді',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Ставка з мінусом у Penalty, Bowling, Archery, Sic Bo, Card War і Duck Shoot більше не приймається',
+          'Неіснуюча сторінка тепер показує нормальну сторінку 404 з кнопкою на головну',
+        ]
+      },
+    ]
+  },
   {
     version: '99',
     title: '📜 Оновлення v99 — запрошуй друзів',
@@ -6401,16 +6631,16 @@ function buildNewsCard(n) {
   }).join('');
 
   const avHtml = n.authorAvatarUrl
-    ? '<div class="news-avatar"><img src="' + n.authorAvatarUrl + '"></div>'
-    : '<div class="news-avatar">' + (n.authorEmoji||'👤') + '</div>';
+    ? '<div class="news-avatar"><img src="' + safeUrl(n.authorAvatarUrl) + '"></div>'
+    : '<div class="news-avatar">' + escapeHtml(n.authorEmoji||'👤') + '</div>';
 
   card.innerHTML =
     '<div class="news-header">' +
       '<div class="news-author">' +
         avHtml +
         '<div>' +
-          '<div class="news-name">' + (n.author||'Адмін') + ' <span class="news-admin-badge">ADMIN</span></div>' +
-          '<div class="news-time">' + t + ' · <span style="color:' + catColor + ';font-size:10px;">' + (n.emoji||'📢') + ' ' + n.category + '</span></div>' +
+          '<div class="news-name">' + escapeHtml(n.author||'Адмін') + ' <span class="news-admin-badge">ADMIN</span></div>' +
+          '<div class="news-time">' + t + ' · <span style="color:' + catColor + ';font-size:10px;">' + escapeHtml(n.emoji||'📢') + ' ' + escapeHtml(n.category) + '</span></div>' +
         '</div>' +
       '</div>' +
       '<div class="news-title">' + escapeHtml(n.title) + '</div>' +
@@ -6464,13 +6694,13 @@ function loadComments(newsId) {
     Object.values(data).forEach(c => {
       const t = timeAgo(c.time);
       const avHtml = c.avatarUrl
-        ? '<div class="comment-avatar"><img src="' + c.avatarUrl + '"></div>'
-        : '<div class="comment-avatar">' + (c.avatarEmoji||'👤') + '</div>';
+        ? '<div class="comment-avatar"><img src="' + safeUrl(c.avatarUrl) + '"></div>'
+        : '<div class="comment-avatar">' + escapeHtml(c.avatarEmoji||'👤') + '</div>';
       const div = document.createElement('div');
       div.className = 'comment-item';
       div.innerHTML = avHtml +
         '<div>' +
-          '<span class="comment-nick" onclick="openPublicProfile(\'' + c.author + '\')">' + c.author + '</span>' +
+          '<span class="comment-nick" onclick="openPublicProfile(' + jsArg(c.author) + ')">' + escapeHtml(c.author) + '</span>' +
           '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
           '<div class="comment-time">' + t + '</div>' +
         '</div>';
@@ -6952,11 +7182,27 @@ async function requestPushPermission() {
 // працює лише поки вкладка відкрита у фоні. Тихо нічого не робить, доки
 // FCM_VAPID_KEY лишається заглушкою (немає токена — немає push, решта сайту
 // працює як і раніше).
+const _scriptLoads = {};
+function loadScriptOnce(src) {
+  if(!_scriptLoads[src]) {
+    _scriptLoads[src] = new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src; el.async = true;
+      el.onload = resolve;
+      el.onerror = () => { delete _scriptLoads[src]; reject(new Error('Не вдалося завантажити ' + src)); };
+      document.head.appendChild(el);
+    });
+  }
+  return _scriptLoads[src];
+}
 async function registerFcmToken() {
   if(!currentUser || !('serviceWorker' in navigator) || FCM_VAPID_KEY === 'REPLACE_WITH_YOUR_VAPID_KEY') return;
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
-    if(typeof firebase === 'undefined' || !firebase.messaging) return;
+    if(typeof firebase === 'undefined') return;
+    // SDK повідомлень (~100 КБ) вантажимо лише тут, а не на кожному відкритті сторінки.
+    if(!firebase.messaging) await loadScriptOnce('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
+    if(!firebase.messaging) return;
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
     if(token) db.ref('users/'+currentUser+'/fcmTokens/'+token).set(true);
@@ -7209,6 +7455,15 @@ async function doChangePassword() {
   if(!old) return showErr('Введіть поточний пароль');
   if(nw.length < 6) return showErr('Мінімум 6 символів');
   if(nw !== conf) return showErr('Паролі не збігаються');
+  const cpDone = () => {
+    notify('✅ Пароль змінено!', 'success');
+    closeModal('changepass');
+    document.getElementById('modalChangePass')?.remove();
+  };
+  const srv = await serverAuthCall('change-password', { nick: currentUser, password: old, newPassword: nw });
+  if(srv.status === 200) return cpDone();
+  if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
+  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
   let nwHash;
   try {
     if(!(await SlotOKPassword.verify(old, userData.pass)).ok) return showErr('Поточний пароль невірний');
@@ -7219,10 +7474,7 @@ async function doChangePassword() {
   }
   db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
     userData.pass = nwHash;
-    notify('✅ Пароль змінено!', 'success');
-    closeModal('changepass');
-    // Also close old-style if exists
-    document.getElementById('modalChangePass')?.remove();
+    cpDone();
   }).catch(() => showErr('Помилка збереження'));
 }
 
@@ -7494,20 +7746,20 @@ function showPlayerCard(nick, event) {
     var y = event ? Math.min(event.clientY, window.innerHeight - 250) : 50;
     card.style.cssText = 'position:fixed;top:' + y + 'px;left:' + x + 'px;background:#111;border:1.5px solid rgba(212,175,55,.3);border-radius:16px;padding:14px;z-index:9000;width:200px;animation:popIn .2s ease;box-shadow:0 8px 32px rgba(0,0,0,.8);';
     var avHtml = (u.avatarUrl || (u.avatar && u.avatar.startsWith('http')))
-      ? '<img src="' + (u.avatarUrl || u.avatar) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(212,175,55,.3);">'
-      : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:24px;">' + (u.avatar || '👤') + '</div>';
+      ? '<img src="' + safeUrl(u.avatarUrl || u.avatar) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(212,175,55,.3);">'
+      : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:24px;">' + escapeHtml(u.avatar || '👤') + '</div>';
     card.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
       + avHtml
-      + '<div><div style="font-weight:800;font-size:13px;">' + nick + '</div>'
-      + '<div style="font-size:10px;color:#666;">' + (u.tag || 'Гравець') + '</div></div></div>'
+      + '<div><div style="font-weight:800;font-size:13px;">' + escapeHtml(nick) + '</div>'
+      + '<div style="font-size:10px;color:#666;">' + escapeHtml(u.tag || 'Гравець') + '</div></div></div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:10px;">'
       + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#d4af37;font-weight:800;">' + formatNumber(u.totalGames||0) + '</div><div style="color:#555;">Ігор</div></div>'
       + '<div style="background:#0a0a0a;border-radius:6px;padding:6px;text-align:center;"><div style="color:#3dd68c;font-weight:800;">₴' + formatNumber(u.totalWagered||0) + '</div><div style="color:#555;">Ставок</div></div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-      + '<button onclick="switchTab(\'pm\');document.getElementById(\'pmToInput\').value=\'' + nick + '\';document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:8px;padding:7px;color:#4a9eff;cursor:pointer;font-size:11px;">✉️ ПМ</button>'
-      + '<button onclick="followPlayer(\'' + nick + '\');document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:11px;">👥 Follow</button>'
-      + '<button onclick="blockUser(\'' + nick + '\');document.getElementById(\'playerCardPopup\').remove()" style="background:rgba(231,76,60,.08);border:1px solid #222;border-radius:8px;padding:7px;color:#555;cursor:pointer;font-size:11px;">🚫</button>'
+      + '<button onclick="switchTab(\'pm\');document.getElementById(\'pmToInput\').value=' + jsArg(nick) + ';document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:8px;padding:7px;color:#4a9eff;cursor:pointer;font-size:11px;">✉️ ПМ</button>'
+      + '<button onclick="followPlayer(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="flex:1;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:8px;padding:7px;color:#3dd68c;cursor:pointer;font-size:11px;">👥 Follow</button>'
+      + '<button onclick="blockUser(' + jsArg(nick) + ');document.getElementById(\'playerCardPopup\').remove()" style="background:rgba(231,76,60,.08);border:1px solid #222;border-radius:8px;padding:7px;color:#555;cursor:pointer;font-size:11px;">🚫</button>'
       + '</div>';
     document.body.appendChild(card);
     // Close on outside click
@@ -7764,7 +8016,7 @@ function loadFlaggedPlayers() {
       <div style="background:#0d0d0d;border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
           <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgba(231,76,60,.18);color:#e74c3c;border-radius:6px;padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
-          <button onclick="clearPlayerFlag('${nick}')" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
+          <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.2);border-radius:6px;color:#3dd68c;font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
         <div style="font-size:10px;color:#888;">${u.flagReason || 'без деталей'}</div>
         <div style="font-size:10px;color:#555;margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
@@ -7820,7 +8072,7 @@ function loadAdminsList() {
             <div class="adm-admin-nick">${owner ? '👑' : '🛡️'} ${escapeHtml(nick)}${owner ? '<span class="adm-owner-tag">ВЛАСНИК</span>' : ''}</div>
             <div class="adm-admin-sub">${owner ? 'Права не можна змінити' : legacy ? 'Призначений до появи прав' : 'Доступ обмежено'}</div>
           </div>
-          ${owner ? '' : `<button class="adm-mini-btn danger" onclick="revokeAdmin('${escapeHtml(nick)}')">Зняти адмінку</button>`}
+          ${owner ? '' : `<button class="adm-mini-btn danger" onclick="revokeAdmin(${jsArg(nick)})">Зняти адмінку</button>`}
         </div>
         <div class="adm-perm-chips">${chips}</div>
         ${owner ? '' : `<div class="adm-perm-toggles" id="admPerms-${escapeHtml(nick)}" style="display:none;">
@@ -7828,9 +8080,9 @@ function loadAdminsList() {
             <input type="checkbox" data-admin-nick="${escapeHtml(nick)}" data-perm="${p.key}" ${(!legacy && perms[p.key] === true) ? 'checked' : ''}>
             <span><b>${p.icon} ${p.name}</b><br><span style="color:#666;font-size:10px;">${p.desc}</span></span>
           </label>`).join('')}
-          <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="saveAdminPerms('${escapeHtml(nick)}')">💾 Зберегти права</button>
+          <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="saveAdminPerms(${jsArg(nick)})">💾 Зберегти права</button>
         </div>
-        <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="toggleAdminPermsEditor('${escapeHtml(nick)}')">⚙️ Налаштувати права</button>`}
+        <button class="adm-mini-btn" style="width:100%;margin-top:8px;" onclick="toggleAdminPermsEditor(${jsArg(nick)})">⚙️ Налаштувати права</button>`}
       </div>`;
     }).join('');
   }).catch(() => {
@@ -8005,11 +8257,15 @@ function initAdminsPanel() {
 // ── IP ЛОГУВАННЯ ───────────────────────────────────────────────
 function saveUserIP() {
   if (!db || !currentUser) return;
-  fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(function(data) {
+  // Вузол users читається публічно, тож відкриту IP туди не пишемо (персональні
+  // дані). Для пошуку мультиакаунтів достатньо порівнювати хеш; у журнал
+  // безпеки гравця — лише замаскована адреса.
+  fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(async function(data) {
     const ip = data.ip || 'unknown';
-    db.ref('users/' + currentUser + '/lastIP').set(ip);
-    logSecurityEvent('login', 'IP: ' + ip);
-    if(ip !== 'unknown') antiCheatCheckMultiAccount(ip);
+    const ipHash = ip === 'unknown' ? null : await hashIp(ip);
+    db.ref('users/' + currentUser).update({ lastIP: null, lastIpHash: ipHash });
+    logSecurityEvent('login', 'IP: ' + maskIp(ip));
+    if(ipHash) antiCheatCheckMultiAccount(ipHash);
   }).catch(function() {
     logSecurityEvent('login', 'IP: unknown');
   });
@@ -8018,9 +8274,18 @@ function saveUserIP() {
 // Кілька акаунтів з однієї IP не завжди читерство (сім'я/гуртожиток на
 // одному Wi-Fi), тож це лише 'medium' — сповіщає адміна для ручної
 // перевірки, а не блокує нікого автоматично.
-function antiCheatCheckMultiAccount(ip) {
+async function hashIp(ip) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('slotok-ip-v1:' + ip));
+  return Array.from(new Uint8Array(buf)).slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function maskIp(ip) {
+  if(/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return ip.split('.').slice(0, 2).join('.') + '.x.x';
+  if(ip.includes(':')) return ip.split(':').slice(0, 2).join(':') + ':…';
+  return ip;
+}
+function antiCheatCheckMultiAccount(ipHash) {
   if(!currentUser || !_acConfig.enabled || !_acConfig.multiAccount) return;
-  db.ref('users').orderByChild('lastIP').equalTo(ip).once('value').then(snap => {
+  db.ref('users').orderByChild('lastIpHash').equalTo(ipHash).once('value').then(snap => {
     const users = snap.val() || {};
     const others = Object.keys(users).filter(n => n !== currentUser && !users[n].isBot);
     if(others.length >= _acConfig.multiAccountMin) {
@@ -8429,14 +8694,14 @@ function loadBots() {
       const isActive = !!_activeBotData[nick];
       const persIcon = persIcons[b.personality] || '⚖️';
       return `<div class="bot-card">
-        <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${b.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (b.avatar||'🤖')}</div>
+        <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${safeUrl(b.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : escapeHtml(b.avatar||'🤖')}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;">${nick} ${persIcon}</div>
+          <div style="font-weight:700;font-size:13px;">${escapeHtml(nick)} ${persIcon}</div>
           <div style="font-size:10px;color:#666;">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:#3dd68c;">● Активний</span>':'<span style="color:#555;">⚫ Стоп</span>'}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-          <button onclick="toggleBot('${nick}')" style="background:${isActive?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isActive?'#e74c3c':'#3dd68c'};border-radius:6px;color:${isActive?'#e74c3c':'#3dd68c'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
-          <button onclick="deleteBot('${nick}')" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
+          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isActive?'#e74c3c':'#3dd68c'};border-radius:6px;color:${isActive?'#e74c3c':'#3dd68c'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
+          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#666;font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
         </div>
       </div>`;
     }).join('');
@@ -8668,14 +8933,14 @@ function showOnlineUsers() {
     db.ref('users/' + name + '/avatar').once('value', snap => {
       const av = snap.val();
       const avHtml = av && av.length > 4
-        ? '<img src="' + av + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">'
-        : (av || '👤');
+        ? '<img src="' + safeUrl(av) + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">'
+        : escapeHtml(av || '👤');
       const pill = document.createElement('div');
       pill.style.cssText = 'display:flex;align-items:center;gap:6px;background:var(--box);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 4px;cursor:pointer;';
       pill.onclick = () => { dropdown.classList.add('hidden'); openPublicProfile(name); };
       pill.innerHTML =
         '<div style="width:28px;height:28px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden;flex-shrink:0;">' + avHtml + '</div>' +
-        '<span style="font-size:12px;font-weight:bold;' + (name===currentUser?'color:var(--accent);':'') + '">' + name + (name===currentUser?' (я)':'') + '</span>' +
+        '<span style="font-size:12px;font-weight:bold;' + (name===currentUser?'color:var(--accent);':'') + '">' + escapeHtml(name) + (name===currentUser?' (я)':'') + '</span>' +
         '<span style="width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;"></span>';
       listEl.appendChild(pill);
     });
@@ -8721,7 +8986,7 @@ function openPublicProfile(name) {
   db.ref('users/'+name).once('value', snap => {
     const d = snap.val();
     if(!d) return notify('Гравця не знайдено', 'error');
-    const av = d.avatar && d.avatar.length > 20 ? `<img src="${d.avatar}">` : '👤';
+    const av = d.avatar && d.avatar.length > 20 ? `<img src="${safeUrl(d.avatar)}">` : '👤';
     const badges = computeBadges(d);
     document.getElementById('pubProfileContent').innerHTML = `
       <div class="pub-profile">
@@ -8741,9 +9006,9 @@ function openPublicProfile(name) {
         </div>
         <div class="pub-badges">${badges}</div>
         <div style="display:flex;gap:8px;margin-top:15px;">
-          <button class="btn-outline" style="flex:1;" onclick="messageUser('${name}')">✉️ Написати</button>
+          <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
           <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value='${name}';openTabModal('transfer-modal');">💸 Надіслати</button>
-          <button class="btn-outline" style="flex:1;" onclick="addContactByName('${name}')">🤝 В знайомі</button>
+          <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;
     openTabModal('pub-profile-modal');
@@ -8931,7 +9196,7 @@ function loadSupportThreads() {
     list.innerHTML = threads.map(([user, lastMsg]) => {
       const preview = lastMsg.mediaUrl ? (lastMsg.isVideo ? '🎥 Відео' : '📷 Фото') : (lastMsg.text||'');
       const isActive = user === admSupportUser;
-      return `<div class="support-thread" style="${isActive?'border-color:var(--accent);':''}" onclick="openAdminSupport('${user}')">
+      return `<div class="support-thread" style="${isActive?'border-color:var(--accent);':''}" onclick="openAdminSupport(${jsArg(user)})">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <b>${escapeHtml(user)}</b>
           ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
@@ -8960,8 +9225,8 @@ function openAdminSupport(user) {
     let mediaHtml = '';
     if(m.mediaUrl) {
       mediaHtml = m.isVideo
-        ? `<video src="${m.mediaUrl}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;" controls muted playsinline></video>`
-        : `<img src="${m.mediaUrl}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;" onclick="window.open('${m.mediaUrl}','_blank')">`;
+        ? `<video src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;" controls muted playsinline></video>`
+        : `<img src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;" onclick="window.open(this.src,'_blank','noopener')">`;
     }
     const div = document.createElement('div');
     div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'#005c4b':'#1a1a6b'};border-radius:8px;width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
@@ -9489,8 +9754,8 @@ function loadMyClan(clanId) {
       reqEl.innerHTML = (isLeaderOrOfficer && reqs.length)
         ? '<div class="section-header">📩 Заявки на вступ (' + reqs.length + ')</div>' +
           reqs.map(uid => '<div class="clan-member-row"><div style="flex:1;">' + uid + '</div>' +
-            '<button class="btn-green" style="width:auto;padding:4px 10px;font-size:11px;" onclick="respondToJoinRequest(\'' + clanId + '\',\'' + uid + '\',true)">✅</button>' +
-            '<button class="btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin-left:4px;" onclick="respondToJoinRequest(\'' + clanId + '\',\'' + uid + '\',false)">❌</button>' +
+            '<button class="btn-green" style="width:auto;padding:4px 10px;font-size:11px;" onclick="respondToJoinRequest(\'' + clanId + '\',' + jsArg(uid) + ',true)">✅</button>' +
+            '<button class="btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin-left:4px;" onclick="respondToJoinRequest(\'' + clanId + '\',' + jsArg(uid) + ',false)">❌</button>' +
           '</div>').join('')
         : '';
     }
@@ -9519,13 +9784,13 @@ function loadMyClan(clanId) {
         '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
         (canPromoteDemote ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +
-            (role==='member' ? 'promoteOfficer' : 'demoteOfficer') + '(\'' + clanId + '\',\'' + name + '\')">' +
+            (role==='member' ? 'promoteOfficer' : 'demoteOfficer') + '(\'' + clanId + '\',' + jsArg(name) + ')">' +
             (role==='member' ? '⬆️' : '⬇️') + '</button>' : '') +
         (canPromoteDemote && role==='officer' ?
-          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;" onclick="promoteOfficer(\'' + clanId + '\',\'' + name + '\')">👑</button>'
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;" onclick="promoteOfficer(\'' + clanId + '\',' + jsArg(name) + ')">👑</button>'
           : '') +
         (canKick ?
-          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',\'' + name + '\')">👢</button>'
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',' + jsArg(name) + ')">👢</button>'
           : '') +
       '</div>';
     });
@@ -11481,15 +11746,15 @@ window.loadComments = function(newsId) {
     Object.entries(data).forEach(([cid, c]) => {
       const t = timeAgo(c.time);
       const avHtml = c.avatarUrl
-        ? '<div class="comment-avatar"><img src="' + c.avatarUrl + '"></div>'
-        : '<div class="comment-avatar">' + (c.avatarEmoji||'👤') + '</div>';
+        ? '<div class="comment-avatar"><img src="' + safeUrl(c.avatarUrl) + '"></div>'
+        : '<div class="comment-avatar">' + escapeHtml(c.avatarEmoji||'👤') + '</div>';
       const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteComment(\'' + newsId + '\',\'' + cid + '\')" style="background:none;border:none;color:#ff3b30;font-size:11px;cursor:pointer;padding:0 4px;opacity:0.6;" title="Видалити">✕</button>' : '';
       const div = document.createElement('div');
       div.className = 'comment-item';
       div.innerHTML = avHtml +
         '<div style="flex:1;">' +
           '<div style="display:flex;align-items:center;gap:4px;">' +
-            '<span class="comment-nick" onclick="openPublicProfile(\'' + c.author + '\')">' + c.author + '</span>' +
+            '<span class="comment-nick" onclick="openPublicProfile(' + jsArg(c.author) + ')">' + escapeHtml(c.author) + '</span>' +
             delBtn +
           '</div>' +
           '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
@@ -13660,8 +13925,8 @@ function buildMatchCardHTML(m) {
     : `<div style="padding:8px 14px;color:#555;font-size:12px;">vs</div>`;
 
   // Team logos (if from ESPN)
-  const homeLogo = m.homeLogo ? `<img src="${m.homeLogo}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
-  const awayLogo = m.awayLogo ? `<img src="${m.awayLogo}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
+  const homeLogo = m.homeLogo ? `<img src="${safeUrl(m.homeLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
+  const awayLogo = m.awayLogo ? `<img src="${safeUrl(m.awayLogo)}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'">` : '';
 
   const disabled = isFinal ? 'pointer-events:none;opacity:0.5;' : '';
 
@@ -14642,14 +14907,17 @@ function loadLeaderboardNew() {
   if(lbCurrentPeriod === 'all') {
     const fieldMap = { wager:'totalWagered', wins:'totalWins', profit:'totalProfit', games:'stats.gamesPlayed', bigwin:'stats.biggestWin' };
     const field = fieldMap[lbCurrentMetric] || 'totalWagered';
-    db.ref('users').once('value', snap => {
+    // Топ-100 за індексом (.indexOn у database.rules.json), а не весь вузол users.
+    db.ref('users').orderByChild(field.replace('.', '/')).limitToLast(LB_TOP_N).once('value', snap => {
       if(token !== lbLoadToken) return;   // гравець уже перемкнув вкладку
       const data = snap.val() || {};
-      lbRender(Object.entries(data).map(([name, d]) => ({
-        name,
-        val: (field.includes('.') ? field.split('.').reduce((o,k)=>(o||{})[k], d) : d[field]) || 0,
-        avatar: d.avatar,
-      })), suffix);
+      const pick = d => (field.includes('.') ? field.split('.').reduce((o,k)=>(o||{})[k], d) : d[field]) || 0;
+      const rows = Object.entries(data).map(([name, d]) => ({ name, val: pick(d), avatar: d.avatar }));
+      const truncated = rows.length >= LB_TOP_N;
+      if(truncated && currentUser && !data[currentUser] && userData) {
+        rows.push({ name: currentUser, val: pick(userData), avatar: userData.avatar, outsideTop: true });
+      }
+      lbRender(rows, suffix);
     });
   } else {
     db.ref(`leaderboards/${getLbPeriodKey(lbCurrentPeriod)}`).once('value', snap => {
@@ -14676,6 +14944,7 @@ function lbAvatar(name, avatar, cls) {
   return `<div class="${cls}"${style} data-av-for="${escapeHtml(name)}">${escapeHtml(inner)}</div>`;
 }
 
+const LB_TOP_N = 100;
 function lbRender(rows, suffix) {
   const podium = document.getElementById('lbPodium');
   const list   = document.getElementById('leaderboardList');
@@ -14741,11 +15010,13 @@ function lbRender(rows, suffix) {
       const above = arr[myRank-1];
       const gap = above ? above.val - me.val : 0;
       myBox.innerHTML = `<div class="lb-me-card" data-nick="${escapeHtml(currentUser)}">
-        <div class="lb-me-rank">#${myRank+1}</div>
+        <div class="lb-me-rank">#${me.outsideTop ? LB_TOP_N + '+' : myRank+1}</div>
         ${lbAvatar(me.name, me.avatar, 'lb-av')}
         <div style="flex:1;min-width:0;">
           <div class="lb-me-lbl">Твоя позиція</div>
-          <div class="lb-me-gap">${above
+          <div class="lb-me-gap">${me.outsideTop
+            ? `до топ-${LB_TOP_N} — ${lbFmtVal(gap, suffix)}`
+            : above
             ? `до <b>#${myRank}</b> — ${lbFmtVal(gap, suffix)}`
             : '👑 Ти лідер — тримай перше місце'}</div>
         </div>
@@ -18153,7 +18424,7 @@ function openPmThread(otherUser) {
   threadView.innerHTML = `
     <div style="background:linear-gradient(135deg,#0a0d14,#0d1320);border-bottom:1px solid rgba(74,158,255,.15);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <button class="btn-outline" onclick="closePmThread()" style="width:40px;padding:8px;margin:0;font-size:14px;">⬅</button>
-      <div onclick="openPublicProfile('${otherUser}')" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
+      <div onclick="openPublicProfile(${jsArg(otherUser)})" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
         <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2040,#2a3060);border:2px solid rgba(74,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#4a9eff;flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
         <div style="min-width:0;">
           <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
@@ -18172,7 +18443,7 @@ function openPmThread(otherUser) {
       <button onclick="document.getElementById('pmImgInput').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
       <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
       <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
-      <button onclick="pmReply('${otherUser}')" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
+      <button onclick="pmReply(${jsArg(otherUser)})" style="background:linear-gradient(135deg,#4a9eff,#2a6eff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
     </div>`;
 
   // Реальний онлайн-статус замість того, що раніше було намертво
