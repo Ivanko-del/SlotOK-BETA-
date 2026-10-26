@@ -90,7 +90,24 @@ if(!savedUser) {
   if(legacy) { savedUser = legacy; localStorage.setItem(SESSION_KEY, legacy); }
 }
 localStorage.removeItem(LEGACY_SESSION_KEY);
-if(savedUser) { currentUser = savedUser; startDataSync(); }
+if(savedUser) { currentUser = savedUser; whenAuthReady(startDataSync); }
+
+// Firebase Auth відновлює збережену сесію асинхронно. Якщо підписатись на
+// закриті вузли раніше, строгі правила відмовлять і підписка вже не оживе —
+// тож чекаємо першої відповіді Auth (не довше 3 с; без входу через сервер
+// вона приходить одразу з null).
+function whenAuthReady(cb) {
+  let done = false;
+  const go = () => { if(!done) { done = true; cb(); } };
+  try {
+    if(typeof firebase !== 'undefined' && firebase.auth) {
+      const unsub = firebase.auth().onAuthStateChanged(() => { unsub(); go(); });
+      setTimeout(go, 3000);
+      return;
+    }
+  } catch(e) { console.warn(e); }
+  go();
+}
 
 // ── Серверний вхід (api/auth.js) ──────────────────────────────
 // Пароль перевіряє сервер і видає Firebase custom token (uid = нік), після
