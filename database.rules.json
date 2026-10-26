@@ -1,0 +1,613 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": true,
+      ".indexOn": [
+        "totalWagered",
+        "totalWins",
+        "totalProfit",
+        "lastSeen",
+        "lastIpHash",
+        "stats/gamesPlayed",
+        "stats/biggestWin",
+        "isBot"
+      ],
+      "$u": {
+        ".validate": "data.exists() || ($u.length >= 2 && $u.length <= 32 && !$u.matches(/[<>\"'`]/) && !$u.matches(/[ \\\\&%]/))",
+        "balance": {
+          ".validate": "newData.isNumber() && newData.val() < 1000000000000000 && (newData.val() >= 0 || (data.exists() && newData.val() >= data.val()))"
+        },
+        "pass": {
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "securityAnswerHash": {
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "tag": {
+          ".validate": "newData.isString() && newData.val().length <= 120 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "bioInput": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "lastIP": {
+          ".validate": "false"
+        },
+        "lastIpHash": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        ".write": true
+      }
+    },
+    "bot_config": {
+      ".read": false,
+      ".write": false
+    },
+    "notify_rate": {
+      ".read": false,
+      ".write": false
+    },
+    "telegram_state": {
+      ".read": false,
+      ".write": false
+    },
+    "promo_redemptions": {
+      ".read": false,
+      ".write": false
+    },
+    "telegram_links": {
+      ".read": false,
+      "$chat": {
+        ".write": "!newData.exists()"
+      }
+    },
+    "telegram_link_tokens": {
+      ".read": false,
+      "$t": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['nick', 'createdAt'])",
+        "nick": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "lobby_chat": {
+      ".read": true,
+      ".write": "true",
+      ".indexOn": [
+        "time"
+      ],
+      "$m": {
+        ".write": "true",
+        "sender": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "msg": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        }
+      }
+    },
+    "global_chat": {
+      ".read": true,
+      ".indexOn": [
+        "ts"
+      ],
+      "$m": {
+        ".write": "true",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "msg": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        }
+      }
+    },
+    "clan_chats": {
+      ".read": true,
+      "$c": {
+        "$m": {
+          ".write": "true",
+          "user": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "sender": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "pm": {
+      ".read": true,
+      "$u": {
+        "$m": {
+          ".write": "true",
+          "from": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "to": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "support_chats": {
+      ".read": true,
+      "$u": {
+        ".read": true,
+        "$m": {
+          ".write": "true",
+          "sender": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "casino_news": {
+      ".read": true,
+      ".write": "true",
+      "$n": {
+        ".write": "true",
+        "author": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "category": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "emoji": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "reactions": {
+          ".write": "true"
+        },
+        "myReaction": {
+          ".write": "true"
+        },
+        "commentCount": {
+          ".write": "true"
+        },
+        "comments": {
+          "$c": {
+            ".write": "true",
+            "author": {
+              ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatar": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatarUrl": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatarEmoji": {
+              ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "authorAvatarUrl": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "authorEmoji": {
+              ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            },
+            "msg": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            }
+          }
+        }
+      }
+    },
+    "win_feed": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      },
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "live_bets": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      },
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "online": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "clans": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "chat_meta": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "mp_rooms": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "card_rooms": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "pvp_rps": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "pvp_predict": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "pvp_chess": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "pvp_coinflip": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "global_roulette": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "sport_bets": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "sport_matches": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "tournaments": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "tournament_scores": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "leaderboards": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "leaderboard_weekly": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "lottery": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "lottery_history": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "jackpot": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "casino_stats": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "casino_events": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "investPool": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "p2p_loans": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "deposit_requests": {
+      ".read": true,
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".write": true
+      }
+    },
+    "withdraw_requests": {
+      ".read": true,
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".write": true
+      }
+    },
+    "password_reset_requests": {
+      ".read": true,
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".write": true
+      }
+    },
+    "site_config": {
+      ".read": true,
+      ".write": "true"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "true"
+    },
+    "admin_settings": {
+      ".read": true,
+      ".write": "true"
+    },
+    "announcement": {
+      ".read": true,
+      ".write": "true"
+    },
+    "changelog": {
+      ".read": true,
+      ".write": "true"
+    },
+    "promos": {
+      ".read": true,
+      ".write": "true"
+    },
+    "admin_notes": {
+      ".read": true,
+      ".write": "true"
+    },
+    "admin_action_log": {
+      ".read": true,
+      "$e": {
+        ".write": "!data.exists()"
+      }
+    },
+    "anti_cheat_flags": {
+      ".read": true,
+      ".write": "true",
+      "$u": {
+        "$f": {
+          ".write": "true"
+        }
+      }
+    },
+    "axiomPublic": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "axiomCardIndex": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    },
+    "axiomLinkCodes": {
+      ".read": true,
+      "$k": {
+        ".write": "true"
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+# Не публікувати як статику: тести, CI, нотатки для розробників і правила бази.
+# (lib/, api/ і password.js потрібні серверним функціям — їх не чіпаємо.)
+scripts/
+.github/
+*.md
+database.rules*.json
+firebase.json
+.firebaserc

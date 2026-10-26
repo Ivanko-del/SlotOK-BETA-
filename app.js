@@ -92,6 +92,61 @@ if(!savedUser) {
 localStorage.removeItem(LEGACY_SESSION_KEY);
 if(savedUser) { currentUser = savedUser; startDataSync(); }
 
+// ── Серверний вхід (api/auth.js) ──────────────────────────────
+// Пароль перевіряє сервер і видає Firebase custom token (uid = нік), після
+// чого правила бази бачать auth.uid. Поки на Vercel не задано
+// FIREBASE_SERVICE_ACCOUNT_KEY, сервер відповідає 503 і все працює по-старому
+// (перевірка пароля в браузері).
+let _serverAuthStatusPromise = null;
+function serverAuthEnabled() {
+  if(!_serverAuthStatusPromise) {
+    _serverAuthStatusPromise = fetch('/api/auth', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : { serverAuth: false })
+      .then(d => !!(d && d.serverAuth))
+      .catch(() => false);
+  }
+  return _serverAuthStatusPromise;
+}
+async function serverAuthCall(action, payload) {
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ action }, payload)),
+    });
+    let data = {};
+    try { data = await r.json(); } catch(e) {}
+    return { status: r.status, data: data || {} };
+  } catch(e) {
+    return { status: 0, data: {} }; // мережа / локальний запуск без api
+  }
+}
+// Відповідь сервера, яку треба показати гравцю як є (невірний пароль, бан,
+// ліміт спроб). 0/404 без коду/5xx/503 — сервер недоступний, працюємо по-старому.
+function serverAuthIsFinal(r) {
+  return r.status >= 400 && r.status < 500 && !!(r.data && r.data.error);
+}
+async function serverSignIn(token) {
+  if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
+  await firebase.auth().signInWithCustomToken(token);
+}
+// Збережена сесія — це лише нік у localStorage. Коли серверний вхід увімкнено,
+// вимагаємо ще й справжню Firebase Auth-сесію з тим самим uid; інакше (нік
+// вписали руками, або сесія з часів до серверного входу) — просимо увійти знову.
+async function verifyServerSession(nick) {
+  if(!(await serverAuthEnabled())) return;
+  if(typeof firebase === 'undefined' || !firebase.auth) return;
+  const unsub = firebase.auth().onAuthStateChanged(user => {
+    unsub();
+    if(!user || user.uid !== nick) {
+      localStorage.removeItem(SESSION_KEY);
+      alert('🔐 Для безпеки акаунту увійди, будь ласка, ще раз.');
+      location.reload();
+    }
+  });
+}
+if(savedUser) verifyServerSession(savedUser);
+
 function startDataSync() {
     try {
         let _firstSnapshot = true;
@@ -3663,6 +3718,37 @@ async function authLogin() {
   if(btn) { btn.textContent = '⏳ Перевірка...'; btn.disabled = true; }
   const reset = () => { if(btn) { btn.textContent = '🚀 УВІЙТИ'; btn.disabled = false; } };
 
+  const finishLogin = lastSeen => {
+    if(btn) btn.textContent = '✅ Входимо...';
+    currentUser = n;
+    localStorage.setItem(SESSION_KEY, n);
+    initTelegramLinkStatus();
+    _capturedLastSeen = lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
+    db.ref('users/' + n).update({ lastSeen: Date.now() });
+    setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync:', e); } }, 100);
+  };
+
+  // Спершу — серверна перевірка пароля (ліміт спроб, хеш не їде в браузер).
+  const srv = await serverAuthCall('login', { nick: n, password: p });
+  if(srv.status === 200 && srv.data.token) {
+    try {
+      await serverSignIn(srv.data.token);
+      const ls = await db.ref('users/' + n + '/lastSeen').once('value');
+      return finishLogin(ls.val());
+    } catch(e) {
+      reset();
+      console.error('Server sign-in error:', e);
+      return showAuthError('❌ Не вдалося увійти: ' + (e.message || 'помилка'));
+    }
+  }
+  if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
+  if(await serverAuthEnabled()) {
+    // Серверний вхід увімкнено, але зараз він не відповідає — старий шлях у
+    // браузері тут не допоможе: правила бази однаково вимагають Auth-сесію.
+    reset();
+    return showAuthError('⚠️ Сервер входу недоступний. Спробуй за хвилину.');
+  }
+
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 10000);
 
   db.ref('users/' + n).once('value', async snap => {
@@ -3693,13 +3779,7 @@ async function authLogin() {
         reset();
         return showAuthError('🚧 Сайт тимчасово на технічному обслуговуванні. Спробуй пізніше.');
       }
-      if(btn) btn.textContent = '✅ Входимо...';
-      currentUser = n;
-      localStorage.setItem(SESSION_KEY, n);
-      initTelegramLinkStatus();
-      _capturedLastSeen = data.lastSeen || null; // для "Ми скучили" — ловимо ДО перезапису
-      db.ref('users/' + n).update({ lastSeen: Date.now() });
-      setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync:', e); } }, 100);
+      finishLogin(data.lastSeen);
     });
   }, err => {
     clearTimeout(timeout);
@@ -3731,6 +3811,27 @@ async function authRegister() {
   const btn = document.getElementById('regBtn');
   if(btn) { btn.textContent = '⏳ Реєстрація...'; btn.disabled = true; }
   const reset = () => { if(btn) { btn.textContent = '✨ СТВОРИТИ АКАУНТ'; btn.disabled = false; } };
+
+  // Серверна реєстрація: акаунт і стартовий бонус створює сервер, а не браузер.
+  const refByLs = localStorage.getItem('ref_by');
+  const srv = await serverAuthCall('register', {
+    nick: n, password: p, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
+  });
+  if(srv.status === 200 && srv.data.token) {
+    try { await serverSignIn(srv.data.token); }
+    catch(e) { reset(); return showAuthError('❌ Акаунт створено, але вхід не вдався: ' + (e.message || '') + '. Спробуй увійти.'); }
+    if(btn) btn.textContent = '✅ Входимо...';
+    currentUser = n;
+    localStorage.setItem(SESSION_KEY, n);
+    localStorage.removeItem('ref_by');
+    initTelegramLinkStatus();
+    const bonusMsg = promo === 'SLOTOK' ? ' +500₴ промокод!' : promo === 'VIP' ? ' +2000₴ VIP!' : '';
+    notify('🎉 Вітаємо! Бонус: ' + srv.data.bonus + '₴ + ' + srv.data.spins + ' фріспінів!' + bonusMsg, 'success');
+    setTimeout(() => { try { startDataSync(); } catch(e) { console.error('startDataSync err:', e); } }, 200);
+    return;
+  }
+  if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
+  if(await serverAuthEnabled()) { reset(); return showAuthError('⚠️ Сервер реєстрації недоступний. Спробуй за хвилину.'); }
 
   const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
 
@@ -3892,6 +3993,19 @@ async function pwrVerifyAndReset(nick) {
   if(p1.length < 6) return pwrErr('Пароль мінімум 6 символів');
   if(p1 !== p2) return pwrErr('Паролі не збігаються');
 
+  const pwrDone = () => {
+    document.getElementById('pwrModal')?.remove();
+    notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
+    const loginName = document.getElementById('loginName');
+    if(loginName) loginName.value = nick;
+  };
+  // Сервер перевіряє відповідь з лімітом спроб — офлайн-перебір хешу відповіді
+  // з публічної бази більше не допомагає.
+  const srv = await serverAuthCall('reset', { nick, answer, newPassword: p1 });
+  if(srv.status === 200) return pwrDone();
+  if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
+  if(await serverAuthEnabled()) return pwrErr('Сервер недоступний. Спробуй за хвилину.');
+
   db.ref('users/' + nick + '/securityAnswerHash').once('value', async snap => {
     let check, newPassHash;
     try {
@@ -3999,7 +4113,14 @@ function setPlayerStatus(status) {
 function logout(){
   stopBgMusic();
   localStorage.removeItem(SESSION_KEY);
-  location.reload();
+  const done = () => location.reload();
+  try {
+    if(typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+      firebase.auth().signOut().then(done, done);
+      return;
+    }
+  } catch(e) { console.warn(e); }
+  done();
 }
 
 // ============================================
@@ -7268,6 +7389,15 @@ async function doChangePassword() {
   if(!old) return showErr('Введіть поточний пароль');
   if(nw.length < 6) return showErr('Мінімум 6 символів');
   if(nw !== conf) return showErr('Паролі не збігаються');
+  const cpDone = () => {
+    notify('✅ Пароль змінено!', 'success');
+    closeModal('changepass');
+    document.getElementById('modalChangePass')?.remove();
+  };
+  const srv = await serverAuthCall('change-password', { nick: currentUser, password: old, newPassword: nw });
+  if(srv.status === 200) return cpDone();
+  if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
+  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
   let nwHash;
   try {
     if(!(await SlotOKPassword.verify(old, userData.pass)).ok) return showErr('Поточний пароль невірний');
@@ -7278,10 +7408,7 @@ async function doChangePassword() {
   }
   db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
     userData.pass = nwHash;
-    notify('✅ Пароль змінено!', 'success');
-    closeModal('changepass');
-    // Also close old-style if exists
-    document.getElementById('modalChangePass')?.remove();
+    cpDone();
   }).catch(() => showErr('Помилка збереження'));
 }
 

@@ -1,0 +1,713 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": true,
+      ".indexOn": [
+        "totalWagered",
+        "totalWins",
+        "totalProfit",
+        "lastSeen",
+        "lastIpHash",
+        "stats/gamesPlayed",
+        "stats/biggestWin",
+        "isBot"
+      ],
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$u": {
+        ".validate": "data.exists() || ($u.length >= 2 && $u.length <= 32 && !$u.matches(/[<>\"'`]/) && !$u.matches(/[ \\\\&%]/))",
+        "balance": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))",
+          ".validate": "newData.isNumber() && newData.val() < 1000000000000000 && (newData.val() >= 0 || (data.exists() && newData.val() >= data.val()))"
+        },
+        "pass": {
+          ".write": "false",
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "securityAnswerHash": {
+          ".write": "false",
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "tag": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+          ".validate": "newData.isString() && newData.val().length <= 120 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "bioInput": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "email": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "lastIP": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
+        "lastIpHash": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "$field": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        },
+        "pmUnread": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "referrals": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "isAdmin": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "adminPerms": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "banned": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "banReason": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "autoFrozen": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "isBot": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "telegramChatId": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))) && !newData.exists()"
+        },
+        "totalWins": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "totalGames": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "totalWagered": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "vipGiftUntil": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "supportUnread": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "virtualCard": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "totalIn": {
+            ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+          }
+        },
+        "history": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$h": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+        "cardTx": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$t": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+        "clanId": {
+          ".write": "auth != null"
+        }
+      }
+    },
+    "bot_config": {
+      ".read": false,
+      ".write": false
+    },
+    "notify_rate": {
+      ".read": false,
+      ".write": false
+    },
+    "telegram_state": {
+      ".read": false,
+      ".write": false
+    },
+    "promo_redemptions": {
+      ".read": false,
+      ".write": false
+    },
+    "telegram_links": {
+      ".read": false,
+      "$chat": {
+        ".write": "auth != null && !newData.exists() && data.val() === auth.uid"
+      }
+    },
+    "telegram_link_tokens": {
+      ".read": false,
+      "$t": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.child('nick').val() === auth.uid",
+        "nick": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "lobby_chat": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".indexOn": [
+        "time"
+      ],
+      "$m": {
+        ".write": "auth != null",
+        "sender": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "msg": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        }
+      }
+    },
+    "global_chat": {
+      ".read": true,
+      ".indexOn": [
+        "ts"
+      ],
+      "$m": {
+        ".write": "auth != null",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "msg": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        }
+      }
+    },
+    "clan_chats": {
+      ".read": true,
+      "$c": {
+        "$m": {
+          ".write": "auth != null",
+          "user": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "sender": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "pm": {
+      ".read": true,
+      "$u": {
+        "$m": {
+          ".write": "auth != null",
+          "from": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "to": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "support_chats": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$u": {
+        ".read": "auth != null && auth.uid === $u",
+        "$m": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "sender": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "avatarEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorAvatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "authorEmoji": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "imgUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 4000"
+          }
+        }
+      }
+    },
+    "casino_news": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$n": {
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+        "author": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "category": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "emoji": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "avatarEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorAvatarUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "authorEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "reactions": {
+          ".write": "auth != null"
+        },
+        "myReaction": {
+          ".write": "auth != null"
+        },
+        "commentCount": {
+          ".write": "auth != null"
+        },
+        "comments": {
+          "$c": {
+            ".write": "auth != null",
+            "author": {
+              ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatar": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatarUrl": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "avatarEmoji": {
+              ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "authorAvatarUrl": {
+              ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "authorEmoji": {
+              ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            },
+            "msg": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            }
+          }
+        }
+      }
+    },
+    "win_feed": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      },
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "live_bets": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      },
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "online": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "clans": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "chat_meta": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "mp_rooms": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "card_rooms": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "pvp_rps": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "pvp_predict": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "pvp_chess": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "pvp_coinflip": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "global_roulette": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "sport_bets": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "sport_matches": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "tournaments": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "tournament_scores": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "leaderboards": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "leaderboard_weekly": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "lottery": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "lottery_history": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "jackpot": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "casino_stats": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "casino_events": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "investPool": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "p2p_loans": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "deposit_requests": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('user').val() === auth.uid) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
+      }
+    },
+    "withdraw_requests": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('user').val() === auth.uid) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
+      }
+    },
+    "password_reset_requests": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
+      ".indexOn": [
+        "user",
+        "status"
+      ],
+      "$id": {
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && true) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
+      }
+    },
+    "site_config": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "admin_settings": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "announcement": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "changelog": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "promos": {
+      ".read": true,
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "admin_notes": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "admin_action_log": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$e": {
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) && !data.exists()"
+      }
+    },
+    "anti_cheat_flags": {
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$u": {
+        "$f": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        }
+      }
+    },
+    "axiomPublic": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "axiomCardIndex": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    },
+    "axiomLinkCodes": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}
