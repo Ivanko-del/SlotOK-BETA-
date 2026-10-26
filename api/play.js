@@ -18,7 +18,24 @@
 // ============================================================
 
 const crypto = require("crypto");
-const { dbGet, dbUpdate, dbTransaction } = require("../lib/firebase");
+const { dbGet, dbSet, dbUpdate, dbIncrement, dbTransaction } = require("../lib/firebase");
+
+// Фріспін: freeSlots > 0 → −1. Спін бонус-раунду: spinsLeft > 0 → −1.
+// Обидва — транзакції, тож один фріспін не зіграти двічі паралельними запитами.
+async function spendSlotsSpin(nick, mode) {
+  if (mode === "free") {
+    const t = await dbTransaction(`users/${nick}/freeSlots`, (cur) => ((Number(cur) || 0) > 0 ? Number(cur) - 1 : undefined));
+    return { ok: t.committed, freeSlots: Number(t.value) || 0 };
+  }
+  let s = null;
+  const t = await dbTransaction(`game_sessions/${nick}/slots`, (cur) => {
+    if (!cur || cur.status !== "active" || !(cur.spinsLeft > 0)) return undefined;
+    s = cur;
+    const left = cur.spinsLeft - 1;
+    return { ...cur, spinsLeft: left, status: left > 0 ? "active" : "done" };
+  });
+  return t.committed ? { ok: true, bet: s.bet, mult: s.mult, spinsLeft: s.spinsLeft - 1 } : { ok: false };
+}
 const { getServiceAccount } = require("../lib/google-auth");
 const { verifyIdToken } = require("../lib/id-token");
 const { GAMES, parseBet } = require("../lib/games");
@@ -91,22 +108,47 @@ module.exports = async (req, res) => {
       return fail(res, 403, "blocked", blocked);
     }
 
-    // 3) Результат і атомарний запис балансу (списання + виграш разом).
-    const ctx = body.game === "scratch" ? { luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : {};
-    const outcome = game.play(bet, params, rng, ctx);
+    // 3) Слоти: фріспін або спін бонус-раунду не списують ставку, але мають
+    //    бути справді доступні — це перевіряємо й списуємо тут, атомарно.
+    let debit = bet, stake = bet, bonusMult = 1, slotsExtra = {};
+    if (body.game === "slots" && params.mode !== "paid") {
+      const spend = await spendSlotsSpin(nick, params.mode);
+      if (!spend.ok) {
+        await dbUpdate(roundPath, { status: "rejected", reason: "no_" + params.mode });
+        return fail(res, 409, "no_" + params.mode, params.mode === "free" ? "Безкоштовних спінів немає" : "Бонус-раунд уже закінчився", { freeSlots: spend.freeSlots || 0 });
+      }
+      debit = 0;
+      stake = params.mode === "bonus" ? spend.bet : Math.min(bet, game.FREE_SPIN_MAX_BET);
+      bonusMult = spend.mult || 1;
+      slotsExtra = params.mode === "bonus" ? { bonusSpinsLeft: spend.spinsLeft, bonusMult } : { freeSlots: spend.freeSlots };
+    }
+
+    // 4) Результат і атомарний запис балансу (списання + виграш разом).
+    const luckGames = ["scratch", "double", "slots", "diamond"];
+    const ctx = luckGames.includes(body.game) ? { luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : {};
+    const outcome = game.play(stake, { ...params, bonusMult }, rng, ctx);
     let insufficient = false;
     const tx = await dbTransaction(`users/${nick}/balance`, (cur) => {
       const balance = Number(cur) || 0;
-      if (balance < bet) { insufficient = true; return undefined; }
+      if (balance < debit) { insufficient = true; return undefined; }
       insufficient = false;
-      return balance - bet + outcome.payout;
+      return balance - debit + outcome.payout;
     });
     if (insufficient || !tx.committed) {
       await dbUpdate(roundPath, { status: "rejected", reason: "insufficient" });
       return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: Number(tx.value) || 0 });
     }
 
-    const response = { game: body.game, bet, params, ...outcome, balance: tx.value, id: body.id };
+    // Тригери слотів: бонус-раунд (стан на сервері) або +5 фріспінів.
+    if (body.game === "slots" && outcome.trigger === "bonus") {
+      await dbSet(`game_sessions/${nick}/slots`, { status: "active", spinsLeft: game.BONUS_SPINS, bet: stake, mult: outcome.bonusMult, startedAt: Date.now() });
+      slotsExtra = { ...slotsExtra, bonusSpinsLeft: game.BONUS_SPINS, bonusMult: outcome.bonusMult };
+    }
+    if (body.game === "slots" && outcome.trigger === "free") {
+      slotsExtra = { ...slotsExtra, freeSlots: await dbIncrement(`users/${nick}/freeSlots`, game.FREE_SPINS) };
+    }
+
+    const response = { game: body.game, bet: stake, params, ...outcome, ...slotsExtra, balance: tx.value, id: body.id };
     await dbUpdate(roundPath, { status: "done", response, doneAt: Date.now() });
     res.status(200).json(response);
   } catch (err) {

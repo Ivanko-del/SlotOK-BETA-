@@ -150,6 +150,44 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   assert.strictEqual(r.data.win, r.data.result >= 2);
   assert.strictEqual(tree.users.dave.balance, 900 + (r.data.win ? 200 : 0));
 
+  // ── Слоти: фріспіни й бонус-раунд перевіряє сервер ──
+  tree.users.sam = { balance: 1000, freeSlots: 1 };
+  const sam = idToken("sam");
+  r = await play(sam, { game: "slots", bet: 1000000, params: { mode: "free" } });
+  assert.strictEqual(r.status, 200, "фріспін");
+  assert.ok(r.data.bet <= 100, "фріспін грається на ставку ≤ 100, а не на будь-яку");
+  assert.ok(tree.users.sam.freeSlots === 0 || r.data.trigger === "free", "фріспін списано");
+  if (r.data.trigger !== "free") {
+    assert.strictEqual((await play(sam, { game: "slots", bet: 100, params: { mode: "free" } })).status, 409, "другого фріспіна нема");
+  }
+  assert.strictEqual(tree.users.sam.balance, 1000 + r.data.payout, "фріспін не списує ставку");
+  delete tree.game_sessions;
+  assert.strictEqual((await play(sam, { game: "slots", bet: 100, params: { mode: "bonus" } })).status, 409, "бонус-раунду нема — не грається");
+  tree.game_sessions = { sam: { slots: { status: "active", spinsLeft: 2, bet: 50, mult: 3 } } };
+  const balBonus = tree.users.sam.balance;
+  r = await play(sam, { game: "slots", bet: 999, params: { mode: "bonus" } });
+  assert.strictEqual(r.data.bet, 50, "ставка бонус-раунду — з сервера, не з запиту");
+  assert.strictEqual(r.data.bonusSpinsLeft, 1);
+  r = await play(sam, { game: "slots", bet: 999, params: { mode: "bonus" } });
+  assert.strictEqual(tree.game_sessions.sam.slots.status, "done");
+  assert.strictEqual((await play(sam, { game: "slots", bet: 100, params: { mode: "bonus" } })).status, 409, "11-го бонус-спіну нема");
+  assert.ok(tree.users.sam.balance >= balBonus, "бонус-спіни нічого не списують");
+  assert.strictEqual((await play(sam, { game: "slots", bet: 100, params: { mode: "turbo" } })).status, 400);
+
+  // Точний RTP Classic 777: E = (W + p_bonus·B) / (1 − 5·p_free), де B — 10 бонус-спінів.
+  {
+    const S = GAMES.slots;
+    let prev = 0, W = 0;
+    for (const l of S.LINES) { W += (l.upTo - prev) * l.mult; prev = l.upTo; }
+    const pBonus = S.BONUS_UPTO - prev, pFree = S.FREE_UPTO - S.BONUS_UPTO;
+    const Wb = W / S.BONUS_ODDS, B = S.BONUS_SPINS * Wb * 2.5; // ×2 або ×3 порівну
+    const E = (W + pBonus * B) / (1 - S.FREE_SPINS * pFree);
+    assert.ok(E < 0.97 && E > 0.9, "RTP Classic 777: " + E);
+    let prevD = 0, Ed = 0;
+    for (const l of GAMES.diamond.LINES) { Ed += (l.upTo - prevD) * l.mult; prevD = l.upTo; }
+    assert.ok(Ed < 0.97, "RTP Diamond Rush: " + Ed);
+  }
+
   // ── математика: RTP і межі (200k раундів; похибка середнього ~0,3%) ──
   const rng = { int: (min, max) => crypto.randomInt(min, max) };
   const N = 200000;
@@ -205,6 +243,18 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   assert.strictEqual(GAMES.keno.parse({ picks: Array.from({ length: 11 }, (_, i) => i + 1) }), null);
   const appKeno = /const KENO_PAY = (\{[\s\S]*?\n\});/.exec(appSrc);
   assert.deepStrictEqual(new Function("return " + appKeno[1])(), GAMES.keno.PAY, "KENO_PAY в app.js ≠ lib/games.js");
+  // Double / Fortune / Chests
+  for (const color of ["red", "black", "green"]) {
+    const r = rtpOf("double", { color }, 300000);
+    assert.ok(r > 0.9 && r < 1.0, `Double ${color}: RTP ${r}`);
+  }
+  const fortuneExact = GAMES.fortune.MULTS.reduce((a, b) => a + b, 0) / GAMES.fortune.MULTS.length;
+  assert.ok(fortuneExact < 0.98, "Fortune RTP " + fortuneExact);
+  const appFortune = /const FORTUNE_SEGMENTS = (\[[\s\S]*?\n\]);/.exec(appSrc);
+  assert.deepStrictEqual(new Function("return " + appFortune[1])().map((x) => x.mult), GAMES.fortune.MULTS, "FORTUNE_SEGMENTS в app.js ≠ lib/games.js");
+  const rc = rtpOf("chests", {}, 300000);
+  assert.ok(rc > 0.93 && rc < 0.99, "Chests RTP " + rc);
+  assert.strictEqual(GAMES.double.parse({ color: "blue" }), null);
   // Скретч: 96,4% звичайно; «удача новачка» лише для перших ігор.
   const rs = rtpOf("scratch", {}, 300000);
   assert.ok(rs > 0.93 && rs < 0.99, "Scratch RTP " + rs);
