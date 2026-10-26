@@ -70,6 +70,10 @@
       ".read": false,
       ".write": false
     },
+    "game_rounds": {
+      ".read": false,
+      ".write": false
+    },
     "telegram_state": {
       ".read": false,
       ".write": false
@@ -174,6 +178,13 @@
         "msg": {
           ".validate": "newData.isString() && newData.val().length <= 4000"
         }
+      }
+    },
+    "chat_rate": {
+      ".read": false,
+      "$u": {
+        ".write": "true",
+        ".validate": "newData.isNumber() && newData.val() === now"
       }
     },
     "clan_chats": {

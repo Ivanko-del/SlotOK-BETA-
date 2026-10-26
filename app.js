@@ -150,6 +150,35 @@ function friendlySignInError(e) {
   if(/too-many|TOO_MANY/i.test(raw)) return 'Забагато спроб. Зачекай кілька хвилин.';
   return 'Вхід тимчасово недоступний. Спробуй за кілька хвилин, а якщо не минеться — напиши в підтримку.';
 }
+// ── Серверні ігри (api/play.js) ──
+// Результат і баланс рахує сервер. Повертає:
+//   { mode: 'server', r }  — зіграно на сервері, баланс уже змінено там;
+//   { mode: 'legacy' }     — серверні ігри не налаштовані, граємо як раніше;
+//   { mode: 'error' }      — помилку вже показано гравцю, ставку не прийнято.
+async function serverPlay(game, bet, params) {
+  if(!(await serverAuthEnabled())) return { mode: 'legacy' };
+  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error' }; }
+  const id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2))).replace(/[^A-Za-z0-9_-]/g, '');
+  const send = async () => fetch('/api/play', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() },
+    body: JSON.stringify({ game, bet, params, id }),
+  });
+  let res;
+  try { res = await send(); }
+  catch(e) {
+    // Обрив мережі: повтор з тим самим id безпечний — сервер не зіграє двічі.
+    try { res = await send(); } catch(e2) { notify('Немає зʼєднання. Перевір інтернет.', 'error'); return { mode: 'error' }; }
+  }
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  if(res.status === 200) return { mode: 'server', r: data };
+  if(res.status === 503 && data.error === 'not_configured') return { mode: 'legacy' };
+  notify(data.message || 'Ставку не прийнято. Спробуй ще раз.', 'error');
+  return { mode: 'error' };
+}
+
 async function serverSignIn(token) {
   if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
   await firebase.auth().signInWithCustomToken(token);
@@ -786,11 +815,38 @@ document.addEventListener('error', e => {
   el.src = IMG_FALLBACK;
 }, true);
 
-function notifyBot(type, id, extra) {
+// Заголовок з Firebase ID token, якщо гравець увійшов через сервер (api/auth).
+// Сервер за ним знає, ХТО надсилає — без цього будь-хто міг слати чужим
+// гравцям у Telegram фейкові «виграш +N₴».
+async function authHeaders() {
   try {
+    const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    return u ? { Authorization: 'Bearer ' + await u.getIdToken() } : {};
+  } catch(e) { return {}; }
+}
+// Повідомлення гравця в загальний чат разом з міткою часу chat_rate/<нік>.
+// У строгих правилах база пропускає повідомлення, лише якщо попереднє було
+// щонайменше 2 с тому — антиспам, який не обійти з консолі браузера.
+function postChatMessage(node, msg) {
+  const key = db.ref(node).push().key;
+  return db.ref().update({
+    [node + '/' + key]: msg,
+    ['chat_rate/' + currentUser]: firebase.database.ServerValue.TIMESTAMP,
+  }).catch(e => {
+    if(!/permission/i.test(String(e && (e.code || e.message)))) return console.warn(e);
+    // Опубліковані правила ще не знають chat_rate — пишемо як раніше. У строгих
+    // правилах такий запис без мітки часу не пройде, тож антиспам не обійти.
+    return db.ref(node + '/' + key).set(msg)
+      .catch(() => notify('⏳ Не так швидко — зачекай пару секунд', 'error'));
+  });
+}
+
+async function notifyBot(type, id, extra) {
+  try {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, type === 'player-ping' ? await authHeaders() : {});
     fetch('/api/notify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(Object.assign({ type, id }, extra)),
     }).catch(() => {});
   } catch(e) { console.warn(e); }
@@ -3370,7 +3426,7 @@ function sendChatMsg() {
     msg.imgUrl = chatPendingImage;
     if(chatPendingIsVideo) msg.isVideo = true;
   }
-  db.ref('global_chat').push(msg);
+  postChatMessage('global_chat', msg);
   inp.value = '';
   clearChatImage();
 }
@@ -5331,7 +5387,7 @@ function sendLobbyMsg() {
   if(!txt || txt.length > 200) return;
   if(userData.muted) return notify('Вас замутовано в чаті', 'error');
   const isAdmin = isAdminUser();
-  db.ref('lobby_chat').push({
+  postChatMessage('lobby_chat', {
     sender: currentUser,
     text: txt,
     time: Date.now(),
@@ -5348,10 +5404,34 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '101';
+const CURRENT_VERSION = '102';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '102',
+    title: '📜 Оновлення v102 — чесні Кості й Limbo',
+    date: Date.UTC(2026, 9, 26),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎲 Чесна гра',
+        items: [
+          'Результат у Костях і Limbo тепер визначає сервер, а не телефон — підкрутити його неможливо',
+          'Подвійний клік або обрив інтернету більше не списують ставку двічі',
+          'Решта ігор переїде на сервер поступово — для тебе нічого не зміниться, крім чесності',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🛡️ Захист від спаму',
+        items: [
+          'Сповіщення про чужі «великі виграші» в Telegram більше не можна підробити',
+        ]
+      },
+    ]
+  },
   {
     version: '101',
     title: '📜 Оновлення v101 — надійніше відновлення пароля',
@@ -7467,6 +7547,10 @@ async function runCleanup() {
     toDelete.forEach(k => { updates['live_bets/' + k] = null; cleaned++; });
     if(Object.keys(updates).length) db.ref().update(updates);
   });
+
+  // Чати чистить лише адмін: раніше кожен гравець раз на 10 хв качав увесь
+  // global_chat і lobby_chat, а строгі правила й не дадуть гравцю видаляти чуже.
+  if(!isAdminUser()) return;
 
   // Clean global_chat older than 6 hours (keep last 200 messages)
   db.ref('global_chat').orderByChild('ts').once('value', snap => {
@@ -13630,17 +13714,29 @@ function updateDiceUI() {
   document.getElementById('diceMult').textContent = 'x' + mult.toFixed(2);
 }
 
-function rollDice(dir) {
+let diceBusy = false;
+async function rollDice(dir) {
+  if(diceBusy) return;
   const bet = validateBet(document.getElementById('diceBet').value);
   if(!bet) return;
   const target = parseInt(document.getElementById('diceSlider').value);
-  const result = Math.floor(Math.random()*99)+1;
-  const win = (dir==='over') ? result > target : result < target;
-  const chance = dir==='over' ? (99-target)/99 : (target-1)/99;
-  const mult = parseFloat((0.97/chance).toFixed(2));
-  const winAmt = Math.floor(bet * mult);
-
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  diceBusy = true;
+  let srv;
+  try { srv = await serverPlay('dice', bet, { target, dir }); } finally { diceBusy = false; }
+  if(srv.mode === 'error') return;
+  let result, win, mult, winAmt;
+  if(srv.mode === 'server') {
+    // Ставку й виграш уже записав сервер одним атомарним записом.
+    ({ result, win, mult } = srv.r);
+    winAmt = srv.r.payout;
+  } else {
+    result = Math.floor(Math.random()*99)+1;
+    win = (dir==='over') ? result > target : result < target;
+    const chance = dir==='over' ? (99-target)/99 : (target-1)/99;
+    mult = parseFloat((0.97/chance).toFixed(2));
+    winAmt = Math.floor(bet * mult);
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  }
   addWager(bet);
   trackLbStat('wager', bet); trackLbStat('games', 1);
   publishLiveBet('Dice','🎲', bet, '');
@@ -13652,7 +13748,7 @@ function rollDice(dir) {
 
   setTimeout(() => {
     if(win) {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
+      if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
       playSound('win');
       resEl.innerHTML = `<span style="color:var(--green);font-weight:900;">🎲 ${result} — ВИГРАШ! +${formatNumber(winAmt)} ₴</span>`;
       notify('🎲 ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success');
@@ -15218,7 +15314,7 @@ function updateLimboChance() {
   if(pyEl) pyEl.textContent = '₴' + formatNumber(payout);
 }
 
-function playLimbo() {
+async function playLimbo() {
   if(limboRunning) return;
   const bet = validateBet(document.getElementById('limboAmount').value);
   if(!bet) return;
@@ -15230,7 +15326,9 @@ function playLimbo() {
   const btn = document.getElementById('limboBtn');
   if(btn) btn.disabled = true;
 
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  const srv = await serverPlay('limbo', bet, { target });
+  if(srv.mode === 'error') { limboRunning = false; if(btn) btn.disabled = false; return; }
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   addWager(bet); trackQuest('totalGames',1); trackQuest('weekWager',bet);
   trackLbStat('wager',bet); trackLbStat('games',1);
   publishLiveBet('Limbo','🌀', bet, '×'+target);
@@ -15240,13 +15338,14 @@ function playLimbo() {
   if(resEl) { resEl.style.color = '#c9a0ff'; resEl.textContent = '...'; }
   if(msgEl) msgEl.textContent = '';
 
-  // Генерація результату (розподіл як у Crash)
-  const rand = Math.random();
-  const result = parseFloat(Math.max(1.00, (97 / (rand * 100))).toFixed(2));
+  // Генерація результату (розподіл як у Crash) — на сервері, якщо він налаштований
+  const result = srv.mode === 'server'
+    ? srv.r.result
+    : parseFloat(Math.max(1.00, (97 / (Math.random() * 100))).toFixed(2));
 
   setTimeout(() => {
-    const win = result >= target;
-    const payout = win ? Math.floor(bet * target) : 0;
+    const win = srv.mode === 'server' ? srv.r.win : result >= target;
+    const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet * target) : 0);
 
     // Анімація числа
     let counter = 1.0;
@@ -15266,7 +15365,7 @@ function playLimbo() {
           resEl.style.textShadow = win ? '0 0 30px rgba(61,214,140,.5)' : '0 0 30px rgba(240,64,96,.5)';
         }
         if(win) {
-          db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
+          if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
           playSound('win');
           if(msgEl) msgEl.innerHTML = `<span style="color:var(--green);font-weight:700;">✅ ВИГРАШ! +₴${formatNumber(payout - bet)} (ціль ×${target} ✓)</span>`;
           notify(`🌀 +₴${formatNumber(payout - bet)}`,'success');

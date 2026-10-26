@@ -152,8 +152,17 @@ async function strict() {
   assert.strictEqual(await alice.get("support_chats/alice"), OK);
   assert.strictEqual(await bob.put("telegram_link_tokens/t9", { nick: "alice", createdAt: 1 }), NO, "токен прив'язки на чужий нік");
   assert.strictEqual(await alice.put("telegram_link_tokens/t9", { nick: "alice", createdAt: 1 }), OK);
-  assert.strictEqual(await bob.post("lobby_chat", { sender: "bob", text: "hi" }), OK);
+  const say = (who, key, sender) => who.patch("", { [`lobby_chat/${key}`]: { sender, text: "hi" }, [`chat_rate/${sender}`]: { ".sv": "timestamp" } });
+  assert.strictEqual(await say(bob, "m1", "bob"), OK, "повідомлення з міткою часу");
+  assert.strictEqual(await say(bob, "m2", "bob"), NO, "друге повідомлення одразу — антиспам");
+  assert.strictEqual(await bob.post("lobby_chat", { sender: "bob", text: "hi" }), NO, "без мітки часу");
+  const carol = client(ns, "carol"); // не адмін (alice вище стала адміном)
+  assert.strictEqual(await say(carol, "m3", "bob"), NO, "від чужого імені");
   assert.strictEqual(await anon.post("lobby_chat", { sender: "bob", text: "hi" }), NO, "анонім у чаті");
+  assert.strictEqual(await carol.del("lobby_chat/m1"), NO, "чуже повідомлення не видалити");
+  assert.strictEqual(await bob.del("lobby_chat/m1"), OK, "своє — можна");
+  await new Promise((r) => setTimeout(r, 2100));
+  assert.strictEqual(await say(bob, "m4", "bob"), OK, "через 2 с — знову можна");
 }
 
 (async () => {
