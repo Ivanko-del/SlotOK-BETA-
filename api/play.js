@@ -39,6 +39,7 @@ async function spendSlotsSpin(nick, mode) {
 const { getServiceAccount } = require("../lib/google-auth");
 const { verifyIdToken } = require("../lib/id-token");
 const { GAMES, parseBet } = require("../lib/games");
+const { safeRecordWager } = require("../lib/progress");
 
 const ID_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
@@ -139,6 +140,10 @@ module.exports = async (req, res) => {
       return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: Number(tx.value) || 0 });
     }
 
+    // Облік ставки (VIP, Battle Pass, кешбек) — паралельно з рештою запису.
+    // Фріспін і бонус-раунд ставкою не рахуються, як і в браузері.
+    const progressP = debit > 0 ? safeRecordWager(nick, debit) : Promise.resolve(null);
+
     // Тригери слотів: бонус-раунд (стан на сервері) або +5 фріспінів.
     if (body.game === "slots" && outcome.trigger === "bonus") {
       await dbSet(`game_sessions/${nick}/slots`, { status: "active", spinsLeft: game.BONUS_SPINS, bet: stake, mult: outcome.bonusMult, startedAt: Date.now() });
@@ -148,7 +153,8 @@ module.exports = async (req, res) => {
       slotsExtra = { ...slotsExtra, freeSlots: await dbIncrement(`users/${nick}/freeSlots`, game.FREE_SPINS) };
     }
 
-    const response = { game: body.game, bet: stake, params, ...outcome, ...slotsExtra, balance: tx.value, id: body.id };
+    const progress = await progressP;
+    const response = { game: body.game, bet: stake, params, ...outcome, ...slotsExtra, balance: tx.value, id: body.id, ...(progress ? { progress } : {}) };
     await dbUpdate(roundPath, { status: "done", response, doneAt: Date.now() });
     res.status(200).json(response);
   } catch (err) {

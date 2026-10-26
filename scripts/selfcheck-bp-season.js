@@ -1,20 +1,13 @@
-// Self-check for the Battle Pass season math in app.js (getBpSeasonInfo / formatBpTimeLeft).
-// app.js is a monolithic browser script with no module.exports, so this reimplements
-// the same formulas in isolation and pins the boundary behavior — the part most likely
+// Self-check for the Battle Pass season math (getBpSeasonInfo in shared/rewards.js,
+// formatBpTimeLeft in app.js). Pins the boundary behavior — the part most likely
 // to break silently (off-by-one on season rollover would wipe or freeze everyone's
-// progress at the wrong instant). If you change the formulas in app.js, mirror the
-// change here too. Run: node scripts/selfcheck-bp-season.js
+// progress at the wrong instant). shared/rewards.js is the same file the server
+// (lib/progress.js) and the browser use. Run: node scripts/selfcheck-bp-season.js
 const assert = require("assert");
 
-const BP_SEASON_EPOCH = Date.UTC(2026, 0, 1);
-const BP_SEASON_DAYS = 30;
-
-function getBpSeasonInfo(now) {
-  const len = BP_SEASON_DAYS * 86400000;
-  const num = Math.floor((now - BP_SEASON_EPOCH) / len) + 1;
-  const endsAt = BP_SEASON_EPOCH + num * len;
-  return { num, endsAt };
-}
+const { BP_SEASON_EPOCH, BP_SEASON_DAYS, getBpSeasonInfo } = require("../shared/rewards");
+assert.strictEqual(BP_SEASON_EPOCH, Date.UTC(2026, 0, 1), "зсув епохи перенумерує всі сезони");
+assert.strictEqual(BP_SEASON_DAYS, 30);
 
 function formatBpTimeLeft(ms) {
   if (ms <= 0) return "закінчується...";
@@ -50,8 +43,9 @@ console.log("OK — Battle Pass season boundary math and timer formatting are co
 const fs = require("fs");
 const path = require("path");
 const appSrc = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+const rewardsSrc = fs.readFileSync(path.join(__dirname, "..", "shared", "rewards.js"), "utf8");
 
-const block = appSrc.slice(appSrc.indexOf("const BP_SEASONS = ["));
+const block = rewardsSrc.slice(rewardsSrc.indexOf("const BP_SEASONS = ["));
 const nums = [...block.slice(0, block.indexOf("];")).matchAll(/\{\s*num:\s*(\d+)/g)].map(m => +m[1]);
 assert.ok(nums.length >= 12, "очікуємо щонайменше 12 названих сезонів, знайдено " + nums.length);
 assert.strictEqual(nums[0], 1, "таблиця сезонів має починатись з 1");
@@ -76,7 +70,7 @@ console.log("OK — таблиця сезонів Battle Pass суцільна �
 // понад 50 рівнів, нічого — до 50-го, і видане не видається вдруге.
 {
   const grab = (re) => { const m = re.exec(appSrc); assert.ok(m, "не знайдено: " + re); return m[0]; };
-  const src = grab(/const BP_BONUS_XP = \d+;/) + "\n" + grab(/function bpBonusInfo\(bp\) \{[\s\S]*?\n\}/);
+  const src = /const BP_BONUS_XP = \d+;/.exec(rewardsSrc)[0] + "\n" + grab(/function bpBonusInfo\(bp\) \{[\s\S]*?\n\}/);
   const { BP_BONUS_XP: B, bpBonusInfo } = new Function("BP_MAX_LEVEL", "BP_XP_PER_LEVEL", src + "; return { BP_BONUS_XP, bpBonusInfo };")(50, 1000);
   assert.deepStrictEqual(bpBonusInfo({ xp: 49999, level: 49, bonusClaimed: 0 }).available, 0, "до 50 рівня скринь немає");
   assert.strictEqual(bpBonusInfo({ xp: 50000, level: 50, bonusClaimed: 0 }).available, 0);

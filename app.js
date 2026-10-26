@@ -173,7 +173,7 @@ async function serverPlay(game, bet, params) {
   }
   let data = {};
   try { data = await res.json(); } catch(e) {}
-  if(res.status === 200) return { mode: 'server', r: data };
+  if(res.status === 200) { serverProgress(data); return { mode: 'server', r: data }; }
   if(res.status === 503 && data.error === 'not_configured') return { mode: 'legacy' };
   notify(data.message || 'Ставку не прийнято. Спробуй ще раз.', 'error');
   return { mode: 'error' };
@@ -182,23 +182,54 @@ async function serverPlay(game, bet, params) {
 // ── Серверні раунди з кількома ходами (api/round.js: Mines, Tower, Hi-Lo) ──
 // Повертає { mode: 'server', r } | { mode: 'legacy' } | { mode: 'error', status }.
 async function serverRound(action, game, extra) {
+  return serverApi('/api/round', Object.assign({ action, game }, extra || {}));
+}
+
+// ── Бонуси й нагороди (api/reward.js): суму, право й час рахує сервер ──
+// Ті самі три режими, що й serverRound. _rewardBusy — від подвійного кліку.
+let _rewardBusy = false;
+async function serverReward(action, extra) {
+  if(_rewardBusy) return { mode: 'error', status: 429 };
+  _rewardBusy = true;
+  try { return await serverApi('/api/reward', Object.assign({ action }, extra || {})); }
+  finally { _rewardBusy = false; }
+}
+
+async function serverApi(url, body) {
   if(!(await serverAuthEnabled())) return { mode: 'legacy' };
   const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
   if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error', status: 401 }; }
   let res;
   try {
-    res = await fetch('/api/round', {
+    res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() },
-      body: JSON.stringify(Object.assign({ action, game }, extra || {})),
+      body: JSON.stringify(body),
     });
   } catch(e) { notify('Немає зʼєднання. Перевір інтернет.', 'error'); return { mode: 'error', status: 0 }; }
   let data = {};
   try { data = await res.json(); } catch(e) {}
-  if(res.status === 200) return { mode: 'server', r: data };
+  if(res.status === 200) { serverProgress(data); return { mode: 'server', r: data }; }
   if(res.status === 503 && data.error === 'not_configured') return { mode: 'legacy' };
   notify(data.message || 'Не вдалося. Спробуй ще раз.', 'error');
   return { mode: 'error', status: res.status, r: data };
+}
+
+// Ставку, списану на сервері, сервер сам записав у вейджер/XP/кешбек і
+// повернув progress. addWager() цю суму вдруге не пише (див. _serverWagerCredit),
+// а тут лише показуємо підвищення VIP чи рівня Battle Pass.
+let _serverWagerCredit = 0, _serverWagerCreditAt = 0;
+function serverProgress(r) {
+  const p = r && !r.replay && r.progress;
+  if(!p || !(p.wager > 0)) return;
+  if(Date.now() - _serverWagerCreditAt > 15000) _serverWagerCredit = 0;
+  _serverWagerCredit += p.wager;
+  _serverWagerCreditAt = Date.now();
+  if(p.vipUp) {
+    setTimeout(() => notify(`🎉 VIP підвищено до ${p.vipUp.icon} ${p.vipUp.name}!`, 'success'), 700);
+    notifyBot('player-ping', null, { to: currentUser, kind: 'vipup', ref: { name: p.vipUp.name, icon: p.vipUp.icon } });
+  }
+  if(p.bpLevelUp) showBpLevelUp(p.bpLevelUp);
 }
 
 async function serverSignIn(token) {
@@ -617,7 +648,6 @@ function addToHistory(msg) {
 // ============================================
 // ЩОДЕННИЙ БОНУС
 // ============================================
-const DAILY_BONUSES = [100, 150, 200, 300, 500, 750, 1000];
 
 function checkDailyBonus() {
     const lastClaim = userData.lastDailyBonus || 0;
@@ -685,7 +715,24 @@ function openDailyBonus() {
     openTabModal('daily-bonus-modal');
 }
 
-function claimDailyBonus(amount) {
+async function claimDailyBonus(amount) {
+    const srv = await serverReward('daily');
+    if(srv.mode === 'error') {
+        if(srv.status === 409) { closeTabModal('daily-bonus-modal'); document.getElementById('dailyBonusBanner').classList.add('hidden'); }
+        return;
+    }
+    if(srv.mode === 'server') {
+        const r = srv.r;
+        pushCardTx(currentUser, {dir:'in', amount:r.amount, title:'Щоденний бонус', subtitle:'День '+r.day+' серії', icon:'🎁'}, getActiveCardId());
+        if(r.streakBonus) notify(`🔥 7 днів поспіль! +${r.streakBonus} ₴`, 'success');
+        playSound('win');
+        const multText = r.vip.mult > 1 ? ` (${r.vip.icon} VIP ×${r.vip.mult})` : '';
+        notify(`🎁 Щоденний бонус: +${r.amount} ₴${multText}`, 'success');
+        addToHistory(`Daily Bonus: +${r.amount}`);
+        closeTabModal('daily-bonus-modal');
+        document.getElementById('dailyBonusBanner').classList.add('hidden');
+        return;
+    }
     const streak = (userData.dailyStreak || 0) + 1;
     const newStreak = streak >= 7 ? 0 : streak;
     // VIP множник
@@ -5811,10 +5858,38 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '107';
+const CURRENT_VERSION = '108';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '108',
+    title: '🎁 Оновлення v108 — бонуси й Battle Pass на сервері',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎁 Бонуси рахує сервер',
+        items: [
+          'Щоденний і погодинний бонус, щоденне колесо, кешбек і бонус повернення тепер видає сервер за своїм часом — суми ті самі',
+          'Нагороди Battle Pass, бонусні скрині після 50 рівня і VIP-пропуск теж видає сервер — жодну не забрати двічі',
+          'Ставки в іграх, які вже грають на сервері, самі зараховуються у VIP, досвід Battle Pass і кешбек',
+          'Перемикач кешбеку тепер запам\'ятовується в акаунті, а не лише на цьому телефоні',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Ставки з різних вкладок більше не губляться з VIP-прогресу і досвіду Battle Pass',
+          'Кешбек: ліміт 5 000 ₴ на тиждень тепер справді тижневий — виплата його не скидає',
+          'Купівля VIP Battle Pass на початку нового сезону більше не переносить прогрес минулого',
+          'Бонус повернення рахується від останньої гри і дається один раз за відсутність',
+        ]
+      },
+    ]
+  },
   {
     version: '107',
     title: '🃏 Оновлення v107 — Blackjack на сервері',
@@ -10563,17 +10638,6 @@ function trackClanWager(amount) {
   recalcClanScore(userData.clanId);
 }
 
-// Тіри кланового банку -> бонус кешбеку для всіх учасників
-const CLAN_BANK_TIERS = [
-  { min: 100000, cashback: 0.005, label: 'Тір 3', tag: 'gold-animated' },
-  { min: 25000,  cashback: 0.0025, label: 'Тір 2', tag: 'gold' },
-  { min: 5000,   cashback: 0.001, label: 'Тір 1', tag: 'green' },
-  { min: 0,      cashback: 0,     label: 'Без тіру', tag: 'none' }
-];
-function getClanBankTier(bank) {
-  return CLAN_BANK_TIERS.find(t => (bank || 0) >= t.min) || CLAN_BANK_TIERS[CLAN_BANK_TIERS.length - 1];
-}
-
 function recalcClanScore(clanId) {
   const week = getWeekStr();
   Promise.all([
@@ -11053,52 +11117,39 @@ function monoLog(text, cls) {
 // ============================================
 // ===== VIP СИСТЕМА =====
 // ============================================
-const VIP_LEVELS = [
-  { name: 'Iron',      icon: '⚙️',  min: 0,         cashback: 0,      hourly: 10,  dailyMult: 1.0,  class: 'bronze',   cssVar: '#555' },
-  { name: 'Bronze',    icon: '🥉',  min: 1000,      cashback: 0,      hourly: 25,  dailyMult: 1.0,  class: 'bronze',   cssVar: 'var(--bronze)' },
-  { name: 'Silver',    icon: '🥈',  min: 5000,      cashback: 0.001,  hourly: 50,  dailyMult: 1.1,  class: 'silver',   cssVar: 'var(--silver-c)' },
-  { name: 'Gold',      icon: '🥇',  min: 20000,     cashback: 0.002,  hourly: 80,  dailyMult: 1.25, class: 'gold',     cssVar: 'var(--gold-c)' },
-  { name: 'Emerald',   icon: '💚',  min: 60000,     cashback: 0.003,  hourly: 120, dailyMult: 1.4,  class: 'gold',     cssVar: '#2ecc71' },
-  { name: 'Sapphire',  icon: '💙',  min: 150000,    cashback: 0.004,  hourly: 160, dailyMult: 1.6,  class: 'silver',   cssVar: '#3498db' },
-  { name: 'Ruby',      icon: '❤️',  min: 350000,    cashback: 0.005,  hourly: 200, dailyMult: 1.75, class: 'gold',     cssVar: '#e74c3c' },
-  { name: 'Platinum',  icon: '💎',  min: 700000,    cashback: 0.006,  hourly: 250, dailyMult: 1.9,  class: 'platinum', cssVar: 'var(--plat)' },
-  { name: 'Master',    icon: '🔮',  min: 1500000,   cashback: 0.007,  hourly: 350, dailyMult: 2.0,  class: 'platinum', cssVar: '#9b59b6' },
-  { name: 'Elite',     icon: '⭐',  min: 3000000,   cashback: 0.008,  hourly: 500, dailyMult: 2.2,  class: 'platinum', cssVar: '#f39c12' },
-  { name: 'Diamond',   icon: '💠',  min: 7000000,   cashback: 0.009,  hourly: 750, dailyMult: 2.5,  class: 'platinum', cssVar: '#1abc9c' },
-  { name: 'Legend',    icon: '🌟',  min: 15000000,  cashback: 0.010,  hourly: 1000,dailyMult: 3.0,  class: 'platinum', cssVar: '#e67e22' },
-  { name: 'Mythic',    icon: '🔱',  min: 35000000,  cashback: 0.012,  hourly: 1500,dailyMult: 3.5,  class: 'platinum', cssVar: '#e91e63' },
-  { name: 'Supreme',   icon: '👑',  min: 100000000, cashback: 0.015,  hourly: 3000,dailyMult: 5.0,  class: 'platinum', cssVar: 'linear-gradient(45deg,#d4af37,#fff)' },
-];
-
-function getVipLevel(wagered) {
-  for(let i = VIP_LEVELS.length - 1; i >= 0; i--) {
-    if(wagered >= VIP_LEVELS[i].min) return { ...VIP_LEVELS[i], index: i };
-  }
-  return { ...VIP_LEVELS[0], index: 0 };
-}
-
-// ============================================================
-// CASHBACK SYSTEM — ліміт 50₴/ставка, 5000₴/тиждень
-// ============================================================
-const CASHBACK_MAX_PER_BET  = 50;    // грн
-const CASHBACK_MAX_PER_WEEK = 5000;  // грн
-const CASHBACK_MIN_CLAIM    = 2000;  // грн — мінімум для виводу
-
+// Вибір гравця живе в базі (cashbackOff) — його читає й сервер, який
+// нараховує кешбек за серверні ставки. Старе значення з localStorage
+// переносимо туди один раз.
 function getCashbackEnabled() {
-  try { return localStorage.getItem('cashback_enabled') !== 'false'; } catch(e) { return true; }
+  try {
+    if(localStorage.getItem('cashback_enabled') === 'false' && currentUser && userData) {
+      localStorage.removeItem('cashback_enabled');
+      if(userData.cashbackOff !== true) setCashbackEnabled(false);
+    }
+  } catch(e) { console.warn(e); }
+  return !(userData && userData.cashbackOff === true);
 }
 function setCashbackEnabled(val) {
-  try { localStorage.setItem('cashback_enabled', val ? 'true' : 'false'); } catch(e) { console.warn(e); }
+  if(!currentUser) return;
+  if(userData) userData.cashbackOff = val ? null : true;
+  db.ref('users/'+currentUser+'/cashbackOff').set(val ? null : true);
 }
 
 function addWager(amount) {
   if(!userData.isBot) antiCheatRecordBet(amount);
   // Progressive jackpot: 0.05% of wager
   try { db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.ceil(amount*0.0005))); } catch(e) { console.warn(e); }
+  // Частину, яку вже врахував сервер (серверні ігри), не пишемо вдруге.
+  if(Date.now() - _serverWagerCreditAt > 15000) _serverWagerCredit = 0;
+  const covered = Math.min(_serverWagerCredit, amount);
+  _serverWagerCredit -= covered;
+  amount -= covered;
+  if(amount <= 0) return;
+  const inc = firebase.database.ServerValue.increment;
   const wagered = (userData.totalWagered || 0) + amount;
   const vip = getVipLevel(wagered);
   const prevVip = getVipLevel(userData.totalWagered || 0);
-  const updates = { totalWagered: wagered };
+  const updates = { totalWagered: inc(amount) };
 
   // Cashback (only if enabled by user)
   if((vip.cashback + clanCashbackBonus) > 0 && getCashbackEnabled()) {
@@ -11118,8 +11169,7 @@ function addWager(amount) {
       const finalCashback = Math.min(betCashback, canAdd);
       if(finalCashback > 0) {
         // Accumulate pending cashback (user claims it from cashier)
-        const pending = (userData.cashbackPending || 0) + finalCashback;
-        updates.cashbackPending   = pending;
+        updates.cashbackPending   = inc(finalCashback);
         updates.cashbackWeekUsed  = currentWeekUsed + finalCashback;
         updates.cashbackWeekStart = isNewWeek ? now : weekStart;
       }
@@ -11137,15 +11187,17 @@ function addWager(amount) {
 }
 
 // Claim cashback from cashier
-function claimCashback() {
-  const pending = userData.cashbackPending || 0;
+async function claimCashback() {
+  let pending = userData.cashbackPending || 0;
   if(pending <= 0) return notify('Немає накопиченого кешбеку', 'info');
   if(pending < CASHBACK_MIN_CLAIM) return notify(`❌ Мінімум для виплати: ${CASHBACK_MIN_CLAIM} ₴. Зараз: ${formatNumber(pending)} ₴`, 'error');
-  db.ref('users/'+currentUser).update({
+  const srv = await serverReward('cashback');
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'server') pending = srv.r.amount;
+  else db.ref('users/'+currentUser).update({
     balance: firebase.database.ServerValue.increment(pending),
     cashbackPending: 0,
-    cashbackTotalClaimed: (userData.cashbackTotalClaimed||0) + pending,
-    cashbackWeekUsed: Math.max(0, (userData.cashbackWeekUsed||0) - pending)
+    cashbackTotalClaimed: (userData.cashbackTotalClaimed||0) + pending
   });
   playSound('win');
   notify(`💰 Кешбек отримано: +${formatNumber(pending)} ₴`, 'success');
@@ -11353,9 +11405,19 @@ function updateHourlyTimer() {
   }
 }
 
-function claimHourlyBonus() {
+async function claimHourlyBonus() {
   const last = userData.lastHourlyBonus || 0;
-  if(Date.now() - last < 3600000) return notify('Ще не час! Зачекай годину.', 'error');
+  if(Date.now() - last < HOURLY_BONUS_MS) return notify('Ще не час! Зачекай годину.', 'error');
+  const srv = await serverReward('hourly');
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'server') {
+    const r = srv.r;
+    addToHistory(`Hourly Bonus +${r.amount}₴ (${r.vip.name})`);
+    playSound('win');
+    notify(`⏰ Погодинний бонус: +${r.amount} ₴ (${r.vip.icon} ${r.vip.name})`, 'success');
+    setTimeout(loadHourlyHistory, 300);
+    return;
+  }
   const vip = getVipLevel(userData.totalWagered || 0);
   const amount = vip.hourly;
   db.ref('users/' + currentUser).update({
@@ -18023,78 +18085,6 @@ function initBgMusicFromSettings() {
 // ============================================================
 // ===== BATTLE PASS SYSTEM =====
 // ============================================================
-const BP_XP_PER_LEVEL = 1000;
-const BP_MAX_LEVEL    = 50;
-
-// Seasons are pure date math (no server cron needed) — every client computes the
-// same season number from a fixed epoch, so a season "ends" for everyone at the
-// same instant without a scheduled job. Progress from a finished season is
-// lazily wiped the next time the player earns XP (see addBpXP), same pattern
-// already used for the weekly cashback limit reset.
-const BP_SEASON_EPOCH = Date.UTC(2026, 0, 1);
-const BP_SEASON_DAYS  = 30;
-
-// Назви й теми сезонів. Сезони самі йдуть по 30 днів від епохи й ніколи не
-// закінчуються, тому таблиця лише дає їм обличчя: номер, якого тут немає,
-// показується просто як «Сезон N» — нічого не ламається, коли список
-// вичерпається. Щоб додати сезон — допиши рядок з наступним num.
-const BP_SEASONS = [
-  { num: 1,  name: 'Перший захід',     icon: '🎬', color: '#c9a0ff' },
-  { num: 2,  name: 'Крижаний банк',    icon: '❄️', color: '#7fd4ff' },
-  { num: 3,  name: 'Весняний ап',      icon: '🌱', color: '#6fe08a' },
-  { num: 4,  name: 'Квітневий блеф',   icon: '🃏', color: '#ff8fa3' },
-  { num: 5,  name: 'Травневий олл-ін', icon: '⚡', color: '#ffd24a' },
-  { num: 6,  name: 'Літній заплив',    icon: '🌊', color: '#4ab8ff' },
-  { num: 7,  name: 'Спека',            icon: '🔥', color: '#ff7a3d' },
-  { num: 8,  name: 'Золотий берег',    icon: '🏝', color: '#ffc861' },
-  { num: 9,  name: 'Осінній рейз',     icon: '🍂', color: '#e67e22' },
-  { num: 10, name: 'Хелловін',         icon: '🎃', color: '#ff7518' },
-  { num: 11, name: 'Нічна зміна',      icon: '🌌', color: '#8f7dff' },
-  { num: 12, name: 'Зимове свято',     icon: '🎄', color: '#4cd964' },
-  { num: 13, name: 'Новий заїзд',      icon: '🎆', color: '#ffe08a' },
-  { num: 14, name: 'Крижаний джекпот', icon: '💎', color: '#9ad8ff' },
-  { num: 15, name: 'Космічний рейс',   icon: '🚀', color: '#b18cff' },
-  { num: 16, name: 'Корона',           icon: '👑', color: '#d4af37' },
-  // 2027–2029 — теми під пору року, коли сезон іде (сезон = 30 днів від епохи).
-  { num: 17, name: 'Квітучий джекпот', icon: '🌸', color: '#ff9ecf' },
-  { num: 18, name: 'Піратська гавань', icon: '⚓', color: '#5aa0c8' },
-  { num: 19, name: 'Сафарі',           icon: '🦁', color: '#e0a040' },
-  { num: 20, name: 'Неонове місто',    icon: '🌃', color: '#ff3cac' },
-  { num: 21, name: 'Дикий Захід',      icon: '🤠', color: '#c47a3a' },
-  { num: 22, name: 'Шлях самурая',     icon: '⛩️', color: '#e04848' },
-  { num: 23, name: 'Відьмин котел',    icon: '🧙', color: '#8e44ad' },
-  { num: 24, name: 'Кіберпанк',        icon: '🤖', color: '#00e5ff' },
-  { num: 25, name: 'Снігова казка',    icon: '⛄', color: '#b8e8ff' },
-  { num: 26, name: 'Рік дракона',      icon: '🐉', color: '#ff5a36' },
-  { num: 27, name: 'Валентинка',       icon: '💘', color: '#ff6b9a' },
-  { num: 28, name: 'Глибокий океан',   icon: '🐙', color: '#1fb5c9' },
-  { num: 29, name: 'Скарби фараона',   icon: '🏺', color: '#d9a441' },
-  { num: 30, name: 'Орбітальна станція', icon: '🛰️', color: '#9aa9ff' },
-  { num: 31, name: 'Тропічний коктейль', icon: '🍹', color: '#ff9f43' },
-  { num: 32, name: 'Олімп',            icon: '🏛️', color: '#e6c87a' },
-  { num: 33, name: 'Казкове королівство', icon: '🏰', color: '#c39bff' },
-  { num: 34, name: 'Сага вікінгів',    icon: '🛡️', color: '#8fa3b8' },
-  { num: 35, name: 'Ніч привидів',     icon: '👻', color: '#a0a0ff' },
-  { num: 36, name: 'Золота лихоманка', icon: '⛏️', color: '#f5c542' },
-  { num: 37, name: 'Північне сяйво',   icon: '🌠', color: '#6fffd2' },
-  { num: 38, name: 'Ніч у Монако',     icon: '🎲', color: '#e74c3c' },
-  { num: 39, name: 'Джунглі',          icon: '🌴', color: '#3ecf6e' },
-  { num: 40, name: 'Арена чемпіонів',  icon: '🏆', color: '#ffd700' },
-];
-const BP_SEASON_DEFAULT = { name: '', icon: '🎫', color: '#c9a0ff' };
-
-function getBpSeasonTheme(num) {
-  return BP_SEASONS.find(s => s.num === num) || BP_SEASON_DEFAULT;
-}
-
-function getBpSeasonInfo() {
-  const len = BP_SEASON_DAYS * 86400000;
-  const num = Math.floor((Date.now() - BP_SEASON_EPOCH) / len) + 1;
-  const endsAt = BP_SEASON_EPOCH + num * len;
-  const theme = getBpSeasonTheme(num);
-  return { num, endsAt, name: theme.name, icon: theme.icon, color: theme.color };
-}
-
 function formatBpTimeLeft(ms) {
   if(ms <= 0) return 'закінчується...';
   const days  = Math.floor(ms / 86400000);
@@ -18102,64 +18092,6 @@ function formatBpTimeLeft(ms) {
   return days > 0 ? `${days}д ${hours}г` : `${hours}г ${Math.floor((ms%3600000)/60000)}хв`;
 }
 
-// 50 levels of rewards
-const BP_REWARDS = [
-  // lv: level, free: free reward, vip: vip-only reward
-  {lv:1,  free:{icon:'💰',label:'500 ₴',type:'balance',val:500},          vip:{icon:'🪙',label:'1 Слотік',type:'slotiky',val:1}},
-  {lv:2,  free:{icon:'🎟️',label:'2 Спіни',type:'freeSlots',val:2},         vip:{icon:'💰',label:'1 000 ₴',type:'balance',val:1000}},
-  {lv:3,  free:{icon:'💰',label:'1 000 ₴',type:'balance',val:1000},        vip:{icon:'🪙',label:'2 Слотіки',type:'slotiky',val:2}},
-  {lv:4,  free:{icon:'🎡',label:'1 Прокрутка',type:'freeFortune',val:1},   vip:{icon:'💰',label:'2 000 ₴',type:'balance',val:2000}},
-  {lv:5,  free:{icon:'💰',label:'2 000 ₴',type:'balance',val:2000},        vip:{icon:'🛡️',label:'Краш страх.',type:'crashInsurance',val:true}},
-  {lv:6,  free:{icon:'🎟️',label:'5 Спінів',type:'freeSlots',val:5},        vip:{icon:'🪙',label:'3 Слотіки',type:'slotiky',val:3}},
-  {lv:7,  free:{icon:'💰',label:'3 000 ₴',type:'balance',val:3000},        vip:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000}},
-  {lv:8,  free:{icon:'📦',label:'Лут-бокс',type:'lootbox',val:1},          vip:{icon:'🪙',label:'4 Слотіки',type:'slotiky',val:4}},
-  {lv:9,  free:{icon:'💰',label:'5 000 ₴',type:'balance',val:5000},        vip:{icon:'🚀',label:'VIP Буст 3д',type:'vipBoost',val:3}},
-  {lv:10, free:{icon:'🎡',label:'3 Прокрутки',type:'freeFortune',val:3},   vip:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000}, milestone:true},
-  {lv:11, free:{icon:'💰',label:'7 000 ₴',type:'balance',val:7000},        vip:{icon:'🪙',label:'5 Слотіків',type:'slotiky',val:5}},
-  {lv:12, free:{icon:'🎟️',label:'10 Спінів',type:'freeSlots',val:10},      vip:{icon:'💰',label:'15 000 ₴',type:'balance',val:15000}},
-  {lv:13, free:{icon:'💰',label:'10 000 ₴',type:'balance',val:10000},      vip:{icon:'🪙',label:'6 Слотіків',type:'slotiky',val:6}},
-  {lv:14, free:{icon:'💡',label:'3 Підказки',type:'minesHints',val:3},     vip:{icon:'💰',label:'20 000 ₴',type:'balance',val:20000}},
-  {lv:15, free:{icon:'💰',label:'15 000 ₴',type:'balance',val:15000},      vip:{icon:'🚀',label:'VIP Буст 7д',type:'vipBoost',val:7}},
-  {lv:16, free:{icon:'📦',label:'Ultra Лут',type:'lootbox',val:2},          vip:{icon:'🪙',label:'8 Слотіків',type:'slotiky',val:8}},
-  {lv:17, free:{icon:'💰',label:'20 000 ₴',type:'balance',val:20000},      vip:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000}},
-  {lv:18, free:{icon:'🎟️',label:'15 Спінів',type:'freeSlots',val:15},      vip:{icon:'🪙',label:'10 Слотіків',type:'slotiky',val:10}},
-  {lv:19, free:{icon:'💰',label:'25 000 ₴',type:'balance',val:25000},      vip:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000}},
-  {lv:20, free:{icon:'🎡',label:'5 Прокрут.',type:'freeFortune',val:5},    vip:{icon:'🦈',label:'Значок "Акула"',type:'cosmetic',val:'badge_shark'}, milestone:true},
-  {lv:21, free:{icon:'💰',label:'30 000 ₴',type:'balance',val:30000},      vip:{icon:'💰',label:'50 000 ₴',type:'balance',val:50000}},
-  {lv:22, free:{icon:'🎟️',label:'20 Спінів',type:'freeSlots',val:20},      vip:{icon:'🪙',label:'15 Слотіків',type:'slotiky',val:15}},
-  {lv:23, free:{icon:'💰',label:'40 000 ₴',type:'balance',val:40000},      vip:{icon:'💰',label:'70 000 ₴',type:'balance',val:70000}},
-  {lv:24, free:{icon:'📦',label:'Legend Лут',type:'lootbox',val:3},         vip:{icon:'🪙',label:'18 Слотіків',type:'slotiky',val:18}},
-  {lv:25, free:{icon:'💰',label:'50 000 ₴',type:'balance',val:50000},      vip:{icon:'💰',label:'100 000 ₴',type:'balance',val:100000}},
-  {lv:26, free:{icon:'🎟️',label:'25 Спінів',type:'freeSlots',val:25},      vip:{icon:'🪙',label:'20 Слотіків',type:'slotiky',val:20}},
-  {lv:27, free:{icon:'💰',label:'60 000 ₴',type:'balance',val:60000},      vip:{icon:'💰',label:'120 000 ₴',type:'balance',val:120000}},
-  {lv:28, free:{icon:'🎡',label:'7 Прокрут.',type:'freeFortune',val:7},    vip:{icon:'🪙',label:'22 Слотіки',type:'slotiky',val:22}},
-  {lv:29, free:{icon:'💰',label:'75 000 ₴',type:'balance',val:75000},      vip:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000}},
-  {lv:30, free:{icon:'💡',label:'5 Підказок',type:'minesHints',val:5},     vip:{icon:'🔥',label:'Вогняний аватар',type:'cosmetic',val:'avatar_fire'}, milestone:true},
-  {lv:31, free:{icon:'💰',label:'90 000 ₴',type:'balance',val:90000},      vip:{icon:'💰',label:'180 000 ₴',type:'balance',val:180000}},
-  {lv:32, free:{icon:'🎟️',label:'30 Спінів',type:'freeSlots',val:30},      vip:{icon:'🪙',label:'28 Слотіків',type:'slotiky',val:28}},
-  {lv:33, free:{icon:'💰',label:'100 000 ₴',type:'balance',val:100000},    vip:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000}},
-  {lv:34, free:{icon:'📦',label:'×5 Лут',type:'lootbox',val:5},            vip:{icon:'🪙',label:'30 Слотіків',type:'slotiky',val:30}},
-  {lv:35, free:{icon:'💰',label:'120 000 ₴',type:'balance',val:120000},    vip:{icon:'💰',label:'250 000 ₴',type:'balance',val:250000}},
-  {lv:36, free:{icon:'🎡',label:'10 Прокрут.',type:'freeFortune',val:10},  vip:{icon:'🪙',label:'35 Слотіків',type:'slotiky',val:35}},
-  {lv:37, free:{icon:'💰',label:'150 000 ₴',type:'balance',val:150000},    vip:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000}},
-  {lv:38, free:{icon:'🎟️',label:'40 Спінів',type:'freeSlots',val:40},      vip:{icon:'🪙',label:'40 Слотіків',type:'slotiky',val:40}},
-  {lv:39, free:{icon:'💰',label:'200 000 ₴',type:'balance',val:200000},    vip:{icon:'💰',label:'400 000 ₴',type:'balance',val:400000}},
-  {lv:40, free:{icon:'💡',label:'10 Підказок',type:'minesHints',val:10},   vip:{icon:'🐉',label:'Значок "Дракон"',type:'cosmetic',val:'badge_dragon'}, milestone:true},
-  {lv:41, free:{icon:'💰',label:'250 000 ₴',type:'balance',val:250000},    vip:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000}},
-  {lv:42, free:{icon:'🎟️',label:'50 Спінів',type:'freeSlots',val:50},      vip:{icon:'🪙',label:'55 Слотіків',type:'slotiky',val:55}},
-  {lv:43, free:{icon:'💰',label:'300 000 ₴',type:'balance',val:300000},    vip:{icon:'💰',label:'600 000 ₴',type:'balance',val:600000}},
-  {lv:44, free:{icon:'📦',label:'×10 Лут',type:'lootbox',val:10},          vip:{icon:'🪙',label:'60 Слотіків',type:'slotiky',val:60}},
-  {lv:45, free:{icon:'💰',label:'400 000 ₴',type:'balance',val:400000},    vip:{icon:'💰',label:'800 000 ₴',type:'balance',val:800000}},
-  {lv:46, free:{icon:'🎡',label:'15 Прокрут.',type:'freeFortune',val:15},  vip:{icon:'🪙',label:'70 Слотіків',type:'slotiky',val:70}},
-  {lv:47, free:{icon:'💰',label:'500 000 ₴',type:'balance',val:500000},    vip:{icon:'💰',label:'1 000 000 ₴',type:'balance',val:1000000}},
-  {lv:48, free:{icon:'🎟️',label:'75 Спінів',type:'freeSlots',val:75},      vip:{icon:'🪙',label:'80 Слотіків',type:'slotiky',val:80}},
-  {lv:49, free:{icon:'💰',label:'750 000 ₴',type:'balance',val:750000},    vip:{icon:'💰',label:'1 500 000 ₴',type:'balance',val:1500000}},
-  {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'🔱',label:'Рамка "Supreme"',type:'cosmetic',val:'name_frame'}, milestone:true},
-];
-
-// Після 50-го рівня сезон не «закінчується»: кожні BP_BONUS_XP досвіду дають
-// бонусну скриню (лут-бокс; з VIP-пропуском — ще й 2 Слотіки).
-const BP_BONUS_XP = 2000;
 function bpBonusInfo(bp) {
   const extra = Math.max(0, bp.xp - BP_MAX_LEVEL * BP_XP_PER_LEVEL);
   const earned = bp.level >= BP_MAX_LEVEL ? Math.floor(extra / BP_BONUS_XP) : 0;
@@ -18295,11 +18227,18 @@ function bpBonusCard(bp) {
 }
 
 let _bpBonusLock = false;
-function claimBpBonus() {
+async function claimBpBonus() {
   if(_bpBonusLock) return;
   const bp = getBpData();
   if(bpBonusInfo(bp).available < 1) return notify('Поки немає бонусних скринь', 'info');
   _bpBonusLock = true;
+  const srv = await serverReward('bpBonus');
+  if(srv.mode !== 'legacy') {
+    _bpBonusLock = false;
+    if(srv.mode === 'server') { playSound('bonus'); notify('🎁 Бонусна скриня: 📦 лут-бокс' + (srv.r.slotiky ? ` + 🪙 ${srv.r.slotiky} Слотіки` : '') + '!', 'success'); }
+    setTimeout(initBattlePass, 400);
+    return;
+  }
   const inc = firebase.database.ServerValue.increment;
   const updates = { bpBonusClaimed: bp.bonusClaimed + 1, lootboxes: inc(1) };
   if(bp.isVip) updates.slotiky = inc(2);
@@ -18311,7 +18250,7 @@ function claimBpBonus() {
 }
 
 let _bpClaimLock = false;
-function claimBpReward(lv, track) {
+async function claimBpReward(lv, track) {
   if(_bpClaimLock) return;  // запобігаємо подвійному кліку
   _bpClaimLock = true;
   setTimeout(() => { _bpClaimLock = false; }, 2000);
@@ -18325,6 +18264,13 @@ function claimBpReward(lv, track) {
   const reward = track === 'f' ? row.free : row.vip;
   if(track === 'v' && !bp.isVip) return notify('❌ Потрібен VIP Battle Pass!', 'error');
   if(lv > bp.level) return notify('❌ Рівень ще не досягнуто!', 'error');
+
+  const srv = await serverReward('bp', { lv, track });
+  if(srv.mode !== 'legacy') {
+    if(srv.mode === 'server') { playSound('bonus'); notify(`🎫 ${reward.icon} ${reward.label} отримано!`, 'success'); }
+    setTimeout(initBattlePass, 400);
+    return;
+  }
 
   claimed[key] = true;
   const updates = { bpClaimed: claimed };
@@ -18366,8 +18312,10 @@ function addBpXP(amount) {
   const isVip = bp.isVip;
   const earnedXP = isVip ? amount * 2 : amount; // VIP = double XP
   const newXP    = bp.xp + earnedXP;
-  const newLevel = Math.min(Math.floor(newXP / BP_XP_PER_LEVEL), BP_MAX_LEVEL);
-  const updates  = { bpXP: newXP };
+  const newLevel = bpLevelFromXp(newXP);
+  // increment, а не перезапис: XP від серверних ігор, що ще не дійшов до
+  // локальної копії, інакше губився б.
+  const updates  = { bpXP: bp.stale ? newXP : firebase.database.ServerValue.increment(earnedXP) };
 
   // Roll into the new season: bp.xp/level/claimed/isVip already read as 0/empty/false
   // above when stale, so this just persists that reset instead of leaving last
@@ -18376,7 +18324,13 @@ function addBpXP(amount) {
 
   if(newLevel > bp.level) {
     updates.bpLevel = newLevel;
-    // Notify level up
+    showBpLevelUp(newLevel);
+  }
+
+  db.ref('users/'+currentUser).update(updates);
+}
+
+function showBpLevelUp(newLevel) {
     setTimeout(() => {
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
@@ -18386,19 +18340,18 @@ function addBpXP(amount) {
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
     }, 500);
     notifyBot('player-ping', null, { to: currentUser, kind: 'bplevel', ref: { level: newLevel + 1 } });
-  }
-
-  db.ref('users/'+currentUser).update(updates);
 }
 
-function buyVipBattlePass() {
-  const cost = 500; // slotiky
+async function buyVipBattlePass() {
+  const cost = BP_VIP_PRICE_SLOTIKY;
   if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;
   }
-  db.ref('users/'+currentUser).update({
+  const srv = await serverReward('bpVip');
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'legacy') db.ref('users/'+currentUser).update({
     slotiky: (userData.slotiky||0) - cost,
     bpVip:   true,
     bpVipBoughtAt: Date.now(),
@@ -20335,7 +20288,6 @@ function withdrawFromPool() {
 // ══════════════════════════════════════════════════════
 // 🎡 DAILY SPIN
 // ══════════════════════════════════════════════════════
-const DAILY_SPIN_PRIZES = [50,100,200,500,1000,2000,200,100,50,150,300,5000];
 const DAILY_SPIN_COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#d4af37'];
 let dailySpinCanvas=null, dailySpinCtx=null, dailySpinAngle=0;
 function openDailySpinModal() {
@@ -20365,11 +20317,17 @@ function drawDailySpin(angle) {
   ctx.beginPath(); ctx.arc(cx,cy,18,0,2*Math.PI); ctx.fillStyle='#111'; ctx.fill();
   ctx.beginPath(); ctx.arc(cx,cy,14,0,2*Math.PI); ctx.fillStyle='#d4af37'; ctx.fill();
 }
-function doSpinDaily() {
+async function doSpinDaily() {
   const today=getTodayStr();
   if(userData.dailySpinDate===today) return notify('Вже крутили сьогодні!','error');
-  const btn=document.getElementById('dailySpinBtn'); btn.disabled=true;
-  const targetIdx=Math.floor(Math.random()*DAILY_SPIN_PRIZES.length);
+  const btn=document.getElementById('dailySpinBtn');
+  if(btn.disabled) return;
+  btn.disabled=true;
+  // Сектор вибирає сервер; колесо лише докручується до нього.
+  const srv = await serverReward('dailySpin');
+  if(srv.mode === 'error') { if(srv.status !== 409) btn.disabled=false; return; }
+  const server = srv.mode === 'server';
+  const targetIdx = server ? srv.r.index : Math.floor(Math.random()*DAILY_SPIN_PRIZES.length);
   const prize=DAILY_SPIN_PRIZES[targetIdx];
   const targetAngle=-(2*Math.PI/DAILY_SPIN_PRIZES.length)*targetIdx + Math.PI*1.5;
   const totalSpin=targetAngle+Math.PI*8;
@@ -20383,9 +20341,11 @@ function doSpinDaily() {
       document.getElementById('dailySpinResult').textContent='🎉 +₴'+formatNumber(prize)+'!';
       document.getElementById('dailySpinResult').style.color='#d4af37';
       document.getElementById('dailySpinStatus').textContent='Приходь завтра!';
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(prize));
-      db.ref('users/'+currentUser+'/dailySpinDate').set(today);
-      userData.balance+=prize; userData.dailySpinDate=today; updateUI();
+      if(!server) {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(prize));
+        db.ref('users/'+currentUser+'/dailySpinDate').set(today);
+        userData.balance+=prize; userData.dailySpinDate=today; updateUI();
+      }
       notify('🎡 Щоденний спін: +₴'+formatNumber(prize),'success');
       checkAchievements('spin',prize);
     }
@@ -23629,16 +23589,24 @@ function playWinSting(tier) {
 // ║  "МИ СКУЧИЛИ" — win-back для гравців що не заходили 14+ днів ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-function checkWelcomeBack() {
-  if(!currentUser || _capturedLastSeen === undefined || _capturedLastSeen === null) return;
-  const daysSince = Math.floor((Date.now() - _capturedLastSeen) / 86400000);
-  if(daysSince < 14) return;
+async function checkWelcomeBack() {
+  if(!currentUser) return;
+  // З сервером відлік — від останньої ставки на сервері (lastPlayedAt), і
+  // бонус дається раз за відсутність (welcomeBackAt); без нього — як раніше.
+  let last = _capturedLastSeen;
+  if(await serverAuthEnabled()) {
+    last = userData && userData.lastPlayedAt;
+    if(last && (userData.welcomeBackAt || 0) > last) return;
+  }
+  if(last === undefined || last === null) return;
+  const daysSince = Math.floor((Date.now() - last) / 86400000);
+  if(daysSince < WELCOME_BACK_MIN_DAYS) return;
   // Не показуємо частіше разу на день навіть при повторних вхід-виходах того ж дня
   const todayKey = new Date().toDateString();
   if(localStorage.getItem('welcomeBackShown') === todayKey) return;
   localStorage.setItem('welcomeBackShown', todayKey);
 
-  const bonus = Math.min(5000, 300 + daysSince * 250); // росте з кількістю днів, кап 5000
+  const bonus = welcomeBackBonus(daysSince); // росте з кількістю днів, кап 5000
   setTimeout(() => showWelcomeBackModal(daysSince, bonus), 1600);
 }
 
@@ -23657,8 +23625,11 @@ function showWelcomeBackModal(days, bonus) {
   openModal('welcomeBack', html);
 }
 
-function claimWelcomeBackBonus(bonus) {
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bonus));
+async function claimWelcomeBackBonus(bonus) {
+  const srv = await serverReward('welcomeBack');
+  if(srv.mode === 'error') { closeModal('welcomeBack'); return; }
+  if(srv.mode === 'server') bonus = srv.r.amount;
+  else db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(bonus));
   pushCardTx(currentUser, {dir:'in', amount:bonus, title:'Бонус повернення', subtitle:'Ми скучили!', icon:'🥺'}, getActiveCardId());
   notify('🎁 +₴'+formatNumber(bonus)+' — з поверненням!', 'success');
   spawnWinCoins(bonus);
