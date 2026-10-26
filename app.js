@@ -7132,11 +7132,27 @@ async function requestPushPermission() {
 // працює лише поки вкладка відкрита у фоні. Тихо нічого не робить, доки
 // FCM_VAPID_KEY лишається заглушкою (немає токена — немає push, решта сайту
 // працює як і раніше).
+const _scriptLoads = {};
+function loadScriptOnce(src) {
+  if(!_scriptLoads[src]) {
+    _scriptLoads[src] = new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src; el.async = true;
+      el.onload = resolve;
+      el.onerror = () => { delete _scriptLoads[src]; reject(new Error('Не вдалося завантажити ' + src)); };
+      document.head.appendChild(el);
+    });
+  }
+  return _scriptLoads[src];
+}
 async function registerFcmToken() {
   if(!currentUser || !('serviceWorker' in navigator) || FCM_VAPID_KEY === 'REPLACE_WITH_YOUR_VAPID_KEY') return;
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
-    if(typeof firebase === 'undefined' || !firebase.messaging) return;
+    if(typeof firebase === 'undefined') return;
+    // SDK повідомлень (~100 КБ) вантажимо лише тут, а не на кожному відкритті сторінки.
+    if(!firebase.messaging) await loadScriptOnce('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
+    if(!firebase.messaging) return;
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
     if(token) db.ref('users/'+currentUser+'/fcmTokens/'+token).set(true);
