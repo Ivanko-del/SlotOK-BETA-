@@ -1,4 +1,9 @@
 // ============================================================
+// ЗГЕНЕРОВАНИЙ ФАЙЛ — не редагуй руками.
+// Джерело: src/app/*.js, збірка: npm run build:app (scripts/build-app.js).
+// ============================================================
+// ─── src/app/01-core.js ───
+// ============================================================
 // SlotOK Casino — app.js
 // Firebase 8.10.1 + Realtime Database
 // Project: nye-slotok
@@ -341,6 +346,7 @@ function startDataSync() {
     } catch(e) { console.error("Sync error:", e); }
 }
 
+// ─── src/app/02-ui-admin-rights.js ───
 // ============================================
 // ІНТЕРФЕЙС
 // ============================================
@@ -645,6 +651,7 @@ function addToHistory(msg) {
     }
 }
 
+// ─── src/app/03-bonus-deposit-withdraw.js ───
 // ============================================
 // ЩОДЕННИЙ БОНУС
 // ============================================
@@ -1220,6 +1227,7 @@ function loadMyWithdraws() {
     });
 }
 
+// ─── src/app/04-slots.js ───
 // ============================================
 // ІГРИ
 // ============================================
@@ -1547,6 +1555,7 @@ function finishDiamondSlots(bet, srvR) {
   }, 300);
 }
 
+// ─── src/app/05-global-roulette-crash.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║              🎡  GLOBAL ROULETTE  —  v58                   ║
 // ║  Спін раз на годину, всі гравці разом, Firebase-синхронізація║
@@ -2180,6 +2189,7 @@ async function cashoutCrash() {
     document.getElementById('crashCashoutBtn').classList.add('hidden'); 
 }
 
+// ─── src/app/06-videopoker-mines-plinko-balloon.js ───
 // ============================================
 // СПІЛЬНА КОЛОДА КАРТ — create/shuffle/isRed для покеру, блекджеку,
 // карт (Дурень), відеопокеру й бакари. Раніше кожна гра мала свою копію
@@ -2742,6 +2752,7 @@ function resetBalloon() {
 let rrSurvived = 0, rrBet = 0, rrActive = false;
 const RR_CHAMBERS = 6;
 
+// ─── src/app/07-rr-quiz-session-settings.js ───
 function spinRR() {
   const rev = document.getElementById('rrRevolver');
   const angle = 60 * Math.floor(Math.random() * 6) + Math.random()*30;
@@ -3244,6 +3255,7 @@ function loadLiveWallpaper() {
 
 
 
+// ─── src/app/08-auth-screen-horse-colorwheel.js ───
 // ═══════════════════════════════════════════
 // AUTH SCREEN — particles + stats
 // ═══════════════════════════════════════════
@@ -3609,6 +3621,7 @@ if (!window._chatMediaClickBound) {
   });
 }
 
+// ─── src/app/09-chat-affiliate-lobby.js ───
 function initChat() {
   const msgsEl = document.getElementById('chatMessages');
   if(!msgsEl) return;
@@ -4101,6 +4114,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ─── src/app/10-auth.js ───
 // ============================================
 // РЕЙТИНГ
 // ============================================
@@ -4327,6 +4341,7 @@ async function authRegister() {
   });
 }
 
+// ─── src/app/11-password-recovery.js ───
 // ============================================================
 // ВІДНОВЛЕННЯ ПАРОЛЯ
 // ============================================================
@@ -4566,6 +4581,7 @@ function logout(){
   done();
 }
 
+// ─── src/app/12-admin-panel.js ───
 // ============================================
 // АДМІН-ПАНЕЛЬ
 // ============================================
@@ -4754,6 +4770,7 @@ function wipeEconomy_auto() {
     });
 }
 
+// ─── src/app/13-misc.js ───
 // ============================================
 // ІНШІ ФУНКЦІЇ
 // ============================================
@@ -4966,6 +4983,7 @@ window.openUserProfile = function(name) {
         } 
     }); 
 }
+// ─── src/app/14-blackjack.js ───
 // ============================================
 // БЛЕКДЖЕК
 // ============================================
@@ -5355,6 +5373,7 @@ function bjCardVal(card) {
   return Math.min(10, STANDARD_RANKS.indexOf(card.rank)+2);
 }
 
+// ─── src/app/15-keno-scratch-fortune.js ───
 // ============================================
 // КЕНО
 // ============================================
@@ -5680,6 +5699,7 @@ async function spinFortune() {
   }, duration/steps);
 }
 
+// ─── src/app/16-home-chat.js ───
 // ============================================
 // ЧАТ ЛОБІ (moved to home tab, new version below)
 // ============================================
@@ -5853,6 +5873,7 @@ function sendLobbyMsg() {
 }
 
 
+// ─── src/app/17-changelog.js ───
 // ════════════════════════════════════════════════
 // ===== CHANGELOG / СТРІЧКА ОНОВЛЕНЬ =====
 // ════════════════════════════════════════════════
@@ -7328,6 +7349,7 @@ function checkChangelogBadge() {
 }
 
 
+// ─── src/app/18-news-bots.js ───
 // ============================================
 // ===== НОВИНИ =====
 // ============================================
@@ -7727,6 +7749,7 @@ function stopBotEngine() {
   if(_botEngine) { clearInterval(_botEngine); _botEngine = null; }
 }
 
+// ─── src/app/19-features-fair-push-2fa.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -8200,6 +8223,7 @@ function startAllBackgroundTasks() {
 }
 
 
+// ─── src/app/20-big-patch-anticheat-admins.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  НОВІ ФУНКЦІЇ: пароль, CSV, пошук, AI, мова, крипто, P2P   ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -9183,6 +9207,7 @@ function buyProfileEffect(effectId, price) {
   notify('✅ Ефект активовано!', 'success');
 }
 
+// ─── src/app/21-modals-profile-tournaments.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  UNIVERSAL MODAL MANAGER — виправляє всі модали             ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -10275,6 +10300,7 @@ function rejectDeposit(id, user) {
   notify('Депозит відхилено', 'info');
 }
 
+// ─── src/app/22-clans-leaderboard-monopoly.js ───
 // ============================================
 // ОНОВЛЕНИЙ switchTab — ініціалізація при відкритті
 // ============================================
@@ -11114,6 +11140,7 @@ function monoLog(text, cls) {
 }
 
 
+// ─── src/app/23-vip-hourly-lootbox-quests.js ───
 // ============================================
 // ===== VIP СИСТЕМА =====
 // ============================================
@@ -12160,6 +12187,7 @@ function scratchReset() {
 }
 
 
+// ─── src/app/24-settings-notifications-mp.js ───
 // ============================================
 // ===== MONO PASS (пропустити купівлю) =====
 // ============================================
@@ -13015,6 +13043,7 @@ function mpAddLog2(text, cls) {
   log.scrollTop = log.scrollHeight;
 }
 
+// ─── src/app/25-durak-currency-cashier-tabs.js ───
 // ============================================
 // ===== ГРА В КАРТИ: ДУРЕНЬ =====
 // ============================================
@@ -14083,6 +14112,7 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   if(highEl) highEl.textContent = 'Max: '+fmt(maxP)+'₴';
 }
 
+// ─── src/app/26-tower-hilo-dice-double.js ───
 // ============================================================
 // ===== TOWER CLIMB GAME =====
 // ============================================================
@@ -14541,6 +14571,7 @@ async function betDouble(color) {
   }, 3000);
 }
 
+// ─── src/app/27-sports.js ───
 // ============================================================
 // ===== СПОРТ V2 — ESPN PUBLIC API (без ключа) =====
 // ============================================================
@@ -15226,6 +15257,7 @@ function scheduleQuickSettle(betId, bet) {
   }, 30000); // 30 секунд — для демо/тестування
 }
 
+// ─── src/app/28-pvp-leaderboard-limbo.js ───
 // ╔══════════════════════════════════════════════════════╗
 // ║           🪙 COINFLIP PvP                           ║
 // ╚══════════════════════════════════════════════════════╝
@@ -16112,6 +16144,7 @@ pvpStyle.textContent = `
 document.head.appendChild(pvpStyle);
 
 
+// ─── src/app/29-support-chat.js ───
     // ============================================================
 // ===== AI SUPPORT CHAT =====
 // ============================================================
@@ -16720,6 +16753,7 @@ async function aiSupportReply(userMsg) {
 
 
 
+// ─── src/app/30-home-achievements-stream.js ───
 // ========================
 // HOME STATS + JACKPOT
 // ========================
@@ -17104,6 +17138,7 @@ function closeStreamViewer() {
 
 
 
+// ─── src/app/31-slotiky-tournament-live.js ───
 // ============================================================
 // ===== СЛОТІКИ — внутрішня валюта =====
 // ============================================================
@@ -17981,6 +18016,7 @@ function goalBurst(isHome) {
 
 
 
+// ─── src/app/32-music-battlepass-stats.js ───
 // ============================================================
 // ===== ФОНОВА МУЗИКА — Web Audio API ambient casino =====
 // ============================================================
@@ -18515,6 +18551,7 @@ function initStatsTab() {
 }
 
 
+// ─── src/app/33-bank-card.js ───
 // ============================================================
 // ╔══════════════════════════════════════════════════════════╗
 // ║          SLOTOK BANK & VIRTUAL CARD SYSTEM               ║
@@ -18710,6 +18747,7 @@ function selectCardTopupAmt(amt, btn) {
 }
 
 
+// ─── src/app/34-axiom-pm.js ───
 // ============================================================
 // ===== SLOTOK ↔ AXIOM BANK INTEGRATION =====
 // ============================================================
@@ -19716,6 +19754,7 @@ function showGameHelp(gameId) {
 // 🐉 DRAGON TOWER
 // ══════════════════════════════════════════════════════
 let dragonState = { active:false, level:0, bet:0, dragons:1, cols:3, mult:1 };
+// ─── src/app/35-minigames-dragon-penalty-duck.js ───
 function initDragonTower() { renderDragonGrid(); }
 function setDragonDiff(cols, dragons, el) {
   dragonState.cols = cols; dragonState.dragons = dragons;
@@ -20199,6 +20238,7 @@ function finishDuckShoot(allHit) {
 // CSS for duck animation
 (()=>{const s=document.createElement('style');s.textContent='@keyframes duckFly{from{transform:translateX(-40px) scaleX(-1)}to{transform:translateX(200px) scaleX(-1)}}';document.head.appendChild(s);})();
 
+// ─── src/app/36-lottery-dailyspin-themes.js ───
 // ══════════════════════════════════════════════════════
 // 🎟️ LOTTERY SYSTEM
 // ══════════════════════════════════════════════════════
@@ -20637,6 +20677,7 @@ function watchPmUnread() {
 }
 
 
+// ─── src/app/37-cashier-v70.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  КАСА v70 — 3D КАРТКА + ТИМЧАСОВА КАРТКА ПАРТНЕРА          ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -22280,6 +22321,7 @@ function applyCardSkin(skinId) {
   renderCardPanel();
 }
 
+// ─── src/app/38-banners-moderation.js ───
 // Тимчасових карток SlotOK більше не існує — жодних термінів дії та
 // нагадувань про продовження тут немає.
 
@@ -22629,6 +22671,7 @@ function initModerationPanel() {
   loadFlaggedPlayers();
 }
 
+// ─── src/app/39-chess.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ШАХИ — повний рушій з нуля (без зовнішніх бібліотек)        ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -23473,6 +23516,7 @@ function chessResolvePvpGame(status, loserColor) {
   });
 }
 
+// ─── src/app/40-celebration-winback-onboarding.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  WIN CELEBRATION v2 — BIG WIN / MEGA WIN + звук + тряска     ║
 // ╚══════════════════════════════════════════════════════════════╝

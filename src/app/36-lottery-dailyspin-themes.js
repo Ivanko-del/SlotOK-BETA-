@@ -1,0 +1,438 @@
+// ══════════════════════════════════════════════════════
+// 🎟️ LOTTERY SYSTEM
+// ══════════════════════════════════════════════════════
+function loadLottery() {
+  const ticketPrice=100;
+  // Get or init current week pool
+  const weekKey = getWeekStr();
+  db.ref('lottery/'+weekKey).once('value', snap => {
+    const data=snap.val()||{pool:0,tickets:{}};
+    document.getElementById('lotteryPrizeDisplay').textContent='₴'+formatNumber(data.pool||0);
+    // My tickets
+    const mine=Object.entries(data.tickets||{}).filter(([_,t])=>t.user===currentUser);
+    const myEl=document.getElementById('lotteryMyTickets');
+    if(myEl) myEl.innerHTML=mine.length?mine.map(([id,t])=>`<div class="box" style="padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>🎟️ Квиток #${id.slice(-4).toUpperCase()}</span><span style="color:#555;font-size:12px;">${new Date(t.ts).toLocaleDateString('uk-UA')}</span></div>`).join(''):
+      '<div style="color:#555;text-align:center;padding:14px;">Ви ще не купили квитків</div>';
+    // Countdown to Sunday 20:00
+    const now=new Date(), next=new Date(); next.setDate(now.getDate()+(7-now.getDay())%7||7); next.setHours(20,0,0,0);
+    document.getElementById('lotteryCountdown').textContent=next.toLocaleDateString('uk-UA')+' о 20:00';
+  });
+  // History
+  db.ref('lottery_history').limitToLast(5).once('value',snap=>{
+    const el=document.getElementById('lotteryHistory');
+    if(!el) return;
+    const d=snap.val();
+    if(!d){el.innerHTML='<div style="color:#555;text-align:center;padding:14px;">Ще не було розіграшів</div>';return;}
+    el.innerHTML=Object.values(d).reverse().map(h=>`<div class="box" style="padding:10px;margin-bottom:6px;"><div style="font-weight:bold;color:#d4af37;">👑 ${h.winner}</div><div style="font-size:12px;color:#555;">+₴${formatNumber(h.prize)} • ${new Date(h.ts).toLocaleDateString('uk-UA')}</div></div>`).join('');
+  });
+}
+function buyLotteryTickets() {
+  const count=parseInt(document.getElementById('lotteryTickets').value)||1;
+  const cost=count*100;
+  if(!validateBet(cost)) return;
+  const weekKey=getWeekStr();
+  const updates={};
+  for(let i=0;i<count;i++) {
+    const tid=db.ref().push().key;
+    updates[`lottery/${weekKey}/tickets/${tid}`]={user:currentUser,ts:Date.now()};
+  }
+  updates[`lottery/${weekKey}/pool`]=firebase.database.ServerValue.increment(cost*0.8); // 80% to pool
+  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-cost));
+  userData.balance-=cost; updateUI();
+  db.ref().update(updates).then(()=>{
+    notify(`🎟️ Куплено ${count} квитків за ₴${formatNumber(cost)}!`,'success');
+    loadLottery();
+    checkAchievements('lottery',null);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// 📈 INVEST POOL
+// ══════════════════════════════════════════════════════
+function loadInvestPool() {
+  db.ref('investPool').once('value', snap=>{
+    const pool=snap.val()||{total:0,investors:{}};
+    const myShare=pool.investors?.[currentUser]?.amount||0;
+    const total=pool.total||0;
+    document.getElementById('investMyShare').textContent='₴'+formatNumber(myShare);
+    document.getElementById('investTotalPool').textContent='₴'+formatNumber(total);
+    document.getElementById('investMyPercent').textContent=total>0?((myShare/total)*100).toFixed(1)+'%':'0%';
+  });
+}
+function investInPool() {
+  const amt=parseInt(document.getElementById('investAmount').value)||0;
+  if(!validateBet(amt)) return;
+  const updates={};
+  updates['investPool/total']=firebase.database.ServerValue.increment(amt);
+  updates['investPool/investors/'+currentUser+'/amount']=firebase.database.ServerValue.increment(amt);
+  updates['investPool/investors/'+currentUser+'/ts']=Date.now();
+  updates['users/'+currentUser+'/balance']=firebase.database.ServerValue.increment(-amt);
+  userData.balance-=amt; updateUI();
+  db.ref().update(updates).then(()=>{notify('📈 Вкладено в пул!','success');loadInvestPool();});
+}
+function withdrawFromPool() {
+  const amt=parseInt(document.getElementById('withdrawInvest').value)||0;
+  db.ref('investPool/investors/'+currentUser+'/amount').once('value',snap=>{
+    const myAmt=snap.val()||0;
+    if(amt>myAmt) return notify('Недостатньо коштів у пулі','error');
+    const upd={};
+    upd['investPool/total']=firebase.database.ServerValue.increment(-amt);
+    upd['investPool/investors/'+currentUser+'/amount']=firebase.database.ServerValue.increment(-amt);
+    upd['users/'+currentUser+'/balance']=firebase.database.ServerValue.increment(amt);
+    userData.balance+=amt; updateUI();
+    db.ref().update(upd).then(()=>{notify('💸 Виведено з пулу!','success');loadInvestPool();});
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// 🎡 DAILY SPIN
+// ══════════════════════════════════════════════════════
+const DAILY_SPIN_COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#d4af37'];
+let dailySpinCanvas=null, dailySpinCtx=null, dailySpinAngle=0;
+function openDailySpinModal() {
+  openTabModal('dailySpinModal');
+  const today=getTodayStr();
+  const spun=userData.dailySpinDate===today;
+  const btn=document.getElementById('dailySpinBtn');
+  const status=document.getElementById('dailySpinStatus');
+  if(spun) { btn.disabled=true; status.textContent='Вже крутили сьогодні. Повертайтеся завтра!'; }
+  else { btn.disabled=false; status.textContent='Безкоштовно раз на день'; }
+  drawDailySpin(dailySpinAngle);
+}
+function drawDailySpin(angle) {
+  const canvas=document.getElementById('dailySpinCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const cx=130,cy=130,r=120,n=DAILY_SPIN_PRIZES.length;
+  ctx.clearRect(0,0,260,260);
+  for(let i=0;i<n;i++) {
+    const start=angle+i*(2*Math.PI/n), end=start+2*Math.PI/n;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+    ctx.fillStyle=DAILY_SPIN_COLORS[i]; ctx.fill();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+(end-start)/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff'; ctx.font='bold 11px Orbitron,sans-serif';
+    ctx.fillText('₴'+DAILY_SPIN_PRIZES[i],r-8,4); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(cx,cy,18,0,2*Math.PI); ctx.fillStyle='#111'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,14,0,2*Math.PI); ctx.fillStyle='#d4af37'; ctx.fill();
+}
+async function doSpinDaily() {
+  const today=getTodayStr();
+  if(userData.dailySpinDate===today) return notify('Вже крутили сьогодні!','error');
+  const btn=document.getElementById('dailySpinBtn');
+  if(btn.disabled) return;
+  btn.disabled=true;
+  // Сектор вибирає сервер; колесо лише докручується до нього.
+  const srv = await serverReward('dailySpin');
+  if(srv.mode === 'error') { if(srv.status !== 409) btn.disabled=false; return; }
+  const server = srv.mode === 'server';
+  const targetIdx = server ? srv.r.index : Math.floor(Math.random()*DAILY_SPIN_PRIZES.length);
+  const prize=DAILY_SPIN_PRIZES[targetIdx];
+  const targetAngle=-(2*Math.PI/DAILY_SPIN_PRIZES.length)*targetIdx + Math.PI*1.5;
+  const totalSpin=targetAngle+Math.PI*8;
+  let current=dailySpinAngle, speed=0.3, target=current+totalSpin;
+  const anim=()=>{
+    current+=speed; speed=Math.max(0.01,(target-current)*0.04+0.01);
+    drawDailySpin(current);
+    if(current<target) requestAnimationFrame(anim);
+    else {
+      dailySpinAngle=current;
+      document.getElementById('dailySpinResult').textContent='🎉 +₴'+formatNumber(prize)+'!';
+      document.getElementById('dailySpinResult').style.color='#d4af37';
+      document.getElementById('dailySpinStatus').textContent='Приходь завтра!';
+      if(!server) {
+        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(prize));
+        db.ref('users/'+currentUser+'/dailySpinDate').set(today);
+        userData.balance+=prize; userData.dailySpinDate=today; updateUI();
+      }
+      notify('🎡 Щоденний спін: +₴'+formatNumber(prize),'success');
+      checkAchievements('spin',prize);
+    }
+  };
+  anim();
+}
+
+// ══════════════════════════════════════════════════════
+// 📣 SHARE WIN
+// ══════════════════════════════════════════════════════
+let pendingShare={amount:0,game:'',mult:0};
+function openShareWin(amount,game,mult) {
+  pendingShare={amount,game,mult};
+  document.getElementById('shareWinAmount').textContent='₴'+formatNumber(amount);
+  document.getElementById('shareWinGame').textContent=game+(mult?' • x'+mult:'');
+  document.getElementById('shareWinUser').textContent=currentUser||'Гравець';
+  openTabModal('shareWinModal');
+}
+function generateShareImage() {
+  const canvas=document.getElementById('shareCanvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=400; canvas.height=220;
+  const grad=ctx.createLinearGradient(0,0,400,220);
+  grad.addColorStop(0,'#1a0500'); grad.addColorStop(1,'#2d0800');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,400,220);
+  ctx.strokeStyle='#d4af37'; ctx.lineWidth=3;
+  ctx.strokeRect(3,3,394,214);
+  ctx.fillStyle='#d4af37'; ctx.font='bold 32px Orbitron,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('SLOTOK',200,50);
+  ctx.fillStyle='#fff'; ctx.font='bold 42px Orbitron,sans-serif';
+  ctx.fillText('₴'+formatNumber(pendingShare.amount),200,120);
+  ctx.fillStyle='#aaa'; ctx.font='14px Arial,sans-serif';
+  ctx.fillText(pendingShare.game,200,155);
+  ctx.fillStyle='#555'; ctx.font='12px Arial,sans-serif';
+  ctx.fillText('@'+currentUser+' • slotok.app',200,190);
+  canvas.style.display='block';
+  const link=document.createElement('a'); link.download='slotok_win.png';
+  link.href=canvas.toDataURL(); link.click();
+  canvas.style.display='none';
+}
+function shareToTelegram() {
+  const text=`🎰 Виграв ₴${formatNumber(pendingShare.amount)} в ${pendingShare.game} на @SlotOKBot! Грай зі мною: https://t.me/SlotOK_DepositBot`;
+  window.open('https://t.me/share/url?url=https://t.me/SlotOK_DepositBot&text='+encodeURIComponent(text),'_blank');
+}
+
+// ══════════════════════════════════════════════════════
+// 📆 EVENT CALENDAR
+// ══════════════════════════════════════════════════════
+const SCHEDULED_EVENTS = [
+  { day:0, hour:20, icon:'🎟️', name:'Лотерея', desc:'Щотижневий розіграш призового фонду', color:'#d4af37' },
+  { day:3, hour:18, icon:'🏆', name:'Середній турнір', desc:'PvP турнір з призами 5000₴', color:'#4a9eff' },
+  { day:5, hour:20, icon:'🎊', name:'Бонусні вихідні', desc:'Всі виграші x2 до неділі 23:59', color:'#3dd68c' },
+  { day:6, hour:14, icon:'👑', name:'VIP-стрим', desc:'Ексклюзивна гра для VIP+ гравців', color:'#c9a0ff' },
+];
+function openEventCalendar() { openTabModal('eventCalendarModal'); renderEventCalendar(); }
+function renderEventCalendar() {
+  const el=document.getElementById('eventCalendarFull');
+  if(!el) return;
+  const now=new Date(), dow=now.getDay();
+  el.innerHTML=SCHEDULED_EVENTS.map(e=>{
+    const daysUntil=(e.day-dow+7)%7||7;
+    const dateLabel=daysUntil===1?'Завтра':daysUntil<7?`Через ${daysUntil} дні`:'Цього тижня';
+    return `<div style="background:var(--box);border:1px solid ${e.color}44;border-left:4px solid ${e.color};border-radius:12px;padding:14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:24px;">${e.icon}</span>
+        <div><div style="font-weight:bold;color:${e.color};">${e.name}</div><div style="font-size:12px;color:#555;">${dateLabel} о ${e.hour}:00</div></div>
+      </div>
+      <div style="font-size:13px;color:#aaa;">${e.desc}</div>
+    </div>`;
+  }).join('');
+}
+function initEventCalendarMini() {
+  const el=document.getElementById('eventCalendarMini');
+  const labelEl=document.getElementById('nextEventLabel');
+  if(!el) return;
+  const now=new Date(), dow=now.getDay();
+  const next=SCHEDULED_EVENTS.map(e=>({...e,days:(e.day-dow+7)%7||7})).sort((a,b)=>a.days-b.days)[0];
+  if(next && labelEl) labelEl.textContent=next.icon+' '+next.name+' — через '+next.days+'д';
+  el.innerHTML=SCHEDULED_EVENTS.slice(0,4).map(e=>`<div style="background:${e.color}22;border:1px solid ${e.color}55;border-radius:10px;padding:8px 10px;white-space:nowrap;flex-shrink:0;"><div style="font-size:16px;">${e.icon}</div><div style="font-size:10px;color:${e.color};font-weight:bold;">${e.name}</div></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// 🎰 PROGRESSIVE JACKPOT
+// ══════════════════════════════════════════════════════
+function initProgressiveJackpot() {
+  db.ref('jackpot/amount').on('value', snap=>{
+    const amt=snap.val()||50000;
+    const el=document.getElementById('jackpotDisplay');
+    if(el) el.textContent='₴'+formatNumber(Math.floor(amt));
+  });
+}
+// Add 0.1% of each wager to jackpot (patch into addWager)
+const _origAddWager=window.addWager;
+if(typeof addWager==='function') {
+  window.addWager=function(amt){
+    _origAddWager && _origAddWager(amt);
+    db.ref('jackpot/amount').set(firebase.database.ServerValue.increment(Math.floor(amt*0.001)));
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// 🎨 ACCENT COLOR SYSTEM
+// ══════════════════════════════════════════════════════
+function setAccentColor(hex, el) {
+  if(!hex) return;
+  document.documentElement.style.setProperty('--accent', hex);
+  localStorage.setItem('slotok_accent', hex);
+  document.querySelectorAll('.accent-dot').forEach(function(d){ d.style.border='2px solid transparent'; });
+  if(el) el.style.border = '2px solid #fff';
+  var prev = document.getElementById('accentColorPreview');
+  if(prev) prev.style.background = hex;
+  var pick = document.getElementById('accentColorCustom');
+  if(pick) pick.value = hex;
+}
+function loadAccentColor() {
+  var saved = localStorage.getItem('slotok_accent');
+  if(saved) {
+    document.documentElement.style.setProperty('--accent', saved);
+    var prev = document.getElementById('accentColorPreview');
+    if(prev) prev.style.background = saved;
+    var pick = document.getElementById('accentColorCustom');
+    if(pick) pick.value = saved;
+  }
+  loadSavedBackground();
+}
+
+// ─── BACKGROUND ───
+var BG_PRESETS = {
+  dark:'#050505',navy:'linear-gradient(135deg,#050515,#0a0a2e)',
+  forest:'linear-gradient(135deg,#050f05,#0a1a0a)',
+  crimson:'linear-gradient(135deg,#150505,#2a0808)',
+  purple:'linear-gradient(135deg,#0d0517,#1a0530)',
+  ocean:'linear-gradient(135deg,#020d1a,#051a2e)',
+  sunset:'linear-gradient(135deg,#1a0a00,#2d1500)'
+};
+function setBgPreset(key, el) {
+  document.querySelectorAll('.bg-preset').forEach(function(d){ d.style.border='2px solid transparent'; });
+  if(el) el.style.border = '2px solid var(--accent)';
+  var bg = BG_PRESETS[key] || '#050505';
+  applyBackground(bg);
+  localStorage.setItem('slotok_bg_type','preset');
+  localStorage.setItem('slotok_bg_value', bg);
+}
+function setBgCustomColor(hex) {
+  applyBackground(hex);
+  localStorage.setItem('slotok_bg_type','color');
+  localStorage.setItem('slotok_bg_value', hex);
+}
+function applyBackground(bg) {
+  document.body.style.backgroundImage = '';
+  document.body.style.background = bg;
+}
+function setBgPhoto(input) {
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var url = e.target.result;
+    document.body.style.background = 'url('+url+') center/cover fixed';
+    try{ localStorage.setItem('slotok_bg_type','photo'); localStorage.setItem('slotok_bg_photo', url); }catch(ex) { console.warn(ex); }
+    var preview = document.getElementById('bgPhotoPreview');
+    var img = document.getElementById('bgPhotoImg');
+    if(preview) preview.style.display = 'block';
+    if(img) img.src = url;
+  };
+  reader.readAsDataURL(file);
+}
+function removeBgPhoto() {
+  document.body.style.background = '';
+  localStorage.removeItem('slotok_bg_type');
+  localStorage.removeItem('slotok_bg_photo');
+  var preview = document.getElementById('bgPhotoPreview');
+  if(preview) preview.style.display = 'none';
+  var input = document.getElementById('bgPhotoInput');
+  if(input) input.value = '';
+}
+function loadSavedBackground() {
+  var type  = localStorage.getItem('slotok_bg_type');
+  var value = localStorage.getItem('slotok_bg_value');
+  if(type === 'photo') {
+    var photo = localStorage.getItem('slotok_bg_photo');
+    if(photo) {
+      document.body.style.background = 'url('+photo+') center/cover fixed';
+      var preview = document.getElementById('bgPhotoPreview');
+      var img = document.getElementById('bgPhotoImg');
+      if(preview) preview.style.display='block';
+      if(img) img.src = photo;
+    }
+  } else if(value) {
+    applyBackground(value);
+  }
+}
+function toggleStreamerMode(on) {
+  saveSetting('streamer',on);
+  document.querySelectorAll('.bal').forEach(el=>el.textContent=on?'***':formatNumber(userData?.balance||0));
+  document.querySelectorAll('#profileName,#profileId').forEach(el=>{ if(on && !el._orig) { el._orig=el.textContent; el.textContent='***'; } else if(!on && el._orig) { el.textContent=el._orig; el._orig=null; }});
+  notify(on?'📺 Режим стримера увімкнено (баланс прихований)':'📺 Режим стримера вимкнено','info');
+}
+function toggleFocusMode(on) {
+  saveSetting('focus',on);
+  const toHide=['#jackpotTicker','.home-tabs','.wins-feed','.providers-scroll','#hp-chat'];
+  toHide.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display=on?'none':''));
+  notify(on?'🎯 Режим фокусу увімкнено':'🎯 Режим фокусу вимкнено','info');
+}
+
+// ══════════════════════════════════════════════════════
+// 🌅 DYNAMIC BACKGROUND
+// ══════════════════════════════════════════════════════
+function applyDynamicBg(on) {
+  if(!on) { document.body.style.background=''; return; }
+  const h=new Date().getHours();
+  let bg='';
+  if(h>=5&&h<9)   bg='linear-gradient(180deg,#1a0a00 0%,#050505 100%)'; // Ранок
+  else if(h>=9&&h<17)  bg='linear-gradient(180deg,#050510 0%,#050505 100%)'; // День
+  else if(h>=17&&h<21) bg='linear-gradient(180deg,#1a0505 0%,#050505 100%)'; // Вечір
+  else               bg='linear-gradient(180deg,#000005 0%,#050505 100%)'; // Ніч
+  document.body.style.background=bg;
+}
+
+// ══════════════════════════════════════════════════════
+// 📊 MINI BALANCE CHART
+// ══════════════════════════════════════════════════════
+function renderMiniBalanceChart() {
+  const canvas=document.getElementById('miniBalanceChart');
+  if(!canvas) return;
+  // Read last 30 games from history
+  db.ref('users/'+currentUser+'/balanceHistory').limitToLast(30).once('value',snap=>{
+    const data=snap.val()?Object.values(snap.val()):[userData?.balance||1000];
+    const ctx=canvas.getContext('2d');
+    const w=canvas.offsetWidth||300, h=50;
+    canvas.width=w; canvas.height=h;
+    const min=Math.min(...data), max=Math.max(...data), range=max-min||1;
+    ctx.clearRect(0,0,w,h);
+    ctx.beginPath();
+    data.forEach((v,i)=>{ const x=i/(data.length-1||1)*w; const y=h-(v-min)/range*(h-4)-2; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+    ctx.strokeStyle='#d4af37'; ctx.lineWidth=2; ctx.stroke();
+    const grad=ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,'rgba(212,175,55,.3)'); grad.addColorStop(1,'transparent');
+    ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.fillStyle=grad; ctx.fill();
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// ADD GAME HELP ENTRIES FOR NEW GAMES
+// ══════════════════════════════════════════════════════
+Object.assign(GAME_HELP, {
+  dragon: { title:'🐉 Dragon Tower', rules:`<b>Мета:</b> Піднімайся по вежі — кожен рівень безпечно пройдений = більший множник.<br><br><b>Як грати:</b><br>1. Вибери складність: скільки драконів на ряд<br>2. Натискай на яйця — якщо не потрапив на дракона, множник зростає<br>3. Натисни "Забрати" в будь-який момент<br><br><b>Складність:</b><br>Легка (1/3) → Mid → Хардкор (3/4)<br>8 рівнів всього, пройди всі = AUTO кешаут` },
+  penalty: { title:'⚽ Penalty Kick', rules:`<b>Мета:</b> Вибери куток і бий — воротар рандомно стрибає.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Вибери один з 6 кутків<br>3. Воротар блокує рандомний куток<br>4. Забив = x1.16 виплата!<br><br><b>Шанс:</b> 5/6 = 83.3%` },
+  bowling: { title:'🎳 Bowling', rules:`<b>Мета:</b> Вибери силу кидка і збий якомога більше кеглів.<br><br><b>Виплати:</b><br>🎳 СТРАЙК (10) → x3.5<br>7-9 кеглів → x1.25<br>4-6 кеглів → x0.7<br>1-3 кеглі → x0.2<br>0 кеглів → x0<br><br><b>Порада:</b> Надто сильний кидок (понад 60%) може піти в жолоб — шукай баланс між силою і точністю!` },
+  archery: { title:'🎯 Archery', rules:`<b>Мета:</b> Вибери ризик і стріляй — чим менший шанс, тим більший виграш.<br><br><b>Рівні ризику:</b><br>🟢 Низький: 55% шанс → x1.75<br>🟡 Середній: 30% шанс → x3.2<br>🔴 Центр: 10% шанс → x9.7` },
+  sicbo: { title:'🎲 Sic Bo', rules:`<b>Мета:</b> Поставити на результат трьох кубиків.<br><br><b>Ставки:</b><br>📈 Велике (11-17) → x2<br>📉 Мале (4-10) → x2<br>🎰 Трипл → x24<br>🔢 Точна сума → x6-x60<br><br><b>Увага:</b> Трипл скасовує Велике/Мале!` },
+  cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
+  duckshoot: { title:'🦆 Duck Shoot', rules:`<b>Мета:</b> Клікни на кожну качку до того як вона пролетить.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Качки з'являються по черзі (10 штук)<br>3. Кожна збита качка = x1.2 до множника<br>4. Пропустив — гра закінчена!<br><br><b>Страйк всіх 10:</b> ~x6.2 від ставки!` },
+});
+
+// ══════════════════════════════════════════════════════
+// INIT CALLS ON LOAD
+// ══════════════════════════════════════════════════════
+function initV62Features() {
+  loadAccentColor();
+  applyDynamicBg(true);
+  setTimeout(initProgressiveJackpot, 1200);
+  setTimeout(initEventCalendarMini, 1500);
+  setTimeout(renderMiniBalanceChart, 2000);
+}
+
+// ── PM BADGE watcher ──
+function watchSupportUnread() {
+  if(!currentUser) return;
+  db.ref('users/'+currentUser+'/supportUnread').on('value', snap => {
+    const count = snap.val() || 0;
+    const badge = document.getElementById('supportUnreadBadge');
+    if(badge) {
+      badge.textContent = count > 0 ? count : '';
+      badge.classList.toggle('hidden', count === 0);
+    }
+  });
+}
+
+function watchPmUnread() {
+  if(!currentUser) return;
+  db.ref('users/'+currentUser+'/pmUnread').on('value', snap => {
+    const count = snap.val() || 0;
+    const badge = document.getElementById('pmBadge');
+    if(badge) {
+      badge.textContent = count > 0 ? count : '!';
+      badge.classList.toggle('hidden', count === 0);
+    }
+  });
+}
+
+

@@ -1,8 +1,18 @@
 # SlotOK Casino — notes for Claude
 
-Single-file vanilla-JS app: `app.js` (~20k lines) + `index.html` + `style.css`,
-using the Firebase Realtime Database directly from the client. Deployed on
-Vercel from the `main` branch.
+Vanilla-JS app: `index.html` + `style.css` + `app.js`, using the Firebase
+Realtime Database from the client, plus Vercel functions in `api/` (server
+games, login, rewards). Deployed on Vercel from the `main` branch.
+
+## `app.js` is generated — edit `src/app/*.js`
+
+`app.js` (~24k lines) is built by concatenating `src/app/NN-name.js` in order
+(`npm run build:app`, `scripts/build-app.js`). The browser still loads one
+`app.js`. Edit the pieces in `src/app/`, run `npm run build:app`, commit both;
+`npm test` fails if `app.js` is stale. The pieces are one shared global
+script, not modules — see `src/app/README.md` for what lives where.
+Reward tables (VIP, Battle Pass, bonuses) live in `shared/rewards.js`, which
+both the browser and the server (`lib/progress.js`) load.
 
 ## Where the remaining work is written down
 
@@ -17,7 +27,8 @@ and drop it from the roadmap.
 
 Whenever you make a change that a player would notice (a fix, a new feature,
 a game rebalance, a UI change) — add an entry to `BUILTIN_CHANGELOG` in
-`app.js` (near the top, search for `const BUILTIN_CHANGELOG`). This feeds the
+`src/app/17-changelog.js` (search for `const BUILTIN_CHANGELOG`; then
+`npm run build:app`). This feeds the
 in-app "Оновлення" list under Home → Новини → Оновлення (`loadChangelog()`).
 
 - Bump `CURRENT_VERSION` (right above the array) to match the new entry's
