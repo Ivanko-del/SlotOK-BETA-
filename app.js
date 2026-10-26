@@ -20504,8 +20504,7 @@ function setAccentColor(value, el, silent) {
   if (!silent && el !== null && typeof notify === 'function' && el) notify('Акцент змінено', 'info');
 }
 function loadAccentColor() {
-  const saved = localStorage.getItem('slotok_accent');
-  if (saved) setAccentColor(saved, null, true);
+  setAccentColor(localStorage.getItem('slotok_accent') || 'coral', null, true);
   loadSavedBackground();
 }
 
