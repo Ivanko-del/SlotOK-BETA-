@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SlotOK">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>SlotOK v100</title>
+  <title>SlotOK v101</title>
   <meta name="description" content="SlotOK — казино для своїх: слоти, рулетка, краш, блекджек і турніри з друзями на віртуальні гривні. Безкоштовно, прямо в браузері.">
   <link rel="canonical" href="https://slot-ok-beta.vercel.app/">
   <meta property="og:type" content="website">
@@ -2400,6 +2400,7 @@
 
         <div style="font-size:10px;color:#4a9eff;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">🔐 Безпека та акаунт</div>
         <button onclick="openChangePasswordModal()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">🔑 Змінити пароль</button>
+        <button onclick="openSecurityQuestionModal()" style="width:100%;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:11px;color:#d4af37;font-size:13px;cursor:pointer;margin-top:8px;">❓ Контрольне питання для відновлення</button>
         <button onclick="showSecurityLog()" style="width:100%;background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:12px;padding:11px;color:#e74c3c;font-size:13px;cursor:pointer;margin-top:8px;">📋 Журнал безпеки</button>
 
         <div style="font-size:10px;color:#3dd68c;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;font-weight:700;">💰 Фінанси</div>
@@ -3867,14 +3868,21 @@
           <!-- Контрольне питання (для відновлення пароля) -->
           <div class="auth-input-group">
             <span class="auth-input-icon">❓</span>
-            <select class="auth-input" id="regSecQuestion" style="appearance:auto;">
-              <option value="pet">Кличка вашого першого улюбленця?</option>
-              <option value="city">Місто, де ви народились?</option>
-              <option value="school">Назва вашої школи?</option>
-              <option value="friend">Ім'я найкращого друга дитинства?</option>
-              <option value="book">Улюблена книга/фільм?</option>
+            <select class="auth-input" id="regSecQuestion" style="appearance:auto;" onchange="secQuestionChanged('reg')">
+              <option value="custom">✍️ Своє питання (найнадійніше)</option>
+              <option value="first_phone">Модель вашого першого телефона?</option>
+              <option value="first_teacher">Ім'я та по батькові першої вчительки?</option>
+              <option value="first_job">Де ви вперше заробили гроші?</option>
+              <option value="childhood_nick">Ваше дитяче прізвисько?</option>
+              <option value="first_concert">Перший концерт або матч, на який ви ходили?</option>
+              <option value="dream_job">Ким ви мріяли стати в дитинстві?</option>
             </select>
           </div>
+          <div class="auth-input-group" id="regSecCustomBox">
+            <span class="auth-input-icon">✍️</span>
+            <input class="auth-input" id="regSecCustom" maxlength="120" placeholder="Своє питання (напр. «Що лежало в моїй першій скарбничці?»)">
+          </div>
+          <div style="font-size:11px;color:#777;margin:-4px 4px 10px;line-height:1.4;">Обирай те, чого не знайти в соцмережах і не вгадати друзям. Відповідь регістр не враховує.</div>
           <div class="auth-input-group">
             <span class="auth-input-icon">🔑</span>
             <input class="auth-input" id="regSecAnswer" placeholder="Відповідь (для відновлення пароля)">
