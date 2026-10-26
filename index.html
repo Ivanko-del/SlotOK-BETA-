@@ -973,7 +973,7 @@
 
       <!-- Hero шапка з фото рулетки -->
       <div style="position:relative;width:100%;height:220px;overflow:hidden;flex-shrink:0;">
-        <img src="/icons/roulette-hero.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="roulette">
+        <picture><source srcset="/icons/roulette-hero.webp" type="image/webp"><img src="/icons/roulette-hero.jpg" loading="lazy" decoding="async" width="600" height="400" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="roulette"></picture>
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.35) 0%,rgba(6,5,12,.98) 100%);"></div>
         <!-- Back btn -->
         <button onclick="switchTab('lobby')" style="position:absolute;top:14px;left:14px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px 14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);z-index:10;">⬅</button>
@@ -4164,14 +4164,14 @@
       <div id="gifPanel" style="display:none;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:8px;max-height:160px;overflow-y:auto;flex-shrink:0;">
         <div style="font-size:11px;color:#555;margin-bottom:6px;">Популярні GIF (натисни щоб вставити)</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/DhstvI3zZ598Nb1rFf/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/WoD6JZnwap6s8/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
-          <img src="https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.src)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/100.webp" data-full="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/100.webp" data-full="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/100.webp" data-full="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/100.webp" data-full="https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/100.webp" data-full="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/DhstvI3zZ598Nb1rFf/100.webp" data-full="https://media.giphy.com/media/DhstvI3zZ598Nb1rFf/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/WoD6JZnwap6s8/100.webp" data-full="https://media.giphy.com/media/WoD6JZnwap6s8/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
+          <img src="https://media.giphy.com/media/LmNwrBhejkK9EFP504/100.webp" data-full="https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif" loading="lazy" decoding="async" alt="GIF-реакція" class="gif-option" onclick="selectGif(this.dataset.full)" style="height:60px;border-radius:6px;cursor:pointer;">
         </div>
       </div>
     </div>
