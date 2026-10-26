@@ -102,391 +102,270 @@
   </div>
 
   <div id="tab-home" class="screen">
-      <!-- JACKPOT TICKER -->
-      <div id="jackpotTicker" style="background:linear-gradient(90deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)),var(--surface-1));border-bottom:1px solid rgb(var(--accent-rgb) / 0.4);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation:none;" onclick="switchTab('lobby')">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:18px;">🎰</span>
-          <span style="font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:1px;">Прогресивний Джекпот</span>
-        </div>
-        <div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:var(--accent);" id="jackpotDisplay">₴0</div>
-        <div style="font-size:11px;color:var(--fg-4);">Грати →</div>
-      </div>
-      <!-- Sub-tabs -->
-      <div class="home-tabs">
-        <div class="home-tab-btn active" id="htb-main" onclick="switchHomeTab('main',this)">🏠 Головна</div>
-        <div class="home-tab-btn" id="htb-chat" onclick="switchHomeTab('chat',this)">💬 Чат <span class="htbadge hidden" id="chatNewBadge">!</span></div>
-        <div class="home-tab-btn" id="htb-news" onclick="switchHomeTab('news',this)">🔄 Оновлення <span class="htbadge hidden" id="newsNewBadge">NEW</span></div>
+      <h1 class="sr-only">Головна</h1>
+      <!-- Під-вкладки Головної -->
+      <div class="seg home-tabs" role="tablist" aria-label="Розділи Головної">
+        <button type="button" class="seg-item home-tab-btn active" id="htb-main" role="tab" onclick="switchHomeTab('main',this)"><span class="seg-label">🏠 Головна</span></button>
+        <button type="button" class="seg-item home-tab-btn" id="htb-chat" role="tab" onclick="switchHomeTab('chat',this)"><span class="seg-label">💬 Чат <span class="htbadge hidden" id="chatNewBadge">!</span></span></button>
+        <button type="button" class="seg-item home-tab-btn" id="htb-news" role="tab" onclick="switchHomeTab('news',this)"><span class="seg-label">📰 Новини <span class="htbadge hidden" id="newsNewBadge">NEW</span></span></button>
       </div>
 
       <!-- === ГОЛОВНА панель === -->
       <div class="home-panel active" id="hp-main">
+        <div class="home-grid">
+        <div class="home-col-main">
 
-        <!-- HERO BANNER CAROUSEL — авто-ротація + свайп -->
-        <div class="banner-carousel" id="bannerCarousel">
+        <!-- ГЕРОЙ — баланс і головна дія -->
+        <section class="hero-card lux-hero anim-cascade" aria-label="Твій рахунок">
+          <div class="hero-top">
+            <div>
+              <div class="hero-label">Твій рахунок</div>
+              <div class="hero-balance" id="homeStatBalance">₴0</div>
+            </div>
+            <button type="button" class="hero-vip" onclick="switchTab('vip')" aria-label="VIP-рівень">
+              <span class="ic i-crown" aria-hidden="true"></span>
+              <span class="hero-vip-tier" id="homeStatVip">—</span>
+              <span class="hero-vip-lbl">VIP</span>
+            </button>
+          </div>
+          <div class="hero-actions">
+            <button type="button" class="btn btn-primary btn-lg" onclick="switchTab('lobby')"><span class="ic i-play" aria-hidden="true"></span>Грати</button>
+            <button type="button" class="btn btn-secondary btn-lg" onclick="switchTab('cashier')"><span class="ic i-plus" aria-hidden="true"></span>Поповнити</button>
+          </div>
+          <div class="hero-strip">
+            <button type="button" class="hero-cell" onclick="openDailyBonus()">
+              <span class="hero-cell-val" id="homeStatStreak">0🔥</span>
+              <span class="hero-cell-lbl">Серія днів</span>
+            </button>
+            <button type="button" class="hero-cell" onclick="switchTab('stats')">
+              <span class="hero-cell-val" id="homeStatBets">0</span>
+              <span class="hero-cell-lbl">Ставок</span>
+            </button>
+            <button type="button" class="hero-cell" onclick="switchTab('stats')">
+              <span class="hero-cell-val" id="homeStatWins">₴0</span>
+              <span class="hero-cell-lbl">Виграно</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Щоденний бонус -->
+        <button type="button" id="dailyBonusBanner" class="hidden callout callout-pos anim-cascade" onclick="openDailyBonus()">
+          <span class="callout-ic"><span class="ic i-gift" aria-hidden="true"></span></span>
+          <span class="callout-body">
+            <span class="callout-title">Щоденний бонус готовий</span>
+            <span class="callout-sub">Натисни, щоб забрати нагороду</span>
+          </span>
+          <span class="ic i-chevron-right callout-go" aria-hidden="true"></span>
+        </button>
+
+        <!-- Mystery Box — тільки для нових гравців перші 24 год -->
+        <div id="mysteryBoxWidget" class="hidden anim-cascade"></div>
+
+        <!-- Швидкий старт: одна дія до гри -->
+        <div class="section-header"><span>Швидкий старт</span><button type="button" class="link-btn section-link" onclick="switchTab('lobby')">Усі ігри</button></div>
+        <div class="games-scroll quick-games" role="list">
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('crash')"><span class="icon">🚀</span><span class="label">Краш</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('slots')"><span class="icon">🎰</span><span class="label">Слоти</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('roulette')"><span class="icon">🎡</span><span class="label">Рулетка</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('blackjack')"><span class="icon">🃏</span><span class="label">Блекджек</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('plinko')"><span class="icon">🔻</span><span class="label">Plinko</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('tower')"><span class="icon">🗼</span><span class="label">Tower</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('dice')"><span class="icon">🎲</span><span class="label">Dice</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('hilo')"><span class="icon">🃏</span><span class="label">Hi-Lo</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('coinflip')"><span class="icon">🪙</span><span class="label">Coinflip</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('rps')"><span class="icon">✊</span><span class="label">Камінь</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('predict')"><span class="icon">🔮</span><span class="label">Прогноз</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('sports')"><span class="icon">⚽</span><span class="label">Спорт</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('horseracing')"><span class="icon">🏇</span><span class="label">Скачки</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('balloon')"><span class="icon">🎈</span><span class="label">Balloon</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('quiz')"><span class="icon">🧠</span><span class="label">Вікторина</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('russianroulette')"><span class="icon">🔫</span><span class="label">Ризик</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('colorbet')"><span class="icon">🎨</span><span class="label">Колір</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('baccarat')"><span class="icon">🃏</span><span class="label">Бакара</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('videpoker')"><span class="icon">🎴</span><span class="label">Відеопокер</span></button>
+        </div>
+
+        <!-- Промо-карусель — авто-ротація + свайп -->
+        <div class="banner-carousel" id="bannerCarousel" aria-roledescription="карусель" aria-label="Акції">
           <div class="banner-track" id="bannerTrack">
-
-            <!-- Слайд 1: VIP Бонус -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 10%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--accent-rgb) / 0.35);" onclick="openDailyBonus()">
+            <div class="banner-slide tone-accent" role="button" tabindex="0" onclick="openDailyBonus()">
               <div class="banner-deco">💎</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">💎 VIP БОНУС</div>
-                  <div class="banner-sub" style="color:var(--accent);">До +250% на депозит</div>
-                  <div class="banner-desc">Щоденні бонуси • Лут-бокси • Подарунки</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--accent);background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.2);">🎁 +100% перший деп</span>
-                    <span class="banner-pill" style="color:var(--pos);background:rgb(var(--pos-rgb) / 0.1);border-color:rgb(var(--pos-rgb) / 0.2);">✨ 10 фріспінів</span>
-                  </div>
+                  <div class="banner-kicker">Бонуси</div>
+                  <div class="banner-title">VIP-бонус</div>
+                  <div class="banner-sub">До +250% на депозит</div>
+                  <div class="banner-desc">Щоденні бонуси · Лут-бокси · Подарунки</div>
+                  <div class="banner-pills"><span class="banner-pill">🎁 +100% перший деп</span><span class="banner-pill">✨ 10 фріспінів</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--accent-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Джекпот</div>
-                  <div class="banner-stat-val" style="color:var(--accent);" id="homeJackpot">—</div>
-                  <div class="banner-stat-sub" style="color:var(--pos);">Сьогодні</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Джекпот</div><div class="banner-stat-val" id="homeJackpot">—</div><div class="banner-stat-sub">Сьогодні</div></div>
               </div>
             </div>
-
-            <!-- Слайд 2: Battle Pass -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 7%, var(--surface-1)),color-mix(in srgb, var(--special) 14%, var(--surface-1)),color-mix(in srgb, var(--special) 7%, var(--surface-1)));border:1.5px solid rgb(var(--special-rgb) / 0.4);" onclick="switchTab('battlepass')">
+            <div class="banner-slide tone-special" role="button" tabindex="0" onclick="switchTab('battlepass')">
               <div class="banner-deco">🎫</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--special);">🎫 BATTLE PASS</div>
-                  <div class="banner-sub" style="color:var(--special);">Сезон 3 вже тут</div>
-                  <div class="banner-desc">50 рівнів • Ексклюзивні скіни • Слотіки</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--special);background:rgb(var(--special-rgb) / 0.1);border-color:rgb(var(--special-rgb) / 0.2);">🏆 Преміум нагороди</span>
-                  </div>
+                  <div class="banner-kicker">Сезон 3</div>
+                  <div class="banner-title">Battle Pass</div>
+                  <div class="banner-sub">50 рівнів нагород</div>
+                  <div class="banner-desc">Ексклюзивні скіни · Слотіки · Фріспіни</div>
+                  <div class="banner-pills"><span class="banner-pill">🏆 Преміум нагороди</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--special-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Рівень</div>
-                  <div class="banner-stat-val" style="color:var(--special);" id="bannerBpLevel">1</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">Твій прогрес</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Рівень</div><div class="banner-stat-val" id="bannerBpLevel">1</div><div class="banner-stat-sub">Твій прогрес</div></div>
               </div>
             </div>
-
-            <!-- Слайд 3: Турнір -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 11%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--accent-rgb) / 0.4);" onclick="switchTab('tournaments')">
+            <div class="banner-slide tone-warn" role="button" tabindex="0" onclick="switchTab('tournaments')">
               <div class="banner-deco">🏆</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--accent);">🏆 ТУРНІР ТИЖНЯ</div>
-                  <div class="banner-sub" style="color:var(--accent);">Топ-10 отримають призи</div>
-                  <div class="banner-desc">Грай будь-яку гру — бали нараховуються автоматично</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--accent);background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.2);">💰 Призовий фонд 50k₴</span>
-                  </div>
+                  <div class="banner-kicker">Турнір тижня</div>
+                  <div class="banner-title">Топ-10 з призами</div>
+                  <div class="banner-sub">Бали — за будь-яку гру</div>
+                  <div class="banner-desc">Нараховуються автоматично</div>
+                  <div class="banner-pills"><span class="banner-pill">💰 Фонд 50 000 ₴</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--accent-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Місце</div>
-                  <div class="banner-stat-val" style="color:var(--accent);" id="bannerTourneyRank">—</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">В рейтингу</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Місце</div><div class="banner-stat-val" id="bannerTourneyRank">—</div><div class="banner-stat-sub">У рейтингу</div></div>
               </div>
             </div>
-
-            <!-- Слайд 4: Рейтинги -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-2),color-mix(in srgb, var(--info) 19%, var(--surface-1)),var(--surface-2));border:1.5px solid rgb(var(--info-rgb) / 0.4);" onclick="switchTab('leaderboard')">
+            <div class="banner-slide tone-info" role="button" tabindex="0" onclick="switchTab('leaderboard')">
               <div class="banner-deco">🏅</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--info);">🏅 РЕЙТИНГИ</div>
-                  <div class="banner-sub" style="color:var(--info);">Топ дня, тижня і місяця</div>
-                  <div class="banner-desc">Ставки, виграші, прибуток, ігри, рекорди</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--accent);background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.22);">🥇 ₴5 000 за 1 місце щодня</span>
-                  </div>
+                  <div class="banner-kicker">Рейтинги</div>
+                  <div class="banner-title">Топ дня й тижня</div>
+                  <div class="banner-sub">Ставки, виграші, рекорди</div>
+                  <div class="banner-desc">Перше місце дня — 5 000 ₴</div>
+                  <div class="banner-pills"><span class="banner-pill">🥇 Щодня</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--info-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Твоє місце</div>
-                  <div class="banner-stat-val" style="color:var(--info);" id="bannerLbRank">—</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">За добу</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Твоє місце</div><div class="banner-stat-val" id="bannerLbRank">—</div><div class="banner-stat-sub">За добу</div></div>
               </div>
             </div>
-
-            <!-- Слайд 5: Реферали -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--pos) 11%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--pos-rgb) / 0.4);" onclick="switchTab('affiliate')">
+            <div class="banner-slide tone-pos" role="button" tabindex="0" onclick="switchTab('affiliate')">
               <div class="banner-deco">🤝</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--pos);">🤝 ЗАПРОСИ ДРУЗІВ</div>
-                  <div class="banner-sub" style="color:var(--pos);">1% довічно з кожної ставки</div>
-                  <div class="banner-desc">Комісія з усіх ігор запрошеного, назавжди</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--pos);background:rgb(var(--pos-rgb) / 0.1);border-color:rgb(var(--pos-rgb) / 0.2);">📲 Персональне посилання</span>
-                  </div>
+                  <div class="banner-kicker">Запроси друзів</div>
+                  <div class="banner-title">1% з кожної ставки</div>
+                  <div class="banner-sub">Довічно, з усіх ігор друга</div>
+                  <div class="banner-desc">Персональне посилання — у Профілі</div>
+                  <div class="banner-pills"><span class="banner-pill">📲 Поділитись</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--pos-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Заробив</div>
-                  <div class="banner-stat-val" style="color:var(--pos);" id="bannerRefEarned">₴0</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">З рефералів</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Заробив</div><div class="banner-stat-val" id="bannerRefEarned">₴0</div><div class="banner-stat-sub">З рефералів</div></div>
               </div>
             </div>
-
-            <!-- Слайд 6: Глобальна рулетка -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--neg) 11%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--neg-rgb) / 0.4);" onclick="switchTab('roulette')">
+            <div class="banner-slide tone-neg" role="button" tabindex="0" onclick="switchTab('roulette')">
               <div class="banner-deco">🎡</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--neg);">🎡 ГЛОБАЛЬНА РУЛЕТКА</div>
-                  <div class="banner-sub" style="color:var(--neg);">Один спін для всіх онлайн</div>
-                  <div class="banner-desc">Ставки приймаються між раундами • Живий результат для всіх гравців</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--neg);background:rgb(var(--neg-rgb) / 0.1);border-color:rgb(var(--neg-rgb) / 0.2);">🔴⚫ Червоне/Чорне ×2</span>
-                    <span class="banner-pill" style="color:var(--accent);background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.2);">🎯 Число ×35</span>
-                  </div>
+                  <div class="banner-kicker">Наживо</div>
+                  <div class="banner-title">Глобальна рулетка</div>
+                  <div class="banner-sub">Один спін для всіх онлайн</div>
+                  <div class="banner-desc">Ставки — між раундами</div>
+                  <div class="banner-pills"><span class="banner-pill">Червоне/Чорне ×2</span><span class="banner-pill">🎯 Число ×35</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--neg-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Останнє</div>
-                  <div class="banner-stat-val" style="color:var(--neg);font-size:20px;" id="bannerRouletteLast">—</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">Випало</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Останнє</div><div class="banner-stat-val" id="bannerRouletteLast">—</div><div class="banner-stat-sub">Випало</div></div>
               </div>
             </div>
-
-            <!-- Слайд 7: Крипто-симулятор -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 11%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--accent-rgb) / 0.4);" onclick="openCryptoSimulator()">
+            <div class="banner-slide tone-accent" role="button" tabindex="0" onclick="openCryptoSimulator()">
               <div class="banner-deco">📈</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--accent);">📈 КРИПТО-СИМУЛЯТОР</div>
-                  <div class="banner-sub" style="color:var(--accent);">Торгуй BTC, ETH, SOL, BNB</div>
-                  <div class="banner-desc">Реалістичні ціни, оновлення кожні 5с</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--accent);background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.2);">🪙 Свій портфель</span>
-                  </div>
+                  <div class="banner-kicker">Симулятор</div>
+                  <div class="banner-title">Крипто-торгівля</div>
+                  <div class="banner-sub">BTC, ETH, SOL, BNB</div>
+                  <div class="banner-desc">Ціни оновлюються кожні 5 с</div>
+                  <div class="banner-pills"><span class="banner-pill">🪙 Свій портфель</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--accent-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">BTC</div>
-                  <div class="banner-stat-val" style="color:var(--accent);font-size:14px;" id="bannerBtcPrice">—</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">Зараз</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">BTC</div><div class="banner-stat-val is-sm" id="bannerBtcPrice">—</div><div class="banner-stat-sub">Зараз</div></div>
               </div>
             </div>
-
-            <!-- Слайд 8: Кейси -->
-            <div class="banner-slide" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--neg) 11%, var(--surface-1)),var(--surface-1));border:1.5px solid rgb(var(--neg-rgb) / 0.4);" onclick="switchTab('lootboxes')">
+            <div class="banner-slide tone-neg" role="button" tabindex="0" onclick="switchTab('lootboxes')">
               <div class="banner-deco">📦</div>
               <div class="banner-inner">
                 <div>
-                  <div class="banner-title" style="color:var(--neg);">📦 ВІДКРИЙ КЕЙС</div>
-                  <div class="banner-sub" style="color:var(--neg);">Шанс на джекпот 10 000₴</div>
-                  <div class="banner-desc">Базовий і Преміум кейси з гарантованим призом</div>
-                  <div class="banner-pills">
-                    <span class="banner-pill" style="color:var(--neg);background:rgb(var(--neg-rgb) / 0.1);border-color:rgb(var(--neg-rgb) / 0.2);">🎁 Від 500₴</span>
-                  </div>
+                  <div class="banner-kicker">Кейси</div>
+                  <div class="banner-title">Відкрий кейс</div>
+                  <div class="banner-sub">Шанс на 10 000 ₴</div>
+                  <div class="banner-desc">Гарантований приз у кожному</div>
+                  <div class="banner-pills"><span class="banner-pill">🎁 Від 500 ₴</span></div>
                 </div>
-                <div class="banner-stat-box" style="border-color:rgb(var(--neg-rgb) / 0.3);">
-                  <div class="banner-stat-lbl">Шанс</div>
-                  <div class="banner-stat-val" style="color:var(--neg);font-size:16px;">5%</div>
-                  <div class="banner-stat-sub" style="color:var(--fg-3);">На джекпот</div>
-                </div>
+                <div class="banner-stat-box"><div class="banner-stat-lbl">Шанс</div><div class="banner-stat-val">5%</div><div class="banner-stat-sub">На джекпот</div></div>
               </div>
             </div>
-
           </div>
           <div class="banner-dots" id="bannerDots"></div>
         </div>
 
-        <!-- Mystery Box — тільки для нових гравців перші 24 год -->
-        <div id="mysteryBoxWidget" class="hidden anim-cascade" style="margin-bottom:12px;"></div>
-
-        <!-- HERO — баланс, VIP, серія/ставки/виграно -->
-        <div class="anim-cascade lux-hero" style="animation-delay:.02s;">
-          <div class="lux-hero-top" onclick="switchTab('stats')">
-            <div>
-              <div class="lux-hero-greet">Твій рахунок</div>
-              <div class="lux-hero-balance" id="homeStatBalance">₴0</div>
-            </div>
-            <div class="lux-hero-vip" onclick="event.stopPropagation();switchTab('vip')">
-              <div class="lux-hero-vip-crest">👑</div>
-              <div class="lux-hero-vip-tier" id="homeStatVip">—</div>
-              <div class="lux-hero-vip-lbl">VIP</div>
-            </div>
-          </div>
-          <div class="lux-hero-strip">
-            <div class="lux-hero-cell" onclick="openDailyBonus()">
-              <div class="lux-hero-cell-val" id="homeStatStreak">0🔥</div>
-              <div class="lux-hero-cell-lbl">Серія днів</div>
-            </div>
-            <div class="lux-hero-cell" onclick="switchTab('stats')">
-              <div class="lux-hero-cell-val" id="homeStatBets">0</div>
-              <div class="lux-hero-cell-lbl">Ставок</div>
-            </div>
-            <div class="lux-hero-cell" onclick="switchTab('stats')">
-              <div class="lux-hero-cell-val" id="homeStatWins">₴0</div>
-              <div class="lux-hero-cell-lbl">Виграно</div>
-            </div>
-          </div>
+        <!-- Live-стрічка виграшів -->
+        <div class="live-ticker lux-live-ticker anim-cascade" aria-live="off">
+          <span class="badge is-neg live-badge">LIVE</span>
+          <span id="winTicker" class="live-ticker-text"></span>
         </div>
 
-        <!-- Щоденний бонус banner -->
-        <div id="dailyBonusBanner" class="hidden anim-cascade anim-press" style="background:linear-gradient(135deg,var(--surface-2),var(--surface-1));border:1.5px solid var(--green);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;animation-delay:.03s;" onclick="openDailyBonus()">
-          <div>
-            <div style="font-size:15px;font-weight:900;color:var(--green);">🎁 Щоденний бонус готовий!</div>
-            <div style="font-size:11px;color:var(--fg-2);margin-top:2px;">Натисни щоб забрати нагороду</div>
-          </div>
-          <div style="font-size:36px;animation:heartbeat 1s ease infinite;">✨</div>
+        <!-- Швидкі дії -->
+        <div class="section-header"><span>Швидкі дії</span></div>
+        <div class="action-grid anim-cascade">
+          <button type="button" class="action-tile" style="--tone:var(--pos)" onclick="switchTab('sports')">
+            <span class="action-ic">⚽</span><span class="action-title">Спорт</span><span class="action-sub">Live-ставки</span>
+          </button>
+          <button type="button" class="action-tile" style="--tone:var(--accent)" onclick="openDailyBonus()">
+            <span class="action-ic">🎁</span><span class="action-title">Бонус дня</span><span class="action-sub">Щоденна нагорода</span>
+          </button>
+          <button type="button" class="action-tile" style="--tone:var(--special)" onclick="switchTab('vip')">
+            <span class="action-ic">👑</span><span class="action-title">VIP-клуб</span><span class="action-sub">14 рівнів · кешбек</span>
+          </button>
+          <button type="button" class="action-tile" style="--tone:var(--warn)" onclick="switchTab('tournaments')">
+            <span class="action-ic">🏆</span><span class="action-title">Турніри</span><span class="action-sub" id="homeTournamentPrize">Топ-призи</span>
+          </button>
+        </div>
+        </div><!-- /home-col-main -->
+
+        <div class="home-col-side">
+        <!-- Прогрес -->
+        <div class="section-header"><span>Твій прогрес</span></div>
+        <div class="panel progress-card lux-progress-card anim-cascade">
+          <div class="progress-row"><span>👑 VIP · <b id="homeVipLabel">Bronze</b></span><span class="num" id="homeVipPct">0%</span></div>
+          <div class="progress"><div id="homeVipBar" class="progress-bar" style="width:0%;"></div></div>
+          <div class="progress-row"><span>🎫 Battle Pass</span><span class="num" id="homeBpPct">Lv0</span></div>
+          <div class="progress"><div id="homeBpBar" class="progress-bar is-special" style="width:0%;"></div></div>
         </div>
 
         <!-- Стрічка друзів -->
-        <div id="friendsFeedWidget" class="hidden anim-cascade lux-panel" style="animation-delay:.04s;"></div>
+        <div id="friendsFeedWidget" class="hidden anim-cascade panel"></div>
 
-        <!-- Axiom Bank widget -->
-        <div id="homeAxiomWidget" class="anim-cascade" style="margin-bottom:12px;animation-delay:.05s;"></div>
+        <!-- Аксіома Банк -->
+        <div id="homeAxiomWidget" class="anim-cascade"></div>
 
-        <!-- VIP + Battle Pass mini progress -->
-        <div class="lux-divider" style="margin-top:4px;"><span class="lux-divider-label">👤 Твій прогрес</span></div>
-        <div class="anim-cascade lux-progress-card" style="animation-delay:.06s;">
-          <div class="lux-progress-row">
-            <span>👑 VIP · <b id="homeVipLabel">Bronze</b></span>
-            <span id="homeVipPct">0%</span>
-          </div>
-          <div class="lux-progress-track">
-            <div id="homeVipBar" class="progress-fill-shimmer lux-progress-fill" style="width:0%;"></div>
-          </div>
-          <div class="lux-progress-row">
-            <span>🎫 Battle Pass</span>
-            <span id="homeBpPct">Lv0</span>
-          </div>
-          <div class="lux-progress-track">
-            <div id="homeBpBar" class="progress-fill-shimmer lux-progress-fill" style="width:0%;background:var(--special);"></div>
-          </div>
+        <!-- Казино зараз -->
+        <div class="section-header"><span>Казино зараз</span></div>
+        <div class="panel stat-trio anim-cascade">
+          <div class="stat"><div class="stat-val t-pos" id="casinoOnlineCount">—</div><div class="stat-lbl">Онлайн</div></div>
+          <div class="stat"><div class="stat-val t-accent" id="casinoTodayWins">—</div><div class="stat-lbl">Виграшів</div></div>
+          <div class="stat"><div class="stat-val t-info" id="casinoTotalPlayers">—</div><div class="stat-lbl">Гравців</div></div>
         </div>
 
-        <!-- Live лента виграшів -->
-        <div class="anim-cascade lux-live-ticker" style="animation-delay:.08s;">
-          <span class="lux-live-badge">LIVE</span>
-          <span id="winTicker" class="lux-live-text"></span>
-        </div>
-
-        <!-- 4 банери -->
-        <div class="lux-divider"><span class="lux-divider-label">⚡ Швидкі дії</span></div>
-        <div class="anim-cascade lux-action-grid" style="animation-delay:.1s;">
-          <div class="anim-press lux-action-tile" style="--ac:var(--pos);" onclick="switchTab('sports')">
-            <div class="lux-action-icon-badge">⚽</div>
-            <div class="lux-action-title">Спортбетинг</div>
-            <div class="lux-action-sub">Live ставки</div>
-          </div>
-          <div class="anim-press lux-action-tile" style="--ac:var(--accent);" onclick="openDailyBonus()">
-            <div class="lux-action-icon-badge">🎁</div>
-            <div class="lux-action-title">Бонус дня</div>
-            <div class="lux-action-sub">Щоденна нагорода</div>
-          </div>
-          <div class="anim-press lux-action-tile" style="--ac:var(--special);" onclick="switchTab('vip')">
-            <div class="lux-action-icon-badge">👑</div>
-            <div class="lux-action-title">VIP Клуб</div>
-            <div class="lux-action-sub">14 рівнів • Cashback</div>
-          </div>
-          <div class="anim-press lux-action-tile" style="--ac:var(--accent);" onclick="switchTab('tournaments')">
-            <div class="lux-action-icon-badge">🏆</div>
-            <div class="lux-action-title">Турніри</div>
-            <div class="lux-action-sub" id="homeTournamentPrize">Топ призи</div>
-          </div>
-        </div>
-
-        <!-- Популярні ігри -->
-        <div class="lux-divider">
-          <span class="lux-divider-label">🔥 Популярні</span>
-          <span class="lux-divider-action" onclick="switchTab('lobby')">Всі ігри →</span>
-        </div>
-        <div class="games-scroll" style="margin-bottom:14px;">
-          <div class="game-thumb" onclick="switchTab('coinflip')"><span class="icon">🪙</span><span class="label">Coinflip</span></div>
-          <div class="game-thumb" onclick="switchTab('rps')"><span class="icon">✊</span><span class="label">Камінь</span></div>
-          <div class="game-thumb" onclick="switchTab('predict')"><span class="icon">🔮</span><span class="label">Predict</span></div>
-          <div class="game-thumb" onclick="openGame('crash')"><span class="icon">🚀</span><span class="label">Краш</span></div>
-          <div class="game-thumb" onclick="openGame('slots')"><span class="icon">🎰</span><span class="label">Слоти</span></div>
-          <div class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></div>
-          <div class="game-thumb" onclick="switchTab('sports')"><span class="icon">⚽</span><span class="label">Спорт</span></div>
-          <div class="game-thumb" onclick="openGame('tower')"><span class="icon">🗼</span><span class="label">Tower</span></div>
-          <div class="game-thumb" onclick="openGame('plinko')"><span class="icon">🔻</span><span class="label">Plinko</span></div>
-          <div class="game-thumb" onclick="openGame('blackjack')"><span class="icon">🃏</span><span class="label">Блекджек</span></div>
-          <div class="game-thumb" onclick="openGame('roulette')"><span class="icon">🎡</span><span class="label">Рулетка</span></div>
-          <div class="game-thumb" onclick="openGame('hilo')"><span class="icon">🃏</span><span class="label">Hi-Lo</span></div>
-          <div class="game-thumb" onclick="openGame('dice')"><span class="icon">🎲</span><span class="label">Dice</span></div>
-          <div class="game-thumb" onclick="switchTab('horseracing')"><span class="icon">🏇</span><span class="label">Скачки</span></div>
-          <div class="game-thumb" onclick="switchTab('balloon')"><span class="icon">🎈</span><span class="label">Balloon</span></div>
-          <div class="game-thumb" onclick="switchTab('quiz')"><span class="icon">🧠</span><span class="label">Quiz</span></div>
-          <div class="game-thumb" onclick="switchTab('russianroulette')"><span class="icon">🔫</span><span class="label">Ризик</span></div>
-          <div class="game-thumb" onclick="switchTab('colorbet')"><span class="icon">🎨</span><span class="label">Колір</span></div>
-          <div class="game-thumb" onclick="switchTab('baccarat')"><span class="icon">🃏</span><span class="label">Бакара</span></div>
-          <div class="game-thumb" onclick="switchTab('videpoker')"><span class="icon">🎴</span><span class="label">Відеопокер</span></div>
-        </div>
-
-        <!-- Battle Pass промо -->
-        <div class="anim-cascade anim-press lux-promo-card" style="animation-delay:.16s;" onclick="switchTab('battlepass')">
-          <div class="lux-promo-deco">🎫</div>
-          <div class="lux-promo-body">
-            <div class="lux-promo-icon">🎫</div>
-            <div>
-              <div class="lux-promo-title">BATTLE PASS</div>
-              <div class="lux-promo-sub">50 рівнів • Ексклюзивні нагороди</div>
-              <div class="lux-promo-pills">
-                <span class="lux-promo-pill" style="background:rgb(var(--special-rgb) / 0.1);border:1px solid rgb(var(--special-rgb) / 0.2);color:var(--special);">💰 До 50 000 ₴</span>
-                <span class="lux-promo-pill" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);color:var(--pos);">🎟️ Фріспіни</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Статистика казино -->
-        <div class="lux-divider"><span class="lux-divider-label">📊 Статистика казино</span></div>
-        <div class="anim-cascade lux-panel" style="animation-delay:.18s;">
-          <div class="lux-panel-label" style="margin-bottom:10px;">Казино зараз</div>
-          <div class="lux-mini-grid">
-            <div class="lux-mini-item">
-              <div class="lux-mini-val" style="color:var(--pos);" id="casinoOnlineCount">—</div>
-              <div class="lux-mini-lbl">Онлайн</div>
-            </div>
-            <div class="lux-mini-item">
-              <div class="lux-mini-val" style="color:var(--accent);" id="casinoTodayWins">—</div>
-              <div class="lux-mini-lbl">Виграшів</div>
-            </div>
-            <div class="lux-mini-item">
-              <div class="lux-mini-val" style="color:var(--info);" id="casinoTotalPlayers">—</div>
-              <div class="lux-mini-lbl">Гравців</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="anim-cascade lux-panel" style="animation-delay:.2s;">
-          <div class="lux-panel-label" style="margin-bottom:6px;">⚡ Активність</div>
+        <div class="panel anim-cascade">
+          <div class="panel-head"><h3 class="panel-title is-sm">Активність</h3></div>
           <div id="activityFeed"></div>
         </div>
-        <div class="anim-cascade anim-press lux-panel clickable" style="animation-delay:.22s;" onclick="switchTab('stats')">
-          <div class="lux-panel-head" style="margin-bottom:6px;">
-            <div class="lux-panel-label" style="margin-bottom:0;">📈 Графік балансу</div>
-            <div class="lux-panel-action">30 ігор →</div>
-          </div>
+
+        <button type="button" class="panel panel-link anim-cascade" onclick="switchTab('stats')">
+          <span class="panel-head"><span class="panel-title is-sm">Графік балансу</span><span class="panel-action">30 ігор <span class="ic i-chevron-right" aria-hidden="true"></span></span></span>
           <canvas id="miniBalanceChart" height="50" style="width:100%;display:block;"></canvas>
-        </div>
+        </button>
 
-        <!-- Календар подій -->
-        <div class="anim-cascade anim-press lux-panel clickable" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--special) 13%, var(--surface-1)));border-color:rgb(var(--special-rgb) / 0.28);animation-delay:.24s;" onclick="openEventCalendar()">
-          <div class="lux-panel-head" style="margin-bottom:0;">
-            <div class="lux-panel-label" style="color:var(--special);margin-bottom:0;">📆 Календар подій</div>
-            <div style="font-size:10px;color:var(--special);background:rgb(var(--special-rgb) / 0.15);padding:3px 8px;border-radius:var(--r-md);" id="nextEventLabel">Завантаження...</div>
-          </div>
-          <div id="eventCalendarMini" style="margin-top:8px;display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;"></div>
-        </div>
+        <button type="button" class="panel panel-link anim-cascade" onclick="openEventCalendar()">
+          <span class="panel-head"><span class="panel-title is-sm">📆 Календар подій</span><span class="badge is-special" id="nextEventLabel">Завантаження…</span></span>
+          <span id="eventCalendarMini" class="event-mini"></span>
+        </button>
 
-        <!-- Останнє оновлення -->
-        <div class="anim-cascade anim-press lux-panel clickable" style="margin-bottom:14px;animation-delay:.26s;" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
-          <div class="lux-panel-head" style="margin-bottom:6px;">
-            <div class="lux-panel-label" style="margin-bottom:0;">🔄 Останнє оновлення</div>
-            <div class="lux-panel-action">Всі →</div>
-          </div>
-          <div id="homeLastUpdate" style="font-size:12px;color:var(--fg-3);">Завантаження...</div>
-        </div>
-
-        <!-- CTA -->
-        <div class="anim-cascade lux-cta-grid" style="animation-delay:.28s;">
-          <button class="btn-gold anim-press" onclick="switchTab('cashier')" style="font-size:14px;">💳 Донат</button>
-          <button class="btn-outline anim-press" onclick="switchTab('lobby')" style="font-size:14px;">🎰 Всі ігри</button>
-        </div>
+        <button type="button" class="panel panel-link anim-cascade" onclick="switchHomeTab('news',document.getElementById('htb-news'));switchNewsTab('changelog')">
+          <span class="panel-head"><span class="panel-title is-sm">Останнє оновлення</span><span class="panel-action">Усі <span class="ic i-chevron-right" aria-hidden="true"></span></span></span>
+          <span id="homeLastUpdate" class="panel-text">Завантаження…</span>
+        </button>
+        </div><!-- /home-col-side -->
+        </div><!-- /home-grid -->
       </div>
       <!-- === ЧАТ панель === -->
       <div class="home-panel" id="hp-chat">

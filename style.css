@@ -1376,23 +1376,244 @@ body > .screen, .container ~ .screen {
 .i-write { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 4H6a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V10'/%3E%3Cpath d='M10 14h2.5L20 6.5a1.8 1.8 0 0 0-2.5-2.5L10 11.5z'/%3E%3C/svg%3E"); }
 .i-x-circle { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m9 9 6 6M15 9l-6 6'/%3E%3C/svg%3E"); }
 .i-xmas-tree { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2.5 7 9h2.5l-4 5.5h3L4 20h16l-4.5-5.5h3l-4-5.5H17z'/%3E%3Cpath d='M12 20v1.5'/%3E%3C/svg%3E"); }
+/* ─── src/css/10-home.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   ГОЛОВНА (#tab-home): герой з балансом → швидкий старт → акції →
+   прогрес і стрічки. На ≥1024px — дві колонки (основне + бокова).
+   ═══════════════════════════════════════════════════════════════════ */
+
+.home-tabs { margin-bottom: var(--stack); }
+.home-panel { display: none; }
+.home-panel.active { display: block; animation: fade-in var(--dur-2) var(--ease-out); }
+.htbadge {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
+  margin-left: var(--sp-1); padding: 0 5px; border-radius: var(--r-pill);
+  background: var(--neg); color: var(--on-neg); font-size: 10px; font-weight: var(--fw-bold); line-height: 1;
+}
+.htbadge.hidden { display: none; }
+
+.home-grid { display: grid; gap: 0 var(--sp-6); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) {
+  .home-grid { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); align-items: start; }
+  .home-col-side { position: sticky; top: calc(var(--header-h) + var(--sp-4)); }
+  .home-col-side > .section-header:first-child { margin-top: 0; }
+}
+
+/* ── Герой ─────────────────────────────────────────────────────── */
+.hero-card {
+  position: relative;
+  padding: var(--sp-5);
+  background: var(--surface-1);
+  border: var(--bw) solid var(--fg);
+  border-radius: var(--r-xl);
+  box-shadow: 5px 5px 0 0 rgb(var(--primary-rgb) / .55);
+  margin: 0 var(--sp-1) var(--stack) 0;
+  overflow: hidden;
+}
+/* Друкарська «плашка» в кутку — графічний акцент без зображень */
+.hero-card::after {
+  content: ''; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--accent-rgb) / .22) 0 40%, transparent 41%) 0 0 / 14px 14px;
+  opacity: .9; pointer-events: none;
+}
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); position: relative; z-index: 1; }
+.hero-label {
+  font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
+  text-transform: uppercase; color: var(--fg-3);
+}
+.hero-balance {
+  margin-top: var(--sp-1);
+  font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-num);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1.05; color: var(--fg);
+}
+.hero-vip {
+  width: auto; margin: 0; flex: none; flex-direction: column; gap: 0; min-width: 64px; padding: var(--sp-2) var(--sp-3);
+  --btn-bg: var(--surface-2); --btn-bd: var(--line-strong); --btn-fg: var(--warn); --btn-sh: none;
+  border-radius: var(--r-lg);
+}
+.hero-vip .ic { width: 22px; height: 22px; }
+.hero-vip-tier { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--fg); }
+.hero-vip-lbl { font-size: var(--fs-2xs); color: var(--fg-3); letter-spacing: var(--ls-caps); }
+.hero-actions { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--sp-3); margin-top: var(--sp-5); position: relative; z-index: 1; }
+.hero-actions .btn { margin: 0; }
+.hero-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--bw) dashed var(--line);
+  position: relative; z-index: 1;
+}
+.hero-cell {
+  width: auto; margin: 0; min-height: var(--hit); padding: var(--sp-1); flex-direction: column; gap: 2px;
+  --btn-bg: transparent; --btn-bd: transparent; --btn-sh: none; border-radius: var(--r-md);
+}
+.hero-cell + .hero-cell { border-left: 1px solid var(--line); border-radius: 0; }
+.hero-cell-val { font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--fg); }
+.hero-cell-lbl { font-size: var(--fs-2xs); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--fg-3); font-weight: var(--fw-semibold); }
+
+/* ── Виноска-заклик (щоденний бонус тощо) ───────────────────────── */
+.callout {
+  display: flex; align-items: center; gap: var(--sp-3); text-align: left; justify-content: flex-start;
+  padding: var(--sp-3) var(--sp-4); margin-bottom: var(--stack);
+  --btn-bg: rgb(var(--tone-rgb, var(--primary-rgb)) / .1);
+  --btn-bd: rgb(var(--tone-rgb, var(--primary-rgb)) / .6);
+  --btn-sh: none; border-radius: var(--r-lg);
+}
+.callout.hidden { display: none !important; }
+.callout-pos { --tone-rgb: var(--pos-rgb); }
+.callout-warn { --tone-rgb: var(--warn-rgb); }
+.callout-neg { --tone-rgb: var(--neg-rgb); }
+.callout-ic {
+  display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: var(--r-md);
+  background: rgb(var(--tone-rgb, var(--primary-rgb))); color: var(--bg);
+}
+.callout-ic .ic { width: 22px; height: 22px; }
+.callout-body { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.callout-title { font-weight: var(--fw-bold); color: var(--fg); }
+.callout-sub { font-size: var(--fs-sm); color: var(--fg-2); font-weight: var(--fw-regular); }
+.callout-go { color: var(--fg-3); }
+
+/* ── Посилання в заголовку секції ───────────────────────────────── */
+.section-header .section-link { order: 3; margin-left: var(--sp-2); font-size: var(--fs-xs); letter-spacing: 0; text-transform: none; }
+.section-header > span:first-child { order: 1; }
+.section-header::after { order: 2; }
+
+/* ── Швидкий старт: плитки ігор ─────────────────────────────────── */
+.games-scroll {
+  display: flex; gap: var(--sp-2); overflow-x: auto; scroll-snap-type: x proximity;
+  padding: 2px 4px var(--sp-3) 2px; margin-bottom: var(--sp-2); scrollbar-width: none;
+}
+.games-scroll::-webkit-scrollbar { display: none; }
+.game-thumb {
+  flex: none; scroll-snap-align: start;
+  width: 84px; min-height: 92px; margin: 0; padding: var(--sp-2) var(--sp-1);
+  flex-direction: column; gap: var(--sp-1);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: var(--sh-1);
+  border-radius: var(--r-lg);
+}
+.game-thumb .icon {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-md);
+  background: var(--surface-3); color: var(--fg); font-size: 24px; line-height: 1;
+}
+.game-thumb .icon .ic { width: 26px; height: 26px; }
+.game-thumb .label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--fg-2); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) {
+  .game-thumb:hover .icon { background: var(--accent); color: var(--on-accent); }
+}
+@media (min-width: 1024px) {
+  .quick-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); overflow: visible; }
+  .quick-games .game-thumb { width: auto; }
+}
+
+/* ── Промо-карусель ─────────────────────────────────────────────── */
+.banner-carousel { position: relative; margin-bottom: var(--stack); overflow: hidden; border-radius: var(--r-xl); }
+.banner-track { display: flex; transition: transform var(--dur-4) var(--ease-in-out); will-change: transform; }
+.banner-slide {
+  --tone: var(--accent); --tone-rgb: var(--accent-rgb);
+  position: relative; flex: 0 0 100%; min-height: 160px; overflow: hidden; cursor: pointer;
+  padding: var(--sp-5); border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface-1));
+  border: var(--bw) solid rgb(var(--tone-rgb) / .55);
+}
+.banner-slide:focus-visible { outline: var(--bw-strong) solid var(--primary); outline-offset: -4px; }
+.tone-accent { --tone: var(--accent); --tone-rgb: var(--accent-rgb); }
+.tone-special { --tone: var(--special); --tone-rgb: var(--special-rgb); }
+.tone-warn { --tone: var(--warn); --tone-rgb: var(--warn-rgb); }
+.tone-info { --tone: var(--info); --tone-rgb: var(--info-rgb); }
+.tone-pos { --tone: var(--pos); --tone-rgb: var(--pos-rgb); }
+.tone-neg { --tone: var(--neg); --tone-rgb: var(--neg-rgb); }
+/* Великий «штамп»-іконка на тлі */
+.banner-deco {
+  position: absolute; right: -14px; bottom: -22px; font-size: 140px; line-height: 1;
+  color: rgb(var(--tone-rgb) / .16); pointer-events: none; transform: rotate(-12deg);
+}
+.banner-inner { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-3); }
+.banner-kicker { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--tone); }
+.banner-title { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-bold); line-height: var(--lh-tight); margin-top: var(--sp-1); color: var(--fg); }
+.banner-sub { font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg); margin-top: var(--sp-1); }
+.banner-desc { font-size: var(--fs-sm); color: var(--fg-2); margin-top: 2px; max-width: 30ch; }
+.banner-pills { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-3); }
+.banner-pill {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px var(--sp-2);
+  font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--fg);
+  background: var(--surface-1); border: 1px solid rgb(var(--tone-rgb) / .5); border-radius: var(--r-sm);
+}
+.banner-stat-box {
+  flex: none; min-width: 92px; text-align: center; padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-1); border: var(--bw) solid var(--ink-shadow); border-radius: var(--r-lg);
+  box-shadow: 2px 2px 0 0 var(--ink-shadow);
+}
+.banner-stat-lbl { font-size: var(--fs-2xs); color: var(--fg-3); text-transform: uppercase; letter-spacing: var(--ls-caps); }
+.banner-stat-val { font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-lg); color: var(--tone); margin: 2px 0; white-space: nowrap; }
+.banner-stat-val.is-sm { font-size: var(--fs-sm); }
+.banner-stat-sub { font-size: var(--fs-2xs); color: var(--fg-3); }
+.banner-dots { display: flex; justify-content: center; gap: var(--sp-1); padding: var(--sp-2) 0 0; }
+.banner-dot {
+  width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--line-strong); cursor: pointer;
+  transition: width var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out);
+}
+.banner-dot.active { width: 22px; background: var(--fg); }
+@media (max-width: 420px) {
+  .banner-stat-box { display: none; }
+}
+
+/* ── Live-стрічка ───────────────────────────────────────────────── */
+.live-ticker {
+  display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit);
+  padding: var(--sp-2) var(--sp-3); margin-bottom: var(--stack);
+  border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md);
+}
+.live-badge { flex: none; }
+.live-ticker-text { font-size: var(--fs-sm); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Швидкі дії ─────────────────────────────────────────────────── */
+.action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); margin-bottom: var(--stack); }
+@media (min-width: 640px) { .action-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.action-tile {
+  margin: 0; min-height: 96px; padding: var(--sp-3); flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; text-align: left;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; border-radius: var(--r-lg);
+  border-top: 4px solid var(--tone, var(--accent));
+}
+@media (hover: hover) { .action-tile:hover { --btn-bd: var(--tone, var(--accent)); } }
+.action-ic { display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: var(--sp-1); color: var(--tone, var(--accent)); font-size: 22px; }
+.action-ic .ic { width: 24px; height: 24px; }
+.action-title { font-weight: var(--fw-bold); color: var(--fg); }
+.action-sub { font-size: var(--fs-xs); color: var(--fg-3); font-weight: var(--fw-regular); }
+
+/* ── Прогрес ────────────────────────────────────────────────────── */
+.progress-card .progress { margin-bottom: var(--sp-3); }
+.progress-card .progress:last-child { margin-bottom: 0; }
+.progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-2); font-size: var(--fs-sm); color: var(--fg-2); }
+.progress-row b { color: var(--fg); }
+.progress-bar.is-special { background: var(--special); }
+
+/* ── Статистика трійкою ─────────────────────────────────────────── */
+.stat-trio { display: grid; grid-template-columns: repeat(3, 1fr); padding: var(--sp-3) var(--sp-2); }
+.stat { text-align: center; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat-val { font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-lg); }
+.stat-lbl { font-size: var(--fs-2xs); color: var(--fg-3); text-transform: uppercase; letter-spacing: var(--ls-caps); margin-top: 2px; }
+
+/* ── Панель-посилання ───────────────────────────────────────────── */
+.panel-link {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; padding: var(--sp-4);
+}
+@media (hover: hover) { .panel-link:hover { --btn-bd: var(--line-strong); } }
+.panel-link .panel-head { margin-bottom: var(--sp-2); display: flex; }
+.panel-title.is-sm { font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.panel-action { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-xs); color: var(--fg-3); font-weight: var(--fw-semibold); }
+.panel-text { display: block; font-size: var(--fs-sm); color: var(--fg-2); font-weight: var(--fw-regular); }
+.event-mini { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-1); scrollbar-width: none; }
+#activityFeed .feed-item { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
+#activityFeed .feed-item:last-child { border-bottom: 0; }
 /* ─── src/css/50-legacy.css ─── */
 /* ============================================================
    SlotOK Casino — style.css
    All styles combined from index.html
    ============================================================ */
 
-
     .hero-banner { width: 100%; min-height: 130px; background: linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--accent) 6%, var(--surface-1)), var(--bg)); border-radius: var(--r-xl); margin-bottom: 16px; border: 1px solid rgb(var(--accent-rgb) / 0.2); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; position:relative; overflow:hidden; box-shadow: none; }
     .hero-title { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 5px; font-family:var(--font-display); letter-spacing:1px; }
-    
-    .games-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-    .games-scroll::-webkit-scrollbar { display:none; }
-    .game-thumb { min-width: 82px; height: 90px; background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.04), transparent 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 5px; transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; -webkit-tap-highlight-color:transparent; box-shadow: var(--bevel), var(--elev-1); }
-    .game-thumb:active { transform: scale(.92) translateY(1px); filter:brightness(.8); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
     .game-thumb:hover, .game-card:hover { border-color: rgb(var(--accent-rgb) / 0.35); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
-    .game-thumb span.icon { font-size: 30px; line-height:1; }
-    .game-thumb span.label { font-size: 10px; color: var(--sub); font-weight:700; }
 
     .game-card { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.04), transparent 45%), var(--box); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; margin-bottom: 10px; display:flex; align-items:center; gap:15px; cursor: pointer; transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; box-shadow: var(--bevel), var(--elev-1); }
     .game-card:active { transform:scale(.98) translateY(1px); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
@@ -1441,8 +1662,6 @@ body > .screen, .container ~ .screen {
     .admin-user-card:active { transform: scale(.98); }
     .rank { color: var(--accent); font-weight: bold; width: 30px; text-align:center; text-shadow: none; }
 
-    
-
     /* Повноекранний чат ПП — position:fixed, а не звичайний блок у потоці сторінки,
        щоб поле вводу завжди було приклеєне до низу видимої області екрана (а не
        ховалось нижче через 100vh на мобільних, чи "їхало" разом зі скролом body). */
@@ -1454,7 +1673,6 @@ body > .screen, .container ~ .screen {
     .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
     .avatar-large { width: 72px; height: 72px; background: linear-gradient(135deg,color-mix(in srgb, var(--accent) 9%, var(--surface-1)),color-mix(in srgb, var(--accent) 16%, var(--surface-1))); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; box-shadow: 0 6px 18px -6px rgb(var(--shade-rgb) / 0.5); }
     .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
- 
 
     .pay-btn.selected { border-color: var(--accent); color: var(--accent); background: rgb(var(--accent-rgb) / 0.1); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
 
@@ -1587,7 +1805,6 @@ body > .screen, .container ~ .screen {
 
     /* ===== RATE TICKER ===== */
     @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    #rateTicker:hover #rateTickerInner { animation-play-state:paused; }
 
     /* ===== CURRENCY SYSTEM ===== */
     .currency-btn { padding:12px 8px;background:var(--input);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s;text-align:center;box-shadow: var(--bevel), var(--elev-1); }
@@ -1595,96 +1812,26 @@ body > .screen, .container ~ .screen {
     .currency-btn:hover { border-color:var(--line-strong); }
     .currency-btn.active { border-color:var(--accent);background:rgb(var(--accent-rgb) / 0.12);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
     #currencyPickerModal .currency-btn { display:flex;flex-direction:column;align-items:center; }
-    .rate-ticker { font-size:9px;color:var(--fg-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-    .header-bal { font-size: 14px; background: rgb(var(--accent-rgb) / 0.1); padding: 6px 14px; border-radius: var(--r-xl); border: 1px solid rgb(var(--accent-rgb) / 0.25); font-weight: 700; color: var(--green); cursor: pointer; white-space: nowrap; font-family:var(--font-body); box-shadow: var(--bevel); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; }
-    .header-bal:active { transform: translateY(1px) scale(.97); }
 
     /* ===== HOME SUB-TABS ===== */
-    .home-tabs { display:flex; gap:0; background:var(--surface-1); border-radius:var(--r-sm); padding:4px; margin-bottom:15px; border:1px solid var(--line); box-shadow: var(--bevel), var(--elev-1); }
-    .home-tab-btn { flex:1; padding:10px 6px; border-radius:var(--r-md); font-size:12px; font-weight:bold; cursor:pointer; text-align:center; color:var(--fg-3); transition:all 0.2s; position:relative; }
-    .home-tab-btn:active { transform: scale(.95); }
-    .home-tab-btn.active { background:var(--box); color:var(--fg); box-shadow: var(--bevel), 0 4px 12px -4px rgb(var(--shade-rgb) / 0.5); }
-    .home-tab-btn .htbadge { position:absolute; top:4px; right:6px; background:var(--red); color:var(--fg); border-radius:var(--r-md); font-size:8px; padding:1px 4px; font-weight:bold; }
-    .home-panel { display:none; }
-    .home-panel.active { display:block; }
 
     /* ═══════════════════════════════════════════════════════
        HOME DASHBOARD — PREMIUM CASINO-LUX SYSTEM (lux-* / v74)
     ═══════════════════════════════════════════════════════ */
-    #hp-main { --lux-gold:var(--accent); --lux-gold-soft:rgb(var(--accent-rgb) / 0.7); --lux-dim:var(--accent); }
 
     /* Ornate section divider — flanking hairlines around a small gold label */
-    #hp-main .lux-divider { display:flex; align-items:center; gap:10px; margin:22px 0 12px; }
-    #hp-main .lux-divider::before, #hp-main .lux-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.32), transparent); }
-    #hp-main .lux-divider:first-child::before { background:linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.15), transparent); }
-    #hp-main .lux-divider-label { font-family:var(--font-display); font-size:10px; letter-spacing:2.5px; color:var(--lux-gold); text-transform:uppercase; white-space:nowrap; display:flex; align-items:center; gap:7px; }
-    #hp-main .lux-divider-action { font-size:10px; color:var(--lux-dim); cursor:pointer; font-weight:700; letter-spacing:.4px; white-space:nowrap; }
 
     /* Hero — balance, VIP crest, streak/bets/wins strip */
-    .lux-hero { position:relative; background: radial-gradient(120% 160% at 12% 0%, rgb(var(--accent-rgb) / 0.11), transparent 55%), linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 50%), var(--bg); border:1px solid rgb(var(--accent-rgb) / 0.22); border-radius:var(--r-xl); padding:18px 18px 16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-2); overflow:hidden; will-change:transform; }
-    .lux-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgb(var(--accent-rgb) / 0.75),transparent); }
-    .lux-hero-top { display:flex; align-items:flex-start; justify-content:space-between; cursor:pointer; }
-    .lux-hero-greet { font-size:10px; color:var(--lux-dim); letter-spacing:1.6px; text-transform:uppercase; margin-bottom:6px; }
-    .lux-hero-balance { font-family:var(--font-display); font-size:30px; font-weight:900; line-height:1.05; background:var(--accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:.3px; }
-    .lux-hero-vip { flex-shrink:0; text-align:center; cursor:pointer; padding:8px 14px; border-radius:var(--r-lg); background:rgb(var(--accent-rgb) / 0.06); border:1px solid rgb(var(--accent-rgb) / 0.22); }
-    .lux-hero-vip-crest { font-size:19px; }
-    .lux-hero-vip-tier { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--lux-gold); margin-top:3px; }
-    .lux-hero-vip-lbl { font-size:8px; color:var(--lux-dim); text-transform:uppercase; letter-spacing:1px; margin-top:1px; }
-    .lux-hero-strip { display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:16px; padding-top:14px; border-top:1px solid rgb(var(--accent-rgb) / 0.12); }
-    .lux-hero-cell { text-align:center; cursor:pointer; }
-    .lux-hero-cell + .lux-hero-cell { border-left:1px solid rgb(var(--tint-rgb) / 0.06); }
-    .lux-hero-cell-val { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--fg); }
-    .lux-hero-cell-lbl { font-size:8px; color:var(--lux-dim); margin-top:4px; text-transform:uppercase; letter-spacing:.7px; }
 
     /* Generic luxe panel — replaces plain widget cards */
-    .lux-panel { position:relative; background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.022), transparent 50%), var(--bg); border:1px solid rgb(var(--accent-rgb) / 0.13); border-radius:var(--r-xl); padding:14px 16px; margin-bottom:12px; box-shadow: var(--bevel), var(--elev-1); }
-    .lux-panel.clickable { cursor:pointer; transition: border-color .15s, transform .14s var(--ease-tactile); }
-    .lux-panel.clickable:active { transform: scale(.98); }
-    .lux-panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-    .lux-panel-label { font-size:10px; font-weight:800; color:var(--lux-gold); text-transform:uppercase; letter-spacing:1.6px; display:flex; align-items:center; gap:7px; }
-    .lux-panel-action { font-size:10px; color:var(--lux-dim); }
-
-    .lux-mini-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .lux-mini-item { text-align:center; }
-    .lux-mini-val { font-family:var(--font-display); font-size:15px; font-weight:900; }
-    .lux-mini-lbl { font-size:8px; color:var(--lux-dim); margin-top:3px; text-transform:uppercase; letter-spacing:.6px; }
 
     /* VIP + Battle Pass progress */
-    .lux-progress-card { background: linear-gradient(160deg, rgb(var(--accent-rgb) / 0.05), transparent 50%), var(--bg); border:1px solid rgb(var(--accent-rgb) / 0.18); border-radius:var(--r-xl); padding:16px; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-1); }
-    .lux-progress-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
-    .lux-progress-row span { font-size:10px; color:var(--lux-dim); text-transform:uppercase; letter-spacing:.7px; }
-    .lux-progress-row b { color:var(--lux-gold); }
-    .lux-progress-track { height:6px; background: rgb(var(--tint-rgb) / 0.05); border-radius:var(--r-sm); overflow:hidden; margin-bottom:14px; box-shadow: inset 0 2px 4px rgb(var(--shade-rgb) / 0.6); }
-    .lux-progress-track:last-of-type { margin-bottom:0; }
-    .lux-progress-fill { height:100%; border-radius:var(--r-sm); background: var(--accent); transition:width .8s cubic-bezier(.22,1,.36,1); }
 
     /* Live win ticker */
-    .lux-live-ticker { background: linear-gradient(90deg,transparent,rgb(var(--accent-rgb) / 0.04) 40%,transparent), var(--bg); border:1px solid rgb(var(--accent-rgb) / 0.14); border-radius:var(--r-lg); padding:9px 12px; margin-bottom:14px; overflow:hidden; display:flex; align-items:center; gap:9px; box-shadow: var(--bevel), var(--elev-1); }
-    .lux-live-badge { background:var(--neg); color:var(--on-neg); font-size:9px; font-weight:800; padding:2px 7px; border-radius:var(--r-md); flex-shrink:0; animation:heartbeat 2s infinite; letter-spacing:.5px; }
-    .lux-live-text { font-size:12px; color:var(--fg-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 
     /* Quick action tiles — minimal dark glass with a thin accent top-edge */
-    .lux-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
-    .lux-action-tile { position:relative; background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.022), transparent 50%), var(--bg); border:1px solid rgb(var(--tint-rgb) / 0.07); border-radius:var(--r-xl); padding:15px 14px; cursor:pointer; overflow:hidden; box-shadow: var(--bevel), var(--elev-1); transition: transform .15s var(--ease-tactile), border-color .15s, box-shadow .15s; }
-    .lux-action-tile::before { content:''; position:absolute; top:0; left:14px; right:14px; height:2px; border-radius:0 0 var(--r-xs) var(--r-xs); background: var(--ac, var(--lux-gold)); opacity:.75; }
-    .lux-action-tile:active { transform: scale(.96); }
-    .lux-action-tile:hover { border-color: var(--ac, var(--lux-gold)); box-shadow: var(--bevel), var(--elev-1); }
-    .lux-action-icon-badge { width:34px; height:34px; border-radius:var(--r-md); background: rgb(var(--tint-rgb) / 0.04); border:1px solid rgb(var(--tint-rgb) / 0.08); display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px; }
-    .lux-action-title { font-size:13px; font-weight:800; color:var(--fg); letter-spacing:.2px; }
-    .lux-action-sub { font-size:10px; color:var(--lux-dim); margin-top:2px; }
 
     /* Battle Pass promo — jewel-tone purple with a gold hairline frame */
-    .lux-promo-card { background: linear-gradient(135deg,color-mix(in srgb, var(--special) 7%, var(--surface-1)),color-mix(in srgb, var(--special) 14%, var(--surface-1)),color-mix(in srgb, var(--special) 7%, var(--surface-1))); border:1px solid rgb(var(--accent-rgb) / 0.22); border-radius:var(--r-xl); padding:16px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
-    .lux-promo-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background: linear-gradient(90deg,transparent,rgb(var(--accent-rgb) / 0.7),transparent); }
-    .lux-promo-deco { position:absolute; right:-10px; top:-10px; font-size:80px; opacity:.08; }
-    .lux-promo-body { display:flex; align-items:center; gap:12px; }
-    .lux-promo-icon { font-size:34px; animation: float 3s ease-in-out infinite; }
-    .lux-promo-title { font-weight:900; font-size:15px; color:var(--special); font-family:var(--font-display); letter-spacing:1px; }
-    .lux-promo-sub { font-size:12px; color:var(--fg-3); margin-top:2px; }
-    .lux-promo-pills { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
-    .lux-promo-pill { border-radius:var(--r-sm); padding:2px 8px; font-size:10px; }
-
-    .lux-cta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
 
     /* ===== НОВИНИ ===== */
     .news-card { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 45%), var(--box); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-1); }
@@ -2415,7 +2562,6 @@ body > .screen, .container ~ .screen {
     .big-win-glow{position:fixed;inset:0;background:radial-gradient(circle at 50% 50%,rgb(var(--accent-rgb) / 0.22),transparent 70%);z-index:99997;animation:glowpop .8s ease-out forwards;pointer-events:none;}
     @keyframes glowpop{0%{opacity:1;}100%{opacity:0;}}
 
-
     /* ─── BACCARAT ─── */
     .bac-table{background:var(--surface-1);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;}
     .bac-cards{display:flex;gap:6px;min-height:72px;align-items:center;flex-wrap:wrap;}
@@ -2874,7 +3020,6 @@ body > .screen, .container ~ .screen {
     /* Real-time deposit approve animation */
     @keyframes reqFlash { 0%,100%{background:transparent} 50%{background:rgb(var(--pos-rgb) / 0.08)} }
     .req-card.new-req { animation:reqFlash 1s ease 2; }
-  
 
     /* ══════════════════════════════════════════════════
        ГЛОБАЛЬНІ АНІМАЦІЇ v69
@@ -3192,7 +3337,6 @@ body > .screen, .container ~ .screen {
 
     /* Req card animation */
     .req-card { animation:slideUp .3s ease both; }
-  
 
     /* ══ UNIVERSAL MODAL SYSTEM ══ */
     .slotok-modal-overlay{position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.88 * var(--recess-k)));z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;animation:fadeInOverlay .2s ease;overflow-y:auto;}
@@ -3201,7 +3345,6 @@ body > .screen, .container ~ .screen {
     .slotok-modal-box{background:var(--surface-1);border-radius:var(--r-xl);padding:22px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease;position:relative;}
     .slotok-modal-close{position:absolute;top:12px;right:12px;background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);cursor:pointer;width:30px;height:30px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.15s;}
     .slotok-modal-close:active{transform:scale(.9);}
-  
 
     /* ═══ AUTH SCREEN ═══ */
     #auth-screen {
@@ -3395,7 +3538,6 @@ body > .screen, .container ~ .screen {
     .auth-stat { text-align:center; }
     .auth-stat-val { font-size:18px;font-weight:900;color:var(--accent);font-family:var(--font-display); }
     .auth-stat-lbl { font-size:9px;color:var(--fg-4);letter-spacing:1px; }
-  
 
 @keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}
 
@@ -4127,16 +4269,6 @@ body > .screen, .container ~ .screen {
 /* ═══════════════════════════════════════════════════════
    BANNER CAROUSEL — ротаційні банери на головній
 ═══════════════════════════════════════════════════════ */
-.banner-carousel {
-  position: relative;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  margin-bottom: 12px;
-  animation: slideUp .4s ease;
-  box-shadow: var(--bevel), var(--elev-2);
-  border: 1px solid rgb(var(--accent-rgb) / 0.18);
-}
-.banner-dot.active { box-shadow: none; }
 
 /* Головна — фонові плаваючі "орби" за героєм, чисто CSS, без JS */
 #tab-home { position: relative; }
@@ -4153,88 +4285,6 @@ body > .screen, .container ~ .screen {
 @keyframes homeOrbDrift {
   0%   { transform: translate(0,0) scale(1); }
   100% { transform: translate(-14px,18px) scale(1.06); }
-}
-.progress-fill-shimmer { position: relative; overflow: hidden; }
-.progress-fill-shimmer::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgb(var(--tint-rgb) / 0.35) 45%, transparent 60%);
-  background-size: 200% 100%;
-  animation: shimmerSweep 2.4s ease-in-out infinite;
-}
-.banner-track {
-  display: flex;
-  transition: transform .5s cubic-bezier(.4,0,.2,1);
-  touch-action: pan-y;
-}
-.banner-slide {
-  flex: 0 0 100%;
-  min-width: 100%;
-  box-sizing: border-box;
-  padding: 18px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--r-xl);
-  transition: transform .15s cubic-bezier(.4,0,.2,1), filter .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.banner-slide:active { transform: scale(.98); filter: brightness(.92); }
-.banner-deco {
-  position: absolute; top: -20px; right: -20px;
-  font-size: 110px; opacity: .06; pointer-events: none;
-  transition: transform .5s var(--ease-premium);
-  will-change: transform;
-}
-.banner-slide::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(var(--tint-rgb) / 0.25), transparent);
-}
-.banner-slide::after {
-  content: '';
-  position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(100deg, transparent 30%, rgb(var(--tint-rgb) / 0.08) 45%, transparent 60%);
-  background-size: 200% 100%;
-  animation: shimmerSweep 4.5s ease-in-out infinite;
-}
-.banner-inner {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  position: relative; z-index: 1;
-}
-.banner-title {
-  font-family: var(--font-display);
-  font-size: 21px; font-weight: 900; letter-spacing: 1.5px;
-}
-.banner-sub { font-size: 13px; font-weight: 700; margin-top: 4px; }
-.banner-desc { color: var(--fg-3); font-size: 11px; margin-top: 3px; max-width: 220px; }
-.banner-pills { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.banner-pill {
-  border: 1px solid; border-radius: var(--r-xl);
-  padding: 4px 10px; font-size: 10px;
-}
-.banner-stat-box {
-  background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.06), rgb(var(--recess-rgb) / calc(0.4 * var(--recess-k))) 55%);
-  border: 1.5px solid; border-radius: var(--r-lg);
-  padding: 10px 14px; text-align: center;
-  flex-shrink: 0; min-width: 72px;
-  box-shadow: 0 6px 16px -8px rgb(var(--shade-rgb) / 0.6);
-}
-.banner-stat-lbl { font-size: 9px; color: var(--fg-3); }
-.banner-stat-val { font-size: 17px; font-weight: 900; font-family: var(--font-display); }
-.banner-stat-sub { font-size: 9px; margin-top: 4px; }
-
-.banner-dots {
-  display: flex; justify-content: center; gap: 6px;
-  margin-top: 10px;
-}
-.banner-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: rgb(var(--tint-rgb) / 0.15);
-  cursor: pointer; transition: all .25s ease;
-}
-.banner-dot.active {
-  width: 18px; border-radius: var(--r-xs);
-  background: var(--accent, var(--accent));
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -4789,9 +4839,6 @@ body > .screen, .container ~ .screen {
 .anim-press:active { transform: scale(.93); }
 /* A touch of 3D on tap for the premium tiles — pure CSS, no gesture capture,
    so it can never fight scrolling or the banner carousel's swipe. */
-.lux-action-tile.anim-press:active { transform: perspective(400px) scale(.94) rotateX(6deg); }
-.lux-hero-cell { transition: transform .12s cubic-bezier(.4,0,.2,1); cursor:pointer; }
-.lux-hero-cell:active { transform: perspective(400px) scale(.93) rotateX(8deg); }
 #tab-home .anim-press:hover { box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
 
 /* Картки — плавна поява каскадом */
@@ -4870,9 +4917,7 @@ body > .screen, .container ~ .screen {
 .casino-game-card:nth-child(6), .game-thumb:nth-child(6) { animation-delay: .17s; }
 .casino-game-card:nth-child(n+7), .game-thumb:nth-child(n+7) { animation-delay: .2s; }
 
-
 /* Банер-стат числа плавно з'являються */
-.banner-stat-val { animation: cascadeIn .4s ease both; }
 
 /* Прев'ю скіну картки — легкий 3D-тілт при наведенні (десктоп) */
 .skin-swatch { transition: transform .2s, box-shadow .2s; }
