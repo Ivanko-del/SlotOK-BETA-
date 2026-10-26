@@ -70,3 +70,19 @@ assert.strictEqual(getTheme(nums.length + 1).name, "", "сезон поза та
 assert.strictEqual(getTheme(9999).name, "");
 
 console.log("OK — таблиця сезонів Battle Pass суцільна й безпечно вичерпується");
+
+// ── Бонусні скрині після 50 рівня ──────────────────────────────────
+// Беремо справжню bpBonusInfo з app.js: скриня кожні BP_BONUS_XP досвіду
+// понад 50 рівнів, нічого — до 50-го, і видане не видається вдруге.
+{
+  const grab = (re) => { const m = re.exec(appSrc); assert.ok(m, "не знайдено: " + re); return m[0]; };
+  const src = grab(/const BP_BONUS_XP = \d+;/) + "\n" + grab(/function bpBonusInfo\(bp\) \{[\s\S]*?\n\}/);
+  const { BP_BONUS_XP: B, bpBonusInfo } = new Function("BP_MAX_LEVEL", "BP_XP_PER_LEVEL", src + "; return { BP_BONUS_XP, bpBonusInfo };")(50, 1000);
+  assert.deepStrictEqual(bpBonusInfo({ xp: 49999, level: 49, bonusClaimed: 0 }).available, 0, "до 50 рівня скринь немає");
+  assert.strictEqual(bpBonusInfo({ xp: 50000, level: 50, bonusClaimed: 0 }).available, 0);
+  assert.strictEqual(bpBonusInfo({ xp: 50000 + B, level: 50, bonusClaimed: 0 }).available, 1);
+  assert.strictEqual(bpBonusInfo({ xp: 50000 + 3 * B + 5, level: 50, bonusClaimed: 1 }).available, 2);
+  assert.strictEqual(bpBonusInfo({ xp: 50000 + 3 * B + 5, level: 50, bonusClaimed: 1 }).progress, 5);
+  assert.strictEqual(bpBonusInfo({ xp: 50000 + B, level: 50, bonusClaimed: 5 }).available, 0, "не мінус");
+  console.log("OK — бонусні скрині Battle Pass після 50 рівня рахуються правильно");
+}

@@ -20,8 +20,10 @@
 **Зроблено:** серверний гаманець `api/play.js` + `lib/games.js`; на сервері
 Dice, Limbo (v102), Sic Bo, Card War, Plinko, Keno, Scratch, Penalty, Archery,
 Bowling (v103), Mines, Tower, Hi-Lo, Crash, Balloon (v104, `api/round.js`).
-Аудит RTP усіх ігор — BUGS.md B15/B17. Ще на клієнті: слоти, рулетка,
-Double, Fortune, Chests, Dragon Tower, Blackjack, покер.
+Classic 777, Diamond Rush, Double, Fortune, Chests, Dragon Tower (v106).
+Аудит RTP — BUGS.md B15/B17/B18. Ще на клієнті: Blackjack, покер, рулетка,
+PvP і мультиплеєр (там гроші переходять між гравцями — потрібен окремий
+серверний арбітр), бонуси/VIP/Battle Pass (нараховуються за даними клієнта).
 
 **Що робити далі:** покроковий план — у SECURITY.md, розділ «План переносу ігор
 на сервер (C5)»: решта ігор «одним запитом» → ігри з кількома кроками →

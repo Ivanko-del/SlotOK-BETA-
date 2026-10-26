@@ -1180,25 +1180,44 @@ function loadMyWithdraws() {
 // --- Слоти ---
 let _spinBtn = null; // global ref so finishSlots can re-enable it
 
-function spinSlots() { 
+// Безкоштовний спін грається на ставку не більше 100 ₴ (раніше — на будь-яку з
+// поля вводу: 75 фріспінів з Battle Pass на ставці 1 000 000 давали мільйони).
+const SLOTS_FREE_SPIN_MAX_BET = 100;
+async function spinSlots() { 
+    if(_spinBtn && _spinBtn.disabled) return;
     // Free spins check
     const freeSp = userData.freeSlots || 0;
     let b;
     _spinBtn = document.getElementById('slotsSpinBtn');
     if(_spinBtn) _spinBtn.disabled = true;
+    const mode = slotBonusRound > 0 ? 'bonus' : freeSp > 0 ? 'free' : 'paid';
+    let srv = { mode: 'legacy' };
     try {
-    if(freeSp > 0) {
-      b = parseInt(document.getElementById('betAmountSlots').value) || 100;
+    if(mode !== 'bonus') {
+      b = mode === 'free'
+        ? Math.min(parseInt(document.getElementById('betAmountSlots').value) || 100, SLOTS_FREE_SPIN_MAX_BET)
+        : validateBet(document.getElementById('betAmountSlots').value);
+      if(!b) { if(_spinBtn) _spinBtn.disabled = false; return; }
+    } else b = slotBonusBet;
+    // Результат спіну (і фріспіни, і бонус-раунд) рахує сервер, якщо він є.
+    srv = await serverPlay('slots', b, { mode });
+    if(srv.mode === 'error') {
+      if(_spinBtn) _spinBtn.disabled = false;
+      // Сервер каже, що фріспінів / бонус-раунду вже немає — синхронізуємо UI.
+      if(mode === 'bonus') { slotBonusRound = 0; document.getElementById('bonusRoundBanner')?.classList.add('hidden'); }
+      return;
+    }
+    if(srv.mode === 'server') {
+      if(srv.r.freeSlots !== undefined) { userData.freeSlots = srv.r.freeSlots; setTimeout(updateFreeSlotsUI, 50); }
+      if(mode === 'free') notify('🎟️ Використано 1 безкоштовний спін! Залишилось: ' + (srv.r.freeSlots || 0), 'info');
+      if(mode === 'paid') { addWager(b); trackLbStat('wager', b); trackLbStat('games', 1); publishLiveBet('Slots','🎰', b, ''); if(userData.clanId) trackClanWager(b); }
+    } else if(mode === 'free') {
       // Fix: update locally immediately so next spin reads correct value
       userData.freeSlots = freeSp - 1;
       db.ref('users/'+currentUser+'/freeSlots').set(freeSp - 1);
       setTimeout(updateFreeSlotsUI, 50);
       notify('🎟️ Використано 1 безкоштовний спін! Залишилось: ' + (freeSp-1), 'info');
-    } else if(slotBonusRound > 0) {
-      b = slotBonusBet;
-    } else {
-      b = validateBet(document.getElementById('betAmountSlots').value);
-      if(!b) return;
+    } else if(mode === 'paid') {
       db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
       addWager(b);
       trackLbStat('wager', b); trackLbStat('games', 1);
@@ -1223,7 +1242,7 @@ function spinSlots() {
           }, i * 60);
         });
         count++;
-        if(count > 18) { clearInterval(spinInterval); finishSlots(b); }
+        if(count > 18) { clearInterval(spinInterval); finishSlots(b, srv.mode === 'server' ? srv.r : null); }
     }, 75);
     } catch(e) { console.error('spinSlots error:', e); if(_spinBtn) _spinBtn.disabled = false; }
 } // end spinSlots
@@ -1243,27 +1262,28 @@ function updateFreeSlotsUI() {
   if(hint) hint.textContent = free > 0 ? `У вас ${free} безкоштовних спінів` : (slotBonusRound > 0 ? '' : '');
 }
 
-function finishSlots(bet) {
+// Таблиця Classic 777 — та сама, що slots у lib/games.js (RTP ≈96% разом з
+// бонус-раундом і фріспінами; раніше ≈158%).
+function finishSlots(bet, srvR) {
     const r = Math.random();
     const luck = getNewPlayerLuck();
     const isBonusRound = slotBonusRound > 0;
     const mult = isBonusRound ? slotBonusMult : 1;
-
     // Adjust odds in bonus round — better chances
     let adj;
-    if(isBonusRound) adj = r * 0.5;       // bonus: much better odds
+    if(isBonusRound) adj = r * 0.8;       // bonus: better odds
     else if(luck)    adj = r * 0.35;       // new player luck
     else             adj = r;
-
     let win = 0; let res = ["🍒","🍋","🔔"];
-    if(adj < 0.005)       { res = ["7️","7️","7️"];   win = bet*40*mult; }
-    else if(adj < 0.015)  { res = ["💎","💎","💎"]; win = bet*10*mult; }
-    else if(adj < 0.06)   { res = ["🍒","🍒","🍒"]; win = bet*2*mult;  }
-    else if(adj < 0.13)   { res = ["🔔","🔔","🍋"]; win = bet*1.2*mult;}
+    if(srvR) { res = srvR.reels; win = srvR.payout; }
+    else if(adj < 0.005)  { res = ["7️","7️","7️"];   win = Math.floor(bet*50*mult); }
+    else if(adj < 0.015)  { res = ["💎","💎","💎"]; win = Math.floor(bet*15*mult); }
+    else if(adj < 0.06)   { res = ["🍒","🍒","🍒"]; win = Math.floor(bet*3*mult);  }
+    else if(adj < 0.13)   { res = ["🔔","🔔","🍋"]; win = Math.floor(bet*1.5*mult);}
     // BONUS ROUND trigger (only outside bonus round)
-    else if(adj < 0.155 && !isBonusRound) { res = ["🎰","🎰","🎰"]; win = 0; /* handled below */ }
+    else if(adj < 0.14 && !isBonusRound)  { res = ["🎰","🎰","🎰"]; win = 0; /* handled below */ }
     // FREE SPINS trigger
-    else if(adj < 0.19 && !isBonusRound)  { res = ["⭐","⭐","⭐"]; win = 0; /* free spins */ }
+    else if(adj < 0.165 && !isBonusRound) { res = ["⭐","⭐","⭐"]; win = 0; /* free spins */ }
     
     const r1 = document.getElementById('r1');
     const r2 = document.getElementById('r2');
@@ -1290,9 +1310,9 @@ function finishSlots(bet) {
 
       // BONUS ROUND trigger
       if(res[0]==='🎰' && res[1]==='🎰' && res[2]==='🎰' && slotBonusRound===0) {
-        slotBonusRound = 10;
+        slotBonusRound = srvR ? srvR.bonusSpinsLeft : 10;
         slotBonusBet   = bet;
-        slotBonusMult  = 2 + Math.floor(Math.random()*4); // x2–x5
+        slotBonusMult  = srvR ? srvR.bonusMult : 2 + Math.floor(Math.random()*2); // x2–x3
         slotBonusWins  = 0;
         const banner = document.getElementById('bonusRoundBanner');
         const spinsEl = document.getElementById('bonusSpinsLeft');
@@ -1309,8 +1329,8 @@ function finishSlots(bet) {
 
       // FREE SPINS trigger
       if(res[0]==='⭐' && res[1]==='⭐' && res[2]==='⭐' && slotBonusRound===0) {
-        const newFree = (userData.freeSlots||0) + 5;
-        db.ref('users/'+currentUser+'/freeSlots').set(newFree);
+        if(srvR) userData.freeSlots = srvR.freeSlots;
+        else db.ref('users/'+currentUser+'/freeSlots').set(firebase.database.ServerValue.increment(5));
         if(resultEl) resultEl.innerHTML = '<span style="color:var(--green);">⭐ +5 БЕЗКОШТОВНИХ СПІНІВ!</span>';
         playSound('win');
         notify('⭐ Ви виграли 5 безкоштовних спінів!', 'success');
@@ -1322,7 +1342,7 @@ function finishSlots(bet) {
       // Normal win / loss
       if(win > 0) {
         consumeLuckyGame();
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+        if(!srvR) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
         if (win >= bet * 20) {
           notifyBot('player-ping', null, { to: currentUser, kind: 'bigwin', ref: { amount: win, game: 'Slots' } });
         }
@@ -1353,7 +1373,7 @@ function finishSlots(bet) {
       }
 
       if(slotBonusRound > 0) {
-        slotBonusRound--;
+        slotBonusRound = srvR && srvR.bonusSpinsLeft !== undefined ? srvR.bonusSpinsLeft : slotBonusRound - 1;
         const spinsEl = document.getElementById('bonusSpinsLeft');
         if(spinsEl) spinsEl.textContent = slotBonusRound;
         if(slotBonusRound === 0) {
@@ -1382,13 +1402,16 @@ function togglePaytable() {
 // ╚══════════════════════════════════════════════════════════════╝
 let _diamondSpinBtn = null;
 
-function spinDiamondSlots() {
+async function spinDiamondSlots() {
   _diamondSpinBtn = document.getElementById('diamondSpinBtn');
+  if(_diamondSpinBtn && _diamondSpinBtn.disabled) return;
   if(_diamondSpinBtn) _diamondSpinBtn.disabled = true;
   try {
     const b = validateBet(document.getElementById('betAmountDiamond').value);
     if(!b) { if(_diamondSpinBtn) _diamondSpinBtn.disabled = false; return; }
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+    const srv = await serverPlay('diamond', b, {});
+    if(srv.mode === 'error') { if(_diamondSpinBtn) _diamondSpinBtn.disabled = false; return; }
+    if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
     addWager(b);
     trackLbStat('wager', b); trackLbStat('games', 1);
     publishLiveBet('Diamond Rush','💎', b, '');
@@ -1410,18 +1433,19 @@ function spinDiamondSlots() {
         }, i * 60);
       });
       count++;
-      if(count > 18) { clearInterval(spinInterval); finishDiamondSlots(b); }
+      if(count > 18) { clearInterval(spinInterval); finishDiamondSlots(b, srv.mode === 'server' ? srv.r : null); }
     }, 75);
   } catch(e) { console.error('spinDiamondSlots error:', e); if(_diamondSpinBtn) _diamondSpinBtn.disabled = false; }
 }
 
-function finishDiamondSlots(bet) {
+function finishDiamondSlots(bet, srvR) {
   const r = Math.random();
   const luck = getNewPlayerLuck();
   const adj = luck ? r * 0.6 : r; // новачкам трохи кращі шанси, як і в Classic 777
 
   let win = 0; let res = ["🔷","✨","🥂"];
-  if(adj < 0.004)      { res = ["🎩","🎩","🎩"]; win = bet*45; }
+  if(srvR) { res = srvR.reels; win = srvR.payout; }
+  else if(adj < 0.004)      { res = ["🎩","🎩","🎩"]; win = bet*45; }
   else if(adj < 0.016) { res = ["👑","👑","👑"]; win = bet*15; }
   else if(adj < 0.046) { res = ["💍","💍","💍"]; win = bet*6;  }
   else if(adj < 0.126) { res = ["🔷","🔷","🔷"]; win = bet*2.5;}
@@ -1447,7 +1471,7 @@ function finishDiamondSlots(bet) {
 
     if(win > 0) {
       consumeLuckyGame();
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+      if(!srvR) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
       if(win >= bet * 20) {
         notifyBot('player-ping', null, { to: currentUser, kind: 'bigwin', ref: { amount: win, game: 'Diamond Rush' } });
       }
@@ -1901,19 +1925,34 @@ function grScheduleNextSpin() {
 window.initGlobalRoulette = initGlobalRoulette;
 
 // --- Сундуки ---
-function startChests(){ 
+async function startChests(){ 
     const b = validateBet(document.getElementById('betAmountChests').value); 
     if(!b) return; 
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+    // Із сервером ставка списується при відкритті скрині (api/play «chests»).
+    const serverMode = await serverAuthEnabled();
+    if(!serverMode) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
     const g = document.getElementById('chestsGrid'); 
     g.innerHTML = ""; 
     for(let i=0; i<3; i++){ 
         const d = document.createElement('div'); 
         d.className = "chest-item"; 
         d.textContent = "📦"; 
-        d.onclick = () => { 
+        d.onclick = async () => { 
+            if(g.dataset.busy) return;
+            let w;
+            if(serverMode) {
+                g.dataset.busy = '1';
+                let srv;
+                try { srv = await serverPlay('chests', b, {}); } finally { delete g.dataset.busy; }
+                if(srv.mode === 'error') return;
+                w = srv.mode === 'server' ? srv.r.payout : 0;
+                Array.from(g.children).forEach(c => c.onclick = null);
+                d.textContent = w ? "💰" : "💨";
+                if(w){ playSound('win'); notify(`+${w} ₴`, "success"); addToHistory(`Chests: +${w}`); } else { playSound('click'); }
+                return;
+            }
             // 40% × 2.4 = 96% (було × 2.5 = рівно 100%, без переваги закладу)
-            const w = Math.random() > 0.6 ? Math.floor(b*2.4) : 0; 
+            w = Math.random() > 0.6 ? Math.floor(b*2.4) : 0; 
             d.textContent = w ? "💰" : "💨"; 
             if(w){ db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(w)); playSound('win'); notify(`+${w} ₴`, "success"); addToHistory(`Chests: +${w}`); } 
             else { playSound('click'); }
@@ -5429,11 +5468,14 @@ function consumeLuckyGame() {
   }
 }
 
-function spinFortune() {
+async function spinFortune() {
   if(fortuneSpinning) return;
   const b = validateBet(document.getElementById('betAmountFortune').value);
   if(!b) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  fortuneSpinning = true;
+  const srv = await serverPlay('fortune', b, {});
+  if(srv.mode === 'error') { fortuneSpinning = false; return; }
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
   addWager(b);
   trackLbStat('wager', b); trackLbStat('games', 1);
   publishLiveBet('Колесо','🎡', b, '');
@@ -5443,7 +5485,7 @@ function spinFortune() {
 
   const seg = FORTUNE_SEGMENTS.length;
   const arc = (2 * Math.PI) / seg;
-  const winIdx = Math.floor(Math.random() * seg);
+  const winIdx = srv.mode === 'server' ? srv.r.segment : Math.floor(Math.random() * seg);
 
   // Pointer (▼) is at TOP of wheel = angle -π/2 in canvas coordinates.
   // Segment i is drawn from angle (rotation + i*arc) to (rotation + (i+1)*arc).
@@ -5474,12 +5516,12 @@ function spinFortune() {
       drawFortuneWheel(fortuneRotation);
 
       const won = FORTUNE_SEGMENTS[winIdx];
-      const win = Math.floor(b * won.mult);
+      const win = srv.mode === 'server' ? srv.r.payout : Math.floor(b * won.mult);
       document.getElementById('fortuneResult').innerHTML =
         `<span style="color:${win>0?'var(--green)':'var(--red)'}">${won.label} → ${win > 0 ? '+'+formatNumber(win)+' ₴' : '0 ₴'}</span>`;
       if(win > 0) {
         consumeLuckyGame();
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+        if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
         playSound(won.mult >= 10 ? 'bonus' : 'win');
         if(won.mult >= 10) notify('🎉 ВЕЛИКИЙ ВИГРАШ: +'+formatNumber(win)+' ₴!', 'success');
         else notify('🎡 '+won.label+': +'+formatNumber(win)+' ₴', 'success');
@@ -5673,10 +5715,58 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '104';
+const CURRENT_VERSION = '106';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '106',
+    title: '📜 Оновлення v106 — слоти та ще 4 гри на сервері',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎰 Classic 777 — нова таблиця виплат',
+        items: [
+          '7-7-7 тепер ×50 (було ×40), 💎 ×15 (було ×10), 🍒 ×3 (було ×2), 🔔 ×1.5 (було ×1.2)',
+          'Бонус-раунд випадає рідше і дає ×2–×3, безкоштовні спіни — +5 зі ставкою до 100 ₴. Раніше разом вони віддавали більше, ніж ставилось',
+          'Бонус-раунд і фріспіни веде сервер — якщо закрити гру посеред бонус-раунду, він дочекається тебе',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🎲 Чесна гра',
+        items: [
+          'Classic 777, Diamond Rush, Double, Колесо фортуни, Magic Chests і Dragon Tower тепер рахує сервер',
+        ]
+      },
+    ]
+  },
+  {
+    version: '105',
+    title: '📜 Оновлення v105 — нові сезони Battle Pass',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎫 Battle Pass',
+        items: [
+          '24 нові тематичні сезони наперед: Квітучий джекпот, Піратська гавань, Сафарі, Неонове місто, Дикий Захід, Кіберпанк, Рік дракона, Скарби фараона, Сага вікінгів, Північне сяйво і ще багато інших',
+          'Пройшов усі 50 рівнів? Сезон не закінчується: кожні 2 000 XP — бонусна скриня з лут-боксом (з VIP-пропуском — ще й 2 Слотіки)',
+          'На 50 рівні замість «Рівень 51» тепер чесно показується MAX і прогрес до наступної скрині',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Нагорода Battle Pass більше не може «з\'їсти» ставку, зроблену в ту саму секунду',
+        ]
+      },
+    ]
+  },
   {
     version: '104',
     title: '📜 Оновлення v104 — Crash, Mines і ще 3 гри на сервері',
@@ -7036,7 +7126,7 @@ function renderHomeProgressBars() {
   const bpBar = document.getElementById('homeBpBar');
   const bpPctEl = document.getElementById('homeBpPct');
   if(bpBar) bpBar.style.width = bpPct + '%';
-  if(bpPctEl) bpPctEl.textContent = 'Lv' + (bp.level + 1);
+  if(bpPctEl) bpPctEl.textContent = bp.level >= BP_MAX_LEVEL ? 'MAX' : 'Lv' + (bp.level + 1);
 }
 
 
@@ -14216,20 +14306,21 @@ async function rollDiceClassic(dir) {
 let doubleSpinning = false;
 const DOUBLE_HISTORY = [];
 
-function betDouble(color) {
+async function betDouble(color) {
   if(doubleSpinning) return;
   const bet = validateBet(document.getElementById('doubleBet').value);
   if(!bet) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  addWager(bet);
   doubleSpinning = true;
+  const srv = await serverPlay('double', bet, { color });
+  if(srv.mode === 'error') { doubleSpinning = false; return; }
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  addWager(bet);
   playSound('spin');
 
-  // Result: 48.5% red, 48.5% black, 3% green
+  // Red: 46.5%, Black: 46.5%, Green: 7% — на сервері, якщо він налаштований
   const r = Math.random();
-  // Red: 46.5%, Black: 46.5%, Green: 7% — гірший для гравця
   const newPLuck2 = getNewPlayerLuck();
-  const result = newPLuck2 
+  const result = srv.mode === 'server' ? srv.r.result : newPLuck2
     ? (r < 0.48 ? 'red' : r < 0.96 ? 'black' : 'green')
     : (r < 0.465 ? 'red' : r < 0.93 ? 'black' : 'green');
   const mult = result === 'green' ? 14 : 2;
@@ -14247,8 +14338,8 @@ function betDouble(color) {
     const resColor = result==='red'?'#e74c3c':result==='black'?'#777':'#2ecc71';
 
     if(win) {
-      const winAmt = Math.floor(bet * mult);
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
+      const winAmt = srv.mode === 'server' ? srv.r.payout : Math.floor(bet * mult);
+      if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(winAmt));
       playSound(mult>=14 ? 'bonus' : 'win');
       resultEl.innerHTML = `<span style="color:${resColor}">${emoji} ${result.toUpperCase()} — +${formatNumber(winAmt)} ₴ (x${mult})</span>`;
       notify(emoji + ' ' + result + ' → +' + formatNumber(winAmt) + '₴', 'success');
@@ -17851,6 +17942,31 @@ const BP_SEASONS = [
   { num: 14, name: 'Крижаний джекпот', icon: '💎', color: '#9ad8ff' },
   { num: 15, name: 'Космічний рейс',   icon: '🚀', color: '#b18cff' },
   { num: 16, name: 'Корона',           icon: '👑', color: '#d4af37' },
+  // 2027–2029 — теми під пору року, коли сезон іде (сезон = 30 днів від епохи).
+  { num: 17, name: 'Квітучий джекпот', icon: '🌸', color: '#ff9ecf' },
+  { num: 18, name: 'Піратська гавань', icon: '⚓', color: '#5aa0c8' },
+  { num: 19, name: 'Сафарі',           icon: '🦁', color: '#e0a040' },
+  { num: 20, name: 'Неонове місто',    icon: '🌃', color: '#ff3cac' },
+  { num: 21, name: 'Дикий Захід',      icon: '🤠', color: '#c47a3a' },
+  { num: 22, name: 'Шлях самурая',     icon: '⛩️', color: '#e04848' },
+  { num: 23, name: 'Відьмин котел',    icon: '🧙', color: '#8e44ad' },
+  { num: 24, name: 'Кіберпанк',        icon: '🤖', color: '#00e5ff' },
+  { num: 25, name: 'Снігова казка',    icon: '⛄', color: '#b8e8ff' },
+  { num: 26, name: 'Рік дракона',      icon: '🐉', color: '#ff5a36' },
+  { num: 27, name: 'Валентинка',       icon: '💘', color: '#ff6b9a' },
+  { num: 28, name: 'Глибокий океан',   icon: '🐙', color: '#1fb5c9' },
+  { num: 29, name: 'Скарби фараона',   icon: '🏺', color: '#d9a441' },
+  { num: 30, name: 'Орбітальна станція', icon: '🛰️', color: '#9aa9ff' },
+  { num: 31, name: 'Тропічний коктейль', icon: '🍹', color: '#ff9f43' },
+  { num: 32, name: 'Олімп',            icon: '🏛️', color: '#e6c87a' },
+  { num: 33, name: 'Казкове королівство', icon: '🏰', color: '#c39bff' },
+  { num: 34, name: 'Сага вікінгів',    icon: '🛡️', color: '#8fa3b8' },
+  { num: 35, name: 'Ніч привидів',     icon: '👻', color: '#a0a0ff' },
+  { num: 36, name: 'Золота лихоманка', icon: '⛏️', color: '#f5c542' },
+  { num: 37, name: 'Північне сяйво',   icon: '🌠', color: '#6fffd2' },
+  { num: 38, name: 'Ніч у Монако',     icon: '🎲', color: '#e74c3c' },
+  { num: 39, name: 'Джунглі',          icon: '🌴', color: '#3ecf6e' },
+  { num: 40, name: 'Арена чемпіонів',  icon: '🏆', color: '#ffd700' },
 ];
 const BP_SEASON_DEFAULT = { name: '', icon: '🎫', color: '#c9a0ff' };
 
@@ -17928,6 +18044,15 @@ const BP_REWARDS = [
   {lv:50, free:{icon:'👑',label:'1 000 000 ₴',type:'balance',val:1000000}, vip:{icon:'🔱',label:'Рамка "Supreme"',type:'cosmetic',val:'name_frame'}, milestone:true},
 ];
 
+// Після 50-го рівня сезон не «закінчується»: кожні BP_BONUS_XP досвіду дають
+// бонусну скриню (лут-бокс; з VIP-пропуском — ще й 2 Слотіки).
+const BP_BONUS_XP = 2000;
+function bpBonusInfo(bp) {
+  const extra = Math.max(0, bp.xp - BP_MAX_LEVEL * BP_XP_PER_LEVEL);
+  const earned = bp.level >= BP_MAX_LEVEL ? Math.floor(extra / BP_BONUS_XP) : 0;
+  return { earned, available: Math.max(0, earned - bp.bonusClaimed), progress: extra % BP_BONUS_XP };
+}
+
 function getBpData() {
   const season = getBpSeasonInfo();
   // undefined bpSeason = pre-season data from before this feature existed —
@@ -17944,6 +18069,7 @@ function getBpData() {
     level:    stale ? 0     : (userData.bpLevel    || 0),
     isVip:    stale ? false : (userData.bpVip      || false),
     claimed:  stale ? {}    : (userData.bpClaimed  || {}),
+    bonusClaimed: stale ? 0 : (userData.bpBonusClaimed || 0),
   };
 }
 
@@ -17956,10 +18082,13 @@ function initBattlePass() {
   const xpNext = BP_XP_PER_LEVEL;
   const pct    = Math.min(100, Math.round((xp % xpNext) / xpNext * 100));
 
-  document.getElementById('bpLevel').textContent  = level + 1;
-  document.getElementById('bpXP').textContent     = xp % xpNext;
-  document.getElementById('bpXPNext').textContent = xpNext;
-  document.getElementById('bpProgressBar').style.width = pct + '%';
+  // На 50-му рівні показуємо MAX і прогрес до наступної бонусної скрині.
+  const maxed = level >= BP_MAX_LEVEL;
+  const bonus = bpBonusInfo(bp);
+  document.getElementById('bpLevel').textContent  = maxed ? 'MAX' : level + 1;
+  document.getElementById('bpXP').textContent     = maxed ? bonus.progress : xp % xpNext;
+  document.getElementById('bpXPNext').textContent = maxed ? BP_BONUS_XP : xpNext;
+  document.getElementById('bpProgressBar').style.width = (maxed ? Math.round(bonus.progress / BP_BONUS_XP * 100) : pct) + '%';
 
   const seasonNumEl = document.getElementById('bpSeasonNum');
   if(seasonNumEl) seasonNumEl.textContent = bp.season;
@@ -18029,13 +18158,43 @@ function renderBattlePassTrack(bp) {
             : `<div style="font-size:9px;color:#333;">🔒</div>`}
         </div>
       </div>`;
-    }).join('') + `</div>`;
+    }).join('') + bpBonusCard(bp) + `</div>`;
 
   // Scroll to current level
   setTimeout(() => {
     const cur = el.querySelector('div[style*="accent"]');
     if(cur) cur.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
   }, 100);
+}
+
+function bpBonusCard(bp) {
+  const b = bpBonusInfo(bp);
+  const maxed = bp.level >= BP_MAX_LEVEL;
+  return `<div style="flex-shrink:0;width:130px;border-radius:12px;border:2px dashed ${maxed ? bp.seasonColor || '#c9a0ff' : '#1a1a1a'};padding:10px 8px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px;background:#0a0a0a;">
+      <div style="font-size:10px;font-weight:bold;color:#c9a0ff;">Після 50 рівня</div>
+      <div style="font-size:30px;">🎁</div>
+      <div style="font-size:10px;color:#aaa;line-height:1.35;">Бонусна скриня кожні ${formatNumber(BP_BONUS_XP)} XP${bp.isVip ? '<br>👑 + 2 Слотіки' : ''}</div>
+      ${!maxed ? `<div style="font-size:9px;color:#444;">🔒 Дійди до 50 рівня</div>`
+        : b.available > 0
+          ? `<button class="bp-claim-pulse" onclick="claimBpBonus()" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:5px 8px;color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">Відкрити (${b.available})</button>`
+          : `<div style="font-size:9px;color:#666;">Наступна: ${formatNumber(b.progress)} / ${formatNumber(BP_BONUS_XP)} XP</div>`}
+    </div>`;
+}
+
+let _bpBonusLock = false;
+function claimBpBonus() {
+  if(_bpBonusLock) return;
+  const bp = getBpData();
+  if(bpBonusInfo(bp).available < 1) return notify('Поки немає бонусних скринь', 'info');
+  _bpBonusLock = true;
+  const inc = firebase.database.ServerValue.increment;
+  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, lootboxes: inc(1) };
+  if(bp.isVip) updates.slotiky = inc(2);
+  db.ref('users/'+currentUser).update(updates).then(() => {
+    playSound('bonus');
+    notify('🎁 Бонусна скриня: 📦 лут-бокс' + (bp.isVip ? ' + 🪙 2 Слотіки' : '') + '!', 'success');
+  }).catch(() => notify('Не вдалося відкрити скриню', 'error'))
+    .finally(() => { _bpBonusLock = false; setTimeout(initBattlePass, 400); });
 }
 
 let _bpClaimLock = false;
@@ -18057,12 +18216,14 @@ function claimBpReward(lv, track) {
   claimed[key] = true;
   const updates = { bpClaimed: claimed };
 
-  // Apply reward
-  if(reward.type === 'balance')       updates.balance   = (userData.balance||0)   + reward.val;
-  if(reward.type === 'slotiky')       updates.slotiky   = (userData.slotiky||0)   + reward.val;
-  if(reward.type === 'freeSlots')     updates.freeSlots = (userData.freeSlots||0) + reward.val;
-  if(reward.type === 'freeFortune')   updates.freeFortune = (userData.freeFortune||0) + reward.val;
-  if(reward.type === 'minesHints')    updates.minesHints = (userData.minesHints||0) + reward.val;
+  // Apply reward. Атомарні increment: раніше баланс перезаписувався числом з
+  // локальної копії, і ставка, що встигла пройти між читанням і записом, губилась.
+  const inc = firebase.database.ServerValue.increment;
+  if(reward.type === 'balance')       updates.balance   = inc(reward.val);
+  if(reward.type === 'slotiky')       updates.slotiky   = inc(reward.val);
+  if(reward.type === 'freeSlots')     updates.freeSlots = inc(reward.val);
+  if(reward.type === 'freeFortune')   updates.freeFortune = inc(reward.val);
+  if(reward.type === 'minesHints')    updates.minesHints = inc(reward.val);
   if(reward.type === 'crashInsurance')updates.crashInsurance = true;
   if(reward.type === 'vipBoost') {
     const days = reward.val;
@@ -18072,7 +18233,7 @@ function claimBpReward(lv, track) {
     updates.slotikyItems = items;
   }
   if(reward.type === 'lootbox') {
-    updates.lootboxes = (userData.lootboxes||0) + reward.val;
+    updates.lootboxes = inc(reward.val);
   }
   if(reward.type === 'cosmetic') {
     const items = userData.slotikyItems || {};
@@ -18098,7 +18259,7 @@ function addBpXP(amount) {
   // Roll into the new season: bp.xp/level/claimed/isVip already read as 0/empty/false
   // above when stale, so this just persists that reset instead of leaving last
   // season's claimed rewards and VIP pass sitting in the DB under the new season number.
-  if(bp.stale) { updates.bpSeason = bp.season; updates.bpClaimed = {}; updates.bpVip = false; }
+  if(bp.stale) { updates.bpSeason = bp.season; updates.bpClaimed = {}; updates.bpVip = false; updates.bpBonusClaimed = 0; }
 
   if(newLevel > bp.level) {
     updates.bpLevel = newLevel;
@@ -18106,7 +18267,7 @@ function addBpXP(amount) {
     setTimeout(() => {
       const t = document.createElement('div');
       t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
-      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Рівень ${newLevel + 1}!</div>`;
+      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">${newLevel >= BP_MAX_LEVEL ? '🏆 Сезон пройдено! Далі — бонусні скрині' : `Рівень ${newLevel + 1}!`}</div>`;
       document.body.appendChild(t);
       playSound('bonus');
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
@@ -19519,14 +19680,20 @@ function renderDragonGrid() {
     g.appendChild(row);
   }
 }
-function startDragonTower() {
+let dragonBusy = false;
+async function startDragonTower() {
+  if(dragonBusy || dragonState.active) return;
   const bet = validateBet(document.getElementById('dragonBet').value);
   if(!bet) return;
+  dragonBusy = true;
+  let srv;
+  try { srv = await serverRound('start', 'dragon', { bet, params: { cols: dragonState.cols, dragons: dragonState.dragons } }); } finally { dragonBusy = false; }
+  if(srv.mode === 'error') return;
   // ставка раніше НЕ списувалась з балансу тут — гравець міг натиснути
   // "Старт", одразу забрати (mult=1, рівень=0) і отримати гроші нізвідки,
   // навіть не вибравши жодного яйця. Списуємо баланс так само, як інші ігри.
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  dragonState = { active:true, level:0, bet, dragons:dragonState.dragons, cols:dragonState.cols, mult:1 };
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  dragonState = { active:true, level:0, bet, dragons:dragonState.dragons, cols:dragonState.cols, mult:1, server: srv.mode === 'server' };
   addWager(bet);
   document.getElementById('dragonSetup').classList.add('hidden');
   // Кешаут доступний лише після першого безпечного вибору (як у Tower Climb) —
@@ -19538,16 +19705,28 @@ function startDragonTower() {
   renderDragonGrid();
   notify('🐉 Вибери безпечне яйце!', 'info');
 }
-function pickDragonCell(row, col) {
-  if(!dragonState.active || row !== dragonState.level) return;
-  const safe = dragonState.cols - dragonState.dragons;
-  const hit = Math.random() < dragonState.dragons / dragonState.cols;
+async function pickDragonCell(row, col) {
+  if(!dragonState.active || row !== dragonState.level || dragonBusy) return;
   const cells = document.querySelectorAll(`[id^="dr-${row}-"]`);
-  // Reveal all cells
-  const dragonCols = [];
-  while(dragonCols.length < dragonState.dragons) {
-    const r = Math.floor(Math.random()*dragonState.cols);
-    if(!dragonCols.includes(r)) dragonCols.push(r);
+  let dragonCols = [];
+  let serverDone = null;
+  if(dragonState.server) {
+    // Де дракони в цьому рядку, вирішує сервер у момент вибору.
+    dragonBusy = true;
+    let srv;
+    try { srv = await serverRound('move', 'dragon', { move: { col } }); } finally { dragonBusy = false; }
+    if(srv.mode !== 'server') {
+      if(srv.status === 409) { dragonState.active = false; document.getElementById('dragonSetup').classList.remove('hidden'); document.getElementById('dragonCashoutBtn').classList.add('hidden'); }
+      return;
+    }
+    dragonCols = srv.r.view.rows[srv.r.view.rows.length - 1].dragons;
+    if(srv.r.status === 'done') serverDone = srv.r;
+  } else {
+    // Reveal all cells
+    while(dragonCols.length < dragonState.dragons) {
+      const r = Math.floor(Math.random()*dragonState.cols);
+      if(!dragonCols.includes(r)) dragonCols.push(r);
+    }
   }
   cells.forEach((c, i) => {
     c.onclick = null;
@@ -19580,20 +19759,32 @@ function pickDragonCell(row, col) {
     document.getElementById('dragonMult').textContent = 'x'+dragonState.mult;
     document.getElementById('dragonCashout').textContent = '₴'+formatNumber(cashout);
     document.getElementById('dragonCashoutBtn').classList.remove('hidden');
+    if(serverDone) { dragonFinishUI(serverDone.payout); return; }
     if(dragonState.level >= 8) { cashoutDragon(); return; }
     renderDragonGrid();
     notify(`✅ Безпечно! Рівень ${dragonState.level} | x${dragonState.mult}`, 'success');
   }
 }
-function cashoutDragon() {
+async function cashoutDragon() {
   // level 0 = жодного яйця ще не вибрано — виводити нічого, це б лише
   // повертало ставку без ризику (кнопка кешауту й так прихована до цього моменту)
-  if(!dragonState.active || dragonState.level <= 0) return;
+  if(!dragonState.active || dragonState.level <= 0 || dragonBusy) return;
+  if(dragonState.server) {
+    dragonBusy = true;
+    let srv;
+    try { srv = await serverRound('cashout', 'dragon'); } finally { dragonBusy = false; }
+    if(srv.mode !== 'server') return;
+    return dragonFinishUI(srv.r.payout);
+  }
   const payout = Math.floor(dragonState.bet * dragonState.mult);
-  dragonState.active = false;
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
   userData.balance = (userData.balance||0) + payout;
   updateUI();
+  dragonFinishUI(payout);
+}
+// Спільний фінал кешауту (баланс уже змінено — сервером або вище).
+function dragonFinishUI(payout) {
+  dragonState.active = false;
   addToHistory('🐉 Dragon Tower: +₴'+formatNumber(payout)+' (x'+dragonState.mult+')');
   triggerWinReaction(payout, 'Dragon Tower');
   document.getElementById('dragonCashoutBtn').classList.add('hidden');
@@ -22108,7 +22299,7 @@ function resetBannerAutoRotate() {
 function updateBannerDynamicContent() {
   // Battle Pass рівень
   var bpEl = document.getElementById('bannerBpLevel');
-  if(bpEl) bpEl.textContent = getBpData().level + 1;
+  if(bpEl) bpEl.textContent = getBpData().level + 1 > BP_MAX_LEVEL ? 'MAX' : getBpData().level + 1;
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);

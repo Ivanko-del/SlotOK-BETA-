@@ -29,7 +29,7 @@ assert.ok(/bpEl\.textContent = getBpData\(\)\.level \+ 1/.test(bannerFn.slice(0,
   "home banner must read the level from getBpData()");
 // initBattlePass, home, banner and the level-up toast all display level+1
 // (bp.level counts COMPLETED levels, the UI names the level in progress).
-assert.ok(/getElementById\('bpLevel'\)\.textContent  = level \+ 1;/.test(app));
+assert.ok(/getElementById\('bpLevel'\)\.textContent  = maxed \? 'MAX' : level \+ 1;/.test(app));
 assert.ok(/Рівень \$\{newLevel \+ 1\}!/.test(app), "level-up toast must use the same 1-based numbering");
 
 // The displayed level is a pure function of xp; pin it so the two call sites

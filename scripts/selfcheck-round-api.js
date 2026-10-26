@@ -152,6 +152,28 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
     assert.strictEqual(bal("eve"), before + Math.floor(100 * m + 1e-6));
   }
 
+  // ── Dragon Tower ──
+  tree.users.gus = { balance: 1000 };
+  assert.strictEqual((await call("gus", { action: "start", game: "dragon", bet: 100, params: { cols: 5, dragons: 1 } })).status, 400, "лише відомі режими");
+  r = await call("gus", { action: "start", game: "dragon", bet: 100, params: { cols: 3, dragons: 1 } });
+  assert.strictEqual(r.status, 200);
+  r = await call("gus", { action: "move", game: "dragon", move: { col: 1 } });
+  assert.ok(["active", "lost"].includes(r.data.status));
+  if (r.data.status === "active") {
+    const m = r.data.mult;
+    const b0 = bal("gus");
+    r = await call("gus", { action: "cashout", game: "dragon" });
+    assert.strictEqual(bal("gus"), b0 + Math.floor(100 * m + 1e-6));
+  }
+  for (const [cols, dragons] of [[3, 1], [3, 2], [4, 3]]) {
+    const p = (cols - dragons) / cols, step = 1 + (dragons / cols) * 0.8;
+    let m = 1;
+    for (let lv = 1; lv <= 8; lv++) {
+      m = Math.round(m * step * 100) / 100;
+      assert.ok(Math.pow(p, lv) * m < 1, `Dragon ${cols}:${dragons} рівень ${lv}: RTP ${Math.pow(p, lv) * m}`);
+    }
+  }
+
   // ── Crash / Balloon (реальний час) ──
   tree.users.fay = { balance: 1000 };
   r = await call("fay", { action: "start", game: "crash", bet: 100, params: { auto: 0 } });
@@ -237,5 +259,5 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
     assert.ok(rtp < 0.95 && rtp > 0.88, "Hi-Lo 3 кроки: RTP " + rtp); // 0.97³ ≈ 0.913
   }
 
-  console.log("OK — api/round: Mines/Tower/Hi-Lo/Crash/Balloon на сервері — секрет не тече, кешаут рівно раз, незакінчені раунди закриваються, RTP ≤ 97%");
+  console.log("OK — api/round: Mines/Tower/Hi-Lo/Dragon/Crash/Balloon на сервері — секрет не тече, кешаут рівно раз, незакінчені раунди закриваються, RTP ≤ 97%");
 })().catch((e) => { console.error(e); process.exit(1); });
