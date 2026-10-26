@@ -1,0 +1,263 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ДИЗАЙН-ТОКЕНИ «Нічна друкарня» — єдине місце, де живуть значення.
+   Опис концепції й правила вжитку — DESIGN_SYSTEM.md.
+
+   Тема: html[data-theme="dark" | "light"]. Атрибут ставить ранній скрипт
+   у <head> (index.html) ще до першого кадру, а потім applyThemeVars().
+   Без атрибута працює prefers-color-scheme.
+   Акцент: html[data-accent="coral" | "blue" | "neon" | "matrix" | "sakura"],
+   або довільний колір — тоді setAccentColor() пише --accent/--accent-rgb
+   прямо в style на <html>.
+
+   Кольори з прозорістю пишемо як rgb(var(--x-rgb) / .2) — тому кожен
+   семантичний колір має пару «-rgb» з каналами через пробіл.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Типографіка ─────────────────────────────────────────────── */
+  --font-display: 'Unbounded', 'Onest', system-ui, sans-serif;
+  --font-body: 'Onest', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --fs-2xs: 0.6875rem;                               /* 11 — лише бейджі/мітки капсом */
+  --fs-xs: 0.75rem;                                  /* 12 */
+  --fs-sm: 0.8125rem;                                /* 13 */
+  --fs-md: 0.9375rem;                                /* 15 — основний текст */
+  --fs-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);   /* 17–19 */
+  --fs-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);      /* 20–24 */
+  --fs-2xl: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);       /* 24–32 */
+  --fs-3xl: clamp(1.875rem, 1.4rem + 2.2vw, 2.75rem);   /* 30–44 */
+  --fs-num: clamp(1.75rem, 1.3rem + 2.4vw, 2.5rem);     /* баланс, виграш */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.3;
+  --lh-body: 1.5;
+  --ls-caps: 0.08em;
+  --ls-display: -0.01em;
+
+  /* ── Відступи: сітка 4/8 ─────────────────────────────────────── */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --gutter: clamp(12px, 2.4vw + 4px, 32px);          /* бічне поле сторінки */
+  --stack: clamp(12px, 1.2vw + 8px, 20px);           /* проміжок між блоками */
+
+  /* ── Розміри ─────────────────────────────────────────────────── */
+  --hit: 44px;                    /* мінімальна ціль натискання */
+  --hit-lg: 56px;                 /* головна дія екрана */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 32px;
+  --w-page: 1240px;               /* максимум ширини контенту */
+  --w-read: 680px;                /* колонка тексту / форм */
+  --w-dialog: 480px;              /* модалка */
+  --rail-w: 232px;                /* бічна навігація на десктопі */
+  --header-h: 60px;
+  --nav-h: 64px;
+
+  /* ── Форма ───────────────────────────────────────────────────── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+  --bw: 1.5px;                    /* штрих «друку» */
+  --bw-strong: 2px;
+
+  /* ── Шари ────────────────────────────────────────────────────── */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 900;
+  --z-nav: 1000;
+  --z-drawer: 3000;
+  --z-overlay: 4000;
+  --z-modal: 5000;
+  --z-toast: 6000;
+  --z-splash: 9999;
+
+  /* ── Рух ─────────────────────────────────────────────────────── */
+  --dur-1: 120ms;                 /* натискання, hover */
+  --dur-2: 200ms;                 /* зміна стану */
+  --dur-3: 320ms;                 /* поява панелі */
+  --dur-4: 520ms;                 /* святкування, великі переходи */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-press: cubic-bezier(.3, 1.4, .5, 1);       /* легкий «відскок штампа» */
+
+  /* ── Сталі, що не залежать від теми ──────────────────────────── */
+  --paper: #FBF8F2;               /* обличчя карт, барабани, квитки */
+  --paper-ink: #1B1A2E;
+  --paper-red: #C2183F;
+  --white: #FFFFFF;
+  --black: #000000;
+  --scrim: rgb(8 9 18 / .72);     /* затемнення під модалкою */
+
+  /* ── Семантичні кольори: ТЕМНА (типова) ──────────────────────── */
+  color-scheme: dark;
+  --bg: #0E1020;
+  --bg-rgb: 14 16 32;
+  --surface-1: #161A2D;
+  --surface-2: #1F2439;
+  --surface-3: #2A3049;
+  --surface-1-rgb: 22 26 45;
+  --line: #2C3250;
+  --line-strong: #454D72;
+
+  --fg: #F2EDE3;
+  --fg-2: #C3BFD0;
+  --fg-3: #9592AD;
+  --fg-4: #6E6B86;                /* лише вимкнене/декор, не основний текст */
+  --fg-rgb: 242 237 227;
+
+  --tint-rgb: 242 237 227;        /* «світло» для напівпрозорих підкладок */
+  --shade-rgb: 0 0 0;             /* тіні */
+  --recess-rgb: 4 5 12;           /* заглиблення (поля, табло) */
+  --recess-k: 1;
+
+  --primary: #3CCFBD;             /* морська хвиля — бренд, навігація, фокус */
+  --primary-rgb: 60 207 189;
+  --on-primary: #06201C;
+
+  --accent: #FF7A3D;              /* флуоро-помаранч — головна дія, «Грати» */
+  --accent-rgb: 255 122 61;
+  --on-accent: #1A0E08;
+
+  --pos: #93D95B;   --pos-rgb: 147 217 91;   --on-pos: #0F2005;
+  --neg: #FF5C7A;   --neg-rgb: 255 92 122;   --on-neg: #24040C;
+  --warn: #FFC94A;  --warn-rgb: 255 201 74;  --on-warn: #241A00;
+  --info: #6FB3FF;  --info-rgb: 111 179 255; --on-info: #04162E;
+  --special: #B892FF; --special-rgb: 184 146 255; --on-special: #160A30;
+
+  --ink-shadow: #05060E;          /* «відбиток» під елементом */
+  --sh-1: 2px 2px 0 0 var(--ink-shadow);
+  --sh-2: 3px 3px 0 0 var(--ink-shadow);
+  --sh-3: 5px 5px 0 0 var(--ink-shadow);
+  --sh-misreg: 3px 3px 0 0 rgb(var(--primary-rgb) / .55);   /* «зсув друку» */
+  --sh-float: 0 18px 40px -16px rgb(var(--shade-rgb) / .7), 0 2px 0 0 var(--ink-shadow);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+
+  --grain-opacity: .05;
+}
+
+/* Без явного вибору — за системою */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --bg: #F3EEE4; --bg-rgb: 243 238 228;
+    --surface-1: #FBF8F2; --surface-2: #ECE5D8; --surface-3: #E1D8C8;
+    --surface-1-rgb: 251 248 242;
+    --line: #D6CCBA; --line-strong: #B5A88F;
+    --fg: #1B1A2E; --fg-2: #45435C; --fg-3: #615E78; --fg-4: #8A869C;
+    --fg-rgb: 27 26 46;
+    --tint-rgb: 27 26 46; --shade-rgb: 40 30 10; --recess-rgb: 120 96 60; --recess-k: .22;
+    --primary: #096A5F; --primary-rgb: 9 106 95; --on-primary: #FFFFFF;
+    --accent: #B23A0A; --accent-rgb: 178 58 10; --on-accent: #FFFFFF;
+    --pos: #2A701A; --pos-rgb: 42 112 26; --on-pos: #FFFFFF;
+    --neg: #C2183F; --neg-rgb: 194 24 63; --on-neg: #FFFFFF;
+    --warn: #8A5A00; --warn-rgb: 138 90 0; --on-warn: #FFFFFF;
+    --info: #1E5FB8; --info-rgb: 30 95 184; --on-info: #FFFFFF;
+    --special: #6E3FC9; --special-rgb: 110 63 201; --on-special: #FFFFFF;
+    --ink-shadow: #1B1A2E;
+    --sh-float: 0 18px 40px -18px rgb(40 30 10 / .35), 0 2px 0 0 var(--ink-shadow);
+    --scrim: rgb(27 26 46 / .45);
+    --grain-opacity: .07;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F3EEE4; --bg-rgb: 243 238 228;
+  --surface-1: #FBF8F2; --surface-2: #ECE5D8; --surface-3: #E1D8C8;
+  --surface-1-rgb: 251 248 242;
+  --line: #D6CCBA; --line-strong: #B5A88F;
+  --fg: #1B1A2E; --fg-2: #45435C; --fg-3: #615E78; --fg-4: #8A869C;
+  --fg-rgb: 27 26 46;
+  --tint-rgb: 27 26 46; --shade-rgb: 40 30 10; --recess-rgb: 120 96 60; --recess-k: .22;
+  --primary: #096A5F; --primary-rgb: 9 106 95; --on-primary: #FFFFFF;
+  --accent: #B23A0A; --accent-rgb: 178 58 10; --on-accent: #FFFFFF;
+  --pos: #2A701A; --pos-rgb: 42 112 26; --on-pos: #FFFFFF;
+  --neg: #C2183F; --neg-rgb: 194 24 63; --on-neg: #FFFFFF;
+  --warn: #8A5A00; --warn-rgb: 138 90 0; --on-warn: #FFFFFF;
+  --info: #1E5FB8; --info-rgb: 30 95 184; --on-info: #FFFFFF;
+  --special: #6E3FC9; --special-rgb: 110 63 201; --on-special: #FFFFFF;
+  --ink-shadow: #1B1A2E;
+  --sh-float: 0 18px 40px -18px rgb(40 30 10 / .35), 0 2px 0 0 var(--ink-shadow);
+  --scrim: rgb(27 26 46 / .45);
+  --grain-opacity: .07;
+}
+
+/* ── Варіанти акценту (колишні теми «Синя/Неон/Матриця/Сакура») ── */
+:root[data-accent="blue"]   { --accent: #6FA8FF; --accent-rgb: 111 168 255; --on-accent: #04122A; }
+:root[data-accent="neon"]   { --accent: #C38BFF; --accent-rgb: 195 139 255; --on-accent: #1A0833; }
+:root[data-accent="matrix"] { --accent: #6BEA8C; --accent-rgb: 107 234 140; --on-accent: #03200C; }
+:root[data-accent="sakura"] { --accent: #FF8CC6; --accent-rgb: 255 140 198; --on-accent: #2E0619; }
+:root[data-theme="light"][data-accent="blue"]   { --accent: #1D57B0; --accent-rgb: 29 87 176;  --on-accent: #FFFFFF; }
+:root[data-theme="light"][data-accent="neon"]   { --accent: #6B2FC2; --accent-rgb: 107 47 194; --on-accent: #FFFFFF; }
+:root[data-theme="light"][data-accent="matrix"] { --accent: #1E6B32; --accent-rgb: 30 107 50;  --on-accent: #FFFFFF; }
+:root[data-theme="light"][data-accent="sakura"] { --accent: #B0185F; --accent-rgb: 176 24 95;  --on-accent: #FFFFFF; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme])[data-accent="blue"]   { --accent: #1D57B0; --accent-rgb: 29 87 176;  --on-accent: #FFFFFF; }
+  :root:not([data-theme])[data-accent="neon"]   { --accent: #6B2FC2; --accent-rgb: 107 47 194; --on-accent: #FFFFFF; }
+  :root:not([data-theme])[data-accent="matrix"] { --accent: #1E6B32; --accent-rgb: 30 107 50;  --on-accent: #FFFFFF; }
+  :root:not([data-theme])[data-accent="sakura"] { --accent: #B0185F; --accent-rgb: 176 24 95;  --on-accent: #FFFFFF; }
+}
+
+/* ── Сумісність: старі імена змінних, на які ще посилаються інлайн-стилі
+   й JS-шаблони. Нові правила їх не вживають — лише токени вище. ───────── */
+:root {
+  --text: var(--fg);
+  --box: var(--surface-1);
+  --border: var(--line);
+  --input: var(--surface-2);
+  --green: var(--pos);
+  --red: var(--neg);
+  --accent2: var(--accent);
+  --sub: var(--fg-3);
+  --glow: transparent;
+  --bevel: 0 0 0 0 transparent;
+  --elev-1: var(--sh-1);
+  --elev-2: var(--sh-float);
+  --ease-tactile: var(--ease-press);
+  --ease-premium: var(--ease-out);
+  --glow-accent-soft: 0 0 0 0 transparent;
+  --glow-accent-strong: 0 0 0 0 transparent;
+
+  --ks-surface: var(--surface-1);
+  --ks-surface-2: var(--surface-2);
+  --ks-surface-3: var(--surface-3);
+  --ks-line: var(--line);
+  --ks-line-2: var(--line-strong);
+  --ks-fg: var(--fg);
+  --ks-fg-2: var(--fg-2);
+  --ks-fg-3: var(--fg-3);
+  --ks-acc: var(--primary);
+  --ks-acc-dim: rgb(var(--primary-rgb) / .14);
+  --ks-pos: var(--pos);
+  --ks-neg: var(--neg);
+  --ks-warn: var(--warn);
+  --ks-r: var(--r-md);
+  --ks-r-lg: var(--r-lg);
+  --ks-sans: var(--font-body);
+  --ks-mono: var(--font-mono);
+
+  --bronze: #C07A3E;
+  --silver-c: var(--fg-2);
+  --gold-c: var(--warn);
+  --plat: var(--info);
+}

@@ -4,7 +4,7 @@
 function loadUserList() {
   const d = document.getElementById('userList');
   if(!d) return;
-  d.innerHTML = '<div style="color:#555;text-align:center;padding:14px;">⏳ Завантаження...</div>';
+  d.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;">⏳ Завантаження...</div>';
   // Limit to 200 most recently seen users for speed
   db.ref('users').orderByKey().limitToFirst(200).once('value', s => {
     const users = s.val();
@@ -16,9 +16,9 @@ function loadUserList() {
       `<div class="admin-user-card" onclick="openAdminManage(${jsArg(n)})">
         <div>
           <b>${n}</b>
-          ${u.isAdmin?'<span style="color:#d4af37;font-size:10px;"> 👑</span>':''}
-          ${u.banned?'<span style="color:#e74c3c;font-size:10px;"> 🚫</span>':''}
-          <div style="color:#555;font-size:11px;">ID: ${u.id||'?'} ${u.tag?'• '+u.tag:''}</div>
+          ${u.isAdmin?'<span style="color:var(--accent);font-size:10px;"> 👑</span>':''}
+          ${u.banned?'<span style="color:var(--neg);font-size:10px;"> 🚫</span>':''}
+          <div style="color:var(--fg-4);font-size:11px;">ID: ${u.id||'?'} ${u.tag?'• '+u.tag:''}</div>
         </div>
         <span style="color:var(--green);font-weight:bold;">${formatNumber(u.balance||0)}₴</span>
       </div>`

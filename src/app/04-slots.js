@@ -145,7 +145,7 @@ function finishSlots(bet, srvR) {
         if(banner) banner.classList.remove('hidden');
         if(spinsEl) spinsEl.textContent = slotBonusRound;
         if(multEl)  multEl.textContent  = 'x'+slotBonusMult;
-        if(resultEl) resultEl.innerHTML = '<span style="color:#c9a0ff;font-size:16px;">🎰 БОНУС РАУНД! 10 спінів × '+slotBonusMult+'!</span>';
+        if(resultEl) resultEl.innerHTML = '<span style="color:var(--special);font-size:16px;">🎰 БОНУС РАУНД! 10 спінів × '+slotBonusMult+'!</span>';
         playSound('bonus');
         notify('🎰 БОНУС РАУНД! Отримано 10 безкоштовних спінів × '+slotBonusMult+'!', 'success');
         if(_spinBtn) _spinBtn.disabled = false;
@@ -193,7 +193,7 @@ function finishSlots(bet, srvR) {
         const maxW = Math.max(win, userData.slotsMaxWin||0);
         if(win > (userData.slotsMaxWin||0)) db.ref('users/'+currentUser+'/slotsMaxWin').set(win);
       } else {
-        if(resultEl) resultEl.innerHTML = `<span style="color:#444;">Немає комбінації</span>`;
+        if(resultEl) resultEl.innerHTML = `<span style="color:var(--fg-4);">Немає комбінації</span>`;
         checkAchievements('lose', bet);
       }
 
@@ -205,7 +205,7 @@ function finishSlots(bet, srvR) {
           const banner = document.getElementById('bonusRoundBanner');
           if(banner) banner.classList.add('hidden');
           notify(`🎰 Бонус раунд завершено! Виграш: +${formatNumber(slotBonusWins)} ₴`, 'success');
-          if(resultEl) resultEl.innerHTML = `<span style="color:#c9a0ff;">🎰 Бонус: +${formatNumber(slotBonusWins)} ₴!</span>`;
+          if(resultEl) resultEl.innerHTML = `<span style="color:var(--special);">🎰 Бонус: +${formatNumber(slotBonusWins)} ₴!</span>`;
         }
       }
 
@@ -292,7 +292,7 @@ function finishDiamondSlots(bet, srvR) {
   setTimeout(()=>{ landReel(r2, res[1]); }, 150);
   setTimeout(()=>{
     landReel(r3, res[2]);
-    if(win > 0 && winLine) { winLine.style.background = 'linear-gradient(90deg,transparent,#c9a0ff,transparent)'; setTimeout(()=>{ if(winLine) winLine.style.background=''; }, 1000); }
+    if(win > 0 && winLine) { winLine.style.background = 'linear-gradient(90deg,transparent,var(--special),transparent)'; setTimeout(()=>{ if(winLine) winLine.style.background=''; }, 1000); }
 
     if(win > 0) {
       consumeLuckyGame();
@@ -316,7 +316,7 @@ function finishDiamondSlots(bet, srvR) {
       }
       ['dr1','dr2','dr3'].forEach(id=>{ const el=document.getElementById(id); if(el){el.classList.add('winner'); setTimeout(()=>el.classList.remove('winner'),1500);} });
     } else {
-      if(resultEl) resultEl.innerHTML = `<span style="color:#444;">Немає комбінації</span>`;
+      if(resultEl) resultEl.innerHTML = `<span style="color:var(--fg-4);">Немає комбінації</span>`;
       checkAchievements('lose', bet);
     }
 

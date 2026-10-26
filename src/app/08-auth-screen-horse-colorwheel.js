@@ -2,65 +2,9 @@
 // AUTH SCREEN — particles + stats
 // ═══════════════════════════════════════════
 
-function initAuthCanvas() {
-  const canvas = document.getElementById('authCanvas');
-  if(!canvas) return;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  const particles = Array.from({length:60}, () => ({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    r: Math.random()*2+.5,
-    vx: (Math.random()-.5)*.3,
-    vy: (Math.random()-.5)*.3,
-    alpha: Math.random()*.6+.1,
-    color: Math.random() > .6 ? '#d4af37' : '#ffffff'
-  }));
-  // Floating emojis
-  const emojis = ['🎰','🃏','🎲','🎯','💎','🏆','🍀','⭐'];
-  const floaters = Array.from({length:8}, (_, i) => ({
-    emoji: emojis[i],
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    vy: -.2 - Math.random()*.3,
-    alpha: .12,
-    size: 18+Math.random()*14
-  }));
-  function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // BG gradient
-    const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.height*.8);
-    grad.addColorStop(0, 'rgba(20,8,0,1)');
-    grad.addColorStop(.5, 'rgba(8,3,0,1)');
-    grad.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // Particles
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if(p.x<0) p.x=canvas.width; if(p.x>canvas.width) p.x=0;
-      if(p.y<0) p.y=canvas.height; if(p.y>canvas.height) p.y=0;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle = p.color.replace(')', ','+p.alpha+')').replace('rgb','rgba');
-      ctx.globalAlpha = p.alpha; ctx.fill(); ctx.globalAlpha=1;
-    });
-    // Floaters
-    floaters.forEach(f => {
-      f.y += f.vy; if(f.y < -30) { f.y = canvas.height+30; f.x=Math.random()*canvas.width; }
-      ctx.font = f.size+'px serif'; ctx.globalAlpha = f.alpha;
-      ctx.fillText(f.emoji, f.x, f.y); ctx.globalAlpha=1;
-    });
-    // Gold scan line
-    const scanY = (Date.now()/30)%canvas.height;
-    const scanGrad = ctx.createLinearGradient(0,scanY-20,0,scanY+20);
-    scanGrad.addColorStop(0,'rgba(212,175,55,0)');
-    scanGrad.addColorStop(.5,'rgba(212,175,55,.03)');
-    scanGrad.addColorStop(1,'rgba(212,175,55,0)');
-    ctx.fillStyle=scanGrad; ctx.fillRect(0,scanY-20,canvas.width,40);
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
+// Анімоване тло з золотими частинками прибрано в редизайні: екран входу —
+// спокійна «афіша» (src/css/64-auth.css). Функція лишається як точка входу.
+function initAuthCanvas() {}
 
 let _authJackpotListener = null;
 function stopAuthStatsListeners() {
@@ -109,27 +53,24 @@ function loadAuthStats() {
     if(/[!@#$%^&*]/.test(v)) strength++;
     const fill = document.getElementById('passStrengthFill');
     if(!fill) return;
-    const colors = ['#e74c3c','#f39c12','#d4af37','#3dd68c'];
-    fill.style.width = (strength*25)+'%';
-    fill.style.background = colors[Math.max(0,strength-1)];
+    const levels = [
+      { c: 'var(--neg)',  t: 'Закороткий пароль — мінімум 6 символів.' },
+      { c: 'var(--neg)',  t: 'Слабкий пароль. Додай цифри або знаки.' },
+      { c: 'var(--warn)', t: 'Непоганий. Ще довший — ще надійніший.' },
+      { c: 'var(--info)', t: 'Хороший пароль.' },
+      { c: 'var(--pos)',  t: 'Надійний пароль.' },
+    ];
+    const lv = v.length < 6 ? levels[0] : levels[Math.min(4, strength)];
+    fill.style.width = (v ? Math.max(10, strength*25) : 0)+'%';
+    fill.style.background = lv.c;
+    const txt = document.getElementById('passStrengthText');
+    if(txt) txt.textContent = v ? lv.t : 'Мінімум 6 символів. Цифри й знаки роблять пароль надійнішим.';
   });
 }
 
 let _authCoinsInterval = null;
-function initAuthCoins() {
-  const container = document.getElementById('authCoins');
-  if(!container) return;
-  if(_authCoinsInterval) clearInterval(_authCoinsInterval);
-  const symbols = ['🪙','💎','🎰','⭐','🃏','🎲','🔔','🍒'];
-  _authCoinsInterval = setInterval(() => {
-    if(container.children.length > 14) return;
-    const el = document.createElement('div');
-    el.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-30px;font-size:${16+Math.random()*14}px;animation:coinRain ${5+Math.random()*8}s linear forwards;pointer-events:none;`;
-    el.textContent = symbols[Math.floor(Math.random()*symbols.length)];
-    container.appendChild(el);
-    setTimeout(()=>el.remove(), 14000);
-  }, 800);
-}
+// Дощ із монет на екрані входу прибрано (відволікав від форми).
+function initAuthCoins() {}
 function stopAuthCoins() {
   if(_authCoinsInterval) { clearInterval(_authCoinsInterval); _authCoinsInterval = null; }
 }
@@ -341,7 +282,7 @@ function spinColorWheel() {
 function renderColorHistory() {
   const el = document.getElementById('colorHistory');
   if(!el) return;
-  el.innerHTML = colorHistoryArr.map(c=>`<div style="width:16px;height:16px;border-radius:50%;background:${c==='red'?'#e74c3c':c==='green'?'#3dd68c':'#fff'};flex-shrink:0;"></div>`).join('');
+  el.innerHTML = colorHistoryArr.map(c=>`<div style="width:16px;height:16px;border-radius:50%;background:${c==='red'?'var(--neg)':c==='green'?'var(--pos)':'var(--paper)'};flex-shrink:0;"></div>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════

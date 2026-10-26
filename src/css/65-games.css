@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ІГРИ — спільний каркас усіх ігрових екранів.
+   Порядок на екрані: шапка (← Ігри · Правила) → ігрове поле → результат
+   → поле ставки → велика кнопка дії. Поле ставки й кнопку уніфікує
+   src/app/42-game-ui.js (класи .bet-field, .game-cta).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Шапка гри / кнопка «назад» ─────────────────────────────────── */
+.game-back, .back-btn, .game-help {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  width: auto; min-height: 40px; margin: 0; padding: 0 var(--sp-3);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold); border-radius: var(--r-md);
+}
+.game-back .ic, .back-btn .ic, .game-help .ic { width: 18px; height: 18px; }
+.game-help { --btn-bg: transparent; --btn-fg: var(--fg-2); }
+.screen > div:first-child:has(> .game-back) {
+  display: flex !important; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  margin-bottom: var(--sp-4) !important;
+}
+
+/* ── Поле ставки ────────────────────────────────────────────────── */
+.bet-field {
+  display: grid; gap: var(--sp-2); margin: var(--sp-3) 0;
+  padding: var(--sp-3); background: var(--surface-1);
+  border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.bet-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); }
+.bet-field-head .field-label { margin: 0; }
+.bet-field-bal { font-size: var(--fs-xs); color: var(--fg-3); white-space: nowrap; }
+.bet-field-bal .bal { font-family: var(--font-mono); color: var(--fg-2); font-weight: var(--fw-semibold); }
+.bet-input-row { display: grid; grid-template-columns: var(--hit-lg) 1fr var(--hit-lg); gap: var(--sp-2); align-items: stretch; }
+.bet-input-wrap { position: relative; display: block; min-width: 0; }
+.bet-cur { position: absolute; left: var(--sp-4); top: 50%; transform: translateY(-50%); color: var(--fg-3); font-family: var(--font-mono); font-weight: var(--fw-bold); pointer-events: none; }
+.bet-field input.bet-input {
+  width: 100%; margin: 0 !important; min-height: var(--hit-lg); padding-left: calc(var(--sp-4) + 1.2em) !important;
+  font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: var(--fw-bold); text-align: left;
+  background: var(--surface-2); border-radius: var(--r-md);
+}
+.bet-step {
+  margin: 0; min-height: var(--hit-lg); padding: 0; font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-lg);
+  --btn-bg: var(--surface-2); --btn-sh: none;
+}
+.bet-chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-1); }
+.bet-chip {
+  margin: 0; min-height: 38px; padding: 0 2px; font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  --btn-bg: transparent; --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg-2); border-radius: var(--r-sm);
+}
+.bet-chip.is-max { --btn-fg: var(--accent); --btn-bd: rgb(var(--accent-rgb) / .6); }
+@media (hover: hover) { .bet-chip:hover:not(:disabled) { --btn-fg: var(--fg); --btn-bd: var(--fg-3); } }
+
+/* ── Головна кнопка гри ─────────────────────────────────────────── */
+.game-cta, .btn-spin-premium {
+  --btn-bg: var(--accent); --btn-fg: var(--on-accent); --btn-bd: var(--ink-shadow); --btn-sh: var(--sh-2);
+  min-height: var(--hit-lg); padding: var(--sp-3) var(--sp-6);
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: .01em;
+  border-radius: var(--r-lg);
+}
+.game-cta:active:not(:disabled), .btn-spin-premium:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: none; }
+.game-cta:disabled, .btn-spin-premium:disabled { opacity: .55; }
+.btn-spin-premium { width: 100%; }
+
+/* Дві кнопки дії поруч (Більше/Менше, Взяти/Стоп) не мають вилазити за екран */
+.game-cta { min-width: 0; padding-inline: var(--sp-3); }
+@media (max-width: 420px) { .game-cta { font-size: var(--fs-md); } }

@@ -475,7 +475,7 @@ function renderLinkedCards() {
     if(c.kind !== 'axiom') act += '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();confirmRemoveLinkedCard(this)" title="Відключити картку">' + ksIcon('trash') + '</button>';
     var sub = '•••• ' + ksEsc(c.last4) + (c.holder ? ' · ' + ksEsc(c.holder) : '') + (c.expiry ? ' · ' + ksEsc(c.expiry) : '');
     return '<div class="ks-row is-tappable" onclick="switchActiveCard(\'' + ksEsc(c.id) + '\')"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') + '>' +
-      '<div class="ks-icn" style="background:' + c.markColor + ';color:#fff;font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
+      '<div class="ks-icn" style="background:' + c.markColor + ';color:var(--fg);font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
       '<div class="ks-row-main">' +
         '<div class="ks-row-title">' + ksEsc(c.bankName) + (expired ? ' · <span style="color:var(--ks-neg);">прострочена</span>' : '') + '</div>' +
         '<div class="ks-row-sub ks-num">' + sub + '</div>' +
@@ -584,8 +584,8 @@ function openAddCardModal() {
     var b = KS_BANKS[id];
     return '<button class="ks-btn is-sm' + (id === _ksAddBank ? ' is-primary' : ' is-quiet') + '" ' +
       'data-bank="' + id + '" onclick="selectAddCardBank(\'' + id + '\')" style="justify-content:flex-start;">' +
-      '<span class="ks-bank" style="width:20px;height:20px;border-radius:6px;display:flex;align-items:center;' +
-      'justify-content:center;font-size:10px;font-weight:800;color:#fff;background:' + b.color + ';">' + b.short + '</span>' +
+      '<span class="ks-bank" style="width:20px;height:20px;border-radius:var(--r-sm);display:flex;align-items:center;' +
+      'justify-content:center;font-size:10px;font-weight:800;color:var(--fg);background:' + b.color + ';">' + b.short + '</span>' +
       b.name + '</button>';
   }).join('');
   var m = document.createElement('div');
@@ -607,15 +607,15 @@ function openAddCardModal() {
       '<div class="ks-field">' +
         '<label class="ks-label" for="ksAcNum">Номер картки</label>' +
         '<input id="ksAcNum" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="0000 0000 0000 0000" ' +
-          'oninput="ksFormatCardNum(this)" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1.5px;">' +
+          'oninput="ksFormatCardNum(this)" style="font-family:var(--font-mono);letter-spacing:1.5px;">' +
       '</div>' +
       '<div class="ks-field">' +
         '<label class="ks-label" for="ksAcExp">Дійсна до</label>' +
         '<input id="ksAcExp" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/YY" ' +
-          'oninput="ksFormatExpiry(this)" style="font-family:ui-monospace,Menlo,Consolas,monospace;">' +
+          'oninput="ksFormatExpiry(this)" style="font-family:var(--font-mono);">' +
       '</div>' +
       '<div class="ks-copy" style="align-items:flex-start;">' +
-        '<span style="color:#31c48d;margin-top:1px;">' + ksIcon('shield', 17) + '</span>' +
+        '<span style="color:var(--pos);margin-top:1px;">' + ksIcon('shield', 17) + '</span>' +
         '<div class="ks-copy-main ks-hint">У базу SlotOK запишемо лише <b>банк, ім\'я, термін дії та останні 4 цифри</b>. ' +
           'Повний номер використовується лише тут, у браузері, для перевірки — і не зберігається. CVV не запитуємо ніколи.</div>' +
       '</div>' +
@@ -703,8 +703,8 @@ function confirmRemoveLinkedCard(btn) {
   var id = btn.getAttribute('data-id');
   if(btn.dataset.armed !== '1') {
     btn.dataset.armed = '1';
-    btn.style.color = '#f0556b';
-    btn.style.borderColor = 'rgba(240,85,107,.5)';
+    btn.style.color = 'var(--neg)';
+    btn.style.borderColor = 'rgb(var(--neg-rgb) / 0.5)';
     btn.title = 'Натисніть ще раз, щоб відключити';
     notify('Натисніть ще раз, щоб відключити картку', 'info');
     setTimeout(function() {
@@ -816,7 +816,7 @@ function sourceBarHtml(ctx) {
   }
   var verb = ctx === 'withdraw' ? 'Вивід з картки' : ctx === 'transfer' ? 'Переказ з картки' : 'Зарахувати на картку';
   return '<div class="ks-copy" style="margin-bottom:14px;">' +
-    '<div class="ks-icn" style="background:' + a.markColor + ';color:#fff;font-weight:800;font-size:11px;width:32px;height:32px;">' + ksEsc(a.mark) + '</div>' +
+    '<div class="ks-icn" style="background:' + a.markColor + ';color:var(--fg);font-weight:800;font-size:11px;width:32px;height:32px;">' + ksEsc(a.mark) + '</div>' +
     '<div class="ks-copy-main">' +
       '<div class="ks-label" style="margin-bottom:2px;">' + verb + '</div>' +
       '<div class="ks-copy-val" style="font-family:var(--ks-sans);font-size:14px;">' + ksEsc(a.bankName) + ' ····' + ksEsc(a.last4) +
@@ -844,7 +844,7 @@ function openCardSourcePicker() {
     cards.map(function(c) {
       return '<div class="ks-row is-tappable"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') +
         ' onclick="switchActiveCard(\'' + ksEsc(c.id) + '\');document.getElementById(\'ksSrcModal\').remove()">' +
-        '<div class="ks-icn" style="background:' + c.markColor + ';color:#fff;font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
+        '<div class="ks-icn" style="background:' + c.markColor + ';color:var(--fg);font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
         '<div class="ks-row-main"><div class="ks-row-title">' + ksEsc(c.bankName) + '</div>' +
           '<div class="ks-row-sub ks-num">•••• ' + ksEsc(c.last4) + '</div></div>' +
         '<div class="ks-row-value ks-num">' + formatNumber(c.balance) + ' ₴' + (c.active ? '<small><span class="ks-badge is-pos">Активна</span></small>' : '') + '</div>' +
@@ -904,8 +904,8 @@ function renderCardMoveBody() {
       return '<button class="ks-btn is-sm' + (c.id === sel ? ' is-primary' : ' is-quiet') + '" ' +
         'style="flex:1 1 46%;justify-content:flex-start;" ' +
         'onclick="ksMovePick(\'' + side + '\',\'' + ksEsc(c.id) + '\')">' +
-        '<span style="width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;' +
-        'font-size:9px;font-weight:800;color:#fff;background:' + c.markColor + ';">' + ksEsc(c.mark) + '</span>' +
+        '<span style="width:18px;height:18px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;' +
+        'font-size:9px;font-weight:800;color:var(--fg);background:' + c.markColor + ';">' + ksEsc(c.mark) + '</span>' +
         '····' + ksEsc(c.last4) + '</button>';
     }).join('') + '</div>';
   }
@@ -1521,17 +1521,17 @@ function openCardColorPicker() {
   var current = (_act && _act.skin) || (!_act && userData.pendingCardSkin) || 'onyx';
   function swatchHtml(s) {
     var active = current === s.id;
-    return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgba(255,255,255,.08)') + ';color:' + s.accent + ';">' +
+    return '<div onclick="applyCardSkin(\'' + s.id + '\')" class="skin-swatch' + (active?' active':'') + '" style="background:' + s.prev + ';border-color:' + (active ? s.accent : 'rgb(var(--tint-rgb) / 0.08)') + ';color:' + s.accent + ';">' +
       (active ? '<div class="skin-swatch-check">✓</div>' : '') +
-      '<div style="font-size:10px;font-weight:700;margin-top:26px;color:' + s.accent + ';text-shadow:0 1px 3px rgba(0,0,0,.8);">' + s.name + '</div>' +
+      '<div style="font-size:10px;font-weight:700;margin-top:26px;color:' + s.accent + ';text-shadow:0 1px 3px rgb(var(--shade-rgb) / 0.8);">' + s.name + '</div>' +
       '</div>';
   }
   var uploadActive = current === 'custom-photo';
   var html = modalCloseBtn('cardskin') +
-    '<div style="font-family:Orbitron,monospace;font-size:13px;color:#d4af37;margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
-    '<div style="font-size:11px;color:#555;margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
+    '<div style="font-family:var(--font-display);font-size:13px;color:var(--accent);margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
+    '<div style="font-size:11px;color:var(--fg-4);margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
     '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📷 Персональне</div>' +
-    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(212,175,55,.03));border:1.5px dashed rgba(212,175,55,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:#d4af37;margin-bottom:6px;">' +
+    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:linear-gradient(135deg,rgb(var(--accent-rgb) / 0.12),rgb(var(--accent-rgb) / 0.03));border:1.5px dashed rgb(var(--accent-rgb) / 0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:var(--accent);margin-bottom:6px;">' +
     (uploadActive ? '<div class="skin-swatch-check">✓</div>' : '') +
     '<div style="font-size:20px;">📷</div><div style="font-size:11px;font-weight:700;">Завантажити своє фото</div>' +
     '</div>' +
@@ -1558,7 +1558,7 @@ function applyCardPhotoBg(el, skin, photoUrl) {
   var front = el.classList && el.classList.contains('vcard-front') ? el : el.querySelector('.vcard-front');
   if(!front) return;
   if(skin === 'custom-photo' && photoUrl) {
-    front.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url(' + photoUrl + ')';
+    front.style.backgroundImage = 'linear-gradient(rgb(var(--recess-rgb) / calc(0.35 * var(--recess-k))),rgb(var(--recess-rgb) / calc(0.55 * var(--recess-k)))), url(' + photoUrl + ')';
     front.style.backgroundSize = 'cover';
     front.style.backgroundPosition = 'center';
   } else {

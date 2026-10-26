@@ -142,7 +142,7 @@ function grStartTimer() {
       const statusEl = document.getElementById('grSpinStatus');
       if(statusEl) statusEl.textContent = '🔴 Спін незабаром! Ставки закриваються!';
     } else if(remaining < 300000) {
-      if(timerEl) timerEl.style.color = '#f39c12';
+      if(timerEl) timerEl.style.color = 'var(--accent)';
       const statusEl = document.getElementById('grSpinStatus');
       if(statusEl) statusEl.textContent = '⚠️ Залишилось менше 5 хвилин!';
     } else {
@@ -176,10 +176,10 @@ function selectGrColor(color) {
     if(!btn) return;
     const isSelected = c === color;
     btn.style.transform = isSelected ? 'scale(1.05)' : 'scale(1)';
-    if(c === 'red')  btn.style.border = isSelected ? '2px solid #f04060' : '2px solid rgba(180,40,40,.4)';
-    if(c === 'green') btn.style.border = isSelected ? '2px solid var(--green)' : '2px solid rgba(40,160,60,.3)';
-    if(c === 'black') btn.style.border = isSelected ? '2px solid #aaa' : '2px solid rgba(120,120,120,.2)';
-    btn.style.boxShadow = isSelected ? `0 0 20px ${c==='red'?'rgba(240,64,96,.4)':c==='green'?'rgba(61,214,140,.3)':'rgba(180,180,180,.2)'}` : 'none';
+    if(c === 'red')  btn.style.border = isSelected ? '2px solid var(--neg)' : '2px solid rgb(var(--neg-rgb) / 0.4)';
+    if(c === 'green') btn.style.border = isSelected ? '2px solid var(--green)' : '2px solid rgb(var(--pos-rgb) / 0.3)';
+    if(c === 'black') btn.style.border = isSelected ? '2px solid var(--fg-3)' : '2px solid rgb(var(--shade-rgb) / 0.2)';
+    btn.style.boxShadow = isSelected ? `0 0 20px ${c==='red'?'rgb(var(--neg-rgb) / 0.4)':c==='green'?'rgb(var(--pos-rgb) / 0.3)':'rgb(var(--tint-rgb) / 0.2)'}` : 'none';
   });
   playSound('click');
 }
@@ -241,9 +241,9 @@ function grRenderBets(bets) {
     const mult = b.color==='green' ? 14 : 2;
     const isMe = b.user === currentUser;
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;
-      background:${isMe?'rgba(212,175,55,.08)':'var(--box)'};
-      border:1px solid ${isMe?'rgba(212,175,55,.3)':'var(--border)'};
-      border-radius:12px;">
+      background:${isMe?'rgb(var(--accent-rgb) / 0.08)':'var(--box)'};
+      border:1px solid ${isMe?'rgb(var(--accent-rgb) / 0.3)':'var(--border)'};
+      border-radius:var(--r-lg);">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:16px;">${colorEmoji}</div>
         <div>
@@ -386,8 +386,8 @@ function grLoadHistory() {
       const col = h.color==='red'?'#b91c1c':h.color==='green'?'#1a8a3a':'#1a1a1a';
       const border = h.color==='red'?'#f04060':h.color==='green'?'#3dd68c':'#555';
       return `<div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:${col};border:2px solid ${border};
-        display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;
-        box-shadow:0 2px 8px rgba(0,0,0,.4);">${h.number}</div>`;
+        display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--fg);
+        box-shadow:0 2px 8px rgb(var(--shade-rgb) / 0.4);">${h.number}</div>`;
     }).join('');
   });
 }
@@ -478,8 +478,8 @@ function crashLostUI(point) {
     document.getElementById('crashDisplay').textContent = shown + 'x';
     notify("💥 КРАШ на " + shown + "x!", "error");
     updateStreak(false); trackSession(false, crashActiveBet);
-    document.getElementById('crashDisplay').style.color = "red";
-    setTimeout(()=> { document.getElementById('crashDisplay').style.color = "white"; document.getElementById('crashDisplay').textContent = "1.00x"; }, 2000);
+    document.getElementById('crashDisplay').style.color = "var(--neg)";
+    setTimeout(()=> { document.getElementById('crashDisplay').style.color = "var(--fg)"; document.getElementById('crashDisplay').textContent = "1.00x"; }, 2000);
     document.getElementById('crashBtn').classList.remove('hidden');
     document.getElementById('crashCashoutBtn').classList.add('hidden');
 }
@@ -595,8 +595,8 @@ function startCrashLegacy() {
             isCrashPlaying = false;
             notify("💥 КРАШ на " + m.toFixed(2) + "x!", "error");
             updateStreak(false); trackSession(false, crashActiveBet);
-            document.getElementById('crashDisplay').style.color = "red";
-            setTimeout(()=> { document.getElementById('crashDisplay').style.color = "white"; document.getElementById('crashDisplay').textContent = "1.00x"; }, 2000);
+            document.getElementById('crashDisplay').style.color = "var(--neg)";
+            setTimeout(()=> { document.getElementById('crashDisplay').style.color = "var(--fg)"; document.getElementById('crashDisplay').textContent = "1.00x"; }, 2000);
             document.getElementById('crashBtn').classList.remove('hidden'); 
             document.getElementById('crashCashoutBtn').classList.add('hidden'); 
         } 

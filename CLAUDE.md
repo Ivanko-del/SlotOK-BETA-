@@ -14,6 +14,24 @@ script, not modules — see `src/app/README.md` for what lives where.
 Reward tables (VIP, Battle Pass, bonuses) live in `shared/rewards.js`, which
 both the browser and the server (`lib/progress.js`) load.
 
+## `style.css` is generated too — edit `src/css/*.css`
+
+Design system «Нічна друкарня» — read `DESIGN_SYSTEM.md` before touching UI.
+`style.css` is built from `src/css/NN-*.css` (`npm run build:css`); icons from
+`src/icons/icons.js` (`npm run build:icons` → `src/css/05-icons.css`, then
+build:css). `npm test` fails if either is stale. Rules:
+- colours, spacing, radii, shadows, fonts — only tokens from `00-tokens.css`
+  (`var(--…)`), never raw hex; after pasting foreign markup run
+  `node scripts/codemod-tokens.js <file>`;
+- no emoji as UI icons: use `<span class="ic i-name" aria-hidden="true">`;
+  emoji already in markup/JS are mapped to icons by `emoji-icons.js`
+  (`EMOJI_ICONS`);
+- theme = `html[data-theme]` (dark/light, none = auto), accent =
+  `html[data-accent]` — via `applyThemeVars` / `setAccentColor`;
+- new game bet input → add its id to `BET_INPUT_IDS`, main action function →
+  `GAME_CTA_FNS` in `src/app/42-game-ui.js`;
+- critical actions confirm through `confirmAction()` (`src/app/41-ui-confirm.js`).
+
 ## Where the remaining work is written down
 
 Big unfinished directions live in `ROADMAP.md` at the repo root — sports-bet

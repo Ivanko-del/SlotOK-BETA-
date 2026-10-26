@@ -20,7 +20,7 @@ function bjValue(hand) {
 }
 
 function bjCardHTML(c, hidden=false) {
-  if(hidden) return `<div class="bj-card" style="background:#1a3a6b;color:transparent;">🂠</div>`;
+  if(hidden) return `<div class="bj-card" style="background:var(--info);color:transparent;">🂠</div>`;
   const red = isRedSuit(c.suit);
   return `<div class="bj-card ${red?'red':''}">${c.rank}<br>${c.suit}</div>`;
 }
@@ -307,8 +307,8 @@ function bjSettleSplitRound(profit1, profit2) {
   const fmt = p => p > 0 ? ('+₴'+formatNumber(p)) : p < 0 ? ('−₴'+formatNumber(Math.abs(p))) : '₴0';
   const resEl = document.getElementById('bjResult');
   if(resEl) resEl.innerHTML =
-    '<div style="font-size:13px;">Рука 1: <span style="color:'+(profit1>0?'var(--green)':profit1<0?'var(--red)':'#aaa')+'">'+fmt(profit1)+'</span></div>' +
-    '<div style="font-size:13px;margin-top:3px;">Рука 2: <span style="color:'+(profit2>0?'var(--green)':profit2<0?'var(--red)':'#aaa')+'">'+fmt(profit2)+'</span></div>' +
+    '<div style="font-size:13px;">Рука 1: <span style="color:'+(profit1>0?'var(--green)':profit1<0?'var(--red)':'var(--fg-2)')+'">'+fmt(profit1)+'</span></div>' +
+    '<div style="font-size:13px;margin-top:3px;">Рука 2: <span style="color:'+(profit2>0?'var(--green)':profit2<0?'var(--red)':'var(--fg-2)')+'">'+fmt(profit2)+'</span></div>' +
     '<div style="font-size:17px;margin-top:6px;color:'+(totalProfit>=0?'var(--green)':'var(--red)')+'">Разом: '+fmt(totalProfit)+'</div>';
   playSound(totalProfit > 0 ? 'win' : totalProfit < 0 ? 'loss' : 'click');
   vibrateOnWin(Math.max(0,totalProfit));
@@ -331,7 +331,7 @@ function bjSurrender() {
   document.getElementById('bjDealArea').classList.remove('hidden');
   document.getElementById('bjActions').classList.add('hidden');
   bjRender(false);
-  document.getElementById('bjResult').innerHTML = `<span style="color:#888">🏳️ Здався — повернуто ₴${formatNumber(ret)}</span>`;
+  document.getElementById('bjResult').innerHTML = `<span style="color:var(--fg-3)">🏳️ Здався — повернуто ₴${formatNumber(ret)}</span>`;
   notify(`🏳️ Здався, повернуто ₴${formatNumber(ret)}`,'info');
   addToHistory(`Blackjack Surrender: -${bjBet - ret}`);
 }

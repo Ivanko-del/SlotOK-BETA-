@@ -16,10 +16,10 @@ function initChat() {
         : `<div class="chat-msg-avatar-emoji">${escapeHtml(m.avatar||'👤')}</div>`;
       const contentHtml = m.imgUrl
         ? (m.isVideo
-            ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
+            ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:var(--r-lg);display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
             : `<img src="${escapeHtml(m.imgUrl)}" class="chat-img-msg" data-open-img="${escapeHtml(m.imgUrl)}">`)
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
-      const nameBadge = isAdmin ? ' <span style="background:#d4af37;color:#000;font-size:8px;font-weight:900;padding:1px 5px;border-radius:3px;">ADMIN</span>' : '';
+      const nameBadge = isAdmin ? ' <span style="background:var(--accent);color:var(--on-accent);font-size:8px;font-weight:900;padding:1px 5px;border-radius:var(--r-xs);">ADMIN</span>' : '';
       const headerHtml = showHeader
         ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${escapeHtml(m.user)}${nameBadge}</div>`
         : '';
@@ -28,7 +28,7 @@ function initChat() {
         <div class="chat-msg-body" style="${isMe?'align-items:flex-end;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.15);':''}border-radius:${isMe?'14px 4px 14px 14px':'4px 14px 14px 14px'};padding:8px 10px;">
           ${headerHtml}
           ${contentHtml}
-          <div style="font-size:9px;color:#333;margin-top:3px;">${new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
+          <div style="font-size:9px;color:var(--fg-4);margin-top:3px;">${new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
       </div>`;
     }).join('');
@@ -83,7 +83,7 @@ function handleChatImage(input) {
         if(!vidEl) {
           vidEl = document.createElement('video');
           vidEl.id = 'chatVideoPreview';
-          vidEl.style.cssText = 'max-height:80px;border-radius:8px;border:1px solid #222;display:block;';
+          vidEl.style.cssText = 'max-height:80px;border-radius:var(--r-md);border:1px solid var(--line);display:block;';
           vidEl.controls = true;
           vidEl.muted = true;
           img.parentElement.appendChild(vidEl);
@@ -238,7 +238,9 @@ function toggleFavorite(gameId, el) {
   const idx = favoriteGames.indexOf(gameId);
   if(idx >= 0) { favoriteGames.splice(idx,1); if(el) el.classList.remove('active'); }
   else { favoriteGames.push(gameId); if(el) el.classList.add('active'); }
+  if(el) el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
   localStorage.setItem('slotok_favs', JSON.stringify(favoriteGames));
+  if(typeof applyLobbyFilters === 'function' && typeof lobbyState !== 'undefined' && lobbyState.mode === 'fav') applyLobbyFilters();
 }
 
 function trackRecentGame(gameId) {
@@ -253,45 +255,16 @@ function renderRecentGames() {
   const el = document.getElementById('recentGamesRow');
   if(!el || !recentlyPlayed.length) return;
   const gameMap = {slots:'🎰',crash:'🚀',mines:'💣',plinko:'🔻',blackjack:'🃏',dice:'🎲',roulette:'🎡',poker:'♠️',hilo:'🃏',limbo:'🎯',dragon:'🐉',balloon:'🎈',horseracing:'🏇',colorbet:'🎨'};
-  el.innerHTML = recentlyPlayed.map(g=>`<div class="recent-game-chip" onclick="openGame('${g}') || switchTab('${g}')">${gameMap[g]||'🎮'} ${g}</div>`).join('');
+  el.innerHTML = recentlyPlayed.map(g=>`<button type="button" class="chip recent-game-chip" onclick="openGame('${g}')">${gameMap[g]||'🎮'} ${g}</button>`).join('');
 }
 
-function sortGames(mode, el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const grid = document.getElementById('casinoGamesGrid');
-  if(!grid) return;
-  const cards = [...grid.querySelectorAll('.casino-game-card')];
-  if(mode==='hot') {
-    cards.sort((a,b)=>{ const ah=a.querySelector('.casino-badge-hot')?.textContent; const bh=b.querySelector('.casino-badge-hot')?.textContent; return (bh?1:0)-(ah?1:0); });
-  } else if(mode==='new') {
-    cards.sort((a,b)=>{ const an=a.querySelector('.casino-badge-new'); const bn=b.querySelector('.casino-badge-new'); return (bn?1:0)-(an?1:0); });
-  } else if(mode==='rtp') {
-    // Use RTP order — Blackjack first
-    const rtpOrder = ['blackjack','poker','roulette','crash','limbo','dice','mines','plinko','slots'];
-    cards.sort((a,b)=>{ const acat=a.getAttribute('data-cat')||''; const bcat=b.getAttribute('data-cat')||''; return rtpOrder.indexOf(bcat)-rtpOrder.indexOf(acat); });
-  }
-  cards.forEach(c=>grid.appendChild(c));
-}
-
-function showFavorites(el) {
-  document.querySelectorAll('.game-sort-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const favs = JSON.parse(localStorage.getItem('slotok_favs')||'[]');
-  document.querySelectorAll('.casino-game-card').forEach(card=>{
-    const onclick = card.getAttribute('onclick')||'';
-    const hasFav = favs.some(f=>onclick.includes(f));
-    card.style.display = (favs.length===0||hasFav)?'':'none';
-  });
-}
-
+// Старі точки входу фільтрів — тепер усе йде через спільний стан лоббі
+// (applyLobbyFilters у src/app/31-…), щоб пошук і фільтри поєднувались.
+function sortGames(mode, el) { lobbySetMode(mode === 'rtp' ? 'all' : mode, el); }
+function showFavorites(el) { lobbySetMode('fav', el); }
 function searchGames(query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll('.casino-game-card').forEach(card => {
-    const name = card.querySelector('.casino-game-card-name')?.textContent.toLowerCase()||'';
-    const prov = card.querySelector('.casino-game-card-prov')?.textContent.toLowerCase()||'';
-    card.style.display = (!q || name.includes(q) || prov.includes(q)) ? '' : 'none';
-  });
+  lobbyState.q = String(query || '').trim().toLowerCase();
+  applyLobbyFilters();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -332,9 +305,13 @@ let _rgSessionStartTime = null;
 // ліміт, який гравець може обійти простим очищенням даних сайту, не є
 // реальним запобіжником. userData.rgLimits синхронізується тим самим
 // realtime-слухачем, що й решта userData.
-function saveRGLimits() {
-  const loss = parseInt(document.getElementById('rgLossLimit')?.value || 0);
-  const session = parseInt(document.getElementById('rgSessionLimit')?.value || 0);
+async function saveRGLimits() {
+  const loss = Math.max(0, parseInt(document.getElementById('rgLossLimit')?.value || 0) || 0);
+  const session = Math.max(0, parseInt(document.getElementById('rgSessionLimit')?.value || 0) || 0);
+  const parts = [loss ? 'програш за сесію — до ₴' + formatNumber(loss) : 'ліміт програшу вимкнено',
+                 session ? 'тривалість сесії — до ' + session + ' хв' : 'ліміт часу вимкнено'];
+  const ok = await confirmAction({ title: 'Зберегти ліміти?', text: 'Нові ліміти: ' + parts.join('; ') + '.', confirm: 'Зберегти' });
+  if(!ok) return;
   db.ref('users/' + currentUser + '/rgLimits').set({ loss, session }).then(() => {
     notify('✅ Ліміти збережено', 'success');
     updateRGLossWarnUI();
@@ -373,8 +350,14 @@ function isRGLimitReached() {
   return false;
 }
 
-function selfExclude(days) {
-  if(!confirm('Ви впевнені що хочете заблокувати себе на '+days+' день/днів?')) return;
+async function selfExclude(days) {
+  const word = days === 1 ? '24 години' : days + ' днів';
+  const ok = await confirmAction({
+    title: 'Пауза на ' + word + '?',
+    text: 'Ти вийдеш з акаунту й не зможеш грати ' + word + '. Скасувати паузу раніше не вийде.',
+    confirm: 'Так, увімкнути паузу', danger: true,
+  });
+  if(!ok) return;
   db.ref('users/'+currentUser+'/selfExcludeUntil').set(Date.now()+days*86400000);
   db.ref('users/'+currentUser+'/selfExcluded').set(true);
   notify('Само-виключення активовано на '+days+' д.','success');
@@ -457,15 +440,15 @@ function openQuickDeposit() {
   const amounts = [100,250,500,1000,2500,5000];
   const modal = document.createElement('div');
   modal.id = 'quickDepOverlay';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;display:flex;align-items:flex-end;';
+  modal.style.cssText='position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9000;display:flex;align-items:flex-end;';
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
   modal.innerHTML=`
-    <div style="background:#111;border-radius:20px 20px 0 0;padding:20px;width:100%;border-top:1px solid rgba(212,175,55,.3);">
+    <div style="background:var(--surface-1);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px;width:100%;border-top:1px solid rgb(var(--accent-rgb) / 0.3);">
       <div style="text-align:center;font-weight:900;font-size:16px;color:var(--accent);margin-bottom:14px;">⚡ Швидкий депозит</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
+        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
       </div>
-      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:#222;border:none;border-radius:10px;padding:12px;color:#777;cursor:pointer;">Скасувати</button>
+      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:var(--surface-2);border:none;border-radius:var(--r-md);padding:12px;color:var(--fg-3);cursor:pointer;">Скасувати</button>
     </div>`;
   document.body.appendChild(modal);
 }

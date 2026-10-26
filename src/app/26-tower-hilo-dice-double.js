@@ -44,7 +44,7 @@ function renderTowerGrid() {
     }
     const mult = getTowerMult(lv);
     const badge = document.createElement('div');
-    badge.style.cssText = 'font-size:10px;color:#555;min-width:36px;text-align:center;display:flex;align-items:center;';
+    badge.style.cssText = 'font-size:10px;color:var(--fg-4);min-width:36px;text-align:center;display:flex;align-items:center;';
     badge.textContent = 'x'+mult.toFixed(2);
     row.appendChild(badge);
     grid.appendChild(row);
@@ -200,7 +200,7 @@ function renderHiloCard(card) {
   const el = document.getElementById('hiloCurrentCard'); if(!el) return;
   const isRed = card.suit === '♥' || card.suit === '♦';
   const rank = card.rank;
-  el.style.color = isRed ? '#e74c3c' : '#111';
+  el.style.color = isRed ? 'var(--neg)' : 'var(--on-accent)';
   el.textContent = rank + card.suit;
 }
 
@@ -448,7 +448,7 @@ async function betDouble(color) {
     if(histEl) {
       histEl.innerHTML = DOUBLE_HISTORY.slice(0,15).map(c =>
         '<div style="width:28px;height:28px;border-radius:50%;background:' +
-        (c==='red'?'#c0392b':c==='black'?'#2c3e50':'#16a085') +
+        (c==='red'?'var(--neg)':c==='black'?'var(--info)':'var(--primary)') +
         ';display:flex;align-items:center;justify-content:center;font-size:12px;">' +
         (c==='red'?'🔴':c==='black'?'⚫':'🟢') + '</div>'
       ).join('');

@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════════
+   НАЛАШТУВАННЯ (#tab-settings) і рядки-налаштування, які вживаються
+   також у Профілі. «Відповідальна гра» — перша група екрана.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.settings-group-title {
+  margin: var(--sp-6) 0 var(--sp-2); font-family: var(--font-body); font-size: var(--fs-xs);
+  font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--fg-3);
+}
+.settings-section {
+  background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+  overflow: hidden; margin-bottom: var(--sp-2);
+}
+#rgSection { border-color: rgb(var(--warn-rgb) / .6); box-shadow: 3px 3px 0 0 rgb(var(--warn-rgb) / .45); }
+.settings-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 60px; padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line); color: var(--fg);
+}
+.settings-row:last-child { border-bottom: 0; }
+label.settings-row { cursor: pointer; }
+button.settings-row {
+  width: 100%; margin: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: transparent; box-shadow: none; text-align: left; justify-content: flex-start; font-weight: inherit;
+}
+button.settings-row:last-child { border-bottom: 0; }
+button.settings-row:active:not(:disabled) { transform: none; background: rgb(var(--tint-rgb) / .05); }
+@media (hover: hover) { button.settings-row:hover, label.settings-row:hover { background: rgb(var(--tint-rgb) / .035); } }
+.settings-row.is-danger .settings-label { color: var(--neg); }
+.settings-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--r-md); background: var(--surface-3); font-size: 18px; }
+.settings-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.settings-label { font-weight: var(--fw-semibold); color: var(--fg); }
+.settings-sub { font-size: var(--fs-sm); color: var(--fg-3); }
+.settings-value { color: var(--fg-2); font-size: var(--fs-sm); }
+.settings-block { padding: var(--sp-4); border-bottom: 1px solid var(--line); }
+.settings-block:last-child { border-bottom: 0; }
+.settings-block > .field-label:first-child { margin-top: 0; }
+.settings-block .btn, .settings-block > button { margin-top: var(--sp-2); }
+.settings-select-inline { width: auto; min-width: 140px; margin: 0; }
+.volume-slider { margin-top: var(--sp-1); }
+.settings-foot { text-align: center; color: var(--fg-4); font-size: var(--fs-xs); padding: var(--sp-6) 0 var(--sp-2); }
+
+/* Свій колір акценту */
+.swatch-custom { position: relative; display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); padding: 0 var(--sp-3);
+  border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: var(--fw-semibold); cursor: pointer; }
+.swatch-custom input[type="color"] { width: 22px; height: 22px; border-radius: 50%; padding: 0; overflow: hidden; }
+
+/* Фонові відтінки */
+.bg-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--sp-2); }
+.bg-preset {
+  margin: 0; min-height: 52px; font-size: var(--fs-xs); align-items: flex-end; justify-content: flex-start; padding: var(--sp-2);
+  --btn-bg: var(--pv, var(--surface-2)); --btn-sh: none;
+}
+.bg-preset.active, .bg-preset[aria-pressed="true"] { --btn-bd: var(--fg); --btn-sh: var(--sh-1); }
+.bg-preset.is-custom { --btn-bd: var(--line-strong); border-style: dashed; }
+.bg-photo-preview { position: relative; margin-top: var(--sp-2); border-radius: var(--r-lg); overflow: hidden; border: var(--bw) solid var(--line); }
+.bg-photo-preview img { display: block; width: 100%; height: 96px; object-fit: cover; }
+.bg-photo-preview .close-btn { position: absolute; top: var(--sp-2); right: var(--sp-2); }
+.live-wallpaper-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* Відповідальна гра */
+.rg-lead { color: var(--fg-2); font-size: var(--fs-sm); margin-bottom: var(--sp-3); }
+.rg-fields { display: grid; gap: 0 var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.rg-fields .field-label { margin: 0; }
+.loss-limit-warn { display: none; margin-bottom: var(--sp-2); }
+.rg-entry { width: 100%; }
+
+/* Ракебек */
+.rakeback-amount { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
+.mini-rates { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); }
+.code-box { padding: var(--sp-3); margin: var(--sp-2) 0 var(--sp-4); border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md); font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: .12em; }
+/* Вкладка «Теми» (renderThemeGrid) */
+.theme-grid { display: grid; gap: var(--sp-3); }
+.theme-grid .swatches { margin-bottom: var(--sp-2); }

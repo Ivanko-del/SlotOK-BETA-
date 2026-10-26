@@ -21,7 +21,7 @@ function shootRR() {
   if(bang) {
     // BANG — lost
     const log = document.getElementById('rrLog');
-    log.innerHTML = '<div style="color:#ff6b6b;font-size:15px;font-weight:900;text-align:center;">💥 БАМ! Ви програли!</div>';
+    log.innerHTML = '<div style="color:var(--neg);font-size:15px;font-weight:900;text-align:center;">💥 БАМ! Ви програли!</div>';
     notify('💥 БАМ! -'+formatNumber(rrBet)+'₴', 'error');
     addToHistory('RR: -'+rrBet);
     document.getElementById('rrShootBtn').disabled = false;
@@ -35,7 +35,7 @@ function shootRR() {
     const mult = Math.pow(6/5, rrSurvived);
     const win = Math.floor(rrBet * mult);
     const log = document.getElementById('rrLog');
-    log.innerHTML = '<div style="color:#3dd68c;font-size:13px;font-weight:700;text-align:center;">✅ Клік! Порожній барабан<br><span style="font-size:11px;color:#777;">Якщо вийдете зараз — отримаєте ₴'+formatNumber(win)+'</span></div>';
+    log.innerHTML = '<div style="color:var(--pos);font-size:13px;font-weight:700;text-align:center;">✅ Клік! Порожній барабан<br><span style="font-size:11px;color:var(--fg-3);">Якщо вийдете зараз — отримаєте ₴'+formatNumber(win)+'</span></div>';
     notify('😮 Пронесло! '+rrSurvived+' поспіль', 'info');
     document.getElementById('rrWalkBtn').disabled = false;
     updateRRDisplay();
@@ -58,7 +58,7 @@ function walkAwayRR() {
   rrSurvived = 0; rrActive = false;
   document.getElementById('rrSurvivedCount').textContent = 0;
   document.getElementById('rrWalkBtn').disabled = true;
-  document.getElementById('rrLog').innerHTML = '<div style="color:#444;text-align:center;font-size:12px;">Натисни стріляти...</div>';
+  document.getElementById('rrLog').innerHTML = '<div style="color:var(--fg-4);text-align:center;font-size:12px;">Натисни стріляти...</div>';
   updateRRDisplay();
 }
 
@@ -188,7 +188,7 @@ function endQuiz() {
     '<div style="text-align:center;padding:20px;">' +
     '<div style="font-size:32px;margin-bottom:8px;">'+icon+'</div>' +
     '<div style="font-size:15px;font-weight:700;">'+quizCorrect+'/10 правильно</div>' +
-    '<div style="font-size:11px;color:#666;margin-top:6px;">Потрібно 6+ для прибутку · 4-5 = повернення 50%</div>' +
+    '<div style="font-size:11px;color:var(--fg-3);margin-top:6px;">Потрібно 6+ для прибутку · 4-5 = повернення 50%</div>' +
     '</div>';
   document.getElementById('quizOptions').innerHTML = '';
   document.getElementById('quizStartPanel').style.display = 'block';
@@ -304,12 +304,12 @@ function runFraudCheck() {
     });
     const container = document.getElementById('fraudList');
     if(!container) return;
-    if(!suspicious.length) { container.innerHTML='<div style="color:#3dd68c;text-align:center;padding:14px;">✅ Підозрілих гравців не знайдено</div>'; return; }
+    if(!suspicious.length) { container.innerHTML='<div style="color:var(--pos);text-align:center;padding:14px;">✅ Підозрілих гравців не знайдено</div>'; return; }
     container.innerHTML = suspicious.map(s=>`
-      <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:10px;padding:10px;margin-bottom:6px;">
-        <div style="font-size:12px;font-weight:700;color:#ff6b6b;">⚠️ ${escapeHtml(s.user)}</div>
-        <div style="font-size:10px;color:#777;">Причина: ${s.reason}</div>
-        <div style="font-size:10px;color:#555;">Баланс: ₴${formatNumber(s.balance||0)}</div>
+      <div style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid rgb(var(--neg-rgb) / 0.2);border-radius:var(--r-md);padding:10px;margin-bottom:6px;">
+        <div style="font-size:12px;font-weight:700;color:var(--neg);">⚠️ ${escapeHtml(s.user)}</div>
+        <div style="font-size:10px;color:var(--fg-3);">Причина: ${s.reason}</div>
+        <div style="font-size:10px;color:var(--fg-4);">Баланс: ₴${formatNumber(s.balance||0)}</div>
         <button class="btn-red" style="padding:6px 12px;font-size:11px;margin-top:6px;" onclick="admBanUser(${jsArg(s.user)},this)">🚫 Заблокувати</button>
       </div>
     `).join('');
@@ -327,9 +327,9 @@ function loadRTPSettings() {
     if(!container) return;
     container.innerHTML = Object.entries({...defaults, ...data}).map(([game, val])=>`
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="font-size:11px;flex:1;color:#aaa;">${game}</div>
-        <input type="number" value="${val}" min="50" max="99" style="width:65px;background:var(--box);border:1px solid var(--border);border-radius:8px;color:#fff;padding:4px 8px;font-size:12px;" id="rtp_${game}">
-        <span style="font-size:10px;color:#555;">%</span>
+        <div style="font-size:11px;flex:1;color:var(--fg-2);">${game}</div>
+        <input type="number" value="${val}" min="50" max="99" style="width:65px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-md);color:var(--fg);padding:4px 8px;font-size:12px;" id="rtp_${game}">
+        <span style="font-size:10px;color:var(--fg-4);">%</span>
       </div>
     `).join('');
   });

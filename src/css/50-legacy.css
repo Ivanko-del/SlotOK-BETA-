@@ -1,0 +1,2192 @@
+/* ============================================================
+   SlotOK Casino — style.css
+   All styles combined from index.html
+   ============================================================ */
+    .game-thumb:hover, .game-card:hover { border-color: rgb(var(--accent-rgb) / 0.35); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
+
+    /* ІГРИ */
+    .reels-container { background: var(--bg); border: 1px solid var(--accent); border-radius: var(--r-md); padding: 15px; display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; box-shadow: inset 0 4px 14px rgb(var(--shade-rgb) / 0.7); }
+    .reel { font-size: 45px; width: 70px; height: 90px; line-height: 90px; background: var(--paper); color: var(--paper-ink); border-radius: var(--r-sm); text-align: center; box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.08), 0 6px 14px -6px rgb(var(--shade-rgb) / 0.5); }
+
+    .chests-grid { display: grid; gap: 8px; margin-bottom: 15px; grid-template-columns: repeat(3, 1fr); }
+    .chest-item { background: var(--surface-2); border-radius: var(--r-sm); height: 70px; display: flex; align-items: center; justify-content: center; font-size: 35px; border:1px solid var(--line); cursor:pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s;}
+    .chest-item:active { transform: translateY(1px) scale(.96); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
+
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 15px; }
+    .mine-cell { aspect-ratio: 1; background: var(--surface-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid var(--line); cursor:pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s;}
+    .mine-cell:active { transform: translateY(1px) scale(.94); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
+    .mine-cell.revealed { background: var(--surface-1); border-color: var(--line); box-shadow: inset 0 4px 10px rgb(var(--shade-rgb) / 0.6); }
+
+    .plinko-board { position: relative; width: 100%; height: 250px; background: var(--surface-1); border-radius: var(--r-md); margin-bottom: 10px; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 4px 14px rgb(var(--shade-rgb) / 0.7); }
+    .plinko-ball { position: absolute; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; display: none; box-shadow: 0 2px 8px rgb(var(--shade-rgb) / 0.5); }
+    .plinko-buckets { display: flex; justify-content: space-between; } .bucket { font-size: 10px; background: var(--surface-2); width: 14%; text-align: center; border-top: 2px solid var(--line); padding: 3px 0; box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.3); }
+
+    .crash-screen { background: var(--surface-1); height: 200px; border-radius: var(--r-md); border: 1px solid var(--line); position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; overflow: hidden; box-shadow: inset 0 4px 14px rgb(var(--shade-rgb) / 0.7); }
+    .crash-rocket { font-size: 40px; position: absolute; bottom: 20px; left: 20px; transition: 0.1s linear; filter: drop-shadow(0 4px 8px rgb(var(--shade-rgb) / 0.5)); }
+    .crash-multiplier { font-size: 40px; font-weight: bold; color: var(--fg); z-index: 10; text-shadow: 0 2px 10px rgb(var(--shade-rgb) / 0.6); }
+    .crash-graph { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; opacity: 0.3; }
+
+    /* ПОКЕР */
+    .poker-table { background: radial-gradient(ellipse at center, color-mix(in srgb, var(--pos) 25%, var(--surface-1)) 0%, color-mix(in srgb, var(--pos) 14%, var(--surface-1)) 100%); border-radius: var(--r-lg); border: 3px solid var(--accent); padding: 15px; margin-bottom: 15px; min-height: 200px; box-shadow: inset 0 4px 20px rgb(var(--shade-rgb) / 0.5), 0 12px 30px -12px rgb(var(--shade-rgb) / 0.6); }
+    .poker-cards { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .card { width: 50px; height: 75px; background: var(--paper); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; border: 1px solid var(--fg); color: var(--paper-ink); flex-direction: column; line-height: 1.1; box-shadow: 0 6px 16px -6px rgb(var(--shade-rgb) / 0.5); cursor: pointer; transition: transform 0.2s, box-shadow .2s, filter .15s; }
+    .card.red-card { color: var(--neg); }
+    .card.selected { transform: translateY(-8px); border-color: var(--accent); box-shadow: none; }
+    .card.face-down { background: linear-gradient(135deg, var(--info) 0%, color-mix(in srgb, var(--info) 16%, var(--surface-1)) 100%); color: transparent; }
+    .card.face-down::after { content: "🂠"; font-size: 30px; color: rgb(var(--fg-rgb) / 0.3); }
+    .poker-info { text-align: center; padding: 8px; background: rgb(var(--recess-rgb) / calc(0.4 * var(--recess-k))); border-radius: var(--r-sm); margin: 8px 0; color: var(--fg); font-size: 14px; box-shadow: inset 0 2px 8px rgb(var(--shade-rgb) / 0.4); }
+    .poker-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* АДМІНКА & ТОП */
+    .admin-user-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--surface-2); margin-bottom: 8px; border-radius: var(--r-sm); border: 1px solid var(--line); color: var(--fg); cursor: pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .12s, box-shadow .14s; }
+    .admin-user-card:active { transform: scale(.98); }
+    .rank { color: var(--accent); font-weight: bold; width: 30px; text-align:center; text-shadow: none; }
+
+    /* Повноекранний чат ПП — position:fixed, а не звичайний блок у потоці сторінки,
+       щоб поле вводу завжди було приклеєне до низу видимої області екрана (а не
+       ховалось нижче через 100vh на мобільних, чи "їхало" разом зі скролом body). */
+    .pm-thread-fullscreen { position: fixed; inset: 0; z-index: 1200; background: var(--bg); display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    .screen.screen-enter { animation: cascadeIn .32s cubic-bezier(.22,1,.36,1) both; }
+    
+    .contact-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--surface-2); border-radius: var(--r-sm); margin-bottom: 8px; border: 1px solid var(--line); box-shadow: var(--bevel), var(--elev-1); transition: transform .12s, box-shadow .14s; }
+    .contact-row:active { transform: scale(.98); }
+    .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .avatar-large { width: 72px; height: 72px; background: linear-gradient(135deg,color-mix(in srgb, var(--accent) 9%, var(--surface-1)),color-mix(in srgb, var(--accent) 16%, var(--surface-1))); border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden; box-shadow: 0 6px 18px -6px rgb(var(--shade-rgb) / 0.5); }
+    .avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* TELEGRAM ДЕПОЗИТ */
+
+    .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    .amount-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 5px; text-align: center; font-size: 13px; color: var(--fg-2); cursor: pointer; font-weight: bold; box-shadow: var(--bevel), var(--elev-1); }
+    .amount-btn.selected { border-color: var(--info); color: var(--info); background: rgb(var(--info-rgb) / 0.1); }
+
+    /* ВИВІД */
+    .wm-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: var(--fg-2); cursor: pointer; box-shadow: var(--bevel), var(--elev-1); }
+    .wm-btn.selected { border-color: var(--green); color: var(--green); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
+    /* Withdraw-panel-specific method chips (scoped so the shared deposit-panel .wm-btn base rule stays untouched) */
+    .pending-withdraw { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 45%), var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: var(--bevel), var(--elev-1); }
+    .pw-status { font-size: 11px; padding: 4px 10px; border-radius: var(--r-xl); box-shadow: 0 2px 6px rgb(var(--shade-rgb) / 0.25); font-weight:700; white-space:nowrap; }
+    .pw-pending { background: rgb(var(--accent-rgb) / 0.16); color: var(--accent); border: 1px solid rgb(var(--accent-rgb) / 0.3); }
+    .pw-done { background: rgb(var(--pos-rgb) / 0.16); color: var(--green); border: 1px solid rgb(var(--pos-rgb) / 0.3); }
+    .pw-rejected { background: rgb(var(--neg-rgb) / 0.16); color: var(--neg); border: 1px solid rgb(var(--neg-rgb) / 0.3); }
+
+    /* ЩОДЕННИЙ БОНУС */
+    .daily-bonus-modal-content { padding: 20px; text-align: center; }
+    .bonus-icon { font-size: 60px; animation: bounce 0.5s ease infinite alternate; filter: none; }
+    @keyframes bounce { from { transform: scale(1); } to { transform: scale(1.1); } }
+    .bonus-amount { font-size: 36px; font-weight: 900; color: var(--accent); margin: 10px 0; text-shadow: none; }
+    .streak-dots { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
+    .streak-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: var(--bevel); }
+    .streak-dot.done { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.2); }
+    .streak-dot.today { background: var(--green); border-color: var(--green); color: var(--on-accent); animation: pulse 1s ease infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(var(--pos-rgb) / 0.4); } 50% { box-shadow: 0 0 0 8px transparent; } }
+
+    /* СТАТУС ЗАЯВКИ */
+
+    /* БЛЕКДЖЕК */
+    .bj-table { background: radial-gradient(ellipse, color-mix(in srgb, var(--pos) 14%, var(--surface-1)) 0%, var(--surface-1) 100%); border-radius: var(--r-lg); border: 3px solid var(--accent); padding: 15px; margin-bottom: 15px; box-shadow: inset 0 4px 20px rgb(var(--shade-rgb) / 0.5), 0 12px 30px -12px rgb(var(--shade-rgb) / 0.6); }
+    .bj-area { text-align: center; margin-bottom: 10px; }
+    .bj-label { color: var(--fg-2); font-size: 12px; margin-bottom: 5px; }
+    .bj-cards { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; min-height: 75px; }
+    .bj-card { width: 46px; height: 68px; background: var(--paper); border-radius: var(--r-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border: 1px solid var(--fg); box-shadow: 0 6px 16px -6px rgb(var(--shade-rgb) / 0.5); }
+    .bj-card.red { color: var(--neg); }
+    .bj-score { font-size: 18px; font-weight: bold; color: var(--accent); margin-top: 5px; }
+
+    /* КЕНО */
+    .keno-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-bottom: 15px; }
+    .keno-num { aspect-ratio: 1; background: var(--surface-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 1px solid var(--line); cursor: pointer; color: var(--fg-2); box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; }
+    .keno-num:active { transform: translateY(1px) scale(.94); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
+    .keno-num.picked { background: var(--info); border-color: var(--info); color: var(--on-info); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.25); }
+    .keno-num.hit { background: var(--green); border-color: var(--green); color: var(--on-accent); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
+    .keno-num.miss { background: var(--surface-3); color: var(--fg-4); box-shadow: inset 0 3px 8px rgb(var(--shade-rgb) / 0.5); }
+
+    /* СКРЕТЧ */
+    .scratch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+    .scratch-cell { height: 80px; background: linear-gradient(135deg, var(--fg-3), var(--line-strong)); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; border: 2px solid var(--fg-3); position: relative; overflow: hidden; box-shadow: var(--bevel), var(--elev-1); transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s; }
+    .scratch-cell:active { transform: translateY(1px) scale(.97); filter:brightness(.85); box-shadow: var(--bevel), 0 4px 10px -6px rgb(var(--shade-rgb) / 0.5); }
+    .scratch-cell.scratched { background: var(--surface-1); border-color: var(--line); box-shadow: inset 0 4px 10px rgb(var(--shade-rgb) / 0.6); }
+    .scratch-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, var(--fg-3), var(--line-strong)); display: flex; align-items: center; justify-content: center; color: var(--fg-2); font-size: 12px; font-weight: bold; box-shadow: none; }
+
+    /* КОЛЕСО ФОРТУНИ */
+    .fortune-wheel-wrap { position: relative; width: 260px; height: 260px; margin: 0 auto 15px; }
+    .wheel-arrow { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 28px; z-index: 10; filter: drop-shadow(0 2px 4px rgb(var(--shade-rgb) / 1)); }
+    .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; background: var(--accent); border-radius: 50%; border: 3px solid var(--accent); z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: var(--bevel), var(--elev-1); }
+
+    /* ЧАТ ЛОБІ */
+    /* old chat-box replaced below */
+
+    /* ===== SUB-TAB BUTTONS (турніри) ===== */
+    /* Каса має власний сегментований перемикач (.ks-seg) — рейл із золотим
+       слайдером прибрано разом із редизайном. Ці кнопки лишились у турнірах,
+       тому активний стан тепер має власний колір, а не колір під слайдером. */
+    .cashier-tab-btn { position:relative; z-index:1; flex:1; padding:10px 2px; background:none; border:none; color:var(--fg-3); font-size:11px; font-weight:bold; cursor:pointer; border-radius:var(--r-lg); transition:transform .14s var(--ease-tactile), color .2s; display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .cashier-tab-btn span { font-size:9px; letter-spacing:.2px; }
+    .cashier-tab-btn:active { transform:scale(.94); }
+    .cashier-tab-btn.active { color:var(--accent); }
+    .chart-period-btn { padding:4px 10px;background:var(--input);border:1px solid var(--border);color:var(--fg-3);border-radius:var(--r-sm);font-size:11px;cursor:pointer;box-shadow: var(--bevel);transition:transform .14s var(--ease-tactile), box-shadow .14s, background .15s, border-color .15s, color .15s; }
+    .chart-period-btn:active { transform:scale(.94); }
+    .chart-period-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.2); }
+
+    /* ===== SPORT BETTING v2 — REAL ===== */
+    .match-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
+    .match-card:hover { border-color:rgb(var(--tint-rgb) / 0.1); }
+    .match-card.live { border-color:var(--neg);box-shadow: var(--bevel), var(--elev-1); }
+    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
+    .odds-btn { flex:1;background:var(--input);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s; }
+    .odds-btn:hover:not(.disabled) { border-color:rgb(var(--accent-rgb) / 0.5);background:rgb(var(--accent-rgb) / 0.08); }
+    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
+    .odds-btn.disabled { opacity:0.4;cursor:not-allowed;box-shadow: var(--bevel); }
+    .odds-label { font-size:10px;color:var(--sub);margin-bottom:4px; }
+    .odds-val { font-size:16px;font-weight:900;color:var(--accent); }
+
+        /* ===== SPORT BETTING ===== */
+    .sport-tab-btn { padding:7px 14px;background:var(--input);border:1px solid var(--border);color:var(--fg-3);border-radius:var(--r-xl);font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s, color .15s;-webkit-tap-highlight-color:transparent;box-shadow: var(--bevel), 0 6px 14px -8px rgb(var(--shade-rgb) / 0.5); }
+    .sport-tab-btn:active { transform: translateY(1px) scale(.96); }
+    .sport-tab-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
+    .sport-tab-btn:hover { border-color:var(--line-strong);color:var(--fg-2); }
+    #sportTabsRow::-webkit-scrollbar { display:none; }
+    #sportTabsRow { -ms-overflow-style:none; }
+    .match-card { background:linear-gradient(160deg, rgb(var(--tint-rgb) / 0.035), transparent 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:10px;cursor:pointer;box-shadow: var(--bevel), var(--elev-1);transition: border-color .2s, box-shadow .2s, transform .14s var(--ease-tactile); }
+    .match-card:hover { border-color:var(--line-strong); }
+    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
+    .odds-btn { flex:1;padding:10px 4px;background:var(--input);border:1px solid var(--border);border-radius:var(--r-sm);text-align:center;cursor:pointer;transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s;box-shadow: var(--bevel), var(--elev-1); }
+    .odds-btn:active:not(.disabled) { transform: translateY(1px) scale(.97); box-shadow: var(--bevel); }
+    .odds-btn:hover { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
+    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.2);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
+    .odds-val { font-size:16px;font-weight:900;color:var(--green); }
+    .odds-label { font-size:10px;color:var(--fg-4);margin-top:2px; }
+
+    .bet-status-won { color:var(--green);font-weight:bold; }
+    .bet-status-lost { color:var(--red);font-weight:bold; }
+    .bet-status-pending { color:var(--accent);font-weight:bold; }
+
+    /* ===== TOWER GAME ===== */
+    .tower-cell { flex:1;height:44px;background:var(--input);border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 0.15s;position:relative; box-shadow: var(--bevel), var(--elev-1); }
+    .tower-cell:hover { border-color:var(--fg-3);transform:scale(1.05); }
+    .tower-cell.safe { background:var(--surface-2);border-color:var(--green); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
+    .tower-cell.mine { background:var(--surface-2);border-color:var(--red); box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.25); }
+    .tower-cell.disabled { cursor:default;opacity:0.5; }
+    .tower-row { display:flex;gap:6px; }
+
+    /* ===== HILO GAME ===== */
+
+    /* ===== DICE ===== */
+    .dice-result-dot { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:var(--fg); box-shadow: 0 2px 4px rgb(var(--shade-rgb) / 0.4); }
+
+    /* ===== RATE TICKER ===== */
+    @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ===== CURRENCY SYSTEM ===== */
+    .currency-btn { padding:12px 8px;background:var(--input);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s;text-align:center;box-shadow: var(--bevel), var(--elev-1); }
+    .currency-btn:active { transform: translateY(1px) scale(.97); box-shadow: var(--bevel); }
+    .currency-btn:hover { border-color:var(--line-strong); }
+    .currency-btn.active { border-color:var(--accent);background:rgb(var(--accent-rgb) / 0.12);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
+    #currencyPickerModal .currency-btn { display:flex;flex-direction:column;align-items:center; }
+
+    /* ===== HOME SUB-TABS ===== */
+
+    /* ═══════════════════════════════════════════════════════
+       HOME DASHBOARD — PREMIUM CASINO-LUX SYSTEM (lux-* / v74)
+    ═══════════════════════════════════════════════════════ */
+
+    /* Ornate section divider — flanking hairlines around a small gold label */
+
+    /* Hero — balance, VIP crest, streak/bets/wins strip */
+
+    /* Generic luxe panel — replaces plain widget cards */
+
+    /* VIP + Battle Pass progress */
+
+    /* Live win ticker */
+
+    /* Quick action tiles — minimal dark glass with a thin accent top-edge */
+
+    /* Battle Pass promo — jewel-tone purple with a gold hairline frame */
+
+    /* ===== НОВИНИ ===== */
+    .news-card { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.03), transparent 45%), var(--box); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; box-shadow: var(--bevel), var(--elev-1); }
+    .news-header { padding:14px 14px 10px; }
+    .news-author { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .news-avatar { width:38px; height:38px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; box-shadow: 0 6px 18px -6px rgb(var(--shade-rgb) / 0.5); }
+    .news-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .news-name { font-size:13px; font-weight:bold; }
+    .news-time { font-size:10px; color:var(--fg-4); }
+    .news-admin-badge { background:var(--neg); color:var(--on-neg); font-size:9px; padding:1px 6px; border-radius:var(--r-md); margin-left:4px; font-weight:bold; }
+    .news-title { font-size:16px; font-weight:900; color:var(--fg); margin-bottom:6px; line-height:1.3; }
+    .news-body  { font-size:13px; color:var(--fg-2); line-height:1.5; margin-bottom:10px; }
+    .news-image { width:100%; max-height:200px; object-fit:cover; background:var(--surface-1); }
+    .news-reactions { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--line); flex-wrap:wrap; }
+    .reaction-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; background:var(--surface-2); border-radius:var(--r-xl); cursor:pointer; font-size:13px; border:1px solid transparent; transition:all 0.15s; }
+    .reaction-btn.reacted { border-color:var(--accent); background:rgb(var(--accent-rgb) / 0.1); }
+    .reaction-count { font-size:11px; color:var(--fg-3); }
+    .news-comments-toggle { padding:8px 14px; color:var(--fg-3); font-size:12px; cursor:pointer; border-top:1px solid var(--line); display:flex; align-items:center; gap:5px; }
+    .news-comments-toggle:hover { color:var(--fg-2); }
+    .news-comments-box { display:none; border-top:1px solid var(--line); padding:10px 14px; }
+    .news-comments-box.open { display:block; }
+    .comment-item { display:flex; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); }
+    .comment-avatar { width:28px; height:28px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; overflow:hidden; }
+    .comment-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .comment-nick { font-size:12px; font-weight:bold; color:var(--accent); cursor:pointer; }
+    .comment-text { font-size:12px; color:var(--fg-2); margin-top:2px; line-height:1.4; }
+    .comment-time { font-size:10px; color:var(--fg-4); margin-top:2px; }
+    .comment-input-row { display:flex; gap:8px; margin-top:8px; }
+
+    /* ===== БОТИ ===== */
+    .bot-card { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--surface-1); border:1px solid var(--line); border-radius:var(--r-sm); margin-bottom:6px; box-shadow: var(--bevel), var(--elev-1); }
+    .bot-avatar { width:36px; height:36px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; overflow:hidden; }
+    .bot-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+
+    /* ===== CHAT IMPROVEMENTS ===== */
+    .chat-box { height: 300px; overflow-y: auto; background: rgb(var(--recess-rgb) / calc(0.3 * var(--recess-k))); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 10px; margin-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .chat-msg { margin-bottom: 10px; padding: 9px 12px; background: rgb(var(--tint-rgb) / 0.03); border-radius: var(--r-lg); border-left: 2px solid rgb(var(--tint-rgb) / 0.07); }
+    .chat-msg.mine { border-left-color: var(--accent); background: rgb(var(--accent-rgb) / 0.05); }
+    .chat-msg.admin-msg { border-left-color: var(--red); background: rgb(var(--neg-rgb) / 0.04); }
+    .chat-avatar-sm { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; vertical-align:middle; margin-right:5px; overflow:hidden; flex-shrink:0; }
+    .chat-avatar-sm img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .chat-header-line { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+    .chat-body-text { font-size:13px; color:var(--fg-2); line-height:1.4; word-break:break-word; }
+    .chat-emoji-pick { display:flex; gap:6px; padding:6px; background:var(--surface-1); border-radius:var(--r-md); margin-bottom:8px; }
+    .chat-emoji-btn { font-size:20px; cursor:pointer; padding:4px; border-radius:var(--r-sm); transition:transform 0.1s; }
+    .chat-emoji-btn:active { transform:scale(1.3); }
+    .online-pill { display:inline-flex; align-items:center; gap:5px; background:var(--surface-1); border:1px solid var(--line); border-radius:var(--r-xl); padding:4px 10px; font-size:12px; color:var(--green); }
+
+    .chat-nick { font-weight: bold; cursor: pointer; }
+    .chat-nick:hover { text-decoration: underline; }
+    .chat-time { color: var(--fg-4); font-size: 10px; margin-left: 5px; }
+    .chat-input-row { display: flex; gap: 8px; }
+
+    /* ДУЕЛІ */
+
+    /* ═══════════════════════════════════════
+       CASINO LOBBY v2
+    ═══════════════════════════════════════ */
+    @keyframes wfSlide { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+    /* GAME MODAL */
+
+    /* STREAM FALLBACK FIX */
+    .stream-fallback-ui { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px; background:var(--surface-1); width:100%; height:100%; }
+    .stream-fallback-ui .retry-btn { background:var(--accent); color:var(--on-accent); border:none; border-radius:var(--r-md); padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; }
+    .stream-fallback-ui .open-ext-btn { background:transparent; border:1px solid var(--line); border-radius:var(--r-md); padding:8px 20px; font-size:12px; color:var(--fg-2); cursor:pointer; }
+
+    /* ТУРНІРИ */
+    .tournament-card { background: linear-gradient(135deg, var(--surface-1), var(--bg)); border: 1px solid var(--accent); border-radius: var(--r-lg); padding: 15px; margin-bottom: 12px; }
+    .t-prize { font-size: 24px; font-weight: 900; color: var(--accent); }
+    .t-info { color: var(--fg-3); font-size: 12px; margin-top: 5px; }
+    .t-leaderboard { margin-top: 10px; }
+    .t-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+
+    /* РЕФЕРАЛИ */
+
+    /* ПУБЛІЧНИЙ ПРОФІЛЬ */
+    .pub-profile { background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.035), transparent 45%), var(--box); border-radius: var(--r-md); padding: 20px; box-shadow: var(--bevel), var(--elev-1); }
+    .pub-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .pub-stat { background: var(--surface-1); border-radius: var(--r-sm); padding: 12px; text-align: center; border: 1px solid var(--line); box-shadow: var(--bevel), var(--elev-1); }
+    .pub-stat-val { font-size: 20px; font-weight: bold; color: var(--accent); }
+    .pub-stat-label { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
+    .pub-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .badge.gold { border-color: var(--accent); color: var(--accent); background: rgb(var(--accent-rgb) / 0.1); }
+
+    /* АДМІН РОЗШИРЕНИЙ — premium casino-lux treatment (v74) */
+    .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    /* Admin panel tabs */
+    .adm-panel { display:none !important; }
+    .adm-panel.active, .adm-panel[style*="display: block"], .adm-panel[style*="display:block"] { display:block !important; }
+
+    /* ── Керування адмінами та анти-чітом ── */
+    .adm-admin-card { background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:11px;margin-bottom:8px; }
+    .adm-admin-head { display:flex;align-items:flex-start;justify-content:space-between;gap:10px; }
+    .adm-admin-nick { font-size:13px;font-weight:800;color:var(--accent);word-break:break-all; }
+    .adm-admin-sub { font-size:10px;color:var(--fg-3);margin-top:2px; }
+    .adm-owner-tag { background:rgb(var(--accent-rgb) / 0.18);color:var(--accent);border-radius:var(--r-sm);padding:1px 5px;font-size:8px;font-weight:900;margin-left:5px;vertical-align:middle; }
+    .adm-mini-btn { background:rgb(var(--tint-rgb) / 0.05);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-2);font-size:11px;font-weight:700;padding:6px 10px;cursor:pointer;white-space:nowrap;width:auto;margin:0; }
+    .adm-mini-btn.danger { border-color:rgb(var(--neg-rgb) / 0.35);color:var(--neg); }
+    .adm-perm-chips { display:flex;flex-wrap:wrap;gap:4px;margin-top:8px; }
+    .adm-perm-chip { font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:var(--r-md);background:rgb(var(--tint-rgb) / 0.04);border:1px solid var(--line);color:var(--special); }
+    .adm-perm-chip.on { background:rgb(var(--pos-rgb) / 0.12);border-color:rgb(var(--pos-rgb) / 0.3);color:var(--pos); }
+    .adm-perm-chip.legacy { background:rgb(var(--accent-rgb) / 0.1);border-color:rgb(var(--accent-rgb) / 0.3);color:var(--accent); }
+    .adm-perm-chip.off { background:rgb(var(--neg-rgb) / 0.08);border-color:rgb(var(--neg-rgb) / 0.25);color:var(--neg); }
+    .adm-perm-toggles { margin-top:10px;padding-top:10px;border-top:1px solid var(--line); }
+    .adm-perm-row, .adm-switch-row { display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:12px;color:var(--fg-2);cursor:pointer;line-height:1.35; }
+    .adm-perm-row input, .adm-switch-row input { width:17px;height:17px;flex-shrink:0;margin:1px 0 0;accent-color:var(--accent); }
+    .adm-switch-row { border-bottom:1px solid var(--line); }
+    .adm-switch-row:last-of-type { border-bottom:none; }
+    .adm-hint { color:var(--fg-3);font-size:10px; }
+    .adm-num-row { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:11.5px;color:var(--fg-3); }
+    .adm-num-row input { width:110px;flex-shrink:0;margin:0;padding:8px 10px;font-size:13px;min-height:auto;text-align:center; }
+    .req-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;position:relative;overflow:hidden; box-shadow: var(--bevel), var(--elev-1); }
+    .req-card.deposit { border-left:3px solid var(--pos); }
+    .req-card.withdraw { border-left:3px solid var(--accent); }
+    .req-card-user { font-weight:bold;font-size:14px; }
+    .req-card-amount { font-size:18px;font-weight:900; }
+    .req-card-meta { font-size:11px;color:var(--fg-4);margin:3px 0; }
+    .req-card-time { font-size:10px;color:var(--fg-4); }
+    .req-actions { display:flex;gap:6px;margin-top:10px; }
+    .req-actions button { flex:1;padding:10px;font-size:13px;font-weight:700;border-radius:var(--r-md);cursor:pointer;border:none; }
+    .req-approve { background:var(--pos);color:var(--on-pos); }
+    .req-reject  { background:var(--neg);color:var(--on-neg); }
+    .req-empty { text-align:center;padding:24px;color:var(--fg-4);font-size:13px; }
+    /* v62 new styles */
+    .dragon-diff.active { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
+    .arch-risk.active   { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
+    .sicbo-type.active  { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
+    .penalty-zone:hover { background: rgb(var(--pos-rgb) / 0.3) !important; transform: scale(1.05); }
+    #jackpotTicker:hover { background: linear-gradient(90deg,color-mix(in srgb, var(--accent) 10%, var(--surface-1)),color-mix(in srgb, var(--accent) 13%, var(--surface-1)),color-mix(in srgb, var(--accent) 10%, var(--surface-1))) !important; }
+    @keyframes duckFly { from{transform:translateX(-40px) scaleX(-1)} to{transform:translateX(260px) scaleX(-1)} }
+    .admin-stat { background: linear-gradient(160deg, rgb(var(--accent-rgb) / 0.05), transparent 55%), var(--bg); border: 1px solid rgb(var(--accent-rgb) / 0.16); border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }
+    .admin-stat-val { font-size: 22px; font-weight: bold; font-family: var(--font-display); background:var(--accent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .admin-stat-label { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; }
+    .promo-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface-1); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); box-shadow: var(--bevel), var(--elev-1); }
+
+    .support-thread { background: var(--surface-1); border-radius: var(--r-sm); padding: 10px; margin-bottom: 8px; border: 1px solid var(--line); cursor: pointer; box-shadow: var(--bevel), var(--elev-1); transition: transform .12s, box-shadow .14s; }
+    .support-thread:active { transform: scale(.98); }
+    .support-thread:hover { border-color: var(--line); }
+    .support-unread { background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: var(--r-md); }
+
+    /* ===== VIP СИСТЕМА ===== */
+    .vip-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: var(--r-xl); font-size: 12px; font-weight: bold; }
+    .vip-bronze { background: rgb(var(--accent-rgb) / 0.2); border: 1px solid var(--bronze); color: var(--bronze); }
+    .vip-silver { background: rgb(var(--tint-rgb) / 0.15); border: 1px solid var(--silver-c); color: var(--silver-c); }
+    .vip-gold { background: rgb(var(--accent-rgb) / 0.2); border: 1px solid var(--gold-c); color: var(--gold-c); }
+    .vip-platinum { background: rgb(var(--tint-rgb) / 0.15); border: 1px solid var(--plat); color: var(--plat); box-shadow: 0 0 10px rgb(var(--tint-rgb) / 0.2); }
+    .vip-progress-bar { height: 6px; background: var(--surface-2); border-radius: var(--r-xs); overflow: hidden; margin: 6px 0 3px; }
+    .vip-progress-fill { height: 100%; border-radius: var(--r-xs); transition: width 0.5s ease; }
+    .vip-card { border-radius: var(--r-md); padding: 18px; margin-bottom: 12px; position: relative; overflow: hidden; box-shadow: var(--bevel), var(--elev-1); }
+    .vip-card::before { content:''; position:absolute; top:-40px; right:-40px; width:120px; height:120px; border-radius:50%; opacity:0.08; }
+    .vip-card.bronze { background: linear-gradient(135deg, var(--surface-1), color-mix(in srgb, var(--accent) 11%, var(--surface-1))); border: 1px solid var(--bronze); }
+    .vip-card.bronze::before { background: var(--bronze); }
+    .vip-card.silver { background: linear-gradient(135deg, var(--surface-1), var(--surface-2)); border: 1px solid var(--silver-c); }
+    .vip-card.gold { background: linear-gradient(135deg, var(--surface-1), color-mix(in srgb, var(--accent) 10%, var(--surface-1))); border: 1px solid var(--gold-c); }
+    .vip-card.platinum { background: linear-gradient(135deg, var(--surface-1), var(--surface-2)); border: 1px solid var(--plat); }
+    /* The hero "current tier" card breathes a glow in its own tier color —
+       the tier list below stays calm so this one reads as the focal point. */
+    #vipCurrentCard.bronze   { animation: vipGlowBronze 4s ease-in-out infinite; }
+    #vipCurrentCard.silver   { animation: vipGlowSilver 4s ease-in-out infinite; }
+    #vipCurrentCard.gold     { animation: vipGlowGold 4s ease-in-out infinite; }
+    #vipCurrentCard.platinum { animation: vipGlowPlat 4s ease-in-out infinite; }
+    @keyframes vipGlowBronze { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--bronze); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--bronze); } }
+    @keyframes vipGlowSilver { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--silver-c); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--silver-c); } }
+    @keyframes vipGlowGold   { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--gold-c); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--gold-c); } }
+    @keyframes vipGlowPlat   { 0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 30px -14px var(--plat); } 50% { box-shadow: var(--bevel), var(--elev-1), 0 0 55px -12px var(--plat); } }
+    @media (prefers-reduced-motion: reduce) {
+      #vipCurrentCard.bronze, #vipCurrentCard.silver, #vipCurrentCard.gold, #vipCurrentCard.platinum { animation: none; }
+    }
+    .vip-perk { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgb(var(--tint-rgb) / 0.05); font-size: 13px; }
+    .vip-perk-icon { font-size: 18px; min-width: 25px; }
+
+    /* ===== ЛУТБОКСИ ===== */
+    .lootbox-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .lootbox-card { border-radius: var(--r-lg); padding: 15px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid; position: relative; overflow: hidden; }
+    .lootbox-card:active { transform: scale(0.96); }
+    .lootbox-card.common { background: var(--surface-2); border-color: var(--line-strong); }
+    .lootbox-card.rare { background: linear-gradient(135deg, color-mix(in srgb, var(--info) 15%, var(--surface-1)), color-mix(in srgb, var(--info) 25%, var(--surface-1))); border-color: var(--info); }
+    .lootbox-card.epic { background: linear-gradient(135deg, color-mix(in srgb, var(--special) 15%, var(--surface-1)), color-mix(in srgb, var(--special) 25%, var(--surface-1))); border-color: var(--special); }
+    .lootbox-icon { font-size: 40px; margin-bottom: 5px; }
+    .lootbox-name { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+    .lootbox-price { font-size: 14px; font-weight: 900; }
+    .lootbox-common-color { color: var(--fg-2); }
+    .lootbox-rare-color { color: var(--info); }
+    .lootbox-epic-color { color: var(--special); }
+    /* Full-screen reveal overlay — the case-opening moment gets its own
+       stage instead of competing with the still-visible grid behind it. */
+    #lootboxResultScreen:not(.hidden) { position: fixed; inset: 0; z-index: 9600; background: rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k))); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+    .lootbox-reward-screen { text-align: center; padding: 30px 20px; }
+    .lootbox-open-anim { font-size: 80px; animation: lbPop 0.5s ease; }
+    @keyframes lbPop { 0% { transform: scale(0); opacity:0; } 60% { transform: scale(1.3); } 100% { transform: scale(1); opacity:1; } }
+    .lootbox-win-amount { font-size: 48px; font-weight: 900; color: var(--accent); margin: 15px 0 5px; animation: lbPop 0.4s ease 0.2s both; }
+    .lootbox-win-type { font-size: 12px; color: var(--fg-3); margin-bottom: 20px; }
+    #lbCaseCanvas { width: 220px; height: 220px; margin: 0 auto; display: block; touch-action: none; }
+
+    /* ===== ПОГОДИННИЙ БОНУС ===== */
+    .hourly-ring { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 15px; position: relative; cursor: pointer; transition: border-color 0.3s; }
+    .hourly-ring.ready { border-color: var(--green); box-shadow: none; animation: pulse 1.5s ease infinite; }
+    .hourly-cooldown-text { font-size: 30px; font-weight: 900; color: var(--accent); text-align: center; }
+    /* 14 рівнів не влазять у рядок — горизонтальний скрол замість стискання */
+    .hourly-vip-perks { display: flex; margin-top: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .hourly-vip-perks::-webkit-scrollbar { display: none; }
+    .hourly-vip-tier { text-align: center; flex: 0 0 auto; min-width: 74px; padding: 8px 6px; border-radius: var(--r-md); font-size: 11px; background: var(--surface-1); border: 1px solid var(--line); margin: 0 3px; white-space: nowrap; }
+    .hourly-vip-tier.active { border-color: var(--accent); background: rgb(var(--accent-rgb) / 0.08); }
+    .hourly-vip-amount { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+
+    /* ===== КВЕСТИ ===== */
+    .quest-card { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; margin-bottom: 10px; box-shadow: var(--bevel), var(--elev-1); }
+    .quest-card.done { border-color: var(--green); background: rgb(var(--pos-rgb) / 0.05); }
+    .quest-card.claimed { border-color: var(--line); opacity: 0.5; }
+    .quest-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .quest-icon { font-size: 24px; }
+    .quest-title { font-size: 14px; font-weight: bold; flex: 1; }
+    .quest-reward { font-size: 13px; color: var(--accent); font-weight: bold; }
+    .quest-prog-bar { height: 6px; background: var(--surface-2); border-radius: var(--r-xs); overflow: hidden; margin-bottom: 6px; }
+    .quest-prog-fill { height: 100%; background: var(--accent); border-radius: var(--r-xs); transition: width 0.4s ease; }
+    .quest-prog-text { font-size: 11px; color: var(--fg-3); }
+    .quest-claim-btn { background: var(--accent); color: var(--on-accent); border: none; border-radius: var(--r-md); padding: 8px 16px; font-weight: bold; font-size: 12px; cursor: pointer; width: 100%; margin-top: 8px; }
+    .quest-timer { font-size: 11px; color: var(--fg-4); text-align: right; }
+
+    /* ===== КЛАНИ ===== */
+    .clan-banner { border-radius: var(--r-md); padding: 18px; margin-bottom: 15px; position: relative; overflow: hidden; box-shadow: var(--bevel), var(--elev-1); }
+    .clan-banner.none   { background: linear-gradient(135deg,var(--surface-1),var(--surface-2)); border: 1px dashed var(--line); }
+    .clan-banner.member { background: linear-gradient(135deg,var(--surface-1),var(--surface-2)); border: 1px solid var(--green); animation: clanGlowBreathe 5s ease-in-out infinite; }
+    @keyframes clanGlowBreathe {
+      0%,100% { box-shadow: var(--bevel), var(--elev-1), 0 0 28px -16px var(--green); }
+      50%     { box-shadow: var(--bevel), var(--elev-1), 0 0 50px -14px var(--green); }
+    }
+    @media (prefers-reduced-motion: reduce) { .clan-banner.member { animation: none; } }
+    .clan-name   { font-size: 22px; font-weight: 900; }
+    .clan-stats  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .clan-stat   { background: rgb(var(--recess-rgb) / calc(0.3 * var(--recess-k))); border-radius: var(--r-md); padding: 10px 6px; text-align: center; box-shadow: inset 0 2px 6px rgb(var(--shade-rgb) / 0.35); }
+    .clan-stat-v { font-size: 18px; font-weight: bold; color: var(--accent); }
+    .clan-stat-l { font-size: 10px; color: var(--fg-3); margin-top: 2px; }
+    .clan-member-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--surface-1); border-radius: var(--r-sm); margin-bottom: 6px; border: 1px solid var(--line); box-shadow: var(--bevel), var(--elev-1); transition: box-shadow .15s, border-color .15s; }
+    .clan-member-row:hover { border-color: rgb(var(--accent-rgb) / 0.25); box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
+    .clan-member-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .clan-role   { font-size: 10px; padding: 2px 7px; border-radius: var(--r-md); margin-left: auto; }
+    .clan-role.leader  { background: rgb(var(--accent-rgb) / 0.2); color: var(--accent); }
+    .clan-role.member  { background: rgb(var(--pos-rgb) / 0.15); color: var(--green); }
+    .clan-task   { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 12px; margin-bottom: 8px; box-shadow: var(--bevel), var(--elev-1); transition: border-color .15s, box-shadow .15s; }
+    .clan-task.done { border-color: var(--green); box-shadow: var(--bevel), var(--elev-1), 0 0 24px -16px var(--green); }
+    /* ═════════ ЛІДЕРБОРД / РЕЙТИНГИ ═════════ */
+    #tab-leaderboard { padding: 0; }
+
+    /* Шапка */
+    .lb-hero { position: relative; overflow: hidden; padding: 16px 16px 20px;
+      background: radial-gradient(ellipse 80% 90% at 50% -10%, rgb(var(--accent-rgb) / 0.16), transparent 70%), linear-gradient(170deg,var(--surface-2),var(--surface-1) 60%,var(--surface-1)); }
+    .lb-hero::after { content:'🏆'; position:absolute; right:-24px; top:-30px; font-size:150px; opacity:.05; pointer-events:none; }
+    .lb-hero-top { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .lb-title { margin:0; font-family:var(--font-display); font-size:19px; font-weight:900; letter-spacing:2px; line-height:1;
+      background:linear-gradient(135deg,var(--accent2),var(--accent),var(--accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .lb-sub { font-size:11px; color:var(--sub); margin-top:4px; }
+
+    /* Таймер скидання */
+    .lb-timer { display:inline-flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0;
+      background:rgb(var(--accent-rgb) / 0.08); border:1px solid rgb(var(--accent-rgb) / 0.22); border-radius:var(--r-lg); padding:7px 11px; }
+    .lb-timer-lbl { font-size:9px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }
+    .lb-timer-val { font-size:13px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; line-height:1.1; }
+
+    /* Призи періоду */
+    .lb-prizes { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; position:relative; }
+    .lb-prize { border-radius:var(--r-lg); padding:11px 6px; text-align:center; box-shadow:var(--bevel); }
+    .lb-prize-medal { font-size:19px; line-height:1; }
+    .lb-prize-val { font-size:12px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .lb-prize-lbl { font-size:9px; color:var(--sub); margin-top:1px; }
+    .lb-prize.g1 { background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.16),rgb(var(--accent-rgb) / 0.03)); border:1px solid rgb(var(--accent-rgb) / 0.3); }
+    .lb-prize.g1 .lb-prize-val { color:var(--accent); }
+    .lb-prize.g2 { background:linear-gradient(160deg,rgb(var(--tint-rgb) / 0.12),rgb(var(--tint-rgb) / 0.02)); border:1px solid rgb(var(--tint-rgb) / 0.22); }
+    .lb-prize.g2 .lb-prize-val { color:var(--fg-2); }
+    .lb-prize.g3 { background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.13),rgb(var(--accent-rgb) / 0.02)); border:1px solid rgb(var(--accent-rgb) / 0.24); }
+    .lb-prize.g3 .lb-prize-val { color:var(--accent); }
+    .lb-prizes.no-prize { display:none; }   /* «Всі часи» — призів немає, не тримаємо порожні плитки */
+
+    /* Перемикачі */
+    .lb-body { padding:14px 14px 110px; }
+    .lb-seg { display:flex; gap:3px; background:var(--box); border:1px solid var(--border); border-radius:var(--r-lg); padding:4px; margin-bottom:10px; box-shadow:var(--bevel); }
+    .lb-seg-btn { flex:1; text-align:center; padding:9px 4px; border-radius:var(--r-md); font-size:12px; font-weight:700; color:var(--sub);
+      cursor:pointer; white-space:nowrap; transition:background .18s var(--ease-premium), color .18s, box-shadow .18s; -webkit-tap-highlight-color:transparent; }
+    .lb-seg-btn.active { background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.22),rgb(var(--accent-rgb) / 0.08)); color:var(--accent);
+      box-shadow:none; }
+    .lb-chips { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:14px; padding-bottom:2px; }
+    .lb-chips::-webkit-scrollbar { display:none; }
+    .lb-chip { flex-shrink:0; padding:7px 13px; border-radius:var(--r-xl); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+      background:var(--box); border:1px solid var(--border); color:var(--sub); transition:.16s var(--ease-premium); -webkit-tap-highlight-color:transparent; }
+    .lb-chip:active { transform:scale(.95); }
+    .lb-chip.active { background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.2),rgb(var(--accent-rgb) / 0.06)); border-color:rgb(var(--accent-rgb) / 0.45); color:var(--accent);
+      box-shadow:none; }
+
+    /* Подіум */
+    .lb-podium { display:grid; grid-template-columns:1fr 1.18fr 1fr; gap:7px; align-items:end; margin-bottom:16px; }
+    .lb-pod { position:relative; border-radius:var(--r-xl) var(--r-xl) var(--r-lg) var(--r-lg); padding:12px 6px 0; text-align:center; cursor:pointer; overflow:hidden;
+      animation:lbPodIn .45s var(--ease-premium) backwards; -webkit-tap-highlight-color:transparent; transition:transform .14s var(--ease-tactile); }
+    .lb-pod:active { transform:translateY(2px) scale(.98); }
+    @keyframes lbPodIn { from { opacity:0; transform:translateY(16px); } }
+    .lb-pod.r1 { background:linear-gradient(170deg,rgb(var(--accent-rgb) / 0.18),rgb(var(--accent-rgb) / 0.03)); border:1px solid rgb(var(--accent-rgb) / 0.35);
+      box-shadow:var(--bevel); animation-delay:.05s; }
+    .lb-pod.r2 { background:linear-gradient(170deg,rgb(var(--tint-rgb) / 0.13),rgb(var(--tint-rgb) / 0.02)); border:1px solid rgb(var(--tint-rgb) / 0.25); box-shadow:var(--bevel); }
+    .lb-pod.r3 { background:linear-gradient(170deg,rgb(var(--accent-rgb) / 0.13),rgb(var(--accent-rgb) / 0.02)); border:1px solid rgb(var(--accent-rgb) / 0.26);
+      box-shadow:var(--bevel); animation-delay:.1s; }
+    .lb-pod.me { outline:2px solid var(--accent); outline-offset:-2px; }
+    .lb-crown { position:absolute; top:-2px; left:50%; transform:translateX(-50%); font-size:17px; animation:lbFloat 2.6s ease-in-out infinite; }
+    @keyframes lbFloat { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,-3px); } }
+    .lb-pod-av { width:46px; height:46px; margin:6px auto 7px; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center;
+      font-size:17px; font-weight:800; color:var(--on-accent); background:linear-gradient(140deg,var(--accent2),var(--accent)); }
+    .lb-pod.r1 .lb-pod-av { width:54px; height:54px; font-size:20px; border:2px solid var(--accent); box-shadow:none; }
+    .lb-pod.r2 .lb-pod-av { border:2px solid var(--fg-3); background:linear-gradient(140deg,var(--paper),var(--fg-3)); color:var(--paper-ink); }
+    .lb-pod.r3 .lb-pod-av { border:2px solid var(--accent); background:var(--accent); color:var(--on-accent); }
+    .lb-pod-name { font-size:11.5px; font-weight:700; padding:0 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-pod-val { font-size:13px; font-weight:900; color:var(--fg); margin-top:2px; font-variant-numeric:tabular-nums; }
+    .lb-pod-base { margin-top:9px; font-family:var(--font-display); font-size:15px; font-weight:900; color:rgb(var(--fg-rgb) / 0.22);
+      background:rgb(var(--recess-rgb) / calc(0.28 * var(--recess-k))); border-top:1px solid rgb(var(--tint-rgb) / 0.06); }
+    .lb-pod.r1 .lb-pod-base { height:40px; line-height:40px; color:rgb(var(--accent-rgb) / 0.5); }
+    .lb-pod.r2 .lb-pod-base { height:28px; line-height:28px; }
+    .lb-pod.r3 .lb-pod-base { height:21px; line-height:21px; }
+
+    /* Рядки 4+ */
+    .lb-row { display:flex; align-items:center; gap:11px; padding:10px 12px; margin-bottom:6px; border-radius:var(--r-lg);
+      background:linear-gradient(160deg,rgb(var(--tint-rgb) / 0.03),transparent 60%), var(--box); border:1px solid var(--border);
+      cursor:pointer; box-shadow:var(--bevel); animation:lbRowIn .3s var(--ease-premium) backwards;
+      transition:transform .13s var(--ease-tactile), border-color .15s; -webkit-tap-highlight-color:transparent; }
+    @keyframes lbRowIn { from { opacity:0; transform:translateX(-8px); } }
+    .lb-row:active { transform:scale(.985); }
+    .lb-row.me { border-color:rgb(var(--accent-rgb) / 0.45); background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.12),rgb(var(--accent-rgb) / 0.02)); }
+    .lb-rank { min-width:24px; text-align:center; font-family:var(--font-display); font-size:13px; font-weight:900; color:var(--sub); font-variant-numeric:tabular-nums; }
+    .lb-row.me .lb-rank { color:var(--accent); }
+    .lb-av { width:34px; height:34px; flex-shrink:0; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:800; color:var(--on-accent); background:linear-gradient(140deg,var(--accent2),var(--accent)); border:1px solid rgb(var(--tint-rgb) / 0.12); }
+    .lb-row-main { flex:1; min-width:0; }
+    .lb-row-name { font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-row-tag { font-size:9.5px; color:var(--accent); font-weight:700; margin-left:4px; }
+    .lb-bar { height:3px; margin-top:5px; border-radius:var(--r-xs); background:rgb(var(--tint-rgb) / 0.06); overflow:hidden; }
+    .lb-bar-fill { height:100%; border-radius:var(--r-xs); background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .6s var(--ease-premium); }
+    .lb-row-val { font-size:13.5px; font-weight:900; color:var(--accent); flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+    /* Моя позиція (прилипає знизу) */
+    .lb-me-card { position:sticky; bottom:96px; z-index:5; display:flex; align-items:center; gap:11px; margin-top:12px; padding:11px 13px; border-radius:var(--r-lg);
+      background:linear-gradient(160deg,rgb(var(--accent-rgb) / 0.18),rgb(var(--recess-rgb) / calc(0.96 * var(--recess-k)))); border:1px solid rgb(var(--accent-rgb) / 0.4);
+      box-shadow:var(--bevel), var(--elev-2); }
+    .lb-me-rank { font-family:var(--font-display); font-size:17px; font-weight:900; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .lb-me-lbl { font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }
+    .lb-me-val { font-size:14px; font-weight:900; color:var(--fg); font-variant-numeric:tabular-nums; }
+    .lb-me-gap { font-size:10.5px; color:var(--sub); margin-top:2px; }
+    .lb-me-gap b { color:var(--accent); }
+
+    /* Порожньо / завантаження */
+    .lb-empty { text-align:center; padding:34px 20px; color:var(--sub); font-size:13px; line-height:1.6; }
+    .lb-empty-icon { font-size:40px; opacity:.35; margin-bottom:10px; }
+    .lb-skel { height:56px; margin-bottom:6px; border-radius:var(--r-lg); border:1px solid var(--border);
+      background:linear-gradient(100deg, var(--box) 30%, rgb(var(--tint-rgb) / 0.045) 50%, var(--box) 70%); background-size:240% 100%; animation:lbShimmer 1.25s linear infinite; }
+    @keyframes lbShimmer { from { background-position:150% 0; } to { background-position:-50% 0; } }
+
+    /* ===== МОНОПОЛІЯ ===== */
+    .mono-board-wrap { position: relative; width: 100%; max-width: 420px; margin: 0 auto 10px; aspect-ratio: 1; background: var(--paper); border: 3px solid var(--pos); border-radius: var(--r-xs); overflow: hidden; }
+    .mono-board { display: grid; grid-template-columns: 56px repeat(9,1fr) 56px; grid-template-rows: 56px repeat(9,1fr) 56px; width: 100%; height: 100%; }
+    .mono-cell { border: 0.5px solid var(--fg-3); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; text-align: center; cursor: pointer; position: relative; overflow: hidden; line-height: 1.1; padding: 1px; background: var(--paper); }
+    .mono-cell.corner { font-size: 9px; background: color-mix(in srgb, var(--pos) 16%, var(--surface-1)); font-weight: bold; }
+    .mono-cell.prop-top    { border-bottom: 4px solid; }
+    .mono-cell.prop-bottom { border-top: 4px solid; }
+    .mono-cell.prop-left   { border-right: 4px solid; }
+    .mono-cell.prop-right  { border-left: 4px solid; }
+    .mono-cell.owned-me    { box-shadow: inset 0 0 0 2px var(--pos); }
+    .mono-cell.owned-ai    { box-shadow: inset 0 0 0 2px var(--neg); }
+    .mono-cell .cell-price { font-size: 6px; color: var(--fg-3); }
+    .mono-player { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--fg); font-size: 8px; z-index: 5; transition: all 0.5s ease; box-shadow: 0 1px 3px rgb(var(--shade-rgb) / 0.5); pointer-events: none; }
+    .mono-center { grid-column: 2/11; grid-row: 2/11; background: color-mix(in srgb, var(--pos) 16%, var(--surface-1)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: var(--pos); letter-spacing: 2px; text-align: center; }
+    .mono-info-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .mono-info-card { background: var(--surface-1); border-radius: var(--r-md); padding: 12px; border: 1px solid var(--line); text-align: center; }
+    .mono-info-val { font-size: 20px; font-weight: bold; }
+    .mono-info-lbl { font-size: 10px; color: var(--fg-3); margin-top: 2px; }
+    .mono-dice { display: flex; justify-content: center; gap: 12px; margin: 8px 0; }
+    .mono-die  { width: 44px; height: 44px; background: var(--paper); border-radius: var(--r-md); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 2px 6px rgb(var(--shade-rgb) / 0.5); transition: transform 0.3s; }
+    .mono-die.rolling { animation: diceRoll 0.5s ease; }
+    @keyframes diceRoll { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-25deg)scale(1.1)} 75%{transform:rotate(25deg)scale(1.1)} }
+    .mono-log  { height: 120px; overflow-y: auto; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-md); padding: 8px; font-size: 12px; scrollbar-width: none; }
+    .mono-log-item { padding: 3px 0; border-bottom: 1px solid var(--line); color: var(--fg-2); }
+    .mono-log-item.good  { color: var(--green); }
+    .mono-log-item.bad   { color: var(--red); }
+    .mono-log-item.info  { color: var(--accent); font-weight: bold; }
+
+    /* ===== NAV DOT ===== */
+
+    /* ===== СПОВІЩЕННЯ ===== */
+    /* Сповіщення — мова «Ledger» */
+    .notif-item { display:flex; align-items:flex-start; gap:12px; padding:13px 14px; background:var(--ks-surface); border:1px solid var(--ks-line); border-left:3px solid transparent; border-radius:var(--ks-r); margin-bottom:8px; cursor:pointer; transition:background .15s, border-color .15s; }
+    .notif-item:hover { background:var(--ks-surface-2); }
+    .notif-item.unread { border-left-color:var(--ks-acc); background:var(--ks-acc-dim); }
+    .notif-item.unread.green-notif { border-left-color:var(--ks-pos); background:rgb(var(--pos-rgb) / 0.08); }
+    .notif-item.unread.red-notif   { border-left-color:var(--ks-neg); background:rgb(var(--neg-rgb) / 0.08); }
+    .notif-icon { font-size:22px; flex-shrink:0; margin-top:1px; line-height:1; }
+    .notif-body { flex:1; min-width:0; }
+    .notif-title { font-size:14px; font-weight:650; color:var(--ks-fg); margin-bottom:2px; }
+    .notif-text  { font-size:13px; color:var(--ks-fg-2); line-height:1.45; }
+    .notif-time  { font-size:11px; color:var(--ks-fg-3); margin-top:5px; }
+    .notif-filter { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+    .notif-filter::-webkit-scrollbar { display:none; }
+    .notif-filter-btn { padding:8px 14px; border-radius:var(--r-md); font-size:13px; font-weight:600; cursor:pointer; background:var(--ks-surface-2); border:1px solid var(--ks-line); color:var(--ks-fg-3); white-space:nowrap; flex-shrink:0; transition:background .15s, border-color .15s, color .15s; }
+    .notif-filter-btn:hover { background:var(--ks-surface-3); color:var(--ks-fg-2); }
+    .notif-filter-btn.active { background:var(--ks-acc-dim); border-color:var(--ks-acc); color:var(--info); }
+
+    /* ===== НАЛАШТУВАННЯ ===== */
+    /* Налаштування — мова «Ledger» (класи використовуються лише тут) */
+
+    /* ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ ===== */
+    .mp-room-card { background:var(--surface-1); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px; margin-bottom:8px; }
+    .mp-room-card.waiting { border-color:var(--accent); }
+    .mp-room-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .mp-players { display:flex; gap:6px; margin-top:6px; }
+    .mp-player-slot { flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-md); padding:8px; text-align:center; font-size:12px; }
+    .mp-player-slot.filled { border-color:var(--green); background:rgb(var(--pos-rgb) / 0.05); }
+    .mp-player-slot.empty  { border-style:dashed; color:var(--fg-4); }
+    .mp-status-badge { font-size:10px; padding:3px 8px; border-radius:var(--r-md); font-weight:bold; }
+    .mp-waiting { background:rgb(var(--accent-rgb) / 0.2); color:var(--accent); }
+
+    /* ===== СЛОТІКИ ===== */
+    #tab-slotiky .section-header { color:var(--special); }
+
+    /* ===== СТРІМ VIEWER ===== */
+    #streamViewerModal { }
+
+    /* ===== ТУРНІР V2 ===== */
+    .tournament-card { background:linear-gradient(135deg,var(--surface-1),var(--bg));border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);padding:14px;margin-bottom:10px; box-shadow: var(--bevel), var(--elev-1); }
+    .t-prize { font-size:22px;font-weight:900;color:var(--accent);margin:6px 0; }
+    .t-info  { font-size:11px;color:var(--fg-4); }
+    .t-row   { display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line); }
+    .t-row:last-child { border-bottom:none; }
+
+    /* ===== КЕШБЕК у касі ===== */
+    #cashierCashbackPanel .btn-green { width:100%;padding:12px;font-size:14px;font-weight:bold;border:none;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--green),color-mix(in srgb, var(--pos) 25%, var(--surface-1)));color:var(--on-accent);cursor:pointer; }
+    #cashierCashbackPanel .btn-green:disabled { background:var(--surface-2);color:var(--fg-4); }
+
+    /* ===== ESPORTS BADGE ===== */
+
+    /* ===== LIVE MATCH TRACKER ===== */
+    .tracker-container {
+      background: var(--surface-1);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .tracker-header {
+      background: linear-gradient(90deg, var(--info), var(--primary));
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tracker-header .live-dot {
+      width: 8px; height: 8px; background: var(--paper);
+      border-radius: 50%; animation: pulse2 1s infinite;
+    }
+    .pitch-area {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      overflow: hidden;
+    }
+    .pitch-canvas { width: 100%; height: 100%; display: block; }
+    .event-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgb(var(--recess-rgb) / calc(0.75 * var(--recess-k)));
+      border-radius: var(--r-xl);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: bold;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      min-width: 160px;
+    }
+    .event-overlay.show { opacity: 1; }
+    .event-overlay .ev-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--info), var(--primary));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .tracker-events {
+      padding: 10px 14px;
+      max-height: 120px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      border-top: 1px solid var(--line);
+    }
+    .tracker-event-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+    }
+    .tracker-event-row:last-child { border-bottom: none; }
+    .ev-min { color: var(--accent); font-weight: bold; min-width: 34px; font-size: 11px; }
+    .ev-score { color: var(--accent); font-weight: 900; min-width: 34px; text-align: center; }
+    .ev-text { color: var(--fg-2); }
+    .ev-side-home { text-align: left; }
+    .ev-side-away { text-align: right; margin-left: auto; }
+    @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    @keyframes ballMove {
+      0% { transform: translate(var(--bx0), var(--by0)); }
+      100% { transform: translate(var(--bx1), var(--by1)); }
+    }
+
+    /* ============================================
+       VIRTUAL BANK CARD
+    ============================================ */
+    .vcard-wrap { perspective: 1000px; width: 100%; max-width: 360px; margin: 0 auto 20px; height: 200px; }
+    .vcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.4,0,0.2,1); cursor: pointer; }
+    .vcard.flipped { transform: rotateY(180deg); }
+    .vcard-front, .vcard-back {
+      position: absolute; width: 100%; height: 100%; border-radius: 18px;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      padding: 20px 24px; box-sizing: border-box;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .vcard-back { transform: rotateY(180deg); }
+
+    /* SKIN: default gold */
+    .vcard-skin-gold .vcard-front { background: linear-gradient(135deg, #1a0d00 0%, #3d2200 40%, #6b3d00 70%, var(--accent) 100%); }
+    .vcard-skin-gold .vcard-back  { background: linear-gradient(135deg, var(--accent) 0%, #6b3d00 40%, #3d2200 100%); }
+    .vcard-skin-galaxy .vcard-front  { background: linear-gradient(135deg, #000010 0%, #0a004a 30%, #300080 60%, #7000b0 100%); }
+    .vcard-skin-galaxy .vcard-back   { background: linear-gradient(135deg, #7000b0 0%, #300080 50%, #0a004a 100%); }
+
+    /* Card front elements — реалістичний EMV-чип: сітка контактів, а не хрест */
+    /* Чип, безконтактна іконка та платіжне лого лежать у потоці:
+       раніше вони були absolute і накладались на бейдж та термін дії */
+    .vcard-chip {
+      width: 42px; height: 32px; flex-shrink: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0, rgba(0,0,0,.22) 1px, transparent 1px, transparent 14px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0, rgba(0,0,0,.18) 1px, transparent 1px, transparent 10px),
+        linear-gradient(135deg, #f4d78a, var(--accent) 40%, #ffdb4d 60%, #a0820c);
+      border-radius: 6px; position: relative;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 2px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,0.3);
+    }
+    .vcard-chip-row { display:flex; justify-content:space-between; align-items:center; margin:15px 0 14px; }
+    .vcard-contactless { opacity:.5; color:rgba(255,255,255,.9); }
+    .vcard-contactless svg { width:20px; height:20px; }
+    /* Тиснений друк, як на справжній картці, але приглушений: акцент на
+       читабельності номера, а не на блиску */
+    .vcard-number { font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 19px; font-weight:500; letter-spacing: 2.2px; color: rgba(255,255,255,.96); text-shadow: 0 1px 0 rgba(255,255,255,.16), 0 -1px 1px rgba(0,0,0,.5); margin-bottom: 16px; }
+    .vcard-holder-row { display:flex; justify-content:space-between; align-items:flex-end; }
+    .vcard-label { font-size: 8px; color: rgba(255,255,255,0.42); text-transform:uppercase; letter-spacing: .14em; font-weight:600; }
+    .vcard-value { font-size: 12px; font-weight:600; color: rgba(255,255,255,0.92); letter-spacing:.06em; text-shadow: 0 1px 0 rgba(255,255,255,.12), 0 -1px 1px rgba(0,0,0,.45); margin-top:3px; }
+    .vcard-logo { display:flex; align-items:center; flex-shrink:0; }
+    .vcard-logo .c1, .vcard-logo .c2 { width:26px; height:26px; border-radius:50%; opacity:0.85; }
+    .vcard-logo .c1 { background:#eb001b; }
+    .vcard-logo .c2 { background:#f79e1b; margin-left:-9px; }
+    .vcard-bank-name { font-size:11px; font-weight:700; color:rgba(255,255,255,0.88); letter-spacing:.16em; text-transform:uppercase; }
+    
+    /* Card back elements */
+    .vcard-stripe { height: 44px; background: rgba(0,0,0,0.7); margin: -22px -24px 14px; }
+    .vcard-cvv-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .vcard-cvv-tape { flex:1; background:rgba(255,255,255,0.85); height:36px; border-radius:4px; display:flex; align-items:center; padding: 0 10px; }
+    .vcard-cvv-value { font-family:'Courier New',monospace; font-size:16px; font-weight:bold; color:#000; letter-spacing:4px; }
+    .vcard-cvv-label { font-size:10px; color:rgba(255,255,255,0.6); white-space:nowrap; }
+    .vcard-signature { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:6px 12px; font-size:10px; color:rgba(255,255,255,0.6); font-style:italic; }
+    .vcard-back-logo { text-align:right; margin-top:8px; }
+
+    /* CARD SKINS SHOP */
+
+    /* CARD ONBOARDING MODAL */
+    .card-onboard-modal { position:fixed; inset:0; background:rgb(var(--recess-rgb) / calc(0.84 * var(--recess-k))); z-index:9900; display:flex; align-items:center; justify-content:center; padding:18px; }
+    .card-onboard-box { background:var(--surface-1); border:1px solid rgb(var(--tint-rgb) / 0.14); border-radius:var(--r-xl); padding:24px 22px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; font-family:var(--font-body); color:var(--fg); }
+    .card-onboard-box::-webkit-scrollbar { width:0; }
+    .card-onboard-box input { text-align:center; background:var(--surface-2); border:1px solid rgb(var(--tint-rgb) / 0.07); border-radius:var(--r-lg); box-shadow:none; color:var(--fg); }
+    .card-onboard-box input:focus { border-color:var(--info); box-shadow:none; }
+    .card-onboard-box button { box-shadow:none; letter-spacing:0; }
+    
+    /* BANK TAB */
+
+    /* Shimmer animation for card */
+    @keyframes cardShimmer {
+      0%   { background-position: -300% center; }
+      100% { background-position: 300% center; }
+    }
+    .vcard-skin-galaxy .vcard-front {
+      background-size: 200% auto;
+      animation: cardShimmer 4s linear infinite;
+    }
+
+    /* ─── WIN EFFECTS ─── */
+    .confetti-piece{position:absolute;border-radius:var(--r-xs);animation:cfall 2.5s linear forwards;}
+    @keyframes cfall{0%{opacity:1;transform:translateY(-20px) rotate(0deg);}100%{opacity:0;transform:translateY(110vh) rotate(720deg);}}
+    .coin-fly{position:absolute;font-size:26px;pointer-events:none;animation:coinup 1.8s ease-out forwards;}
+    @keyframes coinup{0%{opacity:1;transform:translateY(0) scale(1);}60%{opacity:1;transform:translateY(-90px) scale(1.3);}100%{opacity:0;transform:translateY(-160px) scale(0.5);}}
+    #winEffectOverlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;overflow:hidden;}
+    .big-win-glow{position:fixed;inset:0;background:radial-gradient(circle at 50% 50%,rgb(var(--accent-rgb) / 0.22),transparent 70%);z-index:99997;animation:glowpop .8s ease-out forwards;pointer-events:none;}
+    @keyframes glowpop{0%{opacity:1;}100%{opacity:0;}}
+
+    /* ─── BACCARAT ─── */
+    .bac-table{background:var(--surface-1);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;}
+    .bac-cards{display:flex;gap:6px;min-height:72px;align-items:center;flex-wrap:wrap;}
+    .bac-card{width:46px;height:65px;background:var(--paper);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:var(--paper-ink);box-shadow:0 3px 8px rgb(var(--shade-rgb) / 0.5);}
+    .bac-card.red{color:var(--neg);}
+    .bac-bet-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+    .bac-btn{padding:14px 6px;border:none;border-radius:var(--r-lg);font-weight:900;font-size:12px;cursor:pointer;transition:.15s;}
+    .bac-btn:active{transform:scale(.97);}
+    .bac-btn.player{background:var(--info);color:var(--on-info);}
+    .bac-btn.banker{background:var(--neg);color:var(--on-neg);}
+    .bac-btn.tie{background:linear-gradient(135deg,color-mix(in srgb, var(--pos) 25%, var(--surface-1)),var(--pos));color:var(--fg);}
+
+    /* ─── VIDEO POKER ─── */
+    .vp-hand{display:flex;gap:7px;justify-content:center;margin:14px 0;}
+    .vp-card{width:56px;height:82px;background:var(--paper);border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--paper-ink);cursor:pointer;border:3px solid transparent;box-shadow:0 4px 12px rgb(var(--shade-rgb) / 0.4);transition:.15s;position:relative;user-select:none;}
+    .vp-card.red{color:var(--neg);}
+    .vp-card.held{border-color:var(--pos);background:var(--paper);transform:translateY(-10px);}
+    .vp-card.held::after{content:'HOLD';position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:9px;color:var(--pos);font-weight:900;}
+    .vp-paytable{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:11px;color:var(--fg-3);margin-bottom:12px;}
+    .vp-paytable .highlight{color:var(--accent);font-weight:bold;}
+
+    /* ─── PRIVATE MESSAGES ─── */
+    .pm-thread{display:flex;align-items:center;gap:12px;padding:12px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:6px;cursor:pointer;}
+    .pm-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--on-accent);flex-shrink:0;cursor:pointer;}
+
+    /* ─── ACTIVITY FEED ─── */
+    .feed-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgb(var(--tint-rgb) / 0.03);border-radius:var(--r-sm);margin-bottom:5px;font-size:12px;animation:fadeIn .4s ease;box-shadow: var(--bevel);}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:none;}}
+
+    /* ═══════════════════════════════════════════
+       v63 — UI OVERHAUL
+    ═══════════════════════════════════════════ */
+
+    /* GAME CARDS — glow + shimmer */
+
+    /* HERO */
+    @keyframes heroGlowBreathe {
+      0%, 100% { box-shadow: var(--bevel), var(--elev-2), var(--glow-accent-soft); }
+      50%      { box-shadow: var(--bevel), var(--elev-2), var(--glow-accent-strong); }
+    }
+    /* Parallax decoration layers — moved by JS pointer-tracking on desktop only;
+       stay put (no motion cost) on touch/reduced-motion, per hero-parallax gating. */
+
+    /* JACKPOT STRIP */
+
+    /* CATEGORY TABS */
+
+    /* WINS FEED */
+
+    /* NAV BOTTOM — glow on active */
+
+    /* STREAK BANNER */
+    @keyframes streakPulse { 0%,100%{box-shadow:0 0 0 transparent} 50%{box-shadow:none} }
+
+    /* BALLOON GAME */
+    .balloon-arena {
+      background: linear-gradient(180deg, var(--surface-1), var(--bg));
+      border: 1px solid rgb(var(--info-rgb) / 0.2);
+      border-radius: var(--r-lg);
+      height: 300px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .balloon {
+      position: absolute;
+      font-size: 52px;
+      cursor: pointer;
+      animation: balloonFloat 0s linear;
+      transition: transform .1s;
+      user-select: none;
+      filter: none;
+    }
+    .balloon:active { transform: scale(1.3); }
+    @keyframes balloonFloat { from{bottom:-60px} to{bottom:110%} }
+
+    /* РУЛЕТКА РИЗИКУ */
+    .rr-revolver {
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(var(--surface-2) 0deg 60deg, var(--surface-1) 60deg 120deg, var(--surface-2) 120deg 180deg, var(--surface-1) 180deg 240deg, var(--surface-2) 240deg 300deg, var(--surface-1) 300deg 360deg);
+      border: 3px solid var(--line);
+      display: flex; align-items:center; justify-content:center;
+      margin: 0 auto 16px;
+      position: relative;
+      transition: transform .8s cubic-bezier(.36,.07,.19,.97);
+    }
+
+    /* QUIZ BATTLE */
+    .quiz-option {
+      background: rgb(var(--tint-rgb) / 0.05);
+      border: 2px solid rgb(var(--tint-rgb) / 0.1);
+      border-radius: var(--r-lg);
+      padding: 13px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+      text-align: left;
+      width: 100%;
+      color: var(--fg);
+      margin-bottom: 8px;
+    }
+    .quiz-option:hover { border-color: var(--accent); background: rgb(var(--accent-rgb) / 0.08); }
+    .quiz-option.correct { border-color: var(--pos); background: rgb(var(--pos-rgb) / 0.15); }
+    .quiz-option.wrong { border-color: var(--neg); background: rgb(var(--neg-rgb) / 0.12); }
+
+    /* SESSION STATS BAR */
+
+    /* DEPOSIT PACKAGES */
+    .dep-package {
+      background: linear-gradient(160deg, rgb(var(--tint-rgb) / 0.045), transparent 45%), var(--surface-1);
+      border: 1.5px solid rgb(var(--tint-rgb) / 0.09);
+      border-radius: var(--r-md);
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .16s var(--ease-tactile), box-shadow .16s ease, border-color .16s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--bevel), var(--elev-1);
+    }
+    .dep-package:active { transform: scale(.96) translateY(1px); filter: brightness(.92); }
+    .dep-package.popular {
+      border-color: rgb(var(--accent-rgb) / 0.55);
+      box-shadow: var(--bevel), var(--elev-1);
+    }
+    .dep-package.popular::before {
+      content:'★ Популярний'; position:absolute; top:0; right:0;
+      background: var(--accent);
+      color:var(--on-accent); font-size:8px; font-weight:800; letter-spacing:.3px;
+      padding:3px 9px 3px 11px; border-radius:0 0 0 var(--r-md);
+      box-shadow: none;
+    }
+    .dep-package-amount { font-size:23px; font-weight:900; color:var(--fg); font-family:var(--font-display); letter-spacing:.3px; }
+    .dep-package-bonus { font-size:11px; color:var(--pos); font-weight:800; margin-top:5px; background:rgb(var(--pos-rgb) / 0.12); border-radius:var(--r-sm); padding:2px 7px; display:inline-block; }
+    .dep-package-bonus.none { color:var(--fg-4); background:none; padding:0; font-weight:600; }
+    .dep-package-total { font-size:10px; color:var(--fg-3); margin-top:6px; }
+    .dep-package-label { font-size:9px; color:var(--fg-3); margin-top:3px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
+
+    /* LIVE WALLPAPER */
+
+    /* ANIMATED CANVAS BG */
+    #liveBgCanvas { position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; transition:opacity .5s; }
+    #liveBgCanvas.active { opacity:.4; }
+
+    /* RETURN BONUS */
+    @keyframes returnBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+    /* SMART AUTOBET */
+
+    /* PWA install btn */
+    #pwaInstallBtn {
+      background: var(--info);
+      border: none;
+      border-radius: var(--r-lg);
+      color: var(--on-info);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 12px 20px;
+      cursor: pointer;
+      display: none;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    #pwaInstallBtn.visible { display:flex; align-items:center; justify-content:center; gap:8px; }
+
+    /* ═══ 50 NEW FEATURES — CSS ═══ */
+
+    /* Quick bet buttons */
+
+    /* Game search bar */
+
+    /* Favorite games */
+
+    /* Game sort tabs */
+
+    /* Responsible gambling */
+
+    /* Sound control */
+
+    /* Chat */
+    .chat-messages { flex:1; overflow-y:auto; padding:10px; scrollbar-width:thin; }
+    .chat-msg { display:flex; gap:8px; margin-bottom:8px; animation:fadeIn .3s ease; }
+    .chat-msg-body { background:rgb(var(--tint-rgb) / 0.04); border-radius:var(--r-md); padding:6px 10px; flex:1; }
+    .chat-msg-user { font-size:10px; font-weight:700; color:var(--accent); margin-bottom:2px; }
+    .chat-msg-text { font-size:12px; color:var(--fg-2); word-break:break-word; }
+    .chat-input-row { display:flex; gap:6px; padding:8px; border-top:1px solid rgb(var(--tint-rgb) / 0.06); background:rgb(var(--recess-rgb) / calc(0.2 * var(--recess-k))); }
+    .chat-input { flex:1; background:rgb(var(--tint-rgb) / 0.06); border:1px solid rgb(var(--tint-rgb) / 0.08); border-radius:var(--r-md); padding:11px 14px; color:var(--fg); font-size:15px; outline:none; }
+
+    /* Horse racing */
+    .horse-track { background:var(--surface-1); border:1px solid rgb(var(--pos-rgb) / 0.2); border-radius:var(--r-lg); padding:12px; margin-bottom:10px; }
+    .horse-lane { display:flex; align-items:center; gap:8px; margin-bottom:8px; background:rgb(var(--tint-rgb) / 0.03); border-radius:var(--r-md); padding:6px 10px; cursor:pointer; transition:.2s; }
+    .horse-lane.selected { border:1px solid var(--accent); background:rgb(var(--accent-rgb) / 0.08); }
+    .horse-emoji { font-size:22px; }
+    .horse-bar-wrap { flex:1; height:6px; background:var(--surface-2); border-radius:var(--r-xs); overflow:hidden; }
+    .horse-bar { height:100%; border-radius:var(--r-xs); transition:width .5s ease; }
+    .horse-odds { font-size:12px; font-weight:800; color:var(--accent); min-width:35px; text-align:right; }
+
+    /* Color prediction */
+    .color-bet-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+    .color-bet-btn { padding:18px 8px; border-radius:var(--r-lg); border:3px solid transparent; cursor:pointer; font-size:22px; font-weight:900; text-align:center; transition:.2s; }
+    .color-bet-btn:hover { transform:scale(1.05); }
+    .color-bet-btn.selected { border-color:var(--fg); transform:scale(1.08); }
+
+    /* Virtual slots reel */
+
+    /* Turbo mode */
+
+    /* Rakeback */
+
+    /* Recently played */
+
+    /* Loss limit warning */
+    @keyframes warnPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+    /* Реферали (колишній Афілейт) */
+    .aff-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    .aff-stat-card { background:rgb(var(--tint-rgb) / 0.03); border:1px solid rgb(var(--tint-rgb) / 0.07); border-radius:var(--r-lg); padding:12px; text-align:center; }
+    .aff-stat-val { font-size:20px; font-weight:900; color:var(--accent); }
+    .aff-stat-lbl { font-size:9px; color:var(--fg-4); margin-top:2px; }
+
+    /* Font size control */
+
+    /* VIP progress */
+    .vip-progress-wrap { background:var(--surface-1); border-radius:var(--r-md); height:10px; overflow:hidden; margin:8px 0; }
+    .vip-progress-bar { height:100%; background:var(--special); border-radius:var(--r-md); transition:width 1s ease; }
+
+    /* Turbo bet (double/half) */
+
+    /* Leaderboard sparkline */
+
+    /* Hot/cold badge */
+
+    /* Autobet strategies */
+
+    /* Real-time deposit approve animation */
+    @keyframes reqFlash { 0%,100%{background:transparent} 50%{background:rgb(var(--pos-rgb) / 0.08)} }
+
+    /* ══════════════════════════════════════════════════
+       ГЛОБАЛЬНІ АНІМАЦІЇ v69
+    ══════════════════════════════════════════════════ */
+
+    /* Coin flip burst */
+    @keyframes coinBurst {
+      0%   { transform:scale(0) rotate(-180deg); opacity:0; }
+      60%  { transform:scale(1.2) rotate(10deg);  opacity:1; }
+      100% { transform:scale(1)   rotate(0deg);   opacity:1; }
+    }
+    /* Floating coins rain */
+    /* Win shimmer */
+    @keyframes winShimmer {
+      0%,100%{ background-position:0% 50%; }
+      50%    { background-position:100% 50%; }
+    }
+    /* Pulse glow */
+    @keyframes pulseGlow {
+      0%,100%{ box-shadow:none; }
+      50%    { box-shadow:none; }
+    }
+    /* Battle Pass track: current-level glow, milestone shimmer, claim-button pulse */
+    @keyframes bpGlow {
+      0%,100%{ box-shadow:none; }
+      50%    { box-shadow:none; }
+    }
+    @keyframes bpClaimPulse {
+      0%,100%{ transform:scale(1); }
+      50%    { transform:scale(1.08); }
+    }
+    .bp-node-current   { animation: bpGlow 1.8s ease-in-out infinite; }
+    .bp-node-milestone { box-shadow: none; }
+    .bp-claim-pulse     { animation: bpClaimPulse 1.1s ease-in-out infinite; }
+    /* Slide up entry */
+    @keyframes slideUp {
+      from{ transform:translateY(30px); opacity:0; }
+      to  { transform:translateY(0);    opacity:1; }
+    }
+    /* Pop in */
+    @keyframes popIn {
+      0%  { transform:scale(0.5); opacity:0; }
+      80% { transform:scale(1.08); }
+      100%{ transform:scale(1);   opacity:1; }
+    }
+    /* Jackpot number roll */
+    @keyframes numRoll {
+      from{ transform:translateY(-100%); }
+      to  { transform:translateY(0); }
+    }
+    /* Reel spin */
+    @keyframes reelSpin {
+      0%  { transform:translateY(0); filter:blur(0); }
+      50% { transform:translateY(-8px); filter:blur(3px); }
+      100%{ transform:translateY(0); filter:blur(0); }
+    }
+    /* Notification slide */
+    @keyframes notifIn  { from{transform:translateX(110%)} to{transform:translateX(0)} }
+    @keyframes notifOut { from{transform:translateX(0)} to{transform:translateX(110%)} }
+    /* Gold spark */
+    @keyframes spark {
+      0%,100%{ transform:scale(1); }
+      50%    { transform:scale(1.5) rotate(180deg); }
+    }
+    /* Floating */
+    @keyframes float {
+      0%,100%{ transform:translateY(0); }
+      50%    { transform:translateY(-8px); }
+    }
+    /* Heartbeat */
+    @keyframes heartbeat {
+      0%,100%{ transform:scale(1); }
+      30%    { transform:scale(1.12); }
+      50%    { transform:scale(0.97); }
+      70%    { transform:scale(1.08); }
+    }
+
+    /* Winning jackpot banner */
+
+    /* Premium slot machine */
+    .slot-reel-premium {
+      background:linear-gradient(180deg,var(--bg),var(--surface-1),var(--bg));
+      border:2px solid rgb(var(--accent-rgb) / 0.3);
+      border-radius:var(--r-lg);
+      min-width:68px; height:90px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:44px;
+      box-shadow:inset 0 4px 12px rgb(var(--shade-rgb) / 0.8);
+      transition:.15s;
+      position:relative; overflow:hidden;
+    }
+    .slot-reel-premium::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:30%;
+      background:linear-gradient(180deg,rgb(var(--recess-rgb) / calc(0.7 * var(--recess-k))),transparent);
+      z-index:1; pointer-events:none;
+    }
+    .slot-reel-premium::after {
+      content:'';
+      position:absolute; bottom:0; left:0; right:0; height:30%;
+      background:linear-gradient(0deg,rgb(var(--recess-rgb) / calc(0.7 * var(--recess-k))),transparent);
+      z-index:1; pointer-events:none;
+    }
+    .slot-reel-premium-row { perspective:400px; }
+    .slot-reel-premium.spinning { animation:reelSpin .1s linear infinite; }
+    .slot-reel-premium.flip-tick { animation:reelFlip .18s cubic-bezier(.4,0,.2,1); }
+    .slot-reel-premium.landed { animation:reelLand .4s cubic-bezier(.34,1.56,.64,1); }
+    .slot-reel-premium.winner {
+      border-color:var(--accent);
+      box-shadow:none;
+      animation:heartbeat .5s ease 3;
+    }
+    @keyframes reelFlip {
+      0%   { transform:rotateX(0deg); }
+      45%  { transform:rotateX(92deg); filter:brightness(.5); }
+      55%  { transform:rotateX(-92deg); filter:brightness(.5); }
+      100% { transform:rotateX(0deg); }
+    }
+    @keyframes reelLand {
+      0%   { transform:translateY(-6px) scale(1.04); }
+      55%  { transform:translateY(3px) scale(.98); }
+      100% { transform:translateY(0) scale(1); }
+    }
+    @keyframes jackpotFlash {
+      0%   { opacity:0; }
+      15%  { opacity:1; }
+      100% { opacity:0; }
+    }
+
+    /* Chat image preview */
+    .chat-img-msg {
+      max-width:220px; max-height:200px;
+      border-radius:var(--r-lg); cursor:pointer;
+      border:1px solid rgb(var(--tint-rgb) / 0.1);
+      transition:.15s;
+    }
+    .chat-img-msg:hover { transform:scale(1.03); }
+    .chat-msg-avatar-img {
+      width:32px; height:32px; border-radius:50%;
+      object-fit:cover; flex-shrink:0;
+      border:1.5px solid rgb(var(--accent-rgb) / 0.3);
+    }
+    .chat-msg-avatar-emoji {
+      width:32px; height:32px; border-radius:50%;
+      background:rgb(var(--tint-rgb) / 0.07);
+      display:flex; align-items:center; justify-content:center;
+      font-size:17px; flex-shrink:0;
+    }
+    .chat-upload-btn {
+      background:rgb(var(--tint-rgb) / 0.08);
+      border:1px solid rgb(var(--tint-rgb) / 0.12);
+      border-radius:var(--r-md);
+      padding:8px 12px; cursor:pointer;
+      font-size:18px; line-height:1;
+      transition:.15s;
+      width:auto; flex-shrink:0;
+    }
+    .chat-upload-btn:active { transform:scale(.92); }
+
+    /* Profile stats — прибрано разом із редизайном профілю в мову «Ledger».
+       Сітка статистики тепер збирається з .ks-stat (див. .ks-statgrid нижче). */
+
+    /* Auth screen redesign */
+    @keyframes btnShine {
+      0%  { left:-100%; }
+      50%,100%{ left:150%; }
+    }
+
+    /* Win fly-out coins */
+    .win-coin {
+      position:fixed;
+      font-size:24px;
+      pointer-events:none;
+      z-index:9998;
+      animation:coinFly 1.2s ease forwards;
+    }
+    @keyframes coinFly {
+      0%  { transform:translate(0,0) scale(1) rotate(0deg); opacity:1; }
+      100%{ transform:translate(var(--tx),var(--ty)) scale(.2) rotate(var(--tr)); opacity:0; }
+    }
+
+    /* Notification improved */
+
+    /* Tab icons animate on select */
+
+    /* Lobby hero jackpot counter */
+
+    /* Amount buttons premium */
+    .amount-btn {
+      transition:all .15s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .amount-btn:active { transform:scale(.88) !important; }
+    .amount-btn.selected {
+      animation:popIn .25s ease !important;
+      box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2) !important;
+    }
+
+    /* Method buttons */
+    .wm-btn {
+      transition:all .15s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .wm-btn:active { transform:scale(.92) !important; }
+
+    /* Каса має власну мову чипів (див. блок «КАСА v80») — золоті/зелені
+       градієнтні перебивки тут прибрані, щоб не протікали в новий дизайн. */
+
+    /* Game tab back button */
+
+    /* Slotiky premium */
+
+    /* Screen entry animation - only for non-auth screens */
+    .screen:not(.hidden):not(#auth-screen) {
+      animation:slideUp .25s ease;
+    }
+
+    /* Req card animation */
+    .req-card { animation:slideUp .3s ease both; }
+
+    /* ══ UNIVERSAL MODAL SYSTEM ══ */
+    .slotok-modal-overlay{position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.88 * var(--recess-k)));z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;animation:fadeInOverlay .2s ease;overflow-y:auto;}
+    .slotok-fullscreen-modal{position:fixed;inset:0;background:var(--bg);z-index:9490;overflow-y:auto;padding:16px;padding-bottom:80px;animation:slideUp .25s ease;}
+    @keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+    .slotok-modal-box{background:var(--surface-1);border-radius:var(--r-xl);padding:22px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease;position:relative;}
+    .slotok-modal-close{position:absolute;top:12px;right:12px;background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);cursor:pointer;width:30px;height:30px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.15s;}
+    .slotok-modal-close:active{transform:scale(.9);}
+
+    /* ═══ AUTH SCREEN ═══ */
+    @keyframes authSpin { 0%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} 100%{transform:rotate(-3deg)} }
+    @keyframes authPulse { from{filter:none} to{filter:none} }
+
+    /* Live win ticker — той самий принцип, що й #rateTicker (стрічка курсів на головній) */
+
+    /* Feature pills */
+    @keyframes authFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    /* Form card */
+    /* Повільна "жива" рамка, що обертається навколо картки — суто CSS,
+       через conic-gradient обрізаний до тонкого кільця маскою */
+    @keyframes authBorderSpin { to { transform: rotate(360deg); } }
+    /* Слайдер-індикатор під активною вкладкою — рухається transform'ом
+       замість перемальовування фону кожної кнопки окремо */
+    /* Stats row at bottom of auth */
+
+@keyframes blink{0%,100%{opacity:0.2}50%{opacity:1}}
+
+/* ═══════════════════════════════════════════════════════
+   КАСА — 3D КАРТКА
+═══════════════════════════════════════════════════════ */
+
+/* 3D Card Container */
+.vcard-scene {
+  width: 100%;
+  perspective: 1400px;
+  margin-bottom: 16px;
+  position: relative;
+}
+/* Під карткою — нейтральна тінь-подушка, а не золотий казиновий ореол:
+   картка має читатись як предмет, що лежить на площині */
+.vcard-scene::before {
+  content: '';
+  position: absolute; left: 50%; bottom: 4px;
+  width: 76%; max-width: 300px; height: 34px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,.75), transparent 72%);
+  filter: blur(14px);
+  z-index: -1;
+  pointer-events: none;
+}
+/* Ледь помітна амбієнтна смуга блиску — основний реалізм несе
+   інтерактивне світло нижче, це лише фоновий "живий" штрих */
+.vcard-front::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  background: linear-gradient(112deg, transparent 34%, rgba(255,255,255,.03) 46%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.03) 54%, transparent 66%);
+  background-size: 280% 280%;
+  animation: shimmerSweep 14s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+/* Інтерактивне "дзеркальне" світло — позиція задається JS через --lx/--ly
+   залежно від нахилу картки (тач-драг або рух миші), як справжній відблиск
+   на пластику/металі, а не по колу заскриптована анімація */
+.vcard-front::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+  background: radial-gradient(circle 160px at var(--lx, 28%) var(--ly, 18%), rgba(255,255,255,.5), rgba(255,255,255,.08) 45%, transparent 70%);
+  opacity: var(--light-op, .55);
+  mix-blend-mode: overlay;
+}
+/* Дрібне зерно поверх картки — прибирає "векторний" вигляд, додає
+   відчуття реального матеріалу (ледь помітне, не заважає читанню) */
+.vcard-front, .vcard-back {
+  position: relative;
+}
+.vcard-front::-webkit-scrollbar { display: none; }
+.vcard-grain { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4; opacity: .05; mix-blend-mode: overlay;
+  background-image: radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);
+  background-size: 3px 3px;
+}
+.vcard-wrap {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  height: 210px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22,1,.36,1);
+  cursor: pointer;
+  border-radius: 16px;
+  touch-action: pan-y;
+}
+.vcard-wrap.flipped { transform: rotateY(180deg); }
+/* Ребро картки — тонкий темний "зріз" збоку, щоб картка читалась як
+   товстий фізичний об'єкт, а не пласка наклейка */
+.vcard-wrap::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 16px;
+  transform: translateZ(-3px) translate(3px, 4px);
+  background: rgba(0,0,0,.55);
+  filter: blur(1px);
+  z-index: -1;
+}
+.vcard-front, .vcard-back {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-sizing: border-box;
+}
+.vcard-back { transform: rotateY(180deg); }
+
+/* Holographic shimmer */
+@keyframes hologram {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.vcard.vcard-skin-gold .vcard-front {
+  background: linear-gradient(135deg, #1a0d00, #2a1800, #3a2200, #1a0d00);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(212,175,55,.4);
+  box-shadow: 0 0 30px rgba(212,175,55,.15), inset 0 1px 0 rgba(212,175,55,.2);
+}
+
+/* ═══════════════════════════════════════════════════════
+   КАРТКА — 14 РІЗНОМАНІТНИХ СКІНІВ З ТЕКСТУРАМИ
+═══════════════════════════════════════════════════════ */
+
+/* 1. Gold — класика (default) */
+.vcard-skin-gold .vcard-front {
+  background: linear-gradient(135deg, #1a0d00, #2a1800, #3a2200, #1a0d00);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(212,175,55,.4);
+  box-shadow: 0 0 30px rgba(212,175,55,.15), inset 0 1px 0 rgba(212,175,55,.2);
+}
+
+/* 2. Onyx — глибокий чорний з блиском */
+.vcard-skin-onyx .vcard-front {
+  background: linear-gradient(135deg, #000, #0d0d0d, #000);
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 0 30px rgba(255,255,255,.05), inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+/* 3. Sapphire — сапфірово-синій */
+.vcard-skin-sapphire .vcard-front {
+  background: linear-gradient(135deg, #000d1a, #002a55, #001a33, #000d1a);
+  background-size: 300% 300%;
+  animation: hologram 5s ease infinite;
+  border: 1px solid rgba(74,158,255,.4);
+  box-shadow: 0 0 30px rgba(74,158,255,.15);
+}
+
+/* 4. Emerald — смарагдовий */
+.vcard-skin-emerald .vcard-front {
+  background: linear-gradient(135deg, #001a0f, #003d24, #001a0f);
+  background-size: 300% 300%;
+  animation: hologram 5.5s ease infinite;
+  border: 1px solid rgba(61,214,140,.4);
+  box-shadow: 0 0 30px rgba(61,214,140,.15);
+}
+
+/* 5. Neon Cyber — кіберпанк сітка */
+.vcard-skin-cyber .vcard-front {
+  background:
+    linear-gradient(90deg, rgba(0,255,220,.08) 1px, transparent 1px) 0 0/20px 20px,
+    linear-gradient(0deg,  rgba(0,255,220,.08) 1px, transparent 1px) 0 0/20px 20px,
+    linear-gradient(135deg, #000814, #001d3d, #000814);
+  border: 1px solid rgba(0,255,220,.4);
+  box-shadow: 0 0 30px rgba(0,255,220,.2), inset 0 0 20px rgba(0,255,220,.05);
+}
+
+/* 6. Carbon — карбонове волокно */
+.vcard-skin-carbon .vcard-front {
+  background:
+    repeating-linear-gradient(45deg, #0a0a0a 0, #0a0a0a 4px, #151515 4px, #151515 8px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.4) 0, rgba(0,0,0,.4) 4px, transparent 4px, transparent 8px);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 0 24px rgba(0,0,0,.5);
+}
+
+/* 7. Marble — мармур */
+.vcard-skin-marble .vcard-front {
+  background:
+    linear-gradient(35deg, transparent 46%, rgba(255,255,255,.18) 49%, rgba(255,255,255,.05) 51%, transparent 54%),
+    linear-gradient(-20deg, transparent 62%, rgba(255,255,255,.12) 65%, transparent 68%),
+    radial-gradient(ellipse at 20% 30%, rgba(255,255,255,.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.07) 0%, transparent 45%),
+    linear-gradient(160deg, #1a1a22, #26262e, #1a1a22);
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 0 24px rgba(255,255,255,.05);
+}
+
+/* 8. Sunset — рожево-помаранчевий градієнт */
+.vcard-skin-sunset .vcard-front {
+  background: linear-gradient(135deg, #2a0a1a, #4a1428, #3a1a08, #2a0a1a);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(255,105,140,.35);
+  box-shadow: 0 0 30px rgba(255,105,140,.15);
+}
+
+/* 9. Holographic — веселкове голо-сяйво */
+.vcard-skin-holo .vcard-front {
+  background: linear-gradient(120deg, #ff2ecc, #ffd12e, #2effc7, #2e6bff, #ff2ecc);
+  background-size: 400% 400%;
+  animation: hologram 4s linear infinite;
+  border: 1px solid rgba(255,255,255,.5);
+  box-shadow: 0 0 30px rgba(255,255,255,.2);
+}
+.vcard-skin-holo .vcard-bank-name,
+.vcard-skin-holo .vcard-number,
+.vcard-skin-holo .vcard-value,
+.vcard-skin-holo .vcard-label { text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+
+/* 10. Galaxy — космос зі "зірками" */
+.vcard-skin-galaxy .vcard-front {
+  background:
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 60px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,.8), transparent),
+    radial-gradient(1px 1px at 130px 90px, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 160px 20px, #fff, transparent),
+    radial-gradient(2px 2px at 200px 60px, rgba(255,255,255,.7), transparent),
+    linear-gradient(160deg, #0a0020, #1a0040, #0d0028, #0a0020);
+  background-size: 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 300% 300%;
+  animation: hologram 8s ease infinite;
+  border: 1px solid rgba(180,140,255,.4);
+  box-shadow: 0 0 30px rgba(150,100,255,.2);
+}
+
+/* 11. Fire — вогняний */
+.vcard-skin-fire .vcard-front {
+  background: linear-gradient(160deg, #1a0000, #4a1000, #2a0500, #1a0000);
+  background-size: 300% 300%;
+  animation: hologram 4s ease infinite;
+  border: 1px solid rgba(255,100,0,.45);
+  box-shadow: 0 0 34px rgba(255,80,0,.25);
+}
+
+/* 12. Ice — крижаний з тріщинами */
+.vcard-skin-ice .vcard-front {
+  background:
+    linear-gradient(35deg, transparent 48%, rgba(180,230,255,.12) 49%, rgba(180,230,255,.12) 50%, transparent 51%),
+    linear-gradient(-35deg, transparent 48%, rgba(180,230,255,.08) 49%, rgba(180,230,255,.08) 50%, transparent 51%),
+    linear-gradient(150deg, #001a2a, #003350, #001a2a);
+  border: 1px solid rgba(150,220,255,.4);
+  box-shadow: 0 0 30px rgba(150,220,255,.2);
+}
+
+/* 13. Rose Gold — розове золото */
+.vcard-skin-rosegold .vcard-front {
+  background: linear-gradient(135deg, #2a1015, #4a2a28, #3a1a1a, #2a1015);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(230,170,160,.4);
+  box-shadow: 0 0 30px rgba(230,170,160,.18);
+}
+
+/* 14. Snake — зміїна шкіра */
+.vcard-skin-snake .vcard-front {
+  background:
+    radial-gradient(circle at 10px 10px, rgba(255,255,255,.05) 3px, transparent 3px) 0 0/20px 20px,
+    radial-gradient(circle at 20px 20px, rgba(0,0,0,.2) 3px, transparent 3px) 0 0/20px 20px,
+    linear-gradient(150deg, #0d1a0d, #1a2e1a, #0d1a0d);
+  border: 1px solid rgba(120,200,120,.35);
+  box-shadow: 0 0 24px rgba(80,180,80,.15);
+}
+
+/* Skin picker swatch previews (used in the modal) */
+.skin-swatch {
+  border-radius: 12px;
+  padding: 14px 4px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s;
+  border: 2px solid rgba(255,255,255,.08);
+  position: relative;
+  overflow: hidden;
+  min-height: 58px;
+}
+.skin-swatch:active { transform: scale(.92); }
+.skin-swatch.active { box-shadow: 0 0 0 1px currentColor; }
+.skin-swatch-check {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 11px; font-weight: 900;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BANNER CAROUSEL — ротаційні банери на головній
+═══════════════════════════════════════════════════════ */
+
+/* Головна — фонові плаваючі "орби" за героєм, чисто CSS, без JS */
+#tab-home { position: relative; }
+#tab-home::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 480px;
+  pointer-events: none; z-index: 0; overflow: hidden;
+  background:
+    radial-gradient(circle 140px at 15% 20%, rgb(var(--accent-rgb) / 0.1), transparent 70%),
+    radial-gradient(circle 180px at 85% 10%, rgb(var(--special-rgb) / 0.09), transparent 70%),
+    radial-gradient(circle 120px at 60% 35%, rgb(var(--pos-rgb) / 0.06), transparent 70%);
+  animation: homeOrbDrift 14s ease-in-out infinite alternate;
+}
+#tab-home > * { position: relative; z-index: 1; }
+@keyframes homeOrbDrift {
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(-14px,18px) scale(1.06); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ЩЕ 12 СКІНІВ — на різний смак, вкус і цвєт
+═══════════════════════════════════════════════════════ */
+
+/* 15. Pastel Dream — м'які пастельні тони */
+.vcard-skin-pastel .vcard-front {
+  background: linear-gradient(135deg, #2a1f2e, #3a2a40, #2a1f2e);
+  border: 1px solid rgba(255,200,230,.35);
+  box-shadow: 0 0 26px rgba(255,200,230,.15);
+}
+
+/* 16. Mint — свіжий м'ятний */
+.vcard-skin-mint .vcard-front {
+  background: linear-gradient(135deg, #001a15, #003328, #001a15);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(100,255,210,.4);
+  box-shadow: 0 0 28px rgba(100,255,210,.15);
+}
+
+/* 17. Platinum — платина, холодний метал */
+.vcard-skin-platinum .vcard-front {
+  background: linear-gradient(135deg, #1a1a1d, #2c2c30, #1a1a1d);
+  border: 1px solid rgba(220,220,230,.4);
+  box-shadow: 0 0 26px rgba(220,220,230,.12);
+}
+
+/* 18. Copper — мідь / бронза */
+.vcard-skin-copper .vcard-front {
+  background: linear-gradient(135deg, #1f0d00, #4a2200, #2a1200, #1f0d00);
+  background-size: 300% 300%;
+  animation: hologram 6.5s ease infinite;
+  border: 1px solid rgba(220,130,60,.4);
+  box-shadow: 0 0 28px rgba(220,130,60,.18);
+}
+
+/* 19. Amethyst Dark — темний аметист з блиском */
+.vcard-skin-amethyst .vcard-front {
+  background: linear-gradient(135deg, #1a0025, #33004d, #1a0025);
+  background-size: 300% 300%;
+  animation: hologram 5s ease infinite;
+  border: 1px solid rgba(180,80,255,.4);
+  box-shadow: 0 0 30px rgba(180,80,255,.18);
+}
+
+/* 20. Denim — джинсова текстура */
+.vcard-skin-denim .vcard-front {
+  background:
+    repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0, rgba(255,255,255,.03) 1px, transparent 1px, transparent 3px),
+    linear-gradient(160deg, #0a1a2e, #14304f, #0a1a2e);
+  border: 1px solid rgba(100,150,220,.35);
+  box-shadow: 0 0 24px rgba(70,120,200,.15);
+}
+
+/* 21. Leopard — леопардовий принт */
+.vcard-skin-leopard .vcard-front {
+  background:
+    radial-gradient(ellipse 18px 14px at 15% 20%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 16px 12px at 45% 50%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 14px 18px at 78% 22%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 17px 13px at 22% 75%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 15px 15px at 85% 68%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 16px 12px at 58% 88%, transparent 55%, rgba(20,10,0,.85) 58%, transparent 72%),
+    radial-gradient(ellipse 12px 10px at 62% 38%, transparent 55%, rgba(20,10,0,.8) 58%, transparent 72%),
+    radial-gradient(ellipse 13px 11px at 8% 55%, transparent 55%, rgba(20,10,0,.8) 58%, transparent 72%),
+    linear-gradient(150deg, #a86a2c, #c88838, #a86a2c);
+  border: 1px solid rgba(200,150,80,.4);
+  box-shadow: 0 0 24px rgba(150,100,40,.18);
+}
+
+/* 22. Christmas — новорічний */
+.vcard-skin-xmas .vcard-front {
+  background: linear-gradient(135deg, #0a1a0a, #1a0505, #0a1a0a);
+  background-size: 300% 300%;
+  animation: hologram 5s ease infinite;
+  border: 1px solid rgba(255,215,0,.4);
+  box-shadow: 0 0 30px rgba(200,30,30,.2);
+}
+
+/* 23. Ukraine — синьо-жовтий патріотичний */
+.vcard-skin-ukraine .vcard-front {
+  background: linear-gradient(180deg, #0057b7 0%, #0057b7 50%, #ffd700 50%, #ffd700 100%);
+  border: 1px solid rgba(255,215,0,.5);
+  box-shadow: 0 0 30px rgba(0,87,183,.25);
+}
+.vcard-skin-ukraine .vcard-bank-name,
+.vcard-skin-ukraine .vcard-number,
+.vcard-skin-ukraine .vcard-value,
+.vcard-skin-ukraine .vcard-label { text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+
+/* 24. Midnight Storm — грозове небо */
+.vcard-skin-storm .vcard-front {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.06) 0%, transparent 30%),
+    linear-gradient(160deg, #05050a, #14141f, #05050a);
+  background-size: 100% 100%, 300% 300%;
+  animation: hologram 7s ease infinite;
+  border: 1px solid rgba(150,150,200,.3);
+  box-shadow: 0 0 26px rgba(100,100,180,.15);
+}
+
+/* 25. Coral Reef — кораловий риф */
+.vcard-skin-coral .vcard-front {
+  background: linear-gradient(135deg, #1a0510, #330a1f, #1a0a05, #1a0510);
+  background-size: 300% 300%;
+  animation: hologram 6s ease infinite;
+  border: 1px solid rgba(255,127,110,.4);
+  box-shadow: 0 0 28px rgba(255,127,110,.18);
+}
+
+/* 26. Minimal White — мінімалізм, світлий */
+.vcard-skin-minimal .vcard-front {
+  background: linear-gradient(160deg, #e8e8e8, #f5f5f5, #e8e8e8);
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 0 20px rgba(255,255,255,.1);
+}
+.vcard-skin-minimal .vcard-bank-name,
+.vcard-skin-minimal .vcard-number,
+.vcard-skin-minimal .vcard-value,
+.vcard-skin-minimal .vcard-label,
+.vcard-skin-minimal .vcard-holder-row { color: #1a1a1a !important; text-shadow: none; }
+.vcard-skin-minimal .vcard-chip { filter: brightness(.7); }
+
+/* ═══════════════════════════════════════════════════════
+   МЕМИ — картинки тягнуться напряму з i.imgflip.com (перевірені
+   робочі посилання), затемнення зверху тримає текст картки
+   читабельним поверх будь-якого зображення. Плюс "своє фото" —
+   рендериться окремо через applyCardSkin()/style.backgroundImage,
+   бо це унікальні дані користувача, а не спільний CSS-клас.
+═══════════════════════════════════════════════════════ */
+.vcard-skin-meme-drake .vcard-front            { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/30b1gx.jpg') center/cover; }
+.vcard-skin-meme-distracted .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1ur9b0.jpg') center/cover; }
+.vcard-skin-meme-womancat .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/345v97.jpg') center/cover; }
+.vcard-skin-meme-twobuttons .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1g8my4.jpg') center/cover; }
+.vcard-skin-meme-changemymind .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/24y43o.jpg') center/cover; }
+.vcard-skin-meme-successkid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bhk.jpg') center/cover; }
+.vcard-skin-meme-doge .vcard-front             { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4t0m5.jpg') center/cover; }
+.vcard-skin-meme-thisisfine .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/wxica.jpg') center/cover; }
+.vcard-skin-meme-stonks .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/3si4.jpg') center/cover; }
+.vcard-skin-meme-rollsafe .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1h7in3.jpg') center/cover; }
+.vcard-skin-meme-pikachu .vcard-front          { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2kbn1e.jpg') center/cover; }
+.vcard-skin-meme-disastergirl .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/23ls.jpg') center/cover; }
+.vcard-skin-meme-grumpycat .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/8p0a.jpg') center/cover; }
+.vcard-skin-meme-expandingbrain .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1jwhww.jpg') center/cover; }
+.vcard-skin-meme-onedoesnotsimply .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bij.jpg') center/cover; }
+.vcard-skin-meme-ancientaliens .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/26am.jpg') center/cover; }
+.vcard-skin-meme-dicaprio .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/39t1o.jpg') center/cover; }
+.vcard-skin-meme-pigeon .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1o00in.jpg') center/cover; }
+.vcard-skin-meme-batman .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/9ehk.jpg') center/cover; }
+.vcard-skin-meme-spongebob .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1otk96.jpg') center/cover; }
+.vcard-skin-meme-sadpablo .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1c1uej.jpg') center/cover; }
+.vcard-skin-meme-hidethepain .vcard-front      { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/gk5el.jpg') center/cover; }
+/* Свіжі меми — "молодіжний" тренд-набір */
+.vcard-skin-meme-67kid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/a9fxer.jpg') center/cover; }
+.vcard-skin-meme-skibidi .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover; }
+.vcard-skin-meme-tralalero .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9p82jm.jpg') center/cover; }
+.vcard-skin-meme-bombardiro .vcard-front  { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover; }
+.vcard-skin-meme-tungtung .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover; }
+.vcard-skin-meme-chimpanzini .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover; }
+.vcard-skin-meme-gigachad .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover; }
+.vcard-skin-meme-sigma .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/5imrkq.jpg') center/cover; }
+.vcard-skin-meme-chillguy .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9au02y.jpg') center/cover; }
+.vcard-skin-meme-ohio .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/46e43q.jpg') center/cover; }
+.vcard-skin-meme-npc .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/2k0qad.jpg') center/cover; }
+.vcard-skin-meme-rizzler .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/93etli.jpg') center/cover; }
+.vcard-skin-meme-drake .vcard-front, .vcard-skin-meme-distracted .vcard-front, .vcard-skin-meme-womancat .vcard-front,
+.vcard-skin-meme-twobuttons .vcard-front, .vcard-skin-meme-changemymind .vcard-front, .vcard-skin-meme-successkid .vcard-front,
+.vcard-skin-meme-doge .vcard-front, .vcard-skin-meme-thisisfine .vcard-front, .vcard-skin-meme-stonks .vcard-front,
+.vcard-skin-meme-rollsafe .vcard-front, .vcard-skin-meme-pikachu .vcard-front, .vcard-skin-meme-disastergirl .vcard-front,
+.vcard-skin-meme-grumpycat .vcard-front, .vcard-skin-meme-expandingbrain .vcard-front, .vcard-skin-meme-onedoesnotsimply .vcard-front,
+.vcard-skin-meme-ancientaliens .vcard-front, .vcard-skin-meme-dicaprio .vcard-front, .vcard-skin-meme-pigeon .vcard-front,
+.vcard-skin-meme-batman .vcard-front, .vcard-skin-meme-spongebob .vcard-front, .vcard-skin-meme-sadpablo .vcard-front,
+.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-meme-67kid .vcard-front, .vcard-skin-meme-skibidi .vcard-front,
+.vcard-skin-meme-tralalero .vcard-front, .vcard-skin-meme-bombardiro .vcard-front, .vcard-skin-meme-tungtung .vcard-front,
+.vcard-skin-meme-chimpanzini .vcard-front, .vcard-skin-meme-gigachad .vcard-front, .vcard-skin-meme-sigma .vcard-front,
+.vcard-skin-meme-chillguy .vcard-front, .vcard-skin-meme-ohio .vcard-front, .vcard-skin-meme-npc .vcard-front,
+.vcard-skin-meme-rizzler .vcard-front, .vcard-skin-custom-photo .vcard-front {
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 22px rgba(255,255,255,.1);
+}
+.vcard-skin-custom-photo .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), #1a1a1a center/cover; background-blend-mode: normal; }
+
+/* ═══════════════════════════════════════════════════════
+   40 НОВИХ СКІНІВ КАРТКИ (27-66) — по категоріях, той самий
+   паттерн: 4-стопний градієнт, що зациклюється, легка hologram-
+   анімація зсуву, тематична обвідка/світіння.
+═══════════════════════════════════════════════════════ */
+
+/* ── Класика (+7) ── */
+.vcard-skin-silver .vcard-front { background: linear-gradient(135deg,#1a1a1c,#3a3a3e,#232326,#1a1a1c); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(200,200,210,.4); box-shadow:0 0 22px rgba(200,200,210,.12); }
+.vcard-skin-bronze .vcard-front { background: linear-gradient(135deg,#1f1206,#4a2e12,#2a1a08,#1f1206); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(205,127,50,.4); box-shadow:0 0 22px rgba(205,127,50,.14); }
+.vcard-skin-obsidian .vcard-front { background: linear-gradient(150deg,#050208,#180a2a,#0a0512,#050208); background-size:300% 300%; animation:hologram 7s ease infinite; border:1px solid rgba(120,60,200,.3); box-shadow:0 0 24px rgba(90,30,160,.16); }
+.vcard-skin-steel .vcard-front { background: linear-gradient(135deg,#0d1218,#2a3642,#161c22,#0d1218); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(140,170,200,.35); box-shadow:0 0 20px rgba(140,170,200,.1); }
+.vcard-skin-ivory .vcard-front { background: linear-gradient(160deg,#efe9dd,#f8f4ea,#efe9dd); border:1px solid rgba(0,0,0,.12); box-shadow:0 0 18px rgba(255,250,235,.12); }
+.vcard-skin-ivory .vcard-bank-name, .vcard-skin-ivory .vcard-number, .vcard-skin-ivory .vcard-value, .vcard-skin-ivory .vcard-label, .vcard-skin-ivory .vcard-holder-row { color:#2a2418 !important; text-shadow:none; }
+.vcard-skin-charcoal .vcard-front { background: linear-gradient(135deg,#0a0a0a,#232323,#141414,#0a0a0a); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(255,255,255,.1); box-shadow:0 0 18px rgba(0,0,0,.4); }
+.vcard-skin-chrome .vcard-front { background: linear-gradient(120deg,#2c2c30,#dcdce6,#5a5a62,#dcdce6,#2c2c30); background-size:300% 300%; animation:hologram 5.5s ease infinite; border:1px solid rgba(220,220,230,.5); box-shadow:0 0 24px rgba(220,220,230,.18); }
+
+/* ── Самоцвіти (+7) ── */
+.vcard-skin-ruby .vcard-front { background: linear-gradient(135deg,#1a0004,#4a0012,#2a0008,#1a0004); background-size:300% 300%; animation:hologram 6.1s ease infinite; border:1px solid rgba(220,20,60,.4); box-shadow:0 0 24px rgba(220,20,60,.16); }
+.vcard-skin-topaz .vcard-front { background: linear-gradient(135deg,#1f1600,#4a3800,#2a2200,#1f1600); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(255,196,64,.4); box-shadow:0 0 22px rgba(255,196,64,.16); }
+.vcard-skin-opal .vcard-front { background: linear-gradient(120deg,#1a1a2a,#dcc8ff,#c8f0ff,#ffd8ec,#1a1a2a); background-size:300% 300%; animation:hologram 8s ease infinite; border:1px solid rgba(230,220,255,.4); box-shadow:0 0 24px rgba(230,220,255,.18); }
+.vcard-skin-garnet .vcard-front { background: linear-gradient(135deg,#1a0505,#3a0a10,#26080a,#1a0505); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(140,30,45,.4); box-shadow:0 0 20px rgba(140,30,45,.14); }
+.vcard-skin-turquoise .vcard-front { background: linear-gradient(135deg,#001a1a,#003d3d,#002626,#001a1a); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(64,224,208,.4); box-shadow:0 0 22px rgba(64,224,208,.16); }
+.vcard-skin-citrine .vcard-front { background: linear-gradient(135deg,#1a1200,#4a3200,#2a2000,#1a1200); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(255,165,40,.4); box-shadow:0 0 20px rgba(255,165,40,.14); }
+.vcard-skin-peridot .vcard-front { background: linear-gradient(135deg,#0f1a00,#2a3d00,#1a2600,#0f1a00); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(180,220,60,.4); box-shadow:0 0 20px rgba(180,220,60,.14); }
+
+/* ── Стихії (+7) ── */
+.vcard-skin-thunder .vcard-front { background: linear-gradient(135deg,#050510,#1a1a4a,#0a0a26,#050510); background-size:300% 300%; animation:hologram 5.8s ease infinite; border:1px solid rgba(140,140,255,.4); box-shadow:0 0 24px rgba(140,140,255,.18); }
+.vcard-skin-earth .vcard-front { background: linear-gradient(135deg,#0f1005,#2a2a10,#1a1a0a,#0f1005); background-size:300% 300%; animation:hologram 6.8s ease infinite; border:1px solid rgba(150,170,80,.35); box-shadow:0 0 18px rgba(150,170,80,.12); }
+.vcard-skin-volcano .vcard-front { background: linear-gradient(160deg,#0a0000,#4a0a00,#1a0500,#0a0000); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(255,80,0,.4); box-shadow:0 0 26px rgba(255,80,0,.2); }
+.vcard-skin-blizzard .vcard-front { background: linear-gradient(150deg,#0a1420,#2a4a6a,#153048,#0a1420); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(200,230,255,.4); box-shadow:0 0 22px rgba(200,230,255,.16); }
+.vcard-skin-tsunami .vcard-front { background: linear-gradient(150deg,#00080f,#003250,#001a30,#00080f); background-size:300% 300%; animation:hologram 6.9s ease infinite; border:1px solid rgba(60,150,220,.4); box-shadow:0 0 22px rgba(60,150,220,.16); }
+.vcard-skin-solar .vcard-front { background: linear-gradient(135deg,#1a0e00,#4a2800,#2a1600,#1a0e00); background-size:300% 300%; animation:hologram 5.6s ease infinite; border:1px solid rgba(255,180,40,.45); box-shadow:0 0 26px rgba(255,180,40,.2); }
+.vcard-skin-void .vcard-front { background: linear-gradient(150deg,#000,#150022,#080012,#000); background-size:300% 300%; animation:hologram 7.4s ease infinite; border:1px solid rgba(80,20,140,.35); box-shadow:0 0 24px rgba(80,20,140,.16); }
+
+/* ── Космос і футуризм (+6) ── */
+.vcard-skin-nebula .vcard-front { background: linear-gradient(135deg,#0a0018,#3a0050,#1a0030,#0a0018); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(200,80,255,.4); box-shadow:0 0 26px rgba(200,80,255,.2); }
+.vcard-skin-matrix .vcard-front { background: linear-gradient(160deg,#000800,#003300,#001a00,#000800); background-size:300% 300%; animation:hologram 5.4s ease infinite; border:1px solid rgba(0,255,80,.45); box-shadow:0 0 24px rgba(0,255,80,.2); }
+.vcard-skin-synthwave .vcard-front { background: linear-gradient(120deg,#1a0028,#ff2ea6,#2e2eff,#1a0028); background-size:300% 300%; animation:hologram 6s ease infinite; border:1px solid rgba(255,46,166,.4); box-shadow:0 0 26px rgba(255,46,166,.2); }
+.vcard-skin-aurora .vcard-front { background: linear-gradient(120deg,#001a12,#00ff9c,#0050ff,#001a12); background-size:300% 300%; animation:hologram 7.2s ease infinite; border:1px solid rgba(0,255,156,.4); box-shadow:0 0 26px rgba(0,255,156,.18); }
+.vcard-skin-plasma .vcard-front { background: linear-gradient(120deg,#1a0018,#ff2ecc,#6a2eff,#1a0018); background-size:300% 300%; animation:hologram 5.7s ease infinite; border:1px solid rgba(255,46,204,.4); box-shadow:0 0 26px rgba(255,46,204,.2); }
+.vcard-skin-quantum .vcard-front { background: linear-gradient(135deg,#000a1a,#0050a0,#002a5a,#000a1a); background-size:300% 300%; animation:hologram 6.6s ease infinite; border:1px solid rgba(80,180,255,.4); box-shadow:0 0 26px rgba(80,180,255,.2); }
+
+/* ── Текстури (+6) ── */
+.vcard-skin-wood .vcard-front {
+  background:
+    repeating-linear-gradient(95deg, rgba(0,0,0,.14) 0, rgba(0,0,0,.14) 2px, transparent 2px, transparent 9px),
+    repeating-linear-gradient(95deg, rgba(255,200,140,.05) 0, rgba(255,200,140,.05) 1px, transparent 1px, transparent 14px),
+    linear-gradient(100deg,#1f1206,#3a2410,#2a1a0a,#1f1206,#3a2410);
+  background-size: 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.8s ease infinite;
+  border: 1px solid rgba(160,110,60,.4); box-shadow: 0 0 18px rgba(160,110,60,.12);
+}
+.vcard-skin-concrete .vcard-front {
+  background:
+    radial-gradient(circle at 12% 22%, rgba(0,0,0,.25) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 62% 14%, rgba(255,255,255,.08) 1px, transparent 1.1px),
+    radial-gradient(circle at 38% 68%, rgba(0,0,0,.22) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 84% 58%, rgba(255,255,255,.07) 1px, transparent 1.1px),
+    radial-gradient(circle at 22% 88%, rgba(0,0,0,.2) 1.5px, transparent 1.6px),
+    radial-gradient(circle at 72% 82%, rgba(255,255,255,.06) 1px, transparent 1.1px),
+    linear-gradient(135deg,#141414,#2e2e2e,#1c1c1c,#141414);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.7s ease infinite;
+  border: 1px solid rgba(160,160,160,.3); box-shadow: 0 0 16px rgba(160,160,160,.1);
+}
+.vcard-skin-velvet .vcard-front { background: linear-gradient(135deg,#12000f,#3a0028,#20001a,#12000f); background-size:300% 300%; animation:hologram 7s ease infinite; border:1px solid rgba(160,20,120,.4); box-shadow:0 0 22px rgba(160,20,120,.16); }
+.vcard-skin-silk .vcard-front { background: linear-gradient(120deg,#1e1a24,#3a3244,#241f2c,#1e1a24); background-size:300% 300%; animation:hologram 6.3s ease infinite; border:1px solid rgba(200,190,220,.3); box-shadow:0 0 18px rgba(200,190,220,.12); }
+.vcard-skin-brushedmetal .vcard-front { background: linear-gradient(95deg,#26262a,#3e3e44,#2a2a2e,#3e3e44,#26262a); background-size:300% 300%; animation:hologram 6.1s ease infinite; border:1px solid rgba(210,210,220,.35); box-shadow:0 0 18px rgba(210,210,220,.12); }
+.vcard-skin-camo .vcard-front {
+  background:
+    radial-gradient(ellipse 34px 22px at 18% 28%, rgba(10,20,5,.55) 55%, transparent 60%),
+    radial-gradient(ellipse 26px 30px at 55% 15%, rgba(60,70,30,.5) 55%, transparent 60%),
+    radial-gradient(ellipse 30px 20px at 78% 45%, rgba(10,20,5,.5) 55%, transparent 60%),
+    radial-gradient(ellipse 22px 26px at 30% 70%, rgba(60,70,30,.45) 55%, transparent 60%),
+    radial-gradient(ellipse 28px 24px at 68% 82%, rgba(10,20,5,.5) 55%, transparent 60%),
+    linear-gradient(120deg,#0f1a0a,#2a3318,#141f10,#0f1a0a);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 300% 300%;
+  animation: hologram 6.9s ease infinite;
+  border: 1px solid rgba(120,140,80,.35); box-shadow: 0 0 16px rgba(120,140,80,.1);
+}
+
+/* ── Особливі (+7) ── */
+.vcard-skin-halloween .vcard-front { background: linear-gradient(135deg,#0a0000,#3a1500,#150800,#0a0000); background-size:300% 300%; animation:hologram 6.4s ease infinite; border:1px solid rgba(255,130,0,.4); box-shadow:0 0 24px rgba(255,130,0,.18); }
+.vcard-skin-valentine .vcard-front { background: linear-gradient(135deg,#1a0008,#4a001a,#2a000f,#1a0008); background-size:300% 300%; animation:hologram 6.2s ease infinite; border:1px solid rgba(255,60,110,.4); box-shadow:0 0 24px rgba(255,60,110,.18); }
+.vcard-skin-easter .vcard-front { background: linear-gradient(120deg,#1a1420,#ffd8e8,#d8f0ff,#e8ffd8,#1a1420); background-size:300% 300%; animation:hologram 7.6s ease infinite; border:1px solid rgba(255,216,232,.4); box-shadow:0 0 20px rgba(255,216,232,.16); }
+.vcard-skin-autumn .vcard-front { background: linear-gradient(135deg,#1a0d00,#4a2400,#2a1500,#1a0d00); background-size:300% 300%; animation:hologram 6.7s ease infinite; border:1px solid rgba(255,140,40,.4); box-shadow:0 0 22px rgba(255,140,40,.16); }
+.vcard-skin-spring .vcard-front { background: linear-gradient(135deg,#001a08,#0d3d1a,#062610,#001a08); background-size:300% 300%; animation:hologram 6.5s ease infinite; border:1px solid rgba(255,150,200,.35); box-shadow:0 0 20px rgba(120,220,150,.16); }
+.vcard-skin-diamondelite .vcard-front { background: linear-gradient(115deg,#0a0a0f,#e8e8f5,#4a4a5a,#e8e8f5,#0a0a0f); background-size:300% 300%; animation:hologram 5.2s ease infinite; border:1.5px solid rgba(232,232,245,.55); box-shadow:0 0 30px rgba(232,232,245,.22); }
+.vcard-skin-midnight .vcard-front { background: linear-gradient(160deg,#000005,#050518,#02020c,#000005); background-size:300% 300%; animation:hologram 7.8s ease infinite; border:1px solid rgba(60,60,120,.35); box-shadow:0 0 20px rgba(40,40,100,.16); }
+
+/* ═══════════════════════════════════════════════════════
+   ШАХИ
+═══════════════════════════════════════════════════════ */
+.chess-board-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 2px solid rgb(var(--accent-rgb) / 0.3);
+  box-shadow: 0 0 30px rgb(var(--shade-rgb) / 0.4);
+}
+.chess-board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+}
+.chess-sq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background .15s;
+}
+.chess-move-dot {
+  position: absolute;
+  width: 26%; height: 26%;
+  border-radius: 50%;
+  background: rgb(var(--pos-rgb) / 0.55);
+  pointer-events: none;
+}
+.chess-capture-ring {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 3px solid rgb(var(--neg-rgb) / 0.65);
+  pointer-events: none;
+}
+.chess-mode-btn {
+  background: var(--surface-1);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.chess-mode-btn:active { transform: scale(.95); }
+.chess-mode-btn.selected {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.08);
+}
+.chess-captured-row {
+  min-height: 22px;
+  font-size: 16px;
+  letter-spacing: 2px;
+  opacity: .8;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ВИМКНЕНІ ІГРИ — kill-switch адміна
+═══════════════════════════════════════════════════════ */
+.game-card-disabled {
+  filter: grayscale(85%) brightness(.5);
+  pointer-events: none;
+  position: relative;
+}
+.game-card-disabled-admin {
+  position: relative;
+  box-shadow: inset 0 0 0 2px rgb(var(--neg-rgb) / 0.5);
+}
+.game-card-disabled-admin .game-disabled-badge {
+  inset: auto;
+  top: 4px; left: 4px; right: 4px; bottom: auto;
+  background: rgb(var(--neg-rgb) / 0.85);
+  padding: 3px 6px;
+  border-radius: var(--r-sm);
+  font-size: 8px;
+}
+.game-disabled-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--recess-rgb) / calc(0.55 * var(--recess-k)));
+  color: var(--neg);
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: inherit;
+  z-index: 5;
+  text-align: center;
+  padding: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ЗАМОРОЖЕНА КАРТКА — видима накладка прямо на картці
+═══════════════════════════════════════════════════════ */
+.vcard-frozen-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8,12,22,.76);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 6;
+  animation: fadeInOverlay .3s ease;
+}
+.vcard-frozen-icon svg { width: 24px; height: 24px; }
+.vcard-frozen-icon {
+  font-size: 40px;
+  filter: drop-shadow(0 0 12px rgba(150,220,255,.5));
+  animation: float 3s ease-in-out infinite;
+}
+.vcard-frozen-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #96dcff;
+  text-shadow: 0 0 8px rgba(150,220,255,.6);
+}
+
+/* ═══════════════════════════════════════════════════════
+   СВЯТКУВАННЯ ВИГРАШУ v2 — BIG WIN / MEGA WIN
+═══════════════════════════════════════════════════════ */
+@keyframes screenShake {
+  0%, 100% { transform: translate(0,0); }
+  10% { transform: translate(-8px,-4px); }
+  20% { transform: translate(8px,4px); }
+  30% { transform: translate(-6px,3px); }
+  40% { transform: translate(6px,-3px); }
+  50% { transform: translate(-4px,2px); }
+  60% { transform: translate(4px,-2px); }
+  70% { transform: translate(-2px,1px); }
+  80% { transform: translate(2px,-1px); }
+  90% { transform: translate(-1px,0); }
+}
+.screen-shake { animation: screenShake .5s cubic-bezier(.36,.07,.19,.97) both; }
+
+@keyframes bigWinFlash {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+.bigwin-flash {
+  position: fixed; inset: 0; z-index: 9985;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgb(var(--accent-rgb) / 0.55), transparent 70%);
+  animation: bigWinFlash 1.1s ease-out forwards;
+}
+
+@keyframes bigWinBannerIn {
+  0%   { transform: translate(-50%,-50%) scale(.3) rotate(-8deg); opacity: 0; }
+  55%  { transform: translate(-50%,-50%) scale(1.15) rotate(2deg); opacity: 1; }
+  75%  { transform: translate(-50%,-50%) scale(.96) rotate(-1deg); }
+  100% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes bigWinBannerOut {
+  to { transform: translate(-50%,-50%) scale(.7); opacity: 0; }
+}
+.bigwin-banner {
+  position: fixed; top: 40%; left: 50%;
+  z-index: 9990;
+  text-align: center;
+  animation: bigWinBannerIn .6s cubic-bezier(.34,1.56,.64,1) both;
+  pointer-events: none;
+}
+.bigwin-banner.out { animation: bigWinBannerOut .35s ease forwards; }
+.bigwin-banner-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px currentColor, 0 4px 12px rgb(var(--shade-rgb) / 0.6);
+  white-space: nowrap;
+}
+.bigwin-banner-title.tier-big {
+  font-size: 34px;
+  color: var(--accent);
+  background: linear-gradient(90deg,var(--accent),color-mix(in srgb, var(--accent) 16%, var(--surface-1)),var(--accent));
+  background-size: 200% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: winShimmer 1.3s ease infinite;
+}
+.bigwin-banner-title.tier-mega {
+  font-size: 42px;
+  color: var(--neg);
+  background: linear-gradient(90deg,var(--neg),var(--primary),var(--accent),var(--neg));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: winShimmer 1s ease infinite;
+}
+.bigwin-banner-amount {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--fg);
+  margin-top: 6px;
+  text-shadow: 0 2px 10px rgb(var(--shade-rgb) / 0.7);
+}
+
+/* Гущі конфеті-дощ для великих виграшів */
+.confetti-rain-piece {
+  position: fixed; top: -20px;
+  z-index: 9980;
+  pointer-events: none;
+  animation: confettiRainFall linear forwards;
+}
+@keyframes confettiRainFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(115vh) rotate(var(--spin,540deg)); opacity: .2; }
+}
+
+/* Анімоване число виграшу — рахує вгору */
+
+/* ═══════════════════════════════════════════════════════
+   ОНБОРДИНГ — підсвітка + тултіп
+═══════════════════════════════════════════════════════ */
+.onboard-overlay {
+  position: fixed; inset: 0; z-index: 9970;
+  background: rgb(var(--recess-rgb) / calc(0.78 * var(--recess-k)));
+  animation: fadeInOverlay .3s ease;
+}
+.onboard-spotlight {
+  position: fixed; z-index: 9971;
+  border-radius: var(--r-xl);
+  box-shadow: 0 0 0 9999px rgb(var(--shade-rgb) / 0.78);
+  transition: all .4s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.onboard-tooltip {
+  position: fixed; z-index: 9972;
+  background: linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--accent) 8%, var(--surface-1)));
+  border: 1.5px solid rgb(var(--accent-rgb) / 0.5);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  max-width: 280px;
+  box-shadow: 0 12px 40px rgb(var(--shade-rgb) / 0.6);
+  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ЗАГАЛЬНІ МІКРО-АНІМАЦІЇ — більше "живого" по всьому сайту
+═══════════════════════════════════════════════════════ */
+@keyframes softBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+@keyframes ringPing {
+  0%   { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.5); }
+  100% { box-shadow: 0 0 0 12px transparent; }
+}
+
+@keyframes shimmerSweep {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+/* Кнопки — легкий тактильний відгук на будь-якому елементі з цим класом */
+.anim-press { transition: transform .12s cubic-bezier(.4,0,.2,1), box-shadow .15s; }
+.anim-press:active { transform: scale(.93); }
+/* A touch of 3D on tap for the premium tiles — pure CSS, no gesture capture,
+   so it can never fight scrolling or the banner carousel's swipe. */
+#tab-home .anim-press:hover { box-shadow: var(--bevel), var(--elev-1), var(--glow-accent-soft); }
+
+/* Картки — плавна поява каскадом */
+@keyframes cascadeIn {
+  from { opacity:0; transform: translateY(14px) scale(.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+.anim-cascade { animation: cascadeIn .35s cubic-bezier(.22,1,.36,1) both; }
+
+/* ═══════════════════════════════════════════════════════
+   MYSTERY BOX & WELCOME BACK
+═══════════════════════════════════════════════════════ */
+.mystery-box-card {
+  background: linear-gradient(135deg,color-mix(in srgb, var(--special) 11%, var(--surface-1)),color-mix(in srgb, var(--special) 21%, var(--surface-1)),color-mix(in srgb, var(--special) 11%, var(--surface-1)));
+  background-size: 200% 200%;
+  animation: hologram 4s ease infinite;
+  border: 2px solid rgb(var(--special-rgb) / 0.5);
+  border-radius: var(--r-md);
+  padding: 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--bevel), var(--elev-1);
+  transition: transform .14s var(--ease-tactile);
+}
+.mystery-box-card:active { transform: scale(.98); }
+.mystery-box-icon {
+  font-size: 52px;
+  animation: float 2.5s ease-in-out infinite, spark 3s ease-in-out infinite;
+  filter: none;
+}
+@keyframes welcomeBackGlow {
+  0%,100% { box-shadow: var(--bevel), var(--elev-1); }
+  50%     { box-shadow: var(--bevel), var(--elev-1); }
+}
+.welcome-back-card {
+  border-radius: var(--r-md);
+  animation: welcomeBackGlow 2.5s ease-in-out infinite;
+}
+
+/* Friends feed */
+.friend-feed-item {
+  animation: cascadeIn .3s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ФІНАЛЬНИЙ ПАКЕТ ПОЛІРУВАННЯ — тактильний відгук
+   на елементах де його ще не було
+═══════════════════════════════════════════════════════ */
+
+.pm-thread {
+  transition: transform .12s, background-color .15s;
+}
+.pm-thread:active { transform: scale(.98); background-color: rgb(var(--tint-rgb) / 0.03); }
+
+/* Каскадна поява карток лобі при вході на вкладку */
+.casino-game-card, .game-thumb {
+  animation: cascadeIn .3s ease both;
+}
+.casino-game-card:nth-child(1), .game-thumb:nth-child(1) { animation-delay: .02s; }
+.casino-game-card:nth-child(2), .game-thumb:nth-child(2) { animation-delay: .05s; }
+.casino-game-card:nth-child(3), .game-thumb:nth-child(3) { animation-delay: .08s; }
+.casino-game-card:nth-child(4), .game-thumb:nth-child(4) { animation-delay: .11s; }
+.casino-game-card:nth-child(5), .game-thumb:nth-child(5) { animation-delay: .14s; }
+.casino-game-card:nth-child(6), .game-thumb:nth-child(6) { animation-delay: .17s; }
+.casino-game-card:nth-child(n+7), .game-thumb:nth-child(n+7) { animation-delay: .2s; }
+
+/* Банер-стат числа плавно з'являються */
+
+/* Прев'ю скіну картки — легкий 3D-тілт при наведенні (десктоп) */
+.skin-swatch { transition: transform .2s, box-shadow .2s; }
+@media (hover: hover) {
+  .skin-swatch:hover { transform: translateY(-3px) scale(1.03); }
+}

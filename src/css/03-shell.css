@@ -1,0 +1,226 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ОБОЛОНКА: шапка, навігація, контейнер екранів, сплеш, розкладки.
+
+   Розкладки (mobile-first):
+   • < 768px   — шапка зверху, нижня панель під великий палець;
+   • ≥ 768px   — вузька бічна рейка (іконка + підпис), низ звільняється;
+   • ≥ 1200px  — широка бічна панель з підписами в рядок;
+   • ≥ 1600px  — контент не тягнеться далі --w-page, центрується.
+   Ширина контенту: звичайні екрани — колонка --w-read+, «широкі»
+   (лоббі, Головна, рейтинги, спорт, адмінка) — до --w-page.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Шапка ──────────────────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  min-height: var(--header-h);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sp-2)) var(--gutter) var(--sp-2);
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  border-bottom: var(--bw) solid var(--line);
+}
+.brand {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  min-height: var(--hit); color: var(--fg); text-decoration: none; flex: none;
+}
+.brand-mark {
+  display: inline-grid; place-items: center; width: 34px; height: 34px;
+  background: var(--accent); color: var(--on-accent);
+  border: var(--bw) solid var(--ink-shadow); border-radius: var(--r-md); box-shadow: var(--sh-misreg);
+  font-family: var(--font-display); font-weight: var(--fw-black); font-size: 18px; line-height: 1;
+  transform: rotate(-4deg);
+}
+.brand-word {
+  font-family: var(--font-display); font-weight: var(--fw-black); font-size: 19px; letter-spacing: -0.03em;
+  /* «зсув друку»: другий відбиток кольору під словом */
+  text-shadow: 1.5px 1.5px 0 rgb(var(--primary-rgb) / .6);
+}
+.header-actions { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.hdr-btn, .hdr-chip {
+  width: auto; margin: 0; min-height: 40px; box-shadow: none;
+  padding: 0 var(--sp-3); border-radius: var(--r-md);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-fg: var(--fg-2);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+}
+.hdr-btn { width: 40px; padding: 0; }
+.hdr-btn .ic { width: 20px; height: 20px; }
+.hdr-slotiky { --btn-fg: var(--special); gap: var(--sp-1); font-family: var(--font-mono); }
+.hdr-currency { font-family: var(--font-mono); letter-spacing: .02em; }
+
+/* Баланс — найпомітніший елемент шапки */
+.header-bal {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  min-height: 40px; padding: 0 var(--sp-1) 0 var(--sp-3);
+  background: var(--surface-1); color: var(--fg);
+  border: var(--bw) solid var(--fg); border-radius: var(--r-md); box-shadow: var(--sh-1);
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.header-bal:active { transform: translate(1px, 1px); box-shadow: none; }
+.header-bal:focus-visible { outline: var(--bw-strong) solid var(--primary); outline-offset: 2px; }
+.header-bal-label { display: none; font-size: var(--fs-2xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--fg-3); }
+.header-bal .bal {
+  font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap;
+}
+.header-bal-plus {
+  display: inline-grid; place-items: center; width: 30px; height: 30px;
+  background: var(--accent); color: var(--on-accent); border-radius: var(--r-sm);
+}
+.header-bal-plus .ic { width: 16px; height: 16px; }
+.header-bal.bal-pulse { animation: press-shift var(--dur-4) var(--ease-out); }
+.header-rates { display: none; }
+
+@media (max-width: 380px) {
+  .brand-word { display: none; }
+  .hdr-currency { display: none; }
+}
+@media (min-width: 560px) {
+  .header-bal-label { display: inline; }
+}
+
+/* ── Контейнер і екрани ─────────────────────────────────────────── */
+.container {
+  position: relative; z-index: var(--z-base);
+  width: 100%; max-width: var(--w-page);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--gutter) 0;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.container:focus { outline: none; }
+/* Екрани всередині й поза .container — однакова колонка */
+.screen {
+  position: relative; z-index: var(--z-base);
+  width: 100%; max-width: 760px; margin: 0 auto;
+}
+body > .screen, .container ~ .screen {
+  padding: var(--sp-4) var(--gutter) 0;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+:is(#tab-home, #tab-lobby, #tab-leaderboard, #tab-sports, #tab-admin, #tab-tournaments, #tab-clans, #tab-achievements) {
+  max-width: var(--w-page);
+}
+.screen.screen-enter { animation: rise-in var(--dur-3) var(--ease-out) both; }
+
+/* Заголовок екрана з кнопкою «назад» */
+.screen-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-4); }
+.screen-head h2 { margin: 0; flex: 1; min-width: 0; }
+
+/* ── Нижня панель ───────────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav);
+  display: grid; grid-template-columns: repeat(6, 1fr); align-items: stretch;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding: 0 max(var(--sp-1), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(var(--sp-1), env(safe-area-inset-left, 0px));
+  background: var(--bg);
+  border-top: var(--bw) solid var(--line);
+}
+.nav-item {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  width: auto; min-width: 0; height: 100%; min-height: var(--hit); margin: 0; padding: var(--sp-1) 2px;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  color: var(--fg-3);
+  font-size: 10.5px; font-weight: var(--fw-semibold); letter-spacing: 0; line-height: 1.1;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.nav-item:active:not(:disabled) { transform: none; box-shadow: none; }
+.nav-item .nav-ic { width: 24px; height: 24px; transition: transform var(--dur-2) var(--ease-press); }
+.nav-item .nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item.active { color: var(--fg); }
+/* Активний пункт — «штамп»: плашка під іконкою зі зсунутим відбитком */
+.nav-item.active .nav-ic {
+  color: var(--on-accent);
+  background-color: var(--on-accent);
+  transform: translateY(-1px);
+}
+.nav-item.active::before {
+  content: ''; position: absolute; top: 7px; left: 50%; width: 44px; height: 30px; margin-left: -22px;
+  background: var(--accent); border: var(--bw) solid var(--ink-shadow); border-radius: var(--r-md);
+  box-shadow: 2px 2px 0 0 var(--ink-shadow); z-index: -1;
+}
+.nav-item { isolation: isolate; }
+@media (hover: hover) { .nav-item:hover:not(.active) { color: var(--fg); } }
+.nav-item:focus-visible { outline: var(--bw-strong) solid var(--primary); outline-offset: -4px; border-radius: var(--r-md); }
+.nav-notif-dot {
+  position: absolute; top: 6px; left: calc(50% + 8px);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--neg); border: 2px solid var(--bg);
+}
+
+/* ── Сплеш ──────────────────────────────────────────────────────── */
+#loading-overlay {
+  position: fixed; inset: 0; z-index: var(--z-splash);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-4);
+  background: var(--bg); color: var(--fg);
+  transition: opacity var(--dur-4) var(--ease-out);
+}
+.splash-mark {
+  display: grid; place-items: center; width: 72px; height: 72px;
+  background: var(--accent); color: var(--on-accent);
+  border: var(--bw-strong) solid var(--ink-shadow); border-radius: var(--r-xl); box-shadow: 5px 5px 0 0 rgb(var(--primary-rgb) / .7);
+  font-family: var(--font-display); font-size: 40px; font-weight: var(--fw-black);
+  transform: rotate(-4deg); animation: stamp-in var(--dur-4) var(--ease-out) both;
+}
+.splash-word { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-black); letter-spacing: -0.02em; }
+.splash-status { font-size: var(--fs-sm); color: var(--fg-3); }
+.splash-bar { width: 160px; height: 6px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.splash-bar > div { height: 100%; width: 0; background: var(--primary); border-radius: inherit; transition: width var(--dur-3) var(--ease-out); }
+
+/* ── Повноекранні шари: чат ПП ───────────────────────────────────── */
+.pm-thread-fullscreen {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; flex-direction: column;
+  height: 100vh; height: 100dvh;
+  background: var(--bg);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ═════════════ ПЛАНШЕТ: вузька рейка ═════════════ */
+@media (min-width: 768px) {
+  body { padding-bottom: var(--sp-8); padding-left: 88px; }
+  .bottom-nav {
+    top: 0; bottom: 0; right: auto; width: 88px; height: auto;
+    grid-template-columns: 1fr; grid-auto-rows: 72px; align-content: start; gap: var(--sp-1);
+    padding: calc(env(safe-area-inset-top, 0px) + var(--sp-4)) var(--sp-2) var(--sp-4) max(var(--sp-2), env(safe-area-inset-left, 0px));
+    border-top: 0; border-right: var(--bw) solid var(--line);
+  }
+  .nav-item { border-radius: var(--r-md); font-size: var(--fs-2xs); }
+  .nav-item.active::before { top: 10px; }
+  .header { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+  .header-rates { display: none; }
+  .full-modal, .pm-thread-fullscreen { left: 0; }
+}
+
+/* ═════════════ ДЕСКТОП: широка бічна панель ═════════════ */
+@media (min-width: 1200px) {
+  body { padding-left: var(--rail-w); }
+  .bottom-nav {
+    width: var(--rail-w); grid-auto-rows: 52px; gap: var(--sp-1);
+    padding: var(--sp-6) var(--sp-3);
+  }
+  .nav-item {
+    flex-direction: row; justify-content: flex-start; gap: var(--sp-3);
+    padding: 0 var(--sp-3); font-size: var(--fs-md); font-weight: var(--fw-semibold);
+  }
+  .nav-item.active::before { top: 50%; left: 6px; margin: -16px 0 0; width: 36px; height: 32px; }
+  .nav-item.active { color: var(--fg); background: var(--surface-1); }
+  .nav-notif-dot { top: 12px; left: 30px; }
+  .header-rates {
+    display: block; position: absolute; right: var(--gutter); bottom: 2px; max-width: 360px;
+    font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--fg-4);
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis; pointer-events: none;
+  }
+}
+
+/* ═════════════ Низькі екрани: телефон боком ═════════════ */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 1023px) {
+  :root { --nav-h: 52px; --header-h: 52px; }
+  .header { position: relative; }
+  .nav-item .nav-label { display: none; }
+  .nav-item.active::before { top: 50%; margin-top: -15px; }
+}

@@ -172,7 +172,7 @@ function initBattlePass() {
   const badge = document.getElementById('bpVipBadge');
   if(badge) {
     badge.textContent = bp.isVip ? '👑 VIP' : '⬛ FREE';
-    badge.style.background = bp.isVip ? 'linear-gradient(135deg,#b8860b,#d4af37)' : 'linear-gradient(135deg,#333,#555)';
+    badge.style.background = bp.isVip ? 'var(--accent)' : 'linear-gradient(135deg,var(--surface-3),var(--line-strong))';
   }
 
   const vipBox = document.getElementById('bpVipBuyBox');
@@ -195,29 +195,29 @@ function renderBattlePassTrack(bp) {
       const isCurrent = level + 1 === row.lv;
       const cardClass = isCurrent ? 'bp-node-current' : row.milestone ? 'bp-node-milestone' : '';
 
-      return `<div class="${cardClass}" style="position:relative;flex-shrink:0;width:110px;border-radius:12px;overflow:hidden;border:2px solid ${isCurrent?'var(--accent)':row.milestone?'#c9a0ff':unlocked?'#3a3a3a':'#1a1a1a'};">
-        ${row.milestone ? `<div style="position:absolute;top:-1px;right:-1px;background:#c9a0ff;color:#1a0840;font-size:9px;font-weight:900;padding:2px 5px;border-radius:0 10px 0 8px;z-index:1;">🏅</div>` : ''}
+      return `<div class="${cardClass}" style="position:relative;flex-shrink:0;width:110px;border-radius:var(--r-lg);overflow:hidden;border:2px solid ${isCurrent?'var(--accent)':row.milestone?'var(--special)':unlocked?'var(--line)':'var(--line)'};">
+        ${row.milestone ? `<div style="position:absolute;top:-1px;right:-1px;background:var(--special);color:var(--on-special);font-size:9px;font-weight:900;padding:2px 5px;border-radius:0 var(--r-md) 0 var(--r-md);z-index:1;">🏅</div>` : ''}
         <!-- Level label -->
-        <div style="background:${isCurrent?'rgba(212,175,55,0.2)':'#0a0a0a'};padding:4px 0;text-align:center;font-size:10px;font-weight:bold;color:${isCurrent?'var(--accent)':'#555'};">
+        <div style="background:${isCurrent?'rgb(var(--accent-rgb) / 0.2)':'var(--bg)'};padding:4px 0;text-align:center;font-size:10px;font-weight:bold;color:${isCurrent?'var(--accent)':'var(--fg-4)'};">
           Рівень ${row.lv}
         </div>
         <!-- VIP reward -->
-        <div style="padding:8px;background:linear-gradient(135deg,#0d0520,#1a0840);border-bottom:1px solid #1a1a1a;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;${!isVip?'opacity:0.4;':''}">
+        <div style="padding:8px;background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--special) 16%, var(--surface-1)));border-bottom:1px solid var(--line);min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;${!isVip?'opacity:0.4;':''}">
           <div style="font-size:22px;">${row.vip.icon}</div>
-          <div style="font-size:9px;color:#c9a0ff;text-align:center;line-height:1.3;">${row.vip.label}</div>
+          <div style="font-size:9px;color:var(--special);text-align:center;line-height:1.3;">${row.vip.label}</div>
           ${unlocked && isVip ? (claimedV
             ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
-            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'v')" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
-            : (isVip ? `<div style="font-size:9px;color:#333;">🔒</div>` : `<div style="font-size:9px;color:#5a20c0;">👑 VIP</div>`)}
+            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'v')" style="background:var(--special);border:none;border-radius:var(--r-sm);padding:3px 8px;color:var(--on-special);font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+            : (isVip ? `<div style="font-size:9px;color:var(--fg-4);">🔒</div>` : `<div style="font-size:9px;color:var(--special);">👑 VIP</div>`)}
         </div>
         <!-- Free reward -->
-        <div style="padding:8px;background:#0a0a0a;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+        <div style="padding:8px;background:var(--bg);min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
           <div style="font-size:22px;">${row.free.icon}</div>
-          <div style="font-size:9px;color:#aaa;text-align:center;line-height:1.3;">${row.free.label}</div>
+          <div style="font-size:9px;color:var(--fg-2);text-align:center;line-height:1.3;">${row.free.label}</div>
           ${unlocked ? (claimedF
             ? `<div style="font-size:9px;color:var(--green);font-weight:bold;">✓ Отримано</div>`
-            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'f')" style="background:linear-gradient(135deg,#1a5a20,#27ae60);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
-            : `<div style="font-size:9px;color:#333;">🔒</div>`}
+            : `<button class="bp-claim-pulse" onclick="claimBpReward(${row.lv},'f')" style="background:linear-gradient(135deg,color-mix(in srgb, var(--pos) 25%, var(--surface-1)),var(--pos));border:none;border-radius:var(--r-sm);padding:3px 8px;color:var(--fg);font-size:9px;font-weight:bold;cursor:pointer;margin-top:2px;">Забрати</button>`)
+            : `<div style="font-size:9px;color:var(--fg-4);">🔒</div>`}
         </div>
       </div>`;
     }).join('') + bpBonusCard(bp) + `</div>`;
@@ -232,14 +232,14 @@ function renderBattlePassTrack(bp) {
 function bpBonusCard(bp) {
   const b = bpBonusInfo(bp);
   const maxed = bp.level >= BP_MAX_LEVEL;
-  return `<div style="flex-shrink:0;width:130px;border-radius:12px;border:2px dashed ${maxed ? bp.seasonColor || '#c9a0ff' : '#1a1a1a'};padding:10px 8px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px;background:#0a0a0a;">
-      <div style="font-size:10px;font-weight:bold;color:#c9a0ff;">Після 50 рівня</div>
+  return `<div style="flex-shrink:0;width:130px;border-radius:var(--r-lg);border:2px dashed ${maxed ? bp.seasonColor || 'var(--special)' : 'var(--line)'};padding:10px 8px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px;background:var(--bg);">
+      <div style="font-size:10px;font-weight:bold;color:var(--special);">Після 50 рівня</div>
       <div style="font-size:30px;">🎁</div>
-      <div style="font-size:10px;color:#aaa;line-height:1.35;">Бонусна скриня кожні ${formatNumber(BP_BONUS_XP)} XP${bp.isVip ? '<br>👑 + 2 Слотіки' : ''}</div>
-      ${!maxed ? `<div style="font-size:9px;color:#444;">🔒 Дійди до 50 рівня</div>`
+      <div style="font-size:10px;color:var(--fg-2);line-height:1.35;">Бонусна скриня кожні ${formatNumber(BP_BONUS_XP)} XP${bp.isVip ? '<br>👑 + 2 Слотіки' : ''}</div>
+      ${!maxed ? `<div style="font-size:9px;color:var(--fg-4);">🔒 Дійди до 50 рівня</div>`
         : b.available > 0
-          ? `<button class="bp-claim-pulse" onclick="claimBpBonus()" style="background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:6px;padding:5px 8px;color:#fff;font-size:10px;font-weight:bold;cursor:pointer;">Відкрити (${b.available})</button>`
-          : `<div style="font-size:9px;color:#666;">Наступна: ${formatNumber(b.progress)} / ${formatNumber(BP_BONUS_XP)} XP</div>`}
+          ? `<button class="bp-claim-pulse" onclick="claimBpBonus()" style="background:var(--special);border:none;border-radius:var(--r-sm);padding:5px 8px;color:var(--on-special);font-size:10px;font-weight:bold;cursor:pointer;">Відкрити (${b.available})</button>`
+          : `<div style="font-size:9px;color:var(--fg-3);">Наступна: ${formatNumber(b.progress)} / ${formatNumber(BP_BONUS_XP)} XP</div>`}
     </div>`;
 }
 
@@ -350,8 +350,8 @@ function addBpXP(amount) {
 function showBpLevelUp(newLevel) {
     setTimeout(() => {
       const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,#0d0520,#2d1060);border:2px solid #c9a0ff;border-radius:16px;padding:14px 24px;text-align:center;box-shadow:0 8px 30px rgba(100,0,200,0.4);animation:slideIn 0.4s ease;';
-      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:#c9a0ff;font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">${newLevel >= BP_MAX_LEVEL ? '🏆 Сезон пройдено! Далі — бонусні скрині' : `Рівень ${newLevel + 1}!`}</div>`;
+      t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:7500;background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:2px solid var(--special);border-radius:var(--r-lg);padding:14px 24px;text-align:center;box-shadow:none;animation:slideIn 0.4s ease;';
+      t.innerHTML = `<div style="font-size:28px;">🎫</div><div style="font-size:11px;color:var(--special);font-weight:bold;text-transform:uppercase;margin-top:4px;">Battle Pass</div><div style="font-size:18px;font-weight:900;color:var(--fg);margin-top:2px;">${newLevel >= BP_MAX_LEVEL ? '🏆 Сезон пройдено! Далі — бонусні скрині' : `Рівень ${newLevel + 1}!`}</div>`;
       document.body.appendChild(t);
       playSound('bonus');
       setTimeout(()=>{ t.style.opacity='0'; t.style.transition='0.5s'; setTimeout(()=>t.remove(),500); }, 3000);
@@ -430,8 +430,8 @@ function initStatsTab() {
 
   el.innerHTML = `
     <!-- Main balance stat -->
-    <div style="background:linear-gradient(135deg,#0a1a0a,#111);border:1px solid #1a3a1a;border-radius:16px;padding:16px;margin-bottom:14px;text-align:center;">
-      <div style="font-size:11px;color:#555;margin-bottom:4px;">ПОТОЧНИЙ БАЛАНС</div>
+    <div style="background:var(--surface-1);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:16px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">ПОТОЧНИЙ БАЛАНС</div>
       <div style="font-size:32px;font-weight:900;color:var(--green);">${formatNumber(d.balance||0)} ₴</div>
       <div style="font-size:11px;color:${roi>=0?'var(--green)':'var(--red)'};margin-top:4px;">
         ROI: ${roi>=0?'+':''}${roi.toFixed(1)}% від усіх ставок
@@ -440,33 +440,33 @@ function initStatsTab() {
 
     <!-- 3-col quick stats -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;">
         <div style="font-size:20px;font-weight:900;color:${wrColor};">${winRate}%</div>
-        <div style="font-size:9px;color:#555;">Win Rate</div>
+        <div style="font-size:9px;color:var(--fg-4);">Win Rate</div>
       </div>
-      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;">
         <div style="font-size:20px;font-weight:900;color:var(--accent);">${totalBets}</div>
-        <div style="font-size:9px;color:#555;">Всього ставок</div>
+        <div style="font-size:9px;color:var(--fg-4);">Всього ставок</div>
       </div>
-      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:20px;font-weight:900;color:#c9a0ff;">${bpLevel + 1}</div>
-        <div style="font-size:9px;color:#555;">Рівень BP</div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;">
+        <div style="font-size:20px;font-weight:900;color:var(--special);">${bpLevel + 1}</div>
+        <div style="font-size:9px;color:var(--fg-4);">Рівень BP</div>
       </div>
     </div>
 
     <!-- Win/Loss bar -->
-    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:8px;">
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--fg-4);margin-bottom:8px;">
         <span>🏆 Виграші: <b style="color:var(--green);">${totalWins}</b></span>
         <span>💸 Програші: <b style="color:var(--red);">${totalLosses}</b></span>
       </div>
-      <div style="background:#1a1a1a;border-radius:6px;height:12px;overflow:hidden;">
-        <div style="height:100%;width:${winRate}%;background:linear-gradient(90deg,var(--green),#27ae60);border-radius:6px;"></div>
+      <div style="background:var(--surface-2);border-radius:var(--r-sm);height:12px;overflow:hidden;">
+        <div style="height:100%;width:${winRate}%;background:linear-gradient(90deg,var(--green),var(--pos));border-radius:var(--r-sm);"></div>
       </div>
     </div>
 
     <!-- Financial stats -->
-    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">💰 Фінанси</div>
       ${[
         ['Загальний вагер', formatNumber(totalWagered)+' ₴'],
@@ -476,16 +476,16 @@ function initStatsTab() {
         ['Рефералів', referrals+' осіб'],
         ['Слотіків куплено', (d.slotikySpent||0)+' 🪙'],
       ].map(([l,v])=>`
-        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #111;font-size:12px;">
-          <span style="color:#666;">${l}</span>
-          <span style="color:#ccc;font-weight:bold;">${v}</span>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px;">
+          <span style="color:var(--fg-3);">${l}</span>
+          <span style="color:var(--fg-2);font-weight:bold;">${v}</span>
         </div>`).join('')}
     </div>
 
     <!-- Games breakdown -->
-    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">🎮 Ігри</div>
-      <div style="font-size:11px;color:#555;margin-bottom:10px;">Улюблена гра: <b style="color:#fff;">${favGame}</b></div>
+      <div style="font-size:11px;color:var(--fg-4);margin-bottom:10px;">Улюблена гра: <b style="color:var(--fg);">${favGame}</b></div>
       ${[
         ['🎰 Слоти',    slotsPlayed],
         ['🚀 Краш',     crashGames],
@@ -497,36 +497,36 @@ function initStatsTab() {
         const pct = Math.round(count/maxCount*100);
         return `<div style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
-            <span style="color:#aaa;">${label}</span>
-            <span style="color:#555;">${count}</span>
+            <span style="color:var(--fg-2);">${label}</span>
+            <span style="color:var(--fg-4);">${count}</span>
           </div>
-          <div style="background:#111;border-radius:4px;height:6px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#4a9eff,#00b4d8);border-radius:4px;"></div>
+          <div style="background:var(--surface-1);border-radius:var(--r-xs);height:6px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--info),var(--primary));border-radius:var(--r-xs);"></div>
           </div>
         </div>`;
       }).join('')}
     </div>
 
     <!-- Achievements summary -->
-    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:14px;">
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:12px;font-weight:bold;color:var(--accent);">🏆 Досягнення</div>
-        <button onclick="switchTab('achievements')" style="background:none;border:1px solid #333;border-radius:6px;padding:4px 10px;color:#555;font-size:10px;cursor:pointer;">Всі →</button>
+        <button onclick="switchTab('achievements')" style="background:none;border:1px solid var(--line);border-radius:var(--r-sm);padding:4px 10px;color:var(--fg-4);font-size:10px;cursor:pointer;">Всі →</button>
       </div>
       <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
         <div style="font-size:28px;font-weight:900;color:var(--accent);">${achievements}</div>
         <div>
-          <div style="font-size:11px;color:#aaa;">з 50 досягнень</div>
-          <div style="font-size:11px;color:#555;">${d.achievementXP||0} XP зароблено</div>
+          <div style="font-size:11px;color:var(--fg-2);">з 50 досягнень</div>
+          <div style="font-size:11px;color:var(--fg-4);">${d.achievementXP||0} XP зароблено</div>
         </div>
       </div>
-      <div style="background:#111;border-radius:6px;height:8px;overflow:hidden;margin-top:8px;">
-        <div style="height:100%;width:${Math.round(achievements/50*100)}%;background:linear-gradient(90deg,var(--accent),#ffdb4d);border-radius:6px;"></div>
+      <div style="background:var(--surface-1);border-radius:var(--r-sm);height:8px;overflow:hidden;margin-top:8px;">
+        <div style="height:100%;width:${Math.round(achievements/50*100)}%;background:var(--accent);border-radius:var(--r-sm);"></div>
       </div>
     </div>
 
     <div style="text-align:center;padding:8px 0;">
-      <button onclick="initStatsTab()" style="background:none;border:1px solid #333;border-radius:8px;padding:8px 20px;color:#555;font-size:11px;cursor:pointer;">🔄 Оновити</button>
+      <button onclick="initStatsTab()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);padding:8px 20px;color:var(--fg-4);font-size:11px;cursor:pointer;">🔄 Оновити</button>
     </div>
   `;
 }

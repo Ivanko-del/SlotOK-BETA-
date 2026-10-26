@@ -37,12 +37,12 @@ function openPasswordRecovery() {
   if(existing) existing.remove();
   const modal = document.createElement('div');
   modal.id = 'pwrModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.innerHTML = `
-    <div style="max-width:380px;width:100%;background:#111;border:1px solid #262626;border-radius:16px;padding:20px;">
+    <div style="max-width:380px;width:100%;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-family:'Orbitron',monospace;font-size:15px;color:#d4af37;">🔑 Відновлення пароля</div>
-        <button onclick="document.getElementById('pwrModal').remove()" style="background:none;border:1px solid #333;border-radius:8px;color:#777;padding:4px 10px;cursor:pointer;">✕</button>
+        <div style="font-family:var(--font-display);font-size:15px;color:var(--accent);">🔑 Відновлення пароля</div>
+        <button onclick="document.getElementById('pwrModal').remove()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);padding:4px 10px;cursor:pointer;">✕</button>
       </div>
       <div id="pwrBody"></div>
     </div>`;
@@ -54,9 +54,9 @@ function pwrShowStep1() {
   const body = document.getElementById('pwrBody');
   if(!body) return;
   body.innerHTML = `
-    <div style="font-size:12px;color:#888;margin-bottom:10px;">Введіть свій нікнейм, щоб почати відновлення.</div>
+    <div style="font-size:12px;color:var(--fg-3);margin-bottom:10px;">Введіть свій нікнейм, щоб почати відновлення.</div>
     <input class="auth-input" id="pwrNick" placeholder="Нікнейм" style="margin-bottom:10px;">
-    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="pwrErr" style="color:var(--neg);font-size:12px;margin-bottom:8px;display:none;"></div>
     <button class="auth-btn-main" onclick="pwrLookup()">Далі →</button>`;
 }
 
@@ -87,14 +87,14 @@ function pwrShowQuestion(nick, qKey) {
   if(!body) return;
   const qText = securityQuestionText(qKey);
   body.innerHTML = `
-    <div style="font-size:12px;color:#888;margin-bottom:10px;">${escapeHtml(qText)}</div>
+    <div style="font-size:12px;color:var(--fg-3);margin-bottom:10px;">${escapeHtml(qText)}</div>
     <input class="auth-input" id="pwrAnswer" placeholder="Відповідь" style="margin-bottom:10px;">
     <input class="auth-input" id="pwrNewPass" type="password" placeholder="Новий пароль (мін 6 символів)" style="margin-bottom:10px;">
     <input class="auth-input" id="pwrNewPass2" type="password" placeholder="Повторіть новий пароль" style="margin-bottom:10px;">
-    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="pwrErr" style="color:var(--neg);font-size:12px;margin-bottom:8px;display:none;"></div>
     <button class="auth-btn-main" onclick="pwrVerifyAndReset(${jsArg(nick)})">Змінити пароль</button>
     <div style="text-align:center;margin-top:10px;">
-      <span onclick="pwrShowTelegramFallback(${jsArg(nick)})" style="color:#666;font-size:11px;cursor:pointer;text-decoration:underline;">Не пам'ятаю відповідь</span>
+      <span onclick="pwrShowTelegramFallback(${jsArg(nick)})" style="color:var(--fg-3);font-size:11px;cursor:pointer;text-decoration:underline;">Не пам'ятаю відповідь</span>
     </div>`;
 }
 
@@ -147,11 +147,11 @@ function pwrShowTelegramFallback(nick) {
   const body = document.getElementById('pwrBody');
   if(!body) return;
   body.innerHTML = `
-    <div style="font-size:12px;color:#888;margin-bottom:12px;line-height:1.5;">
+    <div style="font-size:12px;color:var(--fg-3);margin-bottom:12px;line-height:1.5;">
       Автоматичне відновлення недоступне для цього акаунту. Подайте заявку — адміністратор перевірить вас у Telegram і скине пароль вручну.
     </div>
-    <div id="pwrErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;"></div>
-    <div id="pwrTgStatus" style="color:#3dd68c;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="pwrErr" style="color:var(--neg);font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="pwrTgStatus" style="color:var(--pos);font-size:12px;margin-bottom:8px;display:none;"></div>
     <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram(${jsArg(nick)})">✈️ Подати заявку через Telegram</button>`;
 }
 
@@ -203,8 +203,8 @@ function switchAuthTab(mode) {
   const errEl     = document.getElementById('authError');
   if(loginForm) loginForm.classList.toggle('hidden', !isLogin);
   if(regForm)   regForm.classList.toggle('hidden', isLogin);
-  if(tabLogin)  tabLogin.classList.toggle('active', isLogin);
-  if(tabReg)    tabReg.classList.toggle('active', !isLogin);
+  if(tabLogin)  { tabLogin.classList.toggle('active', isLogin); tabLogin.setAttribute('aria-selected', isLogin); }
+  if(tabReg)    { tabReg.classList.toggle('active', !isLogin); tabReg.setAttribute('aria-selected', !isLogin); }
   if(tabsWrap)  tabsWrap.classList.toggle('reg-active', !isLogin);
   if(errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
 }
@@ -215,7 +215,10 @@ function toggleAuthPassVisibility(inputId, btnEl) {
   if(!inp) return;
   const shown = inp.type === 'text';
   inp.type = shown ? 'password' : 'text';
-  if(btnEl) btnEl.textContent = shown ? '👁' : '🙈';
+  if(btnEl) {
+    btnEl.setAttribute('aria-label', shown ? 'Показати пароль' : 'Сховати пароль');
+    btnEl.classList.toggle('is-on', !shown);
+  }
 }
 
 function setPlayerStatus(status) {

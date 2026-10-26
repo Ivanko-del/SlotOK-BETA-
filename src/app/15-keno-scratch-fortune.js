@@ -170,7 +170,7 @@ function finishScratch() {
     msg = `🎉 Три ${best[0]}! Виграш: +${win} ₴`;
   } else { msg = '😔 Немає трьох однакових'; }
 
-  document.getElementById('scratchResult').innerHTML = `<b style="color:${win>0?'var(--green)':'#777'}">${msg}</b>`;
+  document.getElementById('scratchResult').innerHTML = `<b style="color:${win>0?'var(--green)':'var(--fg-3)'}">${msg}</b>`;
   if(win > 0) {
     if(!scratchServerPaid) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
     playSound('win'); addToHistory(`Scratch: +${win}`);

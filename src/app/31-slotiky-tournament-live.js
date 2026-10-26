@@ -70,15 +70,15 @@ function buySlotiky(amount) {
   }
   // Confirm
   const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.innerHTML = `
-    <div style="background:#111;border:1px solid #5a20c0;border-radius:20px;padding:24px;max-width:320px;width:100%;text-align:center;">
+    <div style="background:var(--surface-1);border:1px solid var(--special);border-radius:var(--r-xl);padding:24px;max-width:320px;width:100%;text-align:center;">
       <div style="font-size:40px;margin-bottom:12px;">🪙</div>
-      <div style="font-size:18px;font-weight:bold;color:#c9a0ff;margin-bottom:8px;">Купити ${amount} Слотік${amount>1?'ів':''}?</div>
-      <div style="font-size:14px;color:#888;margin-bottom:20px;">Вартість: <b style="color:#fff;">${formatNumber(cost)} ₴</b></div>
+      <div style="font-size:18px;font-weight:bold;color:var(--special);margin-bottom:8px;">Купити ${amount} Слотік${amount>1?'ів':''}?</div>
+      <div style="font-size:14px;color:var(--fg-3);margin-bottom:20px;">Вартість: <b style="color:var(--fg);">${formatNumber(cost)} ₴</b></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:12px;background:#1a1a1a;border:1px solid #333;border-radius:10px;color:#aaa;cursor:pointer;">Скасувати</button>
-        <button onclick="confirmBuySlotiky(${amount},${cost});this.closest('div[style*=fixed]').remove();" style="padding:12px;background:linear-gradient(135deg,#5a20c0,#8040e0);border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;">✅ Купити</button>
+        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-2);cursor:pointer;">Скасувати</button>
+        <button onclick="confirmBuySlotiky(${amount},${cost});this.closest('div[style*=fixed]').remove();" style="padding:12px;background:var(--special);border:none;border-radius:var(--r-md);color:var(--on-special);font-weight:bold;cursor:pointer;">✅ Купити</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -100,11 +100,11 @@ let _shopFilter = null;
 function filterShop(type, btn) {
   _shopFilter = type;
   document.querySelectorAll('[onclick^="filterShop"]').forEach(b => {
-    b.style.background = '#1a1a1a';
-    b.style.color = '#aaa';
-    b.style.border = '1px solid #333';
+    b.style.background = 'var(--surface-2)';
+    b.style.color = 'var(--fg-2)';
+    b.style.border = '1px solid var(--line)';
   });
-  if(btn) { btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.border='none'; }
+  if(btn) { btn.style.background='var(--accent)'; btn.style.color='var(--on-accent)'; btn.style.border='none'; }
   renderSlotikyShop();
 }
 
@@ -117,13 +117,13 @@ function renderSlotikyShop() {
   grid.innerHTML = filteredItems.map(item => {
     const isOwned = owned[item.id];
     const typeColor = item.type==='boost'?'#f39c12':item.type==='cosmetic'?'#c9a0ff':item.type==='feature'?'#27ae60':'#4a90e2';
-    return `<div style="background:linear-gradient(180deg,#0d0520,#050010);border:1px solid ${isOwned?'#27ae60':'#3a1080'};border-radius:14px;padding:14px;position:relative;">
-      ${isOwned?'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:#27ae60;font-weight:bold;">✅ Є</div>':''}
+    return `<div style="background:linear-gradient(180deg,var(--surface-1),var(--bg));border:1px solid ${isOwned?'var(--pos)':'var(--special)'};border-radius:var(--r-lg);padding:14px;position:relative;">
+      ${isOwned?'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:var(--pos);font-weight:bold;">✅ Є</div>':''}
       <div style="font-size:28px;margin-bottom:6px;">${item.icon}</div>
-      <div style="font-size:12px;font-weight:bold;color:#fff;margin-bottom:3px;">${item.name}</div>
-      <div style="font-size:10px;color:#666;margin-bottom:8px;">${item.desc}</div>
-      <div style="font-size:11px;color:#c9a0ff;font-weight:bold;margin-bottom:8px;">🪙 ${item.price} Слотік${item.price>1?'ів':''}</div>
-      <button onclick="buyShopItem('${item.id}',${item.price})" ${isOwned?'disabled':''} style="width:100%;padding:7px;background:${isOwned?'#1a1a1a':'linear-gradient(135deg,#5a20c0,#8040e0)'};border:none;border-radius:8px;color:${isOwned?'#555':'#fff'};font-size:11px;font-weight:bold;cursor:${isOwned?'default':'pointer'};">${isOwned?'Придбано':'Купити'}</button>
+      <div style="font-size:12px;font-weight:bold;color:var(--fg);margin-bottom:3px;">${item.name}</div>
+      <div style="font-size:10px;color:var(--fg-3);margin-bottom:8px;">${item.desc}</div>
+      <div style="font-size:11px;color:var(--special);font-weight:bold;margin-bottom:8px;">🪙 ${item.price} Слотік${item.price>1?'ів':''}</div>
+      <button onclick="buyShopItem('${item.id}',${item.price})" ${isOwned?'disabled':''} style="width:100%;padding:7px;background:${isOwned?'var(--surface-2)':'var(--special)'};border:none;border-radius:var(--r-md);color:${isOwned?'var(--fg-4)':'var(--fg)'};font-size:11px;font-weight:bold;cursor:${isOwned?'default':'pointer'};">${isOwned?'Придбано':'Купити'}</button>
     </div>`;
   }).join('');
 }
@@ -230,7 +230,7 @@ function _doApplyShopEffects() {
   const avatarEl = document.getElementById('currentAvatar');
   if(avatarEl && activeFrame) {
     avatarEl.style.background = frameColors[activeFrame] || '';
-    avatarEl.style.border = '3px solid ' + (activeFrame==='avatar_gold'?'var(--accent)':activeFrame==='avatar_diamond'?'#00b4d8':activeFrame==='avatar_fire'?'#ff4500':'#aaa');
+    avatarEl.style.border = '3px solid ' + (activeFrame==='avatar_gold'?'var(--accent)':activeFrame==='avatar_diamond'?'var(--primary)':activeFrame==='avatar_fire'?'var(--accent)':'var(--fg-3)');
     avatarEl.style.borderRadius = '50%';
   }
 
@@ -261,12 +261,12 @@ function updateActiveBoostsUI(items, now) {
     const expires = val?.expires;
     return !expires || expires > now;
   });
-  if(!active.length) { el.innerHTML = '<div style="color:#555;font-size:11px;">Немає активних бустів</div>'; return; }
+  if(!active.length) { el.innerHTML = '<div style="color:var(--fg-4);font-size:11px;">Немає активних бустів</div>'; return; }
   el.innerHTML = active.map(([id, val]) => {
     const expires = val?.expires;
     const left = expires ? Math.max(0, Math.ceil((expires - now) / 86400000)) : null;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#0a0a00;border:1px solid #2a2000;border-radius:8px;margin-bottom:5px;">
-      <span style="font-size:12px;color:#ccc;">${boostLabels[id]}</span>
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg);border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);margin-bottom:5px;">
+      <span style="font-size:12px;color:var(--fg-2);">${boostLabels[id]}</span>
       <span style="font-size:10px;color:var(--accent);">${left!==null?left+'д':'Активно'}</span>
     </div>`;
   }).join('');
@@ -305,7 +305,7 @@ function loadTournamentsV2() {
     const data = snap.val();
     const list = document.getElementById('tournamentsList');
     if(!list) return;
-    if(!data) { list.innerHTML = '<div style="color:#555;padding:30px;text-align:center;">Немає активних турнірів</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-4);padding:30px;text-align:center;">Немає активних турнірів</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([id, t]) => {
       const endTime = t.startTime + t.duration * 3600000;
@@ -318,13 +318,13 @@ function loadTournamentsV2() {
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div style="font-size:16px;font-weight:bold;">${t.icon||'🏆'} ${t.name}</div>
-          <span style="font-size:10px;background:${isActive?'rgba(76,217,100,0.2)':'rgba(255,59,48,0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:10px;font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
+          <span style="font-size:10px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
         </div>
-        <div style="background:linear-gradient(135deg,#1a1200,#0d0800);border-radius:10px;padding:12px;margin-bottom:10px;">
+        <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border-radius:var(--r-md);padding:12px;margin-bottom:10px;">
           <div style="font-size:24px;font-weight:900;color:var(--accent);text-align:center;">🏆 ${formatNumber(t.prize)} ₴</div>
-          <div style="font-size:10px;color:#555;text-align:center;margin-top:2px;">Перше місце</div>
+          <div style="font-size:10px;color:var(--fg-4);text-align:center;margin-top:2px;">Перше місце</div>
         </div>
-        <div style="font-size:11px;color:#777;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--fg-3);margin-bottom:10px;">
           ⏱ ${isActive ? `Залишилось: ${hoursLeft}год ${minsLeft}хв` : 'Турнір завершено'} •
           👥 Ігри: ${(t.allowedGames||['crash','slots','mines']).join(', ')}
         </div>
@@ -342,7 +342,7 @@ function loadMyTournaments() {
   db.ref('tournament_scores').once('value', snap => {
     const all = snap.val() || {};
     const mine = Object.entries(all).filter(([tid,scores]) => scores && scores[currentUser] !== undefined);
-    if(!mine.length) { el.innerHTML = '<div style="color:#555;padding:30px;text-align:center;">Ви не берете участі в жодному турнірі</div>'; return; }
+    if(!mine.length) { el.innerHTML = '<div style="color:var(--fg-4);padding:30px;text-align:center;">Ви не берете участі в жодному турнірі</div>'; return; }
     el.innerHTML = mine.map(([tid, scores]) => {
       const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
       const myPos  = sorted.findIndex(([u])=>u===currentUser)+1;
@@ -350,9 +350,9 @@ function loadMyTournaments() {
       return `<div class="tournament-card">
         <div style="font-size:13px;font-weight:bold;margin-bottom:6px;">Турнір: ${tid}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div><div style="font-size:11px;color:#555;">Ваші очки</div><div style="font-size:22px;font-weight:900;color:var(--accent);">${formatNumber(myScore)}</div></div>
-          <div><div style="font-size:11px;color:#555;">Позиція</div><div style="font-size:22px;font-weight:900;color:${myPos===1?'var(--accent)':'#aaa'};">#${myPos}</div></div>
-          <div><div style="font-size:11px;color:#555;">Учасників</div><div style="font-size:22px;font-weight:900;color:#777;">${sorted.length}</div></div>
+          <div><div style="font-size:11px;color:var(--fg-4);">Ваші очки</div><div style="font-size:22px;font-weight:900;color:var(--accent);">${formatNumber(myScore)}</div></div>
+          <div><div style="font-size:11px;color:var(--fg-4);">Позиція</div><div style="font-size:22px;font-weight:900;color:${myPos===1?'var(--accent)':'var(--fg-2)'};">#${myPos}</div></div>
+          <div><div style="font-size:11px;color:var(--fg-4);">Учасників</div><div style="font-size:22px;font-weight:900;color:var(--fg-3);">${sorted.length}</div></div>
         </div>
       </div>`;
     }).join('');
@@ -390,20 +390,20 @@ function renderTourneyGames() {
     const all = snap.val() || {};
     const inTournament = Object.values(all).some(scores => scores && scores[currentUser] !== undefined);
     if(!inTournament) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#555;padding:30px;">
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--fg-4);padding:30px;">
         <div style="font-size:36px;margin-bottom:12px;">🔒</div>
-        <div style="font-size:13px;color:#777;margin-bottom:8px;">Спочатку приєднайся до турніру</div>
+        <div style="font-size:13px;color:var(--fg-3);margin-bottom:8px;">Спочатку приєднайся до турніру</div>
         <button class="btn-gold" onclick="switchTourneyTab('active',document.getElementById('ttb-active'))">🏆 Переглянути турніри</button>
       </div>`;
       return;
     }
     grid.innerHTML = TOURNEY_GAMES.map(g => `
-      <div onclick="openTourneyGame('${g.game}')" style="background:linear-gradient(135deg,#1a1200,#0d0800);border:1px solid #3a2800;border-radius:14px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
+      <div onclick="openTourneyGame('${g.game}')" style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-lg);padding:14px;cursor:pointer;position:relative;overflow:hidden;">
         <div style="position:absolute;top:-10px;right:-10px;font-size:50px;opacity:0.08;">${g.icon}</div>
         <div style="font-size:28px;margin-bottom:6px;">${g.icon}</div>
-        <div style="font-size:12px;font-weight:bold;color:#fff;margin-bottom:2px;">${g.name}</div>
-        <div style="font-size:10px;color:#777;margin-bottom:6px;">${g.desc}</div>
-        <div style="font-size:9px;background:rgba(212,175,55,0.2);color:var(--accent);border-radius:6px;padding:2px 6px;display:inline-block;">×${g.pointMult} очки</div>
+        <div style="font-size:12px;font-weight:bold;color:var(--fg);margin-bottom:2px;">${g.name}</div>
+        <div style="font-size:10px;color:var(--fg-3);margin-bottom:6px;">${g.desc}</div>
+        <div style="font-size:9px;background:rgb(var(--accent-rgb) / 0.2);color:var(--accent);border-radius:var(--r-sm);padding:2px 6px;display:inline-block;">×${g.pointMult} очки</div>
       </div>`).join('');
   });
 }
@@ -447,10 +447,10 @@ function loadTourneyStatsBar() {
     });
     el.innerHTML = tourCount ? `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Турнірів</div><div style="font-size:20px;font-weight:900;color:var(--accent);">${tourCount}</div></div>
-        <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Всього очків</div><div style="font-size:20px;font-weight:900;color:var(--green);">${formatNumber(totalPoints)}</div></div>
-        <div style="text-align:center;"><div style="font-size:9px;color:#555;margin-bottom:2px;">Кращий результат</div><div style="font-size:20px;font-weight:900;color:#f39c12;">#${bestPos===999?'—':bestPos}</div></div>
-      </div>` : '<div style="font-size:11px;color:#555;text-align:center;">Ще не брали участі в турнірах</div>';
+        <div style="text-align:center;"><div style="font-size:9px;color:var(--fg-4);margin-bottom:2px;">Турнірів</div><div style="font-size:20px;font-weight:900;color:var(--accent);">${tourCount}</div></div>
+        <div style="text-align:center;"><div style="font-size:9px;color:var(--fg-4);margin-bottom:2px;">Всього очків</div><div style="font-size:20px;font-weight:900;color:var(--green);">${formatNumber(totalPoints)}</div></div>
+        <div style="text-align:center;"><div style="font-size:9px;color:var(--fg-4);margin-bottom:2px;">Кращий результат</div><div style="font-size:20px;font-weight:900;color:var(--accent);">#${bestPos===999?'—':bestPos}</div></div>
+      </div>` : '<div style="font-size:11px;color:var(--fg-4);text-align:center;">Ще не брали участі в турнірах</div>';
   });
 }
 
@@ -472,6 +472,7 @@ const LOBBY_WIN_POOL = [
 ];
 
 function startLobbyTimers() {
+  try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
   // Jackpot counter
   _lobbyJackpotTimer = setInterval(() => {
     _lobbyJackpot += Math.floor(Math.random()*180 + 40);
@@ -480,18 +481,21 @@ function startLobbyTimers() {
   }, 1200);
 
   // Wins feed rotation
-  _lobbyWinsTimer = setInterval(() => {
+  const pushWin = () => {
     const feed = document.getElementById('lobbyWinsFeed');
     if(!feed) return;
     const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
     const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
     const row = document.createElement('div');
-    row.className = 'win-feed-row';
-    row.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><div class="win-feed-avatar">${p.avatar}</div><div><div class="win-feed-user">${p.user}</div><div class="win-feed-game">${p.game}</div></div></div><div class="win-feed-amount">+₴ ${amt}</div>`;
+    row.className = 'win-feed-row list-row';
+    row.innerHTML = `<div class="win-feed-avatar">${p.avatar}</div><div class="list-row-main"><div class="win-feed-user list-row-title">${p.user}</div><div class="win-feed-game list-row-sub">${p.game}</div></div><div class="win-feed-amount num">+₴ ${amt}</div>`;
     feed.insertBefore(row, feed.firstChild);
     const rows = feed.querySelectorAll('.win-feed-row');
     if(rows.length > 5) rows[rows.length-1].remove();
-  }, 3000);
+  };
+  const feedEl = document.getElementById('lobbyWinsFeed');
+  if(feedEl && !feedEl.children.length) { for(let i = 0; i < 4; i++) pushWin(); }
+  _lobbyWinsTimer = setInterval(pushWin, 3000);
 }
 
 function stopLobbyTimers() {
@@ -499,15 +503,74 @@ function stopLobbyTimers() {
   clearInterval(_lobbyWinsTimer);
 }
 
-// Category filter for casino grid
-function filterCasinoGames(cat, btn) {
-  document.querySelectorAll('.casino-cat-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  const cards = document.querySelectorAll('#casinoGamesGrid .casino-game-card');
-  cards.forEach(c => {
-    const cardCat = c.getAttribute('data-cat') || 'all';
-    c.style.display = (cat === 'all' || cardCat === cat) ? '' : 'none';
+// ── Фільтри лоббі ────────────────────────────────────────────────
+// Один стан на пошук, категорію й режим (усі/популярні/нові/обрані),
+// щоб фільтри поєднувались, а не скидали одне одного.
+const lobbyState = { cat: 'all', mode: 'all', q: '' };
+
+function lobbyCardId(card) {
+  const m = (card.getAttribute('onclick') || '').match(/(?:openGame|switchTab)\('(\w+)'\)/);
+  return m ? m[1] : '';
+}
+
+function applyLobbyFilters() {
+  const grid = document.getElementById('casinoGamesGrid');
+  if(!grid) return;
+  const favs = JSON.parse(localStorage.getItem('slotok_favs') || '[]');
+  const q = lobbyState.q;
+  let shown = 0;
+  grid.querySelectorAll('.casino-game-card').forEach(card => {
+    const cat = card.getAttribute('data-cat') || 'all';
+    const name = (card.querySelector('.casino-game-card-name')?.textContent || '').toLowerCase();
+    const sub = (card.querySelector('.casino-game-card-prov')?.textContent || '').toLowerCase();
+    const okCat = lobbyState.cat === 'all' || cat === lobbyState.cat;
+    const okQ = !q || name.includes(q) || sub.includes(q);
+    let okMode = true;
+    if(lobbyState.mode === 'hot') okMode = !!card.querySelector('.casino-badge-hot');
+    else if(lobbyState.mode === 'new') okMode = !!card.querySelector('.casino-badge-new');
+    else if(lobbyState.mode === 'fav') okMode = favs.includes(lobbyCardId(card));
+    const ok = okCat && okQ && okMode;
+    card.style.display = ok ? '' : 'none';
+    if(ok) shown++;
   });
+  const count = document.getElementById('lobbyGridCount');
+  if(count) count.textContent = shown;
+  const empty = document.getElementById('lobbyEmpty');
+  if(empty) {
+    empty.classList.toggle('hidden', shown > 0);
+    const t = empty.querySelector('.empty-state-title');
+    if(t) t.textContent = lobbyState.mode === 'fav' && !favs.length ? 'Обраних поки немає' : 'Нічого не знайдено';
+  }
+  const title = document.getElementById('lobbyGridTitle');
+  if(title) title.textContent = { all: 'Усі ігри', hot: 'Популярні', new: 'Нові', fav: 'Обрані' }[lobbyState.mode];
+}
+
+function setChipGroup(selector, el) {
+  document.querySelectorAll(selector).forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+  if(el) { el.classList.add('active'); el.setAttribute('aria-pressed', 'true'); }
+}
+
+// Категорія; повторне натискання знімає фільтр.
+function filterCasinoGames(cat, btn) {
+  if(btn && btn.classList.contains('active') && cat !== 'all') { cat = 'all'; btn = null; }
+  lobbyState.cat = cat;
+  setChipGroup('.casino-cat-btn', btn);
+  applyLobbyFilters();
+}
+
+function lobbySetMode(mode, el) {
+  lobbyState.mode = mode;
+  setChipGroup('.game-sort-btn', el);
+  applyLobbyFilters();
+}
+
+function lobbyReset() {
+  lobbyState.cat = 'all'; lobbyState.mode = 'all'; lobbyState.q = '';
+  const inp = document.getElementById('lobbySearch');
+  if(inp) inp.value = '';
+  setChipGroup('.casino-cat-btn', null);
+  setChipGroup('.game-sort-btn', document.querySelector('.game-sort-btn'));
+  applyLobbyFilters();
 }
 
 // Casino game info modal
@@ -682,19 +745,12 @@ function drawBall(x, y, sport) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const bx = x * W, by = y * H;
-  const ballEmoji = { basketball:'🏀', hockey:'🏒', tennis:'🎾', csgo:'💀' };
-  const emoji = ballEmoji[sport] || null;
-
-  if(emoji) {
-    ctx.font = '14px serif';
-    ctx.fillText(emoji, bx-7, by+5);
-  } else {
-    ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
-  }
+  // Без емодзі на canvas (на різних телефонах вони різні) — м'яч малюємо самі.
+  ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
 
   ctx.beginPath(); ctx.ellipse(bx, by+8, 6, 2, 0, 0, Math.PI*2);
   ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
@@ -785,7 +841,7 @@ function renderTrackerEvents() {
   const el = document.getElementById('trackerEventsList');
   if(!el) return;
   if(!trackerEvents.length) {
-    el.innerHTML = '<div style="color:#555;font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>';
+    el.innerHTML = '<div style="color:var(--fg-4);font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>';
     return;
   }
   el.innerHTML = trackerEvents.map(ev => `
@@ -814,13 +870,13 @@ function renderMatchStats(m) {
     const aVal = s.pct ? (100-pctHome)+'%' : s.away;
     const pctW  = s.pct ? pctHome : (s.home+s.away > 0 ? Math.round(s.home/(s.home+s.away)*100) : 50);
     return `<div style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#ccc;margin-bottom:3px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--fg-2);margin-bottom:3px;">
         <span style="font-weight:bold;">${hVal}</span>
-        <span style="color:#555;">${s.label}</span>
+        <span style="color:var(--fg-4);">${s.label}</span>
         <span style="font-weight:bold;">${aVal}</span>
       </div>
-      <div style="height:4px;background:#0d150d;border-radius:2px;overflow:hidden;">
-        <div style="height:100%;width:${pctW}%;background:linear-gradient(90deg,#0077b6,#00b4d8);border-radius:2px;"></div>
+      <div style="height:4px;background:var(--surface-1);border-radius:var(--r-xs);overflow:hidden;">
+        <div style="height:100%;width:${pctW}%;background:linear-gradient(90deg,var(--info),var(--primary));border-radius:var(--r-xs);"></div>
       </div>
     </div>`;
   }).join('');
@@ -842,9 +898,9 @@ function renderTrackerBets(m) {
     { label: '2 ' + (m.away.split(' ')[0]||'Гість'), odds: m.awayOdds, outcome:'away' },
   ].map(b => `
     <div onclick="openBetSlip('${m.id}','${b.outcome}','${b.outcome==='home'?m.home:b.outcome==='away'?m.away:'Нічия'}')"
-         style="background:#0a150a;border:1px solid #1a2a1a;border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all 0.15s;"
+         style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;text-align:center;cursor:pointer;transition:all 0.15s;"
          onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''">
-      <div style="font-size:10px;color:#777;margin-bottom:3px;">${b.label}</div>
+      <div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;">${b.label}</div>
       <div style="font-size:18px;font-weight:900;color:var(--accent);">${b.odds}</div>
     </div>`).join('');
 }

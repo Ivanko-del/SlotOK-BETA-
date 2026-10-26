@@ -11,8 +11,8 @@ function loadLottery() {
     // My tickets
     const mine=Object.entries(data.tickets||{}).filter(([_,t])=>t.user===currentUser);
     const myEl=document.getElementById('lotteryMyTickets');
-    if(myEl) myEl.innerHTML=mine.length?mine.map(([id,t])=>`<div class="box" style="padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>🎟️ Квиток #${id.slice(-4).toUpperCase()}</span><span style="color:#555;font-size:12px;">${new Date(t.ts).toLocaleDateString('uk-UA')}</span></div>`).join(''):
-      '<div style="color:#555;text-align:center;padding:14px;">Ви ще не купили квитків</div>';
+    if(myEl) myEl.innerHTML=mine.length?mine.map(([id,t])=>`<div class="box" style="padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>🎟️ Квиток #${id.slice(-4).toUpperCase()}</span><span style="color:var(--fg-4);font-size:12px;">${new Date(t.ts).toLocaleDateString('uk-UA')}</span></div>`).join(''):
+      '<div style="color:var(--fg-4);text-align:center;padding:14px;">Ви ще не купили квитків</div>';
     // Countdown to Sunday 20:00
     const now=new Date(), next=new Date(); next.setDate(now.getDate()+(7-now.getDay())%7||7); next.setHours(20,0,0,0);
     document.getElementById('lotteryCountdown').textContent=next.toLocaleDateString('uk-UA')+' о 20:00';
@@ -22,8 +22,8 @@ function loadLottery() {
     const el=document.getElementById('lotteryHistory');
     if(!el) return;
     const d=snap.val();
-    if(!d){el.innerHTML='<div style="color:#555;text-align:center;padding:14px;">Ще не було розіграшів</div>';return;}
-    el.innerHTML=Object.values(d).reverse().map(h=>`<div class="box" style="padding:10px;margin-bottom:6px;"><div style="font-weight:bold;color:#d4af37;">👑 ${h.winner}</div><div style="font-size:12px;color:#555;">+₴${formatNumber(h.prize)} • ${new Date(h.ts).toLocaleDateString('uk-UA')}</div></div>`).join('');
+    if(!d){el.innerHTML='<div style="color:var(--fg-4);text-align:center;padding:14px;">Ще не було розіграшів</div>';return;}
+    el.innerHTML=Object.values(d).reverse().map(h=>`<div class="box" style="padding:10px;margin-bottom:6px;"><div style="font-weight:bold;color:var(--accent);">👑 ${h.winner}</div><div style="font-size:12px;color:var(--fg-4);">+₴${formatNumber(h.prize)} • ${new Date(h.ts).toLocaleDateString('uk-UA')}</div></div>`).join('');
   });
 }
 function buyLotteryTickets() {
@@ -138,7 +138,7 @@ async function doSpinDaily() {
     else {
       dailySpinAngle=current;
       document.getElementById('dailySpinResult').textContent='🎉 +₴'+formatNumber(prize)+'!';
-      document.getElementById('dailySpinResult').style.color='#d4af37';
+      document.getElementById('dailySpinResult').style.color='var(--accent)';
       document.getElementById('dailySpinStatus').textContent='Приходь завтра!';
       if(!server) {
         db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(prize));
@@ -207,12 +207,12 @@ function renderEventCalendar() {
   el.innerHTML=SCHEDULED_EVENTS.map(e=>{
     const daysUntil=(e.day-dow+7)%7||7;
     const dateLabel=daysUntil===1?'Завтра':daysUntil<7?`Через ${daysUntil} дні`:'Цього тижня';
-    return `<div style="background:var(--box);border:1px solid ${e.color}44;border-left:4px solid ${e.color};border-radius:12px;padding:14px;margin-bottom:8px;">
+    return `<div style="background:var(--box);border:1px solid ${e.color}44;border-left:4px solid ${e.color};border-radius:var(--r-lg);padding:14px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <span style="font-size:24px;">${e.icon}</span>
-        <div><div style="font-weight:bold;color:${e.color};">${e.name}</div><div style="font-size:12px;color:#555;">${dateLabel} о ${e.hour}:00</div></div>
+        <div><div style="font-weight:bold;color:${e.color};">${e.name}</div><div style="font-size:12px;color:var(--fg-4);">${dateLabel} о ${e.hour}:00</div></div>
       </div>
-      <div style="font-size:13px;color:#aaa;">${e.desc}</div>
+      <div style="font-size:13px;color:var(--fg-2);">${e.desc}</div>
     </div>`;
   }).join('');
 }
@@ -223,7 +223,7 @@ function initEventCalendarMini() {
   const now=new Date(), dow=now.getDay();
   const next=SCHEDULED_EVENTS.map(e=>({...e,days:(e.day-dow+7)%7||7})).sort((a,b)=>a.days-b.days)[0];
   if(next && labelEl) labelEl.textContent=next.icon+' '+next.name+' — через '+next.days+'д';
-  el.innerHTML=SCHEDULED_EVENTS.slice(0,4).map(e=>`<div style="background:${e.color}22;border:1px solid ${e.color}55;border-radius:10px;padding:8px 10px;white-space:nowrap;flex-shrink:0;"><div style="font-size:16px;">${e.icon}</div><div style="font-size:10px;color:${e.color};font-weight:bold;">${e.name}</div></div>`).join('');
+  el.innerHTML=SCHEDULED_EVENTS.slice(0,4).map(e=>`<div style="background:${e.color}22;border:1px solid ${e.color}55;border-radius:var(--r-md);padding:8px 10px;white-space:nowrap;flex-shrink:0;"><div style="font-size:16px;">${e.icon}</div><div style="font-size:10px;color:${e.color};font-weight:bold;">${e.name}</div></div>`).join('');
 }
 
 // ══════════════════════════════════════════════════════
@@ -248,45 +248,91 @@ if(typeof addWager==='function') {
 // ══════════════════════════════════════════════════════
 // 🎨 ACCENT COLOR SYSTEM
 // ══════════════════════════════════════════════════════
-function setAccentColor(hex, el) {
-  if(!hex) return;
-  document.documentElement.style.setProperty('--accent', hex);
-  localStorage.setItem('slotok_accent', hex);
-  document.querySelectorAll('.accent-dot').forEach(function(d){ d.style.border='2px solid transparent'; });
-  if(el) el.style.border = '2px solid #fff';
-  var prev = document.getElementById('accentColorPreview');
-  if(prev) prev.style.background = hex;
-  var pick = document.getElementById('accentColorCustom');
-  if(pick) pick.value = hex;
+// Готові акценти — колишні кольорові теми. Значення для кожної теми живуть
+// у CSS (html[data-accent]), тут — лише назви й колір для зразка.
+const ACCENT_PRESETS = {
+  coral:  { label: 'Помаранч', dark: '#FF7A3D' },
+  blue:   { label: 'Синя',     dark: '#6FA8FF' },
+  neon:   { label: 'Неон',     dark: '#C38BFF' },
+  matrix: { label: 'Матриця',  dark: '#6BEA8C' },
+  sakura: { label: 'Сакура',   dark: '#FF8CC6' },
+};
+// Старі збережені hex-акценти → пресети
+const LEGACY_ACCENT_HEX = { '#d4af37': 'coral', '#ff9f43': 'coral', '#c9a0ff': 'neon', '#4a9eff': 'blue', '#00e5ff': 'blue', '#3dd68c': 'matrix', '#ff6b6b': 'sakura', '#ff4081': 'sakura' };
+
+function currentAccentName() {
+  const v = localStorage.getItem('slotok_accent') || 'coral';
+  return ACCENT_PRESETS[v] ? v : (LEGACY_ACCENT_HEX[v.toLowerCase()] || 'custom');
+}
+
+function hexToRgbChannels(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// value — назва пресету ('coral', 'blue', …) або будь-який #rrggbb з піпетки.
+function setAccentColor(value, el, silent) {
+  if(!value) return;
+  const root = document.documentElement;
+  let name = ACCENT_PRESETS[value] ? value : LEGACY_ACCENT_HEX[String(value).toLowerCase()];
+  ['--accent', '--accent-rgb', '--on-accent'].forEach((v) => root.style.removeProperty(v));
+  if (name) {
+    if (name === 'coral') root.removeAttribute('data-accent');
+    else root.setAttribute('data-accent', name);
+    localStorage.setItem('slotok_accent', name);
+  } else {
+    const rgb = hexToRgbChannels(value);
+    if (!rgb) return;
+    root.removeAttribute('data-accent');
+    root.style.setProperty('--accent', value);
+    root.style.setProperty('--accent-rgb', rgb.join(' '));
+    // Текст на акценті: темний на світлому кольорі, білий на темному
+    const lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+    root.style.setProperty('--on-accent', lum > 0.55 ? '#1A0E08' : '#FFFFFF');
+    localStorage.setItem('slotok_accent', value);
+    name = 'custom';
+  }
+  document.querySelectorAll('[data-accent-option]').forEach((d) => {
+    const on = d.getAttribute('data-accent-option') === name;
+    d.classList.toggle('active', on);
+    d.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+  const pick = document.getElementById('accentColorCustom');
+  if (pick && name === 'custom') pick.value = value;
+  if (!silent && el !== null && typeof notify === 'function' && el) notify('Акцент змінено', 'info');
 }
 function loadAccentColor() {
-  var saved = localStorage.getItem('slotok_accent');
-  if(saved) {
-    document.documentElement.style.setProperty('--accent', saved);
-    var prev = document.getElementById('accentColorPreview');
-    if(prev) prev.style.background = saved;
-    var pick = document.getElementById('accentColorCustom');
-    if(pick) pick.value = saved;
-  }
+  setAccentColor(localStorage.getItem('slotok_accent') || 'coral', null, true);
   loadSavedBackground();
 }
 
 // ─── BACKGROUND ───
+// Фонові відтінки — на токенах, тож однаково працюють у темній і світлій темі.
 var BG_PRESETS = {
-  dark:'#050505',navy:'linear-gradient(135deg,#050515,#0a0a2e)',
-  forest:'linear-gradient(135deg,#050f05,#0a1a0a)',
-  crimson:'linear-gradient(135deg,#150505,#2a0808)',
-  purple:'linear-gradient(135deg,#0d0517,#1a0530)',
-  ocean:'linear-gradient(135deg,#020d1a,#051a2e)',
-  sunset:'linear-gradient(135deg,#1a0a00,#2d1500)'
+  dark:    '',
+  navy:    'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--info) 14%, var(--bg)))',
+  forest:  'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--pos) 12%, var(--bg)))',
+  crimson: 'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--neg) 12%, var(--bg)))',
+  purple:  'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--special) 14%, var(--bg)))',
+  ocean:   'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--primary) 12%, var(--bg)))',
+  sunset:  'linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--accent) 12%, var(--bg)))'
 };
+// Раніше зберігали сам рядок градієнта — впізнаємо старі значення за кольором.
+var LEGACY_BG = { '#050505':'dark', '#0a0a2e':'navy', '#0a1a0a':'forest', '#2a0808':'crimson', '#1a0530':'purple', '#051a2e':'ocean', '#2d1500':'sunset' };
+function bgPresetKey(v) {
+  if (BG_PRESETS[v] !== undefined) return v;
+  for (var hex in LEGACY_BG) if (String(v).indexOf(hex) !== -1) return LEGACY_BG[hex];
+  return null;
+}
 function setBgPreset(key, el) {
-  document.querySelectorAll('.bg-preset').forEach(function(d){ d.style.border='2px solid transparent'; });
-  if(el) el.style.border = '2px solid var(--accent)';
-  var bg = BG_PRESETS[key] || '#050505';
-  applyBackground(bg);
+  document.querySelectorAll('.bg-preset').forEach(function(d){ d.classList.remove('active'); d.setAttribute('aria-pressed','false'); });
+  if(el) { el.classList.add('active'); el.setAttribute('aria-pressed','true'); }
+  if (BG_PRESETS[key] === undefined) key = 'dark';
+  applyBackground(BG_PRESETS[key]);
   localStorage.setItem('slotok_bg_type','preset');
-  localStorage.setItem('slotok_bg_value', bg);
+  localStorage.setItem('slotok_bg_value', key);
 }
 function setBgCustomColor(hex) {
   applyBackground(hex);
@@ -333,6 +379,9 @@ function loadSavedBackground() {
       if(preview) preview.style.display='block';
       if(img) img.src = photo;
     }
+  } else if(type === 'preset' && value) {
+    var key = bgPresetKey(value);
+    if (key) applyBackground(BG_PRESETS[key]);
   } else if(value) {
     applyBackground(value);
   }

@@ -224,25 +224,25 @@ function loadMaintenanceStatus() {
 function loadOnlinePlayersAdmin() {
   const el = document.getElementById('adminOnlineList');
   if(!el) return;
-  el.innerHTML = '<div style="color:#555;text-align:center;padding:14px;">Завантаження...</div>';
+  el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;">Завантаження...</div>';
   db.ref('users').orderByChild('lastSeen').limitToLast(40).once('value').then(snap => {
     const users = snap.val() || {};
     const now = Date.now();
     const online = Object.entries(users)
       .filter(([nick, u]) => u.lastSeen && now - u.lastSeen < 300000 && !u.isBot)
       .sort((a,b) => (b[1].lastSeen||0) - (a[1].lastSeen||0));
-    if(!online.length) { el.innerHTML = '<div style="color:#444;text-align:center;padding:14px;">Нікого онлайн</div>'; return; }
+    if(!online.length) { el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:14px;">Нікого онлайн</div>'; return; }
     el.innerHTML = online.map(([nick, u]) => {
       const minsAgo = Math.floor((now - u.lastSeen) / 60000);
       const statusColor = minsAgo < 2 ? '#3dd68c' : '#f39c12';
-      return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
-          <div style="font-size:10px;color:#555;">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
+          <div style="font-size:10px;color:var(--fg-4);">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
         </div>
-        <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgba(231,76,60,.08);border:1px solid #333;border-radius:6px;color:#888;font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
-        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value='${nick}':null;switchTab('pm')" style="background:rgba(74,158,255,.08);border:1px solid #333;border-radius:6px;color:#4a9eff;font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
+        <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
+        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value='${nick}':null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
       </div>`;
     }).join('');
   });
@@ -303,12 +303,12 @@ function filterGameToggleList(query) {
   const q = (query || '').trim().toLowerCase();
   const disabled = _gameToggleDisabledCache;
   const list = q ? ADMIN_TOGGLEABLE_GAMES.filter(g => g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) : ADMIN_TOGGLEABLE_GAMES;
-  if(!list.length) { el.innerHTML = '<div style="color:#555;text-align:center;padding:10px;font-size:12px;">Нічого не знайдено</div>'; return; }
+  if(!list.length) { el.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:10px;font-size:12px;">Нічого не знайдено</div>'; return; }
   el.innerHTML = list.map(g => {
     const isOff = !!disabled[g.id];
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0d0d0d;border-radius:10px;margin-bottom:6px;">
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:6px;">
       <span style="font-size:12px;">${g.name}</span>
-      <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgba(231,76,60,.15)':'rgba(61,214,140,.15)'};border:1px solid ${isOff?'#e74c3c':'#3dd68c'};border-radius:8px;padding:4px 12px;color:${isOff?'#e74c3c':'#3dd68c'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
+      <button onclick="toggleGameEnabled('${g.id}')" style="background:${isOff?'rgb(var(--neg-rgb) / 0.15)':'rgb(var(--pos-rgb) / 0.15)'};border:1px solid ${isOff?'var(--neg)':'var(--pos)'};border-radius:var(--r-md);padding:4px 12px;color:${isOff?'var(--neg)':'var(--pos)'};font-size:11px;font-weight:700;cursor:pointer;">${isOff?'⛔ Вимкнена':'✅ Активна'}</button>
     </div>`;
   }).join('');
 }
@@ -327,14 +327,14 @@ function toggleGameEnabled(gameId) {
 function loadAdminActionLog() {
   const el = document.getElementById('adminActionLog');
   if(!el) return;
-  el.innerHTML = '<div style="color:#555;">Завантаження...</div>';
+  el.innerHTML = '<div style="color:var(--fg-4);">Завантаження...</div>';
   db.ref('admin_action_log').limitToLast(30).once('value').then(snap => {
     const entries = Object.values(snap.val() || {}).sort((a,b) => b.ts - a.ts);
-    if(!entries.length) { el.innerHTML = '<div style="color:#444;">Дій ще не було</div>'; return; }
+    if(!entries.length) { el.innerHTML = '<div style="color:var(--fg-4);">Дій ще не було</div>'; return; }
     const icons = { ban:'🚫', unban:'✅', mute:'🔇', unmute:'🔊', maintenance:'🚧', note:'📝', game_toggle:'🎮' };
-    el.innerHTML = entries.map(e => `<div style="padding:6px 0;border-bottom:1px solid #1a1a1a;">
-      <span style="color:#888;">${icons[e.action]||'⚙️'} <b style="color:#d4af37;">${e.admin}</b> — ${e.action}</span>
-      <div style="color:#555;font-size:10px;margin-top:2px;">${e.details} · ${new Date(e.ts).toLocaleString('uk-UA')}</div>
+    el.innerHTML = entries.map(e => `<div style="padding:6px 0;border-bottom:1px solid var(--line);">
+      <span style="color:var(--fg-3);">${icons[e.action]||'⚙️'} <b style="color:var(--accent);">${e.admin}</b> — ${e.action}</span>
+      <div style="color:var(--fg-4);font-size:10px;margin-top:2px;">${e.details} · ${new Date(e.ts).toLocaleString('uk-UA')}</div>
     </div>`).join('');
   });
 }

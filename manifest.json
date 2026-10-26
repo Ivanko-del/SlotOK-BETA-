@@ -5,12 +5,29 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
-  "orientation": "portrait",
+  "background_color": "#0E1020",
+  "theme_color": "#0E1020",
+  "orientation": "any",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "description": "SlotOK — казино для своїх на віртуальні гривні: слоти, краш, рулетка, турніри й дуелі з друзями.",
+  "lang": "uk"
 }

@@ -56,6 +56,8 @@
 | 38-banners-moderation | банери, модерація |
 | 39-chess | шахи |
 | 40-celebration-winback-onboarding | святкування виграшу, «Ми скучили», онбординг, mystery box, стрічка друзів |
+| 41-ui-confirm | `confirmAction()` — діалог підтвердження критичних дій |
+| 42-game-ui | спільне поле ставки (`.bet-field`) і головна кнопка (`.game-cta`) для всіх ігор |
 
 Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:
 їх читає і браузер, і сервер.

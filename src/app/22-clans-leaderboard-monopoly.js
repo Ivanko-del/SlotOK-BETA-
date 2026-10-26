@@ -42,17 +42,17 @@ function loadPublicClans() {
     const list = document.getElementById('clanListPublic');
     if(!list) return;
     const data = snap.val();
-    if(!data) { list.innerHTML = '<div style="color:#777;font-size:13px;padding:10px 0;text-align:center;">Кланів поки немає</div>'; return; }
+    if(!data) { list.innerHTML = '<div style="color:var(--fg-3);font-size:13px;padding:10px 0;text-align:center;">Кланів поки немає</div>'; return; }
     list.innerHTML = '';
     Object.entries(data).forEach(([id, c]) => {
       const memberCount = c.members ? Object.keys(c.members).length : 1;
       list.innerHTML += '<div class="clan-banner member" style="margin-bottom:8px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-          '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + escapeHtml(c.tag) + ']</span>' +
+          '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:var(--r-sm);">[' + escapeHtml(c.tag) + ']</span>' +
           '<span class="clan-name" style="font-size:16px;margin-left:8px;">' + escapeHtml(c.name) + '</span></div>' +
-          '<span style="color:#777;font-size:12px;">' + memberCount + ' гравців</span>' +
+          '<span style="color:var(--fg-3);font-size:12px;">' + memberCount + ' гравців</span>' +
         '</div>' +
-        '<div style="color:#777;font-size:12px;margin:6px 0;">' + (c.desc||'') + '</div>' +
+        '<div style="color:var(--fg-3);font-size:12px;margin:6px 0;">' + (c.desc||'') + '</div>' +
         '<button class="btn-green" style="padding:8px;font-size:12px;" onclick="joinClan(\'' + id + '\')">' + (c.privacy === 'private' ? '📩 Подати заявку' : '➕ Вступити') + '</button>' +
       '</div>';
     });
@@ -245,11 +245,11 @@ function loadMyClan(clanId) {
     const members = c.members ? Object.keys(c.members) : [];
     banner.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-        '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:6px;">[' + escapeHtml(c.tag) + ']</span>' +
+        '<div><span style="font-size:11px;color:var(--green);border:1px solid var(--green);padding:1px 6px;border-radius:var(--r-sm);">[' + escapeHtml(c.tag) + ']</span>' +
         '<span class="clan-name" style="font-size:18px;margin-left:8px;">' + escapeHtml(c.name) + '</span></div>' +
         '<span style="font-size:20px;">' + (c.leader===currentUser?'👑':'') + '</span>' +
       '</div>' +
-      '<div style="color:#aaa;font-size:13px;margin-bottom:10px;">' + (c.desc||'') + '</div>' +
+      '<div style="color:var(--fg-2);font-size:13px;margin-bottom:10px;">' + (c.desc||'') + '</div>' +
       '<div class="clan-stats">' +
         '<div class="clan-stat"><div class="clan-stat-v">' + members.length + '</div><div class="clan-stat-l">Учасників</div></div>' +
         '<div class="clan-stat"><div class="clan-stat-v">' + formatNumber(c.bank||0) + '₴</div><div class="clan-stat-l">Банк клану</div></div>' +
@@ -260,7 +260,7 @@ function loadMyClan(clanId) {
         '<button class="btn-gold" style="width:auto;flex-shrink:0;padding:0 16px;" onclick="depositToClanBank(\'' + clanId + '\', parseInt(document.getElementById(\'clanBankDepositInput\').value))">🏦 Внести</button>' +
       '</div>';
     if(c.leader === currentUser) {
-      banner.innerHTML += '<button class="btn-outline" style="width:auto;margin-top:8px;color:#e74c3c;" onclick="disbandClan(\'' + clanId + '\')">💥 Розпустити клан</button>';
+      banner.innerHTML += '<button class="btn-outline" style="width:auto;margin-top:8px;color:var(--neg);" onclick="disbandClan(\'' + clanId + '\')">💥 Розпустити клан</button>';
     }
 
     const myRole = c.members[currentUser] && c.members[currentUser].role || 'member';
@@ -294,7 +294,7 @@ function loadMyClan(clanId) {
       perkEl.innerHTML = '<div class="section-header">💎 Кланові перки</div>' +
         '<div class="box" style="padding:10px;">' +
           '<div style="font-size:13px;">' + tier.label + ': <b style="color:var(--accent);">+' + (tier.cashback*100).toFixed(2) + '%</b> кешбеку для всіх учасників' + (tier.min>=25000?' + колір тегу/банера':'') + (tier.min>=100000?' + знижка 50% на створення клану':tier.min>=25000?' + знижка 25% на створення клану':'') + '</div>' +
-          (nextTier ? '<div style="font-size:11px;color:#777;margin-top:4px;">До наступного тіру: ' + formatNumber(nextTier.min - (c.bank||0)) + '₴</div>' : '<div style="font-size:11px;color:var(--green);margin-top:4px;">Максимальний тір!</div>') +
+          (nextTier ? '<div style="font-size:11px;color:var(--fg-3);margin-top:4px;">До наступного тіру: ' + formatNumber(nextTier.min - (c.bank||0)) + '₴</div>' : '<div style="font-size:11px;color:var(--green);margin-top:4px;">Максимальний тір!</div>') +
         '</div>';
     }
 
@@ -317,7 +317,7 @@ function loadMyClan(clanId) {
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;" onclick="promoteOfficer(\'' + clanId + '\',' + jsArg(name) + ')">👑</button>'
           : '') +
         (canKick ?
-          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:#e74c3c;" onclick="kickMember(\'' + clanId + '\',' + jsArg(name) + ')">👢</button>'
+          '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:4px;color:var(--neg);" onclick="kickMember(\'' + clanId + '\',' + jsArg(name) + ')">👢</button>'
           : '') +
       '</div>';
     });
@@ -340,11 +340,11 @@ function loadMyClan(clanId) {
           '<span style="color:var(--accent);font-size:12px;font-weight:bold;">+' + t.reward + '₴</span>' +
         '</div>' +
         '<div class="quest-prog-bar"><div class="quest-prog-fill" style="width:' + pct + '%"></div></div>' +
-        '<div style="font-size:11px;color:#777;">' + formatNumber(prog) + ' / ' + formatNumber(t.goal) + '</div>' +
+        '<div style="font-size:11px;color:var(--fg-3);">' + formatNumber(prog) + ' / ' + formatNumber(t.goal) + '</div>' +
         (isPaid ? '<div style="color:var(--green);font-size:12px;margin-top:4px;">✅ Виконано і виплачено</div>' :
           done ? (isLeaderOrOfficer
             ? '<button class="btn-gold" style="width:auto;padding:4px 12px;font-size:11px;margin-top:6px;" onclick="claimClanTask(\'' + clanId + '\',\'' + t.id + '\')">🎁 Забрати нагороду</button>'
-            : '<div style="color:#777;font-size:12px;margin-top:4px;">⏳ Очікує на лідера/офіцера</div>')
+            : '<div style="color:var(--fg-3);font-size:12px;margin-top:4px;">⏳ Очікує на лідера/офіцера</div>')
           : '') +
       '</div>';
     }).join('');
@@ -377,7 +377,7 @@ function loadClanLeague() {
   if(!el) return;
   db.ref('clans').orderByChild('score').limitToLast(20).once('value', snap => {
     const data = snap.val();
-    if(!data) { el.innerHTML = '<div style="color:#777;font-size:13px;padding:10px 0;text-align:center;">Ліга поки порожня</div>'; return; }
+    if(!data) { el.innerHTML = '<div style="color:var(--fg-3);font-size:13px;padding:10px 0;text-align:center;">Ліга поки порожня</div>'; return; }
     const ranked = Object.entries(data).sort((a,b) => (b[1].score||0) - (a[1].score||0));
     el.innerHTML = ranked.map(([id, c], i) => {
       const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':('#'+(i+1));
@@ -549,7 +549,7 @@ function renderMonoBoard() {
       div.className = 'mono-cell ' + (cell.type==='corner'?'corner':'') + ' ' + stripeClass + ' ' + ownerClass;
       div.dataset.pos = cell.pos;
 
-      if(cell.color) div.style.borderColor = MONO_COLORS[cell.color]||'#999';
+      if(cell.color) div.style.borderColor = MONO_COLORS[cell.color]||'var(--fg-3)';
 
       const cornerIcons = {0:'🏁',10:'⛓️',20:'🌳',30:'👮'};
       if(cell.type === 'corner') {

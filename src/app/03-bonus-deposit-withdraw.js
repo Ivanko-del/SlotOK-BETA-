@@ -31,7 +31,7 @@ function openDailyBonus() {
         content.innerHTML = `
             <div class="bonus-icon">🎁</div>
             <h2 style="color:var(--accent);">Щоденний Бонус!</h2>
-            <div style="color:#aaa; margin-bottom:10px;">День ${streak + 1} серії</div>
+            <div style="color:var(--fg-2); margin-bottom:10px;">День ${streak + 1} серії</div>
             <div class="bonus-amount">+${bonusAmount} ₴</div>
             <div class="streak-dots">
                 ${DAILY_BONUSES.map((b, i) => `
@@ -40,7 +40,7 @@ function openDailyBonus() {
                     </div>
                 `).join('')}
             </div>
-            <div style="color:#aaa; font-size:12px; margin-bottom:20px;">7 днів поспіль = 1000₴</div>
+            <div style="color:var(--fg-2); font-size:12px; margin-bottom:20px;">7 днів поспіль = 1000₴</div>
             <button class="btn-gold" style="font-size:18px; padding:18px;" onclick="claimDailyBonus(${bonusAmount})">
                 🎁 ЗАБРАТИ ${bonusAmount} ₴
             </button>
@@ -51,10 +51,10 @@ function openDailyBonus() {
         const m = Math.floor((msLeft % 3600000) / 60000);
         content.innerHTML = `
             <div style="font-size:60px; margin-bottom:20px;">⏰</div>
-            <h2 style="color:#777;">Вже забрано</h2>
-            <div style="color:#aaa; margin-bottom:10px;">Наступний бонус через:</div>
+            <h2 style="color:var(--fg-3);">Вже забрано</h2>
+            <div style="color:var(--fg-2); margin-bottom:10px;">Наступний бонус через:</div>
             <div style="font-size:36px; font-weight:900; color:var(--accent);">${h}год ${m}хв</div>
-            <div style="color:#aaa; margin:15px 0; font-size:13px;">Ваша серія: ${streak} днів 🔥</div>
+            <div style="color:var(--fg-2); margin:15px 0; font-size:13px;">Ваша серія: ${streak} днів 🔥</div>
             <div class="streak-dots">
                 ${DAILY_BONUSES.map((b, i) => `
                     <div class="streak-dot ${i < streak ? 'done' : ''}" title="${b}₴">
@@ -136,12 +136,12 @@ function showBankProcessing(accent, onDone) {
   const steps = [...BANK_LOADING_STEPS].sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
   const modal = document.createElement('div');
   modal.id = 'depReceiptModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.innerHTML = `
     <style>@keyframes depSpin{to{transform:rotate(360deg)}}</style>
-    <div style="background:#111;border:1.5px solid ${accent}4d;border-radius:22px;padding:36px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+    <div style="background:var(--surface-1);border:1.5px solid ${accent}4d;border-radius:var(--r-xl);padding:36px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
       <div style="width:48px;height:48px;border-radius:50%;border:3px solid ${accent}33;border-top-color:${accent};margin:0 auto 18px;animation:depSpin .8s linear infinite;"></div>
-      <div id="depLoadingText" style="font-size:13px;color:#aaa;min-height:18px;">${steps[0]}</div>
+      <div id="depLoadingText" style="font-size:13px;color:var(--fg-2);min-height:18px;">${steps[0]}</div>
     </div>`;
   document.body.appendChild(modal);
   let i = 0;
@@ -160,20 +160,20 @@ function showBankReceipt({ sign, amount, accent, title, subtitle, rows }) {
   document.getElementById('depReceiptModal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'depReceiptModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
-  const rowsHtml = rows.map(([k, v]) => `<div style="display:flex;justify-content:space-between;"><span>${k}</span><span style="color:#ccc;font-weight:600;">${v}</span></div>`).join('');
+  const rowsHtml = rows.map(([k, v]) => `<div style="display:flex;justify-content:space-between;"><span>${k}</span><span style="color:var(--fg-2);font-weight:600;">${v}</span></div>`).join('');
   modal.innerHTML = `
-    <div style="background:#111;border:1.5px solid ${accent}4d;border-radius:22px;padding:28px 20px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
+    <div style="background:var(--surface-1);border:1.5px solid ${accent}4d;border-radius:var(--r-xl);padding:28px 20px 20px;max-width:360px;width:100%;text-align:center;animation:popIn .3s ease;">
       <div style="width:64px;height:64px;border-radius:50%;background:${accent}1f;border:2px solid ${accent};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:${accent};">✓</div>
-      <div style="font-size:16px;font-weight:800;color:#eee;margin-bottom:4px;">${title}</div>
-      <div style="font-size:12px;color:#666;margin-bottom:18px;">${subtitle}</div>
-      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount}₴</div>
-      <div style="background:#0a0a0a;border-radius:12px;padding:12px 14px;text-align:left;font-size:12px;color:#888;display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+      <div style="font-size:16px;font-weight:800;color:var(--fg);margin-bottom:4px;">${title}</div>
+      <div style="font-size:12px;color:var(--fg-3);margin-bottom:18px;">${subtitle}</div>
+      <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount}₴</div>
+      <div style="background:var(--bg);border-radius:var(--r-lg);padding:12px 14px;text-align:left;font-size:12px;color:var(--fg-3);display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
         ${rowsHtml}
       </div>
-      <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:${accent}1f;border:1px solid ${accent}4d;border-radius:12px;padding:12px;color:${accent};cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
-      <div style="font-size:10px;color:#444;line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
+      <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:${accent}1f;border:1px solid ${accent}4d;border-radius:var(--r-lg);padding:12px;color:${accent};cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
+      <div style="font-size:10px;color:var(--fg-4);line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
     </div>`;
   document.body.appendChild(modal);
 }
@@ -190,9 +190,9 @@ function showDepositReceipt(amount, method, reqId) {
     title: 'Заявку прийнято', subtitle: 'Очікуйте підтвердження адміністратора',
     rows: [
       ['Спосіб', DEPOSIT_METHOD_NAMES[method] || method],
-      ['ID транзакції', `<span style="font-family:monospace;">${reqId.slice(-10)}</span>`],
+      ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
       ['Дата', dateStr],
-      ['Статус', '<span style="color:#f5b700;">Обробка</span>']
+      ['Статус', '<span style="color:var(--accent);">Обробка</span>']
     ]
   });
 }
@@ -535,10 +535,10 @@ function showWithdrawReceipt(amount, method, dest, reqId) {
     title: 'Заявку на вивід прийнято', subtitle: 'Кошти надійдуть протягом 1-24 год',
     rows: [
       ['Спосіб', WITHDRAW_METHOD_NAMES[method] || method],
-      ['Отримувач', `<span style="font-family:monospace;">${maskDest(dest)}</span>`],
-      ['ID транзакції', `<span style="font-family:monospace;">${reqId.slice(-10)}</span>`],
+      ['Отримувач', `<span style="font-family:var(--font-mono);">${maskDest(dest)}</span>`],
+      ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
       ['Дата', dateStr],
-      ['Статус', '<span style="color:#f5b700;">Обробка</span>']
+      ['Статус', '<span style="color:var(--accent);">Обробка</span>']
     ]
   });
 }

@@ -9,7 +9,7 @@ function updateSupportStatusUI() {
   const statusEl = document.getElementById('supportAdminStatus');
   if(statusEl) {
     statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
-    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : '#4a90e2';
+    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : 'var(--info)';
   }
   const banner = document.getElementById('supportInfoBanner');
   if(banner) {
@@ -70,21 +70,21 @@ function initSupportChat() {
         if(m.isVideo) {
           const vid = document.createElement('video');
           vid.src = m.mediaUrl;
-          vid.style.cssText = 'max-width:200px;max-height:180px;border-radius:10px;display:block;margin-top:6px;cursor:pointer;';
+          vid.style.cssText = 'max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:6px;cursor:pointer;';
           vid.controls = true; vid.muted = true; vid.playsInline = true;
           vid.onclick = () => { vid.requestFullscreen && vid.requestFullscreen(); };
           bubble.appendChild(vid);
         } else {
           const img = document.createElement('img');
           img.src = m.mediaUrl;
-          img.style.cssText = 'max-width:200px;max-height:180px;border-radius:10px;display:block;margin-top:6px;cursor:pointer;';
+          img.style.cssText = 'max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:6px;cursor:pointer;';
           img.onclick = () => window.open(m.mediaUrl, '_blank');
           bubble.appendChild(img);
         }
       }
 
       const time = document.createElement('div');
-      time.style.cssText = 'font-size:9px;color:#555;margin-top:4px;text-align:'+(isMe?'right':'left')+';';
+      time.style.cssText = 'font-size:9px;color:var(--fg-4);margin-top:4px;text-align:'+(isMe?'right':'left')+';';
       time.textContent = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
       bubble.appendChild(time);
 
@@ -107,7 +107,7 @@ function initSupportChat() {
   const statusEl = document.getElementById('supportAdminStatus');
   if(statusEl) {
     statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
-    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : '#4a90e2';
+    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : 'var(--info)';
   }
 }
 
@@ -561,7 +561,7 @@ async function aiSupportReply(userMsg) {
   const box = document.getElementById('supportChatBox');
   const typing = document.createElement('div');
   typing.id = 'aiTyping';
-  typing.style.cssText = 'display:flex;gap:4px;padding:8px 14px;background:#0d1a2e;border-radius:12px;width:fit-content;margin-bottom:8px;';
+  typing.style.cssText = 'display:flex;gap:4px;padding:8px 14px;background:color-mix(in srgb, var(--info) 13%, var(--surface-1));border-radius:var(--r-lg);width:fit-content;margin-bottom:8px;';
   typing.innerHTML = '<span style="animation:blink 1s infinite">•</span><span style="animation:blink 1s 0.3s infinite">•</span><span style="animation:blink 1s 0.6s infinite">•</span>';
   if(box) { box.appendChild(typing); box.scrollTop = box.scrollHeight; }
 

@@ -320,12 +320,12 @@ function loadHourlyHistory() {
     const el = document.getElementById('hourlyHistory');
     if(!el) return;
     const data = snap.val();
-    if(!data) { el.innerHTML = '<div style="color:#777;font-size:13px;text-align:center;padding:10px 0;">Немає записів</div>'; return; }
+    if(!data) { el.innerHTML = '<div style="color:var(--fg-3);font-size:13px;text-align:center;padding:10px 0;">Немає записів</div>'; return; }
     el.innerHTML = '';
     Object.values(data).reverse().forEach(h => {
       const t = new Date(h.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
-      el.innerHTML += `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:#111;border-radius:8px;margin-bottom:5px;font-size:13px;">
-        <span style="color:#777;">${t}</span>
+      el.innerHTML += `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:5px;font-size:13px;">
+        <span style="color:var(--fg-3);">${t}</span>
         <span style="color:var(--green);font-weight:bold;">+${h.amount} ₴</span>
       </div>`;
     });
@@ -590,9 +590,9 @@ function loadLootboxHistory() {
       const t = new Date(h.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
       const profit = h.win - h.price;
       const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
-      el.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#111;border-radius:8px;margin-bottom:5px;font-size:13px;">
+      el.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:5px;font-size:13px;">
         <span>${cfg ? cfg.icon : '📦'} ${cfg ? cfg.name : h.type}</span>
-        <span style="color:#777;">${t}</span>
+        <span style="color:var(--fg-3);">${t}</span>
         <span style="color:${color};font-weight:bold;">${profit >= 0 ? '+' : ''}${profit} ₴</span>
       </div>`;
     });
@@ -782,16 +782,18 @@ function renderFavoriteHearts() {
     const gameId = match[1];
     let heart = el.querySelector('.fav-heart-btn');
     if(!heart) {
-      heart = document.createElement('div');
+      heart = document.createElement('button');
+      heart.type = 'button';
       heart.className = 'fav-heart-btn';
-      heart.style.cssText = 'position:absolute;top:4px;left:4px;font-size:14px;z-index:2;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));';
-      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this); this.textContent = this.classList.contains('active') ? '❤️' : '🤍';`);
-      el.style.position = el.style.position || 'relative';
+      heart.setAttribute('aria-label', 'Додати в обрані');
+      heart.innerHTML = '<span class="ic i-heart fav-off" aria-hidden="true"></span><span class="ic i-heart-fill fav-on" aria-hidden="true"></span>';
+      heart.setAttribute('onclick', `toggleFavorite('${gameId}', this)`);
+      heart.addEventListener('keydown', e => e.stopPropagation());
       el.appendChild(heart);
     }
     const isFav = favoriteGames.includes(gameId);
     heart.classList.toggle('active', isFav);
-    heart.textContent = isFav ? '❤️' : '🤍';
+    heart.setAttribute('aria-pressed', isFav ? 'true' : 'false');
   });
 }
 
@@ -801,104 +803,17 @@ function showAdminBypassBanner(gameId) {
   const gameName = (ADMIN_TOGGLEABLE_GAMES.find(g => g.id === gameId) || {}).name || gameId;
   const banner = document.createElement('div');
   banner.id = 'adminBypassBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#3a0000,#5a0a0a);border-bottom:2px solid #e74c3c;padding:10px 16px;z-index:9997;display:flex;justify-content:space-between;align-items:center;gap:10px;';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 13%, var(--surface-1)),color-mix(in srgb, var(--neg) 22%, var(--surface-1)));border-bottom:2px solid var(--neg);padding:10px 16px;z-index:9997;display:flex;justify-content:space-between;align-items:center;gap:10px;';
   banner.innerHTML = `
-    <div style="font-size:12px;color:#ff8888;flex:1;">🛠 <b>${gameName}</b> вимкнена для гравців — ти бачиш її, бо ти адмін</div>
-    <button onclick="toggleGameEnabled('${gameId}');document.getElementById('adminBypassBanner').remove();switchTab('lobby')" style="background:#3dd68c;border:none;border-radius:8px;padding:6px 12px;color:#000;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Увімкнути</button>
-    <button onclick="document.getElementById('adminBypassBanner').remove()" style="background:none;border:1px solid #666;border-radius:8px;padding:6px 10px;color:#aaa;font-size:11px;cursor:pointer;">✕</button>
+    <div style="font-size:12px;color:var(--neg);flex:1;">🛠 <b>${gameName}</b> вимкнена для гравців — ти бачиш її, бо ти адмін</div>
+    <button onclick="toggleGameEnabled('${gameId}');document.getElementById('adminBypassBanner').remove();switchTab('lobby')" style="background:var(--pos);border:none;border-radius:var(--r-md);padding:6px 12px;color:var(--on-pos);font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Увімкнути</button>
+    <button onclick="document.getElementById('adminBypassBanner').remove()" style="background:none;border:1px solid var(--line-strong);border-radius:var(--r-md);padding:6px 10px;color:var(--fg-2);font-size:11px;cursor:pointer;">✕</button>
   `;
   document.body.appendChild(banner);
 }
 
-// Легкий 3D-тілт для ігрових карток на десктопі (мишка + hover) —
-// на тач-екранах і при prefers-reduced-motion не активується взагалі
-(function initTilt3D() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var SEL = '.game-card, .game-thumb, .casino-game-card';
-  var current = null;
-  function reset(elm) { if (elm) elm.style.transform = ''; }
-  document.addEventListener('pointermove', function(e) {
-    var el = e.target.closest ? e.target.closest(SEL) : null;
-    if (el !== current) { reset(current); current = el; }
-    if (!el) return;
-    var r = el.getBoundingClientRect();
-    var px = (e.clientX - r.left) / r.width;
-    var py = (e.clientY - r.top) / r.height;
-    var rx = (0.5 - py) * 8, ry = (px - 0.5) * 8;
-    el.style.transform = 'perspective(700px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-3px) translateZ(2px)';
-  }, { passive: true });
-  document.addEventListener('pointerleave', function() { reset(current); current = null; }, true);
-})();
-
-// Parallax depth on the lobby hero banner — glow drifts slower than the icon,
-// giving a layered 3D feel from cursor movement. Desktop-only, same gate as tilt3D.
-(function initHeroParallax() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const banner = document.getElementById('casinoHeroBanner');
-  const glow = document.getElementById('heroParallaxGlow');
-  const icon = document.getElementById('heroParallaxIcon');
-  if (!banner || !glow || !icon) return;
-  banner.addEventListener('pointermove', function(e) {
-    const r = banner.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    glow.style.transform = 'translate(' + (px * 24) + 'px,' + (py * 24) + 'px)';
-    icon.style.transform = 'translate(' + (px * 46) + 'px,' + (py * 46) + 'px)';
-  }, { passive: true });
-  banner.addEventListener('pointerleave', function() {
-    glow.style.transform = ''; icon.style.transform = '';
-  });
-})();
-
-// Same cursor-depth trick for the home-screen promo carousel — one listener
-// on the carousel, delegated to whichever slide is under the pointer.
-(function initBannerParallax() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const carousel = document.getElementById('bannerCarousel');
-  if (!carousel) return;
-  let current = null;
-  function reset(deco) { if (deco) deco.style.transform = ''; }
-  carousel.addEventListener('pointermove', function(e) {
-    const slide = e.target.closest ? e.target.closest('.banner-slide') : null;
-    const deco = slide ? slide.querySelector('.banner-deco') : null;
-    if (deco !== current) { reset(current); current = deco; }
-    if (!slide || !deco) return;
-    const r = slide.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    deco.style.transform = 'translate(' + (px * 20) + 'px,' + (py * 20) + 'px)';
-  }, { passive: true });
-  carousel.addEventListener('pointerleave', function() { reset(current); current = null; });
-})();
-
-// Desktop-only 3D tilt for the home hero card (balance/VIP) — mouse-follow
-// only, same pattern as the virtual card and banner parallax above. No
-// touch listener at all, so it can never fight page scroll or any swipe
-// gesture; on touch devices this whole block never registers a listener.
-(function initHeroTilt() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.addEventListener('DOMContentLoaded', function() {
-    const hero = document.querySelector('.lux-hero');
-    if (!hero) return;
-    hero.addEventListener('mousemove', function(e) {
-      const r = hero.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      const dx = (px - 0.5) * 6;
-      const dy = (0.5 - py) * 4;
-      hero.style.transition = 'transform 0.08s linear';
-      hero.style.transform = 'perspective(700px) rotateY(' + dx + 'deg) rotateX(' + dy + 'deg)';
-    });
-    hero.addEventListener('mouseleave', function() {
-      hero.style.transition = 'transform 0.5s cubic-bezier(0.22,1,.36,1)';
-      hero.style.transform = '';
-    });
-  });
-})();
+// 3D-нахили й паралакс карток прибрано в редизайні «Нічна друкарня»:
+// пласка мова друку замість «скла» й об'єму (DESIGN_SYSTEM.md).
 
 function switchTab(id, el) {
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
@@ -934,13 +849,15 @@ function switchTab(id, el) {
 
   try {
     const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(n => n.classList.remove('active'));
+    navItems.forEach(n => { n.classList.remove('active'); n.removeAttribute('aria-current'); });
+    let activeNav = null;
     if(el && el.classList && el.classList.contains('nav-item')) {
-      el.classList.add('active');
+      activeNav = el;
     } else {
       const navIdx = NAV_TAB_MAP[id];
-      if(navIdx !== undefined && navItems[navIdx]) navItems[navIdx].classList.add('active');
+      if(navIdx !== undefined && navItems[navIdx]) activeNav = navItems[navIdx];
     }
+    if(activeNav) { activeNav.classList.add('active'); activeNav.setAttribute('aria-current', 'page'); }
   } catch(e) { console.error('switchTab nav error:', e); }
 
   // Stop crash if leaving
@@ -1039,7 +956,7 @@ function switchTab(id, el) {
 }
 
 function scratchReset() {
-  document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:#777;grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
+  document.getElementById('scratchGrid').innerHTML = '<div style="text-align:center;color:var(--fg-3);grid-column:1/-1;padding:20px;">Купи картку щоб грати</div>';
   document.getElementById('scratchBuyBtn').classList.remove('hidden');
 }
 
