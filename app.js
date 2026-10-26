@@ -179,6 +179,28 @@ async function serverPlay(game, bet, params) {
   return { mode: 'error' };
 }
 
+// ── Серверні раунди з кількома ходами (api/round.js: Mines, Tower, Hi-Lo) ──
+// Повертає { mode: 'server', r } | { mode: 'legacy' } | { mode: 'error', status }.
+async function serverRound(action, game, extra) {
+  if(!(await serverAuthEnabled())) return { mode: 'legacy' };
+  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error', status: 401 }; }
+  let res;
+  try {
+    res = await fetch('/api/round', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() },
+      body: JSON.stringify(Object.assign({ action, game }, extra || {})),
+    });
+  } catch(e) { notify('Немає зʼєднання. Перевір інтернет.', 'error'); return { mode: 'error', status: 0 }; }
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  if(res.status === 200) return { mode: 'server', r: data };
+  if(res.status === 503 && data.error === 'not_configured') return { mode: 'legacy' };
+  notify(data.message || 'Не вдалося. Спробуй ще раз.', 'error');
+  return { mode: 'error', status: res.status, r: data };
+}
+
 async function serverSignIn(token) {
   if(typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase Auth не завантажився');
   await firebase.auth().signInWithCustomToken(token);
@@ -1903,7 +1925,92 @@ function startChests(){
 
 // --- Краш ---
 let crashInt; let isCrashPlaying = false; let crashActiveBet = 0;
-function startCrash() {
+// ── Crash на сервері (api/round.js) ──
+// Точку вибуху знає лише сервер; множник він рахує за своїм годинником.
+// Клієнт анімує той самий ріст (100 мс на тік) і раз на ~0.7 с питає «ще летить?».
+// Окремі прапорці: клік «Забрати» не має губитись, поки йде фоновий poll.
+let crashServer = false, crashPollInt = null, crashBusy = false, crashPolling = false, crashCashing = false;
+function crashStopTimers() {
+    if(crashInt) { clearInterval(crashInt); crashInt = null; }
+    if(crashPollInt) { clearInterval(crashPollInt); crashPollInt = null; }
+}
+function crashLostUI(point) {
+    crashStopTimers();
+    isCrashPlaying = false;
+    const shown = point ? Number(point).toFixed(2) : document.getElementById('crashDisplay').textContent.replace('x','');
+    document.getElementById('crashDisplay').textContent = shown + 'x';
+    notify("💥 КРАШ на " + shown + "x!", "error");
+    updateStreak(false); trackSession(false, crashActiveBet);
+    document.getElementById('crashDisplay').style.color = "red";
+    setTimeout(()=> { document.getElementById('crashDisplay').style.color = "white"; document.getElementById('crashDisplay').textContent = "1.00x"; }, 2000);
+    document.getElementById('crashBtn').classList.remove('hidden');
+    document.getElementById('crashCashoutBtn').classList.add('hidden');
+}
+function crashWonUI(w, mult) {
+    crashStopTimers();
+    isCrashPlaying = false;
+    const b = crashActiveBet;
+    document.getElementById('crashDisplay').textContent = Number(mult).toFixed(2) + 'x';
+    trackQuest('crashCashouts', 1);
+    trackLbStat('wins', w); trackLbStat('profit', w - b);
+    notify(`🚀 Виведено: +${w} ₴`, "success");
+    addToHistory(`Crash: +${w} (x${mult})`);
+    updateStreak(true); trackSession(true, b); recordBalanceHistory();
+    document.getElementById('crashBtn').classList.remove('hidden');
+    document.getElementById('crashCashoutBtn').classList.add('hidden');
+}
+function crashHandleServer(r) {
+    if(r.status === 'lost') return crashLostUI(r.view && r.view.point);
+    if(r.status === 'done') return crashWonUI(r.payout, r.mult);
+}
+async function crashPollServer() {
+    if(!isCrashPlaying || crashPolling || crashCashing) return;
+    crashPolling = true;
+    let srv;
+    try { srv = await serverRound('move', 'crash', { move: { poll: true } }); } finally { crashPolling = false; }
+    // Поки йде кешаут, відповідь poll ігноруємо — результат покаже сам кешаут.
+    if(!isCrashPlaying || crashCashing) return;
+    if(srv.mode === 'server') crashHandleServer(srv.r);
+    else if(srv.status === 409) crashLostUI();
+}
+async function startCrashServer(b) {
+    const autoCashoutTarget = parseFloat(document.getElementById('crashAutoCashout')?.value)||0;
+    crashBusy = true;
+    let srv;
+    try { srv = await serverRound('start', 'crash', { bet: b, params: { auto: autoCashoutTarget > 1 ? autoCashoutTarget : 0 } }); } finally { crashBusy = false; }
+    if(srv.mode !== 'server') return;
+    crashServer = true;
+    crashActiveBet = b;
+    addWager(b);
+    trackQuest('totalGames', 1);
+    trackQuest('weekWager', b);
+    trackLbStat('wager', b); trackLbStat('games', 1);
+    publishLiveBet('Краш','🚀', b, '');
+    document.getElementById('crashBtn').classList.add('hidden');
+    document.getElementById('crashCashoutBtn').classList.remove('hidden');
+    if(autoCashoutTarget > 1) document.getElementById('crashAutoLabel').textContent = autoCashoutTarget+'x';
+    isCrashPlaying = true;
+    let m = 1.00;
+    crashInt = setInterval(() => {
+        m += 0.03 + (m * 0.002);
+        document.getElementById('crashDisplay').textContent = m.toFixed(2) + 'x';
+        // Автокешаут рахує сервер; тут лише одразу питаємо, щоб показати результат.
+        if(autoCashoutTarget > 1 && m >= autoCashoutTarget) crashPollServer();
+    }, 100);
+    crashPollInt = setInterval(crashPollServer, 700);
+}
+
+async function startCrash() {
+    if(isCrashPlaying || crashBusy) return;
+    if(await serverAuthEnabled()) {
+        const b = validateBet(document.getElementById('betAmountCrash').value);
+        if(!b) return;
+        return startCrashServer(b);
+    }
+    crashServer = false;
+    return startCrashLegacy();
+}
+function startCrashLegacy() {
     // Без цього захисту швидкий повторний клік по "Старт" міг запустити ще один
     // setInterval поверх активного раунду: старий крашInt губився (перезаписувався
     // цим глобальним "crashInt"), лишався жити вічно й нескінченно накручував
@@ -1959,8 +2066,18 @@ function startCrash() {
     }, 100); 
 }
 
-function cashoutCrash() { 
+async function cashoutCrash() { 
     if(!isCrashPlaying) return;
+    if(crashServer) {
+        if(crashCashing) return;
+        const claim = parseFloat(document.getElementById('crashDisplay').textContent);
+        crashCashing = true;
+        let srv;
+        try { srv = await serverRound('cashout', 'crash', { claim }); } finally { crashCashing = false; }
+        if(srv.mode === 'server') crashHandleServer(srv.r);
+        else if(srv.status === 409) crashLostUI();
+        return;
+    }
     isCrashPlaying = false;  // скидаємо ОДРАЗУ щоб запобігти подвійному кліку
     clearInterval(crashInt); crashInt = null;
     const b = crashActiveBet;  // читаємо збережену ставку, не input
@@ -2163,13 +2280,20 @@ function updateMinesInfo() {
   if(el) el.textContent = `Безпечних: ${safe} · 1-й хід: ×${m1} · ${Math.min(5,safe)}-й хід: ×${m5}`;
 }
 
-function startMines() {
+let minesServer = false, minesBusy = false;
+async function startMines() {
     const bet = validateBet(document.getElementById('betAmountMines').value);
     if(!bet) return;
-    if(isMinesPlaying) return notify('Гра вже йде!', 'error');
+    if(isMinesPlaying || minesBusy) return notify('Гра вже йде!', 'error');
     minesCount = parseInt((document.getElementById('minesCount')||{value:'5'}).value) || 5;
     minesBet = bet;
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    // Де міни, знає лише сервер (api/round.js); у браузер вони приходять у кінці раунду.
+    minesBusy = true;
+    let srv;
+    try { srv = await serverRound('start', 'mines', { bet, params: { mines: minesCount } }); } finally { minesBusy = false; }
+    if(srv.mode === 'error') return;
+    minesServer = srv.mode === 'server';
+    if(!minesServer) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
     addWager(bet); trackQuest('totalGames', 1); trackQuest('weekWager', bet);
     trackLbStat('wager', bet); trackLbStat('games', 1);
     publishLiveBet('Mines','💣', bet, minesCount+'мін');
@@ -2181,7 +2305,7 @@ function startMines() {
     document.getElementById('minesMultDisplay').textContent = '×1.00';
     minesGrid = new Array(25).fill(0);
     let placed = 0;
-    while(placed < minesCount) { let idx = Math.floor(Math.random()*25); if(!minesGrid[idx]){ minesGrid[idx]=1; placed++; } }
+    if(!minesServer) while(placed < minesCount) { let idx = Math.floor(Math.random()*25); if(!minesGrid[idx]){ minesGrid[idx]=1; placed++; } }
     const container = document.getElementById('minesGrid');
     container.innerHTML = '';
     for(let i=0; i<25; i++){
@@ -2194,8 +2318,82 @@ function startMines() {
     playSound('click');
 }
 
+function minesRevealFromServer(mines, exceptIdx) {
+    const cells = document.getElementById('minesGrid').children;
+    (mines || []).forEach(i => {
+        minesGrid[i] = 1;
+        if(i === exceptIdx || !cells[i] || cells[i].classList.contains('revealed')) return;
+        cells[i].innerHTML = '<span style="font-size:20px;opacity:.5;">💣</span>';
+        cells[i].style.background = 'rgba(240,64,96,.12)';
+    });
+}
+async function clickMineCellServer(idx, el) {
+    if(minesBusy) return;
+    minesBusy = true;
+    let srv;
+    try { srv = await serverRound('move', 'mines', { move: { cell: idx } }); } finally { minesBusy = false; }
+    if(srv.mode !== 'server') {
+        if(srv.status === 409) { isMinesPlaying = false; document.getElementById('minesSetupArea').classList.remove('hidden'); document.getElementById('minesCashoutBtn').classList.add('hidden'); }
+        return;
+    }
+    const r = srv.r;
+    el.classList.add('revealed');
+    if(r.status === 'lost') {
+        minesGrid[idx] = 1;
+        el.innerHTML = '<span style="font-size:20px;">💣</span>';
+        el.style.background = 'rgba(240,64,96,.3)';
+        el.style.border = '2px solid rgba(240,64,96,.6)';
+        playSound('loss');
+        notify('💣 Бум! Програш', 'error');
+        isMinesPlaying = false;
+        minesRevealFromServer(r.view.mines, idx);
+        addToHistory('Mines: -'+minesBet);
+        setTimeout(() => {
+            document.getElementById('minesSetupArea').classList.remove('hidden');
+            document.getElementById('minesCashoutBtn').classList.add('hidden');
+        }, 2000);
+        return;
+    }
+    el.innerHTML = '<span style="font-size:20px;">💎</span>';
+    el.style.background = 'rgba(61,214,140,.15)';
+    el.style.border = '2px solid rgba(61,214,140,.4)';
+    playSound('click');
+    movesMade = r.view.opened.length;
+    currentMinesProfit = Math.floor(minesBet * r.mult);
+    document.getElementById('minesOpenCount').textContent = movesMade;
+    document.getElementById('minesCashoutAmount').textContent = '₴'+formatNumber(currentMinesProfit);
+    document.getElementById('minesMultDisplay').textContent = '×'+r.mult;
+    if(r.status === 'done') {
+        // Усі безпечні відкрито — сервер уже виплатив.
+        notify('🏆 Всі клітинки відкриті! Автокешаут!','success');
+        minesFinishCashoutUI(r.payout, r.view.mines);
+    }
+}
+function minesFinishCashoutUI(payout, mines) {
+    playSound('win');
+    const profit = payout - minesBet;
+    notify(`💎 +₴${formatNumber(profit)}`, 'success');
+    addToHistory(`Mines x${movesMade}: +${profit}`);
+    trackLbStat('wins', payout); trackLbStat('profit', profit);
+    if(profit >= 500) addToWinFeed('Mines', profit, payout/minesBet);
+    isMinesPlaying = false;
+    minesRevealFromServer(mines, -1);
+    const cells = document.getElementById('minesGrid').children;
+    for(let i=0;i<25;i++){
+        if(!minesGrid[i] && !cells[i].classList.contains('revealed')){
+            cells[i].innerHTML = '<span style="font-size:20px;opacity:.3;">💎</span>';
+        }
+        cells[i].onclick = null;
+    }
+    setTimeout(() => {
+        document.getElementById('minesSetupArea').classList.remove('hidden');
+        document.getElementById('minesCashoutBtn').classList.add('hidden');
+    }, 1800);
+}
+
 function clickMineCell(idx, el) {
     if(!isMinesPlaying || el.classList.contains('revealed')) return;
+    if(minesServer) return clickMineCellServer(idx, el);
     el.classList.add('revealed');
     if(minesGrid[idx]===1){
         el.innerHTML = '<span style="font-size:20px;">💣</span>';
@@ -2236,8 +2434,16 @@ function clickMineCell(idx, el) {
     }
 }
 
-function cashoutMines() {
+async function cashoutMines() {
     if(!isMinesPlaying || movesMade===0) return;
+    if(minesServer) {
+        if(minesBusy) return;
+        minesBusy = true;
+        let srv;
+        try { srv = await serverRound('cashout', 'mines'); } finally { minesBusy = false; }
+        if(srv.mode !== 'server') return;
+        return minesFinishCashoutUI(srv.r.payout, srv.r.view.mines);
+    }
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(currentMinesProfit));
     playSound('win');
     const profit = currentMinesProfit - minesBet;
@@ -2321,19 +2527,38 @@ let balloonActive = false, balloonMult = 1.0, balloonBet = 0;
 let balloonInterval = null, balloonPopTimeout = null;
 let balloonEl = null;
 
+// Balloon на сервері: коли лопне — знає лише сервер (як у Crash).
+let balloonServer = false, balloonPollInt = null, balloonStarting = false, balloonPolling = false, balloonCashing = false;
+async function balloonPollServer() {
+  if(!balloonActive || balloonPolling || balloonCashing) return;
+  balloonPolling = true;
+  let srv;
+  try { srv = await serverRound('move', 'balloon', { move: { poll: true } }); } finally { balloonPolling = false; }
+  if(!balloonActive || balloonCashing) return;
+  if(srv.mode === 'server' && srv.r.status === 'lost') burstBalloon();
+  else if(srv.mode !== 'server' && srv.status === 409) burstBalloon();
+}
 function startBalloon() {
   // Без цього гварда повторний виклик під час активного раунду губив
   // попередні balloonInterval/balloonPopTimeout (перезаписуючи ці глобальні
   // змінні) — старий interval лишався жити й далі крутив balloonMult, тепер
   // уже разом із новим — множник ріс у 2+ рази швидше за задумане, і кешаут
   // читав це роздуте число. Той самий клас багу, що й був у Краші.
-  if(balloonActive) return;
+  if(balloonActive || balloonStarting) return;
   const b = validateBet(document.getElementById('betAmountBalloon').value);
   if(!b) return;
+  return startBalloonRound(b);
+}
+async function startBalloonRound(b) {
+  balloonStarting = true;
+  let srv;
+  try { srv = await serverRound('start', 'balloon', { bet: b, params: {} }); } finally { balloonStarting = false; }
+  if(srv.mode === 'error') return;
+  balloonServer = srv.mode === 'server';
   balloonBet = b;
   balloonMult = 1.0;
   balloonActive = true;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
+  if(!balloonServer) db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
   addWager(b); trackQuest('totalGames',1); trackLbStat('wager',b); trackLbStat('games',1);
   document.getElementById('balloonStartBtn').classList.add('hidden');
   document.getElementById('balloonCashBtn').classList.remove('hidden');
@@ -2347,7 +2572,8 @@ function startBalloon() {
   const popTicks = Math.max(0, Math.ceil((popMult - 1) / 0.12));
   // За 250 мс до тіку, на якому множник досяг би точки вибуху (перший тік — 500 мс).
   const popIn = popTicks === 0 ? 300 : Math.min(popTicks * 500 - 250, 120000);
-  balloonPopTimeout = setTimeout(() => { if(balloonActive) burstBalloon(); }, popIn);
+  if(balloonServer) balloonPollInt = setInterval(balloonPollServer, 700);
+  else balloonPopTimeout = setTimeout(() => { if(balloonActive) burstBalloon(); }, popIn);
   balloonInterval = setInterval(updateBalloonMult, 500);
 }
 
@@ -2375,13 +2601,26 @@ function updateBalloonMult() {
   document.getElementById('balloonCashout').textContent = '₴'+formatNumber(win);
 }
 
-function cashBalloon() {
-  if(!balloonActive) return;
+async function cashBalloon() {
+  if(!balloonActive || balloonCashing) return;
+  let win;
+  if(balloonServer) {
+    balloonCashing = true;
+    let srv;
+    try { srv = await serverRound('cashout', 'balloon', { claim: balloonMult }); } finally { balloonCashing = false; }
+    if(srv.mode !== 'server') { if(srv.status === 409) burstBalloon(); return; }
+    if(srv.r.status === 'lost') return burstBalloon();
+    clearInterval(balloonPollInt); balloonPollInt = null;
+    balloonMult = srv.r.mult;
+    win = srv.r.payout;
+  }
   balloonActive = false;
   clearInterval(balloonInterval);
   clearTimeout(balloonPopTimeout);
-  const win = Math.floor(balloonBet * balloonMult);
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+  if(!balloonServer) {
+    win = Math.floor(balloonBet * balloonMult);
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+  }
   trackLbStat('wins', win); trackLbStat('profit', win - balloonBet);
   notify('🎈 +'+formatNumber(win)+'₴ (×'+balloonMult.toFixed(2)+')', 'success');
   addToHistory('Balloon: +'+win+' (×'+balloonMult.toFixed(2)+')');
@@ -2394,6 +2633,7 @@ function burstBalloon() {
   if(!balloonActive) return;
   balloonActive = false;
   clearInterval(balloonInterval);
+  if(balloonPollInt) { clearInterval(balloonPollInt); balloonPollInt = null; }
   const arena = document.getElementById('balloonArena');
   arena.querySelectorAll('.balloon').forEach(b => { b.textContent='💥'; b.style.transform='scale(2)'; });
   notify('💥 БАХ! Балон лопнув! Ставка загублена.', 'error');
@@ -5433,10 +5673,27 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '103';
+const CURRENT_VERSION = '104';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '104',
+    title: '📜 Оновлення v104 — Crash, Mines і ще 3 гри на сервері',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🎲 Чесна гра',
+        items: [
+          'Mines, Tower, Hi-Lo, Crash і Balloon тепер рахує сервер: де міни, яка наступна карта і коли вибухне ракета, телефон не знає до кінця раунду',
+          'Якщо закрити гру посеред раунду, виграш не пропаде: з наступним стартом його зараховано автоматично (або ставку повернуто, якщо ти ще не зробив жодного ходу)',
+          'Автокешаут у Crash спрацьовує навіть при поганому інтернеті — його виконує сервер',
+        ]
+      },
+    ]
+  },
   {
     version: '103',
     title: '📜 Оновлення v103 — чесний баланс міні-ігор',
@@ -13566,15 +13823,21 @@ function drawCurrencyChart(ctx, canvas, data, code) {
 // ============================================================
 let towerState = null;
 
-function startTower() {
+let towerBusy = false;
+async function startTower() {
+  if(towerBusy || (towerState && towerState.active)) return;
   const bet = validateBet(document.getElementById('towerBet').value);
   if(!bet) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  const diff = parseInt(document.getElementById('towerDiff').value) || 2;
+  towerBusy = true;
+  let srv;
+  try { srv = await serverRound('start', 'tower', { bet, params: { diff } }); } finally { towerBusy = false; }
+  if(srv.mode === 'error') return;
+  if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
   addWager(bet);
   playSound('click');
-  const diff = parseInt(document.getElementById('towerDiff').value) || 2;
   const cols = 4;
-  towerState = { bet, diff, cols, level:0, multiplier:1.0, active:true };
+  towerState = { bet, diff, cols, level:0, multiplier:1.0, active:true, server: srv.mode === 'server' };
   document.getElementById('towerStartArea').classList.add('hidden');
   document.getElementById('towerGameArea').classList.remove('hidden');
   document.getElementById('towerCashoutBtn').style.display = 'none';
@@ -13617,17 +13880,28 @@ function getTowerMult(level) {
   return parseFloat((Math.pow(1/prob, level+1) * 0.97).toFixed(2));
 }
 
-function towerClick(col) {
-  if(!towerState || !towerState.active) return;
+async function towerClick(col) {
+  if(!towerState || !towerState.active || towerBusy) return;
   const lv = towerState.level;
   const diff = towerState.diff;
   const cols = towerState.cols;
 
-  // Place mines randomly
-  const mines = [];
-  while(mines.length < diff) {
-    const m = Math.floor(Math.random()*cols);
-    if(!mines.includes(m)) mines.push(m);
+  let mines = [];
+  let serverDone = null;
+  if(towerState.server) {
+    // Міни поверху кидає сервер у момент ходу.
+    towerBusy = true;
+    let srv;
+    try { srv = await serverRound('move', 'tower', { move: { col } }); } finally { towerBusy = false; }
+    if(srv.mode !== 'server') { if(srv.status === 409) towerReset(); return; }
+    mines = srv.r.view.rows[srv.r.view.rows.length - 1].mines;
+    if(srv.r.status === 'done') serverDone = srv.r;
+  } else {
+    // Place mines randomly
+    while(mines.length < diff) {
+      const m = Math.floor(Math.random()*cols);
+      if(!mines.includes(m)) mines.push(m);
+    }
   }
 
   const isMine = mines.includes(col);
@@ -13654,7 +13928,10 @@ function towerClick(col) {
     towerState.level++;
     towerState.multiplier = getTowerMult(lv);
     updateTowerUI();
-    if(towerState.level >= 10) {
+    if(serverDone) {
+      // Верхівка — сервер уже виплатив.
+      towerFinishUI(serverDone.payout, serverDone.mult);
+    } else if(towerState.level >= 10) {
       // Max level!
       towerCashout();
     } else {
@@ -13674,12 +13951,25 @@ function updateTowerUI() {
   document.getElementById('towerWin').textContent = formatNumber(win) + ' ₴';
 }
 
-function towerCashout() {
-  if(!towerState || !towerState.active) return;
+async function towerCashout() {
+  if(!towerState || !towerState.active || towerBusy) return;
+  if(towerState.server) {
+    if(towerState.level < 1) return;
+    towerBusy = true;
+    let srv;
+    try { srv = await serverRound('cashout', 'tower'); } finally { towerBusy = false; }
+    if(srv.mode !== 'server') return;
+    return towerFinishUI(srv.r.payout, srv.r.mult);
+  }
   towerState.active = false;
   const mult = getTowerMult(Math.max(0, towerState.level-1));
   const win = Math.floor(towerState.bet * mult);
   db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+  towerFinishUI(win, mult);
+}
+// Спільний фінал кешауту (баланс уже змінено — сервером або вище в towerCashout).
+function towerFinishUI(win, mult) {
+  if(towerState) towerState.active = false;
   playSound('bonus');
   notify('🏆 Кешаут! +' + formatNumber(win) + '₴ (x'+mult.toFixed(2)+')', 'success');
   addToHistory('Tower x'+mult.toFixed(2)+': +'+win);
@@ -13700,16 +13990,27 @@ function towerReset() {
 // ============================================================
 let hiloState = null;
 
-function startHilo() {
+let hiloBusy = false;
+async function startHilo() {
+  if(hiloBusy) return;
   const bet = validateBet(document.getElementById('hiloBet').value);
   if(!bet) return;
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+  hiloBusy = true;
+  let srv;
+  try { srv = await serverRound('start', 'hilo', { bet, params: {} }); } finally { hiloBusy = false; }
+  if(srv.mode === 'error') return;
   addWager(bet);
   playSound('deal');
-  const deck = [];
-  for(const r of RANKS) for(const s of SUITS) deck.push({rank:r, suit:s});
-  deck.sort(()=>Math.random()-0.5);
-  hiloState = { bet, deck, streak:0, multiplier:1.0, currentCard: deck.pop() };
+  if(srv.mode === 'server') {
+    // Колода лежить на сервері; тут лише поточна карта.
+    hiloState = { bet, server: true, deck: [], streak: 0, multiplier: 1.0, currentCard: srv.r.view.current };
+  } else {
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
+    const deck = [];
+    for(const r of RANKS) for(const s of SUITS) deck.push({rank:r, suit:s});
+    deck.sort(()=>Math.random()-0.5);
+    hiloState = { bet, deck, streak:0, multiplier:1.0, currentCard: deck.pop() };
+  }
   document.getElementById('hiloGameArea').classList.remove('hidden');
   renderHiloCard(hiloState.currentCard);
   updateHiloUI();
@@ -13733,7 +14034,40 @@ function hiloStepMult(curVal, dir, deck) {
   // інакше на ньому можна було б безкоштовно накручувати множник.
   return 0.97 * (win + lose) / win;
 }
+async function hiloGuessServer(dir) {
+  if(hiloBusy) return;
+  hiloBusy = true;
+  let srv;
+  try { srv = await serverRound('move', 'hilo', { move: { dir } }); } finally { hiloBusy = false; }
+  if(srv.mode !== 'server') {
+    if(srv.status === 409) { hiloState = null; document.getElementById('hiloGameArea').classList.add('hidden'); document.getElementById('hiloCashoutBtn').classList.add('hidden'); }
+    return;
+  }
+  const r = srv.r;
+  playSound('deal');
+  if((r.view.last || []).some(h => h.tie)) notify('🔄 Нічия! Перетягуємо.','info');
+  hiloState.currentCard = r.view.current;
+  renderHiloCard(r.view.current);
+  if(r.status === 'lost') {
+    playSound('loss');
+    notify('❌ Невірно! Ви програли ' + hiloState.bet + '₴', 'error');
+    addToHistory('Hi-Lo: -' + hiloState.bet);
+    hiloState = null;
+    setTimeout(() => {
+      document.getElementById('hiloGameArea').classList.add('hidden');
+      document.getElementById('hiloCashoutBtn').classList.add('hidden');
+    }, 1500);
+    return;
+  }
+  hiloState.streak = r.view.streak;
+  hiloState.multiplier = r.view.multiplier;
+  playSound('win');
+  notify('✅ Правильно! Серія: ' + hiloState.streak, 'success');
+  updateHiloUI();
+  document.getElementById('hiloCashoutBtn').classList.remove('hidden');
+}
 function hiloGuess(dir) {
+  if(hiloState && hiloState.server) return hiloGuessServer(dir);
   if(!hiloState || !hiloState.deck.length) return;
   // Вгадати неможливо (напр. «вище» від туза) — не спалюємо ставку даремно.
   if(hiloStepMult(cardValue(hiloState.currentCard.rank), dir, hiloState.deck) === 0) {
@@ -13774,10 +14108,20 @@ function hiloGuess(dir) {
   }
 }
 
-function hiloCashout() {
-  if(!hiloState) return;
-  const win = Math.floor(hiloState.bet * hiloState.multiplier);
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+async function hiloCashout() {
+  if(!hiloState || hiloBusy) return;
+  let win;
+  if(hiloState.server) {
+    hiloBusy = true;
+    let srv;
+    try { srv = await serverRound('cashout', 'hilo'); } finally { hiloBusy = false; }
+    if(srv.mode !== 'server' || !hiloState) return;
+    win = srv.r.payout;
+    hiloState.multiplier = srv.r.mult;
+  } else {
+    win = Math.floor(hiloState.bet * hiloState.multiplier);
+    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(win));
+  }
   playSound('bonus');
   notify('💰 Кешаут! +' + formatNumber(win) + '₴', 'success');
   addToHistory('Hi-Lo x'+hiloState.multiplier+': +'+win);

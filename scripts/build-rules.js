@@ -141,6 +141,8 @@ function build(strict) {
     notify_rate: { ".read": false, ".write": false },
     // Журнал серверних раундів (api/play.js) — лише сервер.
     game_rounds: { ".read": false, ".write": false },
+    // Стан раундів з кількома ходами (api/round.js): де міни, порядок колоди.
+    game_sessions: { ".read": false, ".write": false },
     telegram_state: { ".read": false, ".write": false },
     promo_redemptions: { ".read": false, ".write": false },
     // Хто володіє Telegram-чатом, вирішує сервер; клієнт може лише відв'язати.

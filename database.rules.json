@@ -74,6 +74,10 @@
       ".read": false,
       ".write": false
     },
+    "game_sessions": {
+      ".read": false,
+      ".write": false
+    },
     "telegram_state": {
       ".read": false,
       ".write": false
