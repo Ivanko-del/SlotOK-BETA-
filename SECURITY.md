@@ -157,7 +157,12 @@ Telegram; `api/notify.js` не довіряє тілу запиту, а пере
    `dbTransaction` (баланс не йде в мінус навіть при паралельних ставках),
    перевірка бану/автозаморожування/само-виключення.
 2. 🟡 **Ігри «одним запитом»** — правила ігор у `lib/games.js` (чисті функції,
-   тест RTP у `scripts/selfcheck-play-api.js`). Перенесено: **Dice, Limbo**.
+   тест RTP у `scripts/selfcheck-play-api.js`). Перенесено: **Dice, Limbo,
+   Sic Bo, Card War, Plinko, Penalty, Archery, Bowling** (Plinko, Penalty,
+   Archery і Bowling заодно ребалансовано — до цього вони повертали понад 100%
+   ставки, див. BUGS.md B15). «Provably Fair» у Dice/Plinko генерував seed у
+   самому браузері, тож нічого не доводив; у серверному режимі результат кидає
+   сервер.
    Далі за тим самим шаблоном: монетка, колесо, слоти, plinko, sic bo, card war…
    Щоб додати гру: `parse()` + `play()` у `lib/games.js`, тест RTP, а в
    `app.js` — виклик `serverPlay(game, bet, params)` замість `Math.random()` і

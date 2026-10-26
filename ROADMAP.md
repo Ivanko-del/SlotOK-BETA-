@@ -18,7 +18,7 @@
 `dbTransaction` (`lib/firebase.js`) — тобто фундамент для серверного гаманця.
 
 **Зроблено:** серверний гаманець `api/play.js` + `lib/games.js`; на сервері
-вже Dice і Limbo (v102).
+Dice, Limbo (v102), Sic Bo, Card War, Plinko, Penalty, Archery, Bowling (v103).
 
 **Що робити далі:** покроковий план — у SECURITY.md, розділ «План переносу ігор
 на сервер (C5)»: решта ігор «одним запитом» → ігри з кількома кроками →

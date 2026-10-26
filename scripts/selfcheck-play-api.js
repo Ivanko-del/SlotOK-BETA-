@@ -159,12 +159,52 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
     paidLimbo += GAMES.limbo.play(100, GAMES.limbo.parse({ target: 2 }), rng).payout;
   }
   const rtpDice = paidDice / (N * 100), rtpLimbo = paidLimbo / (N * 100);
+  // Sic Bo «велике» і Card War: теоретичні RTP 0,9722 і рівно 1,0 (як і в клієнті до переносу).
+  let paidSb = 0, paidCw = 0;
+  for (let i = 0; i < N; i++) {
+    paidSb += GAMES.sicbo.play(100, GAMES.sicbo.parse({ type: "big" }), rng).payout;
+    paidCw += GAMES.cardwar.play(100, GAMES.cardwar.parse({}), rng).payout;
+  }
+  const rtpSb = paidSb / (N * 100), rtpCw = paidCw / (N * 100);
+  assert.ok(Math.abs(rtpSb - 0.9722) < 0.01, "RTP Sic Bo " + rtpSb);
+  assert.ok(Math.abs(rtpCw - 1.0) < 0.01, "RTP Card War " + rtpCw);
+  // Ребаланс: жодна гра не повертає гравцю більше, ніж він ставить, за будь-якого вибору.
+  const rtpOf = (game, params, n = 200000) => { let paid = 0; for (let i = 0; i < n; i++) paid += GAMES[game].play(100, params, rng).payout; return paid / (n * 100); };
+  for (const zone of GAMES.penalty.ZONES) assert.ok(rtpOf("penalty", { zone }, 60000) < 0.99, "Penalty " + zone);
+  for (const level of ["low", "mid", "high"]) {
+    const r = rtpOf("archery", { level });
+    assert.ok(r > 0.93 && r < 0.99, `Archery ${level} RTP ${r}`);
+  }
+  let bowlMax = 0, bowlAt = 0;
+  for (let power = 5; power <= 100; power += 5) { const r = rtpOf("bowling", { power }, 40000); if (r > bowlMax) { bowlMax = r; bowlAt = power; } }
+  assert.ok(bowlMax < 1.0, `Bowling max RTP ${bowlMax} @ ${bowlAt}`);
+  for (const risk of ["low", "med", "high"]) {
+    const r = rtpOf("plinko", { risk }, 300000);
+    assert.ok(r > 0.92 && r < 0.995, `Plinko ${risk} RTP ${r}`);
+    const w = GAMES.plinko.TABLE[risk].weights.reduce((a, b) => a + b);
+    assert.ok(Math.abs(w - 1) < 1e-9, `Plinko ${risk}: ваги в сумі ${w}`);
+  }
+  // Клієнт показує ті самі коефіцієнти, що рахує сервер.
+  const appSrc = require("fs").readFileSync(require("path").join(__dirname, "..", "app.js"), "utf8");
+  const tableSrc = /const PLINKO_TABLE = (\{[\s\S]*?\n\});/.exec(appSrc);
+  assert.ok(tableSrc, "PLINKO_TABLE не знайдено в app.js");
+  assert.deepStrictEqual(new Function("return " + tableSrc[1])(), GAMES.plinko.TABLE, "PLINKO_TABLE в app.js ≠ lib/games.js");
+  assert.strictEqual(GAMES.plinko.parse({ risk: "insane" }), null);
+  assert.strictEqual(GAMES.bowling.parse({ power: 101 }), null);
+  assert.strictEqual(GAMES.bowling.parse({ power: 50.5 }), null);
+  assert.strictEqual(GAMES.penalty.parse({ zone: "center" }), null);
+  assert.strictEqual(GAMES.archery.parse({ level: "god" }), null);
+  assert.strictEqual(GAMES.sicbo.parse({ type: "sum", sum: 3 }), null);
+  assert.strictEqual(GAMES.sicbo.parse({ type: "sum", sum: 18 }), null);
+  assert.strictEqual(GAMES.sicbo.parse({ type: "jackpot" }), null);
+  const sbRound = GAMES.sicbo.play(100, { type: "sum", sum: 10 }, rng);
+  assert.ok(sbRound.dice.every((d) => d >= 1 && d <= 6) && sbRound.sum === sbRound.dice.reduce((a, b) => a + b));
   assert.ok(rtpDice > 0.93 && rtpDice < 1.0, "RTP Dice " + rtpDice);
   assert.ok(rtpLimbo > 0.93 && rtpLimbo < 1.0, "RTP Limbo " + rtpLimbo);
   assert.strictEqual(GAMES.limbo.parse({ target: 1.001 }), null);
   assert.strictEqual(GAMES.limbo.parse({ target: "abc" }), null);
 
-  console.log(`OK — api/play: ID token, валідація, атомарний баланс, ідемпотентність, блокування; RTP dice ${rtpDice.toFixed(3)}, limbo ${rtpLimbo.toFixed(3)}`);
+  console.log(`OK — api/play: ID token, валідація, атомарний баланс, ідемпотентність, блокування; RTP dice ${rtpDice.toFixed(3)}, limbo ${rtpLimbo.toFixed(3)}, sic bo ${rtpSb.toFixed(3)}, card war ${rtpCw.toFixed(3)}, bowling max ${bowlMax.toFixed(3)}@${bowlAt}`);
 })().catch((e) => {
   console.error(e);
   process.exit(1);

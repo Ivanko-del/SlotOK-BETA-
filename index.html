@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SlotOK">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>SlotOK v102</title>
+  <title>SlotOK v103</title>
   <meta name="description" content="SlotOK — казино для своїх: слоти, рулетка, краш, блекджек і турніри з друзями на віртуальні гривні. Безкоштовно, прямо в браузері.">
   <link rel="canonical" href="https://slot-ok-beta.vercel.app/">
   <meta property="og:type" content="website">
@@ -747,17 +747,17 @@
         <div class="casino-game-card" data-cat="mini" onclick="openGame('penalty')">
           <span class="casino-badge-new" style="background:linear-gradient(135deg,#27ae60,#1a7a40);">NEW</span>
           <div class="casino-game-card-img" style="background:linear-gradient(135deg,#001a00,#000d00);">⚽</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Penalty Kick</div><div class="casino-game-card-prov">Пробий пенальті → x3</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Penalty Kick</div><div class="casino-game-card-prov">Пробий пенальті → x1.16</div></div>
         </div>
         <div class="casino-game-card" data-cat="mini" onclick="openGame('bowling')">
           <span class="casino-badge-new">NEW</span>
           <div class="casino-game-card-img" style="background:linear-gradient(135deg,#00001a,#00000d);">🎳</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Bowling</div><div class="casino-game-card-prov">Страйк = x10</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Bowling</div><div class="casino-game-card-prov">Страйк = x3.5</div></div>
         </div>
         <div class="casino-game-card" data-cat="mini" onclick="openGame('archery')">
           <span class="casino-badge-new">NEW</span>
           <div class="casino-game-card-img" style="background:linear-gradient(135deg,#1a0a00,#0d0500);">🎯</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Archery</div><div class="casino-game-card-prov">Центр = x50</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Archery</div><div class="casino-game-card-prov">Центр = x9.7</div></div>
         </div>
         <div class="casino-game-card" data-cat="mini" onclick="openGame('sicbo')">
           <span class="casino-badge-new">NEW</span>
@@ -1217,15 +1217,15 @@
       <div class="box">
         <div class="plinko-board" id="plinkoBoard"><div class="plinko-ball" id="plinkoBall"></div></div>
         <div class="plinko-buckets">
-          <div class="bucket">x5</div><div class="bucket">x2</div><div class="bucket">x0.5</div>
-          <div class="bucket">x0.2</div><div class="bucket">x0.5</div><div class="bucket">x2</div><div class="bucket">x5</div>
+          <div class="bucket">x3</div><div class="bucket">x1.3</div><div class="bucket">x0.6</div>
+          <div class="bucket">x0.1</div><div class="bucket">x0.6</div><div class="bucket">x1.3</div><div class="bucket">x3</div>
         </div>
       </div>
       <div class="box">
         <input id="betAmountPlinko" type="number" value="100" style="margin-bottom:6px;">
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <button onclick="setPlinkoRisk('low',this)" class="btn-outline plinko-risk active" style="flex:1;padding:8px;font-size:11px;border-color:#3dd68c;color:#3dd68c;">🟢 Низький</button>
-          <button onclick="setPlinkoRisk('med',this)" class="btn-outline plinko-risk" style="flex:1;padding:8px;font-size:11px;border-color:var(--accent);color:var(--accent);">🟡 Середній</button>
+          <button onclick="setPlinkoRisk('low',this)" class="btn-outline plinko-risk" style="flex:1;padding:8px;font-size:11px;border-color:#3dd68c;color:#3dd68c;">🟢 Низький</button>
+          <button onclick="setPlinkoRisk('med',this)" class="btn-outline plinko-risk active" style="flex:1;padding:8px;font-size:11px;border-color:var(--accent);color:var(--accent);">🟡 Середній</button>
           <button onclick="setPlinkoRisk('high',this)" class="btn-outline plinko-risk" style="flex:1;padding:8px;font-size:11px;border-color:#ff6b6b;color:#ff6b6b;">🔴 Високий</button>
         </div>
         <button class="btn-gold" onclick="dropPlinko()" style="font-family:'Orbitron',monospace;">КИНУТИ 🔻</button>
@@ -4615,7 +4615,7 @@
     </div>
     <div class="box">
       <input type="number" id="penaltyBet" value="200" placeholder="Ставка (₴)">
-      <div style="font-size:11px;color:#555;text-align:center;">Вибери куток та бий! Вгадав = x3 ⚽</div>
+      <div style="font-size:11px;color:#555;text-align:center;">Вибери куток та бий! Гол = x1.16 ⚽</div>
     </div>
     <div class="mono-log" id="penaltyLog" style="height:80px;margin-top:8px;"></div>
   </div>
@@ -4664,9 +4664,9 @@
     <div class="box">
       <div style="font-size:11px;color:#777;margin-bottom:8px;">Ризик = нагорода</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-        <button class="btn-outline arch-risk active" onclick="setArchRisk(0.55,3.5,this)">🟢 Низький<br><span style="font-size:10px;">55% → x3.5</span></button>
-        <button class="btn-outline arch-risk" onclick="setArchRisk(0.3,8,this)" style="border-color:#ff9f43;">🟡 Середній<br><span style="font-size:10px;">30% → x8</span></button>
-        <button class="btn-outline arch-risk" onclick="setArchRisk(0.1,25,this)" style="border-color:#ff6b6b;">🔴 Центр<br><span style="font-size:10px;">10% → x25</span></button>
+        <button class="btn-outline arch-risk active" onclick="setArchRisk(0.55,1.75,this)">🟢 Низький<br><span style="font-size:10px;">55% → x1.75</span></button>
+        <button class="btn-outline arch-risk" onclick="setArchRisk(0.3,3.2,this)" style="border-color:#ff9f43;">🟡 Середній<br><span style="font-size:10px;">30% → x3.2</span></button>
+        <button class="btn-outline arch-risk" onclick="setArchRisk(0.1,9.7,this)" style="border-color:#ff6b6b;">🔴 Центр<br><span style="font-size:10px;">10% → x9.7</span></button>
       </div>
       <input type="number" id="archeryBet" value="200" placeholder="Ставка (₴)">
       <button class="btn-gold" id="archeryBtn" onclick="shootArchery()">🏹 СТРІЛЯТИ</button>
