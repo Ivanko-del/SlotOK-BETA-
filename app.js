@@ -332,6 +332,7 @@ function startDataSync() {
             if(!window._initDone) {
               window._initDone = true;
               setTimeout(initHomeTab, 100);
+              setTimeout(openPendingPlayLink, 700);
               setTimeout(initBgMusicFromSettings, 1800);
               setTimeout(checkCardOnboarding, 3500);
               setTimeout(checkChangelogBadge, 1000);
@@ -2980,6 +2981,25 @@ function showAuthScreen() {
   setTimeout(initAuthCanvas, 50);
   setTimeout(loadAuthStats, 800);
 }
+// Пряме посилання на гру з окремих сторінок (/poker/ → /?play=holdem):
+// запам'ятовуємо гру до входу й відкриваємо, щойно гравець у системі.
+const PLAY_LINK_GAMES = ['holdem', 'durak', 'battleship', 'minesweeper', 'bingo', 'livecrash'];
+(function capturePlayLink() {
+  try {
+    const g = new URLSearchParams(location.search).get('play');
+    if(!g) return;
+    if(PLAY_LINK_GAMES.includes(g)) sessionStorage.setItem('slotok_play', g);
+    const url = new URL(location.href);
+    url.searchParams.delete('play');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch(e) {}
+})();
+function openPendingPlayLink() {
+  let g = null;
+  try { g = sessionStorage.getItem('slotok_play'); sessionStorage.removeItem('slotok_play'); } catch(e) {}
+  if(g && PLAY_LINK_GAMES.includes(g)) openGame(g);
+}
+
 // Екран входу видимий одразу з HTML (showAuthScreen викликає лише демо-режим),
 // тож при першому відкритті вмикаємо його дані тут. Якщо гравець уже в сесії,
 // 01-core.js сховає екран і викличе stopAuthStatsListeners().
@@ -5443,10 +5463,26 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '117';
+const CURRENT_VERSION = '118';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '118',
+    title: '🔗 Оновлення v118 — посилання прямо на гру',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🔗 Сторінки ігор',
+        items: [
+          'У покеру, дурня, морського бою, сапера, бінго й крашу тепер є свої сторінки з правилами — ними зручно ділитися з друзями',
+          'Кнопка «Грати» на такій сторінці відкриває гру одразу після входу чи реєстрації',
+        ],
+      },
+    ],
+  },
   {
     version: '117',
     title: '🚪 Оновлення v117 — новий екран входу',

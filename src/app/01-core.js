@@ -327,6 +327,7 @@ function startDataSync() {
             if(!window._initDone) {
               window._initDone = true;
               setTimeout(initHomeTab, 100);
+              setTimeout(openPendingPlayLink, 700);
               setTimeout(initBgMusicFromSettings, 1800);
               setTimeout(checkCardOnboarding, 3500);
               setTimeout(checkChangelogBadge, 1000);

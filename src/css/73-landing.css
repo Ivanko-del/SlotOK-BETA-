@@ -1,0 +1,62 @@
+/* ═══════════════════════════════════════════════════════════════════
+   СТОРІНКИ ІГОР ДЛЯ ПОШУКУ (/poker/, /durak/, …) — body.lp
+   Генеруються scripts/build-landing.js; тут лише їхня верстка.
+   ═══════════════════════════════════════════════════════════════════ */
+/* padding-left: 0 — прибирає відступ під бічне меню застосунку (03-shell.css) */
+body.lp {
+  padding-bottom: 0; padding-left: 0;
+  background:
+    radial-gradient(60% 40% at 90% 0%, rgb(var(--accent-rgb) / .14), transparent 70%),
+    radial-gradient(circle, rgb(var(--primary-rgb) / .12) 1.2px, transparent 1.6px) 0 0 / 18px 18px,
+    var(--bg);
+}
+.lp-top {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sp-3)) var(--gutter) var(--sp-3);
+  background: rgb(var(--bg-rgb) / .9); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.lp-brand { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--fg); text-decoration: none; font-family: var(--font-display); font-weight: var(--fw-black); font-size: var(--fs-lg); }
+.lp-mark { width: 36px; height: 36px; font-size: 20px; }
+.lp-top-cta { width: auto; margin: 0; min-height: 40px; padding: 0 var(--sp-5); }
+
+.lp-main { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: var(--sp-5) var(--gutter) var(--sp-8); }
+.lp-crumbs { font-size: var(--fs-sm); color: var(--fg-3); margin-bottom: var(--sp-5); }
+.lp-crumbs a { color: var(--fg-2); }
+
+.lp-hero {
+  padding: var(--sp-6) var(--sp-5); margin-bottom: var(--sp-6);
+  background: var(--surface-1); border: var(--bw) solid var(--fg); border-radius: var(--r-xl);
+  box-shadow: 6px 6px 0 0 rgb(var(--accent-rgb) / .75);
+}
+.lp-hero-ic { width: 48px; height: 48px; color: var(--accent); margin-bottom: var(--sp-3); }
+.lp-hero h1 { font-size: var(--fs-3xl); line-height: 1.05; margin: 0 0 var(--sp-3); }
+.lp-lead { font-size: var(--fs-lg); color: var(--fg-2); margin: 0 0 var(--sp-5); line-height: var(--lh-body); }
+.lp-cta { width: auto; margin: 0; display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-6); text-decoration: none; }
+.lp-cta .ic { width: 20px; height: 20px; }
+.lp-note { font-size: var(--fs-sm); color: var(--fg-3); margin: var(--sp-3) 0 0; }
+
+.lp-sec { margin-bottom: var(--sp-6); }
+.lp-sec h2 { font-size: var(--fs-xl); margin: 0 0 var(--sp-3); }
+.lp-sec p, .lp-sec li { color: var(--fg-2); line-height: var(--lh-body); }
+.lp-sec p { margin: 0; }
+.lp-sec ul { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); }
+.lp-sec li::marker { color: var(--accent); }
+
+.lp-others { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-2); }
+.lp-other {
+  display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3);
+  background: var(--surface-1); border: var(--bw) solid var(--line-strong); border-radius: var(--r-md);
+  color: var(--fg); font-weight: var(--fw-semibold); text-decoration: none;
+  transition: transform var(--dur-2) var(--ease-premium), border-color var(--dur-2);
+}
+.lp-other .ic { width: 22px; height: 22px; color: var(--accent); }
+.lp-other:hover, .lp-other:focus-visible { transform: translateY(-2px); border-color: var(--fg); }
+
+.lp-foot { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: var(--sp-5) var(--gutter) calc(env(safe-area-inset-bottom, 0px) + var(--sp-6)); }
+.lp-foot p { max-width: 760px; margin: 0 auto; font-size: var(--fs-xs); color: var(--fg-3); text-align: center; line-height: var(--lh-body); }
+.lp-foot b { color: var(--fg-2); }
+
+/* Посилання на сторінки ігор з блоку «Що таке SlotOK» на екрані входу */
+.auth-about-links { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }

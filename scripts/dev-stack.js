@@ -61,12 +61,13 @@ http.createServer((req, res) => {
   if (m) return handleApi(m[1], req, res);
   let file = path.normalize(path.join(ROOT, decodeURIComponent(url.pathname)));
   if (!file.startsWith(ROOT)) { res.statusCode = 403; return res.end(); }
-  if (url.pathname === "/" ) file = path.join(ROOT, "index.html");
+  // Як на Vercel: /poker/ → poker/index.html (сторінки ігор з build-landing.js)
+  if (url.pathname.endsWith("/")) file = path.join(file, "index.html");
   fs.readFile(file, (err, buf) => {
     if (err) { res.statusCode = 404; return res.end(); }
     res.setHeader("Content-Type", TYPES[path.extname(file)] || "application/octet-stream");
     res.setHeader("Cache-Control", "no-store");
-    if (file.endsWith("index.html")) buf = Buffer.from(String(buf).replace("<head>", "<head>" + EMU_TAG));
+    if (file === path.join(ROOT, "index.html")) buf = Buffer.from(String(buf).replace("<head>", "<head>" + EMU_TAG));
     res.end(buf);
   });
 }).listen(PORT, () => console.log(`dev stack: http://localhost:${PORT}`));
