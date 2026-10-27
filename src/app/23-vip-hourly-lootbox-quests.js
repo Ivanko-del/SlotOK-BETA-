@@ -727,7 +727,7 @@ const NAV_TAB_MAP = {
   baccarat:1, videpoker:1,
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
-  limbo:1, dragon:1, penalty:1, bowling:1, archery:1, sicbo:1, cardwar:1, duckshoot:1,
+  limbo:1, dragon:1, sicbo:1, cardwar:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -933,12 +933,8 @@ function switchTab(id, el) {
   if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
-  if(id==='penalty')      safe(() => initPenalty());
-  if(id==='bowling')      safe(() => initBowling());
-  if(id==='archery')      safe(() => initArchery());
   if(id==='sicbo')        safe(() => initSicBo());
   if(id==='cardwar')      safe(() => initCardWar());
-  if(id==='duckshoot')    safe(() => initDuckShoot());
   if(id==='chess')        safe(() => {
     // Скидаємо на екран налаштувань щоразу коли заходимо в шахи ззовні
     if(!chessGame) {

@@ -50,7 +50,7 @@
 | 32-music-battlepass-stats | музика, **Battle Pass** (екран; таблиці — `shared/rewards.js`), особиста статистика |
 | 33-bank-card | віртуальна картка, `pushCardTx`, перекази Аксіомою |
 | 34-axiom-pm | Аксіома, Baccarat, відеопокер, приватні повідомлення, теми |
-| 35-minigames-dragon-penalty-duck | Dragon Tower, Penalty, Bowling, Archery, Sic Bo, Card War, Duck Shoot |
+| 35-minigames-dragon-sicbo-cardwar | Dragon Tower, Sic Bo, Card War |
 | 36-lottery-dailyspin-themes | лотерея, інвест-пул, щоденне колесо, календар, фон/акцент |
 | 37-cashier-v70 | Каса v70 (3D-картка, ліміти карток) |
 | 38-banners-moderation | банери, модерація |

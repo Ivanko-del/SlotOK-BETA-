@@ -11825,7 +11825,7 @@ const NAV_TAB_MAP = {
   baccarat:1, videpoker:1,
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
-  limbo:1, dragon:1, penalty:1, bowling:1, archery:1, sicbo:1, cardwar:1, duckshoot:1,
+  limbo:1, dragon:1, sicbo:1, cardwar:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -12031,12 +12031,8 @@ function switchTab(id, el) {
   if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
-  if(id==='penalty')      safe(() => initPenalty());
-  if(id==='bowling')      safe(() => initBowling());
-  if(id==='archery')      safe(() => initArchery());
   if(id==='sicbo')        safe(() => initSicBo());
   if(id==='cardwar')      safe(() => initCardWar());
-  if(id==='duckshoot')    safe(() => initDuckShoot());
   if(id==='chess')        safe(() => {
     // Скидаємо на екран налаштувань щоразу коли заходимо в шахи ззовні
     if(!chessGame) {
@@ -16299,26 +16295,6 @@ const SUPPORT_FAQ = [
       '⚔️ Card War: твоя карта проти карти дилера — вища виграє x2, нічия повертає ставку. Просто, швидко, без зайвих правил.',
       '⚔️ Card War максимально просто: твоя карта проти карти дилера, вища виграє x2, нічия — повернення ставки.'
     ] },
-  { keys: ['duck shoot','качк','стріляти по качках'],
-    reply: [
-      '🦆 Duck Shoot: стріляй по качках, що пролітають — кожне влучання підвищує множник (x1.2). Схибив хоч раз — гра закінчена, а збив усіх 10 — забираєш максимальний виграш.',
-      '🦆 У Duck Shoot стріляєш по качках — кожне влучання додає x1.2 до множника, один промах закінчує гру, а всі 10 качок дають максимальний виграш.'
-    ] },
-  { keys: ['bowling','боулінг','кеглі'],
-    reply: [
-      '🎳 Bowling: обери силу кидка і кидай — страйк дає x3.5, спер x1.25, а надто сильний кидок може піти в жолоб. Результат залежить і від сили, і трохи від удачі.',
-      '🎳 У Bowling обираєш силу кидка: страйк платить x3.5, спер — x1.25, а решта залежить від удачі.'
-    ] },
-  { keys: ['archery','стрільба з лука','лучник'],
-    reply: [
-      '🎯 Archery: обери рівень ризику (шанс/множник) і стріляй — влучання дає виплату за обраним множником, промах забирає ставку.',
-      '🎯 В Archery спершу обираєш рівень ризику (співвідношення шансу й множника), потім стріляєш — влучив, отримав виплату за обраним множником.'
-    ] },
-  { keys: ['penalty','пенальті','пробити пенальті'],
-    reply: [
-      '⚽ Penalty Kick: обери зону удару — якщо воротар вгадав інший кут, це гол і виграш x1.16. Просто і швидко.',
-      '⚽ У Penalty Kick обираєш зону удару — якщо воротар не вгадав твій кут, це гол і виплата x1.16.'
-    ] },
   { keys: ['balloon','кульк','лопнути кульку'],
     reply: [
       '🎈 Balloon Pop: постав ставку і чекай — множник росте з кожною секундою, але кулька може лопнути будь-якої миті. Встигни забрати виграш до вибуху!',
@@ -19713,7 +19689,7 @@ function showGameHelp(gameId) {
 // 🐉 DRAGON TOWER
 // ══════════════════════════════════════════════════════
 let dragonState = { active:false, level:0, bet:0, dragons:1, cols:3, mult:1 };
-// ─── src/app/35-minigames-dragon-penalty-duck.js ───
+// ─── src/app/35-minigames-dragon-sicbo-cardwar.js ───
 function initDragonTower() { renderDragonGrid(); }
 function setDragonDiff(cols, dragons, el) {
   dragonState.cols = cols; dragonState.dragons = dragons;
@@ -19857,162 +19833,6 @@ function dragonFinishUI(payout) {
 }
 
 // ══════════════════════════════════════════════════════
-// ⚽ PENALTY KICK
-// ══════════════════════════════════════════════════════
-const PENALTY_ZONES = ['tl','tc','tr','bl','bc','br'];
-function initPenalty() { document.getElementById('penaltyResult').textContent=''; }
-// ×1.16 при шансі 5/6 = RTP 96,7%. Було ×3 (RTP 250%) — гра друкувала гроші.
-const PENALTY_MULT = 1.16;
-let penaltyBusy = false;
-async function shootPenalty(zone) {
-  if(penaltyBusy) return;
-  const bet = parseInt(document.getElementById('penaltyBet').value)||0;
-  if(!validateBet(bet)) return;
-  penaltyBusy = true;
-  let srv;
-  try { srv = await serverPlay('penalty', bet, { zone }); } finally { penaltyBusy = false; }
-  if(srv.mode === 'error') return;
-  if(srv.mode !== 'server') {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-    userData.balance = (userData.balance||0) - bet; updateUI();
-  }
-  addWager(bet);
-  const gkZone = srv.mode === 'server' ? srv.r.keeper : PENALTY_ZONES[Math.floor(Math.random()*PENALTY_ZONES.length)];
-  const win = zone !== gkZone;
-  const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet*PENALTY_MULT) : 0);
-  // Animate GK
-  document.getElementById('penaltyGoalkeeper').textContent = gkZone.startsWith('t') ? '🦵' : '🧤';
-  setTimeout(() => document.getElementById('penaltyGoalkeeper').textContent = '🧤', 800);
-  // Flash chosen zone
-  const el = document.getElementById('pz-'+zone);
-  if(el) { el.style.background=win?'rgb(var(--pos-rgb) / 0.5)':'rgb(var(--neg-rgb) / 0.4)'; setTimeout(()=>el.style.background='rgb(var(--pos-rgb) / 0.1)',700); }
-  document.getElementById('penaltyResult').textContent = win ? '⚽ ГОЛ! +₴'+formatNumber(payout) : '🧤 Воротар схопив!';
-  document.getElementById('penaltyResult').style.color = win ? 'var(--pos)' : 'var(--neg)';
-  if(win) {
-    if(srv.mode !== 'server') {
-      db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-      userData.balance = (userData.balance||0) + payout;
-      updateUI();
-    }
-    triggerWinReaction(payout,'Penalty Kick');
-  }
-  addToHistory(`⚽ Penalty: ${win?'+₴'+formatNumber(payout):'Промах'}`);
-  const log = document.getElementById('penaltyLog');
-  if(log) log.innerHTML = `<div class="mono-log-item ${win?'success':'error'}">${win?'⚽ ГОЛ! +₴'+formatNumber(payout):'🧤 Заблоковано — ₴'+formatNumber(bet)}</div>` + log.innerHTML;
-}
-
-// ══════════════════════════════════════════════════════
-// 🎳 BOWLING
-// ══════════════════════════════════════════════════════
-function initBowling() { document.getElementById('bowlingResult').textContent = ''; }
-// Було: страйк ×10, спейр ×3 … — на силі 100% гра повертала 524% ставки.
-// Тепер ті самі правила кеглів + ризик жолоба на сильному кидку, RTP ≤ 97%.
-const BOWL_MULT = { strike: 3.5, spare: 1.25, mid: 0.7, low: 0.2 };
-async function throwBowl() {
-  const bet = parseInt(document.getElementById('bowlingBet').value)||0;
-  if(!validateBet(bet)) return;
-  const power = parseInt(document.getElementById('bowlingPower').value);
-  const btn = document.getElementById('bowlingBtn');
-  btn.disabled = true;
-  const srv = await serverPlay('bowling', bet, { power });
-  if(srv.mode === 'error') { btn.disabled = false; return; }
-  if(srv.mode !== 'server') {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-    userData.balance = (userData.balance||0) - bet; updateUI();
-  }
-  addWager(bet);
-  let knocked, gutter;
-  if(srv.mode === 'server') {
-    ({ knocked, gutter } = srv.r);
-  } else {
-    const gutterChance = power > 60 ? Math.pow((power - 60) / 40, 2) * 0.75 : 0;
-    gutter = Math.random() < gutterChance;
-    knocked = gutter ? 0 : Math.min(10, Math.floor((power / 100) * 10 * (0.5 + Math.random()*0.8)));
-  }
-  const strike = knocked === 10;
-  const spare = knocked >= 7 && !strike;
-  let mult = knocked === 0 ? 0 : strike ? BOWL_MULT.strike : spare ? BOWL_MULT.spare : knocked >= 4 ? BOWL_MULT.mid : BOWL_MULT.low;
-  const payout = srv.mode === 'server' ? srv.r.payout : Math.floor(bet * mult);
-  // Animate pins
-  const pinsDiv = document.getElementById('bowlingPins');
-  pinsDiv.innerHTML = `<div style="font-size:36px;animation:spin 0.5s;">🎳</div>`;
-  setTimeout(() => {
-    const remain = 10 - knocked;
-    let pinsHtml = '';
-    const row4 = Math.min(remain, 4); const row3 = Math.min(remain-row4, 3);
-    const row2 = Math.min(remain-row4-row3, 2); const row1 = remain-row4-row3-row2>0?1:0;
-    const mkRow = (n,total) => Array(total).fill(0).map((_,i)=>i<n?'🎳':'<span style="opacity:.1">🎳</span>').join(' ');
-    pinsHtml = `<div>${mkRow(row4,4)}</div><div style="margin-left:12px;">${mkRow(row3,3)}</div><div style="margin-left:24px;">${mkRow(row2,2)}</div><div style="margin-left:36px;">${mkRow(row1,1)}</div>`;
-    pinsDiv.innerHTML = pinsHtml;
-    const label = strike ? '🎳 СТРАЙК! x' + BOWL_MULT.strike : spare ? '🎳 Спейр! x' + BOWL_MULT.spare : knocked>0 ? `${knocked}/10 кеглів x${mult}` : gutter ? 'У жолоб! Надто сильно x0' : 'Мімо! x0';
-    document.getElementById('bowlingResult').textContent = label;
-    document.getElementById('bowlingResult').style.color = strike?'var(--accent)':spare?'var(--info)':knocked>0?'var(--pos)':'var(--neg)';
-    if(payout > 0) {
-      if(srv.mode !== 'server') {
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-        userData.balance=(userData.balance||0)+payout; updateUI();
-      }
-      if(strike) triggerWinReaction(payout,'Bowling');
-    }
-    addToHistory(`🎳 Bowling: ${knocked}/10 кеглів → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}`);
-    const log = document.getElementById('bowlingLog');
-    if(log) log.innerHTML = `<div class="mono-log-item ${payout>0?'success':'error'}">${label} → ${payout>0?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}</div>` + log.innerHTML;
-    btn.disabled = false;
-  }, 600);
-}
-
-// ══════════════════════════════════════════════════════
-// 🎯 ARCHERY
-// ══════════════════════════════════════════════════════
-// Коефіцієнти — RTP ≈ 96–97% (було 193–250%). Сервер рахує за рівнем (level).
-let archRisk = { chance:0.55, mult:1.75, level:'low' };
-function setArchRisk(chance, mult, el) {
-  archRisk = { chance, mult, level: chance >= 0.5 ? 'low' : chance >= 0.2 ? 'mid' : 'high' };
-  document.querySelectorAll('.arch-risk').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-}
-function initArchery() { document.getElementById('archeryResult').textContent=''; }
-async function shootArchery() {
-  const bet = parseInt(document.getElementById('archeryBet').value)||0;
-  if(!validateBet(bet)) return;
-  const btn = document.getElementById('archeryBtn');
-  btn.disabled = true;
-  const srv = await serverPlay('archery', bet, { level: archRisk.level });
-  if(srv.mode === 'error') { btn.disabled = false; return; }
-  if(srv.mode !== 'server') {
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-    userData.balance = (userData.balance||0) - bet; updateUI();
-  }
-  addWager(bet);
-  const win = srv.mode === 'server' ? srv.r.win : Math.random() < archRisk.chance;
-  const arrow = document.getElementById('archeryArrow');
-  const target = document.querySelector('#tab-archery div[style*="radial-gradient"]');
-  if(arrow && target) {
-    const rect = target.getBoundingClientRect();
-    arrow.style.display = 'block';
-    arrow.style.left = (20 + Math.random()*60)+'%';
-    arrow.style.top = (20 + Math.random()*60)+'%';
-  }
-  setTimeout(() => {
-    const payout = srv.mode === 'server' ? srv.r.payout : (win ? Math.floor(bet * archRisk.mult) : 0);
-    document.getElementById('archeryResult').textContent = win ? `🎯 Попадання! +₴${formatNumber(payout)}` : '💨 Промах!';
-    document.getElementById('archeryResult').style.color = win ? 'var(--pos)' : 'var(--neg)';
-    if(win) {
-      if(srv.mode !== 'server') {
-        db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-        userData.balance=(userData.balance||0)+payout; updateUI();
-      }
-      triggerWinReaction(payout,'Archery');
-    }
-    addToHistory(`🎯 Archery: ${win?'+₴'+formatNumber(payout):'Промах'}`);
-    const log = document.getElementById('archeryLog');
-    if(log) log.innerHTML = `<div class="mono-log-item ${win?'success':'error'}">${win?'🎯 +₴'+formatNumber(payout):'💨 Промах -₴'+formatNumber(bet)}</div>` + log.innerHTML;
-    btn.disabled = false;
-    if(arrow) setTimeout(()=>arrow.style.display='none', 1500);
-  }, 700);
-}
-
-// ══════════════════════════════════════════════════════
 // 🎲 SIC BO
 // ══════════════════════════════════════════════════════
 let sicboType = 'big';
@@ -20126,77 +19946,6 @@ async function playCardWar() {
     btn.disabled=false;
   },600);
 }
-
-// ══════════════════════════════════════════════════════
-// 🦆 DUCK SHOOT
-// ══════════════════════════════════════════════════════
-let duckState = { active:false, mult:1, duckIndex:0, totalDucks:10, hit:0 };
-function initDuckShoot() { duckState={active:false,mult:1,duckIndex:0,totalDucks:10,hit:0}; }
-function startDuckShoot() {
-  if(duckState.active) return;
-  const bet = parseInt(document.getElementById('duckBet').value)||0;
-  if(!validateBet(bet)) return;
-  // ставка ніколи не списувалась — той самий баг, що й у Penalty/Bowling/Archery/SicBo/Card War
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-bet));
-  userData.balance = (userData.balance||0) - bet; updateUI();
-  addWager(bet);
-  duckState={active:true,bet,mult:1,duckIndex:0,totalDucks:10,hit:0};
-  document.getElementById('duckBtn').textContent='🦆 Стріляй!';
-  document.getElementById('duckBtn').onclick=shootDuck;
-  document.getElementById('duckResult').textContent='';
-  spawnDuck();
-}
-function spawnDuck() {
-  if(!duckState.active) return;
-  const area=document.getElementById('duckArea');
-  if(!area) return;
-  const duck=document.createElement('div');
-  duck.id='active-duck';
-  duck.textContent='🦆';
-  duck.style.cssText='font-size:36px;cursor:pointer;animation:duckFly 1.5s linear;';
-  duck.onclick=()=>shootDuck();
-  area.innerHTML='';
-  area.appendChild(duck);
-  document.getElementById('duckProgress').textContent=`Качка ${duckState.duckIndex+1}/${duckState.totalDucks} • Множник: x${duckState.mult.toFixed(2)}`;
-  const spawnedIndex=duckState.duckIndex;
-  const flyTimer=setTimeout(()=>{ if(duckState.active && duckState.duckIndex===spawnedIndex) missedDuck(); },1800);
-  duck._timer=flyTimer;
-}
-function shootDuck() {
-  if(!duckState.active) return;
-  const duck=document.getElementById('active-duck');
-  if(duck) { clearTimeout(duck._timer); duck.textContent='💥'; duck.style.animation='none'; }
-  duckState.hit++; duckState.mult=parseFloat((duckState.mult*1.2).toFixed(2));
-  duckState.duckIndex++;
-  document.getElementById('duckProgress').textContent=`Качка ${duckState.duckIndex}/${duckState.totalDucks} збита! • x${duckState.mult.toFixed(2)}`;
-  if(duckState.duckIndex>=duckState.totalDucks) finishDuckShoot(true);
-  else setTimeout(spawnDuck,500);
-}
-function missedDuck() {
-  if(!duckState.active) return;
-  duckState.active=false;
-  document.getElementById('duckArea').innerHTML='<div style="font-size:48px;text-align:center;width:100%;">🦆💨</div>';
-  document.getElementById('duckResult').textContent='Пропустив! Гра закінчена!';
-  document.getElementById('duckResult').style.color='var(--neg)';
-  addToHistory(`🦆 Duck Shoot: Програш на ${duckState.duckIndex}/${duckState.totalDucks}`);
-  document.getElementById('duckBtn').textContent='🦆 ПОЧАТИ ЗНОВУ';
-  document.getElementById('duckBtn').onclick=startDuckShoot;
-}
-function finishDuckShoot(allHit) {
-  duckState.active=false;
-  const payout=Math.floor(duckState.bet*duckState.mult);
-  document.getElementById('duckArea').innerHTML='<div style="font-size:48px;text-align:center;width:100%;">🏆</div>';
-  document.getElementById('duckResult').textContent=`🏆 Всіх збив! +₴${formatNumber(payout)}`;
-  document.getElementById('duckResult').style.color='var(--accent)';
-  db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(payout));
-  userData.balance=(userData.balance||0)+payout; updateUI(); triggerWinReaction(payout,'Duck Shoot');
-  addToHistory(`🦆 Duck Shoot: +₴${formatNumber(payout)} (x${duckState.mult.toFixed(2)})`);
-  document.getElementById('duckBtn').textContent='🦆 ГРАТИ ЗНОВУ';
-  document.getElementById('duckBtn').onclick=startDuckShoot;
-}
-// CSS for duck animation
-(()=>{const s=document.createElement('style');s.textContent='@keyframes duckFly{from{transform:translateX(-40px) scaleX(-1)}to{transform:translateX(200px) scaleX(-1)}}';document.head.appendChild(s);})();
-
 // ─── src/app/36-lottery-dailyspin-themes.js ───
 // ══════════════════════════════════════════════════════
 // 🎟️ LOTTERY SYSTEM
@@ -20640,12 +20389,8 @@ function renderMiniBalanceChart() {
 // ══════════════════════════════════════════════════════
 Object.assign(GAME_HELP, {
   dragon: { title:'🐉 Dragon Tower', rules:`<b>Мета:</b> Піднімайся по вежі — кожен рівень безпечно пройдений = більший множник.<br><br><b>Як грати:</b><br>1. Вибери складність: скільки драконів на ряд<br>2. Натискай на яйця — якщо не потрапив на дракона, множник зростає<br>3. Натисни "Забрати" в будь-який момент<br><br><b>Складність:</b><br>Легка (1/3) → Mid → Хардкор (3/4)<br>8 рівнів всього, пройди всі = AUTO кешаут` },
-  penalty: { title:'⚽ Penalty Kick', rules:`<b>Мета:</b> Вибери куток і бий — воротар рандомно стрибає.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Вибери один з 6 кутків<br>3. Воротар блокує рандомний куток<br>4. Забив = x1.16 виплата!<br><br><b>Шанс:</b> 5/6 = 83.3%` },
-  bowling: { title:'🎳 Bowling', rules:`<b>Мета:</b> Вибери силу кидка і збий якомога більше кеглів.<br><br><b>Виплати:</b><br>🎳 СТРАЙК (10) → x3.5<br>7-9 кеглів → x1.25<br>4-6 кеглів → x0.7<br>1-3 кеглі → x0.2<br>0 кеглів → x0<br><br><b>Порада:</b> Надто сильний кидок (понад 60%) може піти в жолоб — шукай баланс між силою і точністю!` },
-  archery: { title:'🎯 Archery', rules:`<b>Мета:</b> Вибери ризик і стріляй — чим менший шанс, тим більший виграш.<br><br><b>Рівні ризику:</b><br>🟢 Низький: 55% шанс → x1.75<br>🟡 Середній: 30% шанс → x3.2<br>🔴 Центр: 10% шанс → x9.7` },
   sicbo: { title:'🎲 Sic Bo', rules:`<b>Мета:</b> Поставити на результат трьох кубиків.<br><br><b>Ставки:</b><br>📈 Велике (11-17) → x2<br>📉 Мале (4-10) → x2<br>🎰 Трипл → x24<br>🔢 Точна сума → x6-x60<br><br><b>Увага:</b> Трипл скасовує Велике/Мале!` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
-  duckshoot: { title:'🦆 Duck Shoot', rules:`<b>Мета:</b> Клікни на кожну качку до того як вона пролетить.<br><br><b>Як грати:</b><br>1. Постав ставку<br>2. Качки з'являються по черзі (10 штук)<br>3. Кожна збита качка = x1.2 до множника<br>4. Пропустив — гра закінчена!<br><br><b>Страйк всіх 10:</b> ~x6.2 від ставки!` },
 });
 
 // ══════════════════════════════════════════════════════
@@ -22611,9 +22356,9 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
-  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'}, {id:'penalty', name:'⚽ Penalty Kick'},
-  {id:'bowling', name:'🎳 Bowling'}, {id:'archery', name:'🎯 Archery'}, {id:'sicbo', name:'🎲 Sic Bo'},
-  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'}, {id:'duckshoot', name:'🦆 Duck Shoot'},
+  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'},
+  {id:'sicbo', name:'🎲 Sic Bo'},
+  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'},
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
   {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
   {id:'diamond', name:'💎 Diamond Rush'},
@@ -23930,15 +23675,15 @@ const BET_INPUT_IDS = [
   'betAmountSlots', 'betAmountDiamond', 'grBetAmount', 'betAmountCrash', 'betAmountPoker', 'betAmountChests',
   'betAmountMines', 'betAmountPlinko', 'towerBet', 'hiloBet', 'diceBet', 'doubleBet', 'betAmountBJ',
   'betAmountKeno', 'betAmountScratch', 'limboAmount', 'betAmountFortune', 'betAmountHR', 'betAmountColor',
-  'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet', 'penaltyBet',
-  'bowlingBet', 'archeryBet', 'sicboBet', 'cwBet', 'duckBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
+  'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
+  'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'placeGrBet', 'startCrash', 'dealPoker', 'startChests', 'startMines',
   'dropPlinko', 'startTower', 'startHilo', 'rollDice', 'bjDeal', 'playKeno', 'buyScratch', 'playLimbo',
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
-  'throwBowl', 'shootArchery', 'rollSicBo', 'playCardWar', 'startDuckShoot', 'createCfRoom', 'createRpsRoom',
+  'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
