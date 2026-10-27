@@ -24747,6 +24747,20 @@ const ROOM_GAME_NAMES = {
   minesweeper: 'Сапер', battleship: 'Морський бій', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction',
 };
 
+// Чи можна грати кімнатами: сервер увімкнено І правила бази вже дозволяють
+// читати rooms/ (нові правила власник публікує вручну — до того старі дуелі
+// мають працювати по-старому, а не зламатись).
+let _roomsReadyP = null;
+function roomsReady() {
+  if (!_roomsReadyP) {
+    _roomsReadyP = serverAuthEnabled().then((on) => {
+      if (!on || !db) return false;
+      return db.ref('rooms/coinflip').limitToFirst(1).once('value').then(() => true, () => false);
+    }).catch(() => false);
+  }
+  return _roomsReadyP;
+}
+
 async function roomApi(action, body) {
   return serverApi('/api/room', Object.assign({ action }, body || {}));
 }
@@ -25504,7 +25518,7 @@ function bsOnlineBack() { bsOnlineClose(); }
 //
 // Старі версії (28-pvp-leaderboard-limbo.js) рахували результат у браузері:
 // монету кидав той, хто приєднався; хід суперника й загадане число лежали в
-// базі відкрито. Коли сервер увімкнено (serverAuthEnabled), ці ж кнопки йдуть
+// базі відкрито. Коли сервер і правила бази готові (roomsReady), ці ж кнопки йдуть
 // через api/room.js (lib/room-games/coinflip|rps|predict.js), а екрани ті самі.
 // Без сервера (локальний запуск) працюють старі функції.
 // ============================================================
@@ -25534,7 +25548,7 @@ const pvpPay = (u) => (u.result.payouts || {})[currentUser] || 0;
 
 // ── Coinflip ──
 createCfRoom = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.createCfRoom();
+  if (!(await roomsReady())) return _legacyPvp.createCfRoom();
   const bet = parseInt(document.getElementById('cfBetInput').value) || 0;
   const id = await roomCreate('coinflip', bet, { side: cfSelectedSide });
   if (!id) return;
@@ -25551,7 +25565,7 @@ function cfServerWatch(id) {
   });
 }
 loadCfRooms = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.loadCfRooms();
+  if (!(await roomsReady())) return _legacyPvp.loadCfRooms();
   if (!PVP_SRV.cfLobby) PVP_SRV.cfLobby = roomLobby('coinflip', document.getElementById('cfRoomsList'), { describe: (o) => (o.side === 'tails' ? 'господар на Решку' : 'господар на Орла') });
 };
 ROOM_HOOKS.coinflip = {
@@ -25586,7 +25600,7 @@ function rpsServerWatch(id) {
   });
 }
 createRpsRoom = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.createRpsRoom();
+  if (!(await roomsReady())) return _legacyPvp.createRpsRoom();
   const bet = parseInt(document.getElementById('rpsBetInput').value) || 0;
   const id = await roomCreate('rps', bet, {});
   if (!id) return;
@@ -25594,7 +25608,7 @@ createRpsRoom = async function () {
   rpsServerWatch(id);
 };
 loadRpsRooms = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.loadRpsRooms();
+  if (!(await roomsReady())) return _legacyPvp.loadRpsRooms();
   if (!PVP_SRV.rpsLobby) PVP_SRV.rpsLobby = roomLobby('rps', document.getElementById('rpsRoomsList'));
 };
 playRps = async function (choice) {
@@ -25619,7 +25633,7 @@ function pdServerResult(u) {
   pdCurrentRoom = null; pdRole = null;
 }
 createPdRoom = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.createPdRoom();
+  if (!(await roomsReady())) return _legacyPvp.createPdRoom();
   const bet = parseInt(document.getElementById('pdBetInput').value) || 0;
   const guess = parseInt(document.getElementById('pdGuessInput').value);
   if (!guess || guess < 1 || guess > 100) return notify('Число від 1 до 100', 'error');
@@ -25631,7 +25645,7 @@ createPdRoom = async function () {
   pvpWatchUntilDone('predict', id, 'pd', null, pdServerResult);
 };
 loadPdRooms = async function () {
-  if (!(await serverAuthEnabled())) return _legacyPvp.loadPdRooms();
+  if (!(await roomsReady())) return _legacyPvp.loadPdRooms();
   if (!PVP_SRV.pdLobby) PVP_SRV.pdLobby = roomLobby('predict', document.getElementById('pdRoomsList'));
 };
 submitPdGuess = async function () {

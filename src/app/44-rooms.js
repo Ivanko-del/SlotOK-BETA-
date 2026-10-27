@@ -14,6 +14,20 @@ const ROOM_GAME_NAMES = {
   minesweeper: 'Сапер', battleship: 'Морський бій', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction',
 };
 
+// Чи можна грати кімнатами: сервер увімкнено І правила бази вже дозволяють
+// читати rooms/ (нові правила власник публікує вручну — до того старі дуелі
+// мають працювати по-старому, а не зламатись).
+let _roomsReadyP = null;
+function roomsReady() {
+  if (!_roomsReadyP) {
+    _roomsReadyP = serverAuthEnabled().then((on) => {
+      if (!on || !db) return false;
+      return db.ref('rooms/coinflip').limitToFirst(1).once('value').then(() => true, () => false);
+    }).catch(() => false);
+  }
+  return _roomsReadyP;
+}
+
 async function roomApi(action, body) {
   return serverApi('/api/room', Object.assign({ action }, body || {}));
 }
