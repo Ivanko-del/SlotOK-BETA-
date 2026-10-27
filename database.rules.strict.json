@@ -498,12 +498,7 @@
     },
     "live_bets": {
       ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      },
-      ".indexOn": [
-        "ts"
-      ]
+      ".write": false
     },
     "online": {
       ".read": true,
@@ -576,6 +571,14 @@
           ".read": "auth != null && auth.uid === $nick"
         }
       }
+    },
+    "live_results": {
+      ".read": true,
+      ".write": false
+    },
+    "live_crash": {
+      ".read": true,
+      ".write": false
     },
     "minesweeper_records": {
       ".read": true,

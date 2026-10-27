@@ -95,6 +95,15 @@ in `src/app/44-rooms.js` (`roomApi`, `roomLobby`, `roomWatch`, `ROOM_HOOKS`).
 Tests: `scripts/selfcheck-room-api.js`. New DB nodes need
 `scripts/build-rules.js` and the owner must republish the rules.
 
+## Shared scheduled games — `api/live.js`
+
+Wheels on a fixed schedule (`w5/w10/w15/w30`, roulette `r60`) and the live
+Crash live in `lib/live.js`. Round results are `HMAC(secret, "<game>:<n>")`
+(secret derived from the service-account key), the hash is shown before and
+the seed after. Settlement is lazy: every `api/live` call first pays the
+caller's finished rounds (`live_open` → `live_paid`), so nothing needs a cron.
+Tests: `scripts/selfcheck-live-api.js`.
+
 ## Local stack for online games (`npm run dev`)
 
 `scripts/dev-stack.js` starts the Firebase emulators (Auth :9099, Realtime

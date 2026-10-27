@@ -5118,3 +5118,112 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 @media (prefers-reduced-motion: reduce) {
   .ms-cell, .ms-cell .ic, .bs-cell, .bs-cell::after { animation: none !important; transition: none !important; }
 }
+/* ─── src/css/69-live.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   СПІЛЬНІ КОЛЕСА + КРАШ НАЖИВО (v113). Логіка — src/app/48-live-wheels.js.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.lw-sub { margin: 0 0 var(--sp-2); text-align: center; }
+.lw-tabs .seg-item { padding-inline: var(--sp-1); min-width: 0; }
+.lw-tabs .seg-hint { font-family: var(--font-mono); }
+
+/* ── Колесо в 3D-нахилі ─────────────────────────────────────────── */
+.lw-stage { position: relative; display: grid; justify-items: center; margin: var(--sp-3) 0 var(--sp-2); }
+.lw-tilt {
+  position: relative; width: min(86vw, 420px); aspect-ratio: 1;
+  perspective: 900px;
+}
+.lw-wheel {
+  width: 100%; height: 100%; border-radius: 50%;
+  box-shadow: 0 0 0 6px var(--ink-shadow), 0 26px 0 -6px rgb(var(--shade-rgb) / .45), 0 30px 60px -20px rgb(var(--shade-rgb) / .8);
+  will-change: transform;
+}
+.lw-tilt::before { /* відблиск на «склі» */
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 1;
+  background: radial-gradient(60% 40% at 35% 20%, color-mix(in srgb, var(--white) 22%, transparent), transparent 70%);
+}
+.lw-ptr {
+  position: absolute; top: -10px; left: 50%; z-index: 2; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent;
+  border-top: 30px solid var(--accent); filter: drop-shadow(0 3px 0 var(--ink-shadow));
+}
+.lw-ring {
+  --p: 0;
+  position: absolute; top: 50%; left: 50%; z-index: 3; transform: translate(-50%, -50%);
+  width: min(22vw, 104px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--primary) calc(var(--p) * 360deg), var(--surface-2) 0);
+  box-shadow: 0 0 0 4px var(--ink-shadow);
+}
+.lw-countdown {
+  width: 84%; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center;
+  background: var(--surface-1);
+}
+.lw-countdown b { font-size: clamp(16px, 4.6vw, 24px); color: var(--fg); }
+.lw-cd-lbl { font-size: 9px; color: var(--fg-3); text-transform: uppercase; letter-spacing: var(--ls-caps); }
+
+.lw-history, .lc-history { display: flex; gap: var(--sp-1); overflow-x: auto; padding: 2px 0 var(--sp-2); scrollbar-width: none; }
+.lw-history::-webkit-scrollbar, .lc-history::-webkit-scrollbar { display: none; }
+.lw-hist {
+  flex-shrink: 0; min-width: 34px; padding: 3px 7px; border-radius: var(--r-pill); text-align: center;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  color: var(--bg); background: var(--tone, var(--fg-3));
+}
+.lw-hist.tone-fg { color: var(--fg); background: var(--surface-3); border: 1px solid var(--line); }
+
+.lw-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.lw-choice {
+  margin: 0; min-height: 58px; padding: var(--sp-2); display: grid; gap: 2px; place-items: center;
+  --btn-bg: color-mix(in srgb, var(--tone) 20%, var(--surface-1)); --btn-bd: color-mix(in srgb, var(--tone) 60%, var(--line)); --btn-fg: var(--fg); --btn-sh: none;
+  border-radius: var(--r-md);
+}
+.lw-choice b { font-family: var(--font-mono); font-size: var(--fs-md); }
+.lw-choice small { font-size: var(--fs-2xs); color: var(--fg-3); }
+.lw-choice.tone-fg { --btn-bg: var(--surface-3); --btn-bd: var(--fg-3); }
+.lw-choice.active { --btn-bg: var(--tone); --btn-fg: var(--bg); --btn-sh: var(--sh-1); transform: translate(-1px, -1px); }
+.lw-choice.tone-fg.active { --btn-bg: var(--fg); }
+.lw-choice.active small { color: inherit; opacity: .75; }
+.lw-mine { font-size: var(--fs-sm); color: var(--fg-2); margin-bottom: var(--sp-1); }
+.lw-mine b { color: var(--tone, var(--fg)); font-family: var(--font-mono); }
+
+.lw-card { margin-top: var(--sp-3); padding: var(--sp-3); background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg); }
+.lw-players { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 2px; max-height: 300px; overflow-y: auto; }
+.lw-players li { display: grid; grid-template-columns: 1fr auto auto; gap: var(--sp-2); align-items: center; padding: var(--sp-1) var(--sp-2); border-radius: var(--r-sm); font-size: var(--fs-sm); }
+.lw-players li.is-me { background: rgb(var(--primary-rgb) / .14); font-weight: var(--fw-bold); }
+.lw-players .num { font-family: var(--font-mono); color: var(--fg-2); }
+.lw-mini { display: inline-flex; gap: 3px; }
+.lw-mini i { width: 10px; height: 10px; border-radius: 50%; background: var(--tone, var(--fg-3)); }
+.lw-fair { margin: var(--sp-2) 0 0; font-size: var(--fs-2xs); word-break: break-all; }
+.lw-fair code { font-family: var(--font-mono); color: var(--fg-2); }
+
+/* ── Краш наживо ────────────────────────────────────────────────── */
+.lc-hist {
+  flex-shrink: 0; padding: 3px 8px; border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  color: var(--neg); background: rgb(var(--neg-rgb) / .14);
+}
+.lc-hist.is-ok { color: var(--pos); background: rgb(var(--pos-rgb) / .14); }
+.lc-hist.is-big { color: var(--bg); background: var(--warn); }
+.lc-stage {
+  position: relative; aspect-ratio: 16 / 10; max-height: 46vh; width: 100%; overflow: hidden;
+  background:
+    radial-gradient(80% 60% at 20% 100%, rgb(var(--accent-rgb) / .14), transparent 70%),
+    var(--surface-1);
+  border: var(--bw) solid var(--line); border-radius: var(--r-xl); box-shadow: var(--sh-1);
+}
+.lc-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lc-mult {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  font-family: var(--font-mono); font-weight: var(--fw-black); font-size: clamp(34px, 11vw, 72px);
+  color: var(--fg); text-shadow: 3px 3px 0 var(--ink-shadow);
+}
+.lc-mult.is-wait { font-family: var(--font-display); font-size: clamp(20px, 6vw, 34px); color: var(--fg-2); }
+.lc-mult.is-crashed { color: var(--neg); animation: lcShake .4s var(--ease-out); }
+@keyframes lcShake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+.lc-auto { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+.lc-auto .field-label { margin: 0; }
+.lc-auto input { margin: 0; font-family: var(--font-mono); }
+.game-cta.is-cashout { --btn-bg: var(--pos); --btn-fg: var(--on-accent); animation: g3dPulse .6s infinite alternate; }
+.lc-players li { grid-template-columns: 1fr auto auto; }
+.lc-players li.is-out .num:last-child { color: var(--pos); font-weight: var(--fw-bold); }
+
+@media (prefers-reduced-motion: reduce) { .lc-mult, .game-cta.is-cashout { animation: none !important; } }

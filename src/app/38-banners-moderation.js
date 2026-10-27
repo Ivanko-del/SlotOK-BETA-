@@ -123,12 +123,12 @@ function updateBannerDynamicContent() {
   // Останній результат глобальної рулетки
   var rouletteEl = document.getElementById('bannerRouletteLast');
   if(rouletteEl && db) {
-    db.ref('global_roulette/history').limitToLast(1).once('value').then(function(snap) {
+    db.ref('live_results/r60').limitToLast(1).once('value').then(function(snap) {
       var vals = Object.values(snap.val() || {});
       if(!vals.length) { rouletteEl.textContent = '—'; return; }
       var last = vals[0];
-      var colorDot = last.color === 'red' ? '🔴' : last.color === 'black' ? '⚫' : '🟢';
-      rouletteEl.textContent = colorDot + ' ' + last.number;
+      var colorDot = last.win === 'red' ? '🔴' : last.win === 'black' ? '⚫' : '🟢';
+      rouletteEl.textContent = colorDot + ' ' + last.num;
     }).catch(function() {});
   }
 }

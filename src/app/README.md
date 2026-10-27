@@ -20,7 +20,7 @@
 | 02-ui-admin-rights | `updateUI`, права адмінів, `notify`, `formatNumber`, `playSound`, `validateBet`, історія |
 | 03-bonus-deposit-withdraw | щоденний бонус, донат/поповнення, вивід |
 | 04-slots | Classic 777, Diamond Rush |
-| 05-global-roulette-crash | глобальна рулетка, Crash |
+| 05-chests-crash | Сундуки, Crash (соло) |
 | 06-videopoker-mines-plinko-balloon | колода карт, покер, Mines, Plinko, Balloon |
 | 07-rr-quiz-session-settings | російська рулетка, вікторина, сесія, RTP-налаштування, шпалери |
 | 08-auth-screen-horse-colorwheel | екран входу (анімації), скачки, колір-бет |
@@ -62,6 +62,7 @@
 | 45-minesweeper | Сапер: соло на час з рекордами (`minesweeper_records`) і дуель через кімнати |
 | 46-battleship | Морський бій: з ботом (у браузері) і онлайн 1×1 через кімнати |
 | 47-pvp-server | Coinflip / Камінь-ножиці / Prediction через кімнати, якщо сервер увімкнено (старі функції — запасний шлях) |
+| 48-live-wheels | спільні колеса 5/10/15/30 хв + рулетка за годину (вкладка `roulette`) і Краш наживо (`livecrash`) через `api/live.js` |
 | 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |
 
 Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:

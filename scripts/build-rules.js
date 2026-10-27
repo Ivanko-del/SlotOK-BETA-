@@ -216,6 +216,11 @@ function build(strict) {
     // room_state/room_of/room_paid — правил не має, тобто закритий для браузера.
     rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
     room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
+    // Спільні ігри за розкладом (api/live.js): пише лише сервер, бачать усі.
+    // Ставки live_open/live_paid — без правил, тобто лише сервер.
+    live_bets: { ".read": true, ".write": false },
+    live_results: { ".read": true, ".write": false },
+    live_crash: { ".read": true, ".write": false },
     // Рекорди соло-Сапера: кожен пише лише свій рядок, кращий час — число секунд
     minesweeper_records: {
       ".read": true,
