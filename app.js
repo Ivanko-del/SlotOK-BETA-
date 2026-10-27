@@ -776,10 +776,10 @@ async function claimDailyBonus(amount) {
 // ============================================
 const DEPOSIT_REQUISITES = {
   mono:       '4874 0700 7092 4301 — Іван Колодєєв',
-  usdt:       'USDT (TRC20): TQn9Y2khEsLJW1ChVWFMSMeRDow5oJgVGw — вкажіть свій ID у коментарі до перекладу',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
 const DEPOSIT_METHOD_NAMES = {
+  // usdt — лише щоб старі заявки в історії мали назву; як спосіб донату прибраний
   mono: 'Monobank', usdt: 'USDT (TRC20)', telegram: 'Telegram'
 };
 let selectedDepMethod = 'mono';
@@ -2849,45 +2849,53 @@ function loadLiveWallpaper() {
 // спокійна «афіша» (src/css/64-auth.css). Функція лишається як точка входу.
 function initAuthCanvas() {}
 
-let _authJackpotListener = null;
+// Екран входу показує лише справжні дані: кількість акаунтів, відлік до
+// найближчого спільного колеса (раунди w5 вирівняні по 5 хв від епохи —
+// lib/live.js) і стрічку реальних виграшів. Вигаданих «онлайн»/«виплачено»
+// і джекпоту за замовчуванням тут більше немає.
+let _authWheelTimer = null;
 function stopAuthStatsListeners() {
-  if(_authJackpotListener) { db.ref('casino_stats/jackpot').off('value', _authJackpotListener); _authJackpotListener = null; }
+  if(_authWheelTimer) { clearInterval(_authWheelTimer); _authWheelTimer = null; }
   stopAuthCoins();
   stopAuthWinTicker();
 }
+// REST-адреса з ?shallow=true (лише ключі). На локальному стенді — емулятор,
+// як і в db (01-core.js), інакше перевірки йшли б у бойову базу.
+function authShallowUrl(path) {
+  const emu = window.SLOTOK_EMULATOR;
+  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    const ns = new URL(firebaseConfig.databaseURL).hostname.split('.')[0];
+    return `http://${emu.db[0]}:${emu.db[1]}/${path}.json?ns=${ns}&shallow=true`;
+  }
+  return `${firebaseConfig.databaseURL}/${path}.json?shallow=true`;
+}
+function authWheelTick() {
+  const el = document.getElementById('authNextWheel');
+  const scr = document.getElementById('auth-screen');
+  if(!el || !scr || scr.classList.contains('hidden')) { if(_authWheelTimer) { clearInterval(_authWheelTimer); _authWheelTimer = null; } return; }
+  const P = 5 * 60 * 1000, left = Math.ceil((P - Date.now() % P) / 1000);
+  el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+}
 function loadAuthStats() {
-  // Екран входу бачить кожен анонімний відвідувач. Раніше тут качався весь
-  // вузол users (з хешами паролів, історією, IP) лише щоб порахувати кількість
-  // гравців. ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
-  fetch(firebaseConfig.databaseURL + '/users.json?shallow=true')
+  // ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
+  fetch(authShallowUrl('users'))
     .then(r => r.ok ? r.json() : {})
     .then(users => {
       const count = Object.keys(users || {}).length;
-      const online = Math.max(1, Math.floor(count*0.12 + Math.random()*3));
-      const el1 = document.getElementById('authStatPlayers');
-      const el2 = document.getElementById('authStatOnline');
-      if(el1) el1.textContent = count+'';
-      if(el2) el2.textContent = online+'';
+      const el = document.getElementById('authStatPlayers');
+      const wrap = document.getElementById('authPlayersWrap');
+      if(el && count > 0) { el.textContent = formatNumber(count); if(wrap) wrap.hidden = false; }
     }).catch(() => {});
-  db.ref('casino_stats/totalWagered').once('value', snap => {
-    const el3 = document.getElementById('authStatPaid');
-    if(el3) el3.textContent = '₴'+formatNumber(Math.max(Number(snap.val())||0, 1500000));
-  }, () => {});
-  // Real jackpot
-  if(_authJackpotListener) db.ref('casino_stats/jackpot').off('value', _authJackpotListener);
-  _authJackpotListener = snap => {
-    const j = snap.val() || 850000;
-    const el = document.getElementById('authJackpot');
-    if(el) el.textContent = '₴ ' + formatNumber(j);
-  };
-  db.ref('casino_stats/jackpot').on('value', _authJackpotListener);
-  // Floating coins in bg
-  initAuthCoins();
+  authWheelTick();
+  if(_authWheelTimer) clearInterval(_authWheelTimer);
+  _authWheelTimer = setInterval(authWheelTick, 1000);
   // Live win ticker
   initAuthWinTicker();
   // Password strength listener
   const passInput = document.getElementById('regPass');
-  if(passInput) passInput.addEventListener('input', e => {
+  if(!passInput || passInput.dataset.meter) return;
+  passInput.dataset.meter = '1';
+  passInput.addEventListener('input', e => {
     const v = e.target.value;
     let strength = 0;
     if(v.length >= 6) strength++;
@@ -2972,6 +2980,16 @@ function showAuthScreen() {
   setTimeout(initAuthCanvas, 50);
   setTimeout(loadAuthStats, 800);
 }
+// Екран входу видимий одразу з HTML (showAuthScreen викликає лише демо-режим),
+// тож при першому відкритті вмикаємо його дані тут. Якщо гравець уже в сесії,
+// 01-core.js сховає екран і викличе stopAuthStatsListeners().
+(function bootAuthScreen() {
+  const go = () => {
+    const scr = document.getElementById('auth-screen');
+    if(scr && !scr.classList.contains('hidden')) setTimeout(loadAuthStats, 800);
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
 
 
 // ═══════════════════════════════════════════════════════
@@ -3732,13 +3750,8 @@ async function authRegister() {
   const secA     = (document.getElementById('regSecAnswer')?.value || '').trim();
 
   // Validation
-  if(!n)             return showAuthError('Введіть нікнейм');
-  if(n.length < 3)   return showAuthError('Нікнейм мінімум 3 символи');
-  if(n.length > 20)  return showAuthError('Нікнейм максимум 20 символів');
-  if(n.includes(' ')) return showAuthError('Нікнейм не може містити пробіли');
-  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return showAuthError('Нікнейм може містити лише літери, цифри, "_" та "-"');
-  if(!p)             return showAuthError('Введіть пароль');
-  if(p.length < 6)   return showAuthError('Пароль мінімум 6 символів');
+  const step1Err = regStep1Error(n, p);
+  if(step1Err) { regStep(1); return showAuthError(step1Err); }
   if(secQ.length < 3) return showAuthError('Напиши своє контрольне питання (мінімум 3 символи) або обери зі списку');
   if(secA.length < 3) return showAuthError('Відповідь на контрольне питання — мінімум 3 символи (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
@@ -4056,6 +4069,49 @@ function switchAuthTab(mode) {
   if(tabReg)    { tabReg.classList.toggle('active', !isLogin); tabReg.setAttribute('aria-selected', !isLogin); }
   if(tabsWrap)  tabsWrap.classList.toggle('reg-active', !isLogin);
   if(errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  if(!isLogin) regStep(1);
+}
+
+// Реєстрація у 2 кроки: 1) нік і пароль, 2) захист акаунту (+email/промокод).
+function regStep1Error(n, p) {
+  if(!n)             return 'Введіть нікнейм';
+  if(n.length < 3)   return 'Нікнейм мінімум 3 символи';
+  if(n.length > 20)  return 'Нікнейм максимум 20 символів';
+  if(n.includes(' ')) return 'Нікнейм не може містити пробіли';
+  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return 'Нікнейм може містити лише літери, цифри, "_" та "-"';
+  if(!p)             return 'Введіть пароль';
+  if(p.length < 6)   return 'Пароль мінімум 6 символів';
+  return '';
+}
+function regStep(n) {
+  const form = document.getElementById('regForm');
+  if(!form) return;
+  form.dataset.step = String(n);
+  document.getElementById('regStep1')?.classList.toggle('hidden', n !== 1);
+  document.getElementById('regStep2')?.classList.toggle('hidden', n !== 2);
+  form.querySelectorAll('.auth-step').forEach((el, i) => el.classList.toggle('is-on', i < n));
+  const focus = document.getElementById(n === 1 ? 'regName' : (document.getElementById('regSecQuestion')?.value === 'custom' ? 'regSecCustom' : 'regSecAnswer'));
+  if(focus && document.getElementById('auth-screen')?.offsetParent !== null) setTimeout(() => focus.focus({ preventScroll: true }), 30);
+}
+async function regSubmit() {
+  const form = document.getElementById('regForm');
+  if(!form) return;
+  if(form.dataset.step === '2') return authRegister();
+  const n = (document.getElementById('regName')?.value || '').trim();
+  const p = document.getElementById('regPass')?.value || '';
+  const err = regStep1Error(n, p);
+  if(err) return showAuthError(err);
+  // Зайнятий нік кажемо одразу, а не після заповнення другого кроку.
+  // Не вдалося перевірити — не страшно: сервер однаково перевірить.
+  const btn = document.getElementById('regNextBtn');
+  if(btn) btn.disabled = true;
+  try {
+    const r = await fetch(authShallowUrl('users/' + encodeURIComponent(n)));
+    if(r.ok && (await r.json()) !== null) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
+  } catch(e) {} finally { if(btn) btn.disabled = false; }
+  const errEl = document.getElementById('authError');
+  if(errEl) errEl.style.display = 'none';
+  regStep(2);
 }
 
 // 👁 Показати/приховати пароль на екрані входу й реєстрації
@@ -5387,10 +5443,34 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '116';
+const CURRENT_VERSION = '117';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '117',
+    title: '🚪 Оновлення v117 — новий екран входу',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🚪 Вхід і реєстрація',
+        items: [
+          'Новий екран входу: вітрина ігор у 3D, відлік до найближчого спільного колеса і стрічка справжніх виграшів',
+          'Прибрали вигадані цифри «онлайн», «виплачено» і джекпот — тепер лише реальна кількість гравців',
+          'Реєстрація у 2 кроки: спершу нік і пароль, потім захист акаунту; зайнятий нік видно одразу',
+          'Email і промокод сховали в «необов\'язково», щоб не заважали',
+          'Під формою — короткий опис платформи, а посилання на сайт у месенджерах показує нову картинку',
+        ],
+      },
+      {
+        type: 'improve',
+        title: '💳 Донат',
+        items: ['Прибрали USDT: донат — через Monobank і Telegram, вивід у Telegram-боті — лише на картку PrivatBank або Monobank'],
+      },
+    ],
+  },
   {
     version: '116',
     title: '♠️ Оновлення v116 — справжній покер у 3D',
@@ -16050,12 +16130,12 @@ function sendSupportMsg() {
 const SUPPORT_FAQ = [
   { keys: ['поповн','депозит','закинут','внест','вклад','поповнити','донат'],
     reply: [
-      '💳 Донат: перейди в Каса → Донат, обери суму й спосіб (Monobank/USDT/Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
+      '💳 Донат: перейди в Каса → Донат, обери суму й спосіб (Monobank або Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
       '💳 Щоб задонатити: Каса → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
     ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: [
-      '🎮 SlotOK — ігрова платформа: баланс віртуальний, і вивід коштів на картку чи USDT не передбачений. Грай на здоров’я!',
+      '🎮 SlotOK — ігрова платформа: баланс віртуальний, і вивід коштів на картку не передбачений. Грай на здоров’я!',
       '🎮 Виводу грошей на сайті немає — увесь баланс ігровий і використовується тільки всередині платформи.'
     ] },
   { keys: ['vip','віп','рівен','статус гравц'],
@@ -21347,7 +21427,7 @@ var TERMS_SECTIONS = [
       'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
       'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
       'Заявка на донат прив’язується до картки, активної на момент подачі: бонус зарахується саме на неї.',
-      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку чи USDT немає.',
+      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку немає.',
     ]
   },
   {

@@ -207,6 +207,49 @@ function switchAuthTab(mode) {
   if(tabReg)    { tabReg.classList.toggle('active', !isLogin); tabReg.setAttribute('aria-selected', !isLogin); }
   if(tabsWrap)  tabsWrap.classList.toggle('reg-active', !isLogin);
   if(errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  if(!isLogin) regStep(1);
+}
+
+// Реєстрація у 2 кроки: 1) нік і пароль, 2) захист акаунту (+email/промокод).
+function regStep1Error(n, p) {
+  if(!n)             return 'Введіть нікнейм';
+  if(n.length < 3)   return 'Нікнейм мінімум 3 символи';
+  if(n.length > 20)  return 'Нікнейм максимум 20 символів';
+  if(n.includes(' ')) return 'Нікнейм не може містити пробіли';
+  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return 'Нікнейм може містити лише літери, цифри, "_" та "-"';
+  if(!p)             return 'Введіть пароль';
+  if(p.length < 6)   return 'Пароль мінімум 6 символів';
+  return '';
+}
+function regStep(n) {
+  const form = document.getElementById('regForm');
+  if(!form) return;
+  form.dataset.step = String(n);
+  document.getElementById('regStep1')?.classList.toggle('hidden', n !== 1);
+  document.getElementById('regStep2')?.classList.toggle('hidden', n !== 2);
+  form.querySelectorAll('.auth-step').forEach((el, i) => el.classList.toggle('is-on', i < n));
+  const focus = document.getElementById(n === 1 ? 'regName' : (document.getElementById('regSecQuestion')?.value === 'custom' ? 'regSecCustom' : 'regSecAnswer'));
+  if(focus && document.getElementById('auth-screen')?.offsetParent !== null) setTimeout(() => focus.focus({ preventScroll: true }), 30);
+}
+async function regSubmit() {
+  const form = document.getElementById('regForm');
+  if(!form) return;
+  if(form.dataset.step === '2') return authRegister();
+  const n = (document.getElementById('regName')?.value || '').trim();
+  const p = document.getElementById('regPass')?.value || '';
+  const err = regStep1Error(n, p);
+  if(err) return showAuthError(err);
+  // Зайнятий нік кажемо одразу, а не після заповнення другого кроку.
+  // Не вдалося перевірити — не страшно: сервер однаково перевірить.
+  const btn = document.getElementById('regNextBtn');
+  if(btn) btn.disabled = true;
+  try {
+    const r = await fetch(authShallowUrl('users/' + encodeURIComponent(n)));
+    if(r.ok && (await r.json()) !== null) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
+  } catch(e) {} finally { if(btn) btn.disabled = false; }
+  const errEl = document.getElementById('authError');
+  if(errEl) errEl.style.display = 'none';
+  regStep(2);
 }
 
 // 👁 Показати/приховати пароль на екрані входу й реєстрації

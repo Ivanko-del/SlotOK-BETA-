@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!-- Картинка для прев'ю посилань (og:image, 1200×630). Збирається з тих самих
+     стилів, що й сайт: node scripts/build-og-image.js → icons/og-image.jpg -->
+<html lang="uk" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="../style.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { background:
+    radial-gradient(60% 60% at 95% 0%, rgb(var(--accent-rgb) / .22), transparent 70%),
+    radial-gradient(50% 55% at 0% 100%, rgb(var(--primary-rgb) / .18), transparent 70%),
+    radial-gradient(circle, rgb(var(--primary-rgb) / .16) 1.4px, transparent 1.8px) 0 0 / 22px 22px,
+    var(--bg); }
+  .og { position: fixed; inset: 0; width: 1200px; display: grid; grid-template-columns: 560px 1fr; gap: 40px; align-items: center; height: 100%; padding: 0 64px; box-sizing: border-box; }
+  .og .auth-mark { width: 72px; height: 72px; font-size: 40px; }
+  .og .auth-logo-name { font-size: 44px; }
+  .og .auth-logo-sub { font-size: 20px; }
+  .og h1 { font-size: 60px; line-height: 1.02; margin: 36px 0 20px; }
+  .og h1 span { color: var(--accent); }
+  .og p { font-size: 22px; color: var(--fg-2); margin: 0; line-height: 1.35; }
+  .og .auth-show { gap: 16px; }
+  .og .auth-show-card { min-height: 150px; padding: 20px; animation: none; }
+  .og .auth-show-card::after { display: none; }
+  .og .auth-show-card .ic { width: 40px; height: 40px; }
+  .og .auth-show-card b { font-size: 20px; }
+  .og .auth-show-card small { font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="og">
+  <div>
+    <div class="auth-logo-block">
+      <span class="brand-mark auth-mark">S</span>
+      <div><div class="auth-logo-name">SlotOK</div><div class="auth-logo-sub">Ігрова платформа · віртуальні гривні</div></div>
+    </div>
+    <h1>Сідай за стіл.<br><span>Тут грають разом.</span></h1>
+    <p>Покер 3D, Краш наживо, Бінго на 10+ гравців і дуелі з друзями. Безкоштовно, прямо в браузері.</p>
+  </div>
+  <div class="auth-show">
+    <div class="auth-show-card" style="--i:0"><span class="ic i-spade"></span><b>Покер 3D</b><small>2–6 гравців</small></div>
+    <div class="auth-show-card" style="--i:1"><span class="ic i-rocket"></span><b>Краш</b><small>наживо</small></div>
+    <div class="auth-show-card" style="--i:2"><span class="ic i-wheel"></span><b>Колеса</b><small>5–60 хв</small></div>
+    <div class="auth-show-card" style="--i:3"><span class="ic i-ticket"></span><b>Бінго</b><small>10+ гравців</small></div>
+    <div class="auth-show-card" style="--i:4"><span class="ic i-mine"></span><b>Сапер</b><small>соло й онлайн</small></div>
+    <div class="auth-show-card" style="--i:5"><span class="ic i-ship"></span><b>Морський бій</b><small>1 на 1</small></div>
+  </div>
+</div>
+</body>
+</html>

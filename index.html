@@ -11,23 +11,51 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SlotOK">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SlotOK — казино для своїх</title>
-  <meta name="description" content="SlotOK — казино для своїх: слоти, рулетка, краш, блекджек і турніри з друзями на віртуальні гривні. Безкоштовно, прямо в браузері.">
+  <title>SlotOK — онлайн-ігри з друзями: покер 3D, краш, бінго, дурень</title>
+  <meta name="description" content="Безкоштовна ігрова платформа на віртуальні гривні: покер Texas Hold'em у 3D, краш наживо, спільні колеса, бінго на 10+ гравців, дурень, лудо, сапер і морський бій. Без завантаження, прямо в браузері.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://slot-ok-beta.vercel.app/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SlotOK">
   <meta property="og:locale" content="uk_UA">
   <meta property="og:url" content="https://slot-ok-beta.vercel.app/">
-  <meta property="og:title" content="SlotOK — казино з друзями 🎰">
-  <meta property="og:description" content="Слоти, рулетка, краш і турніри на віртуальні гривні. Заходь, забирай стартовий бонус і змагайся з друзями!">
+  <meta property="og:title" content="SlotOK — сідай за стіл, тут грають разом">
+  <meta property="og:description" content="Покер 3D, краш наживо, бінго на 10+ гравців і дуелі з друзями — на віртуальні гривні. Безкоштовно, прямо в браузері.">
   <meta property="og:image" content="https://slot-ok-beta.vercel.app/icons/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="SlotOK — слоти, рулетка, краш і турніри з друзями">
+  <meta property="og:image:alt" content="SlotOK — покер 3D, краш, колеса, бінго, сапер і морський бій з друзями">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SlotOK — казино з друзями 🎰">
-  <meta name="twitter:description" content="Слоти, рулетка, краш і турніри на віртуальні гривні. Безкоштовно, прямо в браузері.">
+  <meta name="twitter:title" content="SlotOK — сідай за стіл, тут грають разом">
+  <meta name="twitter:description" content="Покер 3D, краш наживо, бінго на 10+ гравців і дуелі з друзями — на віртуальні гривні. Безкоштовно, прямо в браузері.">
   <meta name="twitter:image" content="https://slot-ok-beta.vercel.app/icons/og-image.jpg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://slot-ok-beta.vercel.app/#website",
+        "url": "https://slot-ok-beta.vercel.app/",
+        "name": "SlotOK",
+        "inLanguage": "uk"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://slot-ok-beta.vercel.app/#app",
+        "name": "SlotOK",
+        "url": "https://slot-ok-beta.vercel.app/",
+        "image": "https://slot-ok-beta.vercel.app/icons/og-image.jpg",
+        "description": "Безкоштовна ігрова платформа на віртуальні гривні: покер у 3D, краш наживо, спільні колеса, бінго, дурень, лудо, сапер і морський бій з друзями.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Будь-який сучасний браузер",
+        "inLanguage": "uk",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "UAH" }
+      }
+    ]
+  }
+  </script>
 
   <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1649,7 +1677,6 @@
             <div class="ks-label">Спосіб оплати</div>
             <div class="ks-methods" id="depMethodBtns">
               <div class="wm-btn selected" id="depm-mono" onclick="selectDepMethod('mono',this)"><span class="ks-bank" style="background:var(--surface-2);border:1px solid rgb(var(--tint-rgb) / 0.2);">М</span><span class="ks-m-name">Monobank<div class="ks-m-note">Переказ на картку</div></span></div>
-              <div class="wm-btn" id="depm-usdt" onclick="selectDepMethod('usdt',this)"><span class="ks-bank" style="background:var(--pos);">₮</span><span class="ks-m-name">USDT<div class="ks-m-note">TRC-20</div></span></div>
               <div class="wm-btn" id="depm-tg" onclick="selectDepMethod('telegram',this)"><span class="ks-bank" style="background:var(--info);">TG</span><span class="ks-m-name">Telegram<div class="ks-m-note">Через бота</div></span></div>
             </div>
 
@@ -3929,37 +3956,34 @@
   </div><!-- /container -->
 
   <div id="auth-screen" class="full-modal auth-screen" role="main">
-    <canvas class="auth-canvas" id="authCanvas" aria-hidden="true"></canvas>
-    <div id="authCoins" aria-hidden="true" hidden></div>
-
     <div class="auth-wrapper">
-      <!-- Афіша: бренд, обіцянка, живі цифри -->
+      <!-- Вітрина: бренд, реальні ігри, живий рядок -->
       <section class="auth-poster" aria-label="Про SlotOK">
         <div class="auth-logo-block">
           <span class="brand-mark auth-mark" aria-hidden="true">S</span>
           <div>
             <div class="auth-logo-name">SlotOK</div>
-            <div class="auth-logo-sub">Казино для своїх · віртуальні гривні</div>
+            <div class="auth-logo-sub">Ігрова платформа · віртуальні гривні</div>
           </div>
         </div>
-        <h1 class="auth-headline">Грай з друзями.<br><span>Без реальних грошей.</span></h1>
-        <ul class="auth-features" aria-label="Що всередині">
-          <li class="auth-feature-pill">🎮 30+ ігор</li>
-          <li class="auth-feature-pill">🏆 Щоденні турніри</li>
-          <li class="auth-feature-pill">⚔️ Дуелі з друзями</li>
-          <li class="auth-feature-pill">🎁 Стартовий бонус</li>
-        </ul>
-        <div class="auth-jackpot">
-          <div class="hero-label">Поточний джекпот</div>
-          <div class="hero-jackpot-counter num" id="authJackpot">₴ 0</div>
+        <h1 class="auth-headline">Сідай за стіл.<br><span>Тут грають разом.</span></h1>
+        <p class="auth-lead">Покер, колеса й Краш наживо, Бінго на 10+ гравців, дуелі 1 на 1 — і все на ігрових гривнях.</p>
+
+        <div class="auth-show" aria-hidden="true">
+          <div class="auth-show-card" style="--i:0"><span class="ic i-spade"></span><b>Покер 3D</b><small>2–6 гравців</small></div>
+          <div class="auth-show-card" style="--i:1"><span class="ic i-rocket"></span><b>Краш наживо</b><small>один політ на всіх</small></div>
+          <div class="auth-show-card" style="--i:2"><span class="ic i-wheel"></span><b>Колеса</b><small>кожні 5–60 хв</small></div>
+          <div class="auth-show-card" style="--i:3"><span class="ic i-ticket"></span><b>Бінго</b><small>10+ гравців</small></div>
+          <div class="auth-show-card" style="--i:4"><span class="ic i-mine"></span><b>Сапер</b><small>соло й онлайн</small></div>
+          <div class="auth-show-card" style="--i:5"><span class="ic i-ship"></span><b>Морський бій</b><small>1 на 1</small></div>
+        </div>
+
+        <div class="auth-live" role="status">
+          <span class="auth-live-item"><span class="auth-live-dot" aria-hidden="true"></span>Наступне колесо через <b class="num" id="authNextWheel">—</b></span>
+          <span class="auth-live-item" id="authPlayersWrap" hidden><span class="ic i-users" aria-hidden="true"></span><b class="num" id="authStatPlayers"></b> гравців</span>
         </div>
         <div class="auth-win-ticker" id="authWinTicker" aria-live="off">
           <div class="auth-win-ticker-inner" id="authWinTickerInner"></div>
-        </div>
-        <div class="auth-stats-row">
-          <div class="auth-stat"><div class="auth-stat-val num" id="authStatPlayers">—</div><div class="auth-stat-lbl">Гравців</div></div>
-          <div class="auth-stat"><div class="auth-stat-val num" id="authStatOnline">—</div><div class="auth-stat-lbl">Онлайн</div></div>
-          <div class="auth-stat"><div class="auth-stat-val num" id="authStatPaid">—</div><div class="auth-stat-lbl">Виплачено</div></div>
         </div>
       </section>
 
@@ -3973,6 +3997,7 @@
 
         <!-- ВХІД -->
         <form id="loginForm" class="auth-form" onsubmit="event.preventDefault();authLogin();" novalidate>
+          <h2 class="auth-title">З поверненням</h2>
           <label class="field">
             <span class="field-label">Нікнейм</span>
             <input class="auth-input" id="loginName" autocomplete="username" autocapitalize="off" spellcheck="false" required
@@ -3992,33 +4017,37 @@
           </div>
         </form>
 
-        <!-- РЕЄСТРАЦІЯ -->
-        <form id="regForm" class="auth-form hidden" onsubmit="event.preventDefault();authRegister();" novalidate>
-          <div class="auth-bonus-badge note">🎁 Новачку — <b>500 ₴ бонусу</b> і 10 безкоштовних спінів</div>
-          <label class="field">
-            <span class="field-label">Нікнейм</span>
-            <input class="auth-input" id="regName" autocomplete="username" autocapitalize="off" spellcheck="false" required aria-describedby="regNameHint">
-            <span class="field-hint" id="regNameHint">Без пробілів — так тебе бачитимуть інші гравці</span>
-          </label>
-          <label class="field">
-            <span class="field-label">Пароль</span>
-            <span class="auth-input-group">
-              <input class="auth-input" id="regPass" type="password" autocomplete="new-password" minlength="6" required aria-describedby="passStrengthText">
-              <button type="button" class="auth-pass-toggle" onclick="toggleAuthPassVisibility('regPass', this)" aria-label="Показати пароль"><span class="ic i-eye" aria-hidden="true"></span></button>
-            </span>
-            <span id="passStrengthBar" class="pass-meter" aria-hidden="true"><span id="passStrengthFill"></span></span>
-            <span class="field-hint" id="passStrengthText">Мінімум 6 символів. Цифри й знаки роблять пароль надійнішим.</span>
-          </label>
-          <label class="field">
-            <span class="field-label">Email <span class="field-optional">— необов'язково</span></span>
-            <input class="auth-input" id="regEmail" type="email" autocomplete="email">
-          </label>
-          <fieldset class="auth-fieldset">
-            <legend class="field-label">Відновлення пароля</legend>
+        <!-- РЕЄСТРАЦІЯ: 2 кроки -->
+        <form id="regForm" class="auth-form hidden" data-step="1" onsubmit="event.preventDefault();regSubmit();" novalidate>
+          <div class="auth-steps" aria-hidden="true"><span class="auth-step is-on"></span><span class="auth-step"></span></div>
+
+          <div class="auth-reg-step" id="regStep1">
+            <h2 class="auth-title">Створи акаунт</h2>
+            <p class="auth-sub">На старт — <b>1 000 ₴</b> ігрових і <b>10 фріспінів</b>.</p>
             <label class="field">
-              <span class="sr-only">Контрольне питання</span>
+              <span class="field-label">Нікнейм</span>
+              <input class="auth-input" id="regName" autocomplete="username" autocapitalize="off" spellcheck="false" required aria-describedby="regNameHint">
+              <span class="field-hint" id="regNameHint">3–20 символів, без пробілів — так тебе бачитимуть за столом</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Пароль</span>
+              <span class="auth-input-group">
+                <input class="auth-input" id="regPass" type="password" autocomplete="new-password" minlength="6" required aria-describedby="passStrengthText">
+                <button type="button" class="auth-pass-toggle" onclick="toggleAuthPassVisibility('regPass', this)" aria-label="Показати пароль"><span class="ic i-eye" aria-hidden="true"></span></button>
+              </span>
+              <span id="passStrengthBar" class="pass-meter" aria-hidden="true"><span id="passStrengthFill"></span></span>
+              <span class="field-hint" id="passStrengthText">Мінімум 6 символів. Цифри й знаки роблять пароль надійнішим.</span>
+            </label>
+            <button type="submit" class="btn btn-primary btn-lg auth-btn-main" id="regNextBtn">Далі <span class="ic i-arrow-right" aria-hidden="true"></span></button>
+          </div>
+
+          <div class="auth-reg-step hidden" id="regStep2">
+            <h2 class="auth-title">Захист акаунту</h2>
+            <p class="auth-sub">Якщо забудеш пароль, відновимо його за відповіддю на питання.</p>
+            <label class="field">
+              <span class="field-label">Контрольне питання</span>
               <select class="auth-input" id="regSecQuestion" onchange="secQuestionChanged('reg')">
-              <option value="custom">✍️ Своє питання (найнадійніше)</option>
+              <option value="custom">Своє питання (найнадійніше)</option>
               <option value="first_phone">Модель вашого першого телефона?</option>
               <option value="first_teacher">Ім'я та по батькові першої вчительки?</option>
               <option value="first_job">Де ви вперше заробили гроші?</option>
@@ -4029,29 +4058,64 @@
             </label>
             <label class="field" id="regSecCustomBox">
               <span class="sr-only">Своє питання</span>
-              <input class="auth-input" id="regSecCustom" maxlength="120" placeholder="Своє питання, напр. «Що лежало в першій скарбничці?»">
+              <input class="auth-input" id="regSecCustom" maxlength="120" placeholder="Напр. «Що лежало в першій скарбничці?»">
             </label>
             <label class="field">
-              <span class="sr-only">Відповідь</span>
-              <input class="auth-input" id="regSecAnswer" placeholder="Відповідь" autocomplete="off">
-              <span class="field-hint">Обирай те, чого не знайти в соцмережах. Регістр не важливий.</span>
+              <span class="field-label">Відповідь</span>
+              <input class="auth-input" id="regSecAnswer" autocomplete="off">
+              <span class="field-hint">Те, чого не знайти в соцмережах. Регістр не важливий.</span>
             </label>
-          </fieldset>
-          <label class="field auth-promo-row">
-            <span class="field-label">Промокод <span class="field-optional">— якщо є</span></span>
-            <input class="auth-input auth-promo-input" id="regPromo" autocapitalize="characters">
-          </label>
-          <button type="submit" class="btn btn-primary btn-lg auth-btn-secondary" id="regBtn">Створити акаунт</button>
-          <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі 18+, і приймаєш правила.</p>
+            <details class="auth-more">
+              <summary>Email і промокод <span class="field-optional">— необов'язково</span></summary>
+              <label class="field">
+                <span class="field-label">Email</span>
+                <input class="auth-input" id="regEmail" type="email" autocomplete="email">
+              </label>
+              <label class="field">
+                <span class="field-label">Промокод</span>
+                <input class="auth-input auth-promo-input" id="regPromo" autocapitalize="characters">
+              </label>
+            </details>
+            <div class="auth-reg-actions">
+              <button type="button" class="btn btn-ghost" onclick="regStep(1)"><span class="ic i-arrow-left" aria-hidden="true"></span> Назад</button>
+              <button type="submit" class="btn btn-primary btn-lg" id="regBtn">Створити акаунт</button>
+            </div>
+            <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі 18+, і приймаєш правила.</p>
+          </div>
+
           <div class="auth-links"><span>Вже є акаунт? <button type="button" class="link-btn" onclick="switchAuthTab('login')">Увійти</button></span></div>
         </form>
 
-        <button type="button" class="btn btn-ghost auth-demo" onclick="startDemoMode()">Спробувати без реєстрації</button>
+        <div class="auth-or"><span>або</span></div>
+        <button type="button" class="btn btn-ghost auth-demo" onclick="startDemoMode()"><span class="ic i-play" aria-hidden="true"></span> Спробувати без реєстрації</button>
       </section>
 
       <p class="auth-disclaimer">
         <b>18+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
       </p>
+
+      <section class="auth-about" aria-labelledby="authAboutTitle">
+        <h2 id="authAboutTitle">Що таке SlotOK</h2>
+        <p>SlotOK — безкоштовна ігрова платформа, де грають на віртуальні гривні. Нічого не треба завантажувати: відкрив сайт у браузері телефона чи комп'ютера — і вже за столом.</p>
+        <div class="auth-about-grid">
+          <div>
+            <h3>Онлайн за одним столом</h3>
+            <p>Покер Texas Hold'em у 3D на 2–6 гравців, дурень на 3–4, «Вісімка» і лудо «Не сердься». Карти роздає й рахує сервер, тож чужих карт не підгледіти.</p>
+          </div>
+          <div>
+            <h3>Ігри на 10+ гравців</h3>
+            <p>Бінго, вікторина-баттл і королівська битва, краш наживо з одним польотом на всіх і спільні колеса, що крутяться кожні 5, 10, 15, 30 і 60 хвилин.</p>
+          </div>
+          <div>
+            <h3>Дуелі й соло-ігри</h3>
+            <p>Сапер і морський бій — соло або проти друга, шахи, монетка, слоти, plinko й інші 3D-ігри для гри наодинці.</p>
+          </div>
+          <div>
+            <h3>Чесно й без реальних грошей</h3>
+            <p>Результати рахує сервер; для коліс хеш раунду видно ще до спіну. Монети віртуальні й не виводяться — це гра для розваги, 18+.</p>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -4164,7 +4228,7 @@
       <div style="font-family:var(--font-display);font-size:14px;font-weight:900;color:var(--accent);text-align:center;margin-bottom:14px;">Важлива інформація</div>
       <div style="font-size:13px;color:var(--fg-3);line-height:1.8;margin-bottom:16px;">
         <b style="color:var(--fg-2);">SlotOK</b> — це виключно <b style="color:var(--fg-2);">розважальна ігрова платформа</b> для дозвілля серед своїх.<br><br>
-        🪙 Всі монети, бали та "виграші" є <b style="color:var(--fg-2);">повністю віртуальними</b>, не мають реальної грошової цінності й не виводяться назад на картку чи USDT.<br><br>
+        🪙 Всі монети, бали та "виграші" є <b style="color:var(--fg-2);">повністю віртуальними</b>, не мають реальної грошової цінності й не виводяться назад на картку.<br><br>
         🤝 Каса приймає добровільний <b style="color:var(--fg-2);">донат на підтримку проєкту</b> (не купівлю товару) — натомість нараховується бонус на ігровий баланс.<br><br>
         📱 Це соціальна гра для розваги між друзями. Ігрові операції є умовними і симуляційними.
       </div>

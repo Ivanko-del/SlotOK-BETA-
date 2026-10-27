@@ -6,45 +6,53 @@
 // спокійна «афіша» (src/css/64-auth.css). Функція лишається як точка входу.
 function initAuthCanvas() {}
 
-let _authJackpotListener = null;
+// Екран входу показує лише справжні дані: кількість акаунтів, відлік до
+// найближчого спільного колеса (раунди w5 вирівняні по 5 хв від епохи —
+// lib/live.js) і стрічку реальних виграшів. Вигаданих «онлайн»/«виплачено»
+// і джекпоту за замовчуванням тут більше немає.
+let _authWheelTimer = null;
 function stopAuthStatsListeners() {
-  if(_authJackpotListener) { db.ref('casino_stats/jackpot').off('value', _authJackpotListener); _authJackpotListener = null; }
+  if(_authWheelTimer) { clearInterval(_authWheelTimer); _authWheelTimer = null; }
   stopAuthCoins();
   stopAuthWinTicker();
 }
+// REST-адреса з ?shallow=true (лише ключі). На локальному стенді — емулятор,
+// як і в db (01-core.js), інакше перевірки йшли б у бойову базу.
+function authShallowUrl(path) {
+  const emu = window.SLOTOK_EMULATOR;
+  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    const ns = new URL(firebaseConfig.databaseURL).hostname.split('.')[0];
+    return `http://${emu.db[0]}:${emu.db[1]}/${path}.json?ns=${ns}&shallow=true`;
+  }
+  return `${firebaseConfig.databaseURL}/${path}.json?shallow=true`;
+}
+function authWheelTick() {
+  const el = document.getElementById('authNextWheel');
+  const scr = document.getElementById('auth-screen');
+  if(!el || !scr || scr.classList.contains('hidden')) { if(_authWheelTimer) { clearInterval(_authWheelTimer); _authWheelTimer = null; } return; }
+  const P = 5 * 60 * 1000, left = Math.ceil((P - Date.now() % P) / 1000);
+  el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+}
 function loadAuthStats() {
-  // Екран входу бачить кожен анонімний відвідувач. Раніше тут качався весь
-  // вузол users (з хешами паролів, історією, IP) лише щоб порахувати кількість
-  // гравців. ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
-  fetch(firebaseConfig.databaseURL + '/users.json?shallow=true')
+  // ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
+  fetch(authShallowUrl('users'))
     .then(r => r.ok ? r.json() : {})
     .then(users => {
       const count = Object.keys(users || {}).length;
-      const online = Math.max(1, Math.floor(count*0.12 + Math.random()*3));
-      const el1 = document.getElementById('authStatPlayers');
-      const el2 = document.getElementById('authStatOnline');
-      if(el1) el1.textContent = count+'';
-      if(el2) el2.textContent = online+'';
+      const el = document.getElementById('authStatPlayers');
+      const wrap = document.getElementById('authPlayersWrap');
+      if(el && count > 0) { el.textContent = formatNumber(count); if(wrap) wrap.hidden = false; }
     }).catch(() => {});
-  db.ref('casino_stats/totalWagered').once('value', snap => {
-    const el3 = document.getElementById('authStatPaid');
-    if(el3) el3.textContent = '₴'+formatNumber(Math.max(Number(snap.val())||0, 1500000));
-  }, () => {});
-  // Real jackpot
-  if(_authJackpotListener) db.ref('casino_stats/jackpot').off('value', _authJackpotListener);
-  _authJackpotListener = snap => {
-    const j = snap.val() || 850000;
-    const el = document.getElementById('authJackpot');
-    if(el) el.textContent = '₴ ' + formatNumber(j);
-  };
-  db.ref('casino_stats/jackpot').on('value', _authJackpotListener);
-  // Floating coins in bg
-  initAuthCoins();
+  authWheelTick();
+  if(_authWheelTimer) clearInterval(_authWheelTimer);
+  _authWheelTimer = setInterval(authWheelTick, 1000);
   // Live win ticker
   initAuthWinTicker();
   // Password strength listener
   const passInput = document.getElementById('regPass');
-  if(passInput) passInput.addEventListener('input', e => {
+  if(!passInput || passInput.dataset.meter) return;
+  passInput.dataset.meter = '1';
+  passInput.addEventListener('input', e => {
     const v = e.target.value;
     let strength = 0;
     if(v.length >= 6) strength++;
@@ -129,6 +137,16 @@ function showAuthScreen() {
   setTimeout(initAuthCanvas, 50);
   setTimeout(loadAuthStats, 800);
 }
+// Екран входу видимий одразу з HTML (showAuthScreen викликає лише демо-режим),
+// тож при першому відкритті вмикаємо його дані тут. Якщо гравець уже в сесії,
+// 01-core.js сховає екран і викличе stopAuthStatsListeners().
+(function bootAuthScreen() {
+  const go = () => {
+    const scr = document.getElementById('auth-screen');
+    if(scr && !scr.classList.contains('hidden')) setTimeout(loadAuthStats, 800);
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
 
 
 // ═══════════════════════════════════════════════════════

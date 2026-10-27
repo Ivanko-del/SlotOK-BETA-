@@ -116,10 +116,10 @@ async function claimDailyBonus(amount) {
 // ============================================
 const DEPOSIT_REQUISITES = {
   mono:       '4874 0700 7092 4301 — Іван Колодєєв',
-  usdt:       'USDT (TRC20): TQn9Y2khEsLJW1ChVWFMSMeRDow5oJgVGw — вкажіть свій ID у коментарі до перекладу',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
 const DEPOSIT_METHOD_NAMES = {
+  // usdt — лише щоб старі заявки в історії мали назву; як спосіб донату прибраний
   mono: 'Monobank', usdt: 'USDT (TRC20)', telegram: 'Telegram'
 };
 let selectedDepMethod = 'mono';
