@@ -106,13 +106,8 @@ async function authRegister() {
   const secA     = (document.getElementById('regSecAnswer')?.value || '').trim();
 
   // Validation
-  if(!n)             return showAuthError('Введіть нікнейм');
-  if(n.length < 3)   return showAuthError('Нікнейм мінімум 3 символи');
-  if(n.length > 20)  return showAuthError('Нікнейм максимум 20 символів');
-  if(n.includes(' ')) return showAuthError('Нікнейм не може містити пробіли');
-  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return showAuthError('Нікнейм може містити лише літери, цифри, "_" та "-"');
-  if(!p)             return showAuthError('Введіть пароль');
-  if(p.length < 6)   return showAuthError('Пароль мінімум 6 символів');
+  const step1Err = regStep1Error(n, p);
+  if(step1Err) { regStep(1); return showAuthError(step1Err); }
   if(secQ.length < 3) return showAuthError('Напиши своє контрольне питання (мінімум 3 символи) або обери зі списку');
   if(secA.length < 3) return showAuthError('Відповідь на контрольне питання — мінімум 3 символи (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
