@@ -83,6 +83,18 @@ merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 - **Rendering data from the DB:** use `escapeHtml()` for text, `safeUrl()` for
   `src`/`href`, and `jsArg()` for values inside `onclick="…"`.
 
+## Local stack for online games (`npm run dev`)
+
+`scripts/dev-stack.js` starts the Firebase emulators (Auth :9099, Realtime
+Database :9000 with `database.rules.json`) and serves the site plus `api/*.js`
+on http://localhost:8123. The page connects to the emulators by itself
+(`window.SLOTOK_EMULATOR`, injected only by the dev server), and the server
+side switches to them via `lib/emulator.js` (env
+`FIREBASE_DATABASE_EMULATOR_HOST`, ignored on Vercel). Sign-up/login work
+through `api/auth.js` as in prod. Use it to test multiplayer with several
+Playwright contexts; the admin REST shortcut is `?access_token=owner`.
+Needs Java and `npx firebase-tools` (first run downloads it).
+
 ## Push notifications (FCM) — two manual steps left to fully activate
 
 Client (`app.js`) and server (`api/notify.js` + `lib/fcm.js`) plumbing for

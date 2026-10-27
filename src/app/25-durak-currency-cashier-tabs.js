@@ -190,6 +190,8 @@ function cgPass() {
     cgRefill();
     cgState.isPlayerAttacking = false; // суперник атакує знову
     renderCgBoard();
+    cgCheckWin(); // суперник міг віддати останню карту — тоді він виграв
+    if(cgState.gameOver) return;
     cgHandoffToOpponent(cgAiAttack, 1000);
   }
 }
@@ -481,6 +483,10 @@ function listenCardRoom(roomId) {
       cgOpponentName = cgIsHost ? r.guest : r.host;
       cgApplyRoomSnapshot(r);
       cgSelectedCards = [];
+      // Кінець партії може настати після ходу суперника (він віддав останню
+      // карту, а я взяв) — перевіряємо на кожному знімку; подвійної виплати
+      // не буде завдяки транзакції resolved у cgResolvePvpGame.
+      if(!r.resolved) cgCheckWin();
       if(isFirstSync) {
         cgLog('🃏 Гра з ' + cgOpponentName + ' почалась!');
         // Старт гри — попередній onDisconnect хоста ("скасувати кімнату")

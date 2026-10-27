@@ -28,6 +28,12 @@ let db = null;
 try {
   if(typeof firebase === 'undefined') throw new Error('Firebase SDK не завантажився');
   if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  // Локальний стенд (scripts/dev-stack.js): емулятори замість бойової бази
+  const emu = window.SLOTOK_EMULATOR;
+  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    firebase.database().useEmulator(emu.db[0], emu.db[1]);
+    if(firebase.auth) firebase.auth().useEmulator(emu.auth, { disableWarnings: true });
+  }
   db = firebase.database();
   setTimeout(initAxioma, 0); // після виконання всього app.js — тоді змінні інтеграції вже оголошені
 } catch(e) {
