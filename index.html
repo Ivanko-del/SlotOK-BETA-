@@ -492,6 +492,18 @@
           <span class="casino-badge-new is-pvp">10+</span><div class="casino-game-card-img"><span class="ic i-swords" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Королівська битва</div><div class="casino-game-card-prov">До 40 гравців</div></div>
         </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('eights')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-cards" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Вісімка</div><div class="casino-game-card-prov">2–4 гравці</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('durak')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-cards" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Дурень онлайн</div><div class="casino-game-card-prov">2–4 гравці</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('ludo')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-dice" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Лудо</div><div class="casino-game-card-prov">2–4 гравці</div></div>
+        </div>
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('livecrash')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">LIVE</span><div class="casino-game-card-img"><span class="ic i-rocket" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Краш наживо</div><div class="casino-game-card-prov">Для всіх разом</div></div>
@@ -971,6 +983,129 @@
           <div class="room-actions">
             <button type="button" class="btn btn-ghost" id="royaleLeave" onclick="massLeave('royale')">Здатися</button>
             <button type="button" class="btn btn-primary hidden" id="royaleAgain" onclick="massBack('royale')">Ще гра</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-eights" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Вісімка <span class="badge is-accent">2–4</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('eights')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="eightsLobby">
+        <div class="mass-hero"><span class="ic i-cards" aria-hidden="true"></span><p>Як Uno на звичайній колоді: ходи в масть або значення. Вісімка — будь-коли зі зміною масті, двійка — наступний бере 2, туз — пропуск ходу. Хто перший скинув карти — забирає банк.</p></div>
+        <div class="field-label">Гравців за столом</div>
+        <div class="seg" role="radiogroup" aria-label="Гравців">
+          <button type="button" class="seg-item tbl-size active" data-n="2" onclick="tableSize('eights',2)"><span class="seg-label">2</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="3" onclick="tableSize('eights',3)"><span class="seg-label">3</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="4" onclick="tableSize('eights',4)"><span class="seg-label">4</span></button>
+        </div>
+        <input id="eightsBet" type="number" value="200">
+        <button type="button" class="game-cta" onclick="tableCreate('eights')"><span class="ic i-users" aria-hidden="true"></span>Створити стіл</button>
+        <div class="field-label">Відкриті столи</div>
+        <div class="room-list" id="eightsRooms"></div>
+      </div>
+      <div id="eightsGame" class="hidden">
+        <div id="eightsWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="eightsWaitText">Чекаємо гравців…</div>
+          <div class="mass-chips" id="eightsWaitPlayers"></div>
+          <button type="button" class="btn btn-primary hidden" id="eightsStartNow" onclick="tableStartNow('eights')">Почати зараз</button>
+          <button type="button" class="btn btn-ghost" onclick="tableLeave('eights')">Вийти (ставку повернемо)</button></div>
+        <div id="eightsPlay" class="hidden">
+          <div class="tbl-top"><span class="tbl-timer num" id="eightsTimer"></span></div>
+          <div class="tbl-opps mass-reset" id="eightsOpp"></div>
+          <div class="tbl-mid mass-reset" id="eightsMid"></div>
+          <p class="field-hint tbl-status" id="eightsStatus" role="status" aria-live="polite"></p>
+          <div class="tbl-suitpick hidden" id="eightsSuit"></div>
+          <div class="tbl-acts mass-reset" id="eightsActs"></div>
+          <div class="tbl-hand mass-reset" id="eightsHand" aria-label="Твої карти"></div>
+          <div class="game-result" id="eightsResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="eightsLeave" onclick="tableLeave('eights')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="eightsAgain" onclick="tableBack('eights')">До столів</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-durak" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Дурень онлайн <span class="badge is-accent">2–4</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('durak')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="durakLobby">
+        <div class="mass-hero"><span class="ic i-cards" aria-hidden="true"></span><p>Підкидний дурень на 36 карт для 2–4 гравців. Підкидати можуть усі, крім того, хто відбивається. Банк ділять усі, крім дурня.</p></div>
+        <div class="field-label">Гравців за столом</div>
+        <div class="seg" role="radiogroup" aria-label="Гравців">
+          <button type="button" class="seg-item tbl-size active" data-n="2" onclick="tableSize('durak',2)"><span class="seg-label">2</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="3" onclick="tableSize('durak',3)"><span class="seg-label">3</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="4" onclick="tableSize('durak',4)"><span class="seg-label">4</span></button>
+        </div>
+        <input id="durakBet" type="number" value="200">
+        <button type="button" class="game-cta" onclick="tableCreate('durak')"><span class="ic i-users" aria-hidden="true"></span>Створити стіл</button>
+        <div class="field-label">Відкриті столи</div>
+        <div class="room-list" id="durakRooms"></div>
+      </div>
+      <div id="durakGame" class="hidden">
+        <div id="durakWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="durakWaitText">Чекаємо гравців…</div>
+          <div class="mass-chips" id="durakWaitPlayers"></div>
+          <button type="button" class="btn btn-primary hidden" id="durakStartNow" onclick="tableStartNow('durak')">Почати зараз</button>
+          <button type="button" class="btn btn-ghost" onclick="tableLeave('durak')">Вийти (ставку повернемо)</button></div>
+        <div id="durakPlay" class="hidden">
+          <div class="tbl-top"><span class="tbl-timer num" id="durakTimer"></span></div>
+          <div class="tbl-opps mass-reset" id="durakOpp"></div>
+          <div class="tbl-mid is-durak mass-reset" id="durakMid"></div>
+          <p class="field-hint tbl-status" id="durakStatus" role="status" aria-live="polite"></p>
+          <div class="tbl-acts mass-reset" id="durakActs"></div>
+          <div class="tbl-hand mass-reset" id="durakHand" aria-label="Твої карти"></div>
+          <div class="game-result" id="durakResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="durakLeave" onclick="tableLeave('durak')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="durakAgain" onclick="tableBack('durak')">До столів</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-ludo" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Лудо <span class="badge is-accent">2–4</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('ludo')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="ludoLobby">
+        <div class="mass-hero"><span class="ic i-dice" aria-hidden="true"></span><p>«Не сердься, людино»: заведи всі чотири фішки додому раніше за інших. Вийти з бази — на шістку, шістка дає ще кидок, чужу фішку можна збити.</p></div>
+        <div class="field-label">Гравців за столом</div>
+        <div class="seg" role="radiogroup" aria-label="Гравців">
+          <button type="button" class="seg-item tbl-size active" data-n="2" onclick="tableSize('ludo',2)"><span class="seg-label">2</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="3" onclick="tableSize('ludo',3)"><span class="seg-label">3</span></button>
+          <button type="button" class="seg-item tbl-size" data-n="4" onclick="tableSize('ludo',4)"><span class="seg-label">4</span></button>
+        </div>
+        <input id="ludoBet" type="number" value="200">
+        <button type="button" class="game-cta" onclick="tableCreate('ludo')"><span class="ic i-users" aria-hidden="true"></span>Створити стіл</button>
+        <div class="field-label">Відкриті столи</div>
+        <div class="room-list" id="ludoRooms"></div>
+      </div>
+      <div id="ludoGame" class="hidden">
+        <div id="ludoWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="ludoWaitText">Чекаємо гравців…</div>
+          <div class="mass-chips" id="ludoWaitPlayers"></div>
+          <button type="button" class="btn btn-primary hidden" id="ludoStartNow" onclick="tableStartNow('ludo')">Почати зараз</button>
+          <button type="button" class="btn btn-ghost" onclick="tableLeave('ludo')">Вийти (ставку повернемо)</button></div>
+        <div id="ludoPlay" class="hidden">
+          <div class="tbl-top"><span class="tbl-timer num" id="ludoTimer"></span></div>
+          <div class="mass-chips mass-reset" id="ludoPlayers"></div>
+          <div class="ld-wrap"><div class="ld-board mass-reset" id="ludoBoard" aria-label="Поле Лудо"></div></div>
+          <div class="ld-controls">
+            <div class="ld-die-wrap"><div class="cr-cube ld-die mass-reset" id="ludoDie"></div></div>
+            <button type="button" class="game-cta" id="ludoRoll" onclick="tableAct('ludo',{a:'roll'})"><span class="ic i-dice" aria-hidden="true"></span>Кинути кубик</button>
+          </div>
+          <p class="field-hint tbl-status" id="ludoStatus" role="status" aria-live="polite"></p>
+          <div class="game-result" id="ludoResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="ludoLeave" onclick="tableLeave('ludo')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="ludoAgain" onclick="tableBack('ludo')">До столів</button>
           </div>
         </div>
       </div>

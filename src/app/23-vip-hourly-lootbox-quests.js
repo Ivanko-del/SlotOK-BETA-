@@ -728,7 +728,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1, eights:1, durak:1, ludo:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -934,6 +934,7 @@ function switchTab(id, el) {
   if(id==='roulette')     safe(() => initLiveWheels());
   if(id==='livecrash')    safe(() => initLiveCrash());
   if(id==='bingo' || id==='quizbattle' || id==='royale') safe(() => initMassGame(id));
+  if(id==='eights' || id==='durak' || id==='ludo') safe(() => initTable(id));
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
   if(id==='sicbo')        safe(() => initSicBo());

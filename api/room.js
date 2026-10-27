@@ -5,6 +5,7 @@
 //   { action: "create", game, bet, size?, opts? }  — нова кімната, ставка списується
 //   { action: "join",   id }                       — увійти (ставка списується)
 //   { action: "quick",  game, bet }                — масові ігри: у найближчу гру з цією ставкою
+//   { action: "start",  id }                       — господар: почати, не чекаючи повного столу
 //   { action: "leave",  id }                       — вийти: до старту — з поверненням,
 //                                                    під час гри — поразка
 //   { action: "act",    id, move }                 — хід
@@ -72,6 +73,7 @@ module.exports = async (req, res) => {
         const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, out.room.bet);
         return send(res, out, { progress });
       }
+      case "start": return id ? send(res, await rooms.startNow(nick, id)) : fail(res, 400, "bad_id", "Невірна кімната");
       case "leave": return id ? send(res, await rooms.leave(nick, id)) : fail(res, 400, "bad_id", "Невірна кімната");
       case "act": return id ? send(res, await rooms.act(nick, id, body.move && typeof body.move === "object" ? body.move : null)) : fail(res, 400, "bad_id", "Невірна кімната");
       case "tick": return id ? send(res, await rooms.tick(id)) : fail(res, 400, "bad_id", "Невірна кімната");

@@ -345,5 +345,56 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
   assert.strictEqual(fq.result.winners[0], "ann", "правильна відповідь перемагає");
   assert.strictEqual(bal("ann"), a0q + Math.floor(600 * 0.95), "хто з нулем очок — без призу, увесь банк першому");
 
-  console.log("OK — api/room: ставки, виплата рівно раз, секрети приховані, таймери, вихід, гонки входу; масові ігри (Бінго, Битва, Вікторина) зі швидким входом");
+  // ── Столи 2–4: старт господарем, повні партії Вісімки, Дурня й Лудо ──
+  const RG = require("../lib/room-games");
+  const pick = (a) => a[crypto.randomInt(0, a.length)];
+  const BOT = {
+    eights(x, seat) {
+      const st = x.state; if (st.turn !== seat) return null;
+      const can = RG.ROOM_GAMES.eights.priv(st, seat).can;
+      return can.length ? { a: "play", card: pick(can), suit: "s" } : { a: st.drew ? "pass" : "draw" };
+    },
+    durak(x, seat) {
+      const st = x.state, I = RG.ROOM_GAMES.durak._internal;
+      const open = st.table.findIndex((p) => !p.d);
+      if (st.defender === seat && open >= 0) { const c = st.hands[seat].find((c) => I.beats(st.table[open].a, c, st.trump)); return c ? { a: "defend", i: open, card: c } : { a: "take" }; }
+      if (st.attacker === seat && !st.table.length) return { a: "attack", card: st.hands[seat][0] };
+      if (st.defender !== seat && !st.out[seat] && st.table.length && open < 0 && !st.passed.includes(seat)) return { a: "pass" };
+      return null;
+    },
+    ludo(x, seat) {
+      const st = x.state; if (st.turn !== seat) return null;
+      if (st.phase === "roll") return { a: "roll" };
+      const l = RG.ROOM_GAMES.ludo._internal.legal(st, seat, st.dice);
+      return l.length ? { a: "move", t: l[0] } : null;
+    },
+  };
+  for (const game of ["eights", "durak", "ludo"]) {
+    ["ann", "ben", "cid", "dan"].forEach((n) => { tree.users[n].balance = 10000; });
+    r = await call("ann", { action: "create", game, bet: 400, size: 4 });
+    const tid = r.data.id;
+    await call("ben", { action: "join", id: tid });
+    assert.strictEqual((await call("ben", { action: "start", id: tid })).status, 403, "почати може лише господар");
+    await call("cid", { action: "join", id: tid });
+    assert.strictEqual((await call("ann", { action: "start", id: tid })).data.status, "playing", "господар стартує 3 з 4");
+    assert.strictEqual((await call("dan", { action: "join", id: tid })).status, 409, "після старту не зайти");
+    const t0 = ["ann", "ben", "cid"].reduce((a, n) => a + bal(n), 0);
+    if (game !== "ludo") assert.ok(!pubOf(game, tid).v.includes('"hands"'), "чужі карти не публікуються");
+    for (let k = 0; k < 4000 && full(tid).status === "playing"; k++) {
+      const x = full(tid);
+      let moved = false;
+      for (const [seat, n] of x.players.entries()) {
+        const mv = BOT[game](x, seat);
+        if (mv) { const rr = await call(n, { action: "act", id: tid, move: mv }); if (rr.status === 200) { moved = true; break; } }
+      }
+      if (!moved) { setState(tid, (y) => { y.state.until = Date.now() - 1; }); await call("eve", { action: "tick", id: tid }); }
+    }
+    const ft = full(tid);
+    assert.strictEqual(ft.status, "finished", game + " дограно");
+    const paidT = Object.values(ft.result.payouts).reduce((a, b) => a + b, 0);
+    assert.ok(paidT <= 1140 && paidT >= 1138, game + ": банк 1200 мінус 5%: " + paidT);
+    assert.strictEqual(["ann", "ben", "cid"].reduce((a, n) => a + bal(n), 0), t0 + paidT);
+  }
+
+  console.log("OK — api/room: ставки, виплата рівно раз, секрети приховані, таймери, вихід, гонки входу; масові ігри (Бінго, Битва, Вікторина) зі швидким входом; столи 2–4 (Вісімка, Дурень, Лудо) до кінця");
 })().catch((e) => { console.error(e); process.exit(1); });
