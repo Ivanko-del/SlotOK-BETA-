@@ -5227,3 +5227,130 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 .lc-players li.is-out .num:last-child { color: var(--pos); font-weight: var(--fw-bold); }
 
 @media (prefers-reduced-motion: reduce) { .lc-mult, .game-cta.is-cashout { animation: none !important; } }
+/* ─── src/css/70-mass.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   МАСОВІ ІГРИ (v114): Бінго, Вікторина-баттл, Королівська битва.
+   Логіка — src/app/49-mass-games.js.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.mass-hero {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3); align-items: center;
+  padding: var(--sp-4); margin-bottom: var(--sp-3);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--special) 18%, var(--surface-1)), var(--surface-1));
+  border: var(--bw) solid var(--line); border-radius: var(--r-xl);
+}
+.mass-hero > .ic { width: 44px; height: 44px; color: var(--special); }
+.mass-hero p { margin: 0; color: var(--fg-2); font-size: var(--fs-sm); }
+.mass-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.mass-tier {
+  margin: 0; min-height: 76px; display: grid; place-items: center; gap: 2px; padding: var(--sp-2);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-fg: var(--fg); --btn-sh: var(--sh-1);
+  border-radius: var(--r-lg);
+}
+.mass-tier b { font-size: var(--fs-xl); font-family: var(--font-mono); }
+.mass-tier span { font-size: var(--fs-xs); color: var(--fg-3); }
+.mass-tier.is-hot { --btn-bd: var(--pos); }
+.mass-tier.is-hot span { color: var(--pos); font-weight: var(--fw-bold); }
+.mass-chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.mass-chip { padding: 2px 8px; border-radius: var(--r-pill); font-size: var(--fs-xs); background: var(--surface-2); border: 1px solid var(--line); }
+.mass-chip.is-me { border-color: var(--primary); color: var(--primary); font-weight: var(--fw-bold); }
+.mass-chip.is-out { opacity: .4; text-decoration: line-through; }
+
+/* ── Бінго ──────────────────────────────────────────────────────── */
+.bingo-top { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3); align-items: center; margin: var(--sp-2) 0 var(--sp-3); }
+.bingo-ball {
+  --tone: var(--accent);
+  width: 84px; height: 84px; border-radius: 50%; display: grid; place-content: center; text-align: center;
+  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--white) 70%, var(--tone)) 0 10%, var(--tone) 46%, color-mix(in srgb, var(--tone) 55%, var(--black)) 100%);
+  box-shadow: 0 10px 18px -6px rgb(var(--shade-rgb) / .6), inset 0 -6px 12px rgb(var(--shade-rgb) / .3);
+  color: var(--ink-shadow);
+}
+.bingo-ball b { font-family: var(--font-mono); font-size: 30px; line-height: 1; padding: 2px 6px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--white) 85%, transparent); }
+.bingo-ball small { font-weight: var(--fw-black); font-size: 12px; margin-bottom: 2px; }
+.bingo-ball.tone-fg { --tone: var(--fg-3); }
+.bingo-ball.is-wait { --tone: var(--surface-3); color: var(--fg); }
+.bingo-ball.is-wait b { background: none; }
+.bingo-ball.is-new { animation: bingoDrop .7s var(--ease-premium); }
+@keyframes bingoDrop { 0% { transform: translateY(-60px) rotate(-200deg) scale(.6); opacity: 0; } 70% { transform: translateY(6px) rotate(10deg); opacity: 1; } 100% { transform: none; } }
+.bingo-recent { display: flex; flex-wrap: wrap; gap: 4px; }
+.bingo-mini {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--ink-shadow);
+  background: var(--tone, var(--fg-3));
+}
+.bingo-mini.tone-fg { background: var(--fg-3); }
+.bingo-card {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 420px; margin: 0 auto; padding: var(--sp-2);
+  background: var(--surface-2); border: var(--bw-strong) solid var(--fg); border-radius: var(--r-xl); box-shadow: var(--sh-2);
+}
+.bingo-head { text-align: center; font-family: var(--font-display); font-weight: var(--fw-black); font-size: var(--fs-lg); color: var(--accent); }
+.bingo-cell {
+  aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm);
+  font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: clamp(16px, 5vw, 22px);
+  background: var(--surface-1); box-shadow: inset 0 -3px 0 rgb(var(--shade-rgb) / .25);
+}
+.bingo-cell.is-hit, .bingo-cell.is-free {
+  background: radial-gradient(circle, var(--accent) 0 52%, color-mix(in srgb, var(--accent) 30%, var(--surface-1)) 54%);
+  color: var(--on-accent); animation: bingoDaub .35s var(--ease-premium);
+}
+.bingo-cell.is-free { animation: none; }
+.bingo-cell .ic { width: 50%; height: 50%; }
+@keyframes bingoDaub { from { transform: scale(1.25); } }
+.bingo-info { text-align: center; margin: var(--sp-2) 0; }
+
+/* ── Вікторина ──────────────────────────────────────────────────── */
+.qb-head { text-align: center; font-weight: var(--fw-bold); color: var(--fg-2); margin: var(--sp-2) 0; }
+.qb-bar { --p: 1; height: 8px; border-radius: var(--r-pill); background: var(--surface-2); overflow: hidden; }
+.qb-bar span { display: block; height: 100%; width: calc(var(--p) * 100%); background: var(--primary); transition: width .25s linear; }
+.qb-bar.is-show span { background: var(--fg-3); }
+.qb-question {
+  margin: var(--sp-3) 0; padding: var(--sp-4); min-height: 88px; display: grid; place-items: center; text-align: center;
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-xl); box-shadow: var(--sh-1);
+}
+.qb-options { display: grid; gap: var(--sp-2); }
+@media (min-width: 560px) { .qb-options { grid-template-columns: 1fr 1fr; } }
+.qb-opt {
+  margin: 0; min-height: 52px; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); text-align: left;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-fg: var(--fg); --btn-sh: var(--sh-1);
+  border-radius: var(--r-md); font-weight: var(--fw-semibold);
+}
+.qb-key { flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--surface-3); font-family: var(--font-mono); font-weight: var(--fw-black); }
+.qb-opt.is-chosen { --btn-bd: var(--primary); --btn-bg: color-mix(in srgb, var(--primary) 18%, var(--surface-1)); }
+.qb-opt.is-right { --btn-bg: var(--pos); --btn-fg: var(--on-pos, var(--bg)); --btn-bd: var(--pos); }
+.qb-opt.is-wrong { --btn-bg: var(--neg); --btn-fg: var(--bg); --btn-bd: var(--neg); }
+.qb-opt.is-dim { opacity: .5; }
+.qb-opt:disabled { cursor: default; }
+.qb-scores li { grid-template-columns: 26px 1fr auto; }
+.qb-scores .ic { width: 14px; height: 14px; color: var(--pos); vertical-align: -2px; }
+
+/* ── Королівська битва: двері в 3D ─────────────────────────────── */
+.ry-head { text-align: center; margin: var(--sp-2) 0 var(--sp-3); color: var(--fg-2); }
+.ry-doors { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); perspective: 900px; }
+.ry-door {
+  position: relative; margin: 0; padding: 0; aspect-ratio: 3 / 5; overflow: visible;
+  --btn-bg: color-mix(in srgb, var(--special) 20%, var(--bg)); --btn-bd: var(--fg); --btn-sh: var(--sh-2);
+  border-radius: var(--r-md) var(--r-md) 4px 4px; transform-style: preserve-3d;
+}
+.ry-leaf {
+  position: absolute; inset: 0; border-radius: inherit; transform-origin: left center; transition: transform .7s var(--ease-premium);
+  background:
+    linear-gradient(90deg, transparent 78%, color-mix(in srgb, var(--warn) 80%, transparent) 78% 84%, transparent 84%) center / 100% 8% no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--special) 55%, var(--surface-2)), color-mix(in srgb, var(--special) 35%, var(--surface-1)));
+  box-shadow: inset 0 0 0 3px rgb(var(--shade-rgb) / .25), inset 6px 0 0 color-mix(in srgb, var(--white) 18%, transparent);
+  backface-visibility: hidden; z-index: 1;
+}
+.ry-in { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(18px, 6vw, 28px); font-weight: var(--fw-black); color: var(--fg); }
+.ry-door:not(.is-open) .ry-in { z-index: 2; color: var(--on-accent); text-shadow: 0 2px 0 var(--ink-shadow); }
+.ry-door.is-open .ry-leaf { transform: rotateY(-105deg); }
+.ry-door.is-trap { --btn-bg: color-mix(in srgb, var(--neg) 40%, var(--bg)); }
+.ry-door.is-trap .ry-in { color: var(--neg); animation: ryBoom .6s var(--ease-out); }
+.ry-door.is-trap .ry-in .ic { width: 50%; height: 50%; }
+@keyframes ryBoom { 0% { transform: scale(.2); } 60% { transform: scale(1.4); } 100% { transform: none; } }
+.ry-door.is-mine { box-shadow: 0 0 0 4px var(--primary), var(--sh-2); }
+.ry-door:not(:disabled):hover .ry-leaf { transform: rotateY(-14deg); }
+.ry-status { text-align: center; margin: var(--sp-3) 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bingo-ball.is-new, .bingo-cell, .ry-leaf, .ry-door .ry-in { animation: none !important; transition: none !important; }
+}

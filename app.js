@@ -5387,10 +5387,29 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '113';
+const CURRENT_VERSION = '114';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '114',
+    title: '🎱 Оновлення v114 — ігри на 10+ гравців',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '👥 Великі столи',
+        items: [
+          'Бінго до 30 гравців: картка 5×5, кулі тягне сервер, перша лінія — 40% банку, повна картка — 60%',
+          'Вікторина-баттл до 40 гравців: 8 питань на всіх одночасно, швидкість дає бонусні очки, призи для трьох найкращих',
+          'Королівська битва до 40 гравців: четверо дверей, за одними пастка — останній живий забирає банк',
+          'Вхід в один дотик: обираєш ставку — і тебе садять за найближчий стіл, гра стартує, щойно збереться компанія',
+          'Якщо гравців не набралося — ставку повертаємо',
+        ],
+      },
+    ],
+  },
   {
     version: '113',
     title: '🎡 Оновлення v113 — п’ять спільних коліс і Краш наживо',
@@ -11519,7 +11538,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -11724,6 +11743,7 @@ function switchTab(id, el) {
   if(id==='mines')        safe(() => updateMinesInfo());
   if(id==='roulette')     safe(() => initLiveWheels());
   if(id==='livecrash')    safe(() => initLiveCrash());
+  if(id==='bingo' || id==='quizbattle' || id==='royale') safe(() => initMassGame(id));
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
   if(id==='sicbo')        safe(() => initSicBo());
@@ -20203,6 +20223,9 @@ Object.assign(GAME_HELP, {
   minesweeper: { title:'💣 Сапер', rules:`<b>Мета:</b> Відкрий усі клітинки без мін. Число показує, скільки мін поруч.<br><br><b>Керування:</b> клік — відкрити; правий клік, довге натискання або кнопка «Прапорець» — позначити міну; клік по числу, біля якого стоїть стільки ж прапорців, — відкрити сусідів.<br><br><b>Соло:</b> перший клік завжди безпечний, кращий час потрапляє в рекорди.<br><b>Дуель онлайн:</b> у вас однакове поле; хто перший розмінує — забирає банк (мінус 5%). Підірвався — поразка. Скінчився час — перемагає той, хто відкрив більше.` },
   battleship: { title:'🚢 Морський бій', rules:`<b>Флот:</b> 1 чотирипалубний, 2 трипалубні, 3 двопалубні, 4 однопалубні. Кораблі не торкаються навіть кутами.<br><br><b>Хід:</b> стріляєш по полю суперника. Влучив — стріляєш ще, промах — хід суперника. Потоплений корабель обводиться промахами.<br><br><b>Онлайн:</b> на розстановку 90 с, на постріл 30 с (не встиг — сервер стрельне за тебе; тричі — поразка). Переможець забирає банк (мінус 5%).` },
   livecrash: { title:'🚀 Краш наживо', rules:`<b>Один політ для всіх.</b> Поки йде відлік — став. Після старту множник росте; забери ставку, поки не впало. Видно, хто скільки поставив і коли забрав.<br><br><b>Автокешаут:</b> вкажи множник — сервер забере за тебе, навіть якщо ти закрив вкладку.<br><br><b>Чесність:</b> точку падіння сервер знає заздалегідь, але показує лише хеш; після падіння відкриває сід.` },
+  bingo: { title:'🎱 Бінго', rules:`<b>Стіл до 30 гравців.</b> Обери вхід — гра стартує через 45 с, якщо зібралось хоча б двоє.<br><br><b>Картка 5×5</b> (центр вільний), кулі 1–75 тягне сервер кожні 3,5 с, числа на картці позначаються самі.<br><br><b>Призи:</b> перша повна лінія (рядок, стовпець чи діагональ) — 40% банку, перша повністю закрита картка — 60%. Одночасні переможці ділять приз. Комісія 5%.` },
+  quizbattle: { title:'🧠 Вікторина-баттл', rules:`<b>До 40 гравців, 8 питань.</b> На кожне — 12 секунд, потім 3 секунди показуємо правильну відповідь.<br><br><b>Очки:</b> правильно — 100 + до 50 за швидкість. Неправильно — 0.<br><br><b>Призи:</b> 1-ше місце — 50%, 2-ге — 30%, 3-тє — 20% банку (на двох: 70/30). Хто не набрав жодного очка — без призу. Комісія 5%.` },
+  royale: { title:'⚔️ Королівська битва', rules:`<b>До 40 гравців.</b> Щораунду 10 секунд, щоб обрати одні з чотирьох дверей (не встиг — оберемо навмання).<br><br>За одними дверима — пастка: хто там стояв, вибуває. Пастка ніколи не забирає всіх живих.<br><br><b>Перемога:</b> останній живий забирає банк (мінус 5%). Якщо після 15 раундів живих кілька — банк ділять.` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
 });
 
@@ -22178,6 +22201,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'plinko3d', name:'⚪ Plinko 3D'}, {id:'wheel3d', name:'🎡 Колесо удачі 3D'}, {id:'craps', name:'🎲 Кубики 3D'},
   {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
   {id:'minesweeper', name:'💣 Сапер'}, {id:'battleship', name:'🚢 Морський бій'},
+  {id:'livecrash', name:'🚀 Краш наживо'}, {id:'bingo', name:'🎱 Бінго'}, {id:'quizbattle', name:'🧠 Вікторина-баттл'}, {id:'royale', name:'⚔️ Королівська битва'},
 ];
 
 let _gameToggleDisabledCache = {};
@@ -24451,11 +24475,24 @@ function roomWatch(game, id, cb) {
         if (r.mode === 'server' && r.r.priv) { priv = r.r.priv; privVer = r.r.ver; emit(); }
       }, 1500);
     }
+    // Масові ігри: лобі збирається до startBy — потім сервер стартує гру
+    if (meta.status === 'waiting' && meta.startBy && tickAt !== meta.startBy) {
+      const at = meta.startBy;
+      setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, at - Date.now() + 300 + Math.random() * 700));
+    }
     // Дедлайн минув — просимо сервер розібратися (раз на дедлайн)
+    // У великих кімнатах першими смикають троє, решта — лише якщо стан так і не зрушив.
     if (pub && pub.until && !pub.over && meta.status === 'playing' && tickAt !== pub.until) {
-      const wait = pub.until - Date.now() + 400 + Math.random() * 600;
+      const seat = players.indexOf(currentUser);
+      const wait = pub.until - Date.now() + 400 + Math.random() * 600 + (seat >= 0 && seat < 3 ? 0 : 2200);
       const at = pub.until;
-      setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, wait));
+      setTimeout(() => {
+        if (stopped || tickAt === at) return;
+        let curUntil = null;
+        try { curUntil = meta.v ? JSON.parse(meta.v).until : null; } catch (e) { /* ignore */ }
+        if (curUntil !== at) return; // хтось уже просунув стан
+        tickAt = at; roomApi('tick', { id });
+      }, Math.max(0, wait));
     }
   };
   const onPub = (s) => { meta = s.val(); emit(); };
@@ -25682,4 +25719,243 @@ async function lcAction() {
       if (r.mode === 'server') { addWager(amount); playSound && playSound('click'); }
     }
   } finally { LC.busy = false; lcButtons(); }
+}
+// ─── src/app/49-mass-games.js ───
+// ============================================================
+// МАСОВІ ІГРИ (v114): Бінго, Вікторина-баттл, Королівська битва — до 30–40
+// гравців за одним столом. Вхід «Грати в наступній грі» (api/room.js
+// action "quick"): стіл збирає гравців 45 с і стартує, якщо їх ≥ 2.
+// Правила — lib/room-games/bingo.js, quizbattle.js, royale.js.
+// ============================================================
+
+const MASS = {};
+const MASS_TIERS = [50, 200, 1000];
+const MASS_CFG = {
+  bingo: { name: 'Бінго', render: bingoRender },
+  quizbattle: { name: 'Вікторина-баттл', render: quizRender },
+  royale: { name: 'Королівська битва', render: royaleRender },
+};
+
+function initMassGame(game) {
+  const m = MASS[game] || (MASS[game] = { id: null, unwatch: null, timer: null, last: null, announced: false });
+  const tiers = document.getElementById(game + 'Tiers');
+  if (tiers && !tiers.childElementCount) {
+    tiers.innerHTML = MASS_TIERS.map((b) => `<button type="button" class="mass-tier" onclick="massQuick('${game}',${b})"><span>Вхід</span><b class="num">₴${formatNumber(b)}</b></button>`).join('');
+  }
+  if (!m.lobbyStop) m.lobbyStop = massLobbyInfo(game);
+  if (!m.id) roomResume(game).then((id) => { if (id) massOpen(game, id); });
+}
+// Скільки людей уже чекає за кожним столом
+function massLobbyInfo(game) {
+  if (!db) return () => {};
+  const ref = db.ref('rooms/' + game).orderByChild('status').equalTo('waiting');
+  const cb = ref.on('value', (snap) => {
+    const by = {};
+    Object.values(snap.val() || {}).forEach((r) => { by[r.bet] = Math.max(by[r.bet] || 0, Object.keys(r.players || {}).length); });
+    document.querySelectorAll(`#${game}Tiers .mass-tier`).forEach((b, i) => {
+      const n = by[MASS_TIERS[i]] || 0;
+      b.classList.toggle('is-hot', n > 0);
+      b.querySelector('span').textContent = n ? `чекають: ${n}` : 'Вхід';
+    });
+  }, () => {});
+  return () => ref.off('value', cb);
+}
+async function massQuick(game, bet) {
+  if (!validateBet(bet)) return;
+  const r = await roomApi('quick', { game, bet });
+  if (r.mode !== 'server') { if (r.mode === 'legacy') notify('Ця гра працює лише з сервером', 'error'); return; }
+  playSound && playSound('click');
+  massOpen(game, r.r.id);
+}
+ROOM_HOOKS.bingo = { onJoined: (id) => massOpen('bingo', id), onLeft: () => massClose('bingo') };
+ROOM_HOOKS.quizbattle = { onJoined: (id) => massOpen('quizbattle', id), onLeft: () => massClose('quizbattle') };
+ROOM_HOOKS.royale = { onJoined: (id) => massOpen('royale', id), onLeft: () => massClose('royale') };
+
+function massOpen(game, id) {
+  const m = MASS[game] || (MASS[game] = {});
+  if (m.id === id) return;
+  massClose(game, true);
+  Object.assign(m, { id, announced: false, last: null, local: {} });
+  // Нова гра — чисте поле (картка бінго, двері, питання з минулої гри)
+  document.querySelectorAll(`#tab-${game} .mass-reset`).forEach((el) => { el.innerHTML = ''; Object.keys(el.dataset).forEach((k) => delete el.dataset[k]); });
+  document.getElementById(game + 'Lobby')?.classList.add('hidden');
+  document.getElementById(game + 'Game')?.classList.remove('hidden');
+  m.unwatch = roomWatch(game, id, (u) => massUpdate(game, u));
+  clearInterval(m.timer);
+  m.timer = setInterval(() => { if (m.last) massUpdate(game, m.last, true); }, 250);
+}
+function massClose(game, keepLobby) {
+  const m = MASS[game];
+  if (!m) return;
+  m.unwatch && m.unwatch(); m.unwatch = null;
+  clearInterval(m.timer); m.timer = null; m.id = null;
+  if (!keepLobby) {
+    document.getElementById(game + 'Game')?.classList.add('hidden');
+    document.getElementById(game + 'Lobby')?.classList.remove('hidden');
+  }
+}
+function massUpdate(game, u, fromTimer) {
+  const m = MASS[game];
+  if (!m || !m.id) return;
+  m.last = u;
+  const { meta } = u;
+  if (meta.status === 'cancelled') { if (!fromTimer) { notify('Гравців не набралось — ставку повернено', 'info'); massClose(game); } return; }
+  const wait = meta.status === 'waiting';
+  document.getElementById(game + 'Wait')?.classList.toggle('hidden', !wait);
+  document.getElementById(game + 'Play')?.classList.toggle('hidden', wait);
+  if (wait) {
+    const n = (u.players || []).length;
+    const el = document.getElementById(game + 'WaitText');
+    if (el) el.innerHTML = `Ставка <b class="num">₴${formatNumber(meta.bet)}</b> · гравців: <b class="num">${n}</b> з ${meta.size}<br>Старт через <b class="num">${roomSecondsLeft(meta.startBy)} с</b>${n < 2 ? ' — потрібно хоча б 2 гравці' : ''}`;
+    const list = document.getElementById(game + 'WaitPlayers');
+    if (list && !fromTimer) list.innerHTML = (u.players || []).map((p) => `<span class="mass-chip${p === currentUser ? ' is-me' : ''}">${escapeHtml(p)}</span>`).join('');
+    return;
+  }
+  if (!u.pub) return;
+  MASS_CFG[game].render(u, m, fromTimer);
+  const st = document.getElementById(game + 'Result');
+  if (st && meta.status === 'finished' && u.result) {
+    st.classList.remove('is-win', 'is-lose');
+    st.classList.add((u.result.winners || []).includes(currentUser) ? 'is-win' : 'is-lose');
+    st.textContent = roomResultText(u.result, meta.bet);
+  }
+  document.getElementById(game + 'Again')?.classList.toggle('hidden', meta.status !== 'finished');
+  document.getElementById(game + 'Leave')?.classList.toggle('hidden', meta.status !== 'playing');
+  if (meta.status === 'finished' && !m.announced) { m.announced = true; roomAnnounce(u.result, meta.bet, MASS_CFG[game].name); }
+}
+function massLeave(game) { const m = MASS[game]; if (m && m.id) roomLeaveConfirm(game, m.id, m.last && m.last.meta.status === 'playing'); }
+function massBack(game) { massClose(game); }
+
+// ══════════════════════════ БІНГО ══════════════════════════
+const BINGO_COLS = ['B', 'I', 'N', 'G', 'O'];
+function bingoBallTone(n) { return ['info', 'neg', 'fg', 'pos', 'warn'][Math.floor((n - 1) / 15)]; }
+function bingoRender(u, m, fromTimer) {
+  const { pub, priv, players, seat } = u;
+  const now = Date.now();
+  const card = document.getElementById('bingoCard');
+  const drawn = new Set(pub.drawn);
+  if (card && priv && priv.card) {
+    if (!card.childElementCount) {
+      card.innerHTML = BINGO_COLS.map((c) => `<div class="bingo-head">${c}</div>`).join('') +
+        priv.card.map((n, i) => `<div class="bingo-cell${n === 0 ? ' is-free' : ''}" data-i="${i}">${n === 0 ? '<span class="ic i-star" aria-hidden="true"></span>' : n}</div>`).join('');
+    }
+    priv.card.forEach((n, i) => {
+      const el = card.querySelector(`.bingo-cell[data-i="${i}"]`);
+      if (el && n && drawn.has(n) && !el.classList.contains('is-hit')) el.classList.add('is-hit');
+    });
+  }
+  const last = pub.drawn[pub.drawn.length - 1];
+  const ball = document.getElementById('bingoBall');
+  if (ball) {
+    if (now < pub.start) { ball.className = 'bingo-ball is-wait'; ball.innerHTML = `<small>старт</small><b>${roomSecondsLeft(pub.start)}</b>`; }
+    else if (last && ball.dataset.n !== String(last)) {
+      ball.dataset.n = last;
+      ball.className = 'bingo-ball tone-' + bingoBallTone(last);
+      void ball.offsetWidth; ball.classList.add('is-new');
+      ball.innerHTML = `<small>${BINGO_COLS[Math.floor((last - 1) / 15)]}</small><b>${last}</b>`;
+      if (priv && priv.card && priv.card.includes(last)) playSound && playSound('click');
+    }
+  }
+  const recent = document.getElementById('bingoRecent');
+  if (recent && !fromTimer) recent.innerHTML = pub.drawn.slice(-9, -1).reverse().map((n) => `<span class="bingo-mini tone-${bingoBallTone(n)}">${n}</span>`).join('');
+  const info = document.getElementById('bingoInfo');
+  if (info) {
+    const mine = pub.prog[seat] || [5, 24];
+    info.innerHTML = `Куля <b class="num">${pub.drawn.length}</b>/75 · до лінії тобі: <b class="num">${mine[0]}</b> · до бінго: <b class="num">${mine[1]}</b>` +
+      (pub.lineW ? `<br>Лінію взяли: ${pub.lineW.map((s) => escapeHtml(players[s] || '?')).join(', ')}` : '<br>Перша лінія — 40% банку, повна картка — 60%');
+  }
+  const top = document.getElementById('bingoTop');
+  if (top && !fromTimer) {
+    const rows = players.map((n, i) => ({ n, i, p: pub.prog[i] })).filter((r) => !pub.left[r.i]).sort((a, b) => a.p[1] - b.p[1]).slice(0, 8);
+    top.innerHTML = rows.map((r) => `<li class="${r.n === currentUser ? 'is-me' : ''}"><span>${escapeHtml(r.n)}</span><span class="num">лінія −${r.p[0]}</span><span class="num">бінго −${r.p[1]}</span></li>`).join('');
+  }
+}
+
+// ══════════════════════════ ВІКТОРИНА ══════════════════════════
+function quizRender(u, m, fromTimer) {
+  const { pub, priv, players, seat } = u;
+  const now = Date.now();
+  const q = document.getElementById('qbQuestion');
+  const opts = document.getElementById('qbOptions');
+  const bar = document.getElementById('qbBar');
+  const head = document.getElementById('qbHead');
+  if (now < pub.start && !pub.over) {
+    if (q) q.textContent = `Перше питання через ${roomSecondsLeft(pub.start)} с…`;
+    if (opts) opts.innerHTML = '';
+    if (head) head.textContent = `${pub.n} питань · ${players.length} гравців`;
+    return;
+  }
+  if (head) head.textContent = pub.over ? 'Вікторину завершено' : `Питання ${Math.min(pub.i + 1, pub.n)} з ${pub.n}`;
+  if (pub.q && q && q.dataset.i !== String(pub.i)) { q.dataset.i = pub.i; q.textContent = pub.q.q; m.local.chosen = null; if (opts) opts.innerHTML = ''; }
+  if (pub.q && opts) {
+    const my = priv && priv.answers ? priv.answers[pub.i] : -1;
+    const chosen = my >= 0 ? my : m.local.chosen;
+    const html = pub.q.o.map((o, k) => {
+      let cls = 'qb-opt';
+      if (chosen === k) cls += ' is-chosen';
+      if (pub.q.a !== undefined) cls += k === pub.q.a ? ' is-right' : chosen === k ? ' is-wrong' : ' is-dim';
+      return `<button type="button" class="${cls}" ${chosen !== null && chosen !== undefined || pub.q.a !== undefined ? 'disabled' : ''} onclick="quizAnswer(${pub.i},${k})"><span class="qb-key">${'ABCD'[k]}</span>${escapeHtml(o)}</button>`;
+    }).join('');
+    if (opts.dataset.html !== html) { opts.dataset.html = html; opts.innerHTML = html; }
+  }
+  if (bar && pub.until) {
+    const span = pub.phase === 'ask' ? pub.ask : pub.show;
+    bar.style.setProperty('--p', Math.max(0, Math.min(1, (pub.until - now) / span)));
+    bar.classList.toggle('is-show', pub.phase === 'show');
+  }
+  const board = document.getElementById('qbScores');
+  if (board && !fromTimer) {
+    const rows = players.map((n, i) => ({ n, i, s: pub.scores[i], ok: pub.answered && pub.answered[i] })).sort((a, b) => b.s - a.s);
+    board.innerHTML = rows.slice(0, 10).map((r, k) => `<li class="${r.n === currentUser ? 'is-me' : ''}"><span class="num">${k + 1}</span><span>${escapeHtml(r.n)}${r.ok && pub.phase === 'ask' ? ' <span class="ic i-check" aria-hidden="true"></span>' : ''}</span><span class="num">${r.s}</span></li>`).join('');
+  }
+}
+async function quizAnswer(i, k) {
+  const m = MASS.quizbattle;
+  if (!m || !m.id || m.local.chosen !== null && m.local.chosen !== undefined) return;
+  m.local.chosen = k;
+  if (m.last) quizRender(m.last, m, false);
+  const r = await roomApi('act', { id: m.id, move: { q: i, a: k } });
+  if (r.mode !== 'server') { m.local.chosen = null; }
+}
+
+// ══════════════════════════ КОРОЛІВСЬКА БИТВА ══════════════════════════
+function royaleRender(u, m, fromTimer) {
+  const { pub, priv, players, seat } = u;
+  const alive = pub.alive.filter(Boolean).length;
+  const me = pub.alive[seat];
+  const head = document.getElementById('ryHead');
+  if (head) head.innerHTML = `Раунд <b class="num">${pub.round}</b> · живих <b class="num">${alive}</b> з ${players.length}${pub.until && !pub.over ? ` · <b class="num">${roomSecondsLeft(pub.until)} с</b>` : ''}`;
+  const doors = document.getElementById('ryDoors');
+  if (doors) {
+    const myPick = priv ? priv.pick : null;
+    const show = pub.phase === 'show' && pub.last;
+    const counts = show ? pub.last.counts : null;
+    const html = [0, 1, 2, 3].map((d) => {
+      let cls = 'ry-door';
+      if (myPick === d) cls += ' is-mine';
+      if (show) cls += d === pub.last.trap ? ' is-trap is-open' : ' is-open';
+      const label = show ? (d === pub.last.trap ? '<span class="ic i-bomb" aria-hidden="true"></span>' : `<span class="num">${counts[d]}</span>`) : `<span class="num">${d + 1}</span>`;
+      return `<button type="button" class="${cls}" ${!me || pub.phase !== 'pick' || pub.over ? 'disabled' : ''} onclick="royalePick(${d})"><span class="ry-leaf"></span><span class="ry-in">${label}</span></button>`;
+    }).join('');
+    if (doors.dataset.html !== html) { doors.dataset.html = html; doors.innerHTML = html; }
+  }
+  const st = document.getElementById('ryStatus');
+  if (st && !pub.over) {
+    st.textContent = !me ? 'Ти вибув — дивись, хто переможе.'
+      : pub.phase === 'pick' ? (priv && priv.pick !== null ? 'Двері обрано. Чекаємо інших…' : 'Обери двері! Не встигнеш — оберемо навмання.')
+      : pub.last && pub.last.out.length ? `Пастка за дверима ${pub.last.trap + 1}: вибуло ${pub.last.out.length}.` : 'Пастка порожня — всі живі!';
+  }
+  if (pub.phase === 'show' && pub.last && m.local.shown !== pub.rounds) {
+    m.local.shown = pub.rounds;
+    if (pub.last.out.includes(seat)) { playSound && playSound('loss'); navigator.vibrate && navigator.vibrate([80, 40, 160]); }
+    else if (me) playSound && playSound('win');
+  }
+  const list = document.getElementById('ryPlayers');
+  if (list && !fromTimer) list.innerHTML = players.map((n, i) => `<span class="mass-chip${pub.alive[i] ? '' : ' is-out'}${n === currentUser ? ' is-me' : ''}">${escapeHtml(n)}</span>`).join('');
+}
+async function royalePick(d) {
+  const m = MASS.royale;
+  if (!m || !m.id) return;
+  const r = await roomApi('act', { id: m.id, move: { door: d } });
+  if (r.mode === 'server') playSound && playSound('click');
 }

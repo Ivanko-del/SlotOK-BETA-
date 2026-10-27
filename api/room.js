@@ -4,6 +4,7 @@
 // POST /api/room  Authorization: Bearer <Firebase ID token>
 //   { action: "create", game, bet, size?, opts? }  — нова кімната, ставка списується
 //   { action: "join",   id }                       — увійти (ставка списується)
+//   { action: "quick",  game, bet }                — масові ігри: у найближчу гру з цією ставкою
 //   { action: "leave",  id }                       — вийти: до старту — з поверненням,
 //                                                    під час гри — поразка
 //   { action: "act",    id, move }                 — хід
@@ -52,6 +53,15 @@ module.exports = async (req, res) => {
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await rooms.create(nick, String(body.game || ""), bet, Number(body.size) || 0, body.opts);
         const progress = out.error ? undefined : await safeRecordWager(nick, bet);
+        return send(res, out, { progress });
+      }
+      case "quick": {
+        const bet = parseBet(body.bet);
+        if (!bet || bet < 10) return fail(res, 400, "bad_bet", "Ставка — від ₴10");
+        const blocked = await blockedReason(nick);
+        if (blocked) return fail(res, 403, "blocked", blocked);
+        const out = await rooms.quick(nick, String(body.game || ""), bet);
+        const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, bet);
         return send(res, out, { progress });
       }
       case "join": {

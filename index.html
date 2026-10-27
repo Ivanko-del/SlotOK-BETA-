@@ -480,6 +480,18 @@
       <!-- Усі ігри -->
       <div class="section-header"><span id="lobbyGridTitle">Усі ігри</span><span class="section-count num" id="lobbyGridCount"></span></div>
       <div class="casino-grid-3" id="casinoGamesGrid" role="list">
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('bingo')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">10+</span><div class="casino-game-card-img"><span class="ic i-grid" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Бінго</div><div class="casino-game-card-prov">До 30 гравців</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('quizbattle')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">10+</span><div class="casino-game-card-img"><span class="ic i-brain" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Вікторина-баттл</div><div class="casino-game-card-prov">До 40 гравців</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('royale')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">10+</span><div class="casino-game-card-img"><span class="ic i-swords" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Королівська битва</div><div class="casino-game-card-prov">До 40 гравців</div></div>
+        </div>
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('livecrash')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">LIVE</span><div class="casino-game-card-img"><span class="ic i-rocket" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Краш наживо</div><div class="casino-game-card-prov">Для всіх разом</div></div>
@@ -871,6 +883,94 @@
               <button type="button" class="btn btn-ghost" id="bsLeave" onclick="bsOnlineLeave()">Здатися</button>
               <button type="button" class="btn btn-primary hidden" id="bsAgain" onclick="bsOnlineBack()">До лобі боїв</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-bingo" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Бінго <span class="badge is-accent">10+</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('bingo')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="bingoLobby">
+        <div class="mass-hero"><span class="ic i-grid" aria-hidden="true"></span><p>75 куль, картка 5×5. Кулі тягне сервер, картка закривається сама. Перша лінія — 40% банку, повна картка — 60%.</p></div>
+        <div class="field-label">Обери стіл — гра стартує, щойно збереться компанія</div>
+        <div class="mass-tiers" id="bingoTiers"></div>
+      </div>
+      <div id="bingoGame" class="hidden">
+        <div id="bingoWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="bingoWaitText">Збираємо гравців…</div>
+          <div class="mass-chips" id="bingoWaitPlayers"></div>
+          <button type="button" class="btn btn-ghost" onclick="massLeave('bingo')">Вийти (ставку повернемо)</button></div>
+        <div id="bingoPlay" class="hidden">
+          <div class="bingo-top"><div class="bingo-ball mass-reset" id="bingoBall"></div><div class="bingo-recent mass-reset" id="bingoRecent"></div></div>
+          <div class="bingo-card mass-reset" id="bingoCard" aria-label="Твоя картка"></div>
+          <p class="field-hint bingo-info" id="bingoInfo"></p>
+          <div class="lw-card"><div class="field-label">Найближчі до перемоги</div><ul class="lw-players mass-reset" id="bingoTop"></ul></div>
+          <div class="game-result" id="bingoResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="bingoLeave" onclick="massLeave('bingo')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="bingoAgain" onclick="massBack('bingo')">Ще гра</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-quizbattle" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Вікторина-баттл <span class="badge is-accent">10+</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('quizbattle')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="quizbattleLobby">
+        <div class="mass-hero"><span class="ic i-brain" aria-hidden="true"></span><p>8 питань на всіх одночасно, 12 секунд на кожне. Правильно й швидко — більше очок. Перші троє ділять банк.</p></div>
+        <div class="field-label">Обери стіл — гра стартує, щойно збереться компанія</div>
+        <div class="mass-tiers" id="quizbattleTiers"></div>
+      </div>
+      <div id="quizbattleGame" class="hidden">
+        <div id="quizbattleWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="quizbattleWaitText">Збираємо гравців…</div>
+          <div class="mass-chips" id="quizbattleWaitPlayers"></div>
+          <button type="button" class="btn btn-ghost" onclick="massLeave('quizbattle')">Вийти (ставку повернемо)</button></div>
+        <div id="quizbattlePlay" class="hidden">
+          <div class="qb-head mass-reset" id="qbHead"></div>
+          <div class="qb-bar" id="qbBar"><span></span></div>
+          <div class="qb-question mass-reset" id="qbQuestion" role="status" aria-live="polite"></div>
+          <div class="qb-options mass-reset" id="qbOptions"></div>
+          <div class="lw-card"><div class="field-label">Таблиця</div><ul class="lw-players qb-scores mass-reset" id="qbScores"></ul></div>
+          <div class="game-result" id="quizbattleResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="quizbattleLeave" onclick="massLeave('quizbattle')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="quizbattleAgain" onclick="massBack('quizbattle')">Ще гра</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-royale" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Королівська битва <span class="badge is-accent">10+</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('royale')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="royaleLobby">
+        <div class="mass-hero"><span class="ic i-swords" aria-hidden="true"></span><p>Чотири двері, за одними — пастка. Щораунду обирай двері; хто стояв за пасткою — вибуває. Останній живий забирає банк.</p></div>
+        <div class="field-label">Обери стіл — гра стартує, щойно збереться компанія</div>
+        <div class="mass-tiers" id="royaleTiers"></div>
+      </div>
+      <div id="royaleGame" class="hidden">
+        <div id="royaleWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="royaleWaitText">Збираємо гравців…</div>
+          <div class="mass-chips" id="royaleWaitPlayers"></div>
+          <button type="button" class="btn btn-ghost" onclick="massLeave('royale')">Вийти (ставку повернемо)</button></div>
+        <div id="royalePlay" class="hidden">
+          <div class="ry-head mass-reset" id="ryHead"></div>
+          <div class="ry-doors mass-reset" id="ryDoors"></div>
+          <p class="field-hint ry-status" id="ryStatus" role="status" aria-live="polite"></p>
+          <div class="mass-chips mass-reset" id="ryPlayers"></div>
+          <div class="game-result" id="royaleResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="royaleLeave" onclick="massLeave('royale')">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="royaleAgain" onclick="massBack('royale')">Ще гра</button>
           </div>
         </div>
       </div>

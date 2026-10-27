@@ -105,11 +105,24 @@ function roomWatch(game, id, cb) {
         if (r.mode === 'server' && r.r.priv) { priv = r.r.priv; privVer = r.r.ver; emit(); }
       }, 1500);
     }
+    // Масові ігри: лобі збирається до startBy — потім сервер стартує гру
+    if (meta.status === 'waiting' && meta.startBy && tickAt !== meta.startBy) {
+      const at = meta.startBy;
+      setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, at - Date.now() + 300 + Math.random() * 700));
+    }
     // Дедлайн минув — просимо сервер розібратися (раз на дедлайн)
+    // У великих кімнатах першими смикають троє, решта — лише якщо стан так і не зрушив.
     if (pub && pub.until && !pub.over && meta.status === 'playing' && tickAt !== pub.until) {
-      const wait = pub.until - Date.now() + 400 + Math.random() * 600;
+      const seat = players.indexOf(currentUser);
+      const wait = pub.until - Date.now() + 400 + Math.random() * 600 + (seat >= 0 && seat < 3 ? 0 : 2200);
       const at = pub.until;
-      setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, wait));
+      setTimeout(() => {
+        if (stopped || tickAt === at) return;
+        let curUntil = null;
+        try { curUntil = meta.v ? JSON.parse(meta.v).until : null; } catch (e) { /* ignore */ }
+        if (curUntil !== at) return; // хтось уже просунув стан
+        tickAt = at; roomApi('tick', { id });
+      }, Math.max(0, wait));
     }
   };
   const onPub = (s) => { meta = s.val(); emit(); };
