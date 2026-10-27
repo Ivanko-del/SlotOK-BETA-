@@ -11,16 +11,18 @@ const BET_INPUT_IDS = [
   'betAmountSlots', 'betAmountDiamond', 'grBetAmount', 'betAmountCrash', 'betAmountPoker', 'betAmountChests',
   'betAmountMines', 'betAmountPlinko', 'towerBet', 'hiloBet', 'diceBet', 'doubleBet', 'betAmountBJ',
   'betAmountKeno', 'betAmountScratch', 'limboAmount', 'betAmountFortune', 'betAmountHR', 'betAmountColor',
-  'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet', 'penaltyBet',
-  'bowlingBet', 'archeryBet', 'sicboBet', 'cwBet', 'duckBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
+  'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
+  'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'placeGrBet', 'startCrash', 'dealPoker', 'startChests', 'startMines',
   'dropPlinko', 'startTower', 'startHilo', 'rollDice', 'bjDeal', 'playKeno', 'buyScratch', 'playLimbo',
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
-  'throwBowl', 'shootArchery', 'rollSicBo', 'playCardWar', 'startDuckShoot', 'createCfRoom', 'createRpsRoom',
+  'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
+  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
 

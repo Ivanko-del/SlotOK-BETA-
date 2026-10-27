@@ -279,12 +279,14 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
-  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'}, {id:'penalty', name:'⚽ Penalty Kick'},
-  {id:'bowling', name:'🎳 Bowling'}, {id:'archery', name:'🎯 Archery'}, {id:'sicbo', name:'🎲 Sic Bo'},
-  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'}, {id:'duckshoot', name:'🦆 Duck Shoot'},
+  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'},
+  {id:'sicbo', name:'🎲 Sic Bo'},
+  {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'},
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
   {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
   {id:'diamond', name:'💎 Diamond Rush'},
+  {id:'plinko3d', name:'⚪ Plinko 3D'}, {id:'wheel3d', name:'🎡 Колесо удачі 3D'}, {id:'craps', name:'🎲 Кубики 3D'},
+  {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
 ];
 
 let _gameToggleDisabledCache = {};

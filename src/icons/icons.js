@@ -324,6 +324,7 @@ module.exports = {
   'pushpin': '<path d="M9 3.5h6l-1 6 3 3H7l3-3z"/><path d="M12 12.5V21"/>',
   'magic-ball': '<circle cx="12" cy="10.5" r="7"/><path d="M6.5 16.5 5 20.5h14l-1.5-4"/><path d="M9.5 8a3 3 0 0 1 3-2"/>',
   'repeat-one': '<path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H19"/><path d="m16 3 3 3-3 3"/><path d="M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H5"/><path d="m8 21-3-3 3-3"/><path d="M11 10.5 12.5 9.5v5"/>',
+  pegs: '<circle cx="12" cy="5" r="1.4" ' + F + '/><circle cx="8" cy="10" r="1.4" ' + F + '/><circle cx="16" cy="10" r="1.4" ' + F + '/><circle cx="4" cy="15" r="1.4" ' + F + '/><circle cx="12" cy="15" r="1.4" ' + F + '/><circle cx="20" cy="15" r="1.4" ' + F + '/><path d="M3 20.5h18M7 20.5v-2M12 20.5v-2M17 20.5v-2"/><circle cx="14" cy="7.6" r="2"/>',
   seven: '<path d="M6 5h12l-6.5 15"/><path d="M8.5 12.5h7"/>',
   'arrow-up-left': '<path d="M17 17 7 7M15.5 7H7v8.5"/>',
   'arrow-down-left': '<path d="M17 7 7 17M7 8.5V17h8.5"/>',

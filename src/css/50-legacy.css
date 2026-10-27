@@ -328,9 +328,7 @@
     .req-empty { text-align:center;padding:24px;color:var(--fg-4);font-size:13px; }
     /* v62 new styles */
     .dragon-diff.active { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
-    .arch-risk.active   { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
     .sicbo-type.active  { border-color: var(--accent) !important; color: var(--accent) !important; background: rgb(var(--accent-rgb) / 0.08); }
-    .penalty-zone:hover { background: rgb(var(--pos-rgb) / 0.3) !important; transform: scale(1.05); }
     #jackpotTicker:hover { background: linear-gradient(90deg,color-mix(in srgb, var(--accent) 10%, var(--surface-1)),color-mix(in srgb, var(--accent) 13%, var(--surface-1)),color-mix(in srgb, var(--accent) 10%, var(--surface-1))) !important; }
     @keyframes duckFly { from{transform:translateX(-40px) scaleX(-1)} to{transform:translateX(260px) scaleX(-1)} }
     .admin-stat { background: linear-gradient(160deg, rgb(var(--accent-rgb) / 0.05), transparent 55%), var(--bg); border: 1px solid rgb(var(--accent-rgb) / 0.16); border-radius: var(--r-sm); padding: 12px; text-align: center; box-shadow: var(--bevel), var(--elev-1); }

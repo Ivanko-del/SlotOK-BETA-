@@ -50,7 +50,7 @@
 | 32-music-battlepass-stats | музика, **Battle Pass** (екран; таблиці — `shared/rewards.js`), особиста статистика |
 | 33-bank-card | віртуальна картка, `pushCardTx`, перекази Аксіомою |
 | 34-axiom-pm | Аксіома, Baccarat, відеопокер, приватні повідомлення, теми |
-| 35-minigames-dragon-penalty-duck | Dragon Tower, Penalty, Bowling, Archery, Sic Bo, Card War, Duck Shoot |
+| 35-minigames-dragon-sicbo-cardwar | Dragon Tower, Sic Bo, Card War |
 | 36-lottery-dailyspin-themes | лотерея, інвест-пул, щоденне колесо, календар, фон/акцент |
 | 37-cashier-v70 | Каса v70 (3D-картка, ліміти карток) |
 | 38-banners-moderation | банери, модерація |
@@ -58,6 +58,7 @@
 | 40-celebration-winback-onboarding | святкування виграшу, «Ми скучили», онбординг, mystery box, стрічка друзів |
 | 41-ui-confirm | `confirmAction()` — діалог підтвердження критичних дій |
 | 42-game-ui | спільне поле ставки (`.bet-field`) і головна кнопка (`.game-cta`) для всіх ігор |
+| 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |
 
 Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:
 їх читає і браузер, і сервер.

@@ -208,14 +208,6 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   assert.ok(Math.abs(rtpCw - 1.0) < 0.01, "RTP Card War " + rtpCw);
   // Ребаланс: жодна гра не повертає гравцю більше, ніж він ставить, за будь-якого вибору.
   const rtpOf = (game, params, n = 200000) => { let paid = 0; for (let i = 0; i < n; i++) paid += GAMES[game].play(100, params, rng).payout; return paid / (n * 100); };
-  for (const zone of GAMES.penalty.ZONES) assert.ok(rtpOf("penalty", { zone }, 60000) < 0.99, "Penalty " + zone);
-  for (const level of ["low", "mid", "high"]) {
-    const r = rtpOf("archery", { level });
-    assert.ok(r > 0.93 && r < 0.99, `Archery ${level} RTP ${r}`);
-  }
-  let bowlMax = 0, bowlAt = 0;
-  for (let power = 5; power <= 100; power += 5) { const r = rtpOf("bowling", { power }, 40000); if (r > bowlMax) { bowlMax = r; bowlAt = power; } }
-  assert.ok(bowlMax < 1.0, `Bowling max RTP ${bowlMax} @ ${bowlAt}`);
   for (const risk of ["low", "med", "high"]) {
     const r = rtpOf("plinko", { risk }, 300000);
     assert.ok(r > 0.92 && r < 0.995, `Plinko ${risk} RTP ${r}`);
@@ -258,10 +250,6 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   // Скретч: 96,4% звичайно; «удача новачка» лише для перших ігор.
   const rs = rtpOf("scratch", {}, 300000);
   assert.ok(rs > 0.93 && rs < 0.99, "Scratch RTP " + rs);
-  assert.strictEqual(GAMES.bowling.parse({ power: 101 }), null);
-  assert.strictEqual(GAMES.bowling.parse({ power: 50.5 }), null);
-  assert.strictEqual(GAMES.penalty.parse({ zone: "center" }), null);
-  assert.strictEqual(GAMES.archery.parse({ level: "god" }), null);
   assert.strictEqual(GAMES.sicbo.parse({ type: "sum", sum: 3 }), null);
   assert.strictEqual(GAMES.sicbo.parse({ type: "sum", sum: 18 }), null);
   assert.strictEqual(GAMES.sicbo.parse({ type: "jackpot" }), null);
@@ -272,7 +260,82 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
   assert.strictEqual(GAMES.limbo.parse({ target: 1.001 }), null);
   assert.strictEqual(GAMES.limbo.parse({ target: "abc" }), null);
 
-  console.log(`OK — api/play: ID token, валідація, атомарний баланс, ідемпотентність, блокування; RTP dice ${rtpDice.toFixed(3)}, limbo ${rtpLimbo.toFixed(3)}, sic bo ${rtpSb.toFixed(3)}, card war ${rtpCw.toFixed(3)}, bowling max ${bowlMax.toFixed(3)}@${bowlAt}`);
+  // ── Нові ігри v110: точний RTP ──
+  const C12 = [1, 12, 66, 220, 495, 792, 924, 792, 495, 220, 66, 12, 1];
+  const rtpNew = {};
+  for (const risk of ["low", "med", "high"]) {
+    const r = GAMES.plinko3d.MULTS[risk].reduce((a, m, i) => a + m * C12[i] / 4096, 0);
+    assert.ok(r > 0.95 && r < 0.98, `Plinko 3D ${risk} RTP ${r}`);
+    rtpNew["plinko3d-" + risk] = r;
+  }
+  {
+    const W = GAMES.wheel3d, bonusMean = W.BONUS.reduce((a, b) => a + b, 0) / W.BONUS.length;
+    const r = W.SEGMENTS.reduce((a, v) => a + (v === "B" ? bonusMean : v), 0) / W.SEGMENTS.length;
+    assert.ok(r > 0.95 && r < 0.98, "Wheel 3D RTP " + r);
+    rtpNew.wheel3d = r;
+  }
+  {
+    const all = [];
+    for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) all.push([a, b]);
+    const fixed = (d) => ({ int: (() => { let i = 0; return () => d[i++]; })() });
+    const bets = [{ type: "small" }, { type: "big" }, { type: "seven" }, { type: "doubles" }];
+    for (let s2 = 2; s2 <= 12; s2++) bets.push({ type: "sum", sum: s2 });
+    for (const b of bets) {
+      const r = all.reduce((acc, d) => acc + GAMES.craps.play(1000, GAMES.craps.parse(b), fixed(d)).payout, 0) / (36 * 1000);
+      assert.ok(r > 0.95 && r < 0.98, `Craps ${JSON.stringify(b)} RTP ${r}`);
+    }
+    assert.strictEqual(GAMES.craps.parse({ type: "sum", sum: 13 }), null);
+    assert.strictEqual(GAMES.craps.parse({ type: "any" }), null);
+  }
+  {
+    // Слот 5×3: на кожній лінії символи барабанів незалежні й рівномірні
+    // за стрічкою → E[лінія] рахується перебором 9^5 комбінацій з вагами.
+    const S = GAMES.slot5, freq = S.REELS.map((r) => { const f = new Array(9).fill(0); r.forEach((x) => f[x]++); return f.map((c) => c / r.length); });
+    let eLine = 0;
+    const rec = (k, p, sy) => {
+      if (k === 5) { const w = S.lineWin(sy); if (w) eLine += p * w.mult; return; }
+      for (let x = 0; x < 9; x++) if (freq[k][x]) { sy[k] = x; rec(k + 1, p * freq[k][x], sy); }
+    };
+    rec(0, 1, []);
+    // Скатер: на стрічці скатери стоять щонайменше через 3, тож у вікні 3×1
+    // барабана їх 0 або 1; P = 3 × кількість / довжина.
+    S.REELS.forEach((r) => {
+      const at = r.map((x, i) => (x === S.SCATTER ? i : -1)).filter((i) => i >= 0);
+      for (const i of at) for (const j of at) if (i !== j) assert.ok(Math.min(Math.abs(i - j), r.length - Math.abs(i - j)) >= 3, "скатери надто близько");
+    });
+    let dist = [1];
+    S.REELS.forEach((r) => {
+      const p = (3 * r.filter((x) => x === S.SCATTER).length) / r.length, nd = new Array(dist.length + 1).fill(0);
+      dist.forEach((v, k) => { nd[k] += v * (1 - p); nd[k + 1] += v * p; });
+      dist = nd;
+    });
+    const eScatter = [3, 4, 5].reduce((a, k) => a + (dist[k] || 0) * S.SCATTER_PAY[k], 0);
+    const r = eLine + eScatter; // лінійна ставка = ставка/10, ліній 10 → RTP ліній = E[множник лінії]
+    assert.ok(r > 0.95 && r < 0.98, "Slot 5x3 RTP " + r);
+    rtpNew.slot5 = r;
+    // Перевірка play(): та сама таблиця, виплата = сума ліній/10 + скатер
+    const s5 = S.play(1000, {}, { int: (a, b) => a + Math.floor(Math.random() * (b - a)) });
+    assert.strictEqual(s5.payout, Math.floor(1000 * (s5.lines.reduce((a, l) => a + l.mult / 10, 0) + s5.scatterMult) + 1e-6));
+  }
+  {
+    // «Три в ряд» — каскади не рахуються аналітично; симуляція з фіксованим зерном.
+    // mulberry32: простий, але якісний генератор (LCG тут занижує збіги).
+    let seed = 20261027;
+    const next = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const prng = { int: (a, b) => a + Math.floor(next() * (b - a)) };
+    let paid = 0, hits = 0;
+    const n = 200000;
+    for (let i = 0; i < n; i++) { const o = GAMES.match3.play(1000, {}, prng); paid += o.payout; if (o.win) hits++; }
+    const r = paid / (n * 1000);
+    assert.ok(r > 0.93 && r < 0.985, "Match-3 RTP " + r);
+    rtpNew.match3 = r;
+    // Кроки узгоджені: після останнього кроку збігів немає
+    const o = GAMES.match3.play(100, {}, prng);
+    const last = o.steps.length ? o.steps[o.steps.length - 1].grid : o.start;
+    assert.strictEqual(GAMES.match3.findRuns(last).cells.length, 0);
+  }
+  assert.strictEqual(GAMES.plinko3d.parse({ risk: "ultra" }), null);
+  console.log(`OK — api/play: ID token, валідація, атомарний баланс, ідемпотентність, блокування; RTP dice ${rtpDice.toFixed(3)}, limbo ${rtpLimbo.toFixed(3)}, sic bo ${rtpSb.toFixed(3)}, card war ${rtpCw.toFixed(3)}; нові: ${Object.entries(rtpNew).map(([k, v]) => k + ' ' + v.toFixed(3)).join(', ')}`);
 })().catch((e) => {
   console.error(e);
   process.exit(1);
