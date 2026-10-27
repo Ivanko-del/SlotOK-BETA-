@@ -27,7 +27,7 @@ const BUILTIN_CHANGELOG = [
       {
         type: 'improve',
         title: '💳 Донат',
-        items: ['Прибрали спосіб донату через USDT — лишились Monobank і Telegram'],
+        items: ['Прибрали USDT: донат — через Monobank і Telegram, вивід у Telegram-боті — лише на картку PrivatBank або Monobank'],
       },
     ],
   },
