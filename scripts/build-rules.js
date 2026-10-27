@@ -212,6 +212,15 @@ function build(strict) {
     pvp_predict: openNode(),
     pvp_chess: openNode(),
     pvp_coinflip: openNode(),
+    // Онлайн-кімнати (api/room.js): пише лише сервер. Повний стан —
+    // room_state/room_of/room_paid — правил не має, тобто закритий для браузера.
+    rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
+    room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
+    // Рекорди соло-Сапера: кожен пише лише свій рядок, кращий час — число секунд
+    minesweeper_records: {
+      ".read": true,
+      $level: { ".indexOn": ["t"], $nick: { ".write": "auth != null && auth.uid === $nick", t: v("newData.isNumber() && newData.val() > 0 && newData.val() < 100000") } },
+    },
     global_roulette: openNode(),
     sport_bets: openNode(),
     sport_matches: openNode(),

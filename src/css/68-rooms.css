@@ -1,0 +1,156 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ОНЛАЙН-КІМНАТИ (v112) + Сапер + Морський бій.
+   Логіка — src/app/44-rooms.js, 45-minesweeper.js, 46-battleship.js.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Лобі кімнат ────────────────────────────────────────────────── */
+.room-list { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.room-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-3); background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.room-row.is-mine { border-color: var(--primary); }
+.room-row-main { min-width: 0; }
+.room-row-host { font-weight: var(--fw-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-row-meta { font-size: var(--fs-xs); color: var(--fg-3); }
+.room-row-btn { width: auto; margin: 0; flex-shrink: 0; min-height: 40px; padding: 0 var(--sp-3); font-size: var(--fs-sm); }
+.room-empty { padding: var(--sp-4); text-align: center; color: var(--fg-3); font-size: var(--fs-sm); background: var(--surface-1); border: var(--bw) dashed var(--line); border-radius: var(--r-lg); list-style: none; }
+.room-wait {
+  display: grid; justify-items: center; gap: var(--sp-3); padding: var(--sp-6) var(--sp-4); margin-bottom: var(--sp-3);
+  text-align: center; color: var(--fg-2); background: var(--surface-1); border: var(--bw) dashed var(--line); border-radius: var(--r-xl);
+}
+.room-wait > .ic { width: 32px; height: 32px; color: var(--primary); animation: g3dPulse 1.2s var(--ease-in-out) infinite alternate; }
+.room-wait .btn { width: auto; }
+.room-actions { display: flex; gap: var(--sp-2); justify-content: center; margin: var(--sp-2) 0; }
+.room-actions > * { flex: 1 1 0; min-width: 0; margin: 0; }
+.room-actions .btn { min-height: var(--hit); }
+
+/* ── Сапер ──────────────────────────────────────────────────────── */
+.ms-levels { margin-top: var(--sp-2); }
+.ms-hud {
+  display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: var(--sp-2);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.ms-hud.is-compact { grid-template-columns: 1fr; justify-items: end; margin-top: 0; }
+.ms-counter {
+  display: inline-flex; align-items: center; gap: var(--sp-1); justify-self: start;
+  padding: var(--sp-1) var(--sp-3); border-radius: var(--r-md);
+  background: var(--surface-1); border: var(--bw) solid var(--line);
+  font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--fg);
+}
+.ms-counter .ic { width: 18px; height: 18px; color: var(--fg-3); }
+.ms-hud .ms-counter:nth-of-type(2) { justify-self: end; }
+.ms-face {
+  width: var(--hit); height: var(--hit); margin: 0; padding: 0; display: grid; place-items: center;
+  --btn-bg: var(--accent); --btn-fg: var(--on-accent); --btn-bd: var(--ink-shadow); --btn-sh: var(--sh-1);
+  border-radius: var(--r-md);
+}
+.ms-face .ic { width: 22px; height: 22px; }
+.ms-flag-toggle {
+  width: auto; margin: 0; min-height: 40px; padding: 0 var(--sp-3); display: inline-flex; align-items: center; gap: var(--sp-1);
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg-2);
+  font-size: var(--fs-sm); border-radius: var(--r-md);
+}
+.ms-flag-toggle .ic { width: 18px; height: 18px; }
+.ms-flag-toggle.active { --btn-bg: var(--neg); --btn-fg: var(--on-accent); --btn-bd: var(--neg); }
+
+.ms-scroll { overflow-x: auto; overscroll-behavior-x: contain; padding: var(--sp-1) 0 var(--sp-2); -webkit-overflow-scrolling: touch; }
+.ms-board {
+  --cell: clamp(24px, calc((min(100vw, 720px) - 56px) / var(--cols, 9)), 40px);
+  display: grid; grid-template-columns: repeat(var(--cols, 9), var(--cell)); grid-auto-rows: var(--cell);
+  gap: 2px; width: max-content; margin: 0 auto; padding: var(--sp-2);
+  background: var(--line); border: var(--bw-strong) solid var(--fg); border-radius: var(--r-lg);
+  box-shadow: var(--sh-2); user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.ms-cell {
+  position: relative; display: grid; place-items: center; border-radius: 4px; cursor: pointer;
+  font-family: var(--font-mono); font-weight: var(--fw-black); font-size: calc(var(--cell) * .55); line-height: 1;
+  /* закрита клітинка — опукла плитка */
+  background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 30%, var(--surface-2)), color-mix(in srgb, var(--primary) 16%, var(--surface-1)));
+  box-shadow: inset 2px 2px 0 color-mix(in srgb, var(--white) 22%, transparent), inset -2px -2px 0 rgb(var(--shade-rgb) / .35);
+  transition: transform var(--dur-1) var(--ease-out), background var(--dur-1);
+}
+@media (hover: hover) { .ms-board:not(.is-over) .ms-cell:not(.is-open):not(.is-flag):hover { background: color-mix(in srgb, var(--primary) 42%, var(--surface-2)); transform: translateY(-1px); } }
+.ms-cell:active:not(.is-open) { transform: scale(.94); }
+.ms-cell.is-open { cursor: default; background: var(--bg); box-shadow: inset 0 0 0 1px rgb(var(--fg-rgb) / .06); animation: msOpen var(--dur-2) var(--ease-out); }
+@keyframes msOpen { from { transform: scale(.82); opacity: .4; } to { transform: none; opacity: 1; } }
+.ms-cell.n1 { color: var(--info); } .ms-cell.n2 { color: var(--pos); } .ms-cell.n3 { color: var(--neg); } .ms-cell.n4 { color: var(--special); }
+.ms-cell.n5 { color: var(--warn); } .ms-cell.n6 { color: var(--primary); } .ms-cell.n7 { color: var(--fg); } .ms-cell.n8 { color: var(--fg-3); }
+.ms-cell .ic { width: 64%; height: 64%; }
+.ms-cell.is-flag { color: var(--neg); }
+.ms-cell.is-flag .ic { animation: msFlag var(--dur-2) var(--ease-premium); }
+@keyframes msFlag { from { transform: translateY(-40%) scale(.6); opacity: 0; } }
+.ms-cell.is-wrong { color: var(--fg-3); text-decoration: line-through; }
+.ms-cell.is-mine { color: var(--fg); background: var(--surface-2); }
+.ms-cell.is-boom { background: var(--neg); color: var(--on-accent); animation: msBoom .5s var(--ease-out); }
+@keyframes msBoom { 0% { transform: scale(1.5); box-shadow: 0 0 0 10px rgb(var(--neg-rgb) / .4); } 100% { transform: none; } }
+.ms-cell.is-pending { opacity: .5; animation: g3dPulse .5s infinite alternate; }
+
+.ms-records-card { margin-top: var(--sp-3); padding: var(--sp-3); background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg); }
+.ms-records { margin: var(--sp-2) 0 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.ms-records li { display: grid; grid-template-columns: 28px 1fr auto; gap: var(--sp-2); padding: var(--sp-1) var(--sp-2); border-radius: var(--r-sm); font-size: var(--fs-sm); }
+.ms-records li.is-me { background: rgb(var(--primary-rgb) / .14); font-weight: var(--fw-bold); }
+.ms-records .num { font-family: var(--font-mono); color: var(--fg-2); }
+
+.ms-duel-top { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); align-items: center; margin: var(--sp-2) 0; }
+.ms-bars { display: grid; gap: var(--sp-2); }
+.ms-bar-top { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--fg-2); margin-bottom: 2px; }
+.ms-bar.is-me .ms-bar-top { color: var(--fg); font-weight: var(--fw-bold); }
+.ms-bar-track { height: 8px; border-radius: var(--r-pill); background: var(--surface-2); overflow: hidden; }
+.ms-bar-fill { height: 100%; background: var(--fg-3); border-radius: inherit; transition: width var(--dur-3) var(--ease-out); }
+.ms-bar.is-me .ms-bar-fill { background: var(--primary); }
+.ms-bar.is-boom .ms-bar-fill { background: var(--neg); }
+
+/* ── Морський бій ───────────────────────────────────────────────── */
+.bs-boards { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); }
+@media (min-width: 760px) { .bs-boards { grid-template-columns: 1fr 1fr; } }
+.bs-wrap { transition: opacity var(--dur-2); }
+.bs-wrap.is-dim { opacity: .45; pointer-events: none; }
+.bs-cap { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-1); font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--fg-2); }
+.bs-left { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; }
+.bs-pip { width: calc(var(--len) * 7px); height: 7px; border-radius: var(--r-pill); background: var(--primary); }
+.bs-pip.is-sunk { background: var(--line); }
+.bs-board {
+  --cell: clamp(24px, calc((min(100vw, 720px) - 60px) / 10), 38px);
+  display: grid; grid-template-columns: repeat(10, var(--cell)); grid-auto-rows: var(--cell); gap: 2px;
+  width: max-content; margin: 0 auto; padding: var(--sp-2);
+  background:
+    repeating-linear-gradient(115deg, transparent 0 14px, rgb(var(--info-rgb) / .06) 14px 15px),
+    color-mix(in srgb, var(--info) 18%, var(--surface-1));
+  border: var(--bw-strong) solid var(--fg); border-radius: var(--r-lg); box-shadow: var(--sh-2);
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+@media (min-width: 760px) { .bs-board { --cell: clamp(22px, calc((min(100vw, 1100px) - 140px) / 22), 34px); } }
+.bs-wrap.is-mine .bs-board { --cell: clamp(20px, calc((min(100vw, 720px) - 60px) / 13), 30px); }
+@media (min-width: 760px) { .bs-wrap.is-mine .bs-board { --cell: clamp(22px, calc((min(100vw, 1100px) - 140px) / 22), 34px); } }
+.bs-cell { position: relative; border-radius: 3px; background: rgb(var(--bg-rgb) / .35); }
+.bs-board.is-enemy.is-active .bs-cell:not(.is-miss):not(.is-hit):not(.is-sunk) { cursor: crosshair; }
+@media (hover: hover) { .bs-board.is-enemy.is-active .bs-cell:not(.is-miss):not(.is-hit):not(.is-sunk):hover { background: rgb(var(--accent-rgb) / .35); box-shadow: inset 0 0 0 2px var(--accent); } }
+.bs-board.is-enemy.is-active { box-shadow: var(--sh-2), 0 0 0 3px var(--accent); }
+/* кораблі: «корпус» з об'ємом */
+.bs-cell.is-ship {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fg-3) 70%, var(--white)), var(--fg-3));
+  box-shadow: inset 0 -3px 0 rgb(var(--shade-rgb) / .35);
+  border-radius: 2px;
+}
+.bs-cell.is-ship.is-h.is-head { border-radius: 40% 2px 2px 40%; }
+.bs-cell.is-ship.is-h.is-tail { border-radius: 2px 40% 40% 2px; }
+.bs-cell.is-ship.is-v.is-head { border-radius: 40% 40% 2px 2px; }
+.bs-cell.is-ship.is-v.is-tail { border-radius: 2px 2px 40% 40%; }
+.bs-cell.is-ship.is-solo { border-radius: 40%; }
+.bs-cell.is-miss::after { content: ""; position: absolute; inset: 38%; border-radius: 50%; background: var(--fg-3); animation: bsSplash var(--dur-3) var(--ease-out); }
+@keyframes bsSplash { from { transform: scale(3); opacity: 0; } }
+.bs-cell.is-hit { background: color-mix(in srgb, var(--warn) 60%, var(--surface-1)); animation: bsHit .45s var(--ease-out); }
+.bs-cell.is-hit::after, .bs-cell.is-sunk::after {
+  content: ""; position: absolute; inset: 18%;
+  background: linear-gradient(45deg, transparent 42%, var(--neg) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--neg) 42% 58%, transparent 58%);
+}
+.bs-cell.is-sunk { background: color-mix(in srgb, var(--neg) 45%, var(--surface-1)); }
+.bs-cell.is-sunk::after { background: linear-gradient(45deg, transparent 42%, var(--fg) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--fg) 42% 58%, transparent 58%); }
+@keyframes bsHit { 0% { transform: scale(1.4); box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / .5); } 100% { transform: none; } }
+.bs-cell.is-last { box-shadow: inset 0 0 0 2px var(--accent); }
+.bs-cell.is-pending { animation: g3dPulse .4s infinite alternate; background: rgb(var(--accent-rgb) / .4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-cell, .ms-cell .ic, .bs-cell, .bs-cell::after { animation: none !important; transition: none !important; }
+}

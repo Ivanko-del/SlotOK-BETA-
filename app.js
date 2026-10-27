@@ -5808,10 +5808,36 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '111';
+const CURRENT_VERSION = '112';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '112',
+    title: '⚓ Оновлення v112 — Сапер, Морський бій і чесні дуелі',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎮 Нові ігри',
+        items: [
+          'Сапер: класичний соло на час (Новачок, Любитель, Профі) з таблицею рекордів',
+          'Сапер-дуель онлайн: однакове поле в обох, хто перший розмінує — забирає банк',
+          'Морський бій: тренування з ботом і онлайн-бій 1×1 на ставку (влучив — стріляєш ще)',
+        ],
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Чесні дуелі',
+        items: [
+          'Coinflip, Камінь-ножиці та Prediction тепер рахує сервер: монету кидає він, хід суперника й загадане число ніхто не бачить до кінця',
+          'Якщо суперник не походив вчасно — він програє, і гра не зависає',
+          'Кімната без суперника сама закривається через 10 хвилин зі поверненням ставки',
+        ],
+      },
+    ],
+  },
   {
     version: '111',
     title: '🔧 Оновлення v111 — онлайн-ігри знову працюють',
@@ -11880,7 +11906,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -12092,6 +12118,8 @@ function switchTab(id, el) {
   if(id==='craps')        safe(() => initCraps());
   if(id==='slot5')        safe(() => initSlot5());
   if(id==='match3')       safe(() => initMatch3());
+  if(id==='minesweeper')  safe(() => initMinesweeper());
+  if(id==='battleship')   safe(() => initBattleship());
   if(id==='cardwar')      safe(() => initCardWar());
   if(id==='chess')        safe(() => {
     // Скидаємо на екран налаштувань щоразу коли заходимо в шахи ззовні
@@ -20560,6 +20588,8 @@ Object.assign(GAME_HELP, {
   craps: { title:'🎲 Кубики 3D', rules:`<b>Мета:</b> Вгадай результат двох кубиків.<br><br><b>Ставки:</b><br>Мала (2–6) → ×2.3<br>Велика (8–12) → ×2.3<br>Сімка (рівно 7) → ×5.8<br>Дубль (однакові) → ×5.8<br>Точна сума → від ×5.8 (7) до ×34.9 (2 або 12)` },
   slot5: { title:'🍒 Слот 5×3', rules:`<b>Мета:</b> Збери 3–5 однакових символів на одній із 10 ліній зліва направо.<br><br><b>Вайлд</b> (зірка) замінює будь-який символ, крім подарунка.<br><b>Подарунок</b> платить будь-де на полі: 3 → ×3, 4 → ×10, 5 → ×50 від усієї ставки.<br><br>Ставка ділиться на 10 ліній, таблиця виплат — під барабанами.` },
   match3: { title:'💎 Три в ряд', rules:`<b>Мета:</b> На полі 6×6 ряди й стовпці з 3+ однакових фішок зникають і платять.<br><br><b>Каскади:</b> на місце зниклих падають нові — якщо знову склався ряд, він теж платить, і множник каскаду росте: 2-й ×2, 3-й ×3 … від 5-го ×5.<br><br>Поле й падіння визначає сервер, тут ти лише ставиш і дивишся.` },
+  minesweeper: { title:'💣 Сапер', rules:`<b>Мета:</b> Відкрий усі клітинки без мін. Число показує, скільки мін поруч.<br><br><b>Керування:</b> клік — відкрити; правий клік, довге натискання або кнопка «Прапорець» — позначити міну; клік по числу, біля якого стоїть стільки ж прапорців, — відкрити сусідів.<br><br><b>Соло:</b> перший клік завжди безпечний, кращий час потрапляє в рекорди.<br><b>Дуель онлайн:</b> у вас однакове поле; хто перший розмінує — забирає банк (мінус 5%). Підірвався — поразка. Скінчився час — перемагає той, хто відкрив більше.` },
+  battleship: { title:'🚢 Морський бій', rules:`<b>Флот:</b> 1 чотирипалубний, 2 трипалубні, 3 двопалубні, 4 однопалубні. Кораблі не торкаються навіть кутами.<br><br><b>Хід:</b> стріляєш по полю суперника. Влучив — стріляєш ще, промах — хід суперника. Потоплений корабель обводиться промахами.<br><br><b>Онлайн:</b> на розстановку 90 с, на постріл 30 с (не встиг — сервер стрельне за тебе; тричі — поразка). Переможець забирає банк (мінус 5%).` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
 });
 
@@ -22534,6 +22564,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'diamond', name:'💎 Diamond Rush'},
   {id:'plinko3d', name:'⚪ Plinko 3D'}, {id:'wheel3d', name:'🎡 Колесо удачі 3D'}, {id:'craps', name:'🎲 Кубики 3D'},
   {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
+  {id:'minesweeper', name:'💣 Сапер'}, {id:'battleship', name:'🚢 Морський бій'},
 ];
 
 let _gameToggleDisabledCache = {};
@@ -23855,7 +23886,7 @@ const BET_INPUT_IDS = [
   'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
-  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'placeGrBet', 'startCrash', 'dealPoker', 'startChests', 'startMines',
@@ -23863,7 +23894,7 @@ const GAME_CTA_FNS = [
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
   'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
-  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3',
+  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3', 'msDuelCreate', 'bsOnlineCreate',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
 
@@ -24699,3 +24730,938 @@ try {
   new MutationObserver(() => { setTimeout(() => { p3dApplyTheme(); w3dApplyTheme(); crApplyTheme(); }, 50); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'style'] });
 } catch (e) { /* старі браузери */ }
+// ─── src/app/44-rooms.js ───
+// ============================================================
+// ОНЛАЙН-КІМНАТИ (v112): спільний клієнт для ігор через api/room.js
+//
+// Хід, ставки й виплати рахує сервер (lib/rooms.js). Тут:
+//   roomApi(action, body)      — запит до /api/room (ті самі режими, що serverApi);
+//   roomLobby(game, el, opts)  — живий список кімнат, що чекають суперника;
+//   roomWatch(game, id, cb)    — підписка на публічний і мій приватний вигляд;
+//   roomResume(game, cb)       — після перезавантаження повернутись у свою кімнату.
+// Таймери: коли дедлайн минув, будь-який клієнт у кімнаті смикає "tick" —
+// сервер сам вирішить, чий хід прострочено.
+// ============================================================
+
+const ROOM_GAME_NAMES = {
+  minesweeper: 'Сапер', battleship: 'Морський бій', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction',
+};
+
+// Чи можна грати кімнатами: сервер увімкнено І правила бази вже дозволяють
+// читати rooms/ (нові правила власник публікує вручну — до того старі дуелі
+// мають працювати по-старому, а не зламатись).
+let _roomsReadyP = null;
+function roomsReady() {
+  if (!_roomsReadyP) {
+    _roomsReadyP = serverAuthEnabled().then((on) => {
+      if (!on || !db) return false;
+      return db.ref('rooms/coinflip').limitToFirst(1).once('value').then(() => true, () => false);
+    }).catch(() => false);
+  }
+  return _roomsReadyP;
+}
+
+async function roomApi(action, body) {
+  return serverApi('/api/room', Object.assign({ action }, body || {}));
+}
+
+// Список кімнат, що чекають гравців. opts.onJoin(id) — після входу;
+// opts.describe(pubOpts) — підпис параметрів кімнати.
+function roomLobby(game, el, opts) {
+  if (!el || !db) return () => {};
+  opts = opts || {};
+  const ref = db.ref('rooms/' + game).orderByChild('status').equalTo('waiting');
+  const cb = ref.on('value', (snap) => {
+    const rooms = Object.entries(snap.val() || {}).sort((a, b) => (b[1].created || 0) - (a[1].created || 0));
+    if (!rooms.length) { el.innerHTML = `<div class="room-empty">Відкритих кімнат немає — створи свою.</div>`; return; }
+    el.innerHTML = rooms.map(([id, r]) => {
+      const players = Object.keys(r.players || {});
+      const mine = players.includes(currentUser);
+      let o = {};
+      try { o = JSON.parse(r.opts || '{}'); } catch (e) { /* старий запис */ }
+      const extra = opts.describe ? opts.describe(o) : '';
+      return `<div class="room-row${mine ? ' is-mine' : ''}">
+        <div class="room-row-main">
+          <div class="room-row-host">${escapeHtml(r.host || '?')}${mine ? ' <span class="badge">ти</span>' : ''}</div>
+          <div class="room-row-meta"><span class="num">₴${formatNumber(r.bet)}</span> · ${players.length}/${r.size} гравців${extra ? ' · ' + escapeHtml(extra) : ''}</div>
+        </div>
+        ${mine
+          ? `<button type="button" class="btn btn-ghost room-row-btn" onclick="roomLeaveConfirm(${jsArg(game)},${jsArg(id)})">Скасувати</button>`
+          : `<button type="button" class="btn btn-primary room-row-btn" onclick="roomJoin(${jsArg(game)},${jsArg(id)})">Грати · ₴${formatNumber(r.bet)}</button>`}
+      </div>`;
+    }).join('');
+  }, () => { el.innerHTML = `<div class="room-empty">Онлайн-кімнати ще не активовані на сервері.</div>`; });
+  return () => ref.off('value', cb);
+}
+
+const ROOM_HOOKS = {}; // game → { onJoined(id) }
+async function roomJoin(game, id) {
+  const r = await roomApi('join', { id });
+  if (r.mode !== 'server') { if (r.mode === 'legacy') notify('Онлайн-ігри зараз недоступні', 'error'); return; }
+  playSound && playSound('click');
+  ROOM_HOOKS[game] && ROOM_HOOKS[game].onJoined(id);
+}
+async function roomCreate(game, bet, opts, size) {
+  if (!validateBet(bet)) return null;
+  const r = await roomApi('create', { game, bet, opts: opts || {}, size: size || 0 });
+  if (r.mode !== 'server') { if (r.mode === 'legacy') notify('Онлайн-ігри зараз недоступні', 'error'); return null; }
+  return r.r.id;
+}
+async function roomLeaveConfirm(game, id, playing) {
+  const ok = await confirmAction(playing
+    ? { title: 'Здатися?', text: 'Гра зараховується як поразка, ставку не повернуть.', confirm: 'Здатися', danger: true }
+    : { title: 'Скасувати кімнату?', text: 'Ставку буде повернено.', confirm: 'Скасувати кімнату' });
+  if (!ok) return;
+  const r = await roomApi('leave', { id });
+  if (r.mode === 'server') ROOM_HOOKS[game] && ROOM_HOOKS[game].onLeft && ROOM_HOOKS[game].onLeft(id);
+}
+
+// Підписка на кімнату. cb({ meta, pub, priv, seat, players }) на кожну зміну.
+function roomWatch(game, id, cb) {
+  let meta = null, priv = null, privVer = 0, stopped = false, tickAt = 0, fixTimer = null;
+  const pubRef = db.ref('rooms/' + game + '/' + id);
+  const privRef = db.ref('room_private/' + id + '/' + currentUser);
+  const emit = () => {
+    if (stopped || !meta) return;
+    let pub = null, result = null, o = {};
+    try { pub = meta.v ? JSON.parse(meta.v) : null; } catch (e) { pub = null; }
+    try { result = meta.result ? JSON.parse(meta.result) : null; } catch (e) { result = null; }
+    try { o = JSON.parse(meta.opts || '{}'); } catch (e) { o = {}; }
+    const players = Object.entries(meta.players || {}).sort((a, b) => a[1] - b[1]).map(([n]) => n);
+    cb({ meta, pub, priv, seat: players.indexOf(currentUser), players, result, opts: o });
+    // Приватний вигляд відстав від публічного — дочитуємо через API
+    if (meta.v && meta.ver > privVer && players.includes(currentUser) && meta.status === 'playing') {
+      clearTimeout(fixTimer);
+      fixTimer = setTimeout(async () => {
+        if (stopped || privVer >= meta.ver) return;
+        const r = await roomApi('view', { id });
+        if (r.mode === 'server' && r.r.priv) { priv = r.r.priv; privVer = r.r.ver; emit(); }
+      }, 1500);
+    }
+    // Дедлайн минув — просимо сервер розібратися (раз на дедлайн)
+    if (pub && pub.until && !pub.over && meta.status === 'playing' && tickAt !== pub.until) {
+      const wait = pub.until - Date.now() + 400 + Math.random() * 600;
+      const at = pub.until;
+      setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, wait));
+    }
+  };
+  const onPub = (s) => { meta = s.val(); emit(); };
+  const onPriv = (s) => {
+    const p = s.val();
+    if (p && p.ver >= privVer) { privVer = p.ver; try { priv = JSON.parse(p.v); } catch (e) { priv = null; } }
+    emit();
+  };
+  pubRef.on('value', onPub);
+  privRef.on('value', onPriv, () => {});
+  return () => { stopped = true; clearTimeout(fixTimer); pubRef.off('value', onPub); privRef.off('value', onPriv); };
+}
+
+// Повернутися в мою відкриту кімнату цієї гри (після перезавантаження).
+async function roomResume(game) {
+  const r = await roomApi('mine', {});
+  if (r.mode !== 'server') return null;
+  const mine = (r.r.rooms || []).find((x) => x.game === game);
+  return mine ? mine.id : null;
+}
+
+// Секунд до дедлайну (для таймерів у UI)
+function roomSecondsLeft(until) { return Math.max(0, Math.ceil((until - Date.now()) / 1000)); }
+
+// Підсумок для гравця: виграв / програв / нічия + сума
+function roomResultText(result, bet) {
+  if (!result) return '';
+  const got = (result.payouts || {})[currentUser] || 0;
+  if (result.draw) return `Нічия — ставку ₴${formatNumber(bet)} повернено`;
+  if ((result.winners || []).includes(currentUser)) return `Перемога! +₴${formatNumber(got)}${result.text ? ' · ' + result.text : ''}`;
+  return `Поразка — −₴${formatNumber(bet)}${result.text ? ' · ' + result.text : ''}`;
+}
+function roomAnnounce(result, bet, gameName) {
+  if (!result) return;
+  const won = (result.winners || []).includes(currentUser);
+  const got = (result.payouts || {})[currentUser] || 0;
+  addToHistory(`${gameName}: ${result.draw ? 'нічия' : won ? '+₴' + formatNumber(got) : '−₴' + formatNumber(bet)}`);
+  if (won) { playSound && playSound('bonus'); triggerWinReaction(got, gameName); }
+  else if (!result.draw) playSound && playSound('loss');
+}
+// ─── src/app/45-minesweeper.js ───
+// ============================================================
+// САПЕР (v112): класичний соло на час із рекордами + дуель онлайн на ставку
+//
+// Соло грається в браузері (без грошей): перший клік завжди безпечний,
+// прапорці — правий клік, довге натискання або режим «прапорець»,
+// клік по числу з потрібною кількістю прапорців відкриває сусідів.
+// Рекорди — minesweeper_records/<рівень>/<нік> { t: секунд }.
+// Дуель — через сервер (lib/room-games/minesweeper.js): однакове поле в
+// обох, міни знає лише сервер; хто перший розмінує — виграв, підрив — поразка.
+// ============================================================
+
+const MS_LEVELS = {
+  easy: { w: 9, h: 9, m: 10, name: 'Новачок' },
+  medium: { w: 16, h: 16, m: 40, name: 'Любитель' },
+  hard: { w: 30, h: 16, m: 99, name: 'Профі' },
+};
+const MS_DUEL_LEVELS = { easy: { w: 9, h: 9, m: 10, name: 'Новачок' }, medium: { w: 12, h: 12, m: 24, name: 'Любитель' } };
+const MS = {
+  mode: 'solo', level: 'easy', flagMode: false,
+  solo: null, timer: null,
+  duelLevel: 'easy', duel: null, unwatch: null, unlobby: null, flags: new Set(), pending: false,
+};
+
+function msNeighbours(w, h, i) {
+  const x = i % w, y = Math.floor(i / w), out = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    const nx = x + dx, ny = y + dy;
+    if (nx >= 0 && ny >= 0 && nx < w && ny < h) out.push(ny * w + nx);
+  }
+  return out;
+}
+
+function initMinesweeper() {
+  msSetMode(MS.mode, true);
+  if (!MS.solo) msNewSolo();
+}
+function msSetMode(mode, silent) {
+  MS.mode = mode;
+  document.querySelectorAll('.ms-mode').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('msSolo')?.classList.toggle('hidden', mode !== 'solo');
+  document.getElementById('msDuel')?.classList.toggle('hidden', mode !== 'duel');
+  if (mode === 'duel') msDuelEnter();
+  else { MS.unlobby && MS.unlobby(); MS.unlobby = null; }
+  if (!silent) playSound && playSound('click');
+}
+function msToggleFlagMode() {
+  MS.flagMode = !MS.flagMode;
+  document.querySelectorAll('.ms-flag-toggle').forEach((b) => { b.classList.toggle('active', MS.flagMode); b.setAttribute('aria-pressed', MS.flagMode); });
+}
+
+// ── Малювання поля (спільне для соло й дуелі) ─────────────────────────
+// cells: рядок довжини w*h: '.' закрита, '0'–'8' відкрита, '*' міна, 'X' міна,
+// на якій підірвався, 'F' прапорець, '/' помилковий прапорець (після поразки).
+function msRenderBoard(el, w, h, cells, opts) {
+  if (!el) return;
+  el.style.setProperty('--cols', w);
+  el.classList.toggle('is-over', !!(opts && opts.over));
+  if (el.childElementCount !== w * h) {
+    el.innerHTML = Array.from({ length: w * h }, (_, i) => `<div class="ms-cell" data-i="${i}"></div>`).join('');
+  }
+  for (let i = 0; i < w * h; i++) {
+    const c = cells[i];
+    const d = el.children[i];
+    const cls = 'ms-cell' + (c === '.' ? '' : c === 'F' ? ' is-flag' : c === '*' ? ' is-open is-mine' : c === 'X' ? ' is-open is-mine is-boom' : c === '/' ? ' is-flag is-wrong' : ' is-open n' + c);
+    if (d.className !== cls) {
+      d.className = cls;
+      d.innerHTML = c === 'F' || c === '/' ? '<span class="ic i-flag" aria-hidden="true"></span>'
+        : c === '*' || c === 'X' ? '<span class="ic i-mine" aria-hidden="true"></span>'
+        : /[1-8]/.test(c) ? c : '';
+    }
+  }
+}
+
+// Події поля: клік, правий клік, довге натискання (на телефоні)
+function msBindBoard(el, onOpen, onFlag) {
+  if (!el || el._msBound) return;
+  el._msBound = true;
+  let pressTimer = null, longFired = false;
+  const cellOf = (e) => { const t = e.target.closest('.ms-cell'); return t ? +t.dataset.i : -1; };
+  el.addEventListener('contextmenu', (e) => { e.preventDefault(); const i = cellOf(e); if (i >= 0) onFlag(i); });
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button && e.button !== 0) return;
+    longFired = false;
+    const i = cellOf(e);
+    clearTimeout(pressTimer);
+    if (i >= 0 && e.pointerType !== 'mouse') pressTimer = setTimeout(() => { longFired = true; navigator.vibrate && navigator.vibrate(25); onFlag(i); }, 380);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => el.addEventListener(ev, () => clearTimeout(pressTimer)));
+  el.addEventListener('click', (e) => {
+    const i = cellOf(e);
+    if (i < 0 || longFired) return;
+    if (MS.flagMode) onFlag(i); else onOpen(i);
+  });
+}
+
+// ══════════════════════════ СОЛО ══════════════════════════
+function msSetLevel(level) {
+  MS.level = level;
+  document.querySelectorAll('.ms-level').forEach((b) => b.classList.toggle('active', b.dataset.level === level));
+  msNewSolo();
+}
+function msNewSolo() {
+  const L = MS_LEVELS[MS.level];
+  clearInterval(MS.timer);
+  MS.solo = { w: L.w, h: L.h, m: L.m, mines: null, num: null, open: new Uint8Array(L.w * L.h), flags: new Set(), started: 0, over: false, won: false, boom: -1 };
+  const el = document.getElementById('msBoard');
+  if (el) el.innerHTML = '';
+  msBindBoard(el, msSoloOpen, msSoloFlag);
+  msSoloRender();
+  msLoadRecords();
+}
+function msSoloPlace(first) {
+  const s = MS.solo, total = s.w * s.h;
+  const safe = new Set([first, ...msNeighbours(s.w, s.h, first)]);
+  const pool = [];
+  for (let i = 0; i < total; i++) if (!safe.has(i)) pool.push(i);
+  const mines = new Set();
+  while (mines.size < s.m) mines.add(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  s.mines = mines;
+  s.num = Array.from({ length: total }, (_, i) => (mines.has(i) ? 9 : msNeighbours(s.w, s.h, i).filter((n) => mines.has(n)).length));
+}
+function msSoloReveal(i) {
+  const s = MS.solo, stack = [i];
+  while (stack.length) {
+    const c = stack.pop();
+    if (s.open[c] || s.flags.has(c)) continue;
+    s.open[c] = 1;
+    if (s.num[c] === 0) msNeighbours(s.w, s.h, c).forEach((n) => { if (!s.open[n]) stack.push(n); });
+  }
+}
+function msSoloOpen(i) {
+  const s = MS.solo;
+  if (!s || s.over || s.flags.has(i)) return;
+  if (!s.mines) {
+    msSoloPlace(i);
+    s.started = Date.now();
+    MS.timer = setInterval(msSoloTick, 250);
+  }
+  if (s.open[i]) {
+    // «Акорд»: на числі з потрібною кількістю прапорців відкриваємо сусідів
+    const nb = msNeighbours(s.w, s.h, i);
+    if (s.num[i] > 0 && nb.filter((n) => s.flags.has(n)).length === s.num[i]) nb.forEach((n) => { if (!s.open[n] && !s.flags.has(n)) msSoloStep(n); });
+  } else msSoloStep(i);
+  msSoloRender();
+}
+function msSoloStep(i) {
+  const s = MS.solo;
+  if (s.over) return;
+  if (s.mines.has(i)) { s.over = true; s.boom = i; clearInterval(MS.timer); playSound && playSound('loss'); navigator.vibrate && navigator.vibrate([60, 40, 120]); return; }
+  msSoloReveal(i);
+  const opened = s.open.reduce((a, b) => a + b, 0);
+  if (opened === s.w * s.h - s.m) {
+    s.over = true; s.won = true; clearInterval(MS.timer);
+    s.mines.forEach((m) => s.flags.add(m));
+    const t = Math.round((Date.now() - s.started) / 100) / 10;
+    s.time = t;
+    playSound && playSound('bonus');
+    msSaveRecord(MS.level, t);
+  } else playSound && playSound('click');
+}
+function msSoloFlag(i) {
+  const s = MS.solo;
+  if (!s || s.over || s.open[i]) return;
+  if (s.flags.has(i)) s.flags.delete(i); else s.flags.add(i);
+  msSoloRender();
+}
+function msSoloTick() {
+  const s = MS.solo, el = document.getElementById('msTime');
+  if (el && s && s.started && !s.over) el.textContent = Math.floor((Date.now() - s.started) / 1000);
+}
+function msSoloRender() {
+  const s = MS.solo;
+  const cells = Array.from({ length: s.w * s.h }, (_, i) => {
+    if (s.over && !s.won && s.mines && s.mines.has(i)) return i === s.boom ? 'X' : s.flags.has(i) ? 'F' : '*';
+    if (s.over && !s.won && s.flags.has(i) && !(s.mines && s.mines.has(i))) return '/';
+    if (s.flags.has(i)) return 'F';
+    return s.open[i] ? String(s.num[i]) : '.';
+  }).join('');
+  msRenderBoard(document.getElementById('msBoard'), s.w, s.h, cells, { over: s.over });
+  const left = document.getElementById('msLeft');
+  if (left) left.textContent = s.m - s.flags.size;
+  const face = document.getElementById('msFace');
+  if (face) face.innerHTML = `<span class="ic i-${s.over ? (s.won ? 'trophy' : 'skull') : 'refresh'}" aria-hidden="true"></span>`;
+  const st = document.getElementById('msStatus');
+  if (st) {
+    st.classList.remove('is-win', 'is-lose');
+    if (s.over) st.classList.add(s.won ? 'is-win' : 'is-lose');
+    st.textContent = s.won ? `Розміновано за ${s.time} с!` : s.over ? 'Бум! Спробуй ще раз.' : s.mines ? 'Шукай міни. Прапорець — правий клік, довге натискання або кнопка.' : 'Перший клік завжди безпечний.';
+  }
+  if (!s.started) { const t = document.getElementById('msTime'); if (t) t.textContent = '0'; }
+}
+function msSaveRecord(level, t) {
+  if (!currentUser || !db) return;
+  const ref = db.ref('minesweeper_records/' + level + '/' + currentUser);
+  ref.once('value').then((snap) => {
+    const cur = snap.val();
+    if (cur && cur.t <= t) return;
+    return ref.set({ t, at: Date.now() }).then(() => { notify(`Новий рекорд: ${t} с`, 'success'); msLoadRecords(); });
+  }).catch(() => {});
+}
+function msLoadRecords() {
+  const el = document.getElementById('msRecords');
+  if (!el || !db) return;
+  db.ref('minesweeper_records/' + MS.level).orderByChild('t').limitToFirst(10).once('value').then((snap) => {
+    const rows = [];
+    snap.forEach((c) => { rows.push([c.key, c.val().t]); });
+    el.innerHTML = rows.length
+      ? rows.map(([n, t], k) => `<li class="${n === currentUser ? 'is-me' : ''}"><span class="num">${k + 1}</span><span>${escapeHtml(n)}</span><span class="num">${t} с</span></li>`).join('')
+      : '<li class="room-empty">Рекордів ще немає — будь першим.</li>';
+  }).catch(() => { el.innerHTML = ''; });
+}
+
+// ══════════════════════════ ДУЕЛЬ ══════════════════════════
+ROOM_HOOKS.minesweeper = {
+  onJoined: (id) => msDuelOpen(id),
+  onLeft: () => msDuelClose(),
+};
+function msSetDuelLevel(level) {
+  MS.duelLevel = level;
+  document.querySelectorAll('.ms-dlevel').forEach((b) => b.classList.toggle('active', b.dataset.level === level));
+}
+async function msDuelEnter() {
+  if (!MS.unlobby) MS.unlobby = roomLobby('minesweeper', document.getElementById('msRooms'), { describe: (o) => (MS_DUEL_LEVELS[o.level] || {}).name || '' });
+  if (!MS.duel) {
+    const id = await roomResume('minesweeper');
+    if (id) msDuelOpen(id);
+  }
+}
+async function msDuelCreate() {
+  const bet = parseInt(document.getElementById('msBet')?.value) || 0;
+  const id = await roomCreate('minesweeper', bet, { level: MS.duelLevel });
+  if (id) { notify('Кімнату створено — чекаємо суперника', 'success'); msDuelOpen(id); }
+}
+function msDuelOpen(id) {
+  if (MS.duel && MS.duel.id === id) return;
+  msDuelClose(true);
+  MS.duel = { id, announced: false };
+  MS.flags = new Set();
+  document.getElementById('msDuelLobby')?.classList.add('hidden');
+  document.getElementById('msDuelGame')?.classList.remove('hidden');
+  const el = document.getElementById('msDuelBoard');
+  if (el) el.innerHTML = '';
+  msBindBoard(el, msDuelOpenCell, msDuelFlag);
+  MS.unwatch = roomWatch('minesweeper', id, msDuelUpdate);
+  clearInterval(MS.duelTimer);
+  MS.duelTimer = setInterval(() => { if (MS.duel && MS.duel.last) msDuelHud(MS.duel.last); }, 500);
+}
+function msDuelClose(keepLobby) {
+  MS.unwatch && MS.unwatch(); MS.unwatch = null;
+  clearInterval(MS.duelTimer);
+  MS.duel = null;
+  if (!keepLobby) {
+    document.getElementById('msDuelGame')?.classList.add('hidden');
+    document.getElementById('msDuelLobby')?.classList.remove('hidden');
+  }
+}
+function msDuelUpdate(u) {
+  if (!MS.duel) return;
+  MS.duel.last = u;
+  const { meta, pub, priv } = u;
+  const wait = meta.status === 'waiting';
+  document.getElementById('msDuelWait')?.classList.toggle('hidden', !wait);
+  document.getElementById('msDuelPlay')?.classList.toggle('hidden', wait);
+  if (wait) {
+    const w = document.getElementById('msDuelWaitText');
+    if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)} · ${(MS_DUEL_LEVELS[u.opts.level] || {}).name || ''}. Чекаємо суперника…`;
+    return;
+  }
+  if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); msDuelClose(); return; }
+  if (!pub) return;
+  let cells = (priv && priv.cells) || '.'.repeat(pub.w * pub.h);
+  if (pub.over && pub.mines) {
+    // '*' у моєму вигляді — міна, на якій я підірвався; решту мін показуємо після кінця
+    const arr = cells.replace(/\*/g, 'X').split('');
+    pub.mines.forEach((m) => { if (arr[m] === '.') arr[m] = '*'; });
+    cells = arr.join('');
+  }
+  // Мої прапорці — лише на закритих клітинках
+  const arr = cells.split('');
+  MS.flags.forEach((f) => { if (arr[f] === '.') arr[f] = 'F'; else MS.flags.delete(f); });
+  msRenderBoard(document.getElementById('msDuelBoard'), pub.w, pub.h, arr.join(''), { over: pub.over });
+  msDuelHud(u);
+  if (meta.status === 'finished' && !MS.duel.announced) {
+    MS.duel.announced = true;
+    roomAnnounce(u.result, meta.bet, 'Сапер-дуель');
+  }
+}
+function msDuelHud(u) {
+  const { meta, pub, players, seat } = u;
+  if (!pub) return;
+  const bars = document.getElementById('msDuelBars');
+  if (bars) bars.innerHTML = players.map((n, i) => {
+    const pct = Math.round((pub.progress[i] / pub.total) * 100);
+    return `<div class="ms-bar${i === seat ? ' is-me' : ''}${pub.boom[i] ? ' is-boom' : ''}">
+      <div class="ms-bar-top"><span>${escapeHtml(n)}${i === seat ? ' (ти)' : ''}</span><span class="num">${pub.boom[i] ? 'підірвався' : pct + '%'}</span></div>
+      <div class="ms-bar-track"><div class="ms-bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  const t = document.getElementById('msDuelTime');
+  if (t) t.textContent = pub.over ? '—' : roomSecondsLeft(pub.until) + ' с';
+  const st = document.getElementById('msDuelStatus');
+  if (st) {
+    st.classList.remove('is-win', 'is-lose');
+    if (meta.status === 'finished' && u.result) {
+      st.classList.add((u.result.winners || []).includes(currentUser) ? 'is-win' : 'is-lose');
+      st.textContent = roomResultText(u.result, meta.bet);
+    } else st.textContent = pub.over ? 'Підрахунок…' : 'Хто перший розмінує поле — забирає банк. Міна — поразка.';
+  }
+  document.getElementById('msDuelLeave')?.classList.toggle('hidden', meta.status !== 'playing');
+  document.getElementById('msDuelAgain')?.classList.toggle('hidden', meta.status !== 'finished');
+}
+async function msDuelOpenCell(i) {
+  const d = MS.duel;
+  if (!d || !d.last || !d.last.pub || d.last.pub.over || MS.pending || MS.flags.has(i)) return;
+  const cells = (d.last.priv && d.last.priv.cells) || '';
+  if (cells[i] && cells[i] !== '.') return;
+  MS.pending = true;
+  document.querySelector(`#msDuelBoard .ms-cell[data-i="${i}"]`)?.classList.add('is-pending');
+  try { await roomApi('act', { id: d.id, move: { c: i } }); }
+  finally { MS.pending = false; }
+}
+function msDuelFlag(i) {
+  const d = MS.duel;
+  if (!d || !d.last || !d.last.pub || d.last.pub.over) return;
+  if (MS.flags.has(i)) MS.flags.delete(i); else MS.flags.add(i);
+  msDuelUpdate(d.last);
+}
+function msDuelLeave() { if (MS.duel) roomLeaveConfirm('minesweeper', MS.duel.id, MS.duel.last && MS.duel.last.meta.status === 'playing'); }
+function msDuelBack() { msDuelClose(); }
+// ─── src/app/46-battleship.js ───
+// ============================================================
+// МОРСЬКИЙ БІЙ (v112): з ботом (без грошей, у браузері) + онлайн 1×1 на ставку
+//
+// Онлайн — через сервер (lib/room-games/battleship.js): флот суперника знає
+// лише сервер, розстановку він перевіряє, влучання рахує сам. Правила:
+// флот 4,3,3,2,2,2,1,1,1,1, кораблі не торкаються навіть кутами; влучив —
+// стріляєш ще; потоплений корабель обводиться промахами.
+// ============================================================
+
+const BS_N = 10;
+const BS_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+const BS = {
+  mode: 'bot',
+  bot: null,
+  online: null, unwatch: null, unlobby: null, myFleet: null, pending: false,
+};
+
+function bsCells(ship) {
+  const out = [];
+  for (let k = 0; k < ship.len; k++) out.push(ship.dir === 'v' ? (ship.y + k) * BS_N + ship.x : ship.y * BS_N + ship.x + k);
+  return out;
+}
+function bsAround(i) {
+  const x = i % BS_N, y = Math.floor(i / BS_N), out = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const nx = x + dx, ny = y + dy;
+    if (nx >= 0 && ny >= 0 && nx < BS_N && ny < BS_N) out.push(ny * BS_N + nx);
+  }
+  return out;
+}
+function bsRandomFleet() {
+  for (;;) {
+    const ships = [], halo = new Set();
+    let ok = true;
+    for (const len of BS_FLEET) {
+      let placed = false;
+      for (let t = 0; t < 300 && !placed; t++) {
+        const dir = Math.random() < 0.5 ? 'v' : 'h';
+        const x = Math.floor(Math.random() * (dir === 'h' ? BS_N - len + 1 : BS_N));
+        const y = Math.floor(Math.random() * (dir === 'v' ? BS_N - len + 1 : BS_N));
+        const ship = { x, y, len, dir };
+        const cs = bsCells(ship);
+        if (cs.some((c) => halo.has(c))) continue;
+        cs.forEach((c) => bsAround(c).forEach((a) => halo.add(a)));
+        ships.push(ship); placed = true;
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) return ships;
+  }
+}
+
+// Малювання поля. shots — рядок 100 символів ('.', 'o', 'x', '#'),
+// fleet — мої кораблі (або null для поля суперника).
+function bsRender(el, shots, fleet, opts) {
+  if (!el) return;
+  opts = opts || {};
+  if (el.childElementCount !== BS_N * BS_N) {
+    el.innerHTML = Array.from({ length: BS_N * BS_N }, (_, i) => `<div class="bs-cell" data-i="${i}"></div>`).join('');
+  }
+  const part = {};
+  (fleet || []).forEach((s) => bsCells(s).forEach((c, k) => {
+    part[c] = 'is-ship ' + (s.dir === 'v' ? 'is-v' : 'is-h') + (k === 0 ? ' is-head' : '') + (k === s.len - 1 ? ' is-tail' : '') + (s.len === 1 ? ' is-solo' : '');
+  }));
+  for (let i = 0; i < BS_N * BS_N; i++) {
+    const c = shots[i];
+    const cls = 'bs-cell' + (part[i] ? ' ' + part[i] : '') + (c === 'o' ? ' is-miss' : c === 'x' ? ' is-hit' : c === '#' ? ' is-sunk' : '') + (opts.last === i ? ' is-last' : '');
+    const d = el.children[i];
+    if (d.className !== cls) d.className = cls;
+  }
+  el.classList.toggle('is-active', !!opts.active);
+}
+function bsBind(el, onFire) {
+  if (!el || el._bsBound) return;
+  el._bsBound = true;
+  el.addEventListener('click', (e) => { const t = e.target.closest('.bs-cell'); if (t) onFire(+t.dataset.i); });
+}
+
+function initBattleship() { bsSetMode(BS.mode, true); }
+function bsSetMode(mode, silent) {
+  BS.mode = mode;
+  document.querySelectorAll('.bs-mode').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('bsBot')?.classList.toggle('hidden', mode !== 'bot');
+  document.getElementById('bsOnline')?.classList.toggle('hidden', mode !== 'online');
+  if (mode === 'bot' && !BS.bot) bsBotNew();
+  if (mode === 'online') bsOnlineEnter();
+  else { BS.unlobby && BS.unlobby(); BS.unlobby = null; }
+  if (!silent) playSound && playSound('click');
+}
+
+// ══════════════════════════ З БОТОМ ══════════════════════════
+function bsBotNew() {
+  BS.bot = {
+    phase: 'place', fleets: [bsRandomFleet(), bsRandomFleet()],
+    shots: ['.'.repeat(100), '.'.repeat(100)], turn: 0, over: false, winner: -1, hunt: [], last: -1,
+  };
+  bsBind(document.getElementById('bsBotEnemy'), bsBotFire);
+  bsBotRender();
+}
+function bsBotShuffle() { if (BS.bot && BS.bot.phase === 'place') { BS.bot.fleets[0] = bsRandomFleet(); bsBotRender(); } }
+function bsBotStart() { if (BS.bot && BS.bot.phase === 'place') { BS.bot.phase = 'fire'; bsBotRender(); } }
+// Постріл; повертає 'miss' | 'hit' | 'sunk' | null
+function bsShoot(st, target, c) {
+  const b = st.shots[target].split('');
+  if (b[c] !== '.') return null;
+  const ship = st.fleets[target].find((s) => bsCells(s).includes(c));
+  if (!ship) { b[c] = 'o'; st.shots[target] = b.join(''); return 'miss'; }
+  b[c] = 'x';
+  const cs = bsCells(ship);
+  if (cs.every((k) => b[k] === 'x' || b[k] === '#')) {
+    cs.forEach((k) => { b[k] = '#'; });
+    cs.forEach((k) => bsAround(k).forEach((a) => { if (b[a] === '.') b[a] = 'o'; }));
+    st.shots[target] = b.join('');
+    return 'sunk';
+  }
+  st.shots[target] = b.join('');
+  return 'hit';
+}
+const bsAllSunk = (st, t) => !st.shots[t].includes('x') && st.fleets[t].every((s) => bsCells(s).every((k) => st.shots[t][k] === '#'));
+function bsBotFire(c) {
+  const st = BS.bot;
+  if (!st || st.phase !== 'fire' || st.over || st.turn !== 0) return;
+  const r = bsShoot(st, 1, c);
+  if (!r) return;
+  st.last = c;
+  playSound && playSound(r === 'miss' ? 'click' : 'win');
+  if (bsAllSunk(st, 1)) { st.over = true; st.winner = 0; bsBotRender(); return; }
+  if (r === 'miss') { st.turn = 1; bsBotRender(); setTimeout(bsBotAi, 650); }
+  else bsBotRender();
+}
+// Бот: «полювання» по шаховому візерунку, після влучання — добиває вздовж лінії
+function bsBotAi() {
+  const st = BS.bot;
+  if (!st || st.over || st.turn !== 1) return;
+  const board = st.shots[0];
+  const hits = [...board].map((c, i) => (c === 'x' ? i : -1)).filter((i) => i >= 0);
+  let cand = [];
+  if (hits.length) {
+    const xs = hits.map((i) => i % BS_N), ys = hits.map((i) => Math.floor(i / BS_N));
+    const line = hits.length > 1 ? (xs.every((x) => x === xs[0]) ? 'v' : 'h') : null;
+    hits.forEach((h) => {
+      const x = h % BS_N, y = Math.floor(h / BS_N);
+      const opts = [];
+      if (line !== 'v') { if (x > 0) opts.push(h - 1); if (x < BS_N - 1) opts.push(h + 1); }
+      if (line !== 'h') { if (y > 0) opts.push(h - BS_N); if (y < BS_N - 1) opts.push(h + BS_N); }
+      opts.forEach((o) => { if (board[o] === '.') cand.push(o); });
+    });
+  }
+  if (!cand.length) cand = [...board].map((c, i) => (c === '.' && (i % BS_N + Math.floor(i / BS_N)) % 2 === 0 ? i : -1)).filter((i) => i >= 0);
+  if (!cand.length) cand = [...board].map((c, i) => (c === '.' ? i : -1)).filter((i) => i >= 0);
+  const c = cand[Math.floor(Math.random() * cand.length)];
+  const r = bsShoot(st, 0, c);
+  st.lastMine = c;
+  if (bsAllSunk(st, 0)) { st.over = true; st.winner = 1; bsBotRender(); return; }
+  if (r === 'miss') st.turn = 0;
+  bsBotRender();
+  if (st.turn === 1) setTimeout(bsBotAi, 650);
+}
+function bsBotRender() {
+  const st = BS.bot;
+  bsRender(document.getElementById('bsBotMine'), st.shots[0], st.fleets[0], { last: st.lastMine });
+  bsRender(document.getElementById('bsBotEnemy'), st.shots[1], st.over ? st.fleets[1] : null, { active: st.phase === 'fire' && st.turn === 0 && !st.over, last: st.last });
+  document.getElementById('bsBotPlace')?.classList.toggle('hidden', st.phase !== 'place');
+  document.getElementById('bsBotEnemyWrap')?.classList.toggle('is-dim', st.phase === 'place');
+  const s = document.getElementById('bsBotStatus');
+  if (s) {
+    s.classList.remove('is-win', 'is-lose');
+    if (st.over) s.classList.add(st.winner === 0 ? 'is-win' : 'is-lose');
+    s.textContent = st.phase === 'place' ? 'Розстав флот: «Перемішати» — інша розстановка, «До бою» — почати.'
+      : st.over ? (st.winner === 0 ? 'Перемога! Флот бота на дні.' : 'Бот потопив твій флот.')
+      : st.turn === 0 ? 'Твій постріл — тисни на поле суперника.' : 'Стріляє бот…';
+  }
+  document.getElementById('bsBotAgain')?.classList.toggle('hidden', !st.over);
+  bsFleetLeft(document.getElementById('bsBotLeft'), st.shots[1]);
+}
+// Скільки кораблів суперника ще на плаву: потоплені ('#') рахуємо прямо з
+// дошки пострілів — зв'язні групи клітинок і є кораблі.
+function bsFleetLeft(el, shots) {
+  if (!el) return;
+  const seen = new Set(), sunk = [];
+  for (let i = 0; i < BS_N * BS_N; i++) {
+    if (shots[i] !== '#' || seen.has(i)) continue;
+    let len = 0;
+    const stack = [i];
+    seen.add(i);
+    while (stack.length) {
+      const c = stack.pop(); len++;
+      const x = c % BS_N;
+      [x > 0 ? c - 1 : -1, x < BS_N - 1 ? c + 1 : -1, c - BS_N, c + BS_N].forEach((n) => {
+        if (n >= 0 && n < BS_N * BS_N && shots[n] === '#' && !seen.has(n)) { seen.add(n); stack.push(n); }
+      });
+    }
+    sunk.push(len);
+  }
+  el.innerHTML = BS_FLEET.map((len) => {
+    const k = sunk.indexOf(len);
+    if (k >= 0) sunk.splice(k, 1);
+    return `<span class="bs-pip${k >= 0 ? ' is-sunk' : ''}" style="--len:${len}" aria-label="${len}-палубний${k >= 0 ? ', потоплено' : ''}"></span>`;
+  }).join('');
+}
+
+// ══════════════════════════ ОНЛАЙН ══════════════════════════
+ROOM_HOOKS.battleship = { onJoined: (id) => bsOnlineOpen(id), onLeft: () => bsOnlineClose() };
+async function bsOnlineEnter() {
+  if (!BS.unlobby) BS.unlobby = roomLobby('battleship', document.getElementById('bsRooms'));
+  if (!BS.online) { const id = await roomResume('battleship'); if (id) bsOnlineOpen(id); }
+}
+async function bsOnlineCreate() {
+  const bet = parseInt(document.getElementById('bsBet')?.value) || 0;
+  const id = await roomCreate('battleship', bet, {});
+  if (id) { notify('Кімнату створено — чекаємо суперника', 'success'); bsOnlineOpen(id); }
+}
+function bsOnlineOpen(id) {
+  if (BS.online && BS.online.id === id) return;
+  bsOnlineClose(true);
+  BS.online = { id, announced: false };
+  BS.myFleet = bsRandomFleet();
+  document.getElementById('bsLobby')?.classList.add('hidden');
+  document.getElementById('bsGame')?.classList.remove('hidden');
+  bsBind(document.getElementById('bsEnemy'), bsOnlineFire);
+  BS.unwatch = roomWatch('battleship', id, bsOnlineUpdate);
+  clearInterval(BS.timer);
+  BS.timer = setInterval(() => { if (BS.online && BS.online.last) bsOnlineHud(BS.online.last); }, 500);
+}
+function bsOnlineClose(keepLobby) {
+  BS.unwatch && BS.unwatch(); BS.unwatch = null;
+  clearInterval(BS.timer);
+  BS.online = null;
+  if (!keepLobby) {
+    document.getElementById('bsGame')?.classList.add('hidden');
+    document.getElementById('bsLobby')?.classList.remove('hidden');
+  }
+}
+function bsOnlineUpdate(u) {
+  if (!BS.online) return;
+  BS.online.last = u;
+  const { meta, pub, priv, seat } = u;
+  const wait = meta.status === 'waiting';
+  if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); bsOnlineClose(); return; }
+  document.getElementById('bsWait')?.classList.toggle('hidden', !wait);
+  document.getElementById('bsPlay')?.classList.toggle('hidden', wait);
+  if (wait) { const w = document.getElementById('bsWaitText'); if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)}. Чекаємо суперника…`; return; }
+  if (!pub) return;
+  const placing = pub.phase === 'place' && !pub.placed[seat];
+  const myFleet = (priv && priv.fleet) || BS.myFleet;
+  const enemy = 1 - seat;
+  bsRender(document.getElementById('bsMine'), pub.shots[seat], myFleet, { last: pub.last && pub.last.by === enemy ? pub.last.c : -1 });
+  bsRender(document.getElementById('bsEnemy'), pub.shots[enemy], pub.fleets ? pub.fleets[enemy] : null, {
+    active: pub.phase === 'fire' && pub.turn === seat && !pub.over, last: pub.last && pub.last.by === seat ? pub.last.c : -1,
+  });
+  document.getElementById('bsPlace')?.classList.toggle('hidden', !placing);
+  document.getElementById('bsEnemyWrap')?.classList.toggle('is-dim', pub.phase === 'place');
+  bsFleetLeft(document.getElementById('bsLeft'), pub.shots[enemy]);
+  bsOnlineHud(u);
+  if (pub.last && BS.online.lastShot !== JSON.stringify(pub.last)) {
+    BS.online.lastShot = JSON.stringify(pub.last);
+    playSound && playSound(pub.last.r === 'miss' ? 'click' : 'win');
+  }
+  if (meta.status === 'finished' && !BS.online.announced) { BS.online.announced = true; roomAnnounce(u.result, meta.bet, 'Морський бій'); }
+}
+function bsOnlineHud(u) {
+  const { meta, pub, seat, players } = u;
+  if (!pub) return;
+  const s = document.getElementById('bsStatus');
+  if (s) {
+    s.classList.remove('is-win', 'is-lose');
+    if (meta.status === 'finished' && u.result) {
+      s.classList.add((u.result.winners || []).includes(currentUser) ? 'is-win' : 'is-lose');
+      s.textContent = roomResultText(u.result, meta.bet);
+    } else if (pub.phase === 'place') {
+      s.textContent = pub.placed[seat] ? `Чекаємо, поки ${escapeHtml(players[1 - seat] || 'суперник')} розставить флот… ${roomSecondsLeft(pub.until)} с`
+        : `Розстав флот: ${roomSecondsLeft(pub.until)} с (не встигнеш — розставимо самі).`;
+    } else {
+      const mine = pub.turn === seat;
+      s.textContent = (mine ? 'Твій постріл' : `Стріляє ${players[1 - seat] || 'суперник'}`) + ` · ${roomSecondsLeft(pub.until)} с` + (pub.timeouts[seat] ? ` · пропущено ходів: ${pub.timeouts[seat]}/3` : '');
+    }
+  }
+  document.getElementById('bsLeave')?.classList.toggle('hidden', meta.status !== 'playing');
+  document.getElementById('bsAgain')?.classList.toggle('hidden', meta.status !== 'finished');
+}
+function bsOnlineShuffle() { BS.myFleet = bsRandomFleet(); if (BS.online && BS.online.last) bsOnlineUpdate(BS.online.last); }
+async function bsOnlineReady() {
+  if (!BS.online) return;
+  const r = await roomApi('act', { id: BS.online.id, move: { ships: BS.myFleet } });
+  if (r.mode === 'server') playSound && playSound('click');
+}
+async function bsOnlineFire(c) {
+  const o = BS.online;
+  if (!o || !o.last || BS.pending) return;
+  const { pub, seat } = o.last;
+  if (!pub || pub.phase !== 'fire' || pub.over || pub.turn !== seat || pub.shots[1 - seat][c] !== '.') return;
+  BS.pending = true;
+  document.querySelector(`#bsEnemy .bs-cell[data-i="${c}"]`)?.classList.add('is-pending');
+  try { await roomApi('act', { id: o.id, move: { c } }); }
+  finally { BS.pending = false; }
+}
+function bsOnlineLeave() { if (BS.online) roomLeaveConfirm('battleship', BS.online.id, BS.online.last && BS.online.last.meta.status === 'playing'); }
+function bsOnlineBack() { bsOnlineClose(); }
+// ─── src/app/47-pvp-server.js ───
+// ============================================================
+// COINFLIP / КАМІНЬ-НОЖИЦІ / PREDICTION через сервер (v112)
+//
+// Старі версії (28-pvp-leaderboard-limbo.js) рахували результат у браузері:
+// монету кидав той, хто приєднався; хід суперника й загадане число лежали в
+// базі відкрито. Коли сервер і правила бази готові (roomsReady), ці ж кнопки йдуть
+// через api/room.js (lib/room-games/coinflip|rps|predict.js), а екрани ті самі.
+// Без сервера (локальний запуск) працюють старі функції.
+// ============================================================
+
+const PVP_SRV = { cf: null, rps: null, pd: null };
+const _legacyPvp = {
+  createCfRoom, loadCfRooms, createRpsRoom, loadRpsRooms, playRps, createPdRoom, loadPdRooms, submitPdGuess,
+};
+
+// Чекаємо кінця кімнати й викликаємо done(u) один раз
+function pvpWatchUntilDone(game, id, slot, onUpdate, done) {
+  if (PVP_SRV[slot]) PVP_SRV[slot].stop();
+  let finished = false;
+  const stop = roomWatch(game, id, (u) => {
+    if (u.meta.status === 'cancelled') { stop(); PVP_SRV[slot] = null; notify('Кімнату скасовано, ставку повернено', 'info'); return; }
+    onUpdate && onUpdate(u);
+    if (u.meta.status === 'finished' && u.result && !finished) {
+      finished = true; stop(); PVP_SRV[slot] = null;
+      done(u);
+    }
+  });
+  PVP_SRV[slot] = { id, stop };
+}
+const pvpOpponent = (u) => u.players.find((n) => n !== currentUser) || '???';
+const pvpWon = (u) => (u.result.winners || []).includes(currentUser);
+const pvpPay = (u) => (u.result.payouts || {})[currentUser] || 0;
+
+// ── Coinflip ──
+createCfRoom = async function () {
+  if (!(await roomsReady())) return _legacyPvp.createCfRoom();
+  const bet = parseInt(document.getElementById('cfBetInput').value) || 0;
+  const id = await roomCreate('coinflip', bet, { side: cfSelectedSide });
+  if (!id) return;
+  notify('🪙 Кімнату створено! Чекаємо суперника...', 'success');
+  switchCfTab('join');
+  cfServerWatch(id);
+};
+function cfServerWatch(id) {
+  pvpWatchUntilDone('coinflip', id, 'cf', null, (u) => {
+    const won = pvpWon(u);
+    showCfResult(won, u.pub.result, u.pub.side, u.meta.bet, pvpPay(u), pvpOpponent(u));
+    roomAnnounce(u.result, u.meta.bet, 'Coinflip');
+    if (won) addToWinFeed('Coinflip', pvpPay(u), 2);
+  });
+}
+loadCfRooms = async function () {
+  if (!(await roomsReady())) return _legacyPvp.loadCfRooms();
+  if (!PVP_SRV.cfLobby) PVP_SRV.cfLobby = roomLobby('coinflip', document.getElementById('cfRoomsList'), { describe: (o) => (o.side === 'tails' ? 'господар на Решку' : 'господар на Орла') });
+};
+ROOM_HOOKS.coinflip = {
+  onJoined: (id) => cfServerWatch(id),
+  onLeft: () => { if (PVP_SRV.cf) { PVP_SRV.cf.stop(); PVP_SRV.cf = null; } },
+};
+
+// ── Камінь-ножиці-папір ──
+function rpsShowArea(text) {
+  document.getElementById('rps-panel-create')?.classList.add('hidden');
+  document.getElementById('rps-panel-join')?.classList.add('hidden');
+  document.getElementById('rpsGameArea')?.classList.remove('hidden');
+  const st = document.getElementById('rpsStatus'); if (st) st.textContent = text;
+  ['rock', 'scissors', 'paper'].forEach((c) => { const el = document.getElementById('rps-' + c); if (el) el.style.opacity = '1'; });
+}
+function rpsServerWatch(id) {
+  rpsCurrentRoom = id; rpsRole = 'server';
+  pvpWatchUntilDone('rps', id, 'rps', (u) => {
+    if (u.meta.status === 'waiting') { rpsShowArea('⏳ Чекаємо суперника...'); return; }
+    if (u.meta.status !== 'playing' || !u.pub) return;
+    const mine = u.priv && u.priv.my;
+    const st = document.getElementById('rpsStatus');
+    if (st) st.textContent = mine ? `⏳ Чекаємо ходу суперника... ${roomSecondsLeft(u.pub.until)} с` : `🎮 Роби хід! ${roomSecondsLeft(u.pub.until)} с`;
+  }, (u) => {
+    const seat = u.seat, moves = (u.pub && u.pub.moves) || [];
+    const my = moves[seat], opp = moves[1 - seat];
+    const oppEl = document.getElementById('rpsOpponentMove');
+    if (oppEl) oppEl.textContent = RPS_EMOJI[opp] || '❓';
+    showRpsResult(pvpWon(u), !!u.result.draw, my, opp, u.meta.bet, pvpPay(u));
+    roomAnnounce(u.result, u.meta.bet, 'RPS');
+    rpsCurrentRoom = null; rpsRole = null;
+  });
+}
+createRpsRoom = async function () {
+  if (!(await roomsReady())) return _legacyPvp.createRpsRoom();
+  const bet = parseInt(document.getElementById('rpsBetInput').value) || 0;
+  const id = await roomCreate('rps', bet, {});
+  if (!id) return;
+  rpsShowArea('⏳ Чекаємо суперника...');
+  rpsServerWatch(id);
+};
+loadRpsRooms = async function () {
+  if (!(await roomsReady())) return _legacyPvp.loadRpsRooms();
+  if (!PVP_SRV.rpsLobby) PVP_SRV.rpsLobby = roomLobby('rps', document.getElementById('rpsRoomsList'));
+};
+playRps = async function (choice) {
+  if (rpsRole !== 'server') return _legacyPvp.playRps(choice);
+  if (!rpsCurrentRoom) return;
+  const r = await roomApi('act', { id: rpsCurrentRoom, move: { m: choice } });
+  if (r.mode !== 'server') return;
+  ['rock', 'scissors', 'paper'].forEach((c) => { const el = document.getElementById('rps-' + c); if (el) el.style.opacity = c === choice ? '1' : '0.3'; });
+};
+ROOM_HOOKS.rps = {
+  onJoined: (id) => { rpsShowArea('🎮 Роби хід!'); rpsServerWatch(id); },
+  onLeft: () => { if (PVP_SRV.rps) { PVP_SRV.rps.stop(); PVP_SRV.rps = null; } },
+};
+
+// ── Prediction Duel ──
+function pdServerResult(u) {
+  const seat = u.seat, g = (u.pub && u.pub.guesses) || [], secret = u.pub && u.pub.secret;
+  const my = g[seat], opp = g[1 - seat];
+  showPdResult(pvpWon(u), !!u.result.draw, secret, my, opp, Math.abs(my - secret), Math.abs(opp - secret), u.meta.bet, pvpPay(u), pvpOpponent(u));
+  roomAnnounce(u.result, u.meta.bet, 'Predict');
+  if (pvpWon(u)) addToWinFeed('Predict', pvpPay(u), 2);
+  pdCurrentRoom = null; pdRole = null;
+}
+createPdRoom = async function () {
+  if (!(await roomsReady())) return _legacyPvp.createPdRoom();
+  const bet = parseInt(document.getElementById('pdBetInput').value) || 0;
+  const guess = parseInt(document.getElementById('pdGuessInput').value);
+  if (!guess || guess < 1 || guess > 100) return notify('Число від 1 до 100', 'error');
+  const id = await roomCreate('predict', bet, { guess });
+  if (!id) return;
+  pdCurrentRoom = id; pdRole = 'server';
+  notify('🔮 Кімнату створено! Твоє число бачиш лише ти.', 'success');
+  switchPdTab('join');
+  pvpWatchUntilDone('predict', id, 'pd', null, pdServerResult);
+};
+loadPdRooms = async function () {
+  if (!(await roomsReady())) return _legacyPvp.loadPdRooms();
+  if (!PVP_SRV.pdLobby) PVP_SRV.pdLobby = roomLobby('predict', document.getElementById('pdRoomsList'));
+};
+submitPdGuess = async function () {
+  if (pdRole !== 'server') return _legacyPvp.submitPdGuess();
+  const g = parseInt(document.getElementById('pdJoinGuessInput').value);
+  if (!g || g < 1 || g > 100) return notify('Число від 1 до 100', 'error');
+  const r = await roomApi('act', { id: pdCurrentRoom, move: { g } });
+  if (r.mode === 'server') { const s = document.getElementById('pdJoinStatus'); if (s) s.textContent = '⏳ Рахуємо…'; }
+};
+ROOM_HOOKS.predict = {
+  onJoined: (id) => {
+    pdCurrentRoom = id; pdRole = 'server';
+    document.getElementById('pd-panel-join')?.classList.add('hidden');
+    document.getElementById('pdJoinGuessArea')?.classList.remove('hidden');
+    const s = document.getElementById('pdJoinStatus'); if (s) s.textContent = '🔮 Вгадай число від 1 до 100! На відповідь 60 с.';
+    pvpWatchUntilDone('predict', id, 'pd', null, pdServerResult);
+  },
+  onLeft: () => { if (PVP_SRV.pd) { PVP_SRV.pd.stop(); PVP_SRV.pd = null; } },
+};

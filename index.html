@@ -480,6 +480,14 @@
       <!-- Усі ігри -->
       <div class="section-header"><span id="lobbyGridTitle">Усі ігри</span><span class="section-count num" id="lobbyGridCount"></span></div>
       <div class="casino-grid-3" id="casinoGamesGrid" role="list">
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('minesweeper')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-mine" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Сапер</div><div class="casino-game-card-prov">Соло · дуель онлайн</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('battleship')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-ship" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Морський бій</div><div class="casino-game-card-prov">Бот · онлайн 1×1</div></div>
+        </div>
         <div class="casino-game-card is-3d" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('plinko3d')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-pegs" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko 3D</div><div class="casino-game-card-prov">Міні-гра</div></div>
@@ -750,6 +758,120 @@
     </div>
 
     <!-- ІГРИ -->
+    <div id="tab-minesweeper" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Сапер</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('minesweeper')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="seg" role="tablist" aria-label="Режим">
+        <button type="button" class="seg-item ms-mode active" data-mode="solo" onclick="msSetMode('solo')"><span class="seg-label">Соло на час</span></button>
+        <button type="button" class="seg-item ms-mode" data-mode="duel" onclick="msSetMode('duel')"><span class="seg-label">Дуель онлайн</span><span class="seg-hint">на ставку</span></button>
+      </div>
+
+      <div id="msSolo">
+        <div class="seg ms-levels" role="radiogroup" aria-label="Рівень">
+          <button type="button" class="seg-item ms-level active" data-level="easy" onclick="msSetLevel('easy')"><span class="seg-label">Новачок</span><span class="seg-hint">9×9 · 10</span></button>
+          <button type="button" class="seg-item ms-level" data-level="medium" onclick="msSetLevel('medium')"><span class="seg-label">Любитель</span><span class="seg-hint">16×16 · 40</span></button>
+          <button type="button" class="seg-item ms-level" data-level="hard" onclick="msSetLevel('hard')"><span class="seg-label">Профі</span><span class="seg-hint">30×16 · 99</span></button>
+        </div>
+        <div class="ms-hud">
+          <span class="ms-counter" title="Мін лишилось"><span class="ic i-mine" aria-hidden="true"></span><b id="msLeft" class="num">10</b></span>
+          <button type="button" class="ms-face" id="msFace" onclick="msNewSolo()" aria-label="Нова гра"><span class="ic i-refresh" aria-hidden="true"></span></button>
+          <span class="ms-counter" title="Секунд"><span class="ic i-timer" aria-hidden="true"></span><b id="msTime" class="num">0</b></span>
+          <button type="button" class="ms-flag-toggle" onclick="msToggleFlagMode()" aria-pressed="false"><span class="ic i-flag" aria-hidden="true"></span><span>Прапорець</span></button>
+        </div>
+        <div class="ms-scroll"><div class="ms-board" id="msBoard" role="grid" aria-label="Поле Сапера"></div></div>
+        <div class="game-result" id="msStatus" role="status" aria-live="polite">Перший клік завжди безпечний.</div>
+        <div class="ms-records-card">
+          <div class="field-label">Рекорди рівня</div>
+          <ol class="ms-records" id="msRecords"></ol>
+        </div>
+      </div>
+
+      <div id="msDuel" class="hidden">
+        <div id="msDuelLobby">
+          <p class="field-hint">Однакове поле в обох. Хто перший розмінує — забирає банк (мінус 5%). Підірвався — поразка.</p>
+          <div class="seg" role="radiogroup" aria-label="Рівень дуелі">
+            <button type="button" class="seg-item ms-dlevel active" data-level="easy" onclick="msSetDuelLevel('easy')"><span class="seg-label">Новачок</span><span class="seg-hint">9×9 · 10 · 4 хв</span></button>
+            <button type="button" class="seg-item ms-dlevel" data-level="medium" onclick="msSetDuelLevel('medium')"><span class="seg-label">Любитель</span><span class="seg-hint">12×12 · 24 · 7 хв</span></button>
+          </div>
+          <input id="msBet" type="number" value="200">
+          <button type="button" class="game-cta" onclick="msDuelCreate()"><span class="ic i-swords" aria-hidden="true"></span>Створити дуель</button>
+          <div class="field-label">Відкриті дуелі</div>
+          <div class="room-list" id="msRooms"></div>
+        </div>
+        <div id="msDuelGame" class="hidden">
+          <div id="msDuelWait" class="room-wait"><span class="ic i-clock" aria-hidden="true"></span><span id="msDuelWaitText">Чекаємо суперника…</span>
+            <button type="button" class="btn btn-ghost" onclick="msDuelLeave()">Скасувати кімнату</button></div>
+          <div id="msDuelPlay" class="hidden">
+            <div class="ms-duel-top"><div class="ms-bars" id="msDuelBars"></div><div class="ms-counter"><span class="ic i-timer" aria-hidden="true"></span><b id="msDuelTime" class="num">—</b></div></div>
+            <div class="ms-hud is-compact"><button type="button" class="ms-flag-toggle" onclick="msToggleFlagMode()" aria-pressed="false"><span class="ic i-flag" aria-hidden="true"></span><span>Прапорець</span></button></div>
+            <div class="ms-scroll"><div class="ms-board" id="msDuelBoard" role="grid" aria-label="Поле дуелі"></div></div>
+            <div class="game-result" id="msDuelStatus" role="status" aria-live="polite"></div>
+            <div class="room-actions">
+              <button type="button" class="btn btn-ghost" id="msDuelLeave" onclick="msDuelLeave()">Здатися</button>
+              <button type="button" class="btn btn-primary hidden" id="msDuelAgain" onclick="msDuelBack()">До лобі дуелей</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-battleship" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Морський бій</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('battleship')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="seg" role="tablist" aria-label="Режим">
+        <button type="button" class="seg-item bs-mode active" data-mode="bot" onclick="bsSetMode('bot')"><span class="seg-label">З ботом</span><span class="seg-hint">тренування</span></button>
+        <button type="button" class="seg-item bs-mode" data-mode="online" onclick="bsSetMode('online')"><span class="seg-label">Онлайн 1×1</span><span class="seg-hint">на ставку</span></button>
+      </div>
+
+      <div id="bsBot">
+        <div class="bs-boards">
+          <div class="bs-wrap" id="bsBotEnemyWrap"><div class="bs-cap"><span>Суперник: бот</span><span class="bs-left" id="bsBotLeft"></span></div><div class="bs-board is-enemy" id="bsBotEnemy" role="grid" aria-label="Поле суперника"></div></div>
+          <div class="bs-wrap is-mine"><div class="bs-cap"><span>Твій флот</span></div><div class="bs-board" id="bsBotMine" role="grid" aria-label="Твоє поле"></div></div>
+        </div>
+        <div class="game-result" id="bsBotStatus" role="status" aria-live="polite"></div>
+        <div class="room-actions" id="bsBotPlace">
+          <button type="button" class="btn btn-ghost" onclick="bsBotShuffle()"><span class="ic i-shuffle" aria-hidden="true"></span>Перемішати</button>
+          <button type="button" class="game-cta" onclick="bsBotStart()"><span class="ic i-anchor" aria-hidden="true"></span>До бою</button>
+        </div>
+        <button type="button" class="game-cta hidden" id="bsBotAgain" onclick="bsBotNew()"><span class="ic i-refresh" aria-hidden="true"></span>Ще раз</button>
+      </div>
+
+      <div id="bsOnline" class="hidden">
+        <div id="bsLobby">
+          <p class="field-hint">Влучив — стріляєш ще. На хід 30 с; тричі пропустив — поразка. Переможець забирає банк (мінус 5%).</p>
+          <input id="bsBet" type="number" value="200">
+          <button type="button" class="game-cta" onclick="bsOnlineCreate()"><span class="ic i-ship" aria-hidden="true"></span>Створити бій</button>
+          <div class="field-label">Відкриті бої</div>
+          <div class="room-list" id="bsRooms"></div>
+        </div>
+        <div id="bsGame" class="hidden">
+          <div id="bsWait" class="room-wait"><span class="ic i-clock" aria-hidden="true"></span><span id="bsWaitText">Чекаємо суперника…</span>
+            <button type="button" class="btn btn-ghost" onclick="bsOnlineLeave()">Скасувати кімнату</button></div>
+          <div id="bsPlay" class="hidden">
+            <div class="bs-boards">
+              <div class="bs-wrap" id="bsEnemyWrap"><div class="bs-cap"><span>Суперник</span><span class="bs-left" id="bsLeft"></span></div><div class="bs-board is-enemy" id="bsEnemy" role="grid" aria-label="Поле суперника"></div></div>
+              <div class="bs-wrap is-mine"><div class="bs-cap"><span>Твій флот</span></div><div class="bs-board" id="bsMine" role="grid" aria-label="Твоє поле"></div></div>
+            </div>
+            <div class="game-result" id="bsStatus" role="status" aria-live="polite"></div>
+            <div class="room-actions" id="bsPlace">
+              <button type="button" class="btn btn-ghost" onclick="bsOnlineShuffle()"><span class="ic i-shuffle" aria-hidden="true"></span>Перемішати</button>
+              <button type="button" class="game-cta" onclick="bsOnlineReady()"><span class="ic i-check" aria-hidden="true"></span>Готовий</button>
+            </div>
+            <div class="room-actions">
+              <button type="button" class="btn btn-ghost" id="bsLeave" onclick="bsOnlineLeave()">Здатися</button>
+              <button type="button" class="btn btn-primary hidden" id="bsAgain" onclick="bsOnlineBack()">До лобі боїв</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="tab-slots" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>

@@ -112,6 +112,7 @@ async function phase1() {
 
   assert.strictEqual(await anon.put("telegram_link_tokens/t1", { nick: "alice", createdAt: 1 }), OK);
   assert.strictEqual(await anon.put("telegram_link_tokens/t1", { nick: "bob", createdAt: 2 }), NO, "перезапис чужого токена");
+  await rooms(ns, client(ns, "alice"), client(ns, "bob"), anon);
 }
 
 async function strict() {
@@ -169,6 +170,26 @@ async function strict() {
   assert.strictEqual(await bob.del("lobby_chat/m1"), OK, "своє — можна");
   await new Promise((r) => setTimeout(r, 2100));
   assert.strictEqual(await say(bob, "m4", "bob"), OK, "через 2 с — знову можна");
+  await rooms(ns, alice, bob, anon);
+}
+
+// Онлайн-кімнати: пише лише сервер; приватне бачить лише власник; повний стан — ніхто.
+async function rooms(ns, alice, bob, anon) {
+  const admin = client(ns, "admin");
+  await admin.put("rooms/rps/r1", { status: "waiting", bet: 10 });
+  await admin.put("room_private/r1/alice", { ver: 1, v: "{}" });
+  await admin.put("room_state/r1", { j: "{}" });
+  assert.strictEqual(await alice.get("rooms/rps/r1"), OK, "лобі кімнат видно");
+  assert.strictEqual(await alice.put("rooms/rps/r1/status", "finished"), NO, "кімнату міняє лише сервер");
+  assert.strictEqual(await alice.post("rooms/rps", { status: "waiting" }), NO, "фальшиву кімнату не створити");
+  assert.strictEqual(await alice.get("room_private/r1/alice"), OK, "своє приватне видно");
+  assert.strictEqual(await bob.get("room_private/r1/alice"), NO, "чуже приватне — ні");
+  assert.strictEqual(await anon.get("room_private/r1/alice"), NO);
+  assert.strictEqual(await alice.put("room_private/r1/alice", { ver: 9 }), NO);
+  assert.strictEqual(await alice.get("room_state/r1"), NO, "повний стан (міни, флоти) — лише сервер");
+  assert.strictEqual(await alice.put("minesweeper_records/easy/alice", { t: 12.5, at: 1 }), OK, "свій рекорд");
+  assert.strictEqual(await alice.put("minesweeper_records/easy/bob", { t: 1, at: 1 }), NO, "чужий рекорд");
+  assert.strictEqual(await alice.put("minesweeper_records/easy/alice", { t: -1 }), NO, "дурний час");
 }
 
 (async () => {

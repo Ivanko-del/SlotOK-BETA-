@@ -83,6 +83,18 @@ merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 - **Rendering data from the DB:** use `escapeHtml()` for text, `safeUrl()` for
   `src`/`href`, and `jsArg()` for values inside `onclick="…"`.
 
+## Online rooms (multiplayer with money) — `api/room.js`
+
+New multiplayer games go through the server arbiter, never through client
+writes to the DB: `lib/rooms.js` (create/join/leave/act/tick, bets, payout
+exactly once via `room_paid`) + one pure rules file per game in
+`lib/room-games/` (register it in `index.js`). Full state lives in
+`room_state/<id>` (closed to browsers); the public view is `rooms/<game>/<id>`
+and each player's private view `room_private/<id>/<nick>`. Client helpers are
+in `src/app/44-rooms.js` (`roomApi`, `roomLobby`, `roomWatch`, `ROOM_HOOKS`).
+Tests: `scripts/selfcheck-room-api.js`. New DB nodes need
+`scripts/build-rules.js` and the owner must republish the rules.
+
 ## Local stack for online games (`npm run dev`)
 
 `scripts/dev-stack.js` starts the Firebase emulators (Auth :9099, Realtime

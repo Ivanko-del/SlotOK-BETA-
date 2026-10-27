@@ -559,6 +559,38 @@
         ".write": "auth != null"
       }
     },
+    "rooms": {
+      ".read": true,
+      ".write": false,
+      "$game": {
+        ".indexOn": [
+          "status"
+        ]
+      }
+    },
+    "room_private": {
+      ".read": false,
+      ".write": false,
+      "$id": {
+        "$nick": {
+          ".read": "auth != null && auth.uid === $nick"
+        }
+      }
+    },
+    "minesweeper_records": {
+      ".read": true,
+      "$level": {
+        ".indexOn": [
+          "t"
+        ],
+        "$nick": {
+          ".write": "auth != null && auth.uid === $nick",
+          "t": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 100000"
+          }
+        }
+      }
+    },
     "global_roulette": {
       ".read": true,
       "$k": {

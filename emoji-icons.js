@@ -68,7 +68,7 @@
     '🧘': 'meditate', '📶': 'signal', '💻': 'laptop', '🦉': 'bird', '📬': 'mail', '🎢': 'roller-coaster',
     '👽': 'alien', '📹': 'video', '🦅': 'bird', '🦋': 'butterfly', '🐬': 'fish', '🦜': 'bird', '🐱': 'paw',
     '🛑': 'stop neg', '🥚': 'egg', '🦵': 'run', '🎊': 'party accent', '🌪': 'vortex', '🪨': 'rock',
-    '🎬': 'video', '🏝': 'island', '🎆': 'fireworks accent', '⚓': 'anchor', '🌃': 'city', '🤠': 'cowboy',
+    '🎬': 'video', '🏝': 'island', '🎆': 'fireworks accent', '⚓': 'anchor', '🚢': 'ship', '🌃': 'city', '🤠': 'cowboy',
     '⛩': 'temple', '🧙': 'wizard', '⛄': 'snowman', '💘': 'heart-fill neg', '🐙': 'octopus',
     '🏺': 'amphora', '🛰': 'satellite', '🍹': 'cocktail', '🏛': 'temple', '🏰': 'castle', '👻': 'ghost',
     '⛏': 'tools', '🌠': 'star-shooting warn', '🌴': 'palm',

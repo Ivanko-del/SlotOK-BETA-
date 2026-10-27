@@ -324,6 +324,8 @@ module.exports = {
   'pushpin': '<path d="M9 3.5h6l-1 6 3 3H7l3-3z"/><path d="M12 12.5V21"/>',
   'magic-ball': '<circle cx="12" cy="10.5" r="7"/><path d="M6.5 16.5 5 20.5h14l-1.5-4"/><path d="M9.5 8a3 3 0 0 1 3-2"/>',
   'repeat-one': '<path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H19"/><path d="m16 3 3 3-3 3"/><path d="M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H5"/><path d="m8 21-3-3 3-3"/><path d="M11 10.5 12.5 9.5v5"/>',
+  ship: '<path d="M3 15h18l-2.5 4.5a2 2 0 0 1-1.8 1H7.3a2 2 0 0 1-1.8-1z"/><path d="M6 15v-4h12v4M9 11V7h6v4M12 7V3.5"/>',
+  mine: '<circle cx="12" cy="12" r="5.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="10" cy="10" r="1.3" ' + F + '/>',
   pegs: '<circle cx="12" cy="5" r="1.4" ' + F + '/><circle cx="8" cy="10" r="1.4" ' + F + '/><circle cx="16" cy="10" r="1.4" ' + F + '/><circle cx="4" cy="15" r="1.4" ' + F + '/><circle cx="12" cy="15" r="1.4" ' + F + '/><circle cx="20" cy="15" r="1.4" ' + F + '/><path d="M3 20.5h18M7 20.5v-2M12 20.5v-2M17 20.5v-2"/><circle cx="14" cy="7.6" r="2"/>',
   seven: '<path d="M6 5h12l-6.5 15"/><path d="M8.5 12.5h7"/>',
   'arrow-up-left': '<path d="M17 17 7 7M15.5 7H7v8.5"/>',
