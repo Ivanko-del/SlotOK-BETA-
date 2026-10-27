@@ -33,6 +33,12 @@ let db = null;
 try {
   if(typeof firebase === 'undefined') throw new Error('Firebase SDK не завантажився');
   if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  // Локальний стенд (scripts/dev-stack.js): емулятори замість бойової бази
+  const emu = window.SLOTOK_EMULATOR;
+  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    firebase.database().useEmulator(emu.db[0], emu.db[1]);
+    if(firebase.auth) firebase.auth().useEmulator(emu.auth, { disableWarnings: true });
+  }
   db = firebase.database();
   setTimeout(initAxioma, 0); // після виконання всього app.js — тоді змінні інтеграції вже оголошені
 } catch(e) {
@@ -5802,10 +5808,30 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '110';
+const CURRENT_VERSION = '111';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '111',
+    title: '🔧 Оновлення v111 — онлайн-ігри знову працюють',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Виправлення онлайн-ігор',
+        items: [
+          'Монополія: до кімнати знову можна приєднатись (раніше завжди писало «Кімната недоступна»)',
+          'Монополія: якщо гравець вийшов чи довго думає (60 с), хід переходить далі — гра більше не зависає',
+          'Монополія: партія триває 25 раундів, далі перемагає найбагатший (гроші + ділянки) — більше без безкінечних ігор',
+          'Монополія: банкрутство від податків теж рахується; якщо хост скасував кімнату, ставку повертають усім гравцям',
+          'Шахи онлайн: переможцю тепер справді виплачується виграш після мату',
+          'Дурень онлайн: гра завершується й платить переможцю, навіть якщо останню карту віддали в атаці',
+        ],
+      },
+    ],
+  },
   {
     version: '110',
     title: '🎲 Оновлення v110 — п\'ять нових 3D-ігор',
@@ -12358,6 +12384,7 @@ const MINOR_ACTION_PATTERNS = [
 ];
 
 window.notify = function(msg, type) {
+  msg = msg == null ? '' : String(msg); // порожнє повідомлення не має валити гру, що його показує
   const isBonus = msg.includes('бонус') || msg.includes('Бонус') || msg.includes('щоденний') || msg.includes('погодинний');
   const isGift  = msg.includes('Подарунок') || msg.includes('подарунок');
   const isNotifCategory = isBonus || isGift || type === 'success' ||
@@ -12413,8 +12440,54 @@ window.notify = function(msg, type) {
 let mpRoomId  = null;
 let mpIsHost  = false;
 let mpListener = null;
+// Партія обмежена раундами (інакше гроші майже не рухаються і гра не
+// закінчується ніколи) і часом на хід (інакше один AFK зупиняє всіх).
+const MP_MAX_ROUNDS = 25;
+const MP_TURN_MS = 60000;
+let mpTurnTimer = null, mpTurnSeen = null, mpRefunded = false;
+
+function mpActiveOrder(r, players) {
+  players = players || r.players || {};
+  return (r.turnOrder || Object.keys(players)).filter(n => players[n] && !players[n].bankrupt);
+}
+// Хто ходить після name (name може вже бути банкрутом)
+function mpNextAfter(r, name, players) {
+  const order = r.turnOrder || Object.keys(r.players || {});
+  players = players || r.players || {};
+  const i = order.indexOf(name);
+  for(let k = 1; k <= order.length; k++) {
+    const n = order[(i + k) % order.length];
+    if(players[n] && !players[n].bankrupt) return n;
+  }
+  return null;
+}
+// Статки: гроші + ціна ділянок — так визначаємо переможця за лімітом раундів
+function mpWorth(r, name) {
+  const p = (r.players || {})[name] || {};
+  let w = p.money || 0;
+  Object.entries(r.props || {}).forEach(([pos, owner]) => {
+    if(owner !== name) return;
+    const cell = MONO_CELLS.find(c => c.pos === +pos);
+    if(cell && cell.price) w += cell.price;
+  });
+  return w;
+}
+// Хід передає лише наступний активний гравець і лише через транзакцію, тож
+// при кількох вкладках хід не «перескочить» двічі.
+function mpForceSkip(r, why) {
+  const stuck = r.turn;
+  const next = mpNextAfter(r, stuck);
+  if(!next || next !== currentUser) return;
+  db.ref('mp_rooms/' + mpRoomId + '/turn').transaction(cur => (cur === stuck ? next : undefined), (err, committed) => {
+    if(err || !committed) return;
+    db.ref('mp_rooms/' + mpRoomId).update({ pendingBuy: null });
+    mpAddLog2('⏭ ' + stuck + ': ' + why);
+  });
+}
 
 function resetMpUI() {
+  if(mpTurnTimer) { clearTimeout(mpTurnTimer); mpTurnTimer = null; }
+  mpTurnSeen = null; mpRefunded = false;
   mpRoomId = null; mpIsHost = false;
   document.getElementById('mpGameScreen').classList.add('hidden');
   document.getElementById('mpWaitScreen').classList.add('hidden');
@@ -12639,7 +12712,11 @@ function joinMpRoom2(roomId, bet) {
   // одночасно, могли обидва пройти перевірку playerCount<maxPlayers за
   // застарілим once('value') і зайняти останнє місце разом.
   db.ref('mp_rooms/' + roomId).transaction(r => {
-    if(!r || r.status !== 'waiting') return; // кімнати нема або вже не очікує — абортуємо
+    // null на першому проході — лише порожній локальний кеш, а не відсутня
+    // кімната: віддаємо null, і SDK повторить транзакцію зі справжнім значенням
+    // (раніше тут був abort, і приєднатись не вдавалось нікому).
+    if(r === null) return null;
+    if(r.status !== 'waiting') return; // кімната вже не очікує — абортуємо
     const players = r.players || {};
     if(players[currentUser]) return; // вже в кімнаті — нічого не міняємо
     const maxPlayers = r.maxPlayers || 2;
@@ -12688,7 +12765,18 @@ function listenMpRoom2(roomId) {
   if(mpListener) { try { db.ref('mp_rooms/' + roomId).off('value', mpListener); } catch(e) { console.warn(e); } }
   mpListener = db.ref('mp_rooms/' + roomId).on('value', snap => {
     const r = snap.val(); if(!r) return;
-    if(r.status === 'cancelled') { notify('Кімнату скасовано', 'error'); resetMpUI(); return; }
+    if(r.status === 'cancelled') {
+      // Хост повертає ставку лише собі — гості, що вже зайшли, повертають свою самі.
+      if(r.host !== currentUser && r.players && r.players[currentUser] && !mpRefunded) {
+        mpRefunded = true;
+        db.ref('mp_rooms/' + roomId + '/players/' + currentUser).onDisconnect().cancel();
+        db.ref('users/' + currentUser + '/balance').onDisconnect().cancel();
+        db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(r.bet));
+      }
+      notify('Кімнату скасовано, ставку повернено', 'error');
+      if(mpListener) { db.ref('mp_rooms/' + roomId).off('value', mpListener); mpListener = null; }
+      resetMpUI(); return;
+    }
     if(r.status === 'waiting' && r.players) {
       renderWaitPlayers(r.players, r.maxPlayers || 2);
     }
@@ -12712,7 +12800,22 @@ function listenMpRoom2(roomId) {
       // Якщо після чиєїсь відключки (бо onDisconnect вище позначив
       // банкрутом) лишився рівно один активний гравець — завершуємо гру
       // замість того, щоб кімната зависла в статусі "playing" назавжди.
-      const active = (r.turnOrder || Object.keys(r.players)).filter(n => r.players[n] && !r.players[n].bankrupt);
+      const active = mpActiveOrder(r);
+      if(active.length > 1 && r.players[r.turn] && r.players[r.turn].bankrupt) {
+        mpForceSkip(r, 'вибув — хід переходить далі');
+      }
+      // Таймер ходу: новий хід — новий відлік
+      const turnKey = r.turn + '|' + (r.round || 1) + '|' + (r.pendingBuy ? 1 : 0);
+      if(turnKey !== mpTurnSeen) {
+        mpTurnSeen = turnKey;
+        if(mpTurnTimer) clearTimeout(mpTurnTimer);
+        mpTurnTimer = setTimeout(() => {
+          db.ref('mp_rooms/' + roomId).once('value', s2 => {
+            const r2 = s2.val();
+            if(r2 && r2.status === 'playing' && r2.turn === r.turn) mpForceSkip(r2, 'час на хід вийшов');
+          });
+        }, MP_TURN_MS + 1500);
+      }
       if(active.length === 1 && !r.gameOver) {
         db.ref('mp_rooms/' + roomId + '/status').transaction(cur => cur === 'playing' ? 'finishing' : undefined, (err, committed) => {
           if(!err && committed) finishMpGame2(active[0], r.bet, r.turnOrder);
@@ -12746,8 +12849,8 @@ function renderMpGame2(r) {
   const turnEl = document.getElementById('mpTurnInfo');
   if(turnEl) {
     if(r.gameOver) { turnEl.textContent = '🏁 Гра завершена!'; turnEl.style.color = 'var(--fg-3)'; }
-    else if(myTurn) { turnEl.textContent = '⚡ Ваш хід!'; turnEl.style.color = 'var(--green)'; }
-    else { turnEl.textContent = '⏳ Хід гравця ' + r.turn; turnEl.style.color = 'var(--fg-3)'; }
+    else if(myTurn) { turnEl.textContent = '⚡ Ваш хід! · раунд ' + (r.round || 1) + '/' + MP_MAX_ROUNDS + ' · 60 с'; turnEl.style.color = 'var(--green)'; }
+    else { turnEl.textContent = '⏳ Хід гравця ' + r.turn + ' · раунд ' + (r.round || 1) + '/' + MP_MAX_ROUNDS; turnEl.style.color = 'var(--fg-3)'; }
   }
 
   const rollBtn = document.getElementById('mpRollBtn');
@@ -12863,8 +12966,8 @@ window.mpRoll = function() {
 
     if(cell) {
       if(cell.pos === 30) { p.pos = 10; p.jail = 2; mpAddLog2('👮 ' + currentUser + ' іде у в\'язницю!'); }
-      else if(cell.type === 'tax') { const tax = cell.pos===4?100:150; p.money -= tax; mpAddLog2('💸 Податок -' + tax + '₴'); }
-      else if(cell.type === 'special') { const bonus = [100,-75,50,150,-50,200][Math.floor(Math.random()*6)]; p.money += bonus; mpAddLog2('🃏 ' + currentUser + ': ' + (bonus>0?'+':'') + bonus + '₴'); }
+      else if(cell.type === 'tax') { const tax = cell.pos===4?100:150; p.money -= tax; mpAddLog2('💸 Податок -' + tax + '₴'); if(p.money <= 0) { p.bankrupt = true; mpAddLog2('💀 ' + currentUser + ' банкрут!'); } }
+      else if(cell.type === 'special') { const bonus = [100,-75,50,150,-50,200][Math.floor(Math.random()*6)]; p.money += bonus; mpAddLog2('🃏 ' + currentUser + ': ' + (bonus>0?'+':'') + bonus + '₴'); if(p.money <= 0) { p.bankrupt = true; mpAddLog2('💀 ' + currentUser + ' банкрут!'); } }
       else if((cell.type==='prop'||cell.type==='station'||cell.type==='utility') && cell.price) {
         const owner = props[cell.pos];
         if(!owner) {
@@ -12882,7 +12985,13 @@ window.mpRoll = function() {
 
     // Check game over
     const activePlayers = Object.entries(players).filter(([,v]) => !v.bankrupt);
-    if(activePlayers.length === 1) { finishMpGame2(activePlayers[0][0], r.bet, r.turnOrder); return; }
+    if(activePlayers.length === 1) {
+      db.ref('mp_rooms/' + mpRoomId).update({ players, props });
+      db.ref('mp_rooms/' + mpRoomId + '/status').transaction(cur => cur === 'playing' ? 'finishing' : undefined, (err, committed) => {
+        if(!err && committed) finishMpGame2(activePlayers[0][0], r.bet, r.turnOrder);
+      });
+      return;
+    }
 
     if(pendingBuy) {
       db.ref('mp_rooms/' + mpRoomId).update({ players, pendingBuy, props });
@@ -12894,11 +13003,22 @@ window.mpRoll = function() {
 
 function mpNextTurn2(r, players, props) {
   const order = r.turnOrder || Object.keys(r.players);
-  const activePlayers = order.filter(n => players[n] && !players[n].bankrupt);
-  if(!activePlayers.length) return;
-  const curIdx = activePlayers.indexOf(r.turn);
-  const nextTurn = activePlayers[(curIdx + 1) % activePlayers.length];
-  db.ref('mp_rooms/' + mpRoomId).update({ players, props: props||r.props, turn: nextTurn, pendingBuy: null });
+  const nextTurn = mpNextAfter(r, r.turn, players);
+  if(!nextTurn) return;
+  // Новий раунд — коли хід повертається на початок черги
+  let round = r.round || 1;
+  if(order.indexOf(nextTurn) <= order.indexOf(r.turn)) round++;
+  if(round > MP_MAX_ROUNDS) {
+    const rr = Object.assign({}, r, { players, props: props || r.props });
+    const best = mpActiveOrder(rr, players).sort((a, b) => mpWorth(rr, b) - mpWorth(rr, a))[0];
+    mpAddLog2('🏁 ' + MP_MAX_ROUNDS + ' раундів зіграно — перемагає найбагатший: ' + best);
+    db.ref('mp_rooms/' + mpRoomId).update({ players, props: props || r.props, pendingBuy: null });
+    db.ref('mp_rooms/' + mpRoomId + '/status').transaction(cur => cur === 'playing' ? 'finishing' : undefined, (err, committed) => {
+      if(!err && committed) finishMpGame2(best, r.bet, r.turnOrder);
+    });
+    return;
+  }
+  db.ref('mp_rooms/' + mpRoomId).update({ players, props: props||r.props, turn: nextTurn, pendingBuy: null, round });
 }
 
 window.mpBuy = function() {
@@ -12932,6 +13052,7 @@ function finishMpGame2(winnerName, bet, turnOrder) {
 }
 
 function handleMpFinished2(r) {
+  if(mpTurnTimer) { clearTimeout(mpTurnTimer); mpTurnTimer = null; }
   db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser + '/bankrupt').onDisconnect().cancel();
   const isWin = r.winner === currentUser;
   mpAddLog2(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + r.prize + '₴' : '😔 Переміг ' + r.winner, isWin?'good':'bad');
@@ -12958,8 +13079,12 @@ window.surrenderMp = function() {
     const players = JSON.parse(JSON.stringify(r.players));
     players[currentUser].bankrupt = true;
     const active = (r.turnOrder||Object.keys(r.players)).filter(n => !players[n].bankrupt);
-    if(active.length === 1) finishMpGame2(active[0], r.bet, r.turnOrder);
-    else db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser).update({ bankrupt: true });
+    db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser).update({ bankrupt: true });
+    if(active.length === 1) {
+      db.ref('mp_rooms/' + mpRoomId + '/status').transaction(cur => cur === 'playing' ? 'finishing' : undefined, (err, committed) => {
+        if(!err && committed) finishMpGame2(active[0], r.bet, r.turnOrder);
+      });
+    }
   });
 };
 
@@ -13165,6 +13290,8 @@ function cgPass() {
     cgRefill();
     cgState.isPlayerAttacking = false; // суперник атакує знову
     renderCgBoard();
+    cgCheckWin(); // суперник міг віддати останню карту — тоді він виграв
+    if(cgState.gameOver) return;
     cgHandoffToOpponent(cgAiAttack, 1000);
   }
 }
@@ -13456,6 +13583,10 @@ function listenCardRoom(roomId) {
       cgOpponentName = cgIsHost ? r.guest : r.host;
       cgApplyRoomSnapshot(r);
       cgSelectedCards = [];
+      // Кінець партії може настати після ходу суперника (він віддав останню
+      // карту, а я взяв) — перевіряємо на кожному знімку; подвійної виплати
+      // не буде завдяки транзакції resolved у cgResolvePvpGame.
+      if(!r.resolved) cgCheckWin();
       if(isFirstSync) {
         cgLog('🃏 Гра з ' + cgOpponentName + ' почалась!');
         // Старт гри — попередній onDisconnect хоста ("скасувати кімнату")
@@ -23015,6 +23146,11 @@ function chessHandleGameEnd(status) {
       } else {
         resultText = `💀 Мат! AI переміг — -${formatNumber(chessGame.bet)}₴`;
       }
+    } else {
+      // PvP: без цього тексту notify() падав і виграш ніколи не виплачувався
+      resultText = playerWon
+        ? `🏆 Мат! Ти переміг — +₴${formatNumber(Math.floor(chessGame.bet * 2 * 0.95))}`
+        : `💀 Мат! Суперник переміг — -₴${formatNumber(chessGame.bet)}`;
     }
   }
 

@@ -547,6 +547,11 @@ function chessHandleGameEnd(status) {
       } else {
         resultText = `💀 Мат! AI переміг — -${formatNumber(chessGame.bet)}₴`;
       }
+    } else {
+      // PvP: без цього тексту notify() падав і виграш ніколи не виплачувався
+      resultText = playerWon
+        ? `🏆 Мат! Ти переміг — +₴${formatNumber(Math.floor(chessGame.bet * 2 * 0.95))}`
+        : `💀 Мат! Суперник переміг — -₴${formatNumber(chessGame.bet)}`;
     }
   }
 
