@@ -14,6 +14,7 @@ const BET_INPUT_IDS = [
   'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'placeGrBet', 'startCrash', 'dealPoker', 'startChests', 'startMines',
@@ -21,6 +22,7 @@ const GAME_CTA_FNS = [
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
   'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
+  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
 

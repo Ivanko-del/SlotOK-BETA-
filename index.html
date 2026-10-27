@@ -156,6 +156,11 @@
         <!-- Швидкий старт: одна дія до гри -->
         <div class="section-header"><span>Швидкий старт</span><button type="button" class="link-btn section-link" onclick="switchTab('lobby')">Усі ігри</button></div>
         <div class="games-scroll quick-games" role="list">
+          <button type="button" role="listitem" class="game-thumb is-3d" onclick="openGame('plinko3d')"><span class="icon"><span class="ic i-pegs" aria-hidden="true"></span></span><span class="label">Plinko 3D</span></button>
+          <button type="button" role="listitem" class="game-thumb is-3d" onclick="openGame('slot5')"><span class="icon"><span class="ic i-cherry" aria-hidden="true"></span></span><span class="label">Слот 5×3</span></button>
+          <button type="button" role="listitem" class="game-thumb is-3d" onclick="openGame('match3')"><span class="icon"><span class="ic i-gem" aria-hidden="true"></span></span><span class="label">Три в ряд</span></button>
+          <button type="button" role="listitem" class="game-thumb is-3d" onclick="openGame('wheel3d')"><span class="icon"><span class="ic i-wheel" aria-hidden="true"></span></span><span class="label">Колесо 3D</span></button>
+          <button type="button" role="listitem" class="game-thumb is-3d" onclick="openGame('craps')"><span class="icon"><span class="ic i-dice" aria-hidden="true"></span></span><span class="label">Кубики 3D</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('crash')"><span class="icon">🚀</span><span class="label">Краш</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('slots')"><span class="icon">🎰</span><span class="label">Слоти</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></button>
@@ -475,6 +480,26 @@
       <!-- Усі ігри -->
       <div class="section-header"><span id="lobbyGridTitle">Усі ігри</span><span class="section-count num" id="lobbyGridCount"></span></div>
       <div class="casino-grid-3" id="casinoGamesGrid" role="list">
+        <div class="casino-game-card is-3d" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('plinko3d')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-pegs" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko 3D</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card is-3d" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('wheel3d')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-wheel" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Колесо удачі 3D</div><div class="casino-game-card-prov">Колесо</div></div>
+        </div>
+        <div class="casino-game-card is-3d" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('craps')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-dice" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Кубики 3D</div><div class="casino-game-card-prov">Кості</div></div>
+        </div>
+        <div class="casino-game-card is-3d" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('slot5')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-cherry" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Слот 5×3</div><div class="casino-game-card-prov">Слот</div></div>
+        </div>
+        <div class="casino-game-card is-3d" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('match3')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-gem" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Три в ряд</div><div class="casino-game-card-prov">Каскади</div></div>
+        </div>
         <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('slots')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🎰</div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Classic 777</div><div class="casino-game-card-prov">Слот</div></div>
@@ -636,6 +661,92 @@
       <!-- Останні виграші -->
       <div class="section-header"><span>Останні виграші</span></div>
       <div class="wins-feed list" id="lobbyWinsFeed"></div>
+    </div>
+
+
+    <!-- ═══ НОВІ 3D-ІГРИ (v110) — логіка: src/app/43-games-3d.js, стилі: src/css/67-games-3d.css ═══ -->
+    <div id="tab-plinko3d" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Plinko <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('plinko3d')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="g3d-stage p3d-stage" id="p3dStage" role="img" aria-label="Дошка Plinko з кілками"><div class="g3d-loading">Завантаження 3D…</div></div>
+      <div class="p3d-buckets" id="p3dBuckets" aria-label="Множники кошиків"></div>
+      <div class="game-result" id="p3dResult" role="status" aria-live="polite">Обери ризик і кинь кульку — можна кілька підряд.</div>
+      <div class="field-label">Ризик</div>
+      <div class="seg" role="radiogroup" aria-label="Ризик">
+        <button type="button" class="seg-item p3d-risk" data-risk="low" onclick="setPlinko3dRisk('low',this)"><span class="seg-label">Низький</span><span class="seg-hint">до ×10</span></button>
+        <button type="button" class="seg-item p3d-risk active" data-risk="med" onclick="setPlinko3dRisk('med',this)"><span class="seg-label">Середній</span><span class="seg-hint">до ×33</span></button>
+        <button type="button" class="seg-item p3d-risk" data-risk="high" onclick="setPlinko3dRisk('high',this)"><span class="seg-label">Високий</span><span class="seg-hint">до ×170</span></button>
+      </div>
+      <input id="p3dBet" type="number" value="100">
+      <button type="button" class="game-cta" id="p3dBtn" onclick="playPlinko3d()"><span class="ic i-play" aria-hidden="true"></span>Кинути кульку</button>
+    </div>
+
+    <div id="tab-wheel3d" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Колесо удачі <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('wheel3d')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="g3d-stage w3d-stage" id="w3dStage" role="img" aria-label="Колесо удачі"><div class="g3d-loading">Завантаження 3D…</div></div>
+      <div class="game-result" id="w3dResult" role="status" aria-live="polite">Сектор «БОНУС» запускає друге колесо з множниками до ×30.</div>
+      <div class="w3d-legend" id="w3dLegend"></div>
+      <input id="w3dBet" type="number" value="100">
+      <button type="button" class="game-cta" id="w3dBtn" onclick="playWheel3d()"><span class="ic i-refresh" aria-hidden="true"></span>Крутити колесо</button>
+    </div>
+
+    <div id="tab-craps" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Кубики <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('craps')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="g3d-stage cr-stage" id="crStage" role="img" aria-label="Стіл з двома кубиками"><div class="g3d-loading">Завантаження 3D…</div></div>
+      <div class="game-result" id="crResult" role="status" aria-live="polite">Постав на суму двох кубиків.</div>
+      <div class="field-label">Ставка на</div>
+      <div class="cr-bets" role="radiogroup" aria-label="На що ставиш">
+        <button type="button" class="cr-bet" data-type="small" onclick="setCrapsBet('small',this)"><b>Мала</b><span>2–6</span><em>×2.3</em></button>
+        <button type="button" class="cr-bet active" data-type="seven" onclick="setCrapsBet('seven',this)"><b>Сімка</b><span>рівно 7</span><em>×5.8</em></button>
+        <button type="button" class="cr-bet" data-type="big" onclick="setCrapsBet('big',this)"><b>Велика</b><span>8–12</span><em>×2.3</em></button>
+        <button type="button" class="cr-bet" data-type="doubles" onclick="setCrapsBet('doubles',this)"><b>Дубль</b><span>однакові</span><em>×5.8</em></button>
+        <button type="button" class="cr-bet" data-type="sum" onclick="setCrapsBet('sum',this)"><b>Точна сума</b><span><select id="crSum" onclick="event.stopPropagation()" onchange="setCrapsBet('sum',this.closest('.cr-bet'))" aria-label="Сума"></select></span><em id="crSumMult">×5.8</em></button>
+      </div>
+      <input id="crBet" type="number" value="100">
+      <button type="button" class="game-cta" id="crBtn" onclick="playCraps()"><span class="ic i-dice" aria-hidden="true"></span>Кинути кубики</button>
+    </div>
+
+    <div id="tab-slot5" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Слот 5×3 <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('slot5')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="s5-machine" id="s5Machine">
+        <div class="s5-window" id="s5Window" role="img" aria-label="Барабани слота"></div>
+        <svg class="s5-lines" id="s5Lines" viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="game-result" id="s5Result" role="status" aria-live="polite">10 ліній · вайлд замінює всі символи · 3+ подарунки будь-де — до ×50.</div>
+      <details class="s5-paytable"><summary>Таблиця виплат</summary><div id="s5Paytable"></div></details>
+      <input id="s5Bet" type="number" value="100">
+      <button type="button" class="game-cta" id="s5Btn" onclick="playSlot5()"><span class="ic i-slot" aria-hidden="true"></span>Крутити</button>
+    </div>
+
+    <div id="tab-match3" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Три в ряд <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('match3')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="m3-wrap">
+        <div class="m3-board" id="m3Board" role="img" aria-label="Поле 6 на 6"></div>
+        <div class="m3-cascade" id="m3Cascade" aria-hidden="true"></div>
+      </div>
+      <div class="game-result" id="m3Result" role="status" aria-live="polite">Ряди з 3+ однакових зникають і платять, нові падають згори — кожен каскад множить виграш.</div>
+      <details class="s5-paytable"><summary>Таблиця виплат</summary><div id="m3Paytable"></div></details>
+      <input id="m3Bet" type="number" value="100">
+      <button type="button" class="game-cta" id="m3Btn" onclick="playMatch3()"><span class="ic i-grid" aria-hidden="true"></span>Грати</button>
     </div>
 
     <!-- ІГРИ -->

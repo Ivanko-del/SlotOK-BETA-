@@ -285,6 +285,8 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},
   {id:'horseracing', name:'🏇 Horse Racing'}, {id:'colorbet', name:'🎨 Color Bet'},
   {id:'diamond', name:'💎 Diamond Rush'},
+  {id:'plinko3d', name:'⚪ Plinko 3D'}, {id:'wheel3d', name:'🎡 Колесо удачі 3D'}, {id:'craps', name:'🎲 Кубики 3D'},
+  {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
 ];
 
 let _gameToggleDisabledCache = {};

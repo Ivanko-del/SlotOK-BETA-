@@ -58,6 +58,7 @@
 | 40-celebration-winback-onboarding | святкування виграшу, «Ми скучили», онбординг, mystery box, стрічка друзів |
 | 41-ui-confirm | `confirmAction()` — діалог підтвердження критичних дій |
 | 42-game-ui | спільне поле ставки (`.bet-field`) і головна кнопка (`.game-cta`) для всіх ігор |
+| 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |
 
 Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:
 їх читає і браузер, і сервер.

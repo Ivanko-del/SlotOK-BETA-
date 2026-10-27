@@ -1281,6 +1281,7 @@ body > .screen, .container ~ .screen {
 .i-pause { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 5v14M16 5v14'/%3E%3C/svg%3E"); }
 .i-paw { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='7' cy='10' rx='1.8' ry='2.4'/%3E%3Cellipse cx='17' cy='10' rx='1.8' ry='2.4'/%3E%3Cellipse cx='10' cy='6' rx='1.8' ry='2.4'/%3E%3Cellipse cx='14' cy='6' rx='1.8' ry='2.4'/%3E%3Cpath d='M12 12c-3 0-5.5 3.5-5.5 6 0 1.5 1 2.5 2.5 2.5 1.2 0 2-.7 3-.7s1.8.7 3 .7c1.5 0 2.5-1 2.5-2.5 0-2.5-2.5-6-5.5-6z'/%3E%3C/svg%3E"); }
 .i-peace { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 13.5 6.5 4a1.5 1.5 0 0 1 3-.7L11.5 11M13 11l1.8-7.7a1.5 1.5 0 0 1 3 .7L16 12'/%3E%3Cpath d='M8 13a1.5 1.5 0 0 1 2.5-1L12 13l1.2-1a1.5 1.5 0 0 1 2.3.4l1.2 2A6 6 0 0 1 11.5 21 4.5 4.5 0 0 1 7 16.5z'/%3E%3C/svg%3E"); }
+.i-pegs { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='5' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='8' cy='10' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='16' cy='10' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='4' cy='15' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='15' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='20' cy='15' r='1.4' fill='%23000' stroke='none'/%3E%3Cpath d='M3 20.5h18M7 20.5v-2M12 20.5v-2M17 20.5v-2'/%3E%3Ccircle cx='14' cy='7.6' r='2'/%3E%3C/svg%3E"); }
 .i-pencil { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z'/%3E%3C/svg%3E"); }
 .i-person { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='5' r='2.5'/%3E%3Cpath d='M9 21v-6.5L7.5 14V9.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2V14L15 14.5V21M12 14.5V21'/%3E%3C/svg%3E"); }
 .i-phone { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6.5' y='2.5' width='11' height='19' rx='2.5'/%3E%3Cpath d='M10.5 18.5h3'/%3E%3C/svg%3E"); }
@@ -4686,4 +4687,275 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 #tab-admin input, #tab-admin select, #tab-admin textarea { font-size: 16px; }
 @media (min-width: 1024px) {
   #tab-admin .adm-panel.active { display: block; }
+}
+/* ─── src/css/67-games-3d.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   3D-ІГРИ (v110): Plinko 3D, Колесо удачі 3D, Кубики, Слот 5×3, Три в ряд.
+   Логіка — src/app/43-games-3d.js. WebGL-сцени малює three.js у
+   .g3d-stage; слот, «Три в ряд» і запасні вигляди — чистий CSS-3D.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Шапка нових ігор ───────────────────────────────────────────── */
+.game-head {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.game-title {
+  margin: 0; display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-bold);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.game-title .badge { font-size: var(--fs-2xs); }
+@media (max-width: 420px) { .game-head .game-back-lbl { display: none; } .game-title { font-size: var(--fs-lg); } }
+
+/* ── Сцена ──────────────────────────────────────────────────────── */
+.g3d-stage {
+  position: relative; width: 100%; overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgb(var(--primary-rgb) / .14), transparent 60%),
+    radial-gradient(90% 70% at 50% 100%, rgb(var(--accent-rgb) / .1), transparent 70%),
+    var(--surface-1);
+  border: var(--bw) solid var(--line); border-radius: var(--r-xl);
+  box-shadow: var(--sh-1);
+}
+.g3d-stage canvas { display: block; width: 100% !important; height: 100% !important; }
+.p3d-stage { aspect-ratio: 1 / 1; max-height: 62vh; }
+.w3d-stage { aspect-ratio: 1 / 1; max-height: 58vh; }
+.cr-stage { aspect-ratio: 16 / 10; max-height: 50vh; }
+@media (min-width: 900px) {
+  .game3d { max-width: 720px; margin-inline: auto; }
+}
+.g3d-loading {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  color: var(--fg-3); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  animation: g3dPulse 1.2s var(--ease-in-out) infinite alternate;
+}
+@keyframes g3dPulse { from { opacity: .45; } to { opacity: 1; } }
+
+/* ── Результат раунду ───────────────────────────────────────────── */
+.game3d .game-result {
+  margin: var(--sp-3) 0; padding: var(--sp-3) var(--sp-4); min-height: 3em;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-weight: var(--fw-semibold); color: var(--fg-2);
+  background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.game3d .game-result.is-win {
+  color: var(--pos); border-color: var(--pos);
+  background-color: color-mix(in srgb, var(--pos) 12%, var(--surface-1));
+  font-family: var(--font-mono); animation: g3dPop var(--dur-3) var(--ease-premium);
+}
+.game3d .game-result.is-lose { color: var(--fg-3); font-family: var(--font-mono); }
+@keyframes g3dPop { 0% { transform: scale(.94); } 60% { transform: scale(1.03); } 100% { transform: none; } }
+
+/* ── Тони (колір символу) ───────────────────────────────────────── */
+.tone-primary { --tone: var(--primary); --tone-rgb: var(--primary-rgb); }
+.tone-fg { --tone: var(--fg); --tone-rgb: var(--fg-rgb); }
+
+/* ── Plinko ─────────────────────────────────────────────────────── */
+.p3d-buckets {
+  display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; margin-top: var(--sp-2);
+}
+.p3d-bucket {
+  display: grid; place-items: center; min-width: 0; padding: var(--sp-1) 0;
+  font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: var(--fw-bold);
+  color: var(--tone); background: rgb(var(--tone-rgb) / .14);
+  border: 1px solid rgb(var(--tone-rgb) / .45); border-radius: var(--r-xs);
+  transition: transform var(--dur-2) var(--ease-out), background var(--dur-2);
+  letter-spacing: -.04em; white-space: nowrap; overflow: hidden;
+}
+.p3d-bucket i { font-style: normal; }
+@media (max-width: 480px) { .p3d-bucket { font-size: 9px; } .p3d-bucket i { display: none; } }
+.p3d-bucket.is-hit { background: var(--tone); color: var(--bg); transform: translateY(3px); }
+@media (min-width: 560px) { .p3d-bucket { font-size: var(--fs-xs); } }
+.p3d-stage.is-fallback canvas { position: absolute; inset: 0; }
+
+/* ── Колесо ─────────────────────────────────────────────────────── */
+.w3d-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-1); margin-bottom: var(--sp-2); }
+.w3d-chip {
+  display: inline-flex; align-items: center; gap: var(--sp-1); padding: 2px var(--sp-2);
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--fg);
+  border: 1px solid var(--line); border-left: 6px solid var(--chip); border-radius: var(--r-pill);
+  background: var(--surface-1);
+}
+.w3d-chip small { color: var(--fg-3); font-weight: var(--fw-medium); }
+/* запасне колесо без WebGL */
+.w3d-flat { position: absolute; inset: 8%; display: grid; place-items: center; }
+.w3d-flat-wheel {
+  width: 100%; aspect-ratio: 1; border-radius: 50%;
+  border: 6px solid var(--fg); box-shadow: var(--sh-2);
+  will-change: transform;
+}
+.w3d-flat-ptr {
+  position: absolute; top: -4%; left: 50%; width: 0; height: 0; transform: translateX(-50%);
+  border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 26px solid var(--accent);
+  filter: drop-shadow(0 2px 0 var(--ink-shadow));
+}
+
+/* ── Кубики ─────────────────────────────────────────────────────── */
+.cr-bets { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.cr-bet {
+  display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center;
+  gap: 0 var(--sp-2); margin: 0; min-height: 56px; padding: var(--sp-2) var(--sp-3); text-align: left;
+  --btn-bg: var(--surface-1); --btn-bd: var(--line); --btn-sh: none; --btn-fg: var(--fg);
+  border-radius: var(--r-md); min-width: 0;
+}
+.cr-bet b { font-size: var(--fs-sm); }
+.cr-bet span { grid-row: 2; font-size: var(--fs-xs); color: var(--fg-3); min-width: 0; }
+.cr-bet em { grid-row: 1 / 3; grid-column: 2; font-style: normal; font-family: var(--font-mono); font-weight: var(--fw-bold); color: var(--accent); }
+.cr-bet.active { --btn-bd: var(--accent); --btn-bg: color-mix(in srgb, var(--accent) 14%, var(--surface-1)); }
+.cr-bet[data-type="sum"] { grid-column: 1 / -1; }
+.cr-bet select {
+  margin: 2px 0 0; min-height: 30px; padding: 0 var(--sp-2); width: auto; max-width: 100%;
+  font-family: var(--font-mono); font-size: var(--fs-xs); background: var(--surface-2); border-radius: var(--r-sm);
+}
+@media (min-width: 560px) { .cr-bets { grid-template-columns: repeat(4, 1fr); } }
+/* запасні CSS-3D кубики */
+.cr-flat { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 18%; perspective: 700px; }
+.cr-cube { --s: clamp(56px, 16vw, 92px); width: var(--s); height: var(--s); position: relative; transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(28deg); }
+.cr-face {
+  position: absolute; inset: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 14%;
+  background: var(--paper); border: 2px solid var(--ink-shadow); border-radius: 18%;
+  backface-visibility: hidden;
+}
+.cr-face i { width: 70%; aspect-ratio: 1; margin: auto; border-radius: 50%; background: var(--paper-ink); }
+.cr-face.f1 i { background: var(--paper-red); }
+.cr-face.f1 { transform: translateZ(calc(var(--s) / 2)); }
+.cr-face.f6 { transform: rotateX(180deg) translateZ(calc(var(--s) / 2)); }
+.cr-face.f2 { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
+.cr-face.f5 { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+.cr-face.f3 { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); }
+.cr-face.f4 { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
+.cr-face.f1 i { grid-area: 2 / 2; }
+.cr-face.f2 i:nth-child(1) { grid-area: 1 / 1; } .cr-face.f2 i:nth-child(2) { grid-area: 3 / 3; }
+.cr-face.f3 i:nth-child(1) { grid-area: 1 / 1; } .cr-face.f3 i:nth-child(2) { grid-area: 2 / 2; } .cr-face.f3 i:nth-child(3) { grid-area: 3 / 3; }
+.cr-face.f4 i:nth-child(1) { grid-area: 1 / 1; } .cr-face.f4 i:nth-child(2) { grid-area: 1 / 3; } .cr-face.f4 i:nth-child(3) { grid-area: 3 / 1; } .cr-face.f4 i:nth-child(4) { grid-area: 3 / 3; }
+.cr-face.f5 i:nth-child(1) { grid-area: 1 / 1; } .cr-face.f5 i:nth-child(2) { grid-area: 1 / 3; } .cr-face.f5 i:nth-child(3) { grid-area: 2 / 2; } .cr-face.f5 i:nth-child(4) { grid-area: 3 / 1; } .cr-face.f5 i:nth-child(5) { grid-area: 3 / 3; }
+.cr-face.f6 i:nth-child(odd) { grid-column: 1; } .cr-face.f6 i:nth-child(even) { grid-column: 3; }
+
+/* ── Слот 5×3 ───────────────────────────────────────────────────── */
+.s5-machine {
+  --fh: clamp(64px, 17vw, 104px);           /* висота одного рядка */
+  position: relative; padding: var(--sp-3);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: var(--bw-strong) solid var(--fg); border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+}
+.s5-window {
+  position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-1);
+  height: calc(var(--fh) * 3); overflow: hidden; border-radius: var(--r-md);
+  background: var(--bg);
+}
+.s5-window::after {           /* тінь зверху й знизу — відчуття циліндра */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgb(var(--shade-rgb) / .55), transparent 22%, transparent 78%, rgb(var(--shade-rgb) / .55));
+}
+.s5-reel {
+  position: relative; height: 100%; perspective: 900px; perspective-origin: 50% 50%;
+  background: var(--surface-1); border-radius: var(--r-sm);
+}
+.s5-cyl {
+  position: absolute; left: 0; right: 0; top: 50%; height: var(--fh); margin-top: calc(var(--fh) / -2);
+  transform-style: preserve-3d; will-change: transform;
+}
+.s5-face {
+  /* 12 граней: радіус = (h/2)/tan(15°) ≈ 1.866·h */
+  position: absolute; inset: 0; display: grid; place-items: center;
+  transform: rotateX(var(--a)) translateZ(calc(var(--fh) * 1.866));
+  backface-visibility: hidden;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1) 50%, var(--surface-2));
+  border-block: 1px solid var(--line);
+  color: var(--tone);
+}
+.s5-face .ic { width: 58%; height: 58%; filter: drop-shadow(2px 2px 0 var(--ink-shadow)); }
+.s5-face.is-win { background: color-mix(in srgb, var(--tone) 22%, var(--surface-1)); box-shadow: inset 0 0 0 3px var(--tone); }
+.s5-face.is-win .ic { animation: s5Win .7s var(--ease-in-out) 2 alternate; }
+@keyframes s5Win { to { transform: scale(1.15); } }
+.s5-lines { position: absolute; inset: var(--sp-3); width: calc(100% - 2 * var(--sp-3)); height: calc(var(--fh) * 3); pointer-events: none; }
+.s5-line {
+  fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; opacity: .9;
+  stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: s5Draw .6s var(--ease-out) forwards;
+  filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / .8));
+}
+.s5-line.l1, .s5-line.l6 { stroke: var(--primary); }
+.s5-line.l2, .s5-line.l7 { stroke: var(--special); }
+.s5-line.l3, .s5-line.l8 { stroke: var(--warn); }
+.s5-line.l4, .s5-line.l9 { stroke: var(--info); }
+@keyframes s5Draw { to { stroke-dashoffset: 0; } }
+.s5-paytable { margin: 0 0 var(--sp-2); padding: var(--sp-2) var(--sp-3); background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg); }
+.s5-paytable summary { cursor: pointer; font-weight: var(--fw-semibold); color: var(--fg-2); min-height: var(--hit); display: flex; align-items: center; }
+.pay-grid { display: grid; gap: var(--sp-1); margin: var(--sp-2) 0; }
+.pay-row { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); }
+.pay-row > span:first-child { color: var(--tone); display: grid; place-items: center; }
+.pay-row > span:first-child .ic { width: 24px; height: 24px; }
+.pay-row .num { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--fg-2); text-align: right; }
+.pay-row:has(.m3-mini) { grid-template-columns: 32px 1fr; }
+
+/* ── Три в ряд ──────────────────────────────────────────────────── */
+.m3-wrap { position: relative; perspective: 1100px; padding: var(--sp-2) 0; }
+.m3-board {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px;
+  width: 92%; max-width: 480px; margin: 0 auto; padding: var(--sp-2);
+  background: var(--surface-1); border: var(--bw-strong) solid var(--fg); border-radius: var(--r-xl);
+  box-shadow: 0 18px 0 -6px rgb(var(--shade-rgb) / .35), var(--sh-2);
+  transform: rotateX(14deg); transform-style: preserve-3d; transform-origin: 50% 100%;
+  overflow: hidden;
+}
+.m3-tile { position: relative; aspect-ratio: 1; transform-style: preserve-3d; }
+.m3-chip {
+  position: absolute; inset: 6%; display: grid; place-items: center; color: var(--on-accent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 70%, var(--white)) 0%, var(--tone) 45%, color-mix(in srgb, var(--tone) 65%, var(--black)) 100%);
+  border-radius: 28%;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--tone) 45%, var(--black)), 0 6px 8px rgb(var(--shade-rgb) / .4), inset 0 2px 0 color-mix(in srgb, var(--white) 35%, transparent);
+  transform: translateZ(8px);
+}
+.m3-chip .ic { width: 58%; height: 58%; color: var(--bg); filter: drop-shadow(0 1px 0 color-mix(in srgb, var(--white) 25%, transparent)); }
+.m3-tile.tone-fg .m3-chip .ic { color: var(--bg); }
+.m3-tile.is-drop .m3-chip { animation: m3Drop .5s var(--ease-out) both; animation-delay: calc((5 - var(--r)) * 30ms + var(--c) * 15ms); }
+.m3-tile.is-fall .m3-chip { animation: m3Fall .42s var(--ease-out) both; }
+.m3-tile.is-new .m3-chip { animation: m3Fall .48s var(--ease-out) both; animation-delay: calc(var(--c) * 12ms); }
+.m3-tile.is-hit .m3-chip { animation: m3Hit .62s var(--ease-in-out) forwards; }
+@keyframes m3Drop { from { transform: translateY(calc(-1 * (var(--r) + 6) * 110%)) translateZ(8px); opacity: 0; } 60% { opacity: 1; } to { transform: translateZ(8px); } }
+@keyframes m3Fall { from { transform: translateY(calc(-1 * var(--from, 1) * 110%)) translateZ(8px); } 80% { transform: translateY(4%) translateZ(8px); } to { transform: translateZ(8px); } }
+@keyframes m3Hit {
+  0% { transform: translateZ(8px); }
+  35% { transform: translateZ(26px) scale(1.18); box-shadow: 0 0 0 4px var(--fg), 0 0 22px rgb(var(--tone-rgb) / .9); }
+  100% { transform: translateZ(40px) scale(0); opacity: 0; }
+}
+.m3-cascade {
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -30%) scale(.6); opacity: 0;
+  padding: var(--sp-1) var(--sp-3); border-radius: var(--r-pill); pointer-events: none;
+  font-family: var(--font-display); font-weight: var(--fw-black); color: var(--on-accent);
+  background: var(--accent); border: var(--bw) solid var(--ink-shadow); box-shadow: var(--sh-1);
+  transition: opacity var(--dur-2), transform var(--dur-2) var(--ease-premium);
+}
+.m3-cascade.is-on { opacity: 1; transform: translate(-50%, -30%) scale(1); }
+.m3-mini {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 28%;
+  background: var(--tone); box-shadow: 0 2px 0 color-mix(in srgb, var(--tone) 45%, var(--black));
+}
+.pay-row > span.m3-mini .ic { width: 18px; height: 18px; color: var(--bg); }
+
+/* ── Картки в лоббі та на головній ──────────────────────────────── */
+.casino-game-card.is-3d { position: relative; }
+.badge-3d {
+  position: absolute; top: var(--sp-2); right: var(--sp-2); z-index: 1;
+  padding: 1px 6px; border-radius: var(--r-xs);
+  font-family: var(--font-display); font-size: var(--fs-2xs); font-weight: var(--fw-black); letter-spacing: .04em;
+  color: var(--on-primary); background: var(--primary); border: 1px solid var(--ink-shadow);
+}
+.casino-game-card.is-3d .casino-game-card-img .ic { transform: perspective(300px) rotateY(-14deg) rotateX(8deg); transition: transform var(--dur-3) var(--ease-premium); }
+@media (hover: hover) {
+  .casino-game-card.is-3d:hover .casino-game-card-img .ic { transform: perspective(300px) rotateY(14deg) rotateX(-6deg) scale(1.08); }
+}
+.game-thumb.is-3d { position: relative; }
+.game-thumb.is-3d::after {
+  content: "3D"; position: absolute; top: 2px; right: 2px; padding: 0 4px; border-radius: var(--r-xs);
+  font-size: 9px; font-weight: var(--fw-black); color: var(--on-primary); background: var(--primary);
+}
+
+/* ── Менше руху ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .m3-tile .m3-chip, .s5-face .ic, .s5-line, .game3d .game-result.is-win, .g3d-loading { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+  .s5-cyl { transition-duration: .3s !important; }
 }
