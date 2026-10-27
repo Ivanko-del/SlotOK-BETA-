@@ -287,6 +287,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'diamond', name:'💎 Diamond Rush'},
   {id:'plinko3d', name:'⚪ Plinko 3D'}, {id:'wheel3d', name:'🎡 Колесо удачі 3D'}, {id:'craps', name:'🎲 Кубики 3D'},
   {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
+  {id:'minesweeper', name:'💣 Сапер'}, {id:'battleship', name:'🚢 Морський бій'},
 ];
 
 let _gameToggleDisabledCache = {};

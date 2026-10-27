@@ -58,6 +58,10 @@
 | 40-celebration-winback-onboarding | святкування виграшу, «Ми скучили», онбординг, mystery box, стрічка друзів |
 | 41-ui-confirm | `confirmAction()` — діалог підтвердження критичних дій |
 | 42-game-ui | спільне поле ставки (`.bet-field`) і головна кнопка (`.game-cta`) для всіх ігор |
+| 44-rooms | клієнт онлайн-кімнат `api/room.js`: `roomApi`, лобі `roomLobby`, підписка `roomWatch`, `roomResume`, хуки `ROOM_HOOKS` |
+| 45-minesweeper | Сапер: соло на час з рекордами (`minesweeper_records`) і дуель через кімнати |
+| 46-battleship | Морський бій: з ботом (у браузері) і онлайн 1×1 через кімнати |
+| 47-pvp-server | Coinflip / Камінь-ножиці / Prediction через кімнати, якщо сервер увімкнено (старі функції — запасний шлях) |
 | 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |
 
 Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:

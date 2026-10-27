@@ -728,7 +728,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -940,6 +940,8 @@ function switchTab(id, el) {
   if(id==='craps')        safe(() => initCraps());
   if(id==='slot5')        safe(() => initSlot5());
   if(id==='match3')       safe(() => initMatch3());
+  if(id==='minesweeper')  safe(() => initMinesweeper());
+  if(id==='battleship')   safe(() => initBattleship());
   if(id==='cardwar')      safe(() => initCardWar());
   if(id==='chess')        safe(() => {
     // Скидаємо на екран налаштувань щоразу коли заходимо в шахи ззовні
