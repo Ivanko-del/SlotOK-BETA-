@@ -137,6 +137,25 @@ function showAuthScreen() {
   setTimeout(initAuthCanvas, 50);
   setTimeout(loadAuthStats, 800);
 }
+// Пряме посилання на гру з окремих сторінок (/poker/ → /?play=holdem):
+// запам'ятовуємо гру до входу й відкриваємо, щойно гравець у системі.
+const PLAY_LINK_GAMES = ['holdem', 'durak', 'battleship', 'minesweeper', 'bingo', 'livecrash'];
+(function capturePlayLink() {
+  try {
+    const g = new URLSearchParams(location.search).get('play');
+    if(!g) return;
+    if(PLAY_LINK_GAMES.includes(g)) sessionStorage.setItem('slotok_play', g);
+    const url = new URL(location.href);
+    url.searchParams.delete('play');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch(e) {}
+})();
+function openPendingPlayLink() {
+  let g = null;
+  try { g = sessionStorage.getItem('slotok_play'); sessionStorage.removeItem('slotok_play'); } catch(e) {}
+  if(g && PLAY_LINK_GAMES.includes(g)) openGame(g);
+}
+
 // Екран входу видимий одразу з HTML (showAuthScreen викликає лише демо-режим),
 // тож при першому відкритті вмикаємо його дані тут. Якщо гравець уже в сесії,
 // 01-core.js сховає екран і викличе stopAuthStatsListeners().
