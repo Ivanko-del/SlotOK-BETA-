@@ -164,7 +164,7 @@
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('crash')"><span class="icon">🚀</span><span class="label">Краш</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('slots')"><span class="icon">🎰</span><span class="label">Слоти</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('mines')"><span class="icon">💣</span><span class="label">Міни</span></button>
-          <button type="button" role="listitem" class="game-thumb" onclick="openGame('roulette')"><span class="icon">🎡</span><span class="label">Рулетка</span></button>
+          <button type="button" role="listitem" class="game-thumb" onclick="openGame('roulette')"><span class="icon">🎡</span><span class="label">Колеса LIVE</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('blackjack')"><span class="icon">🃏</span><span class="label">Блекджек</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('plinko')"><span class="icon">🔻</span><span class="label">Plinko</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="openGame('tower')"><span class="icon">🗼</span><span class="label">Tower</span></button>
@@ -480,6 +480,10 @@
       <!-- Усі ігри -->
       <div class="section-header"><span id="lobbyGridTitle">Усі ігри</span><span class="section-count num" id="lobbyGridCount"></span></div>
       <div class="casino-grid-3" id="casinoGamesGrid" role="list">
+        <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('livecrash')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">LIVE</span><div class="casino-game-card-img"><span class="ic i-rocket" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Краш наживо</div><div class="casino-game-card-prov">Для всіх разом</div></div>
+        </div>
         <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('minesweeper')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-mine" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Сапер</div><div class="casino-game-card-prov">Соло · дуель онлайн</div></div>
@@ -561,8 +565,8 @@
           <div class="casino-game-card-info"><div class="casino-game-card-name">Tower Climb</div><div class="casino-game-card-prov">Множник</div></div>
         </div>
         <div class="casino-game-card" data-cat="slots" role="listitem" tabindex="0" onclick="openGame('roulette')" onkeydown="if(event.key==='Enter')this.click()">
-          <div class="casino-game-card-img">🎡</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Roulette</div><div class="casino-game-card-prov">Слот</div></div>
+          <span class="casino-badge-new">LIVE</span><div class="casino-game-card-img">🎡</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Колеса удачі</div><div class="casino-game-card-prov">5 коліс для всіх разом</div></div>
         </div>
         <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('keno')" onkeydown="if(event.key==='Enter')this.click()">
           <div class="casino-game-card-img">🔢</div>
@@ -983,127 +987,54 @@
     <!-- ══════════════════════════════════════════════════════
          🎡 GLOBAL ROULETTE — Спільна для всіх, крутиться раз на годину
     ══════════════════════════════════════════════════════ -->
-    <div id="tab-roulette" class="screen hidden" style="padding:0;min-height:100vh;background:var(--bg);">
-
-      <!-- Hero шапка з фото рулетки -->
-      <div style="position:relative;width:100%;height:220px;overflow:hidden;flex-shrink:0;">
-        <picture><source srcset="/icons/roulette-hero.webp" type="image/webp"><img src="/icons/roulette-hero.jpg" loading="lazy" decoding="async" width="600" height="400" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="roulette"></picture>
-        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgb(var(--recess-rgb) / calc(0.35 * var(--recess-k))) 0%,rgb(var(--recess-rgb) / calc(0.98 * var(--recess-k))) 100%);"></div>
-        <!-- Back btn -->
+    <div id="tab-roulette" class="screen hidden game3d">
+      <div class="game-head">
         <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
-        <!-- Title overlay -->
-        <div style="position:absolute;bottom:16px;left:0;right:0;text-align:center;">
-          <div style="font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--fg);letter-spacing:3px;text-shadow:none;">GLOBAL ROULETTE</div>
-          <div style="font-size:11px;color:rgb(var(--fg-rgb) / 0.5);margin-top:3px;letter-spacing:2px;">СПІЛЬНА ДЛЯ ВСІХ ГРАВЦІВ</div>
-        </div>
+        <h2 class="game-title">Колеса удачі <span class="badge is-accent">LIVE</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('roulette')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
       </div>
-
-      <div style="padding:16px;padding-bottom:100px;">
-
-        <!-- Таймер наступного спіну -->
-        <div style="background:linear-gradient(135deg,rgb(var(--accent-rgb) / 0.12),rgb(var(--accent-rgb) / 0.04));border:1px solid rgb(var(--accent-rgb) / 0.25);border-radius:var(--r-xl);padding:16px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden;">
-          <div style="position:absolute;right:-8px;top:-8px;font-size:60px;opacity:.06;pointer-events:none;">🎡</div>
-          <div style="font-size:10px;font-weight:700;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">⏱ Наступний спін через</div>
-          <div id="grTimerDisplay" style="font-family:var(--font-display);font-size:40px;font-weight:900;color:var(--accent);letter-spacing:4px;">60:00</div>
-          <div id="grSpinStatus" style="font-size:12px;color:var(--sub);margin-top:6px;">Прийом ставок відкрито</div>
-          <div style="background:rgb(var(--tint-rgb) / 0.06);border-radius:var(--r-sm);height:4px;margin-top:12px;overflow:hidden;">
-            <div id="grTimerBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:100%;transition:width 1s linear;border-radius:var(--r-sm);"></div>
-          </div>
-        </div>
-
-        <!-- Онлайн і банк -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-          <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;">
-            <div style="font-size:10px;color:var(--sub);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">👥 Ставок</div>
-            <div id="grBetCount" style="font-size:24px;font-weight:900;color:var(--fg);">0</div>
-          </div>
-          <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;">
-            <div style="font-size:10px;color:var(--sub);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">💰 Банк раунду</div>
-            <div id="grBankDisplay" style="font-size:20px;font-weight:900;color:var(--accent);">₴0</div>
-          </div>
-        </div>
-
-        <!-- Колесо рулетки 3D -->
-        <div style="position:relative;width:100%;max-width:340px;margin:0 auto 20px;">
-          <!-- Стрілочка -->
-          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:10;font-size:24px;filter:none;">▼</div>
-          <!-- Колесо -->
-          <div id="grWheel" style="width:100%;aspect-ratio:1;border-radius:50%;position:relative;transition:transform 8s cubic-bezier(.17,.67,.12,.99);transform:rotate(0deg);
-            box-shadow:0 0 0 6px rgb(var(--accent-rgb) / 0.3), 0 0 0 12px rgb(var(--accent-rgb) / 0.08), 0 20px 60px rgb(var(--shade-rgb) / 0.6), inset 0 0 40px rgb(var(--shade-rgb) / 0.5);
-            overflow:hidden;">
-            <canvas id="grWheelCanvas" style="width:100%;height:100%;border-radius:50%;display:block;"></canvas>
-          </div>
-          <!-- Центральна кнопка -->
-          <div id="grWheelCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;
-            background:linear-gradient(135deg,var(--accent),var(--accent),var(--accent2));
-            border:3px solid rgb(var(--tint-rgb) / 0.3);display:flex;align-items:center;justify-content:center;
-            font-size:20px;box-shadow:none;z-index:5;">🎡</div>
-        </div>
-
-        <!-- Мій поточний хід -->
-        <div id="grMyBetBox" style="background:linear-gradient(135deg,rgb(var(--pos-rgb) / 0.06),rgb(var(--pos-rgb) / 0.02));border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎫 Моя ставка в цьому раунді</div>
-          <div id="grMyBetStatus" style="text-align:center;color:var(--sub);font-size:13px;padding:8px 0;">Ставку не зроблено</div>
-        </div>
-
-        <!-- Вибір кольору -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
-          <div id="gr-btn-red" onclick="selectGrColor('red')" style="background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 15%, var(--surface-1)),var(--neg));border:2px solid rgb(var(--neg-rgb) / 0.4);border-radius:var(--r-xl);padding:18px 8px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden;">
-            <div style="font-size:28px;margin-bottom:5px;">🔴</div>
-            <div style="font-size:13px;font-weight:800;color:var(--neg);">ЧЕРВОНЕ</div>
-            <div style="font-size:11px;color:rgb(var(--neg-rgb) / 0.6);margin-top:2px;">×2.0</div>
-          </div>
-          <div id="gr-btn-green" onclick="selectGrColor('green')" style="background:linear-gradient(135deg,var(--surface-1),color-mix(in srgb, var(--pos) 15%, var(--surface-1)));border:2px solid rgb(var(--pos-rgb) / 0.3);border-radius:var(--r-xl);padding:18px 8px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden;">
-            <div style="font-size:28px;margin-bottom:5px;">🟢</div>
-            <div style="font-size:13px;font-weight:800;color:var(--pos);">ЗЕЛЕНЕ</div>
-            <div style="font-size:11px;color:rgb(var(--pos-rgb) / 0.6);margin-top:2px;">×14</div>
-          </div>
-          <div id="gr-btn-black" onclick="selectGrColor('black')" style="background:linear-gradient(135deg,var(--bg),var(--surface-2));border:2px solid rgb(var(--shade-rgb) / 0.2);border-radius:var(--r-xl);padding:18px 8px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden;">
-            <div style="font-size:28px;margin-bottom:5px;">⚫</div>
-            <div style="font-size:13px;font-weight:800;color:var(--fg-2);">ЧОРНЕ</div>
-            <div style="font-size:11px;color:rgb(var(--fg-rgb) / 0.5);margin-top:2px;">×2.0</div>
-          </div>
-        </div>
-
-        <!-- Сума ставки -->
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px;margin-bottom:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">💵 Сума ставки</div>
-          <input type="number" id="grBetAmount" placeholder="Від ₴5,000 до ₴100,000,000" min="5000" max="100000000" style="font-size:20px;font-weight:800;text-align:center;letter-spacing:1px;">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:4px;">
-            <div onclick="setGrBet(5000)"    style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴5к</div>
-            <div onclick="setGrBet(25000)"   style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴25к</div>
-            <div onclick="setGrBet(100000)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴100к</div>
-            <div onclick="setGrBet(1000000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1М</div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px;">
-            <div onclick="setGrBet(5000000)"   style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴5М</div>
-            <div onclick="setGrBet(25000000)"  style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴25М</div>
-            <div onclick="setGrBet(100000000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-lg);padding:9px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴100М</div>
-          </div>
-        </div>
-
-        <!-- Кнопка ПОСТАВИТИ -->
-        <button id="grBetBtn" class="btn-gold" onclick="placeGrBet()" style="font-size:16px;font-weight:900;font-family:var(--font-display);padding:18px;letter-spacing:1px;">🎡 ЗРОБИТИ СТАВКУ</button>
-
-        <!-- Ставки інших гравців -->
-        <div style="margin-top:18px;">
-          <div class="section-header">👥 Ставки гравців цього раунду</div>
-          <div id="grAllBets" style="max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
-            <div style="text-align:center;color:var(--sub);font-size:13px;padding:16px;">Завантаження...</div>
-          </div>
-        </div>
-
-        <!-- Останні результати -->
-        <div style="margin-top:18px;">
-          <div class="section-header">🕐 Останні спіни</div>
-          <div id="grHistory" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;">
-            <div style="color:var(--sub);font-size:12px;padding:8px;">Завантаження...</div>
-          </div>
-        </div>
-
+      <p class="field-hint lw-sub">Один спін для всіх гравців. Обери колесо — кожне крутиться за своїм розкладом.</p>
+      <div class="seg lw-tabs" id="lwTabs" role="tablist" aria-label="Колесо"></div>
+      <div class="lw-stage">
+        <div class="lw-ring" id="lwRing"><div class="lw-countdown"><span class="lw-cd-lbl">до спіну</span><b id="lwCountdown" class="num">—</b></div></div>
+        <div class="lw-tilt"><div class="lw-ptr" aria-hidden="true"></div><canvas id="lwWheel" class="lw-wheel" width="600" height="600" role="img" aria-label="Колесо удачі"></canvas></div>
+      </div>
+      <div class="game-result" id="lwStatus" role="status" aria-live="polite">Завантаження…</div>
+      <div class="lw-history" id="lwHistory" aria-label="Останні результати"></div>
+      <div class="field-label">На що ставиш</div>
+      <div class="lw-choices" id="lwChoices"></div>
+      <div class="lw-mine" id="lwMine"></div>
+      <input id="lwBet" type="number" value="100">
+      <button type="button" class="game-cta" id="lwBetBtn" onclick="lwPlaceBet()"><span class="ic i-wheel" aria-hidden="true"></span>Поставити</button>
+      <div class="lw-card">
+        <div class="field-label">Ставки гравців у цьому раунді · <span id="lwCount">0</span></div>
+        <ul class="lw-players" id="lwPlayers"></ul>
+        <p class="field-hint lw-fair" id="lwFair"></p>
       </div>
     </div>
-    
+
+    <div id="tab-livecrash" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Краш наживо <span class="badge is-accent">LIVE</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('livecrash')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div class="lc-history" id="lcHistory" aria-label="Останні падіння"></div>
+      <div class="lc-stage" id="lcStage">
+        <canvas id="lcCanvas" class="lc-canvas" aria-hidden="true"></canvas>
+        <div class="lc-mult is-wait" id="lcMult" role="status" aria-live="polite">—</div>
+      </div>
+      <div class="game-result" id="lcStatus" role="status">Завантаження…</div>
+      <div class="lc-auto"><label class="field-label" for="lcAuto">Автокешаут на ×</label><input id="lcAuto" type="number" step="0.1" min="1.01" placeholder="напр. 2.0"></div>
+      <input id="lcBet" type="number" value="100">
+      <button type="button" class="game-cta" id="lcBtn" onclick="lcAction()"><span class="ic i-rocket" aria-hidden="true"></span>Поставити на політ</button>
+      <div class="lw-card">
+        <div class="field-label">Гравці в раунді · <span id="lcCount">0</span></div>
+        <ul class="lw-players lc-players" id="lcPlayers"></ul>
+        <p class="field-hint lw-fair" id="lcFair"></p>
+      </div>
+    </div>
+
     <div id="tab-crash" class="screen hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>

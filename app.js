@@ -1561,430 +1561,9 @@ function finishDiamondSlots(bet, srvR) {
   }, 300);
 }
 
-// ─── src/app/05-global-roulette-crash.js ───
-// ╔══════════════════════════════════════════════════════════════╗
-// ║              🎡  GLOBAL ROULETTE  —  v58                   ║
-// ║  Спін раз на годину, всі гравці разом, Firebase-синхронізація║
-// ╚══════════════════════════════════════════════════════════════╝
-const GR_MIN = 5000;
-const GR_MAX = 100000000;
-const GR_HOUR_MS = 60 * 60 * 1000; // 1 година
-let grSelectedColor = null;
-let grCurrentRoundId = null;
-let grRoundListener = null;
-let grTimerInterval = null;
-let grWheelDrawn = false;
-let grTotalDeg = 0; // накопичений кут колеса
-
-// Колірна схема колеса (36 секторів + 1 зелений, як европейська рулетка)
-// Порядок: 0(green), 32(red),15(black),19(red),4(black),21(red),2(black),25(red),
-//          17(black),34(red),6(black),27(red),13(black),36(red),11(black),30(red),
-//          8(black),23(red),10(black),5(red),24(black),16(red),33(black),1(red),
-//          20(black),14(red),31(black),9(red),22(black),18(red),29(black),7(red),
-//          28(black),12(red),35(black),3(red),26(black)
-const GR_WHEEL_NUMS = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-const GR_WHEEL_COLORS = n => n===0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n) ? 'red' : 'black';
-
-// Малюємо Canvas-колесо
-function grDrawWheel() {
-  const canvas = document.getElementById('grWheelCanvas');
-  if(!canvas) return;
-  const size = canvas.parentElement.offsetWidth || 300;
-  canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const cx = size/2, cy = size/2, r = size/2;
-  const total = GR_WHEEL_NUMS.length;
-  const segAngle = (2 * Math.PI) / total;
-
-  GR_WHEEL_NUMS.forEach((num, i) => {
-    const startA = i * segAngle - Math.PI/2;
-    const endA   = startA + segAngle;
-    const col = GR_WHEEL_COLORS(num);
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r - 2, startA, endA);
-    ctx.closePath();
-    ctx.fillStyle = col === 'green' ? '#1a8a3a' : col === 'red' ? '#b91c1c' : '#1a1a1a';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(212,175,55,.25)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r - 2, startA, endA);
-    ctx.closePath();
-    ctx.strokeStyle = 'rgba(212,175,55,.35)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(startA + segAngle/2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = col === 'green' ? '#fff' : '#f0e0c0';
-    ctx.font = `bold ${Math.max(9, size/30)}px Arial`;
-    ctx.fillText(num, r - 8, 4);
-    ctx.restore();
-  });
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r - 1, 0, 2*Math.PI);
-  ctx.strokeStyle = 'rgba(212,175,55,.6)';
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.22, 0, 2*Math.PI);
-  ctx.fillStyle = '#08060e';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(212,175,55,.4)';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  grWheelDrawn = true;
-}
-
-// Розрахунок поточного раунду (epoch-based)
-function grGetCurrentRound() {
-  const epoch = Math.floor(Date.now() / GR_HOUR_MS);
-  return `round_${epoch}`;
-}
-
-function grGetRoundStart() {
-  return Math.floor(Date.now() / GR_HOUR_MS) * GR_HOUR_MS;
-}
-
-function grGetRoundEnd() {
-  return grGetRoundStart() + GR_HOUR_MS;
-}
-
-// Ініціалізація глобальної рулетки
-function initGlobalRoulette() {
-  setTimeout(() => { grDrawWheel(); }, 100);
-  grCurrentRoundId = grGetCurrentRound();
-  grStartTimer();
-  grListenRound();
-  grLoadHistory();
-}
-
-// Таймер зворотного відліку
-function grStartTimer() {
-  if(grTimerInterval) clearInterval(grTimerInterval);
-  grTimerInterval = setInterval(() => {
-    const now = Date.now();
-    const end = grGetRoundEnd();
-    const remaining = end - now;
-    const total = GR_HOUR_MS;
-
-    // Перевіряємо чи не змінився раунд
-    const newRoundId = grGetCurrentRound();
-    if(newRoundId !== grCurrentRoundId) {
-      grCurrentRoundId = newRoundId;
-      grListenRound();
-      grLoadHistory();
-    }
-
-    if(remaining <= 0) {
-      document.getElementById('grTimerDisplay') && (document.getElementById('grTimerDisplay').textContent = '00:00');
-      return;
-    }
-
-    const mins = Math.floor(remaining / 60000);
-    const secs = Math.floor((remaining % 60000) / 1000);
-    const timeStr = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-    const timerEl = document.getElementById('grTimerDisplay');
-    if(timerEl) timerEl.textContent = timeStr;
-
-    const pct = (remaining / total) * 100;
-    const barEl = document.getElementById('grTimerBar');
-    if(barEl) barEl.style.width = pct + '%';
-
-    if(remaining < 60000) {
-      if(timerEl) timerEl.style.color = 'var(--red)';
-      const statusEl = document.getElementById('grSpinStatus');
-      if(statusEl) statusEl.textContent = '🔴 Спін незабаром! Ставки закриваються!';
-    } else if(remaining < 300000) {
-      if(timerEl) timerEl.style.color = 'var(--accent)';
-      const statusEl = document.getElementById('grSpinStatus');
-      if(statusEl) statusEl.textContent = '⚠️ Залишилось менше 5 хвилин!';
-    } else {
-      if(timerEl) timerEl.style.color = 'var(--accent)';
-      const statusEl = document.getElementById('grSpinStatus');
-      if(statusEl) statusEl.textContent = '✅ Прийом ставок відкрито';
-    }
-  }, 1000);
-}
-
-// Firebase-слухач поточного раунду
-function grListenRound() {
-  if(grRoundListener) db.ref('global_roulette/rounds/'+grCurrentRoundId).off();
-  const ref = db.ref('global_roulette/rounds/' + grCurrentRoundId);
-  let isFirstSnapshot = true;
-  grRoundListener = ref.on('value', snap => {
-    const round = snap.val() || {};
-    grRenderBets(round.bets || {});
-    grRenderMyBet(round.bets || {});
-    // Якщо раунд вже завершений — показати результат.
-    // Анімуємо тільки коли результат приходить "наживо" (не при відкритті вкладки на вже завершеному раунді).
-    if(round.result) grShowResult(round.result, round.bets || {}, !isFirstSnapshot);
-    isFirstSnapshot = false;
-  });
-}
-
-function selectGrColor(color) {
-  grSelectedColor = color;
-  ['red','green','black'].forEach(c => {
-    const btn = document.getElementById('gr-btn-'+c);
-    if(!btn) return;
-    const isSelected = c === color;
-    btn.style.transform = isSelected ? 'scale(1.05)' : 'scale(1)';
-    if(c === 'red')  btn.style.border = isSelected ? '2px solid var(--neg)' : '2px solid rgb(var(--neg-rgb) / 0.4)';
-    if(c === 'green') btn.style.border = isSelected ? '2px solid var(--green)' : '2px solid rgb(var(--pos-rgb) / 0.3)';
-    if(c === 'black') btn.style.border = isSelected ? '2px solid var(--fg-3)' : '2px solid rgb(var(--shade-rgb) / 0.2)';
-    btn.style.boxShadow = isSelected ? `0 0 20px ${c==='red'?'rgb(var(--neg-rgb) / 0.4)':c==='green'?'rgb(var(--pos-rgb) / 0.3)':'rgb(var(--tint-rgb) / 0.2)'}` : 'none';
-  });
-  playSound('click');
-}
-
-function setGrBet(n) {
-  const inp = document.getElementById('grBetAmount');
-  if(inp) inp.value = n;
-}
-
-function placeGrBet() {
-  if(!currentUser) return notify('Увійди в акаунт', 'error');
-  if(!grSelectedColor) return notify('Оберіть колір: 🔴 🟢 ⚫', 'error');
-  const amt = parseInt(document.getElementById('grBetAmount').value);
-  if(!amt || amt < GR_MIN) return notify(`Мінімальна ставка ₴${formatNumber(GR_MIN)}`, 'error');
-  if(amt > GR_MAX) return notify(`Максимальна ставка ₴${formatNumber(GR_MAX)}`, 'error');
-  if((userData.balance||0) < amt) return notify('Недостатньо коштів', 'error');
-
-  // Перевіряємо чи є вже ставка в цьому раунді
-  db.ref('global_roulette/rounds/'+grCurrentRoundId+'/bets/'+currentUser).once('value', snap => {
-    if(snap.val()) return notify('Ти вже зробив ставку в цьому раунді!', 'error');
-
-    // Перевіряємо чи є ще час (мінімум 10 сек)
-    if(grGetRoundEnd() - Date.now() < 10000) return notify('Ставки закрито! Чекай наступного раунду.', 'error');
-
-    db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-amt));
-    addWager(amt);
-    const bet = { user: currentUser, color: grSelectedColor, amount: amt, ts: Date.now() };
-    db.ref('global_roulette/rounds/'+grCurrentRoundId+'/bets/'+currentUser).set(bet).then(() => {
-      notify(`🎡 Ставку ${formatNumber(amt)}₴ на ${grSelectedColor==='red'?'🔴 Червоне':grSelectedColor==='green'?'🟢 Зелене':'⚫ Чорне'} прийнято!`, 'success');
-      playSound('click');
-      db.ref('global_roulette/rounds/'+grCurrentRoundId+'/totalBank').set(firebase.database.ServerValue.increment(amt));
-      db.ref('global_roulette/rounds/'+grCurrentRoundId+'/betCount').set(firebase.database.ServerValue.increment(1));
-      trackQuest('rouletteBets', 1);
-      trackQuest('totalGames', 1);
-      trackQuest('weekWager', amt);
-      db.ref('users/'+currentUser+'/rouletteBets').set(firebase.database.ServerValue.increment(1));
-      trackLbStat('wager', amt); trackLbStat('games', 1);
-      publishLiveBet('Global Roulette','🎡', amt, grSelectedColor==='red'?'🔴':grSelectedColor==='green'?'🟢':'⚫');
-      grMaybeScheduleSpin();
-    });
-  });
-}
-
-// Рендер ставок всіх гравців
-function grRenderBets(bets) {
-  const el = document.getElementById('grAllBets'); if(!el) return;
-  const list = Object.values(bets);
-  const countEl = document.getElementById('grBetCount');
-  const bankEl  = document.getElementById('grBankDisplay');
-  if(countEl) countEl.textContent = list.length;
-  const totalBank = list.reduce((s, b) => s + (b.amount||0), 0);
-  if(bankEl) bankEl.textContent = '₴' + formatNumber(totalBank);
-
-  if(!list.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub);font-size:13px;padding:16px;">Перший в цьому раунді!</div>'; return; }
-  const sorted = [...list].sort((a,b) => b.amount - a.amount);
-  el.innerHTML = sorted.map(b => {
-    const colorEmoji = b.color==='red'?'🔴':b.color==='green'?'🟢':'⚫';
-    const colorName = b.color==='red'?'Червоне':b.color==='green'?'Зелене':'Чорне';
-    const mult = b.color==='green' ? 14 : 2;
-    const isMe = b.user === currentUser;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;
-      background:${isMe?'rgb(var(--accent-rgb) / 0.08)':'var(--box)'};
-      border:1px solid ${isMe?'rgb(var(--accent-rgb) / 0.3)':'var(--border)'};
-      border-radius:var(--r-lg);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:16px;">${colorEmoji}</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;">${escapeHtml(b.user)}${isMe?' <span style="color:var(--accent);font-size:10px;">(Ти)</span>':''}</div>
-          <div style="font-size:11px;color:var(--sub);">${colorName} · ×${mult}</div>
-        </div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:14px;font-weight:800;color:var(--accent);">₴${formatNumber(b.amount)}</div>
-        <div style="font-size:10px;color:var(--sub);">→ ₴${formatNumber(b.amount * mult)}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Мій статус ставки
-function grRenderMyBet(bets) {
-  const el = document.getElementById('grMyBetStatus'); if(!el) return;
-  const myBet = bets[currentUser];
-  if(!myBet) {
-    el.innerHTML = '<span style="color:var(--sub);">Ставку не зроблено</span>';
-    const btn = document.getElementById('grBetBtn');
-    if(btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '🎡 ЗРОБИТИ СТАВКУ'; }
-    return;
-  }
-  const colorEmoji = myBet.color==='red'?'🔴':myBet.color==='green'?'🟢':'⚫';
-  const colorName = myBet.color==='red'?'Червоне':myBet.color==='green'?'Зелене':'Чорне';
-  const mult = myBet.color==='green' ? 14 : 2;
-  el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="text-align:left;">
-        <div style="font-size:16px;font-weight:800;">${colorEmoji} ${colorName}</div>
-        <div style="font-size:12px;color:var(--sub);margin-top:2px;">Потенційний виграш</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:18px;font-weight:900;color:var(--accent);">₴${formatNumber(myBet.amount)}</div>
-        <div style="font-size:13px;color:var(--green);">→ ₴${formatNumber(myBet.amount * mult)}</div>
-      </div>
-    </div>`;
-  const btn = document.getElementById('grBetBtn');
-  if(btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.textContent = '✅ Ставку зроблено'; }
-}
-
-// Планувальник спіну — кожен клієнт стежить за Firebase
-// Адміністратор (або перший хто зайшов) виконує spin коли час настав
-function grMaybeScheduleSpin() {
-  const timeToSpin = grGetRoundEnd() - Date.now();
-  if(timeToSpin <= 0) { grExecuteSpin(); return; }
-  setTimeout(() => {
-    // Перевіряємо чи ще не розрахований цей раунд
-    db.ref('global_roulette/rounds/'+grCurrentRoundId+'/result').once('value', snap => {
-      if(!snap.val()) grExecuteSpin();
-    });
-  }, timeToSpin + 500);
-}
-
-// Виконати спін — тільки один клієнт повинен це зробити
-// Використовуємо Firebase transaction для атомарності
-function grExecuteSpin() {
-  const roundRef = db.ref('global_roulette/rounds/'+grCurrentRoundId);
-  roundRef.child('spinLock').transaction(current => {
-    if(current) return; // вже хтось інший крутить
-    return Date.now();
-  }, (err, committed) => {
-    if(!committed) return; // не наш раунд крутити
-    // Генеруємо результат
-    const idx = Math.floor(Math.random() * GR_WHEEL_NUMS.length);
-    const winNum = GR_WHEEL_NUMS[idx];
-    const winColor = GR_WHEEL_COLORS(winNum);
-    const spinResult = { number: winNum, color: winColor, idx, ts: Date.now() };
-    roundRef.child('result').set(spinResult);
-    roundRef.child('bets').once('value', bSnap => {
-      const bets = bSnap.val() || {};
-      Object.values(bets).forEach(bet => {
-        if(bet.color === winColor) {
-          const mult = winColor === 'green' ? 14 : 2;
-          const payout = Math.floor(bet.amount * mult);
-          db.ref('users/'+bet.user+'/balance').set(firebase.database.ServerValue.increment(payout));
-        }
-      });
-    });
-    db.ref('global_roulette/history').push(spinResult);
-  });
-}
-
-// Анімація колеса та відображення результату
-function grShowResult(result, bets, animated) {
-  if(!result || grShowResult._shown === grCurrentRoundId) return;
-  grShowResult._shown = grCurrentRoundId;
-
-  const wheelEl = document.getElementById('grWheel');
-  if(wheelEl && result.idx !== undefined) {
-    const segAngle = 360 / GR_WHEEL_NUMS.length;
-    // Обертаємо так, щоб сектор result.idx потрапив на стрілку (вгорі)
-    const targetAngle = 360 - (result.idx * segAngle + segAngle/2);
-    const spins = 5 + Math.floor(Math.random()*3);
-    const totalRot = spins * 360 + targetAngle;
-    grTotalDeg += totalRot;
-    wheelEl.style.transition = animated!==false ? 'transform 8s cubic-bezier(.17,.67,.12,.99)' : 'none';
-    wheelEl.style.transform = `rotate(${grTotalDeg}deg)`;
-  }
-
-  const myBet = bets[currentUser];
-  const colorEmoji = result.color==='red'?'🔴':result.color==='green'?'🟢':'⚫';
-  const colorName  = result.color==='red'?'Червоне':result.color==='green'?'Зелене':'Чорне';
-
-  setTimeout(() => {
-    if(myBet) {
-      const won = myBet.color === result.color;
-      const mult = result.color==='green' ? 14 : 2;
-      const payout = won ? Math.floor(myBet.amount * mult) : 0;
-      if(won) {
-        playSound('bonus');
-        notify(`🎡 ${colorEmoji} ${result.number} — ВИГРАШ +₴${formatNumber(payout)}!`, 'success');
-        if(payout>=1000) triggerWinReaction(payout, 'Global Roulette');
-        if(payout>=10000) addToWinFeed('Global Roulette', payout, mult);
-        addToHistory(`Global Roulette: +${payout}`);
-      } else {
-        playSound('loss');
-        notify(`🎡 ${colorEmoji} ${result.number} — Програш -₴${formatNumber(myBet.amount)}`, 'error');
-      }
-    }
-
-    // Оновлюємо UI кнопки ставки для нового раунду
-    const btn = document.getElementById('grBetBtn');
-    if(btn) { btn.disabled = false; btn.style.opacity='1'; btn.textContent='🎡 ЗРОБИТИ СТАВКУ'; }
-    const myStatusEl = document.getElementById('grMyBetStatus');
-    if(myStatusEl) myStatusEl.innerHTML = '<span style="color:var(--sub);">Новий раунд! Роби ставку.</span>';
-  }, animated !== false ? 8500 : 500);
-}
-
-// Завантаження останніх спінів
-function grLoadHistory() {
-  db.ref('global_roulette/history').limitToLast(15).once('value', snap => {
-    const hist = snap.val();
-    const el = document.getElementById('grHistory'); if(!el) return;
-    if(!hist) { el.innerHTML = '<div style="color:var(--sub);font-size:12px;padding:8px;">Немає спінів</div>'; return; }
-    const items = Object.values(hist).reverse();
-    el.innerHTML = items.map(h => {
-      const col = h.color==='red'?'#b91c1c':h.color==='green'?'#1a8a3a':'#1a1a1a';
-      const border = h.color==='red'?'#f04060':h.color==='green'?'#3dd68c':'#555';
-      return `<div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:${col};border:2px solid ${border};
-        display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--fg);
-        box-shadow:0 2px 8px rgb(var(--shade-rgb) / 0.4);">${h.number}</div>`;
-    }).join('');
-  });
-}
-
-// Підписуємось на нові результати з Firebase для ВСІХ гравців
-function grListenForResults() {
-  db.ref('global_roulette/history').limitToLast(1).on('child_added', snap => {
-    const r = snap.val(); if(!r) return;
-    // Оновлюємо анімацію колеса для всіх хто онлайн
-    const colorEmoji = r.color==='red'?'🔴':r.color==='green'?'🟢':'⚫';
-    if(document.getElementById('grTimerDisplay')) {
-      // Перезавантажуємо ставки нового раунду
-      setTimeout(() => {
-        grCurrentRoundId = grGetCurrentRound();
-        grListenRound();
-        grLoadHistory();
-      }, 9000);
-    }
-  });
-}
-
-// Планувальник для поточної сесії
-function grScheduleNextSpin() {
-  const ms = grGetRoundEnd() - Date.now() + 500;
-  setTimeout(() => {
-    db.ref('global_roulette/rounds/'+grCurrentRoundId+'/result').once('value', snap => {
-      if(!snap.val()) grExecuteSpin();
-    });
-  }, ms);
-}
-
-// Публічний ініціалізатор (викликається при switchTab('roulette'))
-window.initGlobalRoulette = initGlobalRoulette;
+// ─── src/app/05-chests-crash.js ───
+// Сундуки й Краш (соло). Колишня Global Roulette, що крутилась у браузері,
+// замінена спільними колесами на сервері — див. 48-live-wheels.js.
 
 // --- Сундуки ---
 async function startChests(){ 
@@ -5808,10 +5387,44 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '112';
+const CURRENT_VERSION = '113';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '113',
+    title: '🎡 Оновлення v113 — п’ять спільних коліс і Краш наживо',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎡 Колеса удачі для всіх разом',
+        items: [
+          'П’ять коліс в одній вкладці: крутяться раз на 5, 10, 15, 30 хвилин і рулетка — раз на годину',
+          'Один спін для всіх гравців, видно ставки інших і історію результатів',
+          'Колесо фортуни: ×2, ×3, ×8.5, ×17, ×25; у рулетки зеро тепер платить ×36 (було ×14)',
+          'Виграш нараховується, навіть якщо ти закрив вкладку до спіну',
+        ],
+      },
+      {
+        type: 'new',
+        title: '🚀 Краш наживо',
+        items: [
+          'Один політ для всіх: видно, хто скільки поставив і на якому множнику забрав',
+          'Автокешаут працює й тоді, коли вкладку закрито',
+        ],
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Чесність',
+        items: [
+          'Результати коліс і точку падіння рахує сервер; хеш раунду видно до спіну, а сід — після, щоб кожен міг перевірити',
+          'Ставки зі старої Global Roulette, що не встигли зіграти, повертаються автоматично',
+        ],
+      },
+    ],
+  },
   {
     version: '112',
     title: '⚓ Оновлення v112 — Сапер, Морський бій і чесні дуелі',
@@ -11906,7 +11519,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -12109,7 +11722,8 @@ function switchTab(id, el) {
   if(id==='predict')      safe(() => loadPdRooms());
   if(id==='limbo')        safe(() => updateLimboChance());
   if(id==='mines')        safe(() => updateMinesInfo());
-  if(id==='roulette')     safe(() => { initGlobalRoulette(); grListenForResults(); grScheduleNextSpin(); });
+  if(id==='roulette')     safe(() => initLiveWheels());
+  if(id==='livecrash')    safe(() => initLiveCrash());
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
   if(id==='sicbo')        safe(() => initSicBo());
@@ -19785,16 +19399,14 @@ const GAME_HELP = {
       <b>Безкоштовні спіни:</b> можна придбати у магазині Слотіків!`
   },
   roulette: {
-    title: '🎡 Рулетка',
-    rules: `<b>Мета:</b> Вгадати, на яке число або колір зупиниться куля.<br><br>
-      <b>Типи ставок:</b><br>
-      🔴/⚫ Колір — x2 (шанс ~46.5%)<br>
-      Парне/Непарне — x2<br>
-      1–18 / 19–36 — x2<br>
-      Дюжина (1–12, 13–24, 25–36) — x3<br>
-      Число (0–36) — x36<br><br>
-      <b>Зелений 0:</b> Bank забирає всі ставки на колір/парне.`
+    title: '🎡 Колеса удачі',
+    rules: `<b>П'ять спільних коліс:</b> кожне крутиться за своїм розкладом — раз на 5, 10, 15, 30 хвилин і рулетка раз на годину. Один спін для всіх гравців.<br><br>
+      <b>Колесо фортуни (54 сектори):</b> ×2 (26 секторів), ×3 (17), ×8.5 (6), ×17 (3), ×25 (2). Виплата — разом зі ставкою.<br>
+      <b>Рулетка (37 чисел):</b> червоне / чорне ×2, зеро ×36.<br><br>
+      Ставки закриваються за 15 с до спіну. Можна ставити на кілька секторів. Виграш нараховується, навіть якщо ти закрив вкладку.<br><br>
+      <b>Чесність:</b> результат рахує сервер; хеш раунду видно до спіну, сід — після.`,
   },
+
   hilo: {
     title: '🃏 Hi-Lo',
     rules: `<b>Мета:</b> Вгадувати, чи наступна карта буде вище (Hi) чи нижче (Lo).<br><br>
@@ -20590,6 +20202,7 @@ Object.assign(GAME_HELP, {
   match3: { title:'💎 Три в ряд', rules:`<b>Мета:</b> На полі 6×6 ряди й стовпці з 3+ однакових фішок зникають і платять.<br><br><b>Каскади:</b> на місце зниклих падають нові — якщо знову склався ряд, він теж платить, і множник каскаду росте: 2-й ×2, 3-й ×3 … від 5-го ×5.<br><br>Поле й падіння визначає сервер, тут ти лише ставиш і дивишся.` },
   minesweeper: { title:'💣 Сапер', rules:`<b>Мета:</b> Відкрий усі клітинки без мін. Число показує, скільки мін поруч.<br><br><b>Керування:</b> клік — відкрити; правий клік, довге натискання або кнопка «Прапорець» — позначити міну; клік по числу, біля якого стоїть стільки ж прапорців, — відкрити сусідів.<br><br><b>Соло:</b> перший клік завжди безпечний, кращий час потрапляє в рекорди.<br><b>Дуель онлайн:</b> у вас однакове поле; хто перший розмінує — забирає банк (мінус 5%). Підірвався — поразка. Скінчився час — перемагає той, хто відкрив більше.` },
   battleship: { title:'🚢 Морський бій', rules:`<b>Флот:</b> 1 чотирипалубний, 2 трипалубні, 3 двопалубні, 4 однопалубні. Кораблі не торкаються навіть кутами.<br><br><b>Хід:</b> стріляєш по полю суперника. Влучив — стріляєш ще, промах — хід суперника. Потоплений корабель обводиться промахами.<br><br><b>Онлайн:</b> на розстановку 90 с, на постріл 30 с (не встиг — сервер стрельне за тебе; тричі — поразка). Переможець забирає банк (мінус 5%).` },
+  livecrash: { title:'🚀 Краш наживо', rules:`<b>Один політ для всіх.</b> Поки йде відлік — став. Після старту множник росте; забери ставку, поки не впало. Видно, хто скільки поставив і коли забрав.<br><br><b>Автокешаут:</b> вкажи множник — сервер забере за тебе, навіть якщо ти закрив вкладку.<br><br><b>Чесність:</b> точку падіння сервер знає заздалегідь, але показує лише хеш; після падіння відкриває сід.` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
 });
 
@@ -22400,12 +22013,12 @@ function updateBannerDynamicContent() {
   // Останній результат глобальної рулетки
   var rouletteEl = document.getElementById('bannerRouletteLast');
   if(rouletteEl && db) {
-    db.ref('global_roulette/history').limitToLast(1).once('value').then(function(snap) {
+    db.ref('live_results/r60').limitToLast(1).once('value').then(function(snap) {
       var vals = Object.values(snap.val() || {});
       if(!vals.length) { rouletteEl.textContent = '—'; return; }
       var last = vals[0];
-      var colorDot = last.color === 'red' ? '🔴' : last.color === 'black' ? '⚫' : '🟢';
-      rouletteEl.textContent = colorDot + ' ' + last.number;
+      var colorDot = last.win === 'red' ? '🔴' : last.win === 'black' ? '⚫' : '🟢';
+      rouletteEl.textContent = colorDot + ' ' + last.num;
     }).catch(function() {});
   }
 }
@@ -23886,10 +23499,10 @@ const BET_INPUT_IDS = [
   'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
-  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet',
 ];
 const GAME_CTA_FNS = [
-  'spinSlots', 'spinDiamondSlots', 'placeGrBet', 'startCrash', 'dealPoker', 'startChests', 'startMines',
+  'spinSlots', 'spinDiamondSlots', 'lwPlaceBet', 'lcAction', 'startCrash', 'dealPoker', 'startChests', 'startMines',
   'dropPlinko', 'startTower', 'startHilo', 'rollDice', 'bjDeal', 'playKeno', 'buyScratch', 'playLimbo',
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
   'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
@@ -25665,3 +25278,408 @@ ROOM_HOOKS.predict = {
   },
   onLeft: () => { if (PVP_SRV.pd) { PVP_SRV.pd.stop(); PVP_SRV.pd = null; } },
 };
+// ─── src/app/48-live-wheels.js ───
+// ============================================================
+// СПІЛЬНІ КОЛЕСА (v113): п'ять коліс в одній вкладці — 5, 10, 15, 30 хв
+// і рулетка раз на годину. Один спін для всіх гравців.
+// КРАШ НАЖИВО: один політ для всіх, видно чужі ставки й кешаути.
+//
+// Результати рахує сервер (lib/live.js, api/live.js): HMAC від секрету й
+// номера раунду; хеш показуємо до спіну, сід — після. Виграш нараховується
+// при наступному зверненні гравця до сервера, тож навіть якщо вкладку
+// закрили — гроші не пропадуть (прийдуть у «settled»).
+// ============================================================
+
+const LW_GAMES = [
+  { id: 'w5', label: '5 хв' }, { id: 'w10', label: '10 хв' }, { id: 'w15', label: '15 хв' },
+  { id: 'w30', label: '30 хв' }, { id: 'r60', label: '1 год', hint: 'рулетка' },
+];
+const LW_FORTUNE = { a: { tone: 'primary', name: '×2' }, b: { tone: 'info', name: '×3' }, c: { tone: 'pos', name: '×8.5' }, d: { tone: 'special', name: '×17' }, e: { tone: 'accent', name: '×25' } };
+const LW_ROULETTE = { red: { tone: 'neg', name: 'Червоне ×2' }, black: { tone: 'fg', name: 'Чорне ×2' }, green: { tone: 'pos', name: 'Зеро ×36' } };
+const LW = {
+  game: 'w5', st: null, offset: 0, choice: null, angle: {}, spinning: false, timer: null,
+  betsRef: null, histRef: null, myBets: {}, resolving: {},
+};
+const lwNow = () => Date.now() + LW.offset;
+
+async function liveApi(action, body) {
+  const r = await serverApi('/api/live', Object.assign({ action }, body || {}));
+  if (r.mode === 'server') {
+    if (r.r.now) LW.offset = r.r.now - Date.now();
+    lwSettled(r.r.settled);
+  }
+  return r;
+}
+
+// Повідомлення про розраховані раунди (і ті, що були без нас)
+function lwSettled(list) {
+  (list || []).forEach((s) => {
+    if (s.game === 'legacy') { notify(`🎡 Стара рулетка закрита — ставку ₴${formatNumber(s.refund)} повернено`, 'info'); return; }
+    if (s.game === 'crash') {
+      if (s.win > 0 && s.out && !LC.paidShown[s.round]) notify(`🚀 Краш: автокешаут ×${s.out} — +₴${formatNumber(s.win)}`, 'success');
+      return;
+    }
+    const name = (LW_GAMES.find((g) => g.id === s.game) || {}).label || s.game;
+    if (s.win > 0) {
+      notify(`🎡 Колесо ${name}: виграш +₴${formatNumber(s.win)}`, 'success');
+      addToHistory(`Колесо ${name}: +₴${formatNumber(s.win)}`);
+      if (s.win > s.staked) triggerWinReaction(s.win, 'Колесо ' + name);
+    } else if (s.staked) addToHistory(`Колесо ${name}: −₴${formatNumber(s.staked)}`);
+  });
+}
+
+async function initLiveWheels() {
+  lwRenderTabs();
+  const r = await liveApi('state', { which: 'all' });
+  if (r.mode !== 'server') {
+    const el = document.getElementById('lwStatus');
+    if (el) el.textContent = r.mode === 'legacy' ? 'Спільні колеса працюють лише з сервером.' : 'Не вдалося завантажити — спробуй ще раз.';
+    return;
+  }
+  LW.st = r.r;
+  lwSetGame(LW.game, true);
+  clearInterval(LW.timer);
+  LW.timer = setInterval(lwTick, 250);
+}
+function lwRenderTabs() {
+  const el = document.getElementById('lwTabs');
+  if (!el || el.childElementCount) return;
+  el.innerHTML = LW_GAMES.map((g) => `<button type="button" class="seg-item lw-tab" data-game="${g.id}" onclick="lwSetGame('${g.id}')"><span class="seg-label">${g.label}</span><span class="seg-hint" id="lwTabT_${g.id}">${g.hint || '…'}</span></button>`).join('');
+}
+function lwSetGame(game, silent) {
+  LW.game = game;
+  LW.choice = null;
+  document.querySelectorAll('.lw-tab').forEach((b) => b.classList.toggle('active', b.dataset.game === game));
+  lwDrawWheel();
+  lwRenderChoices();
+  lwListen();
+  if (!silent) playSound && playSound('click');
+}
+
+// ── Колесо (canvas у 3D-нахилі) ──
+function lwSegments(game) {
+  if (game === 'r60') {
+    const reds = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+    return LW.st.roulette.map((n) => ({ key: n === 0 ? 'green' : reds.has(n) ? 'red' : 'black', label: String(n) }));
+  }
+  return LW.st.layout.split('').map((k) => ({ key: k, label: LW_FORTUNE[k].name.replace('×', '') }));
+}
+function lwToneColor(tone) { return g3dVar('--' + tone) || '#888'; }
+function lwDrawWheel() {
+  const c = document.getElementById('lwWheel');
+  if (!c || !LW.st) return;
+  const size = 600;
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const segs = lwSegments(LW.game);
+  const n = segs.length, R = size / 2, step = (Math.PI * 2) / n;
+  const tones = LW.game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+  ctx.clearRect(0, 0, size, size);
+  segs.forEach((s, i) => {
+    const a0 = -Math.PI / 2 + i * step - step / 2;
+    ctx.beginPath(); ctx.moveTo(R, R); ctx.arc(R, R, R - 14, a0, a0 + step); ctx.closePath();
+    ctx.fillStyle = s.key === 'black' ? (g3dVar('--surface-3') || '#222') : lwToneColor(tones[s.key].tone);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = g3dVar('--ink-shadow') || '#000'; ctx.stroke();
+    ctx.save(); ctx.translate(R, R); ctx.rotate(a0 + step / 2);
+    ctx.fillStyle = s.key === 'black' ? (g3dVar('--fg') || '#fff') : (g3dVar('--ink-shadow') || '#000');
+    ctx.font = `800 ${n > 40 ? 17 : 20}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(s.label, R - 26, 0);
+    ctx.restore();
+  });
+  // обідок з «лампочками»
+  ctx.beginPath(); ctx.arc(R, R, R - 7, 0, Math.PI * 2); ctx.lineWidth = 14; ctx.strokeStyle = g3dVar('--fg') || '#eee'; ctx.stroke();
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * Math.PI * 2;
+    ctx.beginPath(); ctx.arc(R + Math.cos(a) * (R - 7), R + Math.sin(a) * (R - 7), 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 ? (g3dVar('--accent') || '#f80') : (g3dVar('--warn') || '#fc0'); ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(R, R, R * 0.17, 0, Math.PI * 2); ctx.fillStyle = g3dVar('--surface-1') || '#111'; ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = g3dVar('--fg') || '#eee'; ctx.stroke();
+  const prev = LW.st.wheels[LW.game].prev;
+  if (LW.angle[LW.game] === undefined) LW.angle[LW.game] = -(prev.seg * 360) / n; // колесо стоїть на минулому результаті
+  c.style.transition = 'none';
+  c.style.transform = `rotate(${LW.angle[LW.game]}deg)`;
+}
+async function lwSpinTo(game, seg) {
+  const c = document.getElementById('lwWheel');
+  const n = game === 'r60' ? 37 : 54;
+  const cur = LW.angle[game] || 0;
+  let target = -(seg * 360) / n;
+  while (target > cur - 360 * 6) target -= 360;
+  LW.angle[game] = target;
+  if (game !== LW.game || !c) return;
+  LW.spinning = true;
+  const dur = g3dReduced() ? 300 : 7000;
+  c.style.transition = `transform ${dur}ms cubic-bezier(.12,.62,.08,1)`;
+  c.style.transform = `rotate(${target}deg)`;
+  await g3dSleep(dur + 150);
+  LW.spinning = false;
+}
+
+// ── Таймер, спін і новий раунд ──
+function lwFmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+async function lwTick() {
+  if (!LW.st || !document.getElementById('lwWheel')) return;
+  if (document.getElementById('tab-roulette')?.classList.contains('hidden')) { clearInterval(LW.timer); LW.timer = null; return; }
+  const now = lwNow();
+  LW_GAMES.forEach((g) => {
+    const w = LW.st.wheels[g.id];
+    const t = document.getElementById('lwTabT_' + g.id);
+    if (w && t) t.textContent = now < w.endsAt ? lwFmt(w.endsAt - now) : 'спін!';
+  });
+  const w = LW.st.wheels[LW.game];
+  const locked = now >= w.lockAt;
+  const cd = document.getElementById('lwCountdown');
+  if (cd) cd.textContent = now < w.endsAt ? lwFmt(w.endsAt - now) : '0:00';
+  const ring = document.getElementById('lwRing');
+  if (ring) ring.style.setProperty('--p', Math.max(0, Math.min(1, 1 - (w.endsAt - now) / w.period)));
+  const st = document.getElementById('lwStatus');
+  if (st && !LW.spinning && !(LW.msgUntil > Date.now())) st.textContent = locked ? 'Ставки закрито — зараз крутимо!' : 'Ставки відкриті. Один спін для всіх гравців.';
+  const btn = document.getElementById('lwBetBtn');
+  if (btn) btn.disabled = locked || LW.spinning;
+  // Раунд скінчився — питаємо результат і крутимо (для кожного колеса, що скінчилось)
+  for (const g of LW_GAMES) {
+    const ww = LW.st.wheels[g.id];
+    if (ww && now >= ww.endsAt + 300 && !LW.resolving[g.id + ww.n]) {
+      LW.resolving[g.id + ww.n] = true;
+      lwResolve(g.id, ww.n);
+    }
+  }
+}
+async function lwResolve(game, n) {
+  const r = await liveApi('wheelResult', { game, round: n });
+  if (r.mode !== 'server') { LW.resolving[game + n] = false; return; }
+  const res = r.r;
+  const st = document.getElementById('lwStatus');
+  if (game === LW.game && st) st.textContent = 'Крутимо…';
+  await lwSpinTo(game, res.seg);
+  const fresh = await liveApi('state', { which: 'all' });
+  if (fresh.mode === 'server') {
+    const angles = LW.angle;
+    LW.st = fresh.r; LW.angle = angles;
+  }
+  if (game === LW.game) {
+    const tones = game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+    if (st) st.textContent = `Випало: ${game === 'r60' ? res.num + ' · ' : ''}${tones[res.win].name}. Новий раунд — роби ставку!`;
+    LW.msgUntil = Date.now() + 15000;
+    LW.myBets = {};
+    lwListen();
+    lwRenderMine();
+  }
+}
+
+// ── Ставки ──
+function lwRenderChoices() {
+  const el = document.getElementById('lwChoices');
+  if (!el || !LW.st) return;
+  const tones = LW.game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+  const counts = {};
+  lwSegments(LW.game).forEach((s) => { counts[s.key] = (counts[s.key] || 0) + 1; });
+  el.innerHTML = Object.entries(tones).map(([k, t]) => `<button type="button" class="lw-choice tone-${t.tone}${LW.choice === k ? ' active' : ''}" onclick="lwPick('${k}')">
+    <b>${t.name}</b><small>${counts[k]} з ${LW.game === 'r60' ? 37 : 54}</small></button>`).join('');
+  const fair = document.getElementById('lwFair');
+  const w = LW.st.wheels[LW.game];
+  if (fair) fair.innerHTML = `Хеш раунду: <code>${w.commit.slice(0, 16)}…</code> · минулий сід: <code>${w.prev.seed.slice(0, 16)}…</code>`;
+}
+function lwPick(k) { LW.choice = k; lwRenderChoices(); }
+async function lwPlaceBet() {
+  if (!LW.choice) return notify('Обери сектор, на який ставиш', 'error');
+  const amount = parseInt(document.getElementById('lwBet')?.value) || 0;
+  if (!validateBet(amount)) return;
+  const btn = document.getElementById('lwBetBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await liveApi('wheelBet', { game: LW.game, choice: LW.choice, amount });
+    if (r.mode !== 'server') return;
+    addWager(amount);
+    playSound && playSound('click');
+    notify(`Ставка ₴${formatNumber(amount)} прийнята`, 'success');
+  } finally { if (btn) btn.disabled = false; }
+}
+function lwListen() {
+  if (LW.betsRef) { LW.betsRef.off(); LW.betsRef = null; }
+  if (LW.histRef) { LW.histRef.off(); LW.histRef = null; }
+  if (!LW.st || !db) return;
+  const w = LW.st.wheels[LW.game];
+  LW.betsRef = db.ref(`live_bets/${LW.game}/${w.n}`);
+  LW.betsRef.on('value', (snap) => {
+    const all = snap.val() || {};
+    LW.myBets = all[currentUser] || {};
+    lwRenderMine();
+    const tones = LW.game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+    const rows = Object.entries(all).map(([nick, b]) => ({ nick, total: Object.values(b).reduce((a, x) => a + x, 0), b })).sort((a, b) => b.total - a.total);
+    const el = document.getElementById('lwPlayers');
+    if (el) el.innerHTML = rows.length ? rows.slice(0, 30).map((r) => `<li class="${r.nick === currentUser ? 'is-me' : ''}"><span>${escapeHtml(r.nick)}</span><span class="lw-mini">${Object.keys(r.b).map((k) => `<i class="tone-${tones[k] ? tones[k].tone : 'fg'}"></i>`).join('')}</span><span class="num">₴${formatNumber(r.total)}</span></li>`).join('')
+      : '<li class="room-empty">У цьому раунді ще ніхто не ставив.</li>';
+    const cnt = document.getElementById('lwCount'); if (cnt) cnt.textContent = rows.length;
+  }, () => {});
+  LW.histRef = db.ref(`live_results/${LW.game}`).limitToLast(14);
+  LW.histRef.on('value', (snap) => {
+    const tones = LW.game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+    const items = Object.values(snap.val() || {}).reverse();
+    const el = document.getElementById('lwHistory');
+    if (el) el.innerHTML = items.map((h) => `<span class="lw-hist tone-${(tones[h.win] || {}).tone || 'fg'}">${h.num !== undefined ? h.num : (tones[h.win] || {}).name || ''}</span>`).join('') || '<span class="field-hint">Історія з’явиться після першого спіну.</span>';
+  }, () => {});
+}
+function lwRenderMine() {
+  const el = document.getElementById('lwMine');
+  if (!el) return;
+  const tones = LW.game === 'r60' ? LW_ROULETTE : LW_FORTUNE;
+  const e = Object.entries(LW.myBets || {});
+  el.innerHTML = e.length ? 'Мої ставки: ' + e.map(([k, v]) => `<b class="tone-${tones[k] ? tones[k].tone : 'fg'}">${tones[k] ? tones[k].name : k} ₴${formatNumber(v)}</b>`).join(' · ') : 'У цьому раунді ти ще не ставив.';
+}
+
+// ══════════════════════════ КРАШ НАЖИВО ══════════════════════════
+const LC = { cur: null, cfg: null, raf: null, pollAt: 0, polling: false, point: null, roundRef: null, curRef: null, histRef: null, me: null, paidShown: {}, busy: false, trail: [] };
+async function initLiveCrash() {
+  const r = await liveApi('state', { which: 'none' });
+  if (r.mode !== 'server') { const s = document.getElementById('lcStatus'); if (s) s.textContent = 'Краш наживо працює лише з сервером.'; return; }
+  LC.cfg = r.r.crashCfg;
+  lcSetRound(r.r.crash);
+  if (LC.curRef) LC.curRef.off();
+  LC.curRef = db.ref('live_crash/cur');
+  LC.curRef.on('value', (s) => { const c = s.val(); if (c && (!LC.cur || c.n !== LC.cur.n)) lcSetRound(c); }, () => {});
+  if (LC.histRef) LC.histRef.off();
+  LC.histRef = db.ref('live_crash/hist').limitToLast(16);
+  LC.histRef.on('value', (s) => {
+    const el = document.getElementById('lcHistory');
+    if (el) el.innerHTML = Object.values(s.val() || {}).reverse().map((h) => `<span class="lc-hist${h.p >= 10 ? ' is-big' : h.p >= 2 ? ' is-ok' : ''}">×${h.p}</span>`).join('');
+  }, () => {});
+  cancelAnimationFrame(LC.raf);
+  LC.raf = requestAnimationFrame(lcFrame);
+}
+function lcSetRound(c) {
+  LC.cur = c; LC.point = c.point || null; LC.me = null; LC.trail = [];
+  if (LC.roundRef) LC.roundRef.off();
+  LC.roundRef = db.ref('live_crash/r/' + c.n);
+  LC.roundRef.on('value', (s) => {
+    const all = s.val() || {};
+    LC.me = all[currentUser] || null;
+    const rows = Object.entries(all).sort((a, b) => b[1].bet - a[1].bet);
+    const el = document.getElementById('lcPlayers');
+    if (el) el.innerHTML = rows.length ? rows.slice(0, 40).map(([n, b]) => `<li class="${n === currentUser ? 'is-me' : ''}${b.out ? ' is-out' : ''}"><span>${escapeHtml(n)}</span><span class="num">₴${formatNumber(b.bet)}</span><span class="num">${b.out ? '×' + b.out + ' · +₴' + formatNumber(b.win) : b.auto ? 'авто ×' + b.auto : '—'}</span></li>`).join('')
+      : '<li class="room-empty">Ставок у цьому раунді ще немає.</li>';
+    const cnt = document.getElementById('lcCount'); if (cnt) cnt.textContent = rows.length;
+    lcButtons();
+  }, () => {});
+  const f = document.getElementById('lcFair');
+  if (f) f.innerHTML = `Раунд #${c.n} · хеш: <code>${(c.commit || '').slice(0, 16)}…</code>`;
+}
+const lcMult = (ms) => Math.floor(Math.exp(LC.cfg.rate * Math.max(0, ms) / 1000) * 100) / 100;
+function lcFrame() {
+  if (document.getElementById('tab-livecrash')?.classList.contains('hidden')) { LC.raf = null; return; }
+  LC.raf = requestAnimationFrame(lcFrame);
+  if (!LC.cur || !LC.cfg) return;
+  const now = lwNow();
+  const big = document.getElementById('lcMult');
+  const st = document.getElementById('lcStatus');
+  const stage = document.getElementById('lcStage');
+  if (now < LC.cur.startAt) {
+    if (big) { big.textContent = 'Старт через ' + Math.ceil((LC.cur.startAt - now) / 1000) + ' с'; big.className = 'lc-mult is-wait'; }
+    if (st) st.textContent = 'Приймаємо ставки на цей політ.';
+    stage && stage.classList.remove('is-crashed', 'is-flying');
+    lcDraw(1, false);
+  } else if (LC.point) {
+    if (big) { big.textContent = '×' + LC.point.toFixed(2); big.className = 'lc-mult is-crashed'; }
+    if (st) st.textContent = 'Впало! Наступний раунд за кілька секунд.';
+    stage && stage.classList.add('is-crashed');
+    lcDraw(LC.point, true);
+    if (now - LC.pollAt > 1500) lcPoll(); // після паузи сервер створить новий раунд
+  } else {
+    const m = lcMult(now - LC.cur.startAt);
+    if (big) { big.textContent = '×' + m.toFixed(2); big.className = 'lc-mult is-flying'; }
+    if (st) st.textContent = LC.me && !LC.me.out ? 'Летимо! Встигни забрати.' : 'Летимо!';
+    stage && stage.classList.add('is-flying');
+    lcDraw(m, false);
+    if (now - LC.pollAt > 1000) lcPoll();
+  }
+  lcButtons();
+}
+async function lcPoll() {
+  if (LC.polling) return;
+  LC.polling = true; LC.pollAt = lwNow();
+  try {
+    const r = await serverApi('/api/live', { action: 'crashPoll' });
+    if (r.mode !== 'server') return;
+    LW.offset = r.r.now - Date.now();
+    if (LC.cur && r.r.n === LC.cur.n && r.r.point && !LC.point) {
+      LC.point = r.r.point;
+      if (LC.me && !LC.me.out) {
+        if (LC.me.auto && LC.me.auto <= LC.point) { /* автокешаут — гроші прийдуть з settled */ }
+        else { playSound && playSound('loss'); addToHistory(`Краш наживо: −₴${formatNumber(LC.me.bet)}`); }
+      }
+      setTimeout(() => liveApi('state', { which: 'none' }), 600); // розрахувати автокешаут
+      const f = document.getElementById('lcFair');
+      if (f) f.innerHTML = `Раунд #${LC.cur.n} · точка ×${LC.point} · сід: <code>${(r.r.seed || '').slice(0, 16)}…</code>`;
+    } else if (LC.cur && r.r.n !== LC.cur.n) lcSetRound({ n: r.r.n, startAt: r.r.startAt, commit: r.r.commit });
+  } finally { LC.polling = false; }
+}
+function lcDraw(m, crashed) {
+  const c = document.getElementById('lcCanvas');
+  if (!c) return;
+  const w = c.clientWidth || 600, h = c.clientHeight || 300;
+  if (c.width !== w * 2) { c.width = w * 2; c.height = h * 2; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const top = Math.max(2, m * 1.25);
+  const tMax = Math.log(top) / LC.cfg.rate;
+  const X = (t) => 24 + (t / tMax) * (w - 48), Y = (v) => h - 20 - ((v - 1) / (top - 1)) * (h - 50);
+  ctx.strokeStyle = g3dVar('--line'); ctx.lineWidth = 1;
+  for (const v of [1, 2, 5, 10, 50, 100]) { if (v > top) break; ctx.beginPath(); ctx.moveTo(24, Y(v)); ctx.lineTo(w - 10, Y(v)); ctx.stroke(); ctx.fillStyle = g3dVar('--fg-3'); ctx.font = '11px sans-serif'; ctx.fillText('×' + v, 2, Y(v) - 2); }
+  if (m <= 1 && !crashed) return;
+  const tNow = Math.log(Math.max(1, m)) / LC.cfg.rate;
+  ctx.beginPath();
+  for (let k = 0; k <= 60; k++) { const t = (tNow * k) / 60; const v = Math.exp(LC.cfg.rate * t); k ? ctx.lineTo(X(t), Y(v)) : ctx.moveTo(X(t), Y(v)); }
+  ctx.lineWidth = 4; ctx.strokeStyle = crashed ? g3dVar('--neg') : g3dVar('--accent'); ctx.stroke();
+  ctx.lineTo(X(tNow), h - 20); ctx.lineTo(X(0), h - 20); ctx.closePath();
+  ctx.globalAlpha = 0.12; ctx.fillStyle = crashed ? g3dVar('--neg') : g3dVar('--accent'); ctx.fill(); ctx.globalAlpha = 1;
+  // ракета
+  ctx.save(); ctx.translate(X(tNow), Y(m));
+  ctx.fillStyle = crashed ? g3dVar('--neg') : g3dVar('--fg');
+  ctx.beginPath(); ctx.arc(0, 0, crashed ? 9 : 7, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function lcButtons() {
+  const btn = document.getElementById('lcBtn');
+  if (!btn || !LC.cur) return;
+  const now = lwNow();
+  const flying = now >= LC.cur.startAt && !LC.point;
+  if (LC.me && !LC.me.out && flying) {
+    const m = lcMult(now - LC.cur.startAt);
+    btn.innerHTML = `<span class="ic i-cash" aria-hidden="true"></span>Забрати ₴${formatNumber(Math.floor(LC.me.bet * m))}`;
+    btn.classList.add('is-cashout'); btn.disabled = LC.busy;
+  } else if (now < LC.cur.startAt && !LC.me) {
+    btn.innerHTML = '<span class="ic i-rocket" aria-hidden="true"></span>Поставити на політ';
+    btn.classList.remove('is-cashout'); btn.disabled = LC.busy;
+  } else {
+    btn.classList.remove('is-cashout');
+    btn.innerHTML = LC.me ? (LC.me.out ? `Забрано ×${LC.me.out}` : now < LC.cur.startAt ? 'Ставку прийнято' : 'Чекаємо наступний раунд') : 'Ставка — до старту раунду';
+    btn.disabled = true;
+  }
+}
+async function lcAction() {
+  if (!LC.cur || LC.busy) return;
+  const now = lwNow();
+  LC.busy = true;
+  try {
+    if (LC.me && !LC.me.out && now >= LC.cur.startAt) {
+      const r = await liveApi('crashCashout', { round: LC.cur.n });
+      if (r.mode === 'server') {
+        LC.paidShown[LC.cur.n] = true;
+        playSound && playSound('win');
+        notify(`🚀 Забрано ×${r.r.mult} — +₴${formatNumber(r.r.win)}`, 'success');
+        addToHistory(`Краш наживо: +₴${formatNumber(r.r.win)}`);
+        if (r.r.win > LC.me.bet) triggerWinReaction(r.r.win, 'Краш наживо');
+      }
+    } else if (!LC.me && now < LC.cur.startAt) {
+      const amount = parseInt(document.getElementById('lcBet')?.value) || 0;
+      if (!validateBet(amount)) return;
+      const auto = parseFloat(document.getElementById('lcAuto')?.value) || null;
+      const r = await liveApi('crashBet', { amount, auto });
+      if (r.mode === 'server') { addWager(amount); playSound && playSound('click'); }
+    }
+  } finally { LC.busy = false; lcButtons(); }
+}
