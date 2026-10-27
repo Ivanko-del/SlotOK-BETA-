@@ -92,6 +92,8 @@ exactly once via `room_paid`) + one pure rules file per game in
 `room_state/<id>` (closed to browsers); the public view is `rooms/<game>/<id>`
 and each player's private view `room_private/<id>/<nick>`. Client helpers are
 in `src/app/44-rooms.js` (`roomApi`, `roomLobby`, `roomWatch`, `ROOM_HOOKS`).
+Mass games (Bingo, Quiz battle, Battle royale) set `lobbyMs`/`minPlayers`
+and are joined with action `quick` (same bet → same table).
 Tests: `scripts/selfcheck-room-api.js`. New DB nodes need
 `scripts/build-rules.js` and the owner must republish the rules.
 

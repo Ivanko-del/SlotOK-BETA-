@@ -19,7 +19,7 @@
   var EMOJI_ICONS = {
     '💰': 'money-bag warn', '🎰': 'slot', '🏆': 'trophy warn', '✅': 'check-circle pos', '🃏': 'cards',
     '⬅': 'arrow-left', '💎': 'diamond info', '🪙': 'coin special', '👑': 'crown warn', '🎁': 'gift accent',
-    '🎯': 'target', '🎲': 'dice', '🎡': 'wheel', '❌': 'x-circle neg', '🛡': 'shield', '👤': 'user',
+    '🎯': 'target', '🎱': 'grid', '🎲': 'dice', '🎡': 'wheel', '❌': 'x-circle neg', '🛡': 'shield', '👤': 'user',
     '🎮': 'game-pad', '⚡': 'bolt warn', '⚽': 'ball', '🔄': 'refresh', '🚀': 'rocket', '🔥': 'fire accent',
     '🎟': 'ticket', '🔴': 'dot neg', '📺': 'tv', '🎨': 'palette', '🟢': 'dot pos', '❓': 'question',
     '🤖': 'robot', '📦': 'package', '📜': 'scroll', '💣': 'bomb', '⏳': 'hourglass', '⚔': 'swords',

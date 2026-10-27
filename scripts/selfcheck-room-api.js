@@ -267,5 +267,83 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
   tree.users.eve.balance = 50;
   assert.strictEqual((await call("eve", { action: "create", game: "rps", bet: 100 })).status, 402, "без грошей не створити");
 
-  console.log("OK — api/room: ставки, виплата рівно раз, секрети (міни, флоти, ходи, число) приховані, таймери, вихід, гонки входу");
+  // ── Масові ігри: швидкий вхід, старт за таймером лобі ──
+  const ROOMS = require("../lib/rooms");
+  const setState = (id, fn) => { const x = full(id); fn(x); tree.room_state[id].j = JSON.stringify(x); };
+  ["ann", "ben", "cid", "dan"].forEach((n) => { tree.users[n].balance = 10000; });
+  let q1 = await call("ann", { action: "quick", game: "bingo", bet: 100 });
+  assert.strictEqual(q1.status, 200, JSON.stringify(q1.data));
+  const bingoId = q1.data.id;
+  assert.strictEqual((await call("ben", { action: "quick", game: "bingo", bet: 100 })).data.id, bingoId, "той самий стіл");
+  assert.strictEqual((await call("cid", { action: "quick", game: "bingo", bet: 100 })).data.id, bingoId);
+  assert.notStrictEqual((await call("dan", { action: "quick", game: "bingo", bet: 500 })).data.id, bingoId, "інша ставка — інший стіл");
+  assert.strictEqual((await call("ann", { action: "quick", game: "minesweeper", bet: 100 })).status, 400);
+  assert.strictEqual(full(bingoId).status, "waiting");
+  assert.strictEqual((await call("eve", { action: "tick", id: bingoId })).data.status, "waiting", "до кінця лобі не стартує");
+  setState(bingoId, (x) => { x.startBy = Date.now() - 1; });
+  await call("eve", { action: "tick", id: bingoId });
+  assert.strictEqual(full(bingoId).status, "playing", "лобі минуло, гравців ≥ 2 — старт");
+  assert.ok(!pubOf("bingo", bingoId).v.includes('"order"'), "порядок куль — секрет");
+  assert.ok(JSON.parse(privOf(bingoId, "ann").v).card.length === 25);
+  const before3 = bal("ann") + bal("ben") + bal("cid");
+  setState(bingoId, (x) => { x.state.start = Date.now() - 80 * 3500; }); // усі 75 куль уже мали вийти
+  await call("eve", { action: "tick", id: bingoId });
+  let fb = full(bingoId);
+  assert.strictEqual(fb.status, "finished", "бінго дограно");
+  const paid = Object.values(fb.result.payouts).reduce((a, b) => a + b, 0);
+  assert.ok(paid <= 285 && paid >= 283, "банк 300 мінус 5%: " + paid);
+  assert.strictEqual(bal("ann") + bal("ben") + bal("cid"), before3 + paid);
+  assert.ok(fb.state.lineAt <= fb.state.fullAt);
+  // Одинокий гравець — кімнату скасовано з поверненням
+  const lone = (await call("dan", { action: "tick", id: (await call("dan", { action: "mine" })).data.rooms[0].id })).data;
+  setState(lone.id, (x) => { x.startBy = Date.now() - 1; });
+  const d1 = bal("dan");
+  await call("eve", { action: "tick", id: lone.id });
+  assert.strictEqual(full(lone.id).status, "cancelled");
+  assert.strictEqual(bal("dan"), d1 + 500, "сам за столом — ставку повернено");
+
+  // ── Королівська битва ──
+  ["ann", "ben", "cid", "dan"].forEach((n) => { tree.users[n].balance = 10000; });
+  q1 = await call("ann", { action: "quick", game: "royale", bet: 200 });
+  const roy = q1.data.id;
+  for (const n of ["ben", "cid", "dan"]) await call(n, { action: "quick", game: "royale", bet: 200 });
+  setState(roy, (x) => { x.startBy = Date.now() - 1; });
+  await call("eve", { action: "tick", id: roy });
+  for (let k = 0; k < 60 && full(roy).status === "playing"; k++) {
+    const x = full(roy);
+    if (x.state.phase === "pick") {
+      for (const [seat, n] of x.players.entries()) if (x.state.alive[seat]) await call(n, { action: "act", id: roy, move: { door: crypto.randomInt(0, 4) } });
+    } else { setState(roy, (y) => { y.state.until = Date.now() - 1; }); await call("eve", { action: "tick", id: roy }); }
+  }
+  const fr = full(roy);
+  assert.strictEqual(fr.status, "finished", "битва дограна");
+  assert.ok(fr.state.history.every((h) => h.out.length < h.counts.reduce((a, b) => a + b, 0)), "пастка ніколи не забирає всіх");
+  assert.ok(fr.result.winners.length >= 1);
+
+  // ── Вікторина ──
+  ["ann", "ben"].forEach((n) => { tree.users[n].balance = 10000; });
+  q1 = await call("ann", { action: "quick", game: "quizbattle", bet: 300 });
+  const qb = q1.data.id;
+  await call("ben", { action: "quick", game: "quizbattle", bet: 300 });
+  setState(qb, (x) => { x.startBy = Date.now() - 1; });
+  await call("eve", { action: "tick", id: qb });
+  setState(qb, (x) => { x.state.start = Date.now() - 500; });
+  const qs = full(qb).state.qs;
+  assert.ok(!pubOf("quizbattle", qb).v.includes('"qs"'), "питання наперед не видно");
+  await call("eve", { action: "tick", id: qb });
+  const p0 = JSON.parse(pubOf("quizbattle", qb).v);
+  assert.strictEqual(p0.phase, "ask");
+  assert.strictEqual(p0.q.a, undefined, "правильна відповідь прихована під час питання");
+  assert.strictEqual((await call("ann", { action: "act", id: qb, move: { q: 0, a: qs[0].a } })).status, 200);
+  assert.strictEqual((await call("ann", { action: "act", id: qb, move: { q: 0, a: 0 } })).status, 400, "відповідь одна");
+  await call("ben", { action: "act", id: qb, move: { q: 0, a: (qs[0].a + 1) % 4 } });
+  const a0q = bal("ann");
+  setState(qb, (x) => { x.state.start = Date.now() - 10 * 15000; });
+  await call("eve", { action: "tick", id: qb });
+  const fq = full(qb);
+  assert.strictEqual(fq.status, "finished");
+  assert.strictEqual(fq.result.winners[0], "ann", "правильна відповідь перемагає");
+  assert.strictEqual(bal("ann"), a0q + Math.floor(600 * 0.95), "хто з нулем очок — без призу, увесь банк першому");
+
+  console.log("OK — api/room: ставки, виплата рівно раз, секрети приховані, таймери, вихід, гонки входу; масові ігри (Бінго, Битва, Вікторина) зі швидким входом");
 })().catch((e) => { console.error(e); process.exit(1); });
