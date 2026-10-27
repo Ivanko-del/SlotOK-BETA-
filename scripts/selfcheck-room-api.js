@@ -209,7 +209,9 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
   let bp = JSON.parse(pubOf("battleship", id).v);
   assert.strictEqual(bp.phase, "fire");
   assert.strictEqual(bp.fleets, undefined, "флоти приховані");
-  assert.ok(!privOf(id, "ben").v.includes(JSON.stringify(fleetA[0])), "свій флот бачиш лише ти");
+  // Порівнюємо весь флот: окремий корабель Бена може випадково збігтися з кораблем Анни
+  assert.deepStrictEqual(JSON.parse(privOf(id, "ann").v).fleet.map(({ x, y, len, dir }) => ({ x, y, len, dir })), fleetA.map(({ x, y, len, dir }) => ({ x, y, len, dir })), "свій флот бачиш ти");
+  assert.ok(!privOf(id, "ben").v.includes(JSON.stringify(fleetA)), "чужий флот не видно");
   const balA = bal("ann"), balB = bal("ben");
   for (let k = 0; k < 400; k++) {
     s = full(id);
