@@ -5354,3 +5354,126 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 @media (prefers-reduced-motion: reduce) {
   .bingo-ball.is-new, .bingo-cell, .ry-leaf, .ry-door .ry-in { animation: none !important; transition: none !important; }
 }
+/* ─── src/css/71-tables.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   СТОЛИ 2–4 (v115): Вісімка, Дурень онлайн, Лудо.
+   Логіка — src/app/50-tables.js.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.tbl-top { display: flex; justify-content: flex-end; min-height: 22px; }
+.tbl-timer { font-size: var(--fs-sm); color: var(--fg-3); }
+.tbl-status { text-align: center; min-height: 2.6em; margin: var(--sp-2) 0; }
+
+/* ── Гральна карта ──────────────────────────────────────────────── */
+.pcard {
+  --w: clamp(46px, 13vw, 64px);
+  position: relative; flex-shrink: 0; width: var(--w); height: calc(var(--w) * 1.42); margin: 0; padding: 0;
+  display: block; border-radius: 7px; cursor: default; color: var(--paper-ink);
+  background: linear-gradient(160deg, var(--paper), color-mix(in srgb, var(--paper) 88%, var(--paper-ink)));
+  border: 1px solid color-mix(in srgb, var(--paper-ink) 35%, transparent);
+  box-shadow: 0 3px 0 rgb(var(--shade-rgb) / .25), 0 6px 14px -6px rgb(var(--shade-rgb) / .5);
+  font-family: var(--font-display); font-weight: var(--fw-black);
+  transition: transform var(--dur-2) var(--ease-premium), opacity var(--dur-2);
+}
+.pcard.is-red { color: var(--paper-red); }
+.pc-r { position: absolute; top: 3px; left: 5px; font-size: calc(var(--w) * .3); line-height: 1; }
+.pc-s { position: absolute; top: calc(var(--w) * .32); left: 5px; font-size: calc(var(--w) * .24); line-height: 1; }
+.pc-big { position: absolute; right: 5px; bottom: 2px; font-size: calc(var(--w) * .58); line-height: 1; opacity: .9; }
+.pcard.is-back, .tbl-backs i {
+  background: repeating-linear-gradient(45deg, var(--accent) 0 5px, color-mix(in srgb, var(--accent) 70%, var(--ink-shadow)) 5px 10px);
+  border: 2px solid var(--paper);
+}
+.pcard.is-empty { background: transparent; border: 2px dashed var(--line); box-shadow: none; }
+.pcard.is-playable { cursor: pointer; }
+.pcard.is-playable:hover, .pcard.is-playable:focus-visible { transform: translateY(-12px) rotate(-2deg); }
+.pcard.is-playable { box-shadow: 0 0 0 2px var(--primary), 0 8px 18px -6px rgb(var(--shade-rgb) / .6); }
+.pcard.is-dim { opacity: .55; filter: saturate(.6); }
+.pcard.is-top { animation: tblDeal .35s var(--ease-premium); }
+.pcard.is-trump { transform: rotate(90deg); margin: 0 12px; }
+@keyframes tblDeal { from { transform: translateY(-30px) rotate(-12deg) scale(.8); opacity: 0; } }
+
+/* ── Стіл ───────────────────────────────────────────────────────── */
+.tbl-opps { display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.tbl-opp {
+  display: grid; justify-items: center; gap: 4px; min-width: 92px; padding: var(--sp-2);
+  background: var(--surface-1); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.tbl-opp.is-turn { border-color: var(--accent); box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / .35); }
+.tbl-opp.is-def { border-color: var(--info); }
+.tbl-opp.is-out { opacity: .45; }
+.tbl-opp-name { font-size: var(--fs-xs); font-weight: var(--fw-bold); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbl-backs { display: flex; height: 26px; }
+.tbl-backs i { width: 18px; height: 26px; border-radius: 3px; margin-left: -10px; border-width: 1px; }
+.tbl-backs i:first-child { margin-left: 0; }
+.tbl-role { font-size: var(--fs-2xs); color: var(--fg-3); min-height: 1em; }
+.tbl-mid {
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-4); min-height: 120px; padding: var(--sp-4);
+  background:
+    radial-gradient(80% 90% at 50% 50%, color-mix(in srgb, var(--pos) 26%, var(--surface-1)), color-mix(in srgb, var(--pos) 12%, var(--surface-1)));
+  border: var(--bw-strong) solid var(--fg); border-radius: var(--r-xl); box-shadow: inset 0 0 30px rgb(var(--shade-rgb) / .35), var(--sh-2);
+}
+.tbl-deck { display: grid; justify-items: center; gap: 4px; }
+.tbl-deck small { font-size: var(--fs-2xs); color: var(--fg-2); }
+.tbl-suit {
+  width: 44px; height: 44px; margin: 0; padding: 0; display: grid; place-items: center; border-radius: 50%;
+  background: var(--paper); color: var(--paper-ink); font-size: 26px; font-weight: var(--fw-black);
+  border: 2px solid var(--ink-shadow);
+}
+.tbl-suit.is-red { color: var(--paper-red); }
+.tbl-suitpick { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.tbl-suitpick .tbl-suit { cursor: pointer; }
+.tbl-acts { display: flex; justify-content: center; gap: var(--sp-2); min-height: 0; margin-bottom: var(--sp-2); }
+.tbl-acts .btn { width: auto; min-height: var(--hit); }
+.tbl-hand {
+  display: flex; justify-content: center; padding: var(--sp-4) var(--sp-2) var(--sp-2); overflow-x: auto;
+  scrollbar-width: none;
+}
+.tbl-hand::-webkit-scrollbar { display: none; }
+.tbl-hand .pcard { margin-left: calc(var(--w) * -.38); }
+.tbl-hand .pcard:first-child { margin-left: 0; }
+
+/* Дурень: пари атака/захист */
+.tbl-mid.is-durak { flex-wrap: wrap; justify-content: flex-start; gap: var(--sp-3); }
+.dk-table { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-2); flex: 1; min-width: 0; }
+.dk-pair { position: relative; padding-bottom: 14px; border-radius: 8px; }
+.dk-pair .pcard.is-cover { position: absolute; left: 12px; top: 16px; transform: rotate(10deg); }
+.dk-pair.is-target { cursor: pointer; outline: 2px dashed var(--info); outline-offset: 3px; }
+.dk-pair.is-picked { outline: 3px solid var(--info); }
+
+/* ── Лудо ───────────────────────────────────────────────────────── */
+.ld-wrap { display: grid; justify-items: center; margin: var(--sp-2) 0; perspective: 1200px; }
+.ld-board {
+  --c: calc(min(100vw - 40px, 520px) / 15);
+  position: relative; display: grid; grid-template-columns: repeat(15, var(--c)); grid-template-rows: repeat(15, var(--c));
+  padding: 4px; background: var(--surface-1); border: var(--bw-strong) solid var(--fg); border-radius: var(--r-lg);
+  box-shadow: 0 16px 0 -6px rgb(var(--shade-rgb) / .35), var(--sh-2);
+  transform: rotateX(16deg); transform-origin: 50% 100%;
+}
+.ld-base { margin: 3px; border-radius: var(--r-md); background: color-mix(in srgb, var(--tone) 28%, var(--surface-1)); border: 2px solid var(--tone); }
+.ld-cell { margin: 1px; border-radius: 3px; background: var(--surface-2); display: grid; place-items: center; color: var(--fg-3); }
+.ld-cell .ic { width: 60%; height: 60%; }
+.ld-cell.is-home, .ld-cell.is-start { background: color-mix(in srgb, var(--tone) 55%, var(--surface-2)); }
+.ld-center { margin: 2px; background: conic-gradient(from 45deg, var(--info) 0 25%, var(--neg) 0 50%, var(--pos) 0 75%, var(--warn) 0); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); border-radius: 4px; opacity: .85; }
+.ld-tokens { display: contents; }
+.ld-token {
+  position: relative; z-index: 2; margin: 0; padding: 0; align-self: center; justify-self: center;
+  width: calc(var(--c) * .72); height: calc(var(--c) * .72); border-radius: 50%;
+  transform: translate(calc(var(--off) * 4px), calc(var(--off) * -4px));
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--white) 60%, var(--tone)) 0 15%, var(--tone) 55%, color-mix(in srgb, var(--tone) 60%, var(--black)));
+  border: 2px solid var(--ink-shadow); box-shadow: 0 3px 0 rgb(var(--shade-rgb) / .45);
+  display: grid; place-items: center; color: var(--ink-shadow); cursor: default;
+  transition: transform var(--dur-2) var(--ease-premium);
+}
+.ld-token .ic { width: 60%; height: 60%; }
+.ld-token.is-legal { cursor: pointer; animation: ldPulse .7s var(--ease-in-out) infinite alternate; }
+@keyframes ldPulse { to { transform: translate(calc(var(--off) * 4px), calc(var(--off) * -4px - 5px)) scale(1.12); box-shadow: 0 0 0 3px var(--fg), 0 6px 0 rgb(var(--shade-rgb) / .35); } }
+.mass-chip .ld-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--tone); margin-right: 4px; }
+.mass-chip.is-turn { border-color: var(--tone); box-shadow: 0 0 0 2px rgb(var(--tone-rgb) / .4); }
+.ld-controls { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3); align-items: center; }
+.ld-die-wrap { width: 64px; height: 64px; display: grid; place-items: center; perspective: 500px; }
+.ld-die { --s: 46px; }
+
+@media (prefers-reduced-motion: reduce) { .ld-token.is-legal, .pcard.is-top { animation: none !important; } }
+
+/* Порожнє табло результату (гра ще йде) — не показуємо порожню рамку */
+.game3d .game-result:empty { display: none; }

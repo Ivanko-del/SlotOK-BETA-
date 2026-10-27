@@ -5387,10 +5387,37 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '114';
+const CURRENT_VERSION = '115';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '115',
+    title: '🃏 Оновлення v115 — Вісімка, Дурень онлайн на 2–4 і Лудо',
+    date: Date.UTC(2026, 9, 27),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '👥 Столи на 2–4 гравців',
+        items: [
+          'Вісімка — як Uno на звичайній колоді: вісімка міняє масть, двійка змушує брати 2, туз — пропуск ходу',
+          'Дурень онлайн тепер на 2–4 гравців: підкидати можуть усі, банк ділять усі, крім дурня',
+          'Лудо «Не сердься, людино» на об’ємному полі: вийти на шістку, збивати чужі фішки, завести всі чотири додому',
+          'Господар столу може почати гру, не чекаючи, поки зайдуть усі',
+        ],
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Чесність',
+        items: [
+          'Карти роздає й перевіряє сервер — чужих карт не видно, нечесний хід не пройде',
+          'Хто довго думає, за того ходить сервер; тричі не встиг — поразка, гра не зависає',
+          'Кнопка «Онлайн» у старих «Картах» тепер веде в новий серверний Дурень',
+        ],
+      },
+    ],
+  },
   {
     version: '114',
     title: '🎱 Оновлення v114 — ігри на 10+ гравців',
@@ -11538,7 +11565,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1, eights:1, durak:1, ludo:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -11744,6 +11771,7 @@ function switchTab(id, el) {
   if(id==='roulette')     safe(() => initLiveWheels());
   if(id==='livecrash')    safe(() => initLiveCrash());
   if(id==='bingo' || id==='quizbattle' || id==='royale') safe(() => initMassGame(id));
+  if(id==='eights' || id==='durak' || id==='ludo') safe(() => initTable(id));
   if(id==='admin')        safe(() => initAdminPanel());
   if(id==='dragon')       safe(() => initDragonTower());
   if(id==='sicbo')        safe(() => initSicBo());
@@ -20226,6 +20254,9 @@ Object.assign(GAME_HELP, {
   bingo: { title:'🎱 Бінго', rules:`<b>Стіл до 30 гравців.</b> Обери вхід — гра стартує через 45 с, якщо зібралось хоча б двоє.<br><br><b>Картка 5×5</b> (центр вільний), кулі 1–75 тягне сервер кожні 3,5 с, числа на картці позначаються самі.<br><br><b>Призи:</b> перша повна лінія (рядок, стовпець чи діагональ) — 40% банку, перша повністю закрита картка — 60%. Одночасні переможці ділять приз. Комісія 5%.` },
   quizbattle: { title:'🧠 Вікторина-баттл', rules:`<b>До 40 гравців, 8 питань.</b> На кожне — 12 секунд, потім 3 секунди показуємо правильну відповідь.<br><br><b>Очки:</b> правильно — 100 + до 50 за швидкість. Неправильно — 0.<br><br><b>Призи:</b> 1-ше місце — 50%, 2-ге — 30%, 3-тє — 20% банку (на двох: 70/30). Хто не набрав жодного очка — без призу. Комісія 5%.` },
   royale: { title:'⚔️ Королівська битва', rules:`<b>До 40 гравців.</b> Щораунду 10 секунд, щоб обрати одні з чотирьох дверей (не встиг — оберемо навмання).<br><br>За одними дверима — пастка: хто там стояв, вибуває. Пастка ніколи не забирає всіх живих.<br><br><b>Перемога:</b> останній живий забирає банк (мінус 5%). Якщо після 15 раундів живих кілька — банк ділять.` },
+  eights: { title:'🃏 Вісімка', rules:`<b>2–4 гравці, колода 52 карти.</b> На двох — по 7 карт, на 3–4 — по 5.<br><br><b>Хід:</b> клади карту тієї ж масті або того ж значення, що й верхня.<br>8 — будь-коли, обираєш нову масть.<br>2 — наступний бере 2 карти й пропускає хід.<br>Туз — наступний пропускає хід.<br><br>Нема чим ходити — бери карту; підійшла — можна зіграти, ні — «Пас».<br><br><b>Перемога:</b> хто перший скинув усі карти, забирає банк (мінус 5%). На хід 25 с; тричі не встиг — поразка.` },
+  durak: { title:'🃏 Дурень онлайн', rules:`<b>Підкидний на 2–4 гравців, 36 карт</b>, козир — остання карта колоди. Першим ходить той, у кого найменший козир.<br><br><b>Відбій:</b> атакуючий кладе карту; підкидати можуть усі, крім того, хто відбивається, — карти тих рангів, що вже на столі (не більше 6 і не більше, ніж карт у захисника).<br>Відбився — «Бито», і він ходить наступним; не можеш — «Взяти».<br><br>Добір до 6 карт після кожного відбою. Хто без карт, коли колода скінчилась, — вийшов. Останній із картами — <b>дурень</b>; банк ділять усі інші (мінус 5%).` },
+  ludo: { title:'🎲 Лудо', rules:`<b>2–4 гравці, по 4 фішки.</b> Кубик кидає сервер.<br><br>Вийти з бази можна лише на 6. Шістка дає ще один кидок. Став фішку на клітинку з чужою — та повертається на базу (крім клітинок-стартів і зірочок).<br><br>До фінішу — точним кидком. Хто першим завів усі 4 фішки, забирає банк (мінус 5%). На хід 20 с; тричі не встиг — поразка.` },
   cardwar: { title:'⚔️ Card War', rules:`<b>Мета:</b> Твоя карта проти карти дилера — вища виграє.<br><br><b>Виплати:</b><br>Твоя > Дилер → x2<br>Нічия → повернення ставки<br>Твоя < Дилер → програш<br><br><b>Ранги:</b> 2(низька) ... A(висока)` },
 });
 
@@ -22202,6 +22233,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
   {id:'minesweeper', name:'💣 Сапер'}, {id:'battleship', name:'🚢 Морський бій'},
   {id:'livecrash', name:'🚀 Краш наживо'}, {id:'bingo', name:'🎱 Бінго'}, {id:'quizbattle', name:'🧠 Вікторина-баттл'}, {id:'royale', name:'⚔️ Королівська битва'},
+  {id:'eights', name:'🃏 Вісімка'}, {id:'durak', name:'🃏 Дурень онлайн'}, {id:'ludo', name:'🎲 Лудо'},
 ];
 
 let _gameToggleDisabledCache = {};
@@ -23523,7 +23555,7 @@ const BET_INPUT_IDS = [
   'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
-  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet', 'eightsBet', 'durakBet', 'ludoBet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'lwPlaceBet', 'lcAction', 'startCrash', 'dealPoker', 'startChests', 'startMines',
@@ -23531,7 +23563,7 @@ const GAME_CTA_FNS = [
   'spinFortune', 'startHorseRace', 'spinColorWheel', 'startBalloon', 'startQuiz', 'vpDeal', 'startDragonTower',
   'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
-  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3', 'msDuelCreate', 'bsOnlineCreate',
+  'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3', 'msDuelCreate', 'bsOnlineCreate', 'tableCreate',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
 
@@ -26248,3 +26280,12 @@ function ludoRender(u, t) {
     st.innerHTML = (pub.turn === seat ? (pub.phase === 'roll' ? '<b>Кидай кубик!</b> ' : '<b>Обери фішку</b> (підсвічені). ') : `Хід ${escapeHtml(players[pub.turn])}. `) + lt;
   }
 }
+
+// Стара онлайн-кімната «Карти» (браузерна, карти суперника видно в базі) —
+// якщо сервер і правила готові, ведемо в новий серверний «Дурень онлайн».
+// Гра проти AI лишається як була.
+const _legacyOpenCardLobby = openCardLobby;
+openCardLobby = async function () {
+  if (await roomsReady()) return openGame('durak');
+  return _legacyOpenCardLobby();
+};

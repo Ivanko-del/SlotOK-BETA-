@@ -286,3 +286,12 @@ function ludoRender(u, t) {
     st.innerHTML = (pub.turn === seat ? (pub.phase === 'roll' ? '<b>Кидай кубик!</b> ' : '<b>Обери фішку</b> (підсвічені). ') : `Хід ${escapeHtml(players[pub.turn])}. `) + lt;
   }
 }
+
+// Стара онлайн-кімната «Карти» (браузерна, карти суперника видно в базі) —
+// якщо сервер і правила готові, ведемо в новий серверний «Дурень онлайн».
+// Гра проти AI лишається як була.
+const _legacyOpenCardLobby = openCardLobby;
+openCardLobby = async function () {
+  if (await roomsReady()) return openGame('durak');
+  return _legacyOpenCardLobby();
+};
