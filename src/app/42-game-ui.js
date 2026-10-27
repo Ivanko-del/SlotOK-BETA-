@@ -14,7 +14,7 @@ const BET_INPUT_IDS = [
   'betAmountBalloon', 'betAmountRR', 'betAmountQuiz', 'bacBet', 'vpBet', 'dragonBet',
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
-  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet', 'eightsBet', 'durakBet', 'ludoBet',
+  'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet', 'eightsBet', 'durakBet', 'ludoBet', 'holdemBet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'lwPlaceBet', 'lcAction', 'startCrash', 'dealPoker', 'startChests', 'startMines',
