@@ -289,7 +289,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'slot5', name:'🍒 Слот 5×3'}, {id:'match3', name:'💎 Три в ряд'},
   {id:'minesweeper', name:'💣 Сапер'}, {id:'battleship', name:'🚢 Морський бій'},
   {id:'livecrash', name:'🚀 Краш наживо'}, {id:'bingo', name:'🎱 Бінго'}, {id:'quizbattle', name:'🧠 Вікторина-баттл'}, {id:'royale', name:'⚔️ Королівська битва'},
-  {id:'eights', name:'🃏 Вісімка'}, {id:'durak', name:'🃏 Дурень онлайн'}, {id:'ludo', name:'🎲 Лудо'},
+  {id:'eights', name:'🃏 Вісімка'}, {id:'durak', name:'🃏 Дурень онлайн'}, {id:'ludo', name:'🎲 Лудо'}, {id:'holdem', name:'♠️ Покер Hold\'em'},
 ];
 
 let _gameToggleDisabledCache = {};

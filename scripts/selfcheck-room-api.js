@@ -396,5 +396,48 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
     assert.strictEqual(["ann", "ben", "cid"].reduce((a, n) => a + bal(n), 0), t0 + paidT);
   }
 
-  console.log("OK — api/room: ставки, виплата рівно раз, секрети приховані, таймери, вихід, гонки входу; масові ігри (Бінго, Битва, Вікторина) зі швидким входом; столи 2–4 (Вісімка, Дурень, Лудо) до кінця");
+  // ── Покер: оцінка рук і побічні банки ──
+  const HD = RG.ROOM_GAMES.holdem;
+  const ev = (x) => HD.eval5(x.split(" "));
+  assert.strictEqual(ev("5s 4s 3s 2s As")[0], 8, "стрит-флеш від туза вниз");
+  assert.strictEqual(ev("3c 3d 3h 9s 9c")[0], 6);
+  assert.ok(HD.cmp(ev("6c 5d 4h 3s 2c"), ev("5c 4d 3h 2s Ac")) > 0, "стрит 6 сильніший за «колесо»");
+  assert.ok(HD.cmp(ev("Ac Ad Kh Ks 2c"), ev("Ac Ad Qh Qs Kc")) > 0, "дві пари: друга пара вирішує");
+  assert.ok(HD.cmp(ev("Ac Kd 9h 8s 3c"), ev("Ac Kd 9h 8s 2c")) > 0, "кікер");
+  const sp = { stacks: [0, 0, 500], out: [false, false, false], inHand: [true, true, true], folded: [false, false, false], contrib: [100, 500, 500], bet: [0, 0, 0], dead: 0, dealer: 2,
+    hole: [["Ah", "As"], ["Kh", "Ks"], ["2c", "7d"]], board: ["Ad", "Kd", "9c", "4s", "3h"], hand: 1 };
+  HD._internal.finishHand(sp, 0);
+  assert.deepStrictEqual(sp.won, [300, 800, 0], "олин на 100 бере лише головний банк, побічний — другому");
+
+  // ── Покер: кишенькові карти приховані, повна гра через API ──
+  ["ann", "ben", "cid", "dan"].forEach((n) => { tree.users[n].balance = 10000; });
+  r = await call("ann", { action: "create", game: "holdem", bet: 500, size: 6 });
+  const pk = r.data.id;
+  await call("ben", { action: "join", id: pk });
+  await call("cid", { action: "join", id: pk });
+  await call("ann", { action: "start", id: pk });
+  let px = full(pk);
+  assert.strictEqual(px.status, "playing");
+  const holeA = px.state.hole[0];
+  assert.ok(!pubOf("holdem", pk).v.includes('"hole"') && !pubOf("holdem", pk).v.includes('"deck"'), "кишенькові й колода не в публічному");
+  assert.strictEqual((await call("cid", { action: "act", id: pk, move: { a: "check" } })).status === 200 && px.state.turn !== 2, false, "не в свою чергу — ні");
+  assert.ok(!JSON.stringify(privOf(pk, "ben")).includes(JSON.stringify(holeA)), "чужі кишенькові не видно");
+  assert.deepStrictEqual(JSON.parse(privOf(pk, "ann").v).hole, holeA);
+  const pk0 = ["ann", "ben", "cid"].reduce((a, n) => a + bal(n), 0);
+  for (let k = 0; k < 3000 && full(pk).status === "playing"; k++) {
+    const x = full(pk), st = x.state;
+    if (st.phase === "bet" && st.turn >= 0) {
+      const seat = st.turn, need = Math.max(...st.bet) - st.bet[seat];
+      const mv = crypto.randomInt(0, 4) === 0 ? { a: "allin" } : { a: need > 0 ? "call" : "check" };
+      const rr = await call(x.players[seat], { action: "act", id: pk, move: mv });
+      assert.strictEqual(rr.status, 200, JSON.stringify(rr.data));
+    } else { setState(pk, (y) => { y.state.until = Date.now() - 1; }); await call("eve", { action: "tick", id: pk }); }
+  }
+  px = full(pk);
+  assert.strictEqual(px.status, "finished", "покер дограно");
+  const pPaid = Object.values(px.result.payouts).reduce((a, b) => a + b, 0);
+  assert.ok(pPaid >= 1422 && pPaid <= 1425, "банк 1500 мінус 5%: " + pPaid);
+  assert.strictEqual(["ann", "ben", "cid"].reduce((a, n) => a + bal(n), 0), pk0 + pPaid);
+
+  console.log("OK — api/room: ставки, виплата рівно раз, секрети приховані, таймери, вихід, гонки входу; масові ігри (Бінго, Битва, Вікторина) зі швидким входом; столи 2–4 (Вісімка, Дурень, Лудо) і покер до кінця");
 })().catch((e) => { console.error(e); process.exit(1); });

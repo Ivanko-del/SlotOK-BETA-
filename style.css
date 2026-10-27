@@ -5477,3 +5477,50 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 
 /* Порожнє табло результату (гра ще йде) — не показуємо порожню рамку */
 .game3d .game-result:empty { display: none; }
+/* ─── src/css/72-holdem.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   ПОКЕР HOLD'EM 3D (v116). Логіка — src/app/52-holdem.js.
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 900px) { .game3d.is-wide { max-width: 980px; } }
+.he-info { font-size: var(--fs-xs); color: var(--fg-2); margin-right: auto; }
+.he-stage { aspect-ratio: 16 / 10; max-height: 58vh; overflow: visible; }
+@media (max-width: 560px) { .he-stage { aspect-ratio: 4 / 3.4; } }
+.he-seats { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.he-seat {
+  position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1px;
+  min-width: 78px; max-width: 120px; padding: 4px 8px; border-radius: var(--r-md);
+  background: rgb(var(--bg-rgb) / .86); border: var(--bw) solid var(--line); box-shadow: var(--sh-1);
+  font-size: var(--fs-xs); line-height: 1.25; text-align: center;
+  transition: box-shadow var(--dur-2), opacity var(--dur-2);
+}
+.he-seat b { max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.he-seat .num { font-family: var(--font-mono); color: var(--fg-2); }
+.he-seat small { color: var(--fg-3); font-size: var(--fs-2xs); }
+.he-seat.is-me { border-color: var(--primary); }
+.he-seat.is-turn { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .45), var(--sh-1); animation: g3dPulse .8s infinite alternate; }
+.he-seat.is-out { opacity: .5; }
+.he-seat.is-won { border-color: var(--pos); }
+.he-bet { color: var(--warn) !important; font-weight: var(--fw-bold); }
+.he-sd { color: var(--info) !important; font-weight: var(--fw-bold); }
+.he-won { color: var(--pos) !important; font-weight: var(--fw-black); }
+.he-d { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--paper); color: var(--paper-ink); font-size: 10px; font-weight: var(--fw-black); }
+/* Плаский стіл без WebGL */
+.he-flat { display: none; }
+.he-stage.is-fallback { background: radial-gradient(80% 90% at 50% 50%, color-mix(in srgb, var(--pos) 30%, var(--surface-1)), color-mix(in srgb, var(--pos) 14%, var(--surface-1))); border-radius: 48% / 40%; }
+.he-stage.is-fallback .he-flat { display: grid; place-items: center; gap: var(--sp-2); position: absolute; inset: 0; align-content: center; }
+.he-board { display: flex; gap: 4px; }
+.he-board .pcard { --w: clamp(34px, 9vw, 52px); }
+.he-pot { font-weight: var(--fw-bold); color: var(--fg); }
+
+.he-bottom { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3); align-items: center; margin-top: var(--sp-2); }
+@media (max-width: 520px) { .he-bottom { grid-template-columns: 1fr; justify-items: center; } }
+.he-hole { display: flex; gap: 6px; }
+.he-hole .pcard { --w: clamp(56px, 16vw, 74px); animation: tblDeal .4s var(--ease-premium); }
+.he-ctrl { display: grid; gap: var(--sp-2); width: 100%; transition: opacity var(--dur-2); }
+.he-ctrl.is-off { opacity: .5; pointer-events: none; }
+.he-btns { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: var(--sp-2); }
+.he-btns .btn { margin: 0; min-height: var(--hit); padding: 0 var(--sp-2); min-width: 0; }
+.he-range { width: 100%; accent-color: var(--accent); margin: 0; }
+.he-presets { display: flex; gap: var(--sp-1); justify-content: flex-end; }
+.he-presets .chip { margin: 0; }

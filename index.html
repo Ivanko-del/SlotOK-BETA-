@@ -492,6 +492,10 @@
           <span class="casino-badge-new is-pvp">10+</span><div class="casino-game-card-img"><span class="ic i-swords" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Королівська битва</div><div class="casino-game-card-prov">До 40 гравців</div></div>
         </div>
+        <div class="casino-game-card is-3d" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('holdem')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-spade" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Покер Hold'em</div><div class="casino-game-card-prov">2–6 гравців</div></div>
+        </div>
         <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('eights')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-cards" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Вісімка</div><div class="casino-game-card-prov">2–4 гравці</div></div>
@@ -1106,6 +1110,53 @@
           <div class="room-actions">
             <button type="button" class="btn btn-ghost" id="ludoLeave" onclick="tableLeave('ludo')">Здатися</button>
             <button type="button" class="btn btn-primary hidden" id="ludoAgain" onclick="tableBack('ludo')">До столів</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-holdem" class="screen hidden game3d is-wide">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Покер <span class="badge is-accent">3D</span></h2>
+        <button type="button" class="game-help" onclick="showGameHelp('holdem')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="holdemLobby">
+        <div class="mass-hero"><span class="ic i-spade" aria-hidden="true"></span><p>Texas Hold'em на 2–6 гравців. Бай-ін — твоя ставка, на столі в кожного 1000 фішок. Сліпі ростуть кожні 5 роздач; гра до останнього з фішками або 30 роздач — банк ділиться за фішками.</p></div>
+        <div class="field-label">Гравців за столом</div>
+        <div class="seg" role="radiogroup" aria-label="Гравців">
+          <button type="button" class="seg-item tbl-size active" data-n="2" onclick="tableSize('holdem',2)"><span class="seg-label">2</span></button><button type="button" class="seg-item tbl-size" data-n="3" onclick="tableSize('holdem',3)"><span class="seg-label">3</span></button><button type="button" class="seg-item tbl-size" data-n="4" onclick="tableSize('holdem',4)"><span class="seg-label">4</span></button><button type="button" class="seg-item tbl-size" data-n="5" onclick="tableSize('holdem',5)"><span class="seg-label">5</span></button><button type="button" class="seg-item tbl-size" data-n="6" onclick="tableSize('holdem',6)"><span class="seg-label">6</span></button>
+        </div>
+        <input id="holdemBet" type="number" value="500">
+        <button type="button" class="game-cta" onclick="tableCreate('holdem')"><span class="ic i-spade" aria-hidden="true"></span>Створити стіл</button>
+        <div class="field-label">Відкриті столи</div>
+        <div class="room-list" id="holdemRooms"></div>
+      </div>
+      <div id="holdemGame" class="hidden">
+        <div id="holdemWait" class="room-wait"><span class="ic i-users" aria-hidden="true"></span><div id="holdemWaitText">Чекаємо гравців…</div>
+          <div class="mass-chips" id="holdemWaitPlayers"></div>
+          <button type="button" class="btn btn-primary hidden" id="holdemStartNow" onclick="tableStartNow('holdem')">Почати зараз</button>
+          <button type="button" class="btn btn-ghost" onclick="tableLeave('holdem')">Вийти (ставку повернемо)</button></div>
+        <div id="holdemPlay" class="hidden">
+          <div class="tbl-top"><span class="he-info" id="holdemInfo"></span><span class="tbl-timer num" id="holdemTimer"></span></div>
+          <div class="g3d-stage he-stage" id="holdemStage" role="img" aria-label="Покерний стіл"><div class="g3d-loading">Завантаження 3D…</div><div class="he-flat" id="holdemFlat"></div><div class="he-seats mass-reset" id="holdemSeats"></div></div>
+          <p class="field-hint tbl-status" id="holdemStatus" role="status" aria-live="polite"></p>
+          <div class="he-bottom">
+            <div class="he-hole mass-reset" id="holdemHole" aria-label="Твої карти"></div>
+            <div class="he-ctrl is-off" id="holdemCtrl">
+              <div class="he-btns">
+                <button type="button" class="btn btn-danger" id="holdemFold" onclick="tableAct('holdem',{a:'fold'})">Фолд</button>
+                <button type="button" class="btn btn-ghost" id="holdemCall" onclick="holdemCall()">Чек</button>
+                <button type="button" class="btn btn-primary" id="holdemRaiseBtn" onclick="holdemRaise()">Рейз до <b class="num" id="holdemRaiseVal">0</b></button>
+              </div>
+              <input type="range" id="holdemRaise" class="he-range" min="0" max="0" value="0" oninput="document.getElementById('holdemRaiseVal').textContent=formatNumber(+this.value)" aria-label="Розмір рейзу">
+              <div class="he-presets"><button type="button" class="chip" onclick="holdemPreset('half')">½ банку</button><button type="button" class="chip" onclick="holdemPreset('pot')">Банк</button><button type="button" class="chip" onclick="holdemPreset('max')">Олин</button></div>
+            </div>
+          </div>
+          <div class="game-result" id="holdemResult" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="holdemLeave" onclick="tableLeave('holdem')">Встати з-за столу</button>
+            <button type="button" class="btn btn-primary hidden" id="holdemAgain" onclick="tableBack('holdem')">До столів</button>
           </div>
         </div>
       </div>
