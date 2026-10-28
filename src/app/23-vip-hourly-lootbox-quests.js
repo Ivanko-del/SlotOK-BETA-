@@ -94,7 +94,7 @@ async function claimCashback() {
 function toggleCashback(el) {
   const enabled = el.checked;
   setCashbackEnabled(enabled);
-  notify(enabled ? '💰 Кешбек увімкнено' : '💰 Кешбек вимкнено', 'info');
+  notify(enabled ? 'Кешбек увімкнено' : 'Кешбек вимкнено', 'info');
 }
 
 function updateCashierCashbackUI() {
@@ -118,10 +118,11 @@ function updateCashierCashbackUI() {
 
   el.innerHTML = `
     <div class="ks-tier">
-      <div class="ks-tier-mark">${vip.icon}</div>
+      <div class="ks-tier-mark">${ksIcon('level')}</div>
       <div style="flex:1;min-width:0;">
+        <div class="ks-tier-kicker">Рівень</div>
         <div class="ks-tier-name">${vip.name}</div>
-        <div class="ks-tier-note ks-num">${((vip.cashback + clanCashbackBonus) * 100).toFixed(2)}% з кожної ставки${clanCashbackBonus > 0 ? ' · бонус клану' : ''}</div>
+        <div class="ks-tier-note ks-num">Кешбек ${((vip.cashback + clanCashbackBonus) * 100).toFixed(2)}% з кожної гри${clanCashbackBonus > 0 ? ' · бонус клану' : ''}</div>
       </div>
       <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
         <span class="ks-hint">${enabled ? 'Увімк.' : 'Вимк.'}</span>
@@ -133,10 +134,10 @@ function updateCashierCashbackUI() {
       <div class="ks-panel-body">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ks-fg-3);margin-bottom:9px;">
           <span>${vip.name}</span>
-          <span>${hasNext ? nextVip.name : 'Максимальний рівень'}</span>
+          <span>${hasNext ? nextVip.name : 'Найвищий рівень'}</span>
         </div>
         <div class="ks-meter"><div class="ks-meter-fill" style="width:${tierPct}%;"></div></div>
-        ${hasNext ? `<div style="text-align:right;font-size:11px;color:var(--ks-fg-3);margin-top:8px;">До «${nextVip.name}» — ще ${formatNumber(Math.max(0, nextVip.min - wagered))} ₴ ставок</div>` : ''}
+        ${hasNext ? `<div style="text-align:right;font-size:11px;color:var(--ks-fg-3);margin-top:8px;">До рівня «${nextVip.name}» — ще ${formatNumber(Math.max(0, nextVip.min - wagered))} ₴ ігрової активності</div>` : ''}
       </div>
     </section>
 
@@ -159,7 +160,7 @@ function updateCashierCashbackUI() {
 
     <div class="ks-copy" style="align-items:flex-start;">
       <span style="color:var(--ks-acc);margin-top:1px;">${ksIcon('shield', 17)}</span>
-      <div class="ks-copy-main ks-hint">Не більше <b>${CASHBACK_MAX_PER_BET} ₴</b> за одну ставку і <b>${formatNumber(CASHBACK_MAX_PER_WEEK)} ₴</b> за тиждень. Забрати можна від <b>2 000 ₴</b>.</div>
+      <div class="ks-copy-main ks-hint">Не більше <b>${CASHBACK_MAX_PER_BET} ₴</b> за одну гру і <b>${formatNumber(CASHBACK_MAX_PER_WEEK)} ₴</b> за тиждень. Забрати можна від <b>2 000 ₴</b>.</div>
     </div>
 
     <button class="ks-btn is-pos is-block" onclick="claimCashback()" ${pending <= 0 ? 'disabled' : ''}>

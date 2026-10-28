@@ -98,9 +98,9 @@ function copyCardNumberFlash(e) {
   var num = numEl ? numEl.textContent.replace(/\s/g,'') : '';
   if(!/^[0-9]{12,19}$/.test(num)) return notify(hasConnectedCard()
     ? 'Повний номер картки зберігається у вашому банку, не в SlotOK'
-    : 'Спочатку підключіть картку в Касі', 'error');
+    : 'Спочатку підключіть картку в Гаманці', 'error');
   navigator.clipboard && navigator.clipboard.writeText(num).then(function() {
-    notify('📋 Номер скопійовано!', 'success');
+    notify('Номер скопійовано', 'success');
     if(numEl) { numEl.classList.add('copied'); setTimeout(function(){ numEl.classList.remove('copied'); }, 600); }
     if(navigator.vibrate) navigator.vibrate([40,20,40]);
   });
@@ -116,7 +116,7 @@ function toggleCvvVisibility() {
   var card = getActiveCard();
   if(!card) return notify(hasConnectedCard()
     ? 'CVV своєї картки SlotOK не зберігає — дивіться його на самій картці'
-    : 'Спочатку підключіть картку в Касі', 'error');
+    : 'Спочатку підключіть картку в Гаманці', 'error');
   var cvv = card.cvv || '•••';
   var hidden = cvvFront && cvvFront.textContent === '•••';
   if(cvvFront) cvvFront.textContent = hidden ? cvv : '•••';
@@ -154,6 +154,10 @@ var KS_ICON_PATHS = {
   shield:  '<path d="M12 3l8 3v6c0 4.5-3.3 8.3-8 9-4.7-.7-8-4.5-8-9V6Z"/><path d="m9 12 2 2 4-4"/>',
   check:   '<path d="M20 6 9 17l-5-5"/>',
   clock:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  games:   '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10.5v4"/><path d="M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".9"/><circle cx="18" cy="14" r=".9"/>',
+  level:   '<circle cx="12" cy="9" r="6"/><path d="m8.6 13.8-1.6 7.2 5-2.8 5 2.8-1.6-7.2"/>',
+  info:    '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/>',
+  camera:  '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.6l1.4-2h7l1.4 2h2.6A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z"/><circle cx="12" cy="13" r="3.5"/>',
 };
 function ksIcon(name, size) {
   var d = KS_ICON_PATHS[name];
@@ -398,7 +402,7 @@ function noteCardSpend(id, amount) {
 
 function openCardLimitModal() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
   var old = document.getElementById('ksLimitModal'); if(old) old.remove();
   var cur = cardDayLimit(card.id);
   var m = document.createElement('div');
@@ -514,7 +518,7 @@ function renderCardMetaRow(card) {
           '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
           '<div class="ks-empty-title">Підключіть свою картку</div>' +
           '<div class="ks-empty-text">SlotOK не випускає власних карток. Підключіть <b>свою картку</b> ' +
-            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Касі.</div>' +
+            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Гаманці.</div>' +
           '<div class="ks-btn-row">' +
             '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
             '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
@@ -554,17 +558,17 @@ function renderCardQuickActions(card) {
   var el = document.getElementById('cardQuickActions');
   if(!el) return;
   var frozen = isActiveCardFrozen();
-  // Поповнення, вивід, кешбек, курси й казино працюють і без картки —
+  // Поповнення, вивід, кешбек, валюта й ігри працюють і без картки —
   // інакше новий гравець не зміг би завести перші кошти. Картку вимагають
   // тільки суто карткові дії.
   var acts = [
     { k:'topup',      icon:'down',    label:'Донат',      needsCard:false },
     { k:'transfer',   icon:'send',    label:'Переказ',   needsCard:true  },
     { k:'cashback',   icon:'percent', label:'Кешбек',    needsCard:false },
-    { k:'buySlotyky', icon:'trend',   label:'Курси',     needsCard:false },
+    { k:'buySlotyky', icon:'trend',   label:'Валюта',    needsCard:false },
     { k:'skinShop',   icon:'palette', label:'Скін',      needsCard:true  },
     { k:'freeze',     icon:frozen ? 'unlock' : 'lock', label:frozen ? 'Розблок.' : 'Блок', needsCard:true },
-    { k:'casino',     icon:'dice',    label:'Казино',    needsCard:false },
+    { k:'casino',     icon:'games',   label:'Ігри',      needsCard:false },
   ];
   el.innerHTML = acts.map(function(a) {
     var off = a.needsCard && !card;
@@ -1022,7 +1026,7 @@ var TERMS_SECTIONS = [
     ]
   },
   {
-    title: 'Каса',
+    title: 'Гаманець',
     items: [
       'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
       'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
@@ -1034,7 +1038,7 @@ var TERMS_SECTIONS = [
     title: 'Відповідальна гра',
     items: [
       'У Налаштуваннях є особисті ліміти на програш і тривалість сесії та само-виключення на час.',
-      'У Касі можна поставити денний ліміт на картку — скільки максимум за добу може піти з неї назовні.',
+      'У Гаманці можна поставити денний ліміт на картку — скільки максимум за добу може піти з неї назовні.',
       'Якщо відчуваєш, що граєш забагато — увімкни само-виключення. Адміністратор не знімає його достроково на прохання.',
     ]
   },
@@ -1352,7 +1356,7 @@ function showAllTransactions() {
 function bankAction(action) {
   var needsCard = { transfer:1, skinShop:1, freeze:1 };
   if(needsCard[action] && !hasConnectedCard()) {
-    notify('Спочатку підключіть картку в Касі', 'error');
+    notify('Спочатку підключіть картку в Гаманці', 'error');
     return;
   }
   var actions = {
@@ -1373,7 +1377,7 @@ function bankAction(action) {
 // й з якої йдуть гроші. Решта карток гаманця своїх станів не змінює.
 function toggleCardFreeze() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
   var frozen = isCardFrozen(card.id);
   db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
   if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }
@@ -1506,14 +1510,14 @@ var CARD_SKINS = [
 function openCardColorPicker() {
   var SKINS = CARD_SKINS;
   var CATEGORIES = [
-    { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
-    { name:'💎 Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },
-    { name:'🌪️ Стихії', ids:['fire','ice','mint','storm','sunset','thunder','earth','volcano','blizzard','tsunami','solar','void'] },
-    { name:'🚀 Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
-    { name:'🪨 Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
-    { name:'🎉 Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
-    { name:'🎭 Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
-    { name:'🔥 Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
+    { name:'Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
+    { name:'Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },
+    { name:'Стихії', ids:['fire','ice','mint','storm','sunset','thunder','earth','volcano','blizzard','tsunami','solar','void'] },
+    { name:'Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
+    { name:'Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
+    { name:'Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
+    { name:'Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
+    { name:'Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
@@ -1528,16 +1532,16 @@ function openCardColorPicker() {
   }
   var uploadActive = current === 'custom-photo';
   var html = modalCloseBtn('cardskin') +
-    '<div style="font-family:var(--font-display);font-size:13px;color:var(--accent);margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
-    '<div style="font-size:11px;color:var(--fg-4);margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
-    '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📷 Персональне</div>' +
-    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:linear-gradient(135deg,rgb(var(--accent-rgb) / 0.12),rgb(var(--accent-rgb) / 0.03));border:1.5px dashed rgb(var(--accent-rgb) / 0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:var(--accent);margin-bottom:6px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:650;color:var(--fg);margin-bottom:4px;padding-right:36px;">' + ksIcon('palette', 17) + 'Скін картки</div>' +
+    '<div style="font-size:11px;color:var(--fg-3);margin-bottom:14px;">' + SKINS.length + ' дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
+    '<div style="font-size:11px;color:var(--fg-3);font-weight:650;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Персональне</div>' +
+    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:var(--surface-2);border:1.5px dashed var(--line-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:var(--fg-2);margin-bottom:6px;">' +
     (uploadActive ? '<div class="skin-swatch-check">✓</div>' : '') +
-    '<div style="font-size:20px;">📷</div><div style="font-size:11px;font-weight:700;">Завантажити своє фото</div>' +
+    ksIcon('camera', 20) + '<div style="font-size:11px;font-weight:650;">Завантажити своє фото</div>' +
     '</div>' +
     '<div style="max-height:60vh;overflow-y:auto;">' +
     CATEGORIES.map(function(cat) {
-      return '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
+      return '<div style="font-size:11px;color:var(--fg-3);font-weight:650;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
         cat.ids.filter(function(id){ return byId[id]; }).map(function(id){ return swatchHtml(byId[id]); }).join('') +
         '</div>';
@@ -1604,7 +1608,7 @@ function uploadCustomCardPhoto() {
           db.ref('users/' + currentUser + '/pendingCardSkin').set('custom-photo');
           db.ref('users/' + currentUser + '/pendingCardPhotoUrl').set(dataUrl);
         }
-        notify('📷 Фото застосовано як скін картки!', 'success');
+        notify('Фото застосовано як скін картки', 'success');
         closeModal('cardskin');
         renderCardPanel();
       };
@@ -1636,7 +1640,7 @@ function applyCardSkin(skinId) {
     userData.pendingCardSkin = skinId;
     db.ref('users/' + currentUser + '/pendingCardSkin').set(skinId);
   }
-  notify('🎨 Скін застосовано!', 'success');
+  notify('Скін застосовано', 'success');
   closeModal('cardskin');
   renderCardPanel();
 }

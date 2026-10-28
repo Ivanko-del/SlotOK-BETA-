@@ -267,7 +267,7 @@ function playSound(type) {
 
 function validateBet(amount) {
     if(isActiveCardFrozen()) {
-        notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+        notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
         return false;
     }
     if(userData.autoFrozen) {

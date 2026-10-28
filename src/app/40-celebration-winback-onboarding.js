@@ -167,7 +167,7 @@ async function claimWelcomeBackBonus(bonus) {
 
 const ONBOARDING_STEPS = [
   { selector: '.nav-item[onclick*="lobby"]', title: '🎰 Тут всі ігри', text: 'Понад 40 ігор — від слотів до шахів. Обирай будь-яку і починай грати!' },
-  { selector: '.nav-item[onclick*="cashier"]', title: '💳 Твоя картка', text: 'Тут поповнення ігрового балансу і твоя власна віртуальна картка з 26 скінами на вибір.' },
+  { selector: '.nav-item[onclick*="cashier"]', title: '<span class="ic i-wallet" aria-hidden="true"></span> Гаманець', text: 'Тут ігровий баланс, донат на підтримку проєкту, кешбек і твоя картка — її вигляд можна змінити, скінів понад сотню.' },
   { selector: '#homeJackpot', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
   { selector: '.nav-item[onclick*="profile"]', title: '👤 Твій профіль', text: 'Статистика в реальному часі, досягнення і налаштування — все тут.' },
 ];
