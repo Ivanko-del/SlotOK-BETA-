@@ -72,7 +72,7 @@ function sendMoney() {
   if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if(!checkCardLimit(getActiveCardId(), a)) return;
 
   if(btn) { btn.disabled = true; btn.textContent = 'Відправляємо…'; }

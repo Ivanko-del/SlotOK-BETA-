@@ -4420,6 +4420,77 @@ body > .screen, .container ~ .screen {
   border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); font-size: var(--fs-sm);
 }
 .rate-chip b { font-weight: var(--fw-bold); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ГАМАНЕЦЬ — спокійний «платіжний» вигляд (v119).
+   Без друкарських зміщених тіней і «вдавлювання» кнопок: тут гроші, а не
+   гра, тож усе плоске, з тонкими обводками. Головна дія лишається акцентною.
+   ═══════════════════════════════════════════════════════════════════ */
+#tab-cashier .ks-btn,
+#tab-cashier .ks-btn.is-primary,
+#tab-cashier .ks-btn.is-pos,
+#tab-cashier .ks-quick-btn,
+#tab-cashier .ks-seg-btn.is-active { box-shadow: none; }
+#tab-cashier .ks-btn.is-primary,
+#tab-cashier .ks-btn.is-pos { border-color: transparent; }
+#tab-cashier .ks-btn:active,
+#tab-cashier .ks-btn.is-primary:active,
+#tab-cashier .ks-btn.is-pos:active,
+#tab-cashier .ks-quick-btn:active { transform: none; opacity: .85; }
+#tab-cashier .ks-quick-btn svg { color: var(--ks-fg-2); }
+
+#tab-cashier .ks-balance { border-color: var(--ks-line-2); box-shadow: none; }
+#tab-cashier .ks-balance-amount { font-weight: 600; }
+
+/* Інформаційна плашка (замість кольорового банера з емодзі) */
+.ks-note {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4); margin-bottom: var(--stack);
+  border: 1px solid var(--ks-line); border-radius: var(--ks-r-lg);
+  background: var(--ks-surface); color: var(--ks-fg-2);
+  font-size: 12px; line-height: 1.55;
+}
+.ks-note svg { width: 17px; height: 17px; margin-top: 1px; color: var(--ks-fg-3); }
+
+/* Рівень у кешбеку */
+#tab-cashier .ks-tier { background: var(--ks-surface); border-color: var(--ks-line); }
+#tab-cashier .ks-tier-mark { color: var(--ks-fg-2); }
+#tab-cashier .ks-tier-mark svg { width: 20px; height: 20px; }
+#tab-cashier .ks-tier-name { font-family: var(--ks-sans); font-size: var(--fs-md); font-weight: 650; }
+#tab-cashier .ks-tier-kicker { font-size: 11px; color: var(--ks-fg-3); }
+
+/* Пакети донату: як тарифи — сума головна, бонус другорядний */
+#tab-cashier .dep-package { text-align: left; padding: var(--sp-3); }
+#tab-cashier .dep-package.popular { border-color: var(--ks-line-2); background: var(--ks-surface); }
+#tab-cashier .dep-package.is-selected { border-color: var(--ks-acc); background: var(--ks-acc-dim); }
+#tab-cashier .dep-package-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-1);
+  min-height: 18px; margin-bottom: var(--sp-1);
+}
+#tab-cashier .dep-package-label {
+  margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ks-fg-2);
+}
+#tab-cashier .dep-package-tag {
+  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: var(--r-sm);
+  color: var(--ks-fg-2); border: 1px solid var(--ks-line-2); white-space: nowrap;
+}
+#tab-cashier .dep-package-amount { font-family: var(--ks-mono); font-size: 18px; font-weight: 600; letter-spacing: 0; }
+#tab-cashier .dep-package-bonus,
+#tab-cashier .dep-package-bonus.none {
+  display: block; margin-top: 2px; padding: 0; background: none;
+  font-size: 12px; font-weight: 500; color: var(--ks-fg-3);
+}
+#tab-cashier .dep-package-bonus b { color: var(--ks-pos); font-weight: 600; }
+#tab-cashier .dep-package-total { margin-top: var(--sp-1); font-size: 11px; color: var(--ks-fg-3); }
+
+/* Валюта: коди замість кольорових кружечків, курс — звичайним кольором */
+.ks-code {
+  font-family: var(--ks-mono); font-size: 11px; font-weight: 600; letter-spacing: 0;
+  color: var(--ks-fg-2);
+}
+#tab-cashier .ks-icn .ks-code { font-size: 10px; }
+#tab-cashier .currency-btn.active { background: var(--ks-acc-dim); border-color: var(--ks-acc); }
+#tab-cashier .chart-period-btn.active { color: var(--ks-fg); }
 /* ─── src/css/63-settings.css ─── */
 /* ═══════════════════════════════════════════════════════════════════
    НАЛАШТУВАННЯ (#tab-settings) і рядки-налаштування, які вживаються

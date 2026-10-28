@@ -109,7 +109,7 @@ function setAxiomTxDir(dir) {
   const on = axiomTxDir === 'toCasino' ? b : a, off = on === a ? b : a;
   on.style.background = 'rgb(var(--info-rgb) / 0.15)'; on.style.border = '1px solid rgb(var(--info-rgb) / 0.35)'; on.style.color = 'var(--info)';
   off.style.background = 'transparent'; off.style.border = 'none'; off.style.color = 'var(--fg-4)';
-  if(btn) btn.textContent = axiomTxDir === 'toCasino' ? '🎰 Поповнити гру з картки' : '🏦 Вивести на картку Аксіоми';
+  if(btn) btn.textContent = axiomTxDir === 'toCasino' ? 'Поповнити баланс з картки' : 'Вивести на картку Аксіоми';
 }
 function setAxiomTxAmt(n) {
   const inp = document.getElementById('axiomTxAmt');
@@ -137,7 +137,7 @@ async function doAxiomTransfer() {
   if(btn) btn.disabled = true;
   try {
     if(axiomTxDir === 'toAxiom') {
-      if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+      if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
       if(!checkCardLimit(getActiveCardId(), amt)) return;
       const res = await db.ref('users/' + currentUser + '/balance').transaction(cur => {
         const v = Number(cur) || 0;

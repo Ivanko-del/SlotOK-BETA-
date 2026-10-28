@@ -184,7 +184,7 @@ function renderCryptoAssets() {
 }
 
 function buyCrypto(sym, amount) {
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
   if(!checkCardLimit(getActiveCardId(), amount)) return;
   var price = _cryptoPrices[sym];

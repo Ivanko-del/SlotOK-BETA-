@@ -885,8 +885,7 @@ function buildMarketsPage() {
     const isActive = cur.code === currentCurrency;
     const btn = document.createElement('div');
     btn.className = 'currency-btn' + (isActive ? ' active' : '');
-    btn.innerHTML = '<div style="font-size:17px;line-height:1.1;">' + cur.flag + '</div>' +
-      '<div style="font-size:11px;font-weight:650;margin-top:3px;color:' + (isActive ? 'var(--ks-acc)' : 'var(--ks-fg-2)') + ';">' + cur.code + '</div>' +
+    btn.innerHTML = '<div style="font-size:12px;font-weight:650;color:' + (isActive ? 'var(--ks-fg)' : 'var(--ks-fg-2)') + ';">' + cur.code + '</div>' +
       '<div class="ks-num" style="font-size:10px;color:var(--ks-fg-3);">' + rStr + '</div>';
     btn.onclick = () => { setCurrency(cur.code); buildMarketsPage(); };
     (cur.isCrypto ? cryptoGrid : fiatGrid)?.appendChild(btn);
@@ -906,29 +905,23 @@ function buildMarketsRateTable() {
   const ts  = document.getElementById('marketsRateTs');
   if(!tbl) return;
   tbl.innerHTML = '';
-  const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',USDT:'#26a17b',BNB:'#f3ba2f',SOL:'#9945ff'};
   Object.values(CURRENCIES).filter(c=>c.code!=='UAH').forEach((cur, i) => {
     const rate = currencyRates[cur.code]; if(!rate) return;
     const uahPer1 = 1/rate;
     const fmt = uahPer1 >= 10000 ? Math.round(uahPer1).toLocaleString('uk-UA')
       : uahPer1 >= 1 ? uahPer1.toFixed(2)
       : uahPer1.toFixed(6);
-    const color = cryptoColors[cur.code] || 'var(--accent)';
-    // Mock 24h change (in real life you'd store prev price)
-    const change = ((Math.random()-0.48)*6).toFixed(2);
-    const isUp = parseFloat(change) >= 0;
-    const changeColor = isUp ? 'var(--green)' : 'var(--red)';
+    // Зміни за добу тут немає: попередніх курсів ми не зберігаємо, а
+    // випадкове «+2.35%» на фінансовому екрані вводило б в оману.
     const row = document.createElement('div');
     row.className = 'ks-row';
     row.innerHTML =
-      '<div class="ks-icn" style="font-size:18px;">' + cur.flag + '</div>' +
+      '<div class="ks-icn"><span class="ks-code">' + cur.code + '</span></div>' +
       '<div class="ks-row-main">' +
         '<div class="ks-row-title">' + cur.code + '</div>' +
         '<div class="ks-row-sub">' + cur.name + '</div>' +
       '</div>' +
-      '<div class="ks-row-value" style="color:' + color + ';">' + fmt + ' ₴' +
-        '<small style="color:' + changeColor + ';">' + (isUp ? '+' : '−') + Math.abs(change) + '%</small>' +
-      '</div>';
+      '<div class="ks-row-value ks-num">' + fmt + ' ₴</div>';
     tbl.appendChild(row);
   });
   if(ts && ratesLastFetch) ts.textContent = 'Оновлено ' + new Date(ratesLastFetch).toLocaleTimeString('uk-UA');
@@ -937,12 +930,13 @@ function buildMarketsRateTable() {
 function buildChartSelector() {
   const el = document.getElementById('chartCurrencySelector'); if(!el) return;
   el.innerHTML = '';
-  ['BTC','ETH','SOL','BNB','USD','EUR'].forEach(code => {
+  // Лише ті, для яких є реальна історія курсу (CoinGecko).
+  ['BTC','ETH','SOL','BNB'].forEach(code => {
     const cur = CURRENCIES[code]; if(!cur) return;
     const active = (window._chartCurrency || 'BTC') === code;
     const btn = document.createElement('button');
     btn.className = 'ks-btn is-sm' + (active ? ' is-primary' : ' is-quiet');
-    btn.textContent = cur.flag + ' ' + code;
+    btn.textContent = code;
     btn.onclick = () => {
       window._chartCurrency = code;
       buildChartSelector();
@@ -966,11 +960,7 @@ async function loadCurrencyChart(code, period='7D') {
   const symbolEl = document.getElementById('chartSymbol');
   if(symbolEl) symbolEl.textContent = code + '/UAH';
 
-  // Show loading
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#5e6675'; ctx.font = '13px -apple-system, Segoe UI, sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('Завантаження…', canvas.width/2, canvas.height/2);
+  chartMessage(ctx, canvas, 'Завантаження…');
 
   try {
     const coinIds = {BTC:'bitcoin',ETH:'ethereum',SOL:'solana',BNB:'binancecoin',USDT:'tether'};
@@ -988,26 +978,34 @@ async function loadCurrencyChart(code, period='7D') {
       }
     }
 
-    // Fallback: generate realistic-looking synthetic data
-    if(!pricesUAH.length) {
-      const rate = currencyRates[code] ? (1/currencyRates[code]) : 1;
-      const pts = 48;
-      let p = rate;
-      for(let i=0;i<pts;i++) {
-        p *= 1 + (Math.random()-0.48)*0.03;
-        pricesUAH.push({ts: Date.now() - (pts-i)*3600000*24/pts*days, p});
-      }
-    }
+    // Історії курсу немає (фіат або CoinGecko не відповів) — кажемо прямо,
+    // а не малюємо випадкову криву.
+    if(!pricesUAH.length) return chartMessage(ctx, canvas, 'Немає даних для графіка');
 
     drawCurrencyChart(ctx, canvas, pricesUAH, code);
   } catch(e) {
     console.warn('Chart load failed:', e);
-    // Draw synthetic chart
-    const rate = currencyRates[code] ? (1/currencyRates[code]) : 1;
-    const pts = []; let p = rate;
-    for(let i=0;i<50;i++) { p *= 1+(Math.random()-0.47)*0.025; pts.push({ts:i, p}); }
-    drawCurrencyChart(ctx, canvas, pts, code);
+    chartMessage(ctx, canvas, 'Немає даних для графіка');
   }
+}
+
+// Canvas не бачить CSS-змінних — беремо значення токенів поточної теми.
+function chartTokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n, fb) => (cs.getPropertyValue(n) || '').trim() || fb;
+  return { bg: v('--surface-2', '#1F2439'), line: v('--line', '#2C3250'), muted: v('--fg-3', '#9A97B0'),
+    stroke: v('--primary', '#3CCFBD'), font: v('--font-body', 'sans-serif') };
+}
+
+function chartMessage(ctx, canvas, text) {
+  const t = chartTokens();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = t.bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = t.muted; ctx.font = '13px ' + t.font; ctx.textAlign = 'center';
+  ctx.fillText(text, canvas.width/2, canvas.height/2);
+  const lowEl = document.getElementById('chartLow'), highEl = document.getElementById('chartHigh');
+  if(lowEl) lowEl.textContent = 'Min —';
+  if(highEl) highEl.textContent = 'Max —';
 }
 
 function drawCurrencyChart(ctx, canvas, data, code) {
@@ -1015,7 +1013,8 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,W,H);
+  const t = chartTokens();
+  ctx.fillStyle = t.bg; ctx.fillRect(0,0,W,H);
 
   const prices = data.map(d=>d.p);
   const minP = Math.min(...prices), maxP = Math.max(...prices);
@@ -1028,26 +1027,22 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const toX = i => pad.left + (i/(data.length-1))*chartW;
   const toY = p => pad.top + chartH - ((p-minP)/range)*chartH;
 
-  const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',BNB:'#f3ba2f',USDT:'#26a17b',USD:'#4a90e2',EUR:'#2ecc71'};
-  const lineColor = cryptoColors[code] || '#7c8cff';
+  const lineColor = t.stroke;
 
-  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
+  ctx.strokeStyle = t.line; ctx.lineWidth = 1;
   for(let i=0;i<=4;i++) {
     const y = pad.top + (i/4)*chartH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W-pad.right, y); ctx.stroke();
   }
 
-  const grad = ctx.createLinearGradient(0, pad.top, 0, H-pad.bottom);
-  grad.addColorStop(0, lineColor + '44');
-  grad.addColorStop(1, lineColor + '00');
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(prices[0]));
   prices.forEach((p,i) => ctx.lineTo(toX(i), toY(p)));
   ctx.lineTo(toX(prices.length-1), H-pad.bottom);
   ctx.lineTo(toX(0), H-pad.bottom);
-  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.closePath(); ctx.fillStyle = lineColor; ctx.globalAlpha = .1; ctx.fill(); ctx.globalAlpha = 1;
 
-  ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 2;
   prices.forEach((p,i) => i===0 ? ctx.moveTo(toX(i),toY(p)) : ctx.lineTo(toX(i),toY(p)));
   ctx.stroke();
 
@@ -1056,7 +1051,7 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   ctx.fillStyle = lineColor; ctx.fill();
 
   const fmt = p => p >= 1000 ? Math.round(p).toLocaleString('uk-UA') : p >= 1 ? p.toFixed(2) : p.toFixed(6);
-  ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+  ctx.fillStyle = t.muted; ctx.font = '10px ' + t.font; ctx.textAlign = 'right';
   ctx.fillText(fmt(maxP)+'₴', W-pad.right, pad.top+10);
   ctx.fillText(fmt(minP)+'₴', W-pad.right, H-pad.bottom-4);
 

@@ -250,20 +250,26 @@ function updateSessionBar() {
 function initDepositPackages() {
   const pkg = document.getElementById('depositPackages');
   if(!pkg) return;
+  // Суми й бонуси — ті самі, що нараховує адмін (selectDepPackage). Тут лише
+  // вигляд: повні суми замість «1.0k», нейтральні назви, без емодзі.
   const packages = [
-    {amount:200, bonus:0, label:'Старт', icon:'🔹'},
-    {amount:500, bonus:50, label:'Базовий', icon:'🔸'},
-    {amount:1000, bonus:200, label:'Стандарт', icon:'⭐', popular:true},
-    {amount:2500, bonus:625, label:'Великий', icon:'💎'},
-    {amount:5000, bonus:1500, label:'VIP', icon:'👑'},
-    {amount:10000, bonus:4000, label:'Хайроллер', icon:'🚀'},
+    {amount:200, bonus:0, label:'Старт'},
+    {amount:500, bonus:50, label:'Базовий'},
+    {amount:1000, bonus:200, label:'Стандарт', popular:true},
+    {amount:2500, bonus:625, label:'Більший'},
+    {amount:5000, bonus:1500, label:'Розширений'},
+    {amount:10000, bonus:4000, label:'Максимум'},
   ];
+  const full = n => Number(n).toLocaleString('uk-UA');
   pkg.innerHTML = packages.map(p=>`
     <div class="dep-package${p.popular?' popular':''}" data-amount="${p.amount}" onclick="selectDepPackage(${p.amount},${p.bonus})">
-      <div class="dep-package-amount">${formatNumber(p.amount)} ₴</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">+'+formatNumber(p.bonus)+' ₴</div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
-      <div class="dep-package-total">${p.bonus>0?'Разом '+formatNumber(p.amount+p.bonus)+' ₴':'Тільки депозит'}</div>
-      <div class="dep-package-label">${p.label}</div>
+      <div class="dep-package-head">
+        <span class="dep-package-label">${p.label}</span>
+        ${p.popular?'<span class="dep-package-tag">Популярний</span>':''}
+      </div>
+      <div class="dep-package-amount">${full(p.amount)} ₴</div>
+      ${p.bonus>0?'<div class="dep-package-bonus">Бонус <b>+'+full(p.bonus)+' ₴</b></div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
+      <div class="dep-package-total">На баланс: ${full(p.amount+p.bonus)} ₴</div>
     </div>
   `).join('');
 }

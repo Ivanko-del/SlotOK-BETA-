@@ -106,7 +106,7 @@
     </a>
     <div class="header-actions">
       <button type="button" class="hdr-btn" onclick="openGlobalSearch()" aria-label="Пошук ігор і гравців" title="Пошук"><span class="ic i-search" aria-hidden="true"></span></button>
-      <div class="header-bal" role="button" tabindex="0" onclick="switchTab('cashier')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('cashier');}" aria-label="Баланс. Відкрити Касу" title="Баланс — відкрити Касу">
+      <div class="header-bal" role="button" tabindex="0" onclick="switchTab('cashier')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('cashier');}" aria-label="Баланс. Відкрити Гаманець" title="Баланс — відкрити Гаманець">
         <span class="header-bal-label">Баланс</span>
         <span class="bal">₴ 0</span>
         <span class="header-bal-plus" aria-hidden="true"><span class="ic i-plus"></span></span>
@@ -1517,7 +1517,7 @@
         </button>
         <button class="ks-seg-btn" id="ctb-markets" onclick="switchCashierTab('markets',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
-          <span>Курси</span>
+          <span>Валюта</span>
         </button>
       </nav>
 
@@ -1639,13 +1639,14 @@
       <!-- ═══ ДОНАТ ═══ -->
       <div id="cashier-panel-deposit" class="hidden">
 
-        <div style="background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;font-size:12px;color:var(--fg-2);line-height:1.5;">
-          🤝 SlotOK — некомерційний проєкт для своїх. Донат — це добровільна підтримка проєкту, а не купівля товару: натомість ти отримуєш бонус на ігровий баланс, щоб грати. Виводу назад немає.
+        <div class="ks-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
+          <div>SlotOK — некомерційна ігрова платформа. Донат — добровільна підтримка проєкту, а не купівля товару. Натомість на ігровий баланс нараховується бонус. Ігрові кошти не виводяться.</div>
         </div>
 
         <section class="ks-panel">
           <div class="ks-panel-head">
-            <div class="ks-panel-title">Донат-пакети з бонусом</div>
+            <div class="ks-panel-title">Донат-пакети</div>
           </div>
           <div class="ks-panel-body">
             <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
@@ -1733,7 +1734,7 @@
         </div>
       </div><!-- /cashier-panel-cashback -->
 
-      <!-- ═══ КУРСИ ═══ -->
+      <!-- ═══ ВАЛЮТА ═══ -->
       <div id="cashier-panel-markets" class="hidden">
         <div id="rateTicker" class="rate-ticker" role="button" tabindex="0" onclick="openCurrencyPicker()" aria-label="Курси валют — змінити валюту відображення">
           <div id="rateTickerInner" class="rate-ticker-inner"><span class="rate-ticker-lbl">Курси:</span></div>
@@ -1761,7 +1762,7 @@
             <canvas id="currencyChartCanvas" class="ks-chart-canvas" width="360" height="200"></canvas>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;">
               <span class="ks-num" style="color:var(--ks-fg-3);" id="chartLow">Min —</span>
-              <span id="chartSymbol" style="font-weight:650;color:var(--ks-acc);">BTC/UAH</span>
+              <span id="chartSymbol" style="font-weight:650;color:var(--ks-fg-2);">BTC/UAH</span>
               <span class="ks-num" style="color:var(--ks-fg-3);" id="chartHigh">Max —</span>
             </div>
           </div>
@@ -4232,7 +4233,7 @@
       <div style="font-size:13px;color:var(--fg-3);line-height:1.8;margin-bottom:16px;">
         <b style="color:var(--fg-2);">SlotOK</b> — це виключно <b style="color:var(--fg-2);">розважальна ігрова платформа</b> для дозвілля серед своїх.<br><br>
         🪙 Всі монети, бали та "виграші" є <b style="color:var(--fg-2);">повністю віртуальними</b>, не мають реальної грошової цінності й не виводяться назад на картку.<br><br>
-        🤝 Каса приймає добровільний <b style="color:var(--fg-2);">донат на підтримку проєкту</b> (не купівлю товару) — натомість нараховується бонус на ігровий баланс.<br><br>
+        🤝 Гаманець приймає добровільний <b style="color:var(--fg-2);">донат на підтримку проєкту</b> (не купівлю товару) — натомість нараховується бонус на ігровий баланс.<br><br>
         📱 Це соціальна гра для розваги між друзями. Ігрові операції є умовними і симуляційними.
       </div>
       <button onclick="document.getElementById('disclaimerFull').style.display='none'" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;font-size:14px;cursor:pointer;">✅ Зрозуміло</button>
@@ -4242,7 +4243,7 @@
   <nav class="bottom-nav" aria-label="Основна навігація">
     <button type="button" class="nav-item" onclick="switchTab('home', this)"><span class="ic i-home nav-ic" aria-hidden="true"></span><span class="nav-label">Головна</span></button>
     <button type="button" class="nav-item" onclick="switchTab('lobby', this)"><span class="ic i-slot nav-ic" aria-hidden="true"></span><span class="nav-label">Ігри</span></button>
-    <button type="button" class="nav-item" onclick="switchTab('cashier', this)"><span class="ic i-wallet nav-ic" aria-hidden="true"></span><span class="nav-label">Каса</span></button>
+    <button type="button" class="nav-item" onclick="switchTab('cashier', this)"><span class="ic i-wallet nav-ic" aria-hidden="true"></span><span class="nav-label">Гаманець</span></button>
     <button type="button" class="nav-item" onclick="switchTab('notifications', this)">
       <span class="ic i-bell nav-ic" aria-hidden="true"></span><span class="nav-label">Сповіщення</span>
       <span id="notifNavBadge" class="nav-notif-dot hidden" aria-label="Є нові"></span>
@@ -4556,7 +4557,7 @@
       </div>
 
       <p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 18px;text-align:left;">
-        SlotOK не випускає власних карток. Щоб у Касі з’явилася картка, підключіть
+        SlotOK не випускає власних карток. Щоб у Гаманці з’явилася картка, підключіть
         <b style="color:var(--fg);">свою картку</b> будь-якого банку або
         <b style="color:var(--fg);">картку Аксіома Банку</b> — будь-що одне.
       </p>
@@ -5161,7 +5162,7 @@
       <div onclick="setAxiomTxAmt(1000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1k</div>
     </div>
 
-    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">🎰 Поповнити гру з картки</button>
+    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">Поповнити баланс з картки</button>
     <div style="font-size:11px;color:var(--fg-4);text-align:center;margin-top:8px;line-height:1.7;">
       Переказ миттєвий · Без комісії<br>
       Кошти спільні між SlotOK та Аксіомою

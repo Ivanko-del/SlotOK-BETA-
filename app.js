@@ -623,7 +623,7 @@ function playSound(type) {
 
 function validateBet(amount) {
     if(isActiveCardFrozen()) {
-        notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+        notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
         return false;
     }
     if(userData.autoFrozen) {
@@ -1109,7 +1109,7 @@ function submitWithdraw() {
     if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
     if(userData.balance < amount) return notify("Недостатньо коштів", "error");
     if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
-    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Касі", "error");
+    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Гаманці", "error");
     if(!checkCardLimit(getActiveCardId(), amount)) return;
 
     // Перевірка на pending заявки
@@ -2591,20 +2591,26 @@ function updateSessionBar() {
 function initDepositPackages() {
   const pkg = document.getElementById('depositPackages');
   if(!pkg) return;
+  // Суми й бонуси — ті самі, що нараховує адмін (selectDepPackage). Тут лише
+  // вигляд: повні суми замість «1.0k», нейтральні назви, без емодзі.
   const packages = [
-    {amount:200, bonus:0, label:'Старт', icon:'🔹'},
-    {amount:500, bonus:50, label:'Базовий', icon:'🔸'},
-    {amount:1000, bonus:200, label:'Стандарт', icon:'⭐', popular:true},
-    {amount:2500, bonus:625, label:'Великий', icon:'💎'},
-    {amount:5000, bonus:1500, label:'VIP', icon:'👑'},
-    {amount:10000, bonus:4000, label:'Хайроллер', icon:'🚀'},
+    {amount:200, bonus:0, label:'Старт'},
+    {amount:500, bonus:50, label:'Базовий'},
+    {amount:1000, bonus:200, label:'Стандарт', popular:true},
+    {amount:2500, bonus:625, label:'Більший'},
+    {amount:5000, bonus:1500, label:'Розширений'},
+    {amount:10000, bonus:4000, label:'Максимум'},
   ];
+  const full = n => Number(n).toLocaleString('uk-UA');
   pkg.innerHTML = packages.map(p=>`
     <div class="dep-package${p.popular?' popular':''}" data-amount="${p.amount}" onclick="selectDepPackage(${p.amount},${p.bonus})">
-      <div class="dep-package-amount">${formatNumber(p.amount)} ₴</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">+'+formatNumber(p.bonus)+' ₴</div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
-      <div class="dep-package-total">${p.bonus>0?'Разом '+formatNumber(p.amount+p.bonus)+' ₴':'Тільки депозит'}</div>
-      <div class="dep-package-label">${p.label}</div>
+      <div class="dep-package-head">
+        <span class="dep-package-label">${p.label}</span>
+        ${p.popular?'<span class="dep-package-tag">Популярний</span>':''}
+      </div>
+      <div class="dep-package-amount">${full(p.amount)} ₴</div>
+      ${p.bonus>0?'<div class="dep-package-bonus">Бонус <b>+'+full(p.bonus)+' ₴</b></div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
+      <div class="dep-package-total">На баланс: ${full(p.amount+p.bonus)} ₴</div>
     </div>
   `).join('');
 }
@@ -4429,7 +4435,7 @@ function sendMoney() {
   if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if(!checkCardLimit(getActiveCardId(), a)) return;
 
   if(btn) { btn.disabled = true; btn.textContent = 'Відправляємо…'; }
@@ -5463,10 +5469,39 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '118';
+const CURRENT_VERSION = '119';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '119',
+    title: 'Оновлення v119 — Гаманець замість Каси',
+    date: Date.UTC(2026, 9, 28),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: 'Гаманець',
+        items: [
+          'Каса тепер називається «Гаманець» і виглядає спокійніше, як платіжний розділ: плоскі картки, тонкі рамки, без яскравих тіней',
+          'Донат-пакети показують повну суму, бонус і скільки всього надійде на баланс; назви пакетів стали простішими',
+          'У кешбеку замість «VIP» — «Рівень», а відсоток рахується «з кожної гри»',
+          'Вкладка «Курси» тепер «Валюта»: курси показано кодами валют, графік — у кольорах вашої теми',
+          'Кнопка «Казино» в швидких діях стала «Ігри»',
+        ],
+      },
+      {
+        type: 'fix',
+        title: 'Дрібні виправлення',
+        items: [
+          'Прибрали вигадану «зміну за добу» біля курсів — таких даних у нас немає',
+          'Графік більше не малює випадкову криву, коли історії курсу немає, а пише «Немає даних»; USD і EUR з графіка прибрали',
+          'Графік курсу тепер світлий у світлій темі',
+          'У підказках правильна кількість скінів картки — їх понад сотню, а не 26',
+        ],
+      },
+    ],
+  },
   {
     version: '118',
     title: '🔗 Оновлення v118 — посилання прямо на гру',
@@ -8238,7 +8273,7 @@ function renderCryptoAssets() {
 }
 
 function buyCrypto(sym, amount) {
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
   if(!checkCardLimit(getActiveCardId(), amount)) return;
   var price = _cryptoPrices[sym];
@@ -11065,7 +11100,7 @@ async function claimCashback() {
 function toggleCashback(el) {
   const enabled = el.checked;
   setCashbackEnabled(enabled);
-  notify(enabled ? '💰 Кешбек увімкнено' : '💰 Кешбек вимкнено', 'info');
+  notify(enabled ? 'Кешбек увімкнено' : 'Кешбек вимкнено', 'info');
 }
 
 function updateCashierCashbackUI() {
@@ -11089,10 +11124,11 @@ function updateCashierCashbackUI() {
 
   el.innerHTML = `
     <div class="ks-tier">
-      <div class="ks-tier-mark">${vip.icon}</div>
+      <div class="ks-tier-mark">${ksIcon('level')}</div>
       <div style="flex:1;min-width:0;">
+        <div class="ks-tier-kicker">Рівень</div>
         <div class="ks-tier-name">${vip.name}</div>
-        <div class="ks-tier-note ks-num">${((vip.cashback + clanCashbackBonus) * 100).toFixed(2)}% з кожної ставки${clanCashbackBonus > 0 ? ' · бонус клану' : ''}</div>
+        <div class="ks-tier-note ks-num">Кешбек ${((vip.cashback + clanCashbackBonus) * 100).toFixed(2)}% з кожної гри${clanCashbackBonus > 0 ? ' · бонус клану' : ''}</div>
       </div>
       <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
         <span class="ks-hint">${enabled ? 'Увімк.' : 'Вимк.'}</span>
@@ -11104,10 +11140,10 @@ function updateCashierCashbackUI() {
       <div class="ks-panel-body">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ks-fg-3);margin-bottom:9px;">
           <span>${vip.name}</span>
-          <span>${hasNext ? nextVip.name : 'Максимальний рівень'}</span>
+          <span>${hasNext ? nextVip.name : 'Найвищий рівень'}</span>
         </div>
         <div class="ks-meter"><div class="ks-meter-fill" style="width:${tierPct}%;"></div></div>
-        ${hasNext ? `<div style="text-align:right;font-size:11px;color:var(--ks-fg-3);margin-top:8px;">До «${nextVip.name}» — ще ${formatNumber(Math.max(0, nextVip.min - wagered))} ₴ ставок</div>` : ''}
+        ${hasNext ? `<div style="text-align:right;font-size:11px;color:var(--ks-fg-3);margin-top:8px;">До рівня «${nextVip.name}» — ще ${formatNumber(Math.max(0, nextVip.min - wagered))} ₴ ігрової активності</div>` : ''}
       </div>
     </section>
 
@@ -11130,7 +11166,7 @@ function updateCashierCashbackUI() {
 
     <div class="ks-copy" style="align-items:flex-start;">
       <span style="color:var(--ks-acc);margin-top:1px;">${ksIcon('shield', 17)}</span>
-      <div class="ks-copy-main ks-hint">Не більше <b>${CASHBACK_MAX_PER_BET} ₴</b> за одну ставку і <b>${formatNumber(CASHBACK_MAX_PER_WEEK)} ₴</b> за тиждень. Забрати можна від <b>2 000 ₴</b>.</div>
+      <div class="ks-copy-main ks-hint">Не більше <b>${CASHBACK_MAX_PER_BET} ₴</b> за одну гру і <b>${formatNumber(CASHBACK_MAX_PER_WEEK)} ₴</b> за тиждень. Забрати можна від <b>2 000 ₴</b>.</div>
     </div>
 
     <button class="ks-btn is-pos is-block" onclick="claimCashback()" ${pending <= 0 ? 'disabled' : ''}>
@@ -13810,8 +13846,7 @@ function buildMarketsPage() {
     const isActive = cur.code === currentCurrency;
     const btn = document.createElement('div');
     btn.className = 'currency-btn' + (isActive ? ' active' : '');
-    btn.innerHTML = '<div style="font-size:17px;line-height:1.1;">' + cur.flag + '</div>' +
-      '<div style="font-size:11px;font-weight:650;margin-top:3px;color:' + (isActive ? 'var(--ks-acc)' : 'var(--ks-fg-2)') + ';">' + cur.code + '</div>' +
+    btn.innerHTML = '<div style="font-size:12px;font-weight:650;color:' + (isActive ? 'var(--ks-fg)' : 'var(--ks-fg-2)') + ';">' + cur.code + '</div>' +
       '<div class="ks-num" style="font-size:10px;color:var(--ks-fg-3);">' + rStr + '</div>';
     btn.onclick = () => { setCurrency(cur.code); buildMarketsPage(); };
     (cur.isCrypto ? cryptoGrid : fiatGrid)?.appendChild(btn);
@@ -13831,29 +13866,23 @@ function buildMarketsRateTable() {
   const ts  = document.getElementById('marketsRateTs');
   if(!tbl) return;
   tbl.innerHTML = '';
-  const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',USDT:'#26a17b',BNB:'#f3ba2f',SOL:'#9945ff'};
   Object.values(CURRENCIES).filter(c=>c.code!=='UAH').forEach((cur, i) => {
     const rate = currencyRates[cur.code]; if(!rate) return;
     const uahPer1 = 1/rate;
     const fmt = uahPer1 >= 10000 ? Math.round(uahPer1).toLocaleString('uk-UA')
       : uahPer1 >= 1 ? uahPer1.toFixed(2)
       : uahPer1.toFixed(6);
-    const color = cryptoColors[cur.code] || 'var(--accent)';
-    // Mock 24h change (in real life you'd store prev price)
-    const change = ((Math.random()-0.48)*6).toFixed(2);
-    const isUp = parseFloat(change) >= 0;
-    const changeColor = isUp ? 'var(--green)' : 'var(--red)';
+    // Зміни за добу тут немає: попередніх курсів ми не зберігаємо, а
+    // випадкове «+2.35%» на фінансовому екрані вводило б в оману.
     const row = document.createElement('div');
     row.className = 'ks-row';
     row.innerHTML =
-      '<div class="ks-icn" style="font-size:18px;">' + cur.flag + '</div>' +
+      '<div class="ks-icn"><span class="ks-code">' + cur.code + '</span></div>' +
       '<div class="ks-row-main">' +
         '<div class="ks-row-title">' + cur.code + '</div>' +
         '<div class="ks-row-sub">' + cur.name + '</div>' +
       '</div>' +
-      '<div class="ks-row-value" style="color:' + color + ';">' + fmt + ' ₴' +
-        '<small style="color:' + changeColor + ';">' + (isUp ? '+' : '−') + Math.abs(change) + '%</small>' +
-      '</div>';
+      '<div class="ks-row-value ks-num">' + fmt + ' ₴</div>';
     tbl.appendChild(row);
   });
   if(ts && ratesLastFetch) ts.textContent = 'Оновлено ' + new Date(ratesLastFetch).toLocaleTimeString('uk-UA');
@@ -13862,12 +13891,13 @@ function buildMarketsRateTable() {
 function buildChartSelector() {
   const el = document.getElementById('chartCurrencySelector'); if(!el) return;
   el.innerHTML = '';
-  ['BTC','ETH','SOL','BNB','USD','EUR'].forEach(code => {
+  // Лише ті, для яких є реальна історія курсу (CoinGecko).
+  ['BTC','ETH','SOL','BNB'].forEach(code => {
     const cur = CURRENCIES[code]; if(!cur) return;
     const active = (window._chartCurrency || 'BTC') === code;
     const btn = document.createElement('button');
     btn.className = 'ks-btn is-sm' + (active ? ' is-primary' : ' is-quiet');
-    btn.textContent = cur.flag + ' ' + code;
+    btn.textContent = code;
     btn.onclick = () => {
       window._chartCurrency = code;
       buildChartSelector();
@@ -13891,11 +13921,7 @@ async function loadCurrencyChart(code, period='7D') {
   const symbolEl = document.getElementById('chartSymbol');
   if(symbolEl) symbolEl.textContent = code + '/UAH';
 
-  // Show loading
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#5e6675'; ctx.font = '13px -apple-system, Segoe UI, sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('Завантаження…', canvas.width/2, canvas.height/2);
+  chartMessage(ctx, canvas, 'Завантаження…');
 
   try {
     const coinIds = {BTC:'bitcoin',ETH:'ethereum',SOL:'solana',BNB:'binancecoin',USDT:'tether'};
@@ -13913,26 +13939,34 @@ async function loadCurrencyChart(code, period='7D') {
       }
     }
 
-    // Fallback: generate realistic-looking synthetic data
-    if(!pricesUAH.length) {
-      const rate = currencyRates[code] ? (1/currencyRates[code]) : 1;
-      const pts = 48;
-      let p = rate;
-      for(let i=0;i<pts;i++) {
-        p *= 1 + (Math.random()-0.48)*0.03;
-        pricesUAH.push({ts: Date.now() - (pts-i)*3600000*24/pts*days, p});
-      }
-    }
+    // Історії курсу немає (фіат або CoinGecko не відповів) — кажемо прямо,
+    // а не малюємо випадкову криву.
+    if(!pricesUAH.length) return chartMessage(ctx, canvas, 'Немає даних для графіка');
 
     drawCurrencyChart(ctx, canvas, pricesUAH, code);
   } catch(e) {
     console.warn('Chart load failed:', e);
-    // Draw synthetic chart
-    const rate = currencyRates[code] ? (1/currencyRates[code]) : 1;
-    const pts = []; let p = rate;
-    for(let i=0;i<50;i++) { p *= 1+(Math.random()-0.47)*0.025; pts.push({ts:i, p}); }
-    drawCurrencyChart(ctx, canvas, pts, code);
+    chartMessage(ctx, canvas, 'Немає даних для графіка');
   }
+}
+
+// Canvas не бачить CSS-змінних — беремо значення токенів поточної теми.
+function chartTokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n, fb) => (cs.getPropertyValue(n) || '').trim() || fb;
+  return { bg: v('--surface-2', '#1F2439'), line: v('--line', '#2C3250'), muted: v('--fg-3', '#9A97B0'),
+    stroke: v('--primary', '#3CCFBD'), font: v('--font-body', 'sans-serif') };
+}
+
+function chartMessage(ctx, canvas, text) {
+  const t = chartTokens();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = t.bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = t.muted; ctx.font = '13px ' + t.font; ctx.textAlign = 'center';
+  ctx.fillText(text, canvas.width/2, canvas.height/2);
+  const lowEl = document.getElementById('chartLow'), highEl = document.getElementById('chartHigh');
+  if(lowEl) lowEl.textContent = 'Min —';
+  if(highEl) highEl.textContent = 'Max —';
 }
 
 function drawCurrencyChart(ctx, canvas, data, code) {
@@ -13940,7 +13974,8 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  ctx.fillStyle = '#191c24'; ctx.fillRect(0,0,W,H);
+  const t = chartTokens();
+  ctx.fillStyle = t.bg; ctx.fillRect(0,0,W,H);
 
   const prices = data.map(d=>d.p);
   const minP = Math.min(...prices), maxP = Math.max(...prices);
@@ -13953,26 +13988,22 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   const toX = i => pad.left + (i/(data.length-1))*chartW;
   const toY = p => pad.top + chartH - ((p-minP)/range)*chartH;
 
-  const cryptoColors = {BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',BNB:'#f3ba2f',USDT:'#26a17b',USD:'#4a90e2',EUR:'#2ecc71'};
-  const lineColor = cryptoColors[code] || '#7c8cff';
+  const lineColor = t.stroke;
 
-  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
+  ctx.strokeStyle = t.line; ctx.lineWidth = 1;
   for(let i=0;i<=4;i++) {
     const y = pad.top + (i/4)*chartH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W-pad.right, y); ctx.stroke();
   }
 
-  const grad = ctx.createLinearGradient(0, pad.top, 0, H-pad.bottom);
-  grad.addColorStop(0, lineColor + '44');
-  grad.addColorStop(1, lineColor + '00');
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(prices[0]));
   prices.forEach((p,i) => ctx.lineTo(toX(i), toY(p)));
   ctx.lineTo(toX(prices.length-1), H-pad.bottom);
   ctx.lineTo(toX(0), H-pad.bottom);
-  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.closePath(); ctx.fillStyle = lineColor; ctx.globalAlpha = .1; ctx.fill(); ctx.globalAlpha = 1;
 
-  ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 2;
   prices.forEach((p,i) => i===0 ? ctx.moveTo(toX(i),toY(p)) : ctx.lineTo(toX(i),toY(p)));
   ctx.stroke();
 
@@ -13981,7 +14012,7 @@ function drawCurrencyChart(ctx, canvas, data, code) {
   ctx.fillStyle = lineColor; ctx.fill();
 
   const fmt = p => p >= 1000 ? Math.round(p).toLocaleString('uk-UA') : p >= 1 ? p.toFixed(2) : p.toFixed(6);
-  ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+  ctx.fillStyle = t.muted; ctx.font = '10px ' + t.font; ctx.textAlign = 'right';
   ctx.fillText(fmt(maxP)+'₴', W-pad.right, pad.top+10);
   ctx.fillText(fmt(minP)+'₴', W-pad.right, H-pad.bottom-4);
 
@@ -16166,8 +16197,8 @@ function sendSupportMsg() {
 const SUPPORT_FAQ = [
   { keys: ['поповн','депозит','закинут','внест','вклад','поповнити','донат'],
     reply: [
-      '💳 Донат: перейди в Каса → Донат, обери суму й спосіб (Monobank або Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
-      '💳 Щоб задонатити: Каса → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
+      '💳 Донат: перейди в Гаманець → Донат, обери суму й спосіб (Monobank або Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
+      '💳 Щоб задонатити: Гаманець → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
     ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: [
@@ -16403,8 +16434,8 @@ const SUPPORT_FAQ = [
     ] },
   { keys: ['кешбек','cashback'],
     reply: [
-      '💰 Кешбек: частина програних ставок повертається автоматично, відсоток залежить від VIP-рівня. Забрати накопичений кешбек можна в Каса → Кешбек.',
-      '💰 Кешбек нараховується автоматично з частини програних ставок — відсоток залежить від VIP-рівня, забрати накопичене можна в Каса → Кешбек.'
+      '💰 Кешбек: частина програного в іграх повертається автоматично, відсоток залежить від твого рівня. Забрати накопичений кешбек можна в Гаманець → Кешбек.',
+      '💰 Кешбек нараховується автоматично з частини програного в іграх — відсоток залежить від твого рівня, забрати накопичене можна в Гаманець → Кешбек.'
     ] },
   { keys: ['квест','завдан','daily quest','щоденне завдання'],
     reply: [
@@ -16444,8 +16475,8 @@ const SUPPORT_FAQ = [
     reply: '🔒 Всі результати генеруються Provably Fair алгоритмом — випадковість перевіряється незалежно, накрутити чи вплинути на результат неможливо ні гравцям, ні адміністрації. У грі є кнопка перевірки чесності конкретного раунду.' },
   { keys: ['карт','skin','скін'],
     reply: [
-      '🎨 Картка: в Каса → Моя картка можна перевернути (натисни), скопіювати номер, і обрати один із 26 скінів у розділі 🎨.',
-      '🎨 Віртуальну картку знайдеш у Каса → Моя картка — натисни, щоб перевернути й скопіювати номер, а скінів для неї є аж 26.'
+      '🎨 Картка: у Гаманець → Картка її можна перевернути (натисни), скопіювати номер і обрати скін — їх понад сотню.',
+      '🎨 Картку знайдеш у Гаманець → Картка — натисни, щоб перевернути й скопіювати номер, а скінів для неї понад сотню.'
     ] },
   { keys: ['правил','18+','вік','вікові обмеж'],
     reply: '📜 Правила: реєструючись, гравець підтверджує вік 18+. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
@@ -18295,7 +18326,7 @@ function showBpLevelUp(newLevel) {
 
 async function buyVipBattlePass() {
   const cost = BP_VIP_PRICE_SLOTIKY;
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;
@@ -18578,7 +18609,7 @@ function setAxiomTxDir(dir) {
   const on = axiomTxDir === 'toCasino' ? b : a, off = on === a ? b : a;
   on.style.background = 'rgb(var(--info-rgb) / 0.15)'; on.style.border = '1px solid rgb(var(--info-rgb) / 0.35)'; on.style.color = 'var(--info)';
   off.style.background = 'transparent'; off.style.border = 'none'; off.style.color = 'var(--fg-4)';
-  if(btn) btn.textContent = axiomTxDir === 'toCasino' ? '🎰 Поповнити гру з картки' : '🏦 Вивести на картку Аксіоми';
+  if(btn) btn.textContent = axiomTxDir === 'toCasino' ? 'Поповнити баланс з картки' : 'Вивести на картку Аксіоми';
 }
 function setAxiomTxAmt(n) {
   const inp = document.getElementById('axiomTxAmt');
@@ -18606,7 +18637,7 @@ async function doAxiomTransfer() {
   if(btn) btn.disabled = true;
   try {
     if(axiomTxDir === 'toAxiom') {
-      if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+      if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
       if(!checkCardLimit(getActiveCardId(), amt)) return;
       const res = await db.ref('users/' + currentUser + '/balance').transaction(cur => {
         const v = Number(cur) || 0;
@@ -20534,9 +20565,9 @@ function copyCardNumberFlash(e) {
   var num = numEl ? numEl.textContent.replace(/\s/g,'') : '';
   if(!/^[0-9]{12,19}$/.test(num)) return notify(hasConnectedCard()
     ? 'Повний номер картки зберігається у вашому банку, не в SlotOK'
-    : 'Спочатку підключіть картку в Касі', 'error');
+    : 'Спочатку підключіть картку в Гаманці', 'error');
   navigator.clipboard && navigator.clipboard.writeText(num).then(function() {
-    notify('📋 Номер скопійовано!', 'success');
+    notify('Номер скопійовано', 'success');
     if(numEl) { numEl.classList.add('copied'); setTimeout(function(){ numEl.classList.remove('copied'); }, 600); }
     if(navigator.vibrate) navigator.vibrate([40,20,40]);
   });
@@ -20552,7 +20583,7 @@ function toggleCvvVisibility() {
   var card = getActiveCard();
   if(!card) return notify(hasConnectedCard()
     ? 'CVV своєї картки SlotOK не зберігає — дивіться його на самій картці'
-    : 'Спочатку підключіть картку в Касі', 'error');
+    : 'Спочатку підключіть картку в Гаманці', 'error');
   var cvv = card.cvv || '•••';
   var hidden = cvvFront && cvvFront.textContent === '•••';
   if(cvvFront) cvvFront.textContent = hidden ? cvv : '•••';
@@ -20590,6 +20621,10 @@ var KS_ICON_PATHS = {
   shield:  '<path d="M12 3l8 3v6c0 4.5-3.3 8.3-8 9-4.7-.7-8-4.5-8-9V6Z"/><path d="m9 12 2 2 4-4"/>',
   check:   '<path d="M20 6 9 17l-5-5"/>',
   clock:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  games:   '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10.5v4"/><path d="M5 12.5h4"/><circle cx="15.5" cy="11.5" r=".9"/><circle cx="18" cy="14" r=".9"/>',
+  level:   '<circle cx="12" cy="9" r="6"/><path d="m8.6 13.8-1.6 7.2 5-2.8 5 2.8-1.6-7.2"/>',
+  info:    '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/>',
+  camera:  '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.6l1.4-2h7l1.4 2h2.6A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z"/><circle cx="12" cy="13" r="3.5"/>',
 };
 function ksIcon(name, size) {
   var d = KS_ICON_PATHS[name];
@@ -20834,7 +20869,7 @@ function noteCardSpend(id, amount) {
 
 function openCardLimitModal() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
   var old = document.getElementById('ksLimitModal'); if(old) old.remove();
   var cur = cardDayLimit(card.id);
   var m = document.createElement('div');
@@ -20950,7 +20985,7 @@ function renderCardMetaRow(card) {
           '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
           '<div class="ks-empty-title">Підключіть свою картку</div>' +
           '<div class="ks-empty-text">SlotOK не випускає власних карток. Підключіть <b>свою картку</b> ' +
-            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Касі.</div>' +
+            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Гаманці.</div>' +
           '<div class="ks-btn-row">' +
             '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
             '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
@@ -20990,17 +21025,17 @@ function renderCardQuickActions(card) {
   var el = document.getElementById('cardQuickActions');
   if(!el) return;
   var frozen = isActiveCardFrozen();
-  // Поповнення, вивід, кешбек, курси й казино працюють і без картки —
+  // Поповнення, вивід, кешбек, валюта й ігри працюють і без картки —
   // інакше новий гравець не зміг би завести перші кошти. Картку вимагають
   // тільки суто карткові дії.
   var acts = [
     { k:'topup',      icon:'down',    label:'Донат',      needsCard:false },
     { k:'transfer',   icon:'send',    label:'Переказ',   needsCard:true  },
     { k:'cashback',   icon:'percent', label:'Кешбек',    needsCard:false },
-    { k:'buySlotyky', icon:'trend',   label:'Курси',     needsCard:false },
+    { k:'buySlotyky', icon:'trend',   label:'Валюта',    needsCard:false },
     { k:'skinShop',   icon:'palette', label:'Скін',      needsCard:true  },
     { k:'freeze',     icon:frozen ? 'unlock' : 'lock', label:frozen ? 'Розблок.' : 'Блок', needsCard:true },
-    { k:'casino',     icon:'dice',    label:'Казино',    needsCard:false },
+    { k:'casino',     icon:'games',   label:'Ігри',      needsCard:false },
   ];
   el.innerHTML = acts.map(function(a) {
     var off = a.needsCard && !card;
@@ -21458,7 +21493,7 @@ var TERMS_SECTIONS = [
     ]
   },
   {
-    title: 'Каса',
+    title: 'Гаманець',
     items: [
       'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
       'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
@@ -21470,7 +21505,7 @@ var TERMS_SECTIONS = [
     title: 'Відповідальна гра',
     items: [
       'У Налаштуваннях є особисті ліміти на програш і тривалість сесії та само-виключення на час.',
-      'У Касі можна поставити денний ліміт на картку — скільки максимум за добу може піти з неї назовні.',
+      'У Гаманці можна поставити денний ліміт на картку — скільки максимум за добу може піти з неї назовні.',
       'Якщо відчуваєш, що граєш забагато — увімкни само-виключення. Адміністратор не знімає його достроково на прохання.',
     ]
   },
@@ -21788,7 +21823,7 @@ function showAllTransactions() {
 function bankAction(action) {
   var needsCard = { transfer:1, skinShop:1, freeze:1 };
   if(needsCard[action] && !hasConnectedCard()) {
-    notify('Спочатку підключіть картку в Касі', 'error');
+    notify('Спочатку підключіть картку в Гаманці', 'error');
     return;
   }
   var actions = {
@@ -21809,7 +21844,7 @@ function bankAction(action) {
 // й з якої йдуть гроші. Решта карток гаманця своїх станів не змінює.
 function toggleCardFreeze() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Касі', 'error');
+  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
   var frozen = isCardFrozen(card.id);
   db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
   if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }
@@ -21942,14 +21977,14 @@ var CARD_SKINS = [
 function openCardColorPicker() {
   var SKINS = CARD_SKINS;
   var CATEGORIES = [
-    { name:'✨ Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
-    { name:'💎 Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },
-    { name:'🌪️ Стихії', ids:['fire','ice','mint','storm','sunset','thunder','earth','volcano','blizzard','tsunami','solar','void'] },
-    { name:'🚀 Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
-    { name:'🪨 Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
-    { name:'🎉 Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
-    { name:'🎭 Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
-    { name:'🔥 Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
+    { name:'Класика', ids:['gold','onyx','platinum','copper','minimal','silver','bronze','obsidian','steel','ivory','charcoal','chrome'] },
+    { name:'Самоцвіти', ids:['sapphire','emerald','amethyst','rosegold','coral','ruby','topaz','opal','garnet','turquoise','citrine','peridot'] },
+    { name:'Стихії', ids:['fire','ice','mint','storm','sunset','thunder','earth','volcano','blizzard','tsunami','solar','void'] },
+    { name:'Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
+    { name:'Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
+    { name:'Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
+    { name:'Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
+    { name:'Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
@@ -21964,16 +21999,16 @@ function openCardColorPicker() {
   }
   var uploadActive = current === 'custom-photo';
   var html = modalCloseBtn('cardskin') +
-    '<div style="font-family:var(--font-display);font-size:13px;color:var(--accent);margin-bottom:4px;padding-right:36px;">🎨 Скін картки</div>' +
-    '<div style="font-size:11px;color:var(--fg-4);margin-bottom:14px;">' + SKINS.length + ' унікальних дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
-    '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📷 Персональне</div>' +
-    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:linear-gradient(135deg,rgb(var(--accent-rgb) / 0.12),rgb(var(--accent-rgb) / 0.03));border:1.5px dashed rgb(var(--accent-rgb) / 0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:var(--accent);margin-bottom:6px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:650;color:var(--fg);margin-bottom:4px;padding-right:36px;">' + ksIcon('palette', 17) + 'Скін картки</div>' +
+    '<div style="font-size:11px;color:var(--fg-3);margin-bottom:14px;">' + SKINS.length + ' дизайнів у ' + (CATEGORIES.length + 1) + ' категоріях</div>' +
+    '<div style="font-size:11px;color:var(--fg-3);font-weight:650;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Персональне</div>' +
+    '<div onclick="uploadCustomCardPhoto()" class="skin-swatch' + (uploadActive?' active':'') + '" style="background:var(--surface-2);border:1.5px dashed var(--line-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:80px;color:var(--fg-2);margin-bottom:6px;">' +
     (uploadActive ? '<div class="skin-swatch-check">✓</div>' : '') +
-    '<div style="font-size:20px;">📷</div><div style="font-size:11px;font-weight:700;">Завантажити своє фото</div>' +
+    ksIcon('camera', 20) + '<div style="font-size:11px;font-weight:650;">Завантажити своє фото</div>' +
     '</div>' +
     '<div style="max-height:60vh;overflow-y:auto;">' +
     CATEGORIES.map(function(cat) {
-      return '<div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
+      return '<div style="font-size:11px;color:var(--fg-3);font-weight:650;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">' + cat.name + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
         cat.ids.filter(function(id){ return byId[id]; }).map(function(id){ return swatchHtml(byId[id]); }).join('') +
         '</div>';
@@ -22040,7 +22075,7 @@ function uploadCustomCardPhoto() {
           db.ref('users/' + currentUser + '/pendingCardSkin').set('custom-photo');
           db.ref('users/' + currentUser + '/pendingCardPhotoUrl').set(dataUrl);
         }
-        notify('📷 Фото застосовано як скін картки!', 'success');
+        notify('Фото застосовано як скін картки', 'success');
         closeModal('cardskin');
         renderCardPanel();
       };
@@ -22072,7 +22107,7 @@ function applyCardSkin(skinId) {
     userData.pendingCardSkin = skinId;
     db.ref('users/' + currentUser + '/pendingCardSkin').set(skinId);
   }
-  notify('🎨 Скін застосовано!', 'success');
+  notify('Скін застосовано', 'success');
   closeModal('cardskin');
   renderCardPanel();
 }
@@ -23452,7 +23487,7 @@ async function claimWelcomeBackBonus(bonus) {
 
 const ONBOARDING_STEPS = [
   { selector: '.nav-item[onclick*="lobby"]', title: '🎰 Тут всі ігри', text: 'Понад 40 ігор — від слотів до шахів. Обирай будь-яку і починай грати!' },
-  { selector: '.nav-item[onclick*="cashier"]', title: '💳 Твоя картка', text: 'Тут поповнення ігрового балансу і твоя власна віртуальна картка з 26 скінами на вибір.' },
+  { selector: '.nav-item[onclick*="cashier"]', title: '<span class="ic i-wallet" aria-hidden="true"></span> Гаманець', text: 'Тут ігровий баланс, донат на підтримку проєкту, кешбек і твоя картка — її вигляд можна змінити, скінів понад сотню.' },
   { selector: '#homeJackpot', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
   { selector: '.nav-item[onclick*="profile"]', title: '👤 Твій профіль', text: 'Статистика в реальному часі, досягнення і налаштування — все тут.' },
 ];

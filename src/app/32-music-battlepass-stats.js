@@ -361,7 +361,7 @@ function showBpLevelUp(newLevel) {
 
 async function buyVipBattlePass() {
   const cost = BP_VIP_PRICE_SLOTIKY;
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Касі', 'error');
+  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
   if((userData.slotiky||0) < cost) {
     notify(`❌ Потрібно ${cost} 🪙 Слотіків. У вас: ${userData.slotiky||0}`, 'error');
     return;

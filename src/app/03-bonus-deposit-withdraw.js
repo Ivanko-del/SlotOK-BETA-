@@ -448,7 +448,7 @@ function submitWithdraw() {
     if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
     if(userData.balance < amount) return notify("Недостатньо коштів", "error");
     if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
-    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Касі", "error");
+    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Гаманці", "error");
     if(!checkCardLimit(getActiveCardId(), amount)) return;
 
     // Перевірка на pending заявки
