@@ -219,8 +219,24 @@ function regStep1Error(n, p) {
   if(!/^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_\-]+$/.test(n)) return 'Нікнейм може містити лише літери, цифри, "_" та "-"';
   if(!p)             return 'Введіть пароль';
   if(p.length < 6)   return 'Пароль мінімум 6 символів';
+  return regBirthError(document.getElementById('regBirth')?.value || '');
+}
+// Вік рахуємо від дати народження (shared/age.js — той самий код перевіряє
+// сервер). Молодше MIN_AGE — акаунт не створюється.
+function regBirthError(birth) {
+  if(!birth) return 'Вкажи дату народження';
+  const age = ageFromBirthDate(birth);
+  if(age === null) return 'Вкажи справжню дату народження';
+  if(age < MIN_AGE) return 'SlotOK доступний з ' + MIN_AGE + ' років. Повертайся, коли виповниться ' + MIN_AGE + '.';
   return '';
 }
+// Статичні «13+» у розмітці й лендінгах — з MIN_AGE, щоб число жило в одному місці.
+function applyMinAgeTexts() {
+  document.querySelectorAll('[data-min-age]').forEach(el => { el.textContent = String(MIN_AGE); });
+  const birth = document.getElementById('regBirth');
+  if(birth) birth.max = new Date().toISOString().slice(0, 10);
+}
+applyMinAgeTexts();
 function regStep(n) {
   const form = document.getElementById('regForm');
   if(!form) return;

@@ -11,7 +11,7 @@
 //
 // GET                         → { serverAuth: bool }
 // POST { action: "login",    nick, password }
-// POST { action: "register", nick, password, email?, promo?, secQ, secA, ref? }
+// POST { action: "register", nick, password, birthDate ("YYYY-MM-DD"), email?, promo?, secQ, secA, ref? }
 // POST { action: "reset",    nick, answer, newPassword }      (security question)
 // POST { action: "change-password", nick, password, newPassword }
 // POST { action: "set-security", nick, password, question, answer }
@@ -27,6 +27,7 @@ const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
 const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
 const SlotOKPassword = require("../password.js");
+const { MIN_AGE, ageFromBirthDate } = require("../shared/age.js");
 
 const OWNER = "theivankoo";
 const NICK_RE = /^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_-]{3,20}$/;
@@ -106,12 +107,16 @@ async function register(req, res, body) {
   const email = (str(body.email, 120) || "").trim();
   const promo = (str(body.promo, 40) || "").trim().toUpperCase();
   const ref = str(body.ref, 40);
+  const birthDate = str(body.birthDate, 10);
   if (!nick || !NICK_RE.test(nick)) {
     return fail(res, 400, "bad_nick", 'Нікнейм: 3–20 символів, лише літери, цифри, "_" та "-"');
   }
   if (!password || password.length < 6) return fail(res, 400, "weak_password", "Пароль мінімум 6 символів");
   if (!secA || secA.trim().length < MIN_ANSWER) return fail(res, 400, "no_answer", `Відповідь на контрольне питання — мінімум ${MIN_ANSWER} символи`);
   if (!secQ) return fail(res, 400, "no_question", "Оберіть або напишіть контрольне питання");
+  const age = ageFromBirthDate(birthDate);
+  if (age === null) return fail(res, 400, "bad_birth_date", "Вкажи справжню дату народження");
+  if (age < MIN_AGE) return fail(res, 403, "too_young", `SlotOK доступний з ${MIN_AGE} років. Повертайся, коли виповниться ${MIN_AGE}.`);
   if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) return fail(res, 400, "bad_email", "Невірний email");
   if (!(await throttle(req, "register", null))) {
     return fail(res, 429, "rate_limited", "Забагато реєстрацій з цієї мережі. Спробуй пізніше.");
@@ -145,6 +150,7 @@ async function register(req, res, body) {
   await setSecrets(nick, {
     pass: await SlotOKPassword.hash(password),
     securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
+    birthDate, // не в публічному users/: вузол читають усі
   });
 
   await Promise.allSettled([

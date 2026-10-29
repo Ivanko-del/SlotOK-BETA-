@@ -13,6 +13,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { MIN_AGE } = require("../shared/age.js");
 
 const ROOT = path.join(__dirname, "..");
 const SITE = "https://slot-ok-beta.vercel.app";
@@ -232,7 +233,7 @@ ${sections}
       </section>
   </main>
   <footer class="lp-foot">
-    <p><b>18+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.</p>
+    <p><b>${MIN_AGE}+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.</p>
   </footer>
 </body>
 </html>

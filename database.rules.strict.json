@@ -12,7 +12,8 @@
         "lastIpHash",
         "stats/gamesPlayed",
         "stats/biggestWin",
-        "isBot"
+        "isBot",
+        "role"
       ],
       ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       "$u": {
@@ -83,6 +84,10 @@
         },
         "adminPerms": {
           ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "role": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+          ".validate": "newData.isString() && newData.val().matches(/^(support|admin)$/)"
         },
         "banned": {
           ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
@@ -342,7 +347,7 @@
       ".read": true,
       "$u": {
         "$m": {
-          ".write": "auth != null",
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists()))",
           "from": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
@@ -676,6 +681,70 @@
       ".read": true,
       "$k": {
         ".write": "auth != null"
+      }
+    },
+    "feedback": {
+      ".read": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support')) || (auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid)",
+      ".indexOn": [
+        "uid",
+        "status",
+        "createdAt"
+      ],
+      "$id": {
+        ".read": "auth != null && data.child('uid').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'new' && !newData.child('reply').exists())",
+        ".validate": "newData.hasChildren(['uid', 'type', 'message', 'createdAt', 'status'])",
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val().matches(/^(player|support|admin)$/)"
+        },
+        "type": {
+          ".validate": "newData.isString() && newData.val().matches(/^(question|complaint|suggestion|report)$/)"
+        },
+        "subject": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "message": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "contact": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "status": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+          ".validate": "newData.isString() && newData.val().matches(/^(new|in_progress|closed)$/)"
+        },
+        "reply": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "reply_at": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+          ".validate": "newData.isNumber()"
+        },
+        "reply_by": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/) && newData.val() === auth.uid"
+        },
+        "reportedUser": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "evidence": {
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length <= 400"
+          }
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 3000000 && newData.val().matches(/^data:image\\/(png|jpeg|webp|gif);base64,/)"
+        },
+        "$other": {
+          ".validate": "false"
+        }
       }
     },
     "deposit_requests": {

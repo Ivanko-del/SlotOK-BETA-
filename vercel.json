@@ -32,7 +32,7 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     },
     {
-      "source": "/(index.html|app.js|style.css|password.js|emoji-icons.js|shared/rewards.js)",
+      "source": "/(index.html|app.js|style.css|password.js|emoji-icons.js|shared/rewards.js|shared/age.js)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {

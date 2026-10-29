@@ -12,7 +12,8 @@
         "lastIpHash",
         "stats/gamesPlayed",
         "stats/biggestWin",
-        "isBot"
+        "isBot",
+        "role"
       ],
       "$u": {
         ".validate": "data.exists() || ($u.length >= 2 && $u.length <= 32 && !$u.matches(/[<>\"'`]/) && !$u.matches(/[ \\\\&%]/))",
@@ -570,6 +571,65 @@
       ".read": true,
       "$k": {
         ".write": "true"
+      }
+    },
+    "feedback": {
+      ".read": true,
+      ".indexOn": [
+        "uid",
+        "status",
+        "createdAt"
+      ],
+      "$id": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['uid', 'type', 'message', 'createdAt', 'status'])",
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "role": {
+          ".validate": "newData.isString() && newData.val().matches(/^(player|support|admin)$/)"
+        },
+        "type": {
+          ".validate": "newData.isString() && newData.val().matches(/^(question|complaint|suggestion|report)$/)"
+        },
+        "subject": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "message": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "contact": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(new|in_progress|closed)$/)"
+        },
+        "reply": {
+          ".validate": "newData.isString() && newData.val().length <= 4000"
+        },
+        "reply_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "reply_by": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "reportedUser": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "evidence": {
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length <= 400"
+          }
+        },
+        "imgUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 3000000 && newData.val().matches(/^data:image\\/(png|jpeg|webp|gif);base64,/)"
+        },
+        "$other": {
+          ".validate": "false"
+        }
       }
     },
     "deposit_requests": {
