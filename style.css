@@ -5737,3 +5737,77 @@ body.lp {
 
 /* Посилання на сторінки ігор з блоку «Що таке SlotOK» на екрані входу */
 .auth-about-links { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-2); }
+/* ─── src/css/74-safety.css ─── */
+/* ═══ Звернення (feedback), роль support, безпека ПМ ═══════════════
+   JS — src/app/53-support-safety.js, переписка ПМ — 34-axiom-pm.js.  */
+
+/* ── Переписка ПМ ─────────────────────────────────────────────────
+   Висота — з visualViewport (pmFitViewport), щоб поле вводу лишалось над
+   клавіатурою; без JS — 100dvh. Шар над нижньою панеллю, під діалогами. */
+.pm-thread-fullscreen {
+  z-index: var(--z-drawer);
+  top: var(--pm-vv-top, 0px); bottom: auto;
+  height: var(--pm-vv-h, 100dvh);
+  padding-bottom: 0;
+}
+body.pm-thread-open { overflow: hidden; }
+body.pm-thread-open .bottom-nav { display: none; }
+#pmThreadMessages { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.pm-composer {
+  display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0;
+  padding: var(--sp-2) var(--sp-3) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); border-top: var(--bw) solid var(--line);
+}
+.pm-composer input:not([type="file"]) { flex: 1; min-width: 0; margin: 0; text-align: left; }
+.pm-composer .btn-icon { flex: none; }
+.pm-blocked-bar { justify-content: space-between; color: var(--fg-3); font-size: var(--fs-sm); }
+.pm-img {
+  display: block; max-width: 200px; max-height: 180px; margin-bottom: var(--sp-1);
+  border-radius: var(--r-md); cursor: zoom-in; background: var(--surface-2);
+}
+.pm-img-ph {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 160px; height: 96px; margin-bottom: var(--sp-1); justify-content: center;
+  border: var(--bw) dashed var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--fg-3); font-size: var(--fs-xs);
+}
+.pm-filtered { font-size: var(--fs-sm); color: var(--fg-3); font-style: italic; }
+.pm-lightbox { cursor: zoom-out; }
+.pm-lightbox img { max-width: 100%; max-height: 100%; border-radius: var(--r-md); object-fit: contain; }
+
+/* Клавіатура відкрита — нижня панель на телефоні не перекриває поле вводу */
+@media (max-width: 767px) {
+  body.kb-open .bottom-nav { display: none; }
+}
+
+/* ── Форма й список звернень ───────────────────────────────────── */
+.fb-dialog { display: grid; gap: 0; }
+.fb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.fb-head .dialog-title { margin: 0; }
+.fb-img-prev { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); }
+.fb-img-prev img { max-height: 96px; max-width: 160px; border-radius: var(--r-md); border: var(--bw) solid var(--line); object-fit: cover; }
+.fb-check { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); font-size: var(--fs-sm); color: var(--fg-2); }
+.fb-list { display: grid; gap: var(--sp-2); margin: var(--sp-3) 0; }
+.fb-filter { margin-bottom: var(--sp-2); }
+.fb-card {
+  display: grid; gap: var(--sp-1);
+  padding: var(--sp-3); border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface-1);
+}
+.fb-card-top { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); }
+.fb-date { margin-left: auto; font-size: var(--fs-xs); color: var(--fg-4); }
+.fb-meta { font-size: var(--fs-sm); color: var(--fg-3); }
+.fb-meta .link-btn { font-size: inherit; }
+.fb-role { margin-left: var(--sp-1); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--fg-4); }
+.fb-subject { font-weight: var(--fw-bold); }
+.fb-text { white-space: pre-wrap; word-break: break-word; font-size: var(--fs-sm); color: var(--fg-2); }
+.fb-reply, .fb-evidence {
+  display: grid; gap: var(--sp-1); margin-top: var(--sp-1); padding: var(--sp-2) var(--sp-3);
+  border-left: 3px solid var(--primary); background: var(--surface-2); border-radius: var(--r-sm);
+}
+.fb-evidence { border-left-color: var(--neg); }
+.fb-shot { max-width: 100%; max-height: 240px; border-radius: var(--r-md); border: var(--bw) solid var(--line); cursor: zoom-in; justify-self: start; }
+.fb-actions { display: grid; gap: var(--sp-2); margin-top: var(--sp-2); }
+.fb-actions textarea { min-height: 64px; }
+.fb-support-box { margin-bottom: var(--sp-3); }
+.fb-support-row { padding: var(--sp-1) 0; }

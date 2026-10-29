@@ -357,7 +357,7 @@ function switchAdminTab(tab, el) {
   // Адмін без права на цю вкладку не має її відкривати навіть прямим викликом
   if(!adminCan(tab)) { requireAdminPerm(tab); return; }
   // Hide ALL panels cleanly
-  ['requests','stats','users','bots','content','finance','security','moderation','admins'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) { p.style.display = 'none'; }
   });
@@ -375,10 +375,11 @@ function switchAdminTab(tab, el) {
   if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } try{loadLootboxEdgeSetting();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
   if(tab==='admins')  { try{initAdminsPanel();}catch(e){console.error(e);} }
+  if(tab==='feedback') { try{loadFeedbackAdmin();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
   // Force clear all panels first
-  ['requests','stats','users','bots','content','finance','security','moderation','admins'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) p.style.display = 'none';
   });

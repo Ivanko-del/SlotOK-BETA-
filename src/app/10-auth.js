@@ -104,6 +104,7 @@ async function authRegister() {
   const promo    = (document.getElementById('regPromo')?.value || '').trim().toUpperCase();
   const secQ     = readSecQuestion('reg');
   const secA     = (document.getElementById('regSecAnswer')?.value || '').trim();
+  const birthDate = document.getElementById('regBirth')?.value || '';
 
   // Validation
   const step1Err = regStep1Error(n, p);
@@ -119,7 +120,7 @@ async function authRegister() {
   // Серверна реєстрація: акаунт і стартовий бонус створює сервер, а не браузер.
   const refByLs = localStorage.getItem('ref_by');
   const srv = await serverAuthCall('register', {
-    nick: n, password: p, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
+    nick: n, password: p, birthDate, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
   });
   if(srv.status === 200 && srv.data.token) {
     try { await serverSignIn(srv.data.token); }

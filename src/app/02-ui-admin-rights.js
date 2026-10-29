@@ -112,7 +112,8 @@ function checkAdmin() {
         // Автозапуск бот-движка для адміна
         if(!_botEngine) setTimeout(startBotEngine, 3000);
     } else {
-        document.getElementById('adminPanelBtnBox').classList.add('hidden');
+        // Support (role у профілі) бачить панель лише з вкладкою «Звернення»
+        document.getElementById('adminPanelBtnBox').classList.toggle('hidden', !isSupportUser());
         document.getElementById('adminBadge').classList.add('hidden');
     }
 }
@@ -142,6 +143,7 @@ const ADMIN_PERMS = [
   { key:'security',   icon:'🛡️', name:'Безпека',    desc:'Розіграші, Shadow Mode, службові інструменти' },
   { key:'moderation', icon:'🎛️', name:'Модерація',  desc:'Бани, мути, вимкнення ігор, обслуговування' },
   { key:'admins',     icon:'👑', name:'Адміни',     desc:'Призначати адмінів, міняти права, налаштовувати анти-чіт' },
+  { key:'feedback',   icon:'📨', name:'Звернення',  desc:'Питання, скарги й пропозиції гравців (є в усіх адмінів і в ролі support)' },
 ];
 
 function isOwnerUser() {
@@ -152,6 +154,7 @@ function isOwnerUser() {
 // нічого не змінюється (повний доступ), доки власник не обмежить явно.
 function adminCan(perm) {
   if(isOwnerUser()) return true;
+  if(perm === 'feedback') return isSupportUser();
   if(!isAdminUser()) return false;
   const perms = userData && userData.adminPerms;
   if(!perms || typeof perms !== 'object') return true;

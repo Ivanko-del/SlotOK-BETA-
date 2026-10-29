@@ -171,6 +171,42 @@ async function strict() {
   await new Promise((r) => setTimeout(r, 2100));
   assert.strictEqual(await say(bob, "m4", "bob"), OK, "через 2 с — знову можна");
   await rooms(ns, alice, bob, anon);
+  await feedbackAndPm(ns, owner, bob, carol);
+}
+
+// Звернення (feedback), роль support і блокування в ПМ.
+async function feedbackAndPm(ns, owner, bob, carol) {
+  const dave = client(ns, "dave");
+  const fb = (uid, extra = {}) => ({ uid, role: "player", type: "question", subject: "Тема", message: "Текст звернення", contact: "", createdAt: 1, status: "new", ...extra });
+  assert.strictEqual(await bob.put("feedback/f1", fb("bob")), OK, "своє звернення");
+  assert.strictEqual(await bob.put("feedback/f2", fb("carol")), NO, "звернення від чужого імені");
+  assert.strictEqual(await bob.put("feedback/f2", fb("bob", { status: "closed" })), NO, "одразу закрите — ні");
+  assert.strictEqual(await bob.put("feedback/f2", fb("bob", { reply: "сам собі" })), NO, "з відповіддю — ні");
+  assert.strictEqual(await bob.put("feedback/f2", fb("bob", { type: "hack" })), NO, "невідомий тип");
+  assert.strictEqual(await bob.put("feedback/f3", fb("bob", { type: "report", reportedUser: "carol", evidence: ["msg"] })), OK, "скарга на гравця");
+  assert.strictEqual(await bob.put("feedback/f4", fb("bob", { imgUrl: "data:image/jpeg;base64,AAAA" })), OK, "зі скріном");
+  assert.strictEqual(await bob.put("feedback/f5", fb("bob", { imgUrl: "javascript:alert(1)" })), NO, "скрін — лише data:image");
+  assert.strictEqual(await bob.get("feedback", '&orderBy="uid"&equalTo="bob"'), OK, "свої звернення видно запитом");
+  assert.strictEqual(await bob.get("feedback/f1"), OK);
+  assert.strictEqual(await carol.get("feedback"), NO, "чужі звернення не видно");
+  assert.strictEqual(await carol.get("feedback/f1"), NO);
+  assert.strictEqual(await bob.patch("feedback/f1", { status: "closed" }), NO, "гравець сам статус не міняє");
+  assert.strictEqual(await bob.put("users/bob/role", "support"), NO, "роль собі не видати");
+  assert.strictEqual(await owner.put("users/carol/role", "support"), OK, "адмін видає роль support");
+  assert.strictEqual(await owner.put("users/dave/role", "god"), NO, "лише відомі ролі");
+  assert.strictEqual(await carol.get("feedback"), OK, "support читає всі звернення");
+  assert.strictEqual(await carol.patch("feedback/f1", { status: "in_progress", reply: "Дивимось", reply_at: 2, reply_by: "carol" }), OK, "support відповідає");
+  assert.strictEqual(await carol.patch("feedback/f1", { reply_by: "theivankoo" }), NO, "відповідь від чужого імені");
+  assert.strictEqual(await carol.patch("feedback/f1", { message: "переписано" }), NO, "текст звернення support не міняє");
+  assert.strictEqual(await carol.del("feedback/f1"), NO, "support не видаляє");
+  assert.strictEqual(await carol.put("users/bob/banned", true), NO, "support — не адмін");
+
+  const pmMsg = (from, to) => ({ from, to, text: "привіт", ts: 1 });
+  assert.strictEqual(await dave.post("pm/bob", pmMsg("dave", "bob")), OK, "ПМ іншому гравцю");
+  assert.strictEqual(await bob.put("users/bob/blocked/dave", 1), OK, "заблокувати");
+  assert.strictEqual(await dave.post("pm/bob", pmMsg("dave", "bob")), NO, "заблокований не пише");
+  assert.strictEqual(await dave.post("pm/dave", pmMsg("dave", "bob")), OK, "свою копію — можна");
+  assert.strictEqual(await carol.post("pm/bob", pmMsg("carol", "bob")), OK, "інші — пишуть");
 }
 
 // Онлайн-кімнати: пише лише сервер; приватне бачить лише власник; повний стан — ніхто.

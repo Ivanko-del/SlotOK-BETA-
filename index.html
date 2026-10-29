@@ -2162,6 +2162,7 @@
           <button type="button" class="list-row menu-item" onclick="switchTab('contacts')"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Знайомі</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('clans')"><span class="menu-ic">🛡️</span><span class="list-row-main"><span class="list-row-title">Клани</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Чат підтримки</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openFeedbackModal()"><span class="menu-ic">📨</span><span class="list-row-main"><span class="list-row-title">Підтримка / Пропозиція</span><span class="list-row-sub">Питання, скарга чи ідея — з відповіддю</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="showReferralQR()"><span class="menu-ic">📲</span><span class="list-row-main"><span class="list-row-title">QR-код запрошення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
       </nav>
       <div class="section-header"><span>Змагання</span></div>
@@ -2745,7 +2746,7 @@
         </button>
       </div>
 
-      <p class="settings-foot">SlotOK · онлайн: <span id="onlineTimeDisplay">—</span> · 18+ · грай відповідально</p>
+      <p class="settings-foot">SlotOK · онлайн: <span id="onlineTimeDisplay">—</span> · <span data-min-age>13</span>+ · грай відповідально</p>
     </div>
 
     <!-- ===== КАРТИ (ДУРЕНЬ) ===== -->
@@ -2970,6 +2971,22 @@
         <button class="adm-tab-btn" id="admtb-security" onclick="switchAdminTab('security',this)">🛡️ Безпека</button>
         <button class="adm-tab-btn" id="admtb-moderation" onclick="switchAdminTab('moderation',this)">🎛️ Модерація</button>
         <button class="adm-tab-btn" id="admtb-admins" onclick="switchAdminTab('admins',this)">👑 Адміни</button>
+        <button class="adm-tab-btn" id="admtb-feedback" onclick="switchAdminTab('feedback',this)">📨 Звернення <span id="fbAdminBadge" class="tab-badge hidden">0</span></button>
+      </div>
+
+      <!-- ══ TAB: ЗВЕРНЕННЯ (support / admin) ══ -->
+      <div class="adm-panel" id="adm-panel-feedback" style="display:none;padding:12px;">
+        <div class="panel-head">
+          <h3 class="panel-title">Звернення гравців</h3>
+          <button type="button" class="btn btn-ghost btn-icon" onclick="loadFeedbackAdmin()" aria-label="Оновити"><span class="ic i-refresh" aria-hidden="true"></span></button>
+        </div>
+        <div class="seg fb-filter" role="radiogroup" aria-label="Фільтр за статусом">
+          <button type="button" class="seg-item active" role="radio" aria-checked="true" data-fb-filter="new" onclick="setFeedbackAdminFilter('new')"><span class="seg-label">Нові</span></button>
+          <button type="button" class="seg-item" role="radio" aria-checked="false" data-fb-filter="in_progress" onclick="setFeedbackAdminFilter('in_progress')"><span class="seg-label">В роботі</span></button>
+          <button type="button" class="seg-item" role="radio" aria-checked="false" data-fb-filter="closed" onclick="setFeedbackAdminFilter('closed')"><span class="seg-label">Закриті</span></button>
+          <button type="button" class="seg-item" role="radio" aria-checked="false" data-fb-filter="all" onclick="setFeedbackAdminFilter('all')"><span class="seg-label">Усі</span></button>
+        </div>
+        <div id="fbAdminList" class="fb-list"></div>
       </div>
 
       <!-- ══ TAB: ЗАЯВКИ ══ -->
@@ -3420,6 +3437,17 @@
           <div style="display:flex;gap:8px;">
             <input id="newAdminNick" placeholder="Нік гравця..." style="flex:1;margin:0;">
             <button onclick="grantAdmin()" class="btn-outline" style="border-color:var(--pos);color:var(--pos);font-size:12px;padding:8px 14px;width:auto;margin:0;">👑 Дати права</button>
+          </div>
+        </div>
+
+        <!-- Роль support -->
+        <div class="panel fb-support-box">
+          <div class="panel-head"><h3 class="panel-title">📨 Підтримка (роль support)</h3></div>
+          <div class="field-hint">Бачить в адмін-панелі лише «Звернення»: читає, змінює статус, відповідає. Інших прав немає.</div>
+          <div id="supportList" class="fb-list"></div>
+          <div class="input-group">
+            <input id="newSupportNick" placeholder="Нік гравця..." style="flex:1;margin:0;">
+            <button type="button" onclick="grantSupport()" class="btn btn-secondary btn-sm btn-inline">Дати роль</button>
           </div>
         </div>
 
@@ -4039,6 +4067,11 @@
               <span id="passStrengthBar" class="pass-meter" aria-hidden="true"><span id="passStrengthFill"></span></span>
               <span class="field-hint" id="passStrengthText">Мінімум 6 символів. Цифри й знаки роблять пароль надійнішим.</span>
             </label>
+            <label class="field">
+              <span class="field-label">Дата народження</span>
+              <input class="auth-input" id="regBirth" type="date" autocomplete="bday" required min="1900-01-01" aria-describedby="regBirthHint">
+              <span class="field-hint" id="regBirthHint">SlotOK доступний з <span data-min-age>13</span> років. Дату бачить лише сервер — іншим гравцям її не видно.</span>
+            </label>
             <button type="submit" class="btn btn-primary btn-lg auth-btn-main" id="regNextBtn">Далі <span class="ic i-arrow-right" aria-hidden="true"></span></button>
           </div>
 
@@ -4081,7 +4114,7 @@
               <button type="button" class="btn btn-ghost" onclick="regStep(1)"><span class="ic i-arrow-left" aria-hidden="true"></span> Назад</button>
               <button type="submit" class="btn btn-primary btn-lg" id="regBtn">Створити акаунт</button>
             </div>
-            <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі 18+, і приймаєш правила.</p>
+            <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі <span data-min-age>13</span>+, і приймаєш правила.</p>
           </div>
 
           <div class="auth-links"><span>Вже є акаунт? <button type="button" class="link-btn" onclick="switchAuthTab('login')">Увійти</button></span></div>
@@ -4092,7 +4125,7 @@
       </section>
 
       <p class="auth-disclaimer">
-        <b>18+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
+        <b><span data-min-age>13</span>+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
       </p>
 
       <section class="auth-about" aria-labelledby="authAboutTitle">
@@ -4113,7 +4146,7 @@
           </div>
           <div>
             <h3>Чесно й без реальних грошей</h3>
-            <p>Результати рахує сервер; для коліс хеш раунду видно ще до спіну. Монети віртуальні й не виводяться — це гра для розваги, 18+.</p>
+            <p>Результати рахує сервер; для коліс хеш раунду видно ще до спіну. Монети віртуальні й не виводяться — це гра для розваги, <span data-min-age>13</span>+.</p>
           </div>
         </div>
         <p class="auth-about-links">Правила ігор:
@@ -5242,6 +5275,8 @@
   <script defer src="password.js"></script>
   <!-- Таблиці нагород (VIP, Battle Pass, бонуси) — той самий файл читає сервер -->
   <script defer src="shared/rewards.js"></script>
+  <!-- Мінімальний вік (MIN_AGE) — той самий файл перевіряє сервер при реєстрації -->
+  <script defer src="shared/age.js"></script>
   <!-- Main app -->
   <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
        боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->

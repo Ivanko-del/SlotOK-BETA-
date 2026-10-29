@@ -427,21 +427,24 @@ function renderPmInbox() {
       const other = m.from === currentUser ? m.to : m.from;
       if(!threads[other] || threads[other].ts < m.ts) threads[other] = m;
     });
-    const list = Object.entries(threads).sort((a,b)=>b[1].ts-a[1].ts);
+    // Заблоковані гравці зникають із вхідних (users/<я>/blocked)
+    const list = Object.entries(threads).filter(([name]) => !pmIsBlockedByMe(name)).sort((a,b)=>b[1].ts-a[1].ts);
     if(!list.length) { el.innerHTML += '<div style="color:var(--fg-4);font-size:13px;padding:10px;">Немає повідомлень. Напиши першим!</div>'; return; }
     list.forEach(([name, msg]) => {
       const div = document.createElement('div');
       div.className = 'pm-thread';
       div.setAttribute('data-nick', name.toLowerCase());
-      const previewText = msg.imgUrl ? '📷 Фото' : escapeHtml(msg.text || '');
+      const previewText = msg.imgUrl ? '📷 Фото'
+        : (msg.from !== currentUser && isAbusiveText(msg.text)) ? 'Повідомлення приховано фільтром'
+        : escapeHtml(msg.text || '');
       const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
-      div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile('${name}')" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
+      div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile(${jsArg(name)})" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
         <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
           <div style="font-size:11px;color:${isUnread?'var(--fg-2)':'var(--fg-4)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           <div style="font-size:10px;color:var(--fg-4);">${new Date(msg.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'})}</div>
-          <button onclick="event.stopPropagation();deletePmThread('${name}')" style="background:none;border:none;color:var(--fg-4);font-size:13px;cursor:pointer;padding:2px;line-height:1;" title="Видалити переписку">🗑</button>
+          <button onclick="event.stopPropagation();deletePmThread(${jsArg(name)})" style="background:none;border:none;color:var(--fg-4);font-size:13px;cursor:pointer;padding:2px;line-height:1;" title="Видалити переписку">🗑</button>
         </div>`;
       div.onclick = () => openPmThread(name);
       el.appendChild(div);
@@ -553,8 +556,9 @@ function pmSend() {
   const text = msgEl?.value?.trim();
   if(!to || !text) return notify('Заповни отримувача і текст', 'error');
   if(to === currentUser) return notify('Не можна писати собі', 'error');
-  db.ref('users/'+to).once('value', snap => {
+  db.ref('users/'+to).once('value', async snap => {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
+    if(!(await pmCheckOutgoing(to, text))) return;
     const msg = { from:currentUser, to, text, ts:Date.now() };
     db.ref('pm/'+currentUser).push(msg);
     const toRef = db.ref('pm/'+to).push(msg);
@@ -576,6 +580,8 @@ function openPmThread(otherUser) {
   // Перемикаємо ВИДИМІСТЬ, а не знищуємо розмітку — інбокс лишається цілим
   if(inboxView) inboxView.classList.add('hidden');
   threadView.classList.remove('hidden');
+  pmLayoutOpen();
+  const blockedByMe = pmIsBlockedByMe(otherUser);
 
   // Позначаємо цю переписку прочитаною — без цього в інбоксі назавжди
   // лишався б непрочитаний індикатор навіть після відкриття чату.
@@ -591,6 +597,8 @@ function openPmThread(otherUser) {
           <div id="pmThreadStatus" style="font-size:10px;color:var(--fg-4);">● ...</div>
         </div>
       </div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="openPmReport(${jsArg(otherUser)})" aria-label="Поскаржитись" title="Поскаржитись"><span class="ic i-flag" aria-hidden="true"></span></button>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="pmToggleBlock(${jsArg(otherUser)})" aria-label="${blockedByMe ? 'Розблокувати' : 'Заблокувати'}" title="${blockedByMe ? 'Розблокувати' : 'Заблокувати'}"><span class="ic ${blockedByMe ? 'i-unlock' : 'i-ban'}" aria-hidden="true"></span></button>
     </div>
     <div id="pmThreadMessages" style="flex:1;overflow-y:auto;padding:12px 14px;background:var(--bg);min-height:0;"></div>
     <div id="pmImgPreview" style="display:none;padding:6px 14px;background:var(--bg);border-top:1px solid var(--line);flex-shrink:0;">
@@ -599,12 +607,15 @@ function openPmThread(otherUser) {
         <div onclick="clearPmImg()" style="position:absolute;top:-6px;right:-6px;background:var(--neg);color:var(--on-neg);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
       </div>
     </div>
-    <div style="background:var(--bg);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <button onclick="document.getElementById('pmImgInput').click()" style="background:rgb(var(--tint-rgb) / 0.08);border:1px solid rgb(var(--tint-rgb) / 0.12);border-radius:var(--r-md);padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;">📎</button>
-      <input type="file" id="pmImgInput" accept="image/*,.gif" style="display:none;" onchange="handlePmImage(this,'${otherUser}')">
-      <input id="pmReplyInput" placeholder="Повідомлення..." style="flex:1;min-width:0;margin:0;text-align:left;" onkeydown="if(event.key==='Enter')pmReply('${otherUser}')">
-      <button onclick="pmReply(${jsArg(otherUser)})" style="background:var(--info);border:none;border-radius:var(--r-md);padding:10px 14px;color:var(--on-info);font-weight:800;cursor:pointer;font-size:15px;width:auto;flex-shrink:0;line-height:1;">➤</button>
-    </div>`;
+    ${blockedByMe ? `<div class="pm-composer pm-blocked-bar">
+      <span>Ти заблокував цього гравця</span>
+      <button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="pmToggleBlock(${jsArg(otherUser)})">Розблокувати</button>
+    </div>` : `<div class="pm-composer">
+      <button type="button" class="btn btn-secondary btn-icon" onclick="document.getElementById('pmImgInput').click()" aria-label="Прикріпити фото"><span class="ic i-paperclip" aria-hidden="true"></span></button>
+      <input type="file" id="pmImgInput" accept="image/*,.gif" class="hidden" onchange="handlePmImage(this)">
+      <input id="pmReplyInput" placeholder="Повідомлення..." maxlength="1000" autocomplete="off" enterkeyhint="send" onkeydown="if(event.key==='Enter'){event.preventDefault();pmReply(${jsArg(otherUser)})}">
+      <button type="button" class="btn btn-primary btn-icon" onclick="pmReply(${jsArg(otherUser)})" aria-label="Надіслати"><span class="ic i-send" aria-hidden="true"></span></button>
+    </div>`}`;
 
   // Реальний онлайн-статус замість того, що раніше було намертво
   // прописано "● Онлайн" незалежно від того, чи людина справді в мережі.
@@ -628,23 +639,30 @@ function openPmThread(otherUser) {
     const el = document.getElementById('pmThreadMessages');
     if(!el) return;
     const msgs = Object.values(snap.val()||{})
-      .filter(m=>(m.from===currentUser&&m.to===otherUser)||(m.from===otherUser&&m.to===currentUser))
+      .filter(m=>m && ((m.from===currentUser&&m.to===otherUser)||(m.from===otherUser&&m.to===currentUser)))
       .sort((a,b)=>a.ts-b.ts);
     el.innerHTML = msgs.map(m => {
       const isMe = m.from === currentUser;
       const timeStr = new Date(m.ts).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
-      // m.imgUrl прилітає з бази — перевіряємо, що це справді http(s) URL
-      // (а не, наприклад, "javascript:..."), перед вставкою в src/onclick,
-      // і так само екрануємо, як m.text нижче.
-      const isValidPmImgUrl = typeof m.imgUrl === 'string' && /^https?:\/\//i.test(m.imgUrl);
-      const safePmImgUrl = isValidPmImgUrl ? escapeHtml(m.imgUrl) : '';
-      const contentHtml = m.imgUrl
-        ? (isValidPmImgUrl
-            ? `<img src="${safePmImgUrl}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-bottom:4px;cursor:pointer;" onclick="window.open('${safePmImgUrl}','_blank')">`
-            : `<div style="font-size:12px;color:var(--fg-3);">⚠️ Недійсне зображення</div>`)
-        : `<div style="font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text||'')}</div>`;
+      // m.imgUrl прилітає з бази. Фото з телефона лежать як data:image/…;base64
+      // (Storage не підключено) — раніше їх відкидала перевірка на http(s), і
+      // замість фото писало «Недійсне зображення». Тепер пропускаємо https і
+      // data:image, а все інше або фото, що не завантажилось, — плейсхолдер.
+      const isValidPmImgUrl = typeof m.imgUrl === 'string' && PM_IMG_RE.test(m.imgUrl);
+      const filtered = !isMe && isAbusiveText(m.text);
+      const textHtml = m.text
+        ? (filtered
+            ? `<div class="pm-filtered">Повідомлення приховано фільтром. <button type="button" class="link-btn" onclick="openPmReport(${jsArg(otherUser)})">Поскаржитись</button></div>`
+            : `<div style="font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text)}</div>`)
+        : '';
+      const imgHtml = m.imgUrl
+        ? (isValidPmImgUrl && !filtered
+            ? `<img class="pm-img" src="${escapeHtml(m.imgUrl)}" alt="Фото" loading="lazy" onerror="pmImgFailed(this)" onclick="pmOpenImage(this.src)">`
+            : pmImgPlaceholderHtml())
+        : '';
+      const contentHtml = imgHtml + textHtml;
       return `<div style="display:flex;flex-direction:${isMe?'row-reverse':'row'};gap:8px;margin-bottom:8px;animation:slideUp .2s ease;">
-        <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgb(var(--accent-rgb) / 0.2)':'rgb(var(--info-rgb) / 0.2)'};border:1.5px solid ${isMe?'rgb(var(--accent-rgb) / 0.3)':'rgb(var(--info-rgb) / 0.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${m.from[0].toUpperCase()}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:${isMe?'rgb(var(--accent-rgb) / 0.2)':'rgb(var(--info-rgb) / 0.2)'};border:1.5px solid ${isMe?'rgb(var(--accent-rgb) / 0.3)':'rgb(var(--info-rgb) / 0.3)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;">${escapeHtml(String(m.from||'?')[0].toUpperCase())}</div>
         <div style="max-width:72%;background:${isMe?'rgb(var(--accent-rgb) / 0.08)':'rgb(var(--tint-rgb) / 0.05)'};border:1px solid ${isMe?'rgb(var(--accent-rgb) / 0.15)':'rgb(var(--tint-rgb) / 0.07)'};border-radius:${isMe?'12px 4px 12px 12px':'4px 12px 12px 12px'};padding:8px 10px;">
           ${contentHtml}
           <div style="font-size:9px;color:var(--fg-4);margin-top:3px;text-align:${isMe?'right':'left'};">${timeStr}</div>
@@ -662,33 +680,42 @@ let _pmThreadPresenceUser = null;
 
 let _pmThreadListener = null;
 
-function closePmThread() {
+function closePmThread(leaving) {
+  pmLayoutClose();
   if(_pmThreadListener) { db.ref('pm/'+currentUser).off('value', _pmThreadListener); _pmThreadListener = null; }
   if(_pmThreadPresenceListener) { db.ref('online/'+_pmThreadPresenceUser).off('value', _pmThreadPresenceListener); _pmThreadPresenceListener = null; _pmThreadPresenceUser = null; }
   const inboxView = document.getElementById('pmInboxView');
   const threadView = document.getElementById('pmThreadView');
   if(threadView) { threadView.classList.add('hidden'); threadView.innerHTML = ''; }
   if(inboxView) inboxView.classList.remove('hidden');
-  renderPmInbox(); // освіжити список — статуси прочитання могли змінитись
+  if(!leaving) renderPmInbox(); // освіжити список — статуси прочитання могли змінитись
 }
 
-function handlePmImage(input, toUser) {
+// Фото стискаємо до 1280 px (JPEG) — воно лягає в базу як data:-URL.
+// GIF до 1 МБ лишаємо як є, щоб не зупинити анімацію.
+async function handlePmImage(input) {
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 4*1024*1024) { notify('Файл занадто великий','error'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    const preview = document.getElementById('pmImgPreview');
-    const img = document.getElementById('pmImgPreviewImg');
-    if(preview) preview.style.display = 'block';
-    if(img) { img.src = e.target.result; img.dataset.src = e.target.result; }
-  };
-  reader.readAsDataURL(file);
+  if(file.size > 8*1024*1024) { input.value = ''; notify('Файл занадто великий (до 8 МБ)','error'); return; }
+  let dataUrl;
+  try {
+    dataUrl = (file.type === 'image/gif' && file.size <= PM_GIF_MAX_BYTES)
+      ? await readFileAsDataUrl(file)
+      : await compressImageFile(file, { maxSide: 1280, quality: 0.8 });
+  } catch(e) { input.value = ''; notify(e.message || 'Не вдалося відкрити фото', 'error'); return; }
+  if(!PM_IMG_RE.test(dataUrl)) { input.value = ''; notify('Цей формат фото не підтримується', 'error'); return; }
+  const preview = document.getElementById('pmImgPreview');
+  const img = document.getElementById('pmImgPreviewImg');
+  if(preview) preview.style.display = 'block';
+  if(img) { img.src = dataUrl; img.dataset.src = dataUrl; }
 }
 
 function clearPmImg() {
   const preview = document.getElementById('pmImgPreview');
   if(preview) preview.style.display = 'none';
+  const img = document.getElementById('pmImgPreviewImg');
+  // Без цього фото, яке вже надіслали, їхало б і з наступним текстом
+  if(img) { img.removeAttribute('src'); delete img.dataset.src; }
   const input = document.getElementById('pmImgInput');
   if(input) input.value = '';
 }
@@ -696,12 +723,18 @@ function clearPmImg() {
 // renderPmInboxFull() — прибрано, замінено на closePmThread() яка просто
 // перемикає видимість підекранів, не знищуючи розмітку інбоксу
 
-function pmReply(to) {
+let _pmSending = false;
+async function pmReply(to) {
+  if(_pmSending) return;
   const text = (document.getElementById('pmReplyInput')?.value||'').trim();
   const imgEl = document.getElementById('pmImgPreviewImg');
-  const imgSrc = imgEl ? imgEl.dataset.src || imgEl.src : null;
-  const hasImg = imgSrc && imgSrc.startsWith('data:');
+  const imgSrc = imgEl ? imgEl.dataset.src || '' : '';
+  const hasImg = !!imgSrc && PM_IMG_RE.test(imgSrc);
   if(!text && !hasImg) return;
+  _pmSending = true;
+  let allowed = false;
+  try { allowed = await pmCheckOutgoing(to, text); } finally { _pmSending = false; }
+  if(!allowed) return;
   const msg = { from:currentUser, to, text: text||'', ts:Date.now() };
   if(hasImg) msg.imgUrl = imgSrc;
   db.ref('pm/'+currentUser).push(msg);

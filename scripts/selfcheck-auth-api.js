@@ -138,9 +138,13 @@ function decodeJwt(token) {
   assert.strictEqual((await call("POST", { action: "login", nick: "victim", password: "hunter22" }, { "x-real-ip": "9.9.9.9" })).status, 429);
 
   // --- реєстрація ---
-  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "first_phone", secA: "answer", ...body }, { "x-real-ip": ip });
+  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "first_phone", secA: "answer", birthDate: "2000-01-01", ...body }, { "x-real-ip": ip });
   assert.strictEqual((await reg({ nick: "<img>", password: "123456" })).status, 400, "нік з HTML");
   assert.strictEqual((await reg({ nick: "ok_nick", password: "123" })).status, 400, "короткий пароль");
+  assert.strictEqual((await reg({ nick: "kid", password: "123456", birthDate: new Date(Date.now() - 10 * 365.25 * 864e5).toISOString().slice(0, 10) })).status, 403, "молодше MIN_AGE — акаунт не створюється");
+  assert.strictEqual(tree.users.kid, undefined);
+  assert.strictEqual((await reg({ nick: "nobirth", password: "123456", birthDate: "" })).status, 400, "без дати народження");
+  assert.strictEqual((await reg({ nick: "badbirth", password: "123456", birthDate: "2001-02-30" })).status, 400, "неіснуюча дата");
   assert.strictEqual((await reg({ nick: "alice", password: "123456" })).status, 409, "зайнятий нік не перезаписується");
   assert.strictEqual(tree.users.alice.balance, 10);
   r = await reg({ nick: "newbie", password: "123456", promo: "vip", ref: "alice", balance: 1e9 });
@@ -151,6 +155,8 @@ function decodeJwt(token) {
   assert.strictEqual(tree.users.newbie.pass, undefined, "у публічному вузлі нового гравця хешів немає");
   assert.ok(tree.user_secrets.newbie.pass.startsWith("pbkdf2$"));
   assert.ok(tree.user_secrets.newbie.securityAnswerHash.startsWith("pbkdf2$"));
+  assert.strictEqual(tree.user_secrets.newbie.birthDate, "2000-01-01", "дата народження — лише в user_secrets");
+  assert.strictEqual(tree.users.newbie.birthDate, undefined);
   assert.strictEqual(decodeJwt(r.data.token).claims.uid, "newbie");
   for (let i = 0; i < 5; i++) await reg({ nick: "spam" + i, password: "123456" }, "30.0.0.1");
   assert.strictEqual((await reg({ nick: "spam9", password: "123456" }, "30.0.0.1")).status, 429, "масова реєстрація з однієї IP");

@@ -47,6 +47,9 @@ function build(strict) {
   const authed = strict ? "auth != null" : "true";
   const isAdmin = `(auth != null && (auth.uid === '${OWNER}' || root.child('users').child(auth.uid).child('isAdmin').val() === true))`;
   const admin = strict ? isAdmin : "true";
+  // Роль support (users/<нік>/role, ставить лише адмін): читає всі звернення
+  // і міняє в них статус/відповідь. Адмін має це завжди.
+  const isSupport = `(auth != null && (${isAdmin} || root.child('users').child(auth.uid).child('role').val() === 'support'))`;
   const owner = (v_) => (strict ? `auth != null && (auth.uid === ${v_} || ${isAdmin})` : "true");
   // Запис лише на рівні елемента колекції: push()/update() працюють як і
   // раніше, а стерти чи перезаписати всю колекцію одним запитом — ні.
@@ -94,6 +97,7 @@ function build(strict) {
       securityAnswerHash: { ".write": "false", ...userNode.securityAnswerHash },
       isAdmin: adminOnly,
       adminPerms: adminOnly,
+      role: { ...adminOnly, ...v("newData.isString() && newData.val().matches(/^(support|admin)$/)") },
       banned: adminOnly,
       banReason: adminOnly,
       autoFrozen: adminOnly,
@@ -141,7 +145,7 @@ function build(strict) {
 
     users: {
       ".read": true,
-      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "lastIpHash", "stats/gamesPlayed", "stats/biggestWin", "isBot"],
+      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "lastIpHash", "stats/gamesPlayed", "stats/biggestWin", "isBot", "role"],
       ...(strict ? { ".write": isAdmin } : {}),
       $u: userNode,
     },
@@ -181,7 +185,13 @@ function build(strict) {
       $u: { ".write": strict ? "auth != null && auth.uid === $u" : "true", ".validate": "newData.isNumber() && newData.val() === now" },
     },
     clan_chats: { ".read": true, $c: { $m: { ".write": authed, ...chatMessage(["user", "sender"]) } } },
-    pm: { ".read": true, $u: { $m: { ".write": authed, ...chatMessage(["from", "to"]) } } },
+    // Строгий режим: у ПМ гравця не може писати той, кого він заблокував
+    // (users/<гравець>/blocked/<нік>); прибрати повідомлення з чужої скриньки
+    // так само не можна, свою копію — можна.
+    pm: { ".read": true, $u: { $m: {
+      ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin} || (newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists()))` : authed,
+      ...chatMessage(["from", "to"]),
+    } } },
     support_chats: {
       ".read": strict ? isAdmin : true,
       $u: { ".read": strict ? `auth != null && auth.uid === $u` : true, $m: { ".write": owner("$u"), ...chatMessage(["sender"]) } },
@@ -241,6 +251,9 @@ function build(strict) {
     investPool: openNode(),
     p2p_loans: openNode(),
 
+    // ── Звернення: питання, скарги, пропозиції, скарги на гравців з ПМ ──
+    feedback: feedbackNode(strict, isAdmin, isSupport),
+
     // ── Заявки: створює гравець, статус міняє адмін або сервер ──
     deposit_requests: requestNode(strict, isAdmin),
     withdraw_requests: requestNode(strict, isAdmin),
@@ -263,6 +276,48 @@ function build(strict) {
     axiomLinkCodes: openNode(),
   };
   return { rules };
+}
+
+// Звернення: створює гравець від свого імені (лише зі статусом new і без
+// відповіді), читає — свої (запитом orderByChild('uid').equalTo(<нік>)) або
+// всі, якщо support/admin. Статус і відповідь міняє лише support/admin.
+// Фаза 1 не знає, хто пише, — там лише перевірка формату.
+function feedbackNode(strict, isAdmin, isSupport) {
+  const fields = {
+    uid: v(safe(64)),
+    role: v("newData.isString() && newData.val().matches(/^(player|support|admin)$/)"),
+    type: v("newData.isString() && newData.val().matches(/^(question|complaint|suggestion|report)$/)"),
+    subject: v(str(120)),
+    message: v(str(4000)),
+    contact: v(str(200)),
+    createdAt: v("newData.isNumber()"),
+    status: v("newData.isString() && newData.val().matches(/^(new|in_progress|closed)$/)"),
+    reply: v(str(4000)),
+    reply_at: v("newData.isNumber()"),
+    reply_by: v(safe(64)),
+    reportedUser: v(safe(64)),
+    evidence: { $i: v(str(400)) },
+    // Скрін стискається в браузері; 3 млн символів base64 ≈ 2.2 МБ.
+    imgUrl: v(`newData.isString() && newData.val().length <= 3000000 && newData.val().matches(/^data:image\\/(png|jpeg|webp|gif);base64,/)`),
+    $other: v("false"),
+  };
+  const validate = "newData.hasChildren(['uid', 'type', 'message', 'createdAt', 'status'])";
+  if (!strict) return { ".read": true, ".indexOn": ["uid", "status", "createdAt"], $id: { ".write": true, ".validate": validate, ...fields } };
+  const staff = { ".write": isSupport };
+  return {
+    ".read": `${isSupport} || (auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid)`,
+    ".indexOn": ["uid", "status", "createdAt"],
+    $id: {
+      ".read": "auth != null && data.child('uid').val() === auth.uid",
+      ".write": `${isAdmin} || (!data.exists() && auth != null && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'new' && !newData.child('reply').exists())`,
+      ".validate": validate,
+      ...fields,
+      status: { ...staff, ...fields.status },
+      reply: { ...staff, ...fields.reply },
+      reply_at: { ...staff, ...fields.reply_at },
+      reply_by: { ".write": isSupport, ".validate": `${safe(64)} && newData.val() === auth.uid` },
+    },
+  };
 }
 
 function requestNode(strict, isAdmin, anonymousCreate = false) {

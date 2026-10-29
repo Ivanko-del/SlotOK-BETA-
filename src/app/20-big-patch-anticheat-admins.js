@@ -613,14 +613,14 @@ function loadAdminsList() {
       const legacy = !owner && (!perms || typeof perms !== 'object');
       // Показуємо лише видані права — так одразу видно обсяг доступу,
       // а не сіро-зелену мозаїку з усіх дев'яти
-      const granted = legacy || owner ? [] : ADMIN_PERMS.filter(p => perms[p.key] === true);
+      const granted = legacy || owner ? [] : ADMIN_PERMS.filter(p => p.key !== 'feedback' && perms[p.key] === true);
       const chips = owner
         ? '<span class="adm-perm-chip on">Повний доступ (власник)</span>'
         : legacy
           ? '<span class="adm-perm-chip legacy">Повний доступ — права не обмежено</span>'
           : granted.length
             ? granted.map(p => `<span class="adm-perm-chip on">${p.icon} ${p.name}</span>`).join('')
-              + (granted.length < ADMIN_PERMS.length ? `<span class="adm-perm-chip">решта закрита</span>` : '')
+              + (granted.length < ADMIN_PERMS.length - 1 ? `<span class="adm-perm-chip">решта закрита</span>` : '')
             : '<span class="adm-perm-chip off">Доступу немає жодного</span>';
 
       return `<div class="adm-admin-card">
@@ -633,7 +633,7 @@ function loadAdminsList() {
         </div>
         <div class="adm-perm-chips">${chips}</div>
         ${owner ? '' : `<div class="adm-perm-toggles" id="admPerms-${escapeHtml(nick)}" style="display:none;">
-          ${ADMIN_PERMS.map(p => `<label class="adm-perm-row">
+          ${ADMIN_PERMS.filter(p => p.key !== 'feedback').map(p => `<label class="adm-perm-row">
             <input type="checkbox" data-admin-nick="${escapeHtml(nick)}" data-perm="${p.key}" ${(!legacy && perms[p.key] === true) ? 'checked' : ''}>
             <span><b>${p.icon} ${p.name}</b><br><span style="color:var(--fg-3);font-size:10px;">${p.desc}</span></span>
           </label>`).join('')}
@@ -673,7 +673,7 @@ function grantAdmin() {
   db.ref('users/' + nick).once('value').then(snap => {
     if(!snap.exists()) return notify('Гравця не знайдено', 'error');
     if(snap.val().isAdmin === true) return notify(nick + ' уже адмін', 'info');
-    db.ref('users/' + nick).update({ isAdmin: true, adminPerms: ADMIN_PRESET_DEFAULT });
+    db.ref('users/' + nick).update({ isAdmin: true, role: 'admin', adminPerms: ADMIN_PRESET_DEFAULT });
     db.ref('pm/' + nick + '/' + db.ref().push().key).set({
       from: '👑 SlotOK', to: nick,
       text: 'Тобі видано права адміністратора. Доступні розділи видно в адмін-панелі.', ts: Date.now()
@@ -692,7 +692,7 @@ function revokeAdmin(nick) {
   if(nick.toLowerCase() === ADMIN_OWNER) return notify('Власника не можна зняти з адмінки', 'error');
   if(nick === currentUser) return notify('Зняти адмінку сам із себе не можна', 'error');
   if(!confirm('Зняти права адміна з ' + nick + '?')) return;
-  db.ref('users/' + nick).update({ isAdmin: false, adminPerms: null });
+  db.ref('users/' + nick).update({ isAdmin: false, role: null, adminPerms: null });
   db.ref('pm/' + nick + '/' + db.ref().push().key).set({
     from: '👑 SlotOK', to: nick, text: 'Права адміністратора знято.', ts: Date.now()
   });
@@ -808,6 +808,7 @@ function resetAntiCheatSettings() {
 
 function initAdminsPanel() {
   loadAdminsList();
+  loadSupportList();
   loadAntiCheatSettings();
 }
 

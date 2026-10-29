@@ -818,6 +818,8 @@ function showAdminBypassBanner(gameId) {
 // пласка мова друку замість «скла» й об'єму (DESIGN_SYSTEM.md).
 
 function switchTab(id, el) {
+  // Переписка ПМ висить поверх усього (у <body>) — закриваємо при виході
+  if(id !== 'pm') try { pmThreadForceClose(); } catch(e) {}
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
     if(!isAdminUser()) {
