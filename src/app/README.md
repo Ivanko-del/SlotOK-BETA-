@@ -46,7 +46,7 @@
 | 28-pvp-leaderboard-limbo | Coinflip/RPS/Prediction PvP, лідерборд дня/тижня, Limbo |
 | 29-support-chat | підтримка (AI + адмін) |
 | 30-home-achievements-stream | статистика Головної, досягнення, стріми |
-| 31-slotiky-tournament-live | Слотіки, турніри, live-матч |
+| 31-slotiky-tournament-live | магазин Слотіків (екран; каталог — `shared/shop.js`, купівля — `api/reward` → `lib/shop.js`), предмети в іграх (`renderGameItems`), турніри, live-матч |
 | 32-music-battlepass-stats | музика, **Battle Pass** (екран; таблиці — `shared/rewards.js`), особиста статистика |
 | 33-bank-card | віртуальна картка, `pushCardTx`, перекази Аксіомою |
 | 34-axiom-pm | Аксіома, Baccarat, відеопокер, приватні повідомлення, теми |
@@ -66,8 +66,10 @@
 | 49-mass-games | Бінго, Вікторина-баттл, Королівська битва — масові столи через кімнати (`quick`) |
 | 50-tables | столи 2–4: Вісімка, Дурень онлайн, Лудо через кімнати (старт господарем `start`) |
 | 52-holdem | Покер Texas Hold'em 3D: three.js-стіл, підписи місць поверх сцени, керування ставками |
+| 54-cosmetics | косметика з магазину Слотіків видна всім: `data-pn` (нік) / `data-pa` (аватар) → класи, `applyPlayerStyles`, кеш стилів гравців |
 | 53-support-safety | роль `support` (`isSupportUser`), звернення `feedback/` (форма, «Мої звернення», вкладка адмінки), безпека ПМ: фільтр `isAbusiveText`, блок, скарга, розкладка переписки (`pmLayoutOpen`) |
 | 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |
 
-Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`:
-їх читає і браузер, і сервер.
+Таблиці нагород (VIP, Battle Pass, бонуси) — не тут, а в `shared/rewards.js`;
+каталог магазину Слотіків (товари, ціни, бусти, скрині) — `shared/shop.js`.
+Їх читає і браузер, і сервер (`lib/progress.js`, `lib/shop.js`).

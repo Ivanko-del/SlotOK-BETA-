@@ -12,8 +12,8 @@ function initChat() {
       const showHeader = m.user !== prevUser;
       prevUser = m.user;
       const avatarHtml = m.avatarUrl
-        ? `<img src="${escapeHtml(m.avatarUrl)}" class="chat-msg-avatar-img">`
-        : `<div class="chat-msg-avatar-emoji">${escapeHtml(m.avatar||'👤')}</div>`;
+        ? `<img src="${safeUrl(m.avatarUrl)}" class="chat-msg-avatar-img" data-pa="${escapeHtml(m.user)}">`
+        : `<div class="chat-msg-avatar-emoji" data-pa="${escapeHtml(m.user)}">${escapeHtml(m.avatar||'👤')}</div>`;
       const contentHtml = m.imgUrl
         ? (m.isVideo
             ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:var(--r-lg);display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
@@ -21,7 +21,7 @@ function initChat() {
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
       const nameBadge = isAdmin ? ' <span style="background:var(--accent);color:var(--on-accent);font-size:8px;font-weight:900;padding:1px 5px;border-radius:var(--r-xs);">ADMIN</span>' : '';
       const headerHtml = showHeader
-        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${escapeHtml(m.user)}${nameBadge}</div>`
+        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}"><span data-pn="${escapeHtml(m.user)}">${escapeHtml(m.user)}</span>${nameBadge}</div>`
         : '';
       return `<div class="chat-msg" style="flex-direction:${isMe?'row-reverse':'row'};${!showHeader?'padding-top:2px;':''}">
         ${showHeader ? avatarHtml : `<div style="width:32px;flex-shrink:0;"></div>`}

@@ -89,6 +89,39 @@
           ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
           ".validate": "newData.isString() && newData.val().matches(/^(support|admin)$/)"
         },
+        "slotiky": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "slotikyItems": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopV2": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopSpins": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopFortune": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "freeFortune": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "minesHints": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "crashInsurance": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lootboxInv": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "cosmetics": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$slot": {
+            ".validate": "newData.val() === false || (newData.isString() && newData.val().matches(/^[a-z_]{1,32}$/))"
+          }
+        },
         "banned": {
           ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
         },

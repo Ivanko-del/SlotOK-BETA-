@@ -19,9 +19,23 @@
 
 const crypto = require("crypto");
 const { dbGet, dbSet, dbUpdate, dbIncrement, dbTransaction } = require("../lib/firebase");
+const SHOP = require("../shared/shop");
 
 // Фріспін: freeSlots > 0 → −1. Спін бонус-раунду: spinsLeft > 0 → −1.
 // Обидва — транзакції, тож один фріспін не зіграти двічі паралельними запитами.
+// Безкоштовні спіни з магазину (shopSpins / shopFortune) і прокрутки Колеса з
+// Battle Pass (freeFortune) — той самий лічильник −1 (spendCounter).
+async function spendCounter(nick, counter) {
+  const t = await dbTransaction(`users/${nick}/${counter}`, (cur) => ((Number(cur) || 0) > 0 ? Number(cur) - 1 : undefined));
+  return { ok: t.committed, left: Number(t.value) || 0 };
+}
+const FREE_MODES = {
+  slots: { shop: { counter: "shopSpins", stake: SHOP.SHOP_SPIN_STAKE, none: "Куплених фріспінів немає" } },
+  fortune: {
+    free: { counter: "freeFortune", stake: SHOP.FREE_FORTUNE_STAKE, none: "Безкоштовних прокруток немає" },
+    shop: { counter: "shopFortune", stake: SHOP.SHOP_SPIN_STAKE, none: "Куплених прокруток немає" },
+  },
+};
 async function spendSlotsSpin(nick, mode) {
   if (mode === "free") {
     const t = await dbTransaction(`users/${nick}/freeSlots`, (cur) => ((Number(cur) || 0) > 0 ? Number(cur) - 1 : undefined));
@@ -112,7 +126,17 @@ module.exports = async (req, res) => {
     // 3) Слоти: фріспін або спін бонус-раунду не списують ставку, але мають
     //    бути справді доступні — це перевіряємо й списуємо тут, атомарно.
     let debit = bet, stake = bet, bonusMult = 1, slotsExtra = {};
-    if (body.game === "slots" && params.mode !== "paid") {
+    const freeMode = (FREE_MODES[body.game] || {})[params.mode];
+    if (freeMode) {
+      const spend = await spendCounter(nick, freeMode.counter);
+      if (!spend.ok) {
+        await dbUpdate(roundPath, { status: "rejected", reason: "no_" + params.mode });
+        return fail(res, 409, "no_" + params.mode, freeMode.none, { [freeMode.counter]: 0 });
+      }
+      debit = 0;
+      stake = freeMode.stake;
+      slotsExtra = { [freeMode.counter]: spend.left };
+    } else if (body.game === "slots" && params.mode !== "paid") {
       const spend = await spendSlotsSpin(nick, params.mode);
       if (!spend.ok) {
         await dbUpdate(roundPath, { status: "rejected", reason: "no_" + params.mode });

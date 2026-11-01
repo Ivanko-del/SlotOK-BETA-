@@ -98,7 +98,7 @@ function copyCardNumberFlash(e) {
   var num = numEl ? numEl.textContent.replace(/\s/g,'') : '';
   if(!/^[0-9]{12,19}$/.test(num)) return notify(hasConnectedCard()
     ? 'Повний номер картки зберігається у вашому банку, не в SlotOK'
-    : 'Спочатку підключіть картку в Гаманці', 'error');
+    : 'Спочатку випустіть картку в Гаманці', 'error');
   navigator.clipboard && navigator.clipboard.writeText(num).then(function() {
     notify('Номер скопійовано', 'success');
     if(numEl) { numEl.classList.add('copied'); setTimeout(function(){ numEl.classList.remove('copied'); }, 600); }
@@ -116,7 +116,7 @@ function toggleCvvVisibility() {
   var card = getActiveCard();
   if(!card) return notify(hasConnectedCard()
     ? 'CVV своєї картки SlotOK не зберігає — дивіться його на самій картці'
-    : 'Спочатку підключіть картку в Гаманці', 'error');
+    : 'Спочатку випустіть картку в Гаманці', 'error');
   var cvv = card.cvv || '•••';
   var hidden = cvvFront && cvvFront.textContent === '•••';
   if(cvvFront) cvvFront.textContent = hidden ? cvv : '•••';
@@ -174,12 +174,11 @@ function ksEsc(str) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ПІДКЛЮЧЕНІ КАРТКИ
-// SlotOK не випускає власних карток — ні тимчасових, ні постійних.
-// У Касі показується лише та картка, яку гравець підключив сам:
-//   • своя картка свого банку — зберігаємо ТІЛЬКИ банк, ім'я власника,
-//     останні 4 цифри й термін дії. Повний номер і CVV не приймаємо
-//     й не пишемо в базу взагалі;
+// КАРТКИ ГРАВЦЯ
+//   • ігрова картка SlotOK (bank 'slotok', game: true) — з v121 єдиний спосіб
+//     завести нову картку: лише назва, «останні 4» для розрізнення і баланс;
+//   • старі «свої» картки банків (лише банк, ім'я, останні 4, термін) і
+//     Партнер-картки — нових не створюємо, наявні працюють як і раніше;
 //   • картка Аксіома Банку — приходить через 6-значний код і має повні
 //     дані, бо їх видає сам банк-партнер.
 // ═══════════════════════════════════════════════════════════════════
@@ -188,6 +187,7 @@ var KS_BANKS = {
   mono:   { name: 'Monobank',          color: '#1c1c1c', short: 'М'  },
   visa:   { name: 'Visa / Mastercard', color: '#1a1f71', short: 'VM' },
   partner:{ name: 'Партнер Банк',      color: '#4a9eff', short: 'PB' },
+  slotok: { name: 'SlotOK',            color: '#ff7a3d', short: 'S'  },
   abank:  { name: 'A-Bank',            color: '#e2333a', short: 'A'  },
   sense:  { name: 'Sense Bank',        color: '#7b3fe4', short: 'S'  },
   pumb:   { name: 'ПУМБ',              color: '#c8102e', short: 'ПБ' },
@@ -219,7 +219,8 @@ function getLinkedCards() {
     // і 30-денний термін; звичайна підключена картка — лише маску.
     var gen = !!c.generated;
     out.push({
-      id: id, kind: gen ? 'partner' : 'external', bank: c.bank || 'other', bankName: b.name,
+      id: id, kind: c.game ? 'game' : gen ? 'partner' : 'external', bank: c.bank || 'other',
+      bankName: c.game ? (c.label || 'Картка SlotOK') : b.name,
       mark: b.short, markColor: b.color,
       holder: String(c.holder || '').toUpperCase(),
       last4: c.last4 || (c.number ? String(c.number).replace(/\D/g,'').slice(-4) : '••••'),
@@ -402,7 +403,7 @@ function noteCardSpend(id, amount) {
 
 function openCardLimitModal() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
+  if(!card) return notify('Спочатку випустіть картку в Гаманці', 'error');
   var old = document.getElementById('ksLimitModal'); if(old) old.remove();
   var cur = cardDayLimit(card.id);
   var m = document.createElement('div');
@@ -460,11 +461,10 @@ function renderLinkedCards() {
   if(!cards.length) {
     el.innerHTML =
       '<div class="ks-empty" style="padding:22px 18px;">' +
-        '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що не підключено жодної картки. ' +
-          'Підключіть свою, згенеруйте Партнер-картку або прив\'яжіть Аксіому.</div>' +
+        '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що жодної картки. ' +
+          'Випустіть ігрову картку SlotOK або прив\'яжіть Аксіому.</div>' +
         '<div class="ks-btn-row" style="margin-bottom:8px;">' +
-          '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
-          '<button class="ks-btn" onclick="createPartnerCard()">' + ksIcon('card') + ' Партнер</button>' +
+          '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
         '</div>' +
         '<button class="ks-btn is-quiet is-block" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Прив\'язати Аксіому</button>' +
       '</div>';
@@ -516,11 +516,11 @@ function renderCardMetaRow(card) {
       '<section class="ks-panel">' +
         '<div class="ks-empty">' +
           '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
-          '<div class="ks-empty-title">Підключіть свою картку</div>' +
-          '<div class="ks-empty-text">SlotOK не випускає власних карток. Підключіть <b>свою картку</b> ' +
-            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Гаманці.</div>' +
+          '<div class="ks-empty-title">Випустіть картку</div>' +
+          '<div class="ks-empty-text">Ігрова картка SlotOK — окремий гаманець у грі. Без справжніх банків і номерів. ' +
+            'Можна також привʼязати картку <b>Аксіома Банку</b>.</div>' +
           '<div class="ks-btn-row">' +
-            '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
+            '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
             '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
           '</div>' +
         '</div>' +
@@ -551,7 +551,7 @@ function renderCardMetaRow(card) {
       '<button class="ks-btn is-quiet" style="flex:0 0 auto;padding:13px 15px;" onclick="openCardColorPicker()" title="Скін картки">' + ksIcon('palette') + '</button>' +
     '</div>' +
     '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">' +
-      'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.</p>';
+      (card.kind === 'game' ? 'Ігрова картка SlotOK — без справжнього банку й номера.' : 'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.') + '</p>';
 }
 
 function renderCardQuickActions(card) {
@@ -573,25 +573,22 @@ function renderCardQuickActions(card) {
   el.innerHTML = acts.map(function(a) {
     var off = a.needsCard && !card;
     return '<button class="ks-quick-btn" onclick="bankAction(\'' + a.k + '\')"' +
-      (off ? ' disabled title="Спочатку підключіть картку"' : '') + '>' +
+      (off ? ' disabled title="Спочатку випустіть картку"' : '') + '>' +
       ksIcon(a.icon) + '<span>' + a.label + '</span></button>';
   }).join('');
 }
 
-// ── Додавання своєї картки ───────────────────────────────────────
-var _ksAddBank = 'privat';
+// ── Нова ігрова картка ───────────────────────────────────────────
+// З v121 картки лише ігрові: SlotOK випускає їх сам — без справжнього банку,
+// номера, імені й CVV. Видно тільки назву, останні 4 «цифри» для розрізнення
+// і баланс. Раніше підключені картки банків і Партнер-картки лишаються як були.
+var GAME_CARDS_MAX = 5;
 
 function openAddCardModal() {
   if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
   closeAddCardModal();
-  var banks = Object.keys(KS_BANKS).map(function(id) {
-    var b = KS_BANKS[id];
-    return '<button class="ks-btn is-sm' + (id === _ksAddBank ? ' is-primary' : ' is-quiet') + '" ' +
-      'data-bank="' + id + '" onclick="selectAddCardBank(\'' + id + '\')" style="justify-content:flex-start;">' +
-      '<span class="ks-bank" style="width:20px;height:20px;border-radius:var(--r-sm);display:flex;align-items:center;' +
-      'justify-content:center;font-size:10px;font-weight:800;color:var(--fg);background:' + b.color + ';">' + b.short + '</span>' +
-      b.name + '</button>';
-  }).join('');
+  var count = getLinkedCards().filter(function(c) { return c.kind !== 'axiom'; }).length;
+  if(count >= GAME_CARDS_MAX) return notify('Максимум ' + GAME_CARDS_MAX + ' карток. Відключіть зайву, щоб випустити нову.', 'error');
   var m = document.createElement('div');
   m.className = 'ks-modal';
   m.id = 'ksAddCardModal';
@@ -599,105 +596,51 @@ function openAddCardModal() {
   m.innerHTML =
     '<div class="ks-modal-box">' +
       '<div class="ks-modal-head">' +
-        '<div class="ks-modal-title">Підключити свою картку</div>' +
+        '<div class="ks-modal-title">Нова картка SlotOK</div>' +
         '<button class="ks-modal-x" onclick="closeAddCardModal()">' + ksIcon('x') + '</button>' +
       '</div>' +
-      '<label class="ks-label">Банк</label>' +
-      '<div id="ksAddBankGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">' + banks + '</div>' +
+      '<p class="ks-hint" style="margin:0 0 16px;">Ігрова картка — окремий гаманець усередині SlotOK. Можна завести кілька: ' +
+        'для слотів, для турнірів, «відкладене». Баланс у кожної свій, перекидати між ними можна будь-коли.</p>' +
       '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcHolder">Ім\'я власника</label>' +
-        '<input id="ksAcHolder" maxlength="26" autocomplete="off" placeholder="IVAN KOVALENKO">' +
-      '</div>' +
-      '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcNum">Номер картки</label>' +
-        '<input id="ksAcNum" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="0000 0000 0000 0000" ' +
-          'oninput="ksFormatCardNum(this)" style="font-family:var(--font-mono);letter-spacing:1.5px;">' +
-      '</div>' +
-      '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcExp">Дійсна до</label>' +
-        '<input id="ksAcExp" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/YY" ' +
-          'oninput="ksFormatExpiry(this)" style="font-family:var(--font-mono);">' +
+        '<label class="ks-label" for="ksAcLabel">Назва картки</label>' +
+        '<input id="ksAcLabel" maxlength="20" autocomplete="off" placeholder="Напр. «Основна» чи «Турніри»">' +
       '</div>' +
       '<div class="ks-copy" style="align-items:flex-start;">' +
         '<span style="color:var(--pos);margin-top:1px;">' + ksIcon('shield', 17) + '</span>' +
-        '<div class="ks-copy-main ks-hint">У базу SlotOK запишемо лише <b>банк, ім\'я, термін дії та останні 4 цифри</b>. ' +
-          'Повний номер використовується лише тут, у браузері, для перевірки — і не зберігається. CVV не запитуємо ніколи.</div>' +
+        '<div class="ks-copy-main ks-hint">Справжні банківські картки SlotOK не підключає і не просить номер, ім\'я чи CVV. ' +
+          'Усі гроші тут — ігрові.</div>' +
       '</div>' +
-      '<button class="ks-btn is-primary is-block" onclick="submitAddCard()">Підключити картку</button>' +
-      '<div style="display:flex;align-items:center;gap:10px;margin:16px 0 12px;">' +
-        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
-        '<span class="ks-hint">або</span>' +
-        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
-      '</div>' +
-      '<button class="ks-btn is-block" style="margin-bottom:8px;" onclick="createPartnerCard()">' + ksIcon('card') + ' Згенерувати Партнер-картку (30 днів)</button>' +
-      '<button class="ks-btn is-block" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
-      '<p class="ks-hint" style="margin:10px 0 0;text-align:center;">Партнер-картку створює SlotOK (діє 30 днів). Аксіому — привʼяжи 6-значним кодом із застосунку Аксіома.</p>' +
+      '<button class="ks-btn is-primary is-block" onclick="createGameCard()">' + ksIcon('plus') + ' Випустити картку</button>' +
+      '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
     '</div>';
   document.body.appendChild(m);
-  setTimeout(function() { var f = document.getElementById('ksAcHolder'); if(f) f.focus(); }, 60);
+  setTimeout(function() { var f = document.getElementById('ksAcLabel'); if(f) f.focus(); }, 60);
 }
 function closeAddCardModal() {
   var m = document.getElementById('ksAddCardModal');
   if(m) m.remove();
 }
-function selectAddCardBank(id) {
-  _ksAddBank = id;
-  var grid = document.getElementById('ksAddBankGrid');
-  if(!grid) return;
-  Array.prototype.forEach.call(grid.querySelectorAll('[data-bank]'), function(b) {
-    var on = b.getAttribute('data-bank') === id;
-    b.className = 'ks-btn is-sm' + (on ? ' is-primary' : ' is-quiet');
-  });
-}
-function ksFormatCardNum(inp) {
-  var d = inp.value.replace(/\D/g,'').slice(0,16);
-  inp.value = d.replace(/(.{4})(?=.)/g,'$1 ');
-}
-function ksFormatExpiry(inp) {
-  var d = inp.value.replace(/\D/g,'').slice(0,4);
-  inp.value = d.length > 2 ? d.slice(0,2) + '/' + d.slice(2) : d;
-}
 
-function submitAddCard() {
+function createGameCard() {
   if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
-  var holder = (document.getElementById('ksAcHolder') || {value:''}).value.trim();
-  var digits = (document.getElementById('ksAcNum') || {value:''}).value.replace(/\D/g,'');
-  var exp    = (document.getElementById('ksAcExp') || {value:''}).value.trim();
-
-  if(holder.length < 3)  return notify('Вкажіть ім\'я власника картки', 'error');
-  if(digits.length !== 16) return notify('Номер картки — 16 цифр', 'error');
-  if(!ksLuhn(digits))    return notify('Такого номера картки не існує — перевірте цифри', 'error');
-  var m = /^(\d{2})\/(\d{2})$/.exec(exp);
-  if(!m)                 return notify('Термін дії у форматі MM/YY', 'error');
-  var mm = parseInt(m[1], 10), yy = 2000 + parseInt(m[2], 10);
-  if(mm < 1 || mm > 12)  return notify('Некоректний місяць у терміні дії', 'error');
-  // Картка дійсна до останнього дня вказаного місяця включно
-  if(new Date(yy, mm, 1).getTime() <= Date.now()) return notify('Термін дії цієї картки вже сплив', 'error');
-
-  var last4 = digits.slice(-4);
-  var dup = getLinkedCards().some(function(c) {
-    return c.kind === 'external' && c.bank === _ksAddBank && c.last4 === last4;
-  });
-  if(dup) return notify('Ця картка вже підключена', 'error');
-
-  // Повний номер далі не йде: у базу пишемо лише маску.
+  var label = ((document.getElementById('ksAcLabel') || { value: '' }).value || '').replace(/[<>"'`]/g, '').trim().slice(0, 20);
+  var used = getLinkedCards().map(function(c) { return c.last4; });
+  var last4;
+  do { last4 = String(Math.floor(1000 + Math.random() * 9000)); } while(used.indexOf(last4) >= 0);
   var rec = {
-    bank: _ksAddBank,
-    holder: holder.toUpperCase().slice(0, 26),
-    last4: last4,
-    expiry: exp,
-    addedAt: Date.now(),
+    bank: 'slotok', game: true,
+    label: label || ('Картка ' + (getLinkedCards().length + 1)),
+    holder: String(currentUser || '').toUpperCase().slice(0, 26),
+    last4: last4, addedAt: Date.now(), balance: 0,
   };
   var ref = db.ref('users/' + currentUser + '/linkedCards').push();
-  rec.balance = 0;
   ref.set(rec);
   userData.linkedCards = userData.linkedCards || {};
   userData.linkedCards[ref.key] = rec;
   _adoptOrZeroBalance(ref.key, ref);
-
   closeAddCardModal();
-  notify('Картку підключено', 'success');
-  if(navigator.vibrate) navigator.vibrate([40,30,60]);
+  notify('Картку «' + rec.label + '» випущено', 'success');
+  if(navigator.vibrate) navigator.vibrate([40, 30, 60]);
   renderCardPanel();
 }
 
@@ -815,8 +758,8 @@ function sourceBarHtml(ctx) {
   var a = getActiveCardObj();
   if(!a) {
     return '<div class="ks-copy" style="margin-bottom:14px;"><div class="ks-copy-main ks-hint">' +
-      'Картку не підключено — кошти йдуть на спільний баланс. ' +
-      '<b style="color:var(--ks-acc);cursor:pointer;" onclick="switchCashierTab(\'card\',document.getElementById(\'ctb-card\'))">Підключити</b></div></div>';
+      'Картки ще немає — кошти йдуть на спільний баланс. ' +
+      '<b style="color:var(--ks-acc);cursor:pointer;" onclick="switchCashierTab(\'card\',document.getElementById(\'ctb-card\'))">Випустити</b></div></div>';
   }
   var verb = ctx === 'withdraw' ? 'Вивід з картки' : ctx === 'transfer' ? 'Переказ з картки' : 'Зарахувати на картку';
   return '<div class="ks-copy" style="margin-bottom:14px;">' +
@@ -1198,11 +1141,12 @@ function renderCardPanel() {
         badgeEl.innerHTML = partnerExpired
           ? '<span class="ks-badge is-neg">Прострочена</span>'
           : '<span class="ks-badge is-acc">Партнер · ' + dLeft + 'д</span>';
-      } else badgeEl.innerHTML = '<span class="ks-badge">Підключена</span>';
+      } else if(primary.kind === 'game') badgeEl.innerHTML = '<span class="ks-badge is-acc">Ігрова</span>';
+      else badgeEl.innerHTML = '<span class="ks-badge">Підключена</span>';
     }
     if(numEl)    numEl.textContent    = isFull ? primary.number : ('•••• •••• •••• ' + primary.last4);
     if(holderEl) holderEl.textContent = primary.holder || String(currentUser || '').toUpperCase();
-    if(expiryEl) expiryEl.textContent = primary.expiry || '••/••';
+    if(expiryEl) expiryEl.textContent = primary.kind === 'game' ? '∞' : (primary.expiry || '••/••');
     if(sigEl)    sigEl.textContent    = primary.holder || String(currentUser || '').toUpperCase();
     // CVV скидаємо в приховане; гравець відкриває сам через кнопку
     if(cvvFront) cvvFront.textContent = '•••';
@@ -1364,7 +1308,7 @@ function showAllTransactions() {
 function bankAction(action) {
   var needsCard = { transfer:1, skinShop:1, freeze:1 };
   if(needsCard[action] && !hasConnectedCard()) {
-    notify('Спочатку підключіть картку в Гаманці', 'error');
+    notify('Спочатку випустіть картку в Гаманці', 'error');
     return;
   }
   var actions = {
@@ -1385,7 +1329,7 @@ function bankAction(action) {
 // й з якої йдуть гроші. Решта карток гаманця своїх станів не змінює.
 function toggleCardFreeze() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
+  if(!card) return notify('Спочатку випустіть картку в Гаманці', 'error');
   var frozen = isCardFrozen(card.id);
   db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
   if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }

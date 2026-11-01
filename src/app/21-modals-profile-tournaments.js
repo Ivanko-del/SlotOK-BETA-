@@ -202,63 +202,6 @@ function showReferralQR() {
   );
 }
 
-function openCryptoSimulator() {
-  updateCryptoPrices();
-  openModal('crypto',
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
-    '<button onclick="closeModal(\'crypto\')" style="background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;color:var(--fg-3);cursor:pointer;">⬅</button>' +
-    '<div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">📈 Крипто</div></div>' +
-    '<div style="background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.15);border-radius:var(--r-lg);padding:12px;margin-bottom:14px;">' +
-    '<div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">Портфель (₴)</div>' +
-    '<div style="font-size:24px;font-weight:900;color:var(--accent);" id="cryptoPortfolioVal">₴ 0</div>' +
-    '<div style="font-size:11px;color:var(--fg-4);">Баланс: ₴<span id="cryptoCasBal">'+formatNumber(userData.balance||0)+'</span></div></div>' +
-    '<div id="cryptoAssets"></div>',
-    {fullscreen: true}
-  );
-  renderCryptoAssets();
-  clearInterval(window._cryptoIv);
-  window._cryptoIv = setInterval(function() {
-    updateCryptoPrices(); renderCryptoAssets();
-  }, 5000);
-}
-
-function openProfileEffectShop() {
-  var currentEffect = userData.profileEffect || '';
-  var html = modalCloseBtn('profileeffect')
-    +'<div style="font-size:15px;font-weight:900;color:var(--special);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🎭 Ефекти профілю</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
-    + PROFILE_EFFECTS.map(function(e){
-        var owned = currentEffect === e.id;
-        return '<div style="background:var(--surface-1);border:1.5px solid '+(owned?'rgb(var(--accent-rgb) / 0.4)':'rgb(var(--tint-rgb) / 0.07)')+';border-radius:var(--r-lg);padding:14px;text-align:center;cursor:pointer;" onclick="buyProfileEffect(\''+e.id+'\','+e.price+');closeModal(\'profileeffect\')">'
-          +'<div style="font-size:32px;margin-bottom:6px;">'+e.emoji+'</div>'
-          +'<div style="font-size:12px;font-weight:700;margin-bottom:4px;">'+e.name+'</div>'
-          +'<div style="font-size:11px;color:'+(owned?'var(--accent)':'var(--fg-3)')+';">'+(owned?'✅ Активний':'🪙 '+formatNumber(e.price))+'</div>'
-          +'</div>';
-      }).join('')
-    +'</div>';
-  openModal('profileeffect', html);
-}
-
-function openCustomTagShop() {
-  var TAGS = [
-    {tag:'🔥 Вогонь',price:500},{tag:'💎 Діамант',price:1000},{tag:'👑 Король',price:2000},
-    {tag:'⚡ Блискавка',price:500},{tag:'🐉 Дракон',price:3000},{tag:'🎯 Снайпер',price:750},
-    {tag:'🌊 Хвиля',price:500},{tag:'🦁 Лев',price:1500},{tag:'🚀 Ракета',price:800},
-    {tag:'🎭 Маестро',price:2500},{tag:'🧊 Крижаний',price:600},{tag:'☠️ Череп',price:700},
-  ];
-  var html = modalCloseBtn('tagshop')
-    +'<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏷️ Магазин тегів</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-    + TAGS.map(function(t){
-        var safetag = t.tag.replace(/'/g, "\\'");
-        return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;" onclick="buyCustomTag(\''+safetag+'\','+t.price+');closeModal(\'tagshop\')">'
-          +'<div style="font-size:18px;margin-bottom:6px;">'+t.tag+'</div>'
-          +'<div style="font-size:11px;color:var(--accent);font-weight:700;">🪙 '+formatNumber(t.price)+'</div>'
-          +'</div>';
-      }).join('')
-    +'</div>';
-  openModal('tagshop', html);
-}
 
 function openSoundThemePicker() {
   var html = modalCloseBtn('soundtheme')
@@ -611,10 +554,10 @@ function openPublicProfile(name) {
     document.getElementById('pubProfileContent').innerHTML = `
       <div class="pub-profile">
         <div class="profile-header">
-          <div class="avatar-large">${av}</div>
+          <div class="avatar-large" data-pa="${escapeHtml(name)}">${av}</div>
           <div>
-            <div style="font-size:22px;font-weight:bold;">${name}</div>
-            <div style="color:var(--fg-3);font-size:13px;">${d.tag||'Гравець'}</div>
+            <div style="font-size:22px;font-weight:bold;"><span data-pn="${escapeHtml(name)}">${escapeHtml(name)}</span></div>
+            <div style="color:var(--fg-3);font-size:13px;">${escapeHtml(d.tag||'Гравець')}</div>
           </div>
         </div>
         <div style="color:var(--fg-4);font-size:12px;margin-bottom:10px;">ID: ${d.id||'—'} • Реєстрація: ${d.regDate ? new Date(d.regDate).toLocaleDateString('uk-UA') : 'Невідомо'}</div>
@@ -627,7 +570,7 @@ function openPublicProfile(name) {
         <div class="pub-badges">${badges}</div>
         <div style="display:flex;gap:8px;margin-top:15px;">
           <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
-          <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value='${name}';openTabModal('transfer-modal');">💸 Надіслати</button>
+          <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value=${jsArg(name)};openTabModal('transfer-modal');">💸 Надіслати</button>
           <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;

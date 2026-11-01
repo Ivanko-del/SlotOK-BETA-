@@ -254,17 +254,29 @@ function consumeLuckyGame() {
   }
 }
 
-async function spinFortune() {
+// mode: paid | free (прокрутка з Battle Pass) | shop (куплена за Слотіки).
+// Безкоштовні прокрутки грають на фіксовану ставку (shared/shop.js) і їх
+// списує лише сервер — без нього (legacy) доступна тільки платна.
+async function spinFortune(mode) {
   if(fortuneSpinning) return;
-  const b = validateBet(document.getElementById('betAmountFortune').value);
+  mode = mode === 'free' || mode === 'shop' ? mode : 'paid';
+  const b = mode === 'paid' ? validateBet(document.getElementById('betAmountFortune').value)
+    : mode === 'free' ? FREE_FORTUNE_STAKE : SHOP_SPIN_STAKE;
   if(!b) return;
+  if(mode !== 'paid' && !(await serverAuthEnabled())) return notify('Безкоштовні прокрутки працюють лише з сервером', 'error');
   fortuneSpinning = true;
-  const srv = await serverPlay('fortune', b, {});
+  const srv = await serverPlay('fortune', b, { mode });
   if(srv.mode === 'error') { fortuneSpinning = false; return; }
   if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
-  addWager(b);
-  trackLbStat('wager', b); trackLbStat('games', 1);
-  publishLiveBet('Колесо','🎡', b, '');
+  if(mode === 'paid') {
+    addWager(b);
+    trackLbStat('wager', b); trackLbStat('games', 1);
+    publishLiveBet('Колесо','🎡', b, '');
+  } else {
+    const key = mode === 'free' ? 'freeFortune' : 'shopFortune';
+    if(srv.r[key] !== undefined) userData[key] = srv.r[key];
+    renderGameItems('fortune');
+  }
   fortuneSpinning = true;
   document.getElementById('fortuneBtn').disabled = true;
   playSound('spin');
@@ -315,7 +327,7 @@ async function spinFortune() {
         if(win >= 500) addToWinFeed('Fortune', win, won.mult);
       } else {
         playSound('loss');
-        addToHistory('Fortune '+won.label+': -'+b);
+        addToHistory('Fortune '+won.label+': ' + (mode === 'paid' ? '-'+b : '0 (безкоштовна прокрутка)'));
       }
       fortuneSpinning = false;
       document.getElementById('fortuneBtn').disabled = false;

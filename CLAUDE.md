@@ -13,6 +13,10 @@ games, login, rewards). Deployed on Vercel from the `main` branch.
 script, not modules — see `src/app/README.md` for what lives where.
 Reward tables (VIP, Battle Pass, bonuses) live in `shared/rewards.js`, which
 both the browser and the server (`lib/progress.js`) load.
+The Slotiky shop catalog (items, prices, boosts, chests) lives in
+`shared/shop.js`; purchases/boosts/chests are server-side (`lib/shop.js` via
+`api/reward`). Cosmetics render anywhere via `data-pn`/`data-pa` attributes
+(`src/app/54-cosmetics.js`).
 
 ## `style.css` is generated too — edit `src/css/*.css`
 

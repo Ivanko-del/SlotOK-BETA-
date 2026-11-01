@@ -76,6 +76,11 @@ function crashWonUI(w, mult) {
     document.getElementById('crashCashoutBtn').classList.add('hidden');
 }
 function crashHandleServer(r) {
+    if(r.status === 'refunded') {
+        crashLostUI(r.view && r.view.point);
+        notify('Страховка спрацювала: ставку ' + formatNumber(r.refunded) + ' ₴ повернуто', 'success');
+        return;
+    }
     if(r.status === 'lost') return crashLostUI(r.view && r.view.point);
     if(r.status === 'done') return crashWonUI(r.payout, r.mult);
 }
@@ -93,8 +98,15 @@ async function startCrashServer(b) {
     const autoCashoutTarget = parseFloat(document.getElementById('crashAutoCashout')?.value)||0;
     crashBusy = true;
     let srv;
-    try { srv = await serverRound('start', 'crash', { bet: b, params: { auto: autoCashoutTarget > 1 ? autoCashoutTarget : 0 } }); } finally { crashBusy = false; }
+    const insure = !!document.getElementById('crashInsure')?.checked && (Number(userData.crashInsurance) || 0) > 0;
+    try { srv = await serverRound('start', 'crash', { bet: b, params: { auto: autoCashoutTarget > 1 ? autoCashoutTarget : 0, insure } }); } finally { crashBusy = false; }
     if(srv.mode !== 'server') return;
+    if(srv.r.insured) {
+        userData.crashInsurance = Math.max(0, (Number(userData.crashInsurance) || 0) - 1);
+        const cb = document.getElementById('crashInsure');
+        if(cb) cb.checked = false;
+        renderGameItems('crash');
+    }
     crashServer = true;
     crashActiveBet = b;
     addWager(b);

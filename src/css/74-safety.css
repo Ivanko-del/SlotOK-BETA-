@@ -71,3 +71,10 @@ body.pm-thread-open .bottom-nav { display: none; }
 .fb-actions textarea { min-height: 64px; }
 .fb-support-box { margin-bottom: var(--sp-3); }
 .fb-support-row { padding: var(--sp-1) 0; }
+
+/* Чат підтримки → звернення */
+.support-fb-bar {
+  display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); padding: var(--sp-3);
+  border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface-1);
+  font-size: var(--fs-sm); color: var(--fg-2);
+}

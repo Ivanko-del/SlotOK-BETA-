@@ -119,95 +119,23 @@ function showSearchResults(results, res) {
   }).join('');
 }
 
-// 7. КРИПТО-СИМУЛЯТОР
-var _cryptoPortfolio = JSON.parse(localStorage.getItem('slotok_crypto') || '{}');
-var CRYPTO_ASSETS = [
-  {sym:'BTC', name:'Bitcoin',  emoji:'₿', base:95000, vol:0.04},
-  {sym:'ETH', name:'Ethereum', emoji:'Ξ', base:3500,  vol:0.06},
-  {sym:'SOL', name:'Solana',   emoji:'◎', base:180,   vol:0.08},
-  {sym:'BNB', name:'BNB',      emoji:'⬡', base:600,   vol:0.05},
-];
-var _cryptoPrices = {};
-function updateCryptoPrices() {
-  CRYPTO_ASSETS.forEach(function(a) {
-    var last = _cryptoPrices[a.sym] || a.base;
-    _cryptoPrices[a.sym] = Math.max(last * (1 + (Math.random() - 0.48) * a.vol), a.base * 0.3);
-  });
-}
-function buyCryptoFromBtn(btn) { buyCrypto(btn.dataset.sym, parseInt(btn.dataset.amt)); }
-function sellCryptoFromBtn(btn) { sellCrypto(btn.dataset.sym); }
-
-function renderCryptoAssets() {
-  var el = document.getElementById('cryptoAssets');
-  if(!el) return;
-  var pv = 0;
-  Object.keys(_cryptoPortfolio).forEach(function(s) { pv += (_cryptoPortfolio[s]||0) * (_cryptoPrices[s]||0); });
-  var pvel = document.getElementById('cryptoPortfolioVal');
-  if(pvel) pvel.textContent = '₴ ' + formatNumber(Math.round(pv));
-  el.innerHTML = CRYPTO_ASSETS.map(function(a) {
-    var price  = _cryptoPrices[a.sym] || a.base;
-    var owned  = _cryptoPortfolio[a.sym] || 0;
-    var chg    = ((price - a.base) / a.base * 100).toFixed(1);
-    var isPos  = parseFloat(chg) >= 0;
-    var sym    = a.sym;
-    var ownedHtml = owned > 0
-      ? '<div style="font-size:11px;color:var(--fg-3);margin-bottom:8px;">У портфелі: '
-        + owned.toFixed(6) + ' ' + sym + ' ≈ ₴' + formatNumber(Math.round(owned*price)) + '</div>'
-      : '';
-    var sellBtn = owned > 0
-      ? '<button data-sym="' + sym + '" onclick="sellCryptoFromBtn(this)" '
-        + 'style="flex:1;background:rgb(var(--neg-rgb) / 0.1);border:1px solid rgb(var(--neg-rgb) / 0.2);'
-        + 'border-radius:8px;padding:8px;color:var(--neg);cursor:pointer;font-size:12px;font-weight:700;">Продати</button>'
-      : '';
-    return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      + '<div style="display:flex;align-items:center;gap:10px;">'
-      + '<div style="width:40px;height:40px;border-radius:var(--r-lg);background:rgb(var(--accent-rgb) / 0.1);'
-      + 'display:flex;align-items:center;justify-content:center;font-size:20px;">' + a.emoji + '</div>'
-      + '<div><div style="font-weight:800;">' + sym + '</div>'
-      + '<div style="font-size:10px;color:var(--fg-4);">' + a.name + '</div></div></div>'
-      + '<div style="text-align:right;">'
-      + '<div style="font-weight:900;font-size:15px;">₴' + formatNumber(Math.round(price)) + '</div>'
-      + '<div style="font-size:11px;color:' + (isPos ? 'var(--pos)' : 'var(--neg)') + ';">'
-      + (isPos ? '+' : '') + chg + '%</div></div></div>'
-      + ownedHtml
-      + '<div style="display:flex;gap:6px;">'
-      + '<button data-sym="' + sym + '" data-amt="100" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);'
-      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;font-weight:700;">+100₴</button>'
-      + '<button data-sym="' + sym + '" data-amt="500" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.08);border:1px solid rgb(var(--pos-rgb) / 0.15);'
-      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;">+500₴</button>'
-      + sellBtn
-      + '</div></div>';
-  }).join('');
-}
-
-function buyCrypto(sym, amount) {
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
-  if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
-  if(!checkCardLimit(getActiveCardId(), amount)) return;
-  var price = _cryptoPrices[sym];
-  if(!price) return;
-  var qty = amount / price;
-  _cryptoPortfolio[sym] = (_cryptoPortfolio[sym] || 0) + qty;
-  localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
-  db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-amount));
-  noteCardSpend(getActiveCardId(), amount);
-  userData.balance -= amount;
-  notify('✅ Куплено ' + qty.toFixed(6) + ' ' + sym + ' за ₴' + amount, 'success');
-  renderCryptoAssets();
-}
-function sellCrypto(sym) {
-  var qty = _cryptoPortfolio[sym];
-  if(!qty) return notify('Немає активу', 'error');
-  var value = Math.round(qty * (_cryptoPrices[sym] || 0));
+// 7. КРИПТО-СИМУЛЯТОР — прибрано (v121). Портфель жив лише в localStorage,
+// тож при першому вході після оновлення повертаємо вкладене на баланс за
+// базовою ціною монет. Обмеження — щоб підправлений localStorage не друкував гроші.
+const CRYPTO_REFUND_BASE = { BTC: 95000, ETH: 3500, SOL: 180, BNB: 600 };
+const CRYPTO_REFUND_MAX = 50000;
+function refundCryptoSimulator() {
+  let pf = null;
+  try { pf = JSON.parse(localStorage.getItem('slotok_crypto') || 'null'); } catch(e) {}
+  try { localStorage.removeItem('slotok_crypto'); } catch(e) {}
+  if(!pf || typeof pf !== 'object' || !currentUser || !db) return;
+  let value = 0;
+  Object.keys(CRYPTO_REFUND_BASE).forEach(s => { const q = Number(pf[s]); if(q > 0 && isFinite(q)) value += q * CRYPTO_REFUND_BASE[s]; });
+  value = Math.min(CRYPTO_REFUND_MAX, Math.round(value));
+  if(value <= 0) return;
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(value));
-  userData.balance += value;
-  delete _cryptoPortfolio[sym];
-  localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
-  notify('💰 Продано ' + sym + ' за ₴' + formatNumber(value), 'success');
-  renderCryptoAssets();
+  addToHistory('Крипто-симулятор закрито: повернуто +' + value + '₴');
+  notify('Крипто-симулятор закрито — вкладене повернуто на баланс: +' + formatNumber(value) + ' ₴', 'info');
 }
 
 
@@ -407,7 +335,7 @@ function initClanChat(clanId) {
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
         + '<div style="font-size:20px;flex-shrink:0;">' + avHtml + '</div>'
         + '<div style="background:' + (isMe ? 'rgb(var(--accent-rgb) / 0.08)' : 'rgb(var(--tint-rgb) / 0.04)') + ';border:1px solid ' + (isMe ? 'rgb(var(--accent-rgb) / 0.15)' : 'rgb(var(--tint-rgb) / 0.07)') + ';border-radius:var(--r-lg);padding:8px 10px;max-width:72%;">'
-        + '<div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
+        + '<div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;"><span data-pn="' + escapeHtml(m.user) + '">' + escapeHtml(m.user) + '</span></div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
         + '</div></div>';
     }).join('');
@@ -903,18 +831,6 @@ function setSoundTheme(theme) {
   notify('🎵 Звукова тема: ' + theme, 'info');
   playSound('win');
 }
-// ── КАСТОМНИЙ ТЕГ (купити) ─────────────────────────────────────
-function buyCustomTag(tag, price) {
-  var slotikyEl = document.getElementById('headerSlotiky');
-  var slotiky = parseInt(slotikyEl ? slotikyEl.textContent : 0) || userData.slotiky || 0;
-  if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙 Слотиків', 'error');
-  db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
-  db.ref('users/' + currentUser + '/tag').set(tag);
-  userData.tag = tag;
-  notify('✅ Тег встановлено: ' + tag, 'success');
-  document.querySelector('div[style] .grid')?.parentElement?.parentElement?.remove();
-}
-
 // ── GIFTING VIP ────────────────────────────────────────────────
 function giftVip(toNick, days) {
   if (!toNick || !days) return notify('Заповни всі поля', 'error');
@@ -964,21 +880,4 @@ function doComparePlayers(nick) {
   });
 }
 
-// ── ПРОФІЛЬНІ ЕФЕКТИ ───────────────────────────────────────────
-var PROFILE_EFFECTS = [
-  {id:'gold_glow', name:'Золоте сяйво', emoji:'✨', css:'box-shadow:0 0 20px rgba(212,175,55,.8),0 0 40px rgba(212,175,55,.4);animation:pulseGlow 2s infinite;', price:500},
-  {id:'fire', name:'Вогонь', emoji:'🔥', css:'box-shadow:0 0 20px rgba(255,100,0,.8);animation:heartbeat .8s infinite;', price:750},
-  {id:'ice', name:'Крига', emoji:'❄️', css:'box-shadow:0 0 20px rgba(100,200,255,.8);filter:drop-shadow(0 0 10px #4af);', price:750},
-  {id:'rainbow', name:'Веселка', emoji:'🌈', css:'border:3px solid transparent;background-clip:padding-box;animation:winShimmer 1s infinite;', price:1000},
-  {id:'vip_crown', name:'VIP корона', emoji:'👑', css:'box-shadow:0 0 30px rgba(212,175,55,1);border:3px solid #d4af37;', price:1500},
-];
-function buyProfileEffect(effectId, price) {
-  var slotiky = userData.slotiky || 0;
-  if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙', 'error');
-  db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
-  db.ref('users/' + currentUser + '/profileEffect').set(effectId);
-  userData.profileEffect = effectId;
-  userData.slotiky = (userData.slotiky||0) - price;
-  notify('✅ Ефект активовано!', 'success');
-}
 

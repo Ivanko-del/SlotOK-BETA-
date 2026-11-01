@@ -287,6 +287,40 @@ const cardValFor = (c) => (c.r === 12 ? 11 : c.r >= 8 ? 10 : c.r + 2);
   assert.strictEqual(r.data.payout, 150);
   assert.strictEqual(bal("fay"), b2 + 150);
   assert.strictEqual((await call("fay", { action: "start", game: "crash", bet: 1, params: { auto: 0.5 } })).status, 400, "невірна ціль автокешауту");
+  // Страховка Крашу: вибух до ×1.20 — ставка повертається, лічильник −1
+  tree.users.fay.crashInsurance = 1;
+  const b3 = bal("fay");
+  r = await call("fay", { action: "start", game: "crash", bet: 100, params: { insure: true } });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.data.insured, true);
+  assert.strictEqual(tree.users.fay.crashInsurance, 0, "страховку витрачено");
+  st().crashTick = 2; st().point = 1.06; st().startedAt = Date.now() - 2000;
+  r = await call("fay", { action: "move", game: "crash", move: { poll: true } });
+  assert.strictEqual(r.data.status, "refunded");
+  assert.strictEqual(bal("fay"), b3, "ставку повернуто");
+  assert.strictEqual((await call("fay", { action: "start", game: "crash", bet: 100, params: { insure: true } })).status, 409, "страховок немає");
+  assert.strictEqual(bal("fay"), b3, "без страховки раунд не почався");
+  // Застрахований, але вибух вище порогу — звичайний програш
+  tree.users.fay.crashInsurance = 1;
+  await call("fay", { action: "start", game: "crash", bet: 100, params: { insure: true } });
+  st().crashTick = 40; st().point = 2.5; st().startedAt = Date.now() - 60000;
+  r = await call("fay", { action: "move", game: "crash", move: { poll: true } });
+  assert.strictEqual(r.data.status, "lost");
+  assert.strictEqual(bal("fay"), b3 - 100);
+
+  // Підказка в Мінах: безпечна, не повторюється, витрачає minesHints
+  tree.users.gus = { balance: 1000, minesHints: 2 };
+  assert.strictEqual((await call("gus", { action: "hint", game: "mines" })).status, 409, "без раунду");
+  await call("gus", { action: "start", game: "mines", bet: 100, params: { mines: 22 } });
+  const gm = secret("gus", "mines").state.mines;
+  const h1 = await call("gus", { action: "hint", game: "mines" });
+  const h2 = await call("gus", { action: "hint", game: "mines" });
+  assert.ok(!gm.includes(h1.data.cell) && !gm.includes(h2.data.cell), "підказка — безпечна клітинка");
+  assert.notStrictEqual(h1.data.cell, h2.data.cell, "та сама клітинка двічі не підказується");
+  assert.strictEqual(tree.users.gus.minesHints, 0);
+  assert.strictEqual((await call("gus", { action: "hint", game: "mines" })).status, 409, "підказки скінчились");
+  assert.strictEqual((await call("gus", { action: "hint", game: "tower" })).status, 400);
+
   // Balloon: та сама механіка, інший темп
   await call("fay", { action: "start", game: "balloon", bet: 100, params: {} });
   secret("fay", "balloon").state.crashTick = 5000; secret("fay", "balloon").state.startedAt = Date.now() - 2100;

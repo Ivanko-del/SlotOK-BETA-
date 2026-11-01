@@ -94,13 +94,6 @@ function updateBannerDynamicContent() {
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);
-  // BTC ціна (якщо крипто-модуль вже ініціалізований)
-  var btcEl = document.getElementById('bannerBtcPrice');
-  if(btcEl && typeof _cryptoPrices !== 'undefined' && _cryptoPrices.BTC) {
-    btcEl.textContent = '₴' + formatNumber(Math.round(_cryptoPrices.BTC));
-  } else if(btcEl) {
-    btcEl.textContent = '₴95 000';
-  }
   // Моє місце в денному рейтингу (та сама таблиця, що й у «Ще» → Рейтинги)
   var lbRankEl = document.getElementById('bannerLbRank');
   if(lbRankEl && db && currentUser) {

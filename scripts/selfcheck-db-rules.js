@@ -207,6 +207,15 @@ async function feedbackAndPm(ns, owner, bob, carol) {
   assert.strictEqual(await dave.post("pm/bob", pmMsg("dave", "bob")), NO, "заблокований не пише");
   assert.strictEqual(await dave.post("pm/dave", pmMsg("dave", "bob")), OK, "свою копію — можна");
   assert.strictEqual(await carol.post("pm/bob", pmMsg("carol", "bob")), OK, "інші — пишуть");
+
+  // Магазин Слотіків: Слотіки, куплене й предмети — лише сервер; що надіто — сам гравець
+  assert.strictEqual(await bob.put("users/bob/slotiky", 999), NO, "Слотіки собі не намалювати");
+  assert.strictEqual(await bob.put("users/bob/slotikyItems/monthly_pass", { expires: 9e12 }), NO, "буст собі не видати");
+  assert.strictEqual(await bob.put("users/bob/lootboxInv/legend", 5), NO, "скрині собі не видати");
+  assert.strictEqual(await bob.put("users/bob/cosmetics/frame", "avatar_gold"), OK, "надіти рамку");
+  assert.strictEqual(await bob.put("users/bob/cosmetics/badge", false), OK, "зняти значок");
+  assert.strictEqual(await bob.put("users/bob/cosmetics/frame", "<img>"), NO);
+  assert.strictEqual(await bob.put("users/carol/cosmetics/frame", "avatar_gold"), NO, "чуже — ні");
 }
 
 // Онлайн-кімнати: пише лише сервер; приватне бачить лише власник; повний стан — ніхто.
