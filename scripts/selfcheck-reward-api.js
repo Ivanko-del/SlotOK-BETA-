@@ -61,6 +61,7 @@ _setCertsForTests({ kid1: googlePub.export({ type: "spki", format: "pem" }) });
 const reward = require("../api/reward.js");
 const play = require("../api/play.js");
 const R = require("../shared/rewards");
+const SH = require("../shared/shop");
 const { recordWager } = require("../lib/progress");
 const { _resetRateLimitForTests } = require("../lib/player");
 
@@ -186,7 +187,7 @@ const season = R.getBpSeasonInfo().num;
   tree = { users: { alice: { bpSeason: season, bpXP: R.BP_MAX_LEVEL * R.BP_XP_PER_LEVEL + 2 * R.BP_BONUS_XP + 100, bpVip: true } } };
   const chests = await Promise.all([1, 2, 3, 4].map(() => claim("alice", "bpBonus")));
   assert.strictEqual(chests.filter((x) => x.status === 200).length, 2, "скринь рівно стільки, скільки зароблено");
-  assert.strictEqual(user("alice").lootboxes, 2);
+  assert.strictEqual(user("alice").lootboxInv.bp, 2);
   assert.strictEqual(user("alice").slotiky, 4);
 
   // VIP-пропуск за Слотіки.
@@ -241,6 +242,78 @@ const season = R.getBpSeasonInfo().num;
   assert.strictEqual(r.status, 200);
   assert.strictEqual(r.data.progress, undefined);
   assert.strictEqual(user("alice").totalWagered, 200, "фріспін не рахується ставкою");
+
+  // ── Магазин Слотіків ──
+  tree = { users: { bob: { balance: 6000000 } } };
+  assert.strictEqual((await claim("bob", "buySlotiky", { n: 3 })).status, 400, "лише пакети з каталогу");
+  r = await claim("bob", "buySlotiky", { n: 5 });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(user("bob").balance, 1000000);
+  assert.strictEqual(user("bob").slotiky, 5);
+  assert.strictEqual((await claim("bob", "buySlotiky", { n: 5 })).status, 402, "не вистачає ₴");
+  assert.strictEqual(user("bob").slotiky, 5);
+  assert.strictEqual((await claim("bob", "shopBuy", { item: "guaranteed_win" })).status, 400, "прибраних товарів не купити");
+  const twice = await Promise.all([1, 2].map(() => claim("bob", "shopBuy", { item: "avatar_gold" })));
+  assert.strictEqual(twice.filter((x) => x.status === 200).length, 1, "косметика купується один раз");
+  assert.strictEqual(user("bob").slotiky, 3);
+  r = await claim("bob", "shopBuy", { item: "mines_hint" });
+  assert.strictEqual(user("bob").minesHints, 3, "предмет — лічильник");
+  r = await claim("bob", "shopBuy", { item: "lootbox_basic" });
+  assert.strictEqual(user("bob").lootboxInv.basic, 1);
+  assert.strictEqual((await claim("bob", "shopBuy", { item: "monthly_pass" })).status, 402, "не вистачає Слотіків");
+  const opens = await Promise.all([1, 2].map(() => claim("bob", "openBox", { tier: "basic" })));
+  assert.strictEqual(opens.filter((x) => x.status === 200).length, 1, "одну скриню не відкрити двічі");
+  const win = opens.find((x) => x.status === 200).data.win;
+  assert.ok(SH.SHOP_BOXES.basic.prizes.some((p) => Math.floor(p.mult * SH.SLOTIKY_PRICE) === win), "виграш зі таблиці скрині");
+  assert.strictEqual(user("bob").balance, 1000000 + win);
+
+  // Бусти: продовження, вплив на щоденний бонус, VIP-прогрес, XP, кешбек
+  tree = { users: { bob: { slotiky: 20, balance: 0 } } };
+  await claim("bob", "shopBuy", { item: "daily_x3" });
+  const exp1 = user("bob").slotikyItems.daily_x3.expires;
+  await claim("bob", "shopBuy", { item: "daily_x3" });
+  assert.ok(user("bob").slotikyItems.daily_x3.expires - exp1 >= 7 * DAY - 5000, "повторна купівля продовжує буст");
+  r = await claim("bob", "daily");
+  assert.strictEqual(r.data.amount, R.DAILY_BONUSES[0] * 3, "щоденний ×3");
+  await claim("bob", "shopBuy", { item: "vip_boost_3d" });
+  await claim("bob", "shopBuy", { item: "xp_boost" });
+  await recordWager("bob", 1000);
+  assert.strictEqual(user("bob").totalWagered, 2000, "VIP-прогрес ×2");
+  assert.strictEqual(user("bob").bpXP, 20, "XP ×2");
+  tree = { users: { bob: { totalWagered: 1e6, slotikyItems: { cashback_x2: { expires: Date.now() + DAY } } } } };
+  await recordWager("bob", 10000);
+  assert.strictEqual(user("bob").cashbackPending, Math.min(Math.floor(10000 * R.getVipLevel(1e6).cashback * 2), R.CASHBACK_MAX_PER_BET * 2), "кешбек ×2");
+  tree.users.bob.slotikyItems.cashback_x2.expires = Date.now() - 1;
+  tree.users.bob.cashbackPending = 0;
+  await recordWager("bob", 10000);
+  assert.strictEqual(user("bob").cashbackPending, Math.min(Math.floor(10000 * R.getVipLevel(1e6).cashback), R.CASHBACK_MAX_PER_BET), "прострочений буст не діє");
+
+  // Разове повернення за прибрані товари й ефекти профілю
+  tree = { users: { bob: { slotiky: 1, profileEffect: "fire", lootboxes: 2, crashInsurance: true,
+    slotikyItems: { guaranteed_win: { boughtAt: 1 }, chat_gif: { boughtAt: 1 }, avatar_gold: { boughtAt: 1 } } } } };
+  const migr = await Promise.all([1, 2].map(() => claim("bob", "shopMigrate")));
+  assert.strictEqual(migr.reduce((a, x) => a + (x.data.refund || 0), 0), 25 + 5 + 750, "повернення один раз");
+  assert.strictEqual(user("bob").slotiky, 1 + 780);
+  assert.deepStrictEqual(Object.keys(user("bob").slotikyItems), ["avatar_gold"], "куплена косметика лишається");
+  assert.strictEqual(user("bob").profileEffect, undefined);
+  assert.strictEqual(user("bob").lootboxInv.bp, 2, "старі скрині BP перенесено");
+  assert.strictEqual(user("bob").crashInsurance, 1);
+
+  // Фріспіни й прокрутки з магазину / Battle Pass: ставка фіксована, баланс не списується
+  tree = { users: { bob: { balance: 0, shopSpins: 1, freeFortune: 1, shopFortune: 0 } } };
+  r = await call(play, "bob", { game: "slots", bet: 50, params: { mode: "shop" }, id: "shop-spin-00001" });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.data.bet, SH.SHOP_SPIN_STAKE, "ставка спіну з магазину");
+  assert.strictEqual(user("bob").shopSpins, 0);
+  assert.strictEqual(user("bob").balance, r.data.payout);
+  r = await call(play, "bob", { game: "slots", bet: 50, params: { mode: "shop" }, id: "shop-spin-00002" });
+  assert.strictEqual(r.status, 409, "куплені спіни скінчились");
+  r = await call(play, "bob", { game: "fortune", bet: 50, params: { mode: "free" }, id: "free-fortune-01" });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.data.bet, SH.FREE_FORTUNE_STAKE);
+  assert.strictEqual((await call(play, "bob", { game: "fortune", bet: 50, params: { mode: "shop" }, id: "shop-fortune-01" })).status, 409);
+  r = await call(play, "bob", { game: "fortune", bet: 10, params: {}, id: "paid-fortune-01" });
+  assert.notStrictEqual(r.status, 400, "старий запит Колеса без mode — платний");
 
   console.log("OK — api/reward: суми й час рахує сервер, нагороди не забрати двічі, ставки на сервері ведуть VIP/XP/кешбек");
 })().catch((e) => { console.error(e); process.exit(1); });

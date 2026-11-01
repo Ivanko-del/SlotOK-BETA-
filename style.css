@@ -5811,3 +5811,98 @@ body.pm-thread-open .bottom-nav { display: none; }
 .fb-actions textarea { min-height: 64px; }
 .fb-support-box { margin-bottom: var(--sp-3); }
 .fb-support-row { padding: var(--sp-1) 0; }
+
+/* Чат підтримки → звернення */
+.support-fb-bar {
+  display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); padding: var(--sp-3);
+  border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface-1);
+  font-size: var(--fs-sm); color: var(--fg-2);
+}
+/* ─── src/css/75-shop.css ─── */
+/* ═══ Магазин Слотіків і косметика гравців ═════════════════════════
+   JS — src/app/31-slotiky-tournament-live.js (магазин),
+        src/app/54-cosmetics.js (data-pn / data-pa → класи нижче).      */
+
+/* ── Екран магазину ── */
+.shop-wallet { display: grid; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.shop-wallet-main { display: grid; gap: var(--sp-1); }
+.shop-wallet-val { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-num); font-weight: var(--fw-black); color: var(--special); }
+.shop-wallet-val .ic { width: var(--icon-lg); height: var(--icon-lg); }
+.shop-packs { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
+@media (min-width: 600px) { .shop-packs { grid-template-columns: repeat(4, 1fr); } }
+.shop-pack {
+  position: relative; display: grid; gap: var(--sp-1); justify-items: start;
+  width: 100%; margin: 0; padding: var(--sp-3);
+  background: var(--surface-2); color: var(--fg); text-align: left;
+  border: var(--bw) solid var(--line); border-radius: var(--r-lg); box-shadow: none;
+}
+.shop-pack:hover { border-color: var(--special); }
+.shop-pack .badge { position: absolute; top: var(--sp-2); right: var(--sp-2); }
+.shop-pack-n { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--special); }
+.shop-pack-price { font-size: var(--fs-sm); color: var(--fg-3); }
+.shop-tabs { margin-bottom: var(--sp-3); }
+.shop-group-title {
+  margin: var(--sp-5) 0 var(--sp-2); font-family: var(--font-body); font-size: var(--fs-xs);
+  letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--fg-3);
+}
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-2); }
+.shop-card {
+  display: grid; grid-template-rows: auto 1fr auto; gap: var(--sp-2);
+  padding: var(--sp-3); background: var(--surface-1);
+  border: var(--bw) solid var(--line); border-radius: var(--r-lg);
+}
+.shop-card.is-worn { border-color: var(--pos); }
+.shop-card-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--r-md); background: var(--surface-2); color: var(--special); }
+.shop-card-ic .ic { width: var(--icon-md); height: var(--icon-md); }
+.shop-card-body { display: grid; gap: var(--sp-1); align-content: start; }
+.shop-card-body .badge { justify-self: start; }
+.shop-card-title { font-weight: var(--fw-bold); font-size: var(--fs-sm); }
+.shop-card-desc { font-size: var(--fs-xs); color: var(--fg-3); }
+.shop-card .btn { margin: 0; }
+.shop-card .btn .ic { width: var(--icon-sm); height: var(--icon-sm); }
+.shop-preview { display: grid; place-items: center; min-height: 56px; padding: var(--sp-2); border-radius: var(--r-md); background: var(--surface-2); font-weight: var(--fw-bold); }
+#slotikyShopGrid .list-row .btn { margin: 0; }
+
+/* ── Предмети в іграх ── */
+.game-items { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-2) 0; }
+.game-items .badge { margin-left: var(--sp-1); }
+.game-items-check { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--fg-2); }
+.mine-cell.mine-hint { outline: 3px solid var(--pos); outline-offset: -3px; background: rgb(var(--pos-rgb) / .15); }
+
+/* ── Рамки аватара (data-pa) ── */
+.pa { box-shadow: 0 0 0 3px var(--pa-ring), 0 0 0 5px var(--bg); }
+.pa-silver   { --pa-ring: var(--fg-3); }
+.pa-gold     { --pa-ring: var(--warn); }
+.pa-platinum { --pa-ring: var(--info); box-shadow: 0 0 0 3px var(--pa-ring), 0 0 12px 2px rgb(var(--info-rgb) / .35); }
+.pa-obsidian { --pa-ring: var(--special); box-shadow: 0 0 0 3px var(--pa-ring), 0 0 0 6px rgb(var(--special-rgb) / .35); }
+.pa-ember    { --pa-ring: var(--accent); animation: pa-ember 2.4s var(--ease-out) infinite; }
+@keyframes pa-ember {
+  0%, 100% { box-shadow: 0 0 0 3px var(--accent), 0 0 6px 1px rgb(var(--accent-rgb) / .35); }
+  50%      { box-shadow: 0 0 0 3px var(--accent), 0 0 16px 4px rgb(var(--accent-rgb) / .55); }
+}
+.pa-demo {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  background: var(--surface-3); color: var(--fg); font-weight: var(--fw-black);
+}
+
+/* ── Колір ніку, табличка, значок (data-pn) ── */
+.pn-crimson { color: var(--neg); }
+.pn-gold    { color: var(--warn); }
+.pn-iris {
+  background: linear-gradient(90deg, var(--accent), var(--special), var(--primary), var(--accent));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: pn-iris 6s linear infinite;
+}
+@keyframes pn-iris { to { background-position: 300% 0; } }
+.pp-neon, .pp-supreme { display: inline-block; padding: 0 var(--sp-2); border-radius: var(--r-sm); line-height: 1.5; }
+.pp-neon { border: var(--bw) solid var(--primary); box-shadow: 0 0 8px rgb(var(--primary-rgb) / .45); }
+.pp-supreme { background: var(--warn); color: var(--on-warn); }
+.pp-supreme.pn-iris { color: var(--on-warn); background: var(--warn); animation: none; }
+.pbadge { display: inline-flex; align-items: center; vertical-align: middle; margin-left: var(--sp-1); color: var(--warn); }
+.pbadge .ic { width: 14px; height: 14px; }
+.pbadge-lg .ic { width: var(--icon-lg); height: var(--icon-lg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-ember, .pn-iris { animation: none; }
+}

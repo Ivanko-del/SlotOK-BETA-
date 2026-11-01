@@ -252,12 +252,12 @@ async function claimBpBonus() {
   const srv = await serverReward('bpBonus');
   if(srv.mode !== 'legacy') {
     _bpBonusLock = false;
-    if(srv.mode === 'server') { playSound('bonus'); notify('🎁 Бонусна скриня: 📦 лут-бокс' + (srv.r.slotiky ? ` + 🪙 ${srv.r.slotiky} Слотіки` : '') + '!', 'success'); }
+    if(srv.mode === 'server') { playSound('bonus'); notify('🎁 Бонусна скриня: 📦 скриня Battle Pass' + (srv.r.slotiky ? ` + 🪙 ${srv.r.slotiky} Слотіки` : '') + '! Відкрити — Магазин Слотіків → «Моє»', 'success'); }
     setTimeout(initBattlePass, 400);
     return;
   }
   const inc = firebase.database.ServerValue.increment;
-  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, lootboxes: inc(1) };
+  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, 'lootboxInv/bp': inc(1) };
   if(bp.isVip) updates.slotiky = inc(2);
   db.ref('users/'+currentUser).update(updates).then(() => {
     playSound('bonus');
@@ -300,7 +300,7 @@ async function claimBpReward(lv, track) {
   if(reward.type === 'freeSlots')     updates.freeSlots = inc(reward.val);
   if(reward.type === 'freeFortune')   updates.freeFortune = inc(reward.val);
   if(reward.type === 'minesHints')    updates.minesHints = inc(reward.val);
-  if(reward.type === 'crashInsurance')updates.crashInsurance = true;
+  if(reward.type === 'crashInsurance')updates.crashInsurance = inc(1);
   if(reward.type === 'vipBoost') {
     const days = reward.val;
     const expiry = Date.now() + days * 86400000;
@@ -309,7 +309,7 @@ async function claimBpReward(lv, track) {
     updates.slotikyItems = items;
   }
   if(reward.type === 'lootbox') {
-    updates.lootboxes = inc(reward.val);
+    updates['lootboxInv/bp'] = inc(reward.val);
   }
   if(reward.type === 'cosmetic') {
     const items = userData.slotikyItems || {};

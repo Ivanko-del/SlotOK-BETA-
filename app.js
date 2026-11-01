@@ -322,6 +322,7 @@ function startDataSync() {
             checkTermsGate();
             loadContacts();
             checkAdmin();
+            try { applyPlayerStyles(document.body); } catch(e) {}
             checkDailyBonus();
             loadNotifsFromStorage();
             updateNotifBadge();
@@ -337,6 +338,8 @@ function startDataSync() {
               setTimeout(checkCardOnboarding, 3500);
               setTimeout(checkChangelogBadge, 1000);
               setTimeout(seedChangelogIfAdmin, 3000);
+              setTimeout(() => { try { refundCryptoSimulator(); } catch(e) { console.warn(e); } }, 2500);
+              setTimeout(() => { try { runShopMigration(); } catch(e) { console.warn(e); } }, 4000);
               setTimeout(initChatAutoClear, 500);
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
@@ -1248,6 +1251,14 @@ let _spinBtn = null; // global ref so finishSlots can re-enable it
 // Безкоштовний спін грається на ставку не більше 100 ₴ (раніше — на будь-яку з
 // поля вводу: 75 фріспінів з Battle Pass на ставці 1 000 000 давали мільйони).
 const SLOTS_FREE_SPIN_MAX_BET = 100;
+// Спін, куплений за Слотіки (shopSpins): ставка SHOP_SPIN_STAKE, списує сервер.
+let _slotsShopSpin = false;
+async function spinSlotsShop() {
+    if(!(await serverAuthEnabled())) return notify('Куплені фріспіни працюють лише з сервером', 'error');
+    if(!((userData.shopSpins || 0) > 0)) return notify('Куплених фріспінів немає', 'info');
+    _slotsShopSpin = true;
+    try { await spinSlots(); } finally { _slotsShopSpin = false; }
+}
 async function spinSlots() { 
     if(_spinBtn && _spinBtn.disabled) return;
     // Free spins check
@@ -1255,10 +1266,11 @@ async function spinSlots() {
     let b;
     _spinBtn = document.getElementById('slotsSpinBtn');
     if(_spinBtn) _spinBtn.disabled = true;
-    const mode = slotBonusRound > 0 ? 'bonus' : freeSp > 0 ? 'free' : 'paid';
+    const mode = slotBonusRound > 0 ? 'bonus' : _slotsShopSpin ? 'shop' : freeSp > 0 ? 'free' : 'paid';
     let srv = { mode: 'legacy' };
     try {
-    if(mode !== 'bonus') {
+    if(mode === 'shop') b = SHOP_SPIN_STAKE;
+    else if(mode !== 'bonus') {
       b = mode === 'free'
         ? Math.min(parseInt(document.getElementById('betAmountSlots').value) || 100, SLOTS_FREE_SPIN_MAX_BET)
         : validateBet(document.getElementById('betAmountSlots').value);
@@ -1274,6 +1286,7 @@ async function spinSlots() {
     }
     if(srv.mode === 'server') {
       if(srv.r.freeSlots !== undefined) { userData.freeSlots = srv.r.freeSlots; setTimeout(updateFreeSlotsUI, 50); }
+      if(srv.r.shopSpins !== undefined) { userData.shopSpins = srv.r.shopSpins; renderGameItems('slots'); }
       if(mode === 'free') notify('🎟️ Використано 1 безкоштовний спін! Залишилось: ' + (srv.r.freeSlots || 0), 'info');
       if(mode === 'paid') { addWager(b); trackLbStat('wager', b); trackLbStat('games', 1); publishLiveBet('Slots','🎰', b, ''); if(userData.clanId) trackClanWager(b); }
     } else if(mode === 'free') {
@@ -1644,6 +1657,11 @@ function crashWonUI(w, mult) {
     document.getElementById('crashCashoutBtn').classList.add('hidden');
 }
 function crashHandleServer(r) {
+    if(r.status === 'refunded') {
+        crashLostUI(r.view && r.view.point);
+        notify('Страховка спрацювала: ставку ' + formatNumber(r.refunded) + ' ₴ повернуто', 'success');
+        return;
+    }
     if(r.status === 'lost') return crashLostUI(r.view && r.view.point);
     if(r.status === 'done') return crashWonUI(r.payout, r.mult);
 }
@@ -1661,8 +1679,15 @@ async function startCrashServer(b) {
     const autoCashoutTarget = parseFloat(document.getElementById('crashAutoCashout')?.value)||0;
     crashBusy = true;
     let srv;
-    try { srv = await serverRound('start', 'crash', { bet: b, params: { auto: autoCashoutTarget > 1 ? autoCashoutTarget : 0 } }); } finally { crashBusy = false; }
+    const insure = !!document.getElementById('crashInsure')?.checked && (Number(userData.crashInsurance) || 0) > 0;
+    try { srv = await serverRound('start', 'crash', { bet: b, params: { auto: autoCashoutTarget > 1 ? autoCashoutTarget : 0, insure } }); } finally { crashBusy = false; }
     if(srv.mode !== 'server') return;
+    if(srv.r.insured) {
+        userData.crashInsurance = Math.max(0, (Number(userData.crashInsurance) || 0) - 1);
+        const cb = document.getElementById('crashInsure');
+        if(cb) cb.checked = false;
+        renderGameItems('crash');
+    }
     crashServer = true;
     crashActiveBet = b;
     addWager(b);
@@ -1966,6 +1991,20 @@ function updateMinesInfo() {
 }
 
 let minesServer = false, minesBusy = false;
+
+// Підказка (предмет з магазину / Battle Pass): сервер називає безпечну клітинку.
+async function minesHint() {
+    if(!isMinesPlaying || !minesServer || minesBusy) return notify('Підказка доступна під час раунду', 'info');
+    if(!((userData.minesHints || 0) > 0)) return notify('Підказок немає — їх можна купити в магазині Слотіків', 'info');
+    minesBusy = true;
+    let srv;
+    try { srv = await serverRound('hint', 'mines'); } finally { minesBusy = false; }
+    if(srv.mode !== 'server') return;
+    userData.minesHints = srv.r.minesHints;
+    const cell = document.getElementById('minesGrid').children[srv.r.cell];
+    if(cell) cell.classList.add('mine-hint');
+    renderGameItems('mines');
+}
 async function startMines() {
     const bet = validateBet(document.getElementById('betAmountMines').value);
     if(!bet) return;
@@ -3209,8 +3248,8 @@ function initChat() {
       const showHeader = m.user !== prevUser;
       prevUser = m.user;
       const avatarHtml = m.avatarUrl
-        ? `<img src="${escapeHtml(m.avatarUrl)}" class="chat-msg-avatar-img">`
-        : `<div class="chat-msg-avatar-emoji">${escapeHtml(m.avatar||'👤')}</div>`;
+        ? `<img src="${safeUrl(m.avatarUrl)}" class="chat-msg-avatar-img" data-pa="${escapeHtml(m.user)}">`
+        : `<div class="chat-msg-avatar-emoji" data-pa="${escapeHtml(m.user)}">${escapeHtml(m.avatar||'👤')}</div>`;
       const contentHtml = m.imgUrl
         ? (m.isVideo
             ? `<video src="${escapeHtml(m.imgUrl)}" style="max-width:220px;max-height:200px;border-radius:var(--r-lg);display:block;margin-bottom:4px;cursor:pointer;" controls muted playsinline data-fullscreen-toggle></video>`
@@ -3218,7 +3257,7 @@ function initChat() {
         : `<div class="chat-msg-text" style="${isMe?'color:#ddd;':''}">${escapeHtml(m.text||'')}</div>`;
       const nameBadge = isAdmin ? ' <span style="background:var(--accent);color:var(--on-accent);font-size:8px;font-weight:900;padding:1px 5px;border-radius:var(--r-xs);">ADMIN</span>' : '';
       const headerHtml = showHeader
-        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}">${escapeHtml(m.user)}${nameBadge}</div>`
+        ? `<div class="chat-msg-user" style="${isMe?'color:var(--accent);':''}${isAdmin?'color:#d4af37;':''}"><span data-pn="${escapeHtml(m.user)}">${escapeHtml(m.user)}</span>${nameBadge}</div>`
         : '';
       return `<div class="chat-msg" style="flex-direction:${isMe?'row-reverse':'row'};${!showHeader?'padding-top:2px;':''}">
         ${showHeader ? avatarHtml : `<div style="width:32px;flex-shrink:0;"></div>`}
@@ -5240,17 +5279,29 @@ function consumeLuckyGame() {
   }
 }
 
-async function spinFortune() {
+// mode: paid | free (прокрутка з Battle Pass) | shop (куплена за Слотіки).
+// Безкоштовні прокрутки грають на фіксовану ставку (shared/shop.js) і їх
+// списує лише сервер — без нього (legacy) доступна тільки платна.
+async function spinFortune(mode) {
   if(fortuneSpinning) return;
-  const b = validateBet(document.getElementById('betAmountFortune').value);
+  mode = mode === 'free' || mode === 'shop' ? mode : 'paid';
+  const b = mode === 'paid' ? validateBet(document.getElementById('betAmountFortune').value)
+    : mode === 'free' ? FREE_FORTUNE_STAKE : SHOP_SPIN_STAKE;
   if(!b) return;
+  if(mode !== 'paid' && !(await serverAuthEnabled())) return notify('Безкоштовні прокрутки працюють лише з сервером', 'error');
   fortuneSpinning = true;
-  const srv = await serverPlay('fortune', b, {});
+  const srv = await serverPlay('fortune', b, { mode });
   if(srv.mode === 'error') { fortuneSpinning = false; return; }
   if(srv.mode !== 'server') db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-b));
-  addWager(b);
-  trackLbStat('wager', b); trackLbStat('games', 1);
-  publishLiveBet('Колесо','🎡', b, '');
+  if(mode === 'paid') {
+    addWager(b);
+    trackLbStat('wager', b); trackLbStat('games', 1);
+    publishLiveBet('Колесо','🎡', b, '');
+  } else {
+    const key = mode === 'free' ? 'freeFortune' : 'shopFortune';
+    if(srv.r[key] !== undefined) userData[key] = srv.r[key];
+    renderGameItems('fortune');
+  }
   fortuneSpinning = true;
   document.getElementById('fortuneBtn').disabled = true;
   playSound('spin');
@@ -5301,7 +5352,7 @@ async function spinFortune() {
         if(win >= 500) addToWinFeed('Fortune', win, won.mult);
       } else {
         playSound('loss');
-        addToHistory('Fortune '+won.label+': -'+b);
+        addToHistory('Fortune '+won.label+': ' + (mode === 'paid' ? '-'+b : '0 (безкоштовна прокрутка)'));
       }
       fortuneSpinning = false;
       document.getElementById('fortuneBtn').disabled = false;
@@ -5418,8 +5469,8 @@ function initLobbyChat() {
       const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : '#4a9eff');
       const av = m.avatarEmoji || '👤';
       const avHtml = m.avatarUrl
-        ? '<div class="chat-avatar-sm"><img src="' + safeUrl(m.avatarUrl) + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
-        : '<div class="chat-avatar-sm">' + escapeHtml(av) + '</div>';
+        ? '<div class="chat-avatar-sm" data-pa="' + escapeHtml(m.sender) + '"><img src="' + safeUrl(m.avatarUrl) + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
+        : '<div class="chat-avatar-sm" data-pa="' + escapeHtml(m.sender) + '">' + escapeHtml(av) + '</div>';
       const adminTag = isAdmin ? '<span style="background:var(--neg);color:var(--on-neg);font-size:8px;padding:1px 5px;border-radius:var(--r-sm);margin-left:3px;">ADMIN</span>' : '';
       const botTag = '';  // bots look like regular players
       const msgKey = snap.key;
@@ -5427,7 +5478,7 @@ function initLobbyChat() {
       const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteMsg(\'' + msgKey + '\')" style="background:none;border:none;color:var(--neg);font-size:11px;cursor:pointer;padding:0 3px;opacity:0.5;" title="Видалити">✕</button>' : '';
       el.innerHTML =
         '<div class="chat-header-line">' + avHtml +
-          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(' + jsArg(m.sender) + ')">' + escapeHtml(m.sender) + '</span>' +
+          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(' + jsArg(m.sender) + ')"><span data-pn="' + escapeHtml(m.sender) + '">' + escapeHtml(m.sender) + '</span></span>' +
           adminTag + botTag +
           '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
           delBtn +
@@ -5489,10 +5540,52 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '120';
+const CURRENT_VERSION = '121';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '121',
+    title: 'Оновлення v121 — новий магазин Слотіків і ігрові картки',
+    date: Date.UTC(2026, 10, 1),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🪙 Магазин Слотіків — усе тепер працює',
+        items: [
+          'Слотік подешевшав: 1 Слотік = 1 000 000 ₴ замість 10 000 000 ₴',
+          'Рамки аватара, колір ніку, таблички й значки видно всім — у чатах, ПМ і профілі. Куплене можна надіти або зняти',
+          'Бусти справді діють: прогрес VIP ×2, кешбек ×2/×3, щоденний бонус ×2/×3, досвід Battle Pass ×2, VIP +1 рівень, місячний пропуск',
+          'Предмети використовуються прямо в іграх: фріспіни по 100 000 ₴ у Слотах, прокрутки Колеса, підказки в Мінах, страховка Крашу',
+          'Скрині «Бронза», «Срібло», «Золото» і скрині Battle Pass відкриваються у вкладці «Моє»',
+          'Прибрано товари, які нічого не робили або змінювали б шанси ігор, а також «Ефекти профілю» й «Купити тег». Усім, хто їх купував, Слотіки повернуто автоматично',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '💳 Картки — лише ігрові',
+        items: [
+          'Нова картка — це ігрова картка SlotOK: назва й баланс, без справжнього банку, номера, імені чи CVV',
+          'Уже підключені картки лишаються й працюють як раніше',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '💬 Одна підтримка',
+        items: [
+          'У «Ще» тепер один пункт «Підтримка»: спершу чат, а якщо він не допоміг — кнопка «Оформити звернення» прямо в чаті',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '📈 Крипто-симулятор прибрано',
+        items: [
+          'Симулятор закрито — зробимо новий, ближчий до справжнього. Вкладене в нього повернуто на баланс',
+        ]
+      },
+    ]
+  },
   {
     version: '120',
     title: 'Оновлення v120 — 13+, підтримка і безпечні ПМ',
@@ -8272,95 +8365,23 @@ function showSearchResults(results, res) {
   }).join('');
 }
 
-// 7. КРИПТО-СИМУЛЯТОР
-var _cryptoPortfolio = JSON.parse(localStorage.getItem('slotok_crypto') || '{}');
-var CRYPTO_ASSETS = [
-  {sym:'BTC', name:'Bitcoin',  emoji:'₿', base:95000, vol:0.04},
-  {sym:'ETH', name:'Ethereum', emoji:'Ξ', base:3500,  vol:0.06},
-  {sym:'SOL', name:'Solana',   emoji:'◎', base:180,   vol:0.08},
-  {sym:'BNB', name:'BNB',      emoji:'⬡', base:600,   vol:0.05},
-];
-var _cryptoPrices = {};
-function updateCryptoPrices() {
-  CRYPTO_ASSETS.forEach(function(a) {
-    var last = _cryptoPrices[a.sym] || a.base;
-    _cryptoPrices[a.sym] = Math.max(last * (1 + (Math.random() - 0.48) * a.vol), a.base * 0.3);
-  });
-}
-function buyCryptoFromBtn(btn) { buyCrypto(btn.dataset.sym, parseInt(btn.dataset.amt)); }
-function sellCryptoFromBtn(btn) { sellCrypto(btn.dataset.sym); }
-
-function renderCryptoAssets() {
-  var el = document.getElementById('cryptoAssets');
-  if(!el) return;
-  var pv = 0;
-  Object.keys(_cryptoPortfolio).forEach(function(s) { pv += (_cryptoPortfolio[s]||0) * (_cryptoPrices[s]||0); });
-  var pvel = document.getElementById('cryptoPortfolioVal');
-  if(pvel) pvel.textContent = '₴ ' + formatNumber(Math.round(pv));
-  el.innerHTML = CRYPTO_ASSETS.map(function(a) {
-    var price  = _cryptoPrices[a.sym] || a.base;
-    var owned  = _cryptoPortfolio[a.sym] || 0;
-    var chg    = ((price - a.base) / a.base * 100).toFixed(1);
-    var isPos  = parseFloat(chg) >= 0;
-    var sym    = a.sym;
-    var ownedHtml = owned > 0
-      ? '<div style="font-size:11px;color:var(--fg-3);margin-bottom:8px;">У портфелі: '
-        + owned.toFixed(6) + ' ' + sym + ' ≈ ₴' + formatNumber(Math.round(owned*price)) + '</div>'
-      : '';
-    var sellBtn = owned > 0
-      ? '<button data-sym="' + sym + '" onclick="sellCryptoFromBtn(this)" '
-        + 'style="flex:1;background:rgb(var(--neg-rgb) / 0.1);border:1px solid rgb(var(--neg-rgb) / 0.2);'
-        + 'border-radius:8px;padding:8px;color:var(--neg);cursor:pointer;font-size:12px;font-weight:700;">Продати</button>'
-      : '';
-    return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      + '<div style="display:flex;align-items:center;gap:10px;">'
-      + '<div style="width:40px;height:40px;border-radius:var(--r-lg);background:rgb(var(--accent-rgb) / 0.1);'
-      + 'display:flex;align-items:center;justify-content:center;font-size:20px;">' + a.emoji + '</div>'
-      + '<div><div style="font-weight:800;">' + sym + '</div>'
-      + '<div style="font-size:10px;color:var(--fg-4);">' + a.name + '</div></div></div>'
-      + '<div style="text-align:right;">'
-      + '<div style="font-weight:900;font-size:15px;">₴' + formatNumber(Math.round(price)) + '</div>'
-      + '<div style="font-size:11px;color:' + (isPos ? 'var(--pos)' : 'var(--neg)') + ';">'
-      + (isPos ? '+' : '') + chg + '%</div></div></div>'
-      + ownedHtml
-      + '<div style="display:flex;gap:6px;">'
-      + '<button data-sym="' + sym + '" data-amt="100" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);'
-      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;font-weight:700;">+100₴</button>'
-      + '<button data-sym="' + sym + '" data-amt="500" onclick="buyCryptoFromBtn(this)" '
-      + 'style="flex:1;background:rgb(var(--pos-rgb) / 0.08);border:1px solid rgb(var(--pos-rgb) / 0.15);'
-      + 'border-radius:8px;padding:8px;color:var(--pos);cursor:pointer;font-size:12px;">+500₴</button>'
-      + sellBtn
-      + '</div></div>';
-  }).join('');
-}
-
-function buyCrypto(sym, amount) {
-  if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
-  if(!userData.balance || userData.balance < amount) return notify('Недостатньо балансу', 'error');
-  if(!checkCardLimit(getActiveCardId(), amount)) return;
-  var price = _cryptoPrices[sym];
-  if(!price) return;
-  var qty = amount / price;
-  _cryptoPortfolio[sym] = (_cryptoPortfolio[sym] || 0) + qty;
-  localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
-  db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(-amount));
-  noteCardSpend(getActiveCardId(), amount);
-  userData.balance -= amount;
-  notify('✅ Куплено ' + qty.toFixed(6) + ' ' + sym + ' за ₴' + amount, 'success');
-  renderCryptoAssets();
-}
-function sellCrypto(sym) {
-  var qty = _cryptoPortfolio[sym];
-  if(!qty) return notify('Немає активу', 'error');
-  var value = Math.round(qty * (_cryptoPrices[sym] || 0));
+// 7. КРИПТО-СИМУЛЯТОР — прибрано (v121). Портфель жив лише в localStorage,
+// тож при першому вході після оновлення повертаємо вкладене на баланс за
+// базовою ціною монет. Обмеження — щоб підправлений localStorage не друкував гроші.
+const CRYPTO_REFUND_BASE = { BTC: 95000, ETH: 3500, SOL: 180, BNB: 600 };
+const CRYPTO_REFUND_MAX = 50000;
+function refundCryptoSimulator() {
+  let pf = null;
+  try { pf = JSON.parse(localStorage.getItem('slotok_crypto') || 'null'); } catch(e) {}
+  try { localStorage.removeItem('slotok_crypto'); } catch(e) {}
+  if(!pf || typeof pf !== 'object' || !currentUser || !db) return;
+  let value = 0;
+  Object.keys(CRYPTO_REFUND_BASE).forEach(s => { const q = Number(pf[s]); if(q > 0 && isFinite(q)) value += q * CRYPTO_REFUND_BASE[s]; });
+  value = Math.min(CRYPTO_REFUND_MAX, Math.round(value));
+  if(value <= 0) return;
   db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(value));
-  userData.balance += value;
-  delete _cryptoPortfolio[sym];
-  localStorage.setItem('slotok_crypto', JSON.stringify(_cryptoPortfolio));
-  notify('💰 Продано ' + sym + ' за ₴' + formatNumber(value), 'success');
-  renderCryptoAssets();
+  addToHistory('Крипто-симулятор закрито: повернуто +' + value + '₴');
+  notify('Крипто-симулятор закрито — вкладене повернуто на баланс: +' + formatNumber(value) + ' ₴', 'info');
 }
 
 
@@ -8560,7 +8581,7 @@ function initClanChat(clanId) {
       return '<div style="display:flex;flex-direction:' + (isMe ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:8px;">'
         + '<div style="font-size:20px;flex-shrink:0;">' + avHtml + '</div>'
         + '<div style="background:' + (isMe ? 'rgb(var(--accent-rgb) / 0.08)' : 'rgb(var(--tint-rgb) / 0.04)') + ';border:1px solid ' + (isMe ? 'rgb(var(--accent-rgb) / 0.15)' : 'rgb(var(--tint-rgb) / 0.07)') + ';border-radius:var(--r-lg);padding:8px 10px;max-width:72%;">'
-        + '<div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;">' + escapeHtml(m.user) + '</div>'
+        + '<div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;"><span data-pn="' + escapeHtml(m.user) + '">' + escapeHtml(m.user) + '</span></div>'
         + '<div style="font-size:13px;">' + escapeHtml(m.text || '') + '</div>'
         + '</div></div>';
     }).join('');
@@ -9056,18 +9077,6 @@ function setSoundTheme(theme) {
   notify('🎵 Звукова тема: ' + theme, 'info');
   playSound('win');
 }
-// ── КАСТОМНИЙ ТЕГ (купити) ─────────────────────────────────────
-function buyCustomTag(tag, price) {
-  var slotikyEl = document.getElementById('headerSlotiky');
-  var slotiky = parseInt(slotikyEl ? slotikyEl.textContent : 0) || userData.slotiky || 0;
-  if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙 Слотиків', 'error');
-  db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
-  db.ref('users/' + currentUser + '/tag').set(tag);
-  userData.tag = tag;
-  notify('✅ Тег встановлено: ' + tag, 'success');
-  document.querySelector('div[style] .grid')?.parentElement?.parentElement?.remove();
-}
-
 // ── GIFTING VIP ────────────────────────────────────────────────
 function giftVip(toNick, days) {
   if (!toNick || !days) return notify('Заповни всі поля', 'error');
@@ -9117,23 +9126,6 @@ function doComparePlayers(nick) {
   });
 }
 
-// ── ПРОФІЛЬНІ ЕФЕКТИ ───────────────────────────────────────────
-var PROFILE_EFFECTS = [
-  {id:'gold_glow', name:'Золоте сяйво', emoji:'✨', css:'box-shadow:0 0 20px rgba(212,175,55,.8),0 0 40px rgba(212,175,55,.4);animation:pulseGlow 2s infinite;', price:500},
-  {id:'fire', name:'Вогонь', emoji:'🔥', css:'box-shadow:0 0 20px rgba(255,100,0,.8);animation:heartbeat .8s infinite;', price:750},
-  {id:'ice', name:'Крига', emoji:'❄️', css:'box-shadow:0 0 20px rgba(100,200,255,.8);filter:drop-shadow(0 0 10px #4af);', price:750},
-  {id:'rainbow', name:'Веселка', emoji:'🌈', css:'border:3px solid transparent;background-clip:padding-box;animation:winShimmer 1s infinite;', price:1000},
-  {id:'vip_crown', name:'VIP корона', emoji:'👑', css:'box-shadow:0 0 30px rgba(212,175,55,1);border:3px solid #d4af37;', price:1500},
-];
-function buyProfileEffect(effectId, price) {
-  var slotiky = userData.slotiky || 0;
-  if (slotiky < price) return notify('Потрібно ' + formatNumber(price) + ' 🪙', 'error');
-  db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(-price));
-  db.ref('users/' + currentUser + '/profileEffect').set(effectId);
-  userData.profileEffect = effectId;
-  userData.slotiky = (userData.slotiky||0) - price;
-  notify('✅ Ефект активовано!', 'success');
-}
 
 // ─── src/app/21-modals-profile-tournaments.js ───
 // ╔══════════════════════════════════════════════════════════════╗
@@ -9340,63 +9332,6 @@ function showReferralQR() {
   );
 }
 
-function openCryptoSimulator() {
-  updateCryptoPrices();
-  openModal('crypto',
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
-    '<button onclick="closeModal(\'crypto\')" style="background:rgb(var(--tint-rgb) / 0.06);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 14px;color:var(--fg-3);cursor:pointer;">⬅</button>' +
-    '<div style="font-family:var(--font-display);font-size:16px;font-weight:900;color:var(--accent);">📈 Крипто</div></div>' +
-    '<div style="background:rgb(var(--accent-rgb) / 0.06);border:1px solid rgb(var(--accent-rgb) / 0.15);border-radius:var(--r-lg);padding:12px;margin-bottom:14px;">' +
-    '<div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">Портфель (₴)</div>' +
-    '<div style="font-size:24px;font-weight:900;color:var(--accent);" id="cryptoPortfolioVal">₴ 0</div>' +
-    '<div style="font-size:11px;color:var(--fg-4);">Баланс: ₴<span id="cryptoCasBal">'+formatNumber(userData.balance||0)+'</span></div></div>' +
-    '<div id="cryptoAssets"></div>',
-    {fullscreen: true}
-  );
-  renderCryptoAssets();
-  clearInterval(window._cryptoIv);
-  window._cryptoIv = setInterval(function() {
-    updateCryptoPrices(); renderCryptoAssets();
-  }, 5000);
-}
-
-function openProfileEffectShop() {
-  var currentEffect = userData.profileEffect || '';
-  var html = modalCloseBtn('profileeffect')
-    +'<div style="font-size:15px;font-weight:900;color:var(--special);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🎭 Ефекти профілю</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
-    + PROFILE_EFFECTS.map(function(e){
-        var owned = currentEffect === e.id;
-        return '<div style="background:var(--surface-1);border:1.5px solid '+(owned?'rgb(var(--accent-rgb) / 0.4)':'rgb(var(--tint-rgb) / 0.07)')+';border-radius:var(--r-lg);padding:14px;text-align:center;cursor:pointer;" onclick="buyProfileEffect(\''+e.id+'\','+e.price+');closeModal(\'profileeffect\')">'
-          +'<div style="font-size:32px;margin-bottom:6px;">'+e.emoji+'</div>'
-          +'<div style="font-size:12px;font-weight:700;margin-bottom:4px;">'+e.name+'</div>'
-          +'<div style="font-size:11px;color:'+(owned?'var(--accent)':'var(--fg-3)')+';">'+(owned?'✅ Активний':'🪙 '+formatNumber(e.price))+'</div>'
-          +'</div>';
-      }).join('')
-    +'</div>';
-  openModal('profileeffect', html);
-}
-
-function openCustomTagShop() {
-  var TAGS = [
-    {tag:'🔥 Вогонь',price:500},{tag:'💎 Діамант',price:1000},{tag:'👑 Король',price:2000},
-    {tag:'⚡ Блискавка',price:500},{tag:'🐉 Дракон',price:3000},{tag:'🎯 Снайпер',price:750},
-    {tag:'🌊 Хвиля',price:500},{tag:'🦁 Лев',price:1500},{tag:'🚀 Ракета',price:800},
-    {tag:'🎭 Маестро',price:2500},{tag:'🧊 Крижаний',price:600},{tag:'☠️ Череп',price:700},
-  ];
-  var html = modalCloseBtn('tagshop')
-    +'<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏷️ Магазин тегів</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-    + TAGS.map(function(t){
-        var safetag = t.tag.replace(/'/g, "\\'");
-        return '<div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;" onclick="buyCustomTag(\''+safetag+'\','+t.price+');closeModal(\'tagshop\')">'
-          +'<div style="font-size:18px;margin-bottom:6px;">'+t.tag+'</div>'
-          +'<div style="font-size:11px;color:var(--accent);font-weight:700;">🪙 '+formatNumber(t.price)+'</div>'
-          +'</div>';
-      }).join('')
-    +'</div>';
-  openModal('tagshop', html);
-}
 
 function openSoundThemePicker() {
   var html = modalCloseBtn('soundtheme')
@@ -9749,10 +9684,10 @@ function openPublicProfile(name) {
     document.getElementById('pubProfileContent').innerHTML = `
       <div class="pub-profile">
         <div class="profile-header">
-          <div class="avatar-large">${av}</div>
+          <div class="avatar-large" data-pa="${escapeHtml(name)}">${av}</div>
           <div>
-            <div style="font-size:22px;font-weight:bold;">${name}</div>
-            <div style="color:var(--fg-3);font-size:13px;">${d.tag||'Гравець'}</div>
+            <div style="font-size:22px;font-weight:bold;"><span data-pn="${escapeHtml(name)}">${escapeHtml(name)}</span></div>
+            <div style="color:var(--fg-3);font-size:13px;">${escapeHtml(d.tag||'Гравець')}</div>
           </div>
         </div>
         <div style="color:var(--fg-4);font-size:12px;margin-bottom:10px;">ID: ${d.id||'—'} • Реєстрація: ${d.regDate ? new Date(d.regDate).toLocaleDateString('uk-UA') : 'Невідомо'}</div>
@@ -9765,7 +9700,7 @@ function openPublicProfile(name) {
         <div class="pub-badges">${badges}</div>
         <div style="display:flex;gap:8px;margin-top:15px;">
           <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
-          <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value='${name}';openTabModal('transfer-modal');">💸 Надіслати</button>
+          <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value=${jsArg(name)};openTabModal('transfer-modal');">💸 Надіслати</button>
           <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;
@@ -12001,6 +11936,7 @@ function switchTab(id, el) {
     db.ref('users/'+currentUser+'/pmUnread').set(0);
   });
   if(id==='themes')       safe(() => renderThemeGrid());
+  if(['slots','fortune','mines','crash'].includes(id)) safe(() => renderGameItems(id));
   if(id==='coinflip')     safe(() => loadCfRooms());
   if(id==='rps')          safe(() => loadRpsRooms());
   if(id==='predict')      safe(() => loadPdRooms());
@@ -16546,6 +16482,8 @@ const SUPPORT_FAQ = [
       '🎨 Картка: у Гаманець → Картка її можна перевернути (натисни), скопіювати номер і обрати скін — їх понад сотню.',
       '🎨 Картку знайдеш у Гаманець → Картка — натисни, щоб перевернути й скопіювати номер, а скінів для неї понад сотню.'
     ] },
+  { keys: ['скарг','пропозиц','ідея','ідею','звернен','поскарж'],
+    reply: '📨 Скаргу чи пропозицію краще оформити як звернення — кнопка «Оформити звернення» вгорі цього чату. Підтримка відповість у ПМ, а статус буде видно в «Мої звернення».' },
   { keys: ['правил','13+','18+','вік','вікові обмеж'],
     reply: '📜 Правила: SlotOK доступний з ' + MIN_AGE + ' років, вік перевіряється за датою народження при реєстрації. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
   { keys: ['телеграм бот','telegram бот','прив\'язати телеграм','підключити телеграм','бот повідомлення'],
@@ -17098,277 +17036,278 @@ function closeStreamViewer() {
 
 // ─── src/app/31-slotiky-tournament-live.js ───
 // ============================================================
-// ===== СЛОТІКИ — внутрішня валюта =====
+// ===== СЛОТІКИ — магазин =====
+// Каталог, ціни й ефекти — shared/shop.js (SHOP_ITEMS, SLOTIKY_PACKS, …),
+// той самий файл читає сервер. Купівлю, бусти, скрині й предмети рахує
+// api/reward.js (lib/shop.js); тут лише екран. Без сервера (503) працює
+// старий шлях у браузері — тоді бусти не діють (їх рахує лише сервер).
 // ============================================================
-const SLOTIKY_PRICE = 10000000; // 10M UAH per 1 slotik
+let _shopTab = 'style';
 
-const SLOTIKY_SHOP_ITEMS = [
-  // ── КОСМЕТИКА ──
-  { id:'avatar_silver',   name:'Срібний аватар',       icon:'🥈', price:1,  desc:'Срібна рамка профілю',             type:'cosmetic' },
-  { id:'avatar_gold',     name:'Золотий аватар',       icon:'👑', price:2,  desc:'Золота рамка профілю',             type:'cosmetic' },
-  { id:'avatar_diamond',  name:'Diamond аватар',       icon:'💎', price:5,  desc:'Алмазна рамка профілю',            type:'cosmetic' },
-  { id:'avatar_fire',     name:'Вогняний аватар',      icon:'🔥', price:4,  desc:'Вогняна анімація рамки',           type:'cosmetic' },
-  { id:'avatar_cosmic',   name:'Космічний аватар',     icon:'🌌', price:8,  desc:'Зоряна рамка профілю',             type:'cosmetic' },
-  { id:'username_gold',   name:'Золотий нік',          icon:'✨', price:2,  desc:'Золотий колір у чаті',             type:'cosmetic' },
-  { id:'username_rainbow',name:'Веселковий нік',       icon:'🌈', price:4,  desc:'Анімований веселковий нік',        type:'cosmetic' },
-  { id:'username_red',    name:'Червоний нік',         icon:'❤️', price:1,  desc:'Червоний колір нікнейму',          type:'cosmetic' },
-  { id:'name_frame',      name:'Рамка "Supreme"',      icon:'🔱', price:15, desc:'Supreme рамка для імені',          type:'cosmetic' },
-  { id:'name_frame_neon', name:'Неонова рамка',        icon:'💜', price:7,  desc:'Неонова анімована рамка',          type:'cosmetic' },
-  { id:'badge_whale',     name:'Значок "Кит"',         icon:'🐋', price:10, desc:'Рідкісний значок у профілі',       type:'cosmetic' },
-  { id:'badge_shark',     name:'Значок "Акула"',       icon:'🦈', price:6,  desc:'Значок Акули',                     type:'cosmetic' },
-  { id:'badge_crown',     name:'Значок "Корона"',      icon:'👑', price:8,  desc:'Значок монарха',                   type:'cosmetic' },
-  { id:'badge_dragon',    name:'Значок "Дракон"',      icon:'🐉', price:12, desc:'Легендарний значок',               type:'cosmetic' },
-  { id:'badge_alien',     name:'Значок "Прибулець"',   icon:'👽', price:5,  desc:'Загадковий значок',                type:'cosmetic' },
-  { id:'chat_emoji_pack', name:'Емодзі Пак 1',         icon:'😎', price:1,  desc:'+20 емодзі у чаті',                type:'feature'  },
-  { id:'chat_emoji_pro',  name:'Емодзі Пак PRO',       icon:'🎭', price:3,  desc:'+50 преміум емодзі',               type:'feature'  },
-  { id:'chat_gif',        name:'GIF у чаті',           icon:'📹', price:5,  desc:'Відправляй GIF у чаті',            type:'feature'  },
-  { id:'chat_sticker',    name:'Стікери',              icon:'🎨', price:4,  desc:'10 ексклюзивних стікерів',         type:'feature'  },
-  // ── БУСТИ ──
-  { id:'vip_boost_3d',    name:'VIP Буст 3 дні',       icon:'🚀', price:4,  desc:'2x вагер 3 дні',                   type:'boost'    },
-  { id:'vip_boost_7d',    name:'VIP Буст 7 днів',      icon:'🚀', price:8,  desc:'2x вагер 7 днів',                  type:'boost'    },
-  { id:'cashback_x2',     name:'Кешбек x2',            icon:'💰', price:4,  desc:'Подвоєний кешбек 3 дні',           type:'boost'    },
-  { id:'cashback_x3',     name:'Кешбек x3',            icon:'💸', price:9,  desc:'Потрійний кешбек 7 днів',          type:'boost'    },
-  { id:'daily_x2',        name:'Щоденний бонус x2',    icon:'🎁', price:2,  desc:'Подвоєний щоденний 7 днів',        type:'boost'    },
-  { id:'daily_x3',        name:'Щоденний бонус x3',    icon:'🎁', price:4,  desc:'Потрійний щоденний 7 днів',        type:'boost'    },
-  { id:'lucky_boost',     name:'Везіння x2',           icon:'🍀', price:6,  desc:'+50% шанс виграшу 24 год',         type:'boost'    },
-  { id:'xp_boost',        name:'XP Буст x2',           icon:'⚡', price:3,  desc:'2x досягнення очки 3 дні',          type:'boost'    },
-  { id:'transfer_free',   name:'Переказ без комісії',  icon:'🔄', price:2,  desc:'10 переказів без комісії',         type:'feature'  },
-  // ── ПРЕДМЕТИ ──
-  { id:'lootbox_basic',   name:'Лут-бокс Basic',       icon:'📦', price:1,  desc:'Звичайний лут-бокс',               type:'item'     },
-  { id:'lootbox_ultra',   name:'Ultra Лут-бокс',       icon:'🎁', price:3,  desc:'Рідкісний лут-бокс',               type:'item'     },
-  { id:'lootbox_legend',  name:'Legendary Лут-бокс',   icon:'🔮', price:8,  desc:'Легендарний лут-бокс',             type:'item'     },
-  { id:'slot_free_5',     name:'5 Безкоштовних Спінів',icon:'🎰', price:2,  desc:'5 безкоштовних ставок у слотах',   type:'item'     },
-  { id:'slot_free_20',    name:'20 Безкоштов. Спінів', icon:'🎰', price:6,  desc:'20 безкоштовних ставок у слотах',  type:'item'     },
-  { id:'fortune_free',    name:'Безкошт. Прокрутка',   icon:'🎡', price:2,  desc:'3 безкоштовних прокруток Колеса',  type:'item'     },
-  { id:'crash_insurance', name:'Краш-страховка',       icon:'🛡️', price:5,  desc:'Повернення ставки при краші <1.2',  type:'item'     },
-  { id:'mines_hint',      name:'Підказка в Майнері',   icon:'💡', price:3,  desc:'3 підказки безпечної клітинки',    type:'item'     },
-  { id:'sport_bet_free',  name:'Безкошт. Спортставка', icon:'⚽', price:4,  desc:'1 безкоштовна спортивна ставка',   type:'item'     },
-  { id:'nickname_change', name:'Зміна нікнейму',       icon:'✏️', price:5,  desc:'Змінити нікнейм без перереєстр.',  type:'feature'  },
-  { id:'profile_bio',     name:'Біографія профілю',    icon:'📝', price:2,  desc:'Додати опис до профілю',           type:'feature'  },
-  // ── ЕКСКЛЮЗИВ ──
-  { id:'vip_trial',       name:'VIP Пробний тиждень',  icon:'💠', price:10, desc:'Всі VIP бонуси на 7 днів',         type:'exclusive'},
-  { id:'private_room',    name:'Приватна кімната',     icon:'🏠', price:20, desc:'Власна кімната для гри з друзями', type:'exclusive'},
-  { id:'custom_bet_limit',name:'Підвищений Max-Bet',   icon:'📈', price:15, desc:'Max ставка x10 на 7 днів',         type:'exclusive'},
-  { id:'guaranteed_win',  name:'Гарантований виграш',  icon:'🎯', price:25, desc:'100% виграш у наступній грі',      type:'exclusive'},
-  { id:'monthly_pass',    name:'Місячний Пропуск',     icon:'📅', price:30, desc:'Всі буст бонуси на місяць',        type:'exclusive'},
-];
+const SHOP_TAB_TYPES = { style: ['frame', 'nick', 'plate', 'badge'], boost: ['boost'], item: ['item'] };
+const SHOP_TYPE_TITLES = { frame: 'Рамка аватара', nick: 'Колір ніку', plate: 'Табличка імені', badge: 'Значок біля ніку', boost: 'Бусти', item: 'Предмети' };
+
+function slotikyWord(n) {
+  n = Math.abs(n) % 100;
+  const d = n % 10;
+  if(n > 10 && n < 20) return 'Слотіків';
+  if(d === 1) return 'Слотік';
+  if(d >= 2 && d <= 4) return 'Слотіки';
+  return 'Слотіків';
+}
 
 function initSlotiky() {
   const bal = document.getElementById('slotikyBalance');
   if(bal) bal.textContent = formatNumber(userData.slotiky || 0);
+  const rate = document.getElementById('slotikyRateLbl');
+  if(rate) rate.textContent = SLOTIKY_PRICE.toLocaleString('uk-UA');
+  renderSlotikyPacks();
   renderSlotikyShop();
 }
 
-function buySlotiky(amount) {
-  const prices = { 1: 10000000, 5: 50000000, 10: 95000000, 50: 450000000 };
-  const cost = prices[amount] || amount * SLOTIKY_PRICE;
-  const bal = userData.balance || 0;
-  if(bal < cost) {
-    notify(`❌ Недостатньо коштів! Потрібно ${formatNumber(cost)} ₴`, 'error');
-    return;
+function renderSlotikyPacks() {
+  const el = document.getElementById('slotikyPacks');
+  if(!el) return;
+  el.innerHTML = SLOTIKY_PACKS.map(p => `
+    <button type="button" class="shop-pack" onclick="buySlotiky(${p.n})">
+      ${p.tag ? `<span class="badge is-pos">${p.tag}</span>` : ''}
+      <span class="shop-pack-n num">${p.n} <span class="ic i-coin" aria-hidden="true"></span></span>
+      <span class="shop-pack-price num">${p.price.toLocaleString('uk-UA')} ₴</span>
+    </button>`).join('');
+}
+
+function setShopTab(tab) {
+  _shopTab = tab;
+  document.querySelectorAll('#tab-slotiky [data-shop-tab]').forEach(b => {
+    const on = b.dataset.shopTab === tab;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on);
+  });
+  renderSlotikyShop();
+}
+
+async function buySlotiky(n) {
+  const pack = SLOTIKY_PACKS.find(p => p.n === n);
+  if(!pack) return;
+  if((userData.balance || 0) < pack.price) return notify('Недостатньо коштів: потрібно ' + formatNumber(pack.price) + ' ₴', 'error');
+  const ok = await confirmAction({
+    title: 'Купити ' + n + ' ' + slotikyWord(n) + '?',
+    text: 'З балансу спишеться ' + pack.price.toLocaleString('uk-UA') + ' ₴.',
+    confirm: 'Купити',
+  });
+  if(!ok) return;
+  const srv = await serverReward('buySlotiky', { n });
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'legacy') {
+    const tx = await db.ref('users/' + currentUser + '/balance').transaction(b => (b == null || b < pack.price) ? undefined : b - pack.price);
+    if(!tx.committed) return notify('Недостатньо коштів', 'error');
+    await db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(n));
+    addToHistory('Куплено ' + n + ' ' + slotikyWord(n) + ': -' + formatNumber(pack.price) + '₴');
   }
-  // Confirm
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-  modal.innerHTML = `
-    <div style="background:var(--surface-1);border:1px solid var(--special);border-radius:var(--r-xl);padding:24px;max-width:320px;width:100%;text-align:center;">
-      <div style="font-size:40px;margin-bottom:12px;">🪙</div>
-      <div style="font-size:18px;font-weight:bold;color:var(--special);margin-bottom:8px;">Купити ${amount} Слотік${amount>1?'ів':''}?</div>
-      <div style="font-size:14px;color:var(--fg-3);margin-bottom:20px;">Вартість: <b style="color:var(--fg);">${formatNumber(cost)} ₴</b></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-2);cursor:pointer;">Скасувати</button>
-        <button onclick="confirmBuySlotiky(${amount},${cost});this.closest('div[style*=fixed]').remove();" style="padding:12px;background:var(--special);border:none;border-radius:var(--r-md);color:var(--on-special);font-weight:bold;cursor:pointer;">✅ Купити</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-function confirmBuySlotiky(amount, cost) {
-  db.ref('users/'+currentUser).update({
-    balance:  (userData.balance  || 0) - cost,
-    slotiky:  (userData.slotiky  || 0) + amount,
-  });
+  userData.slotiky = srv.mode === 'server' ? srv.r.slotiky : (userData.slotiky || 0) + n;
   playSound('bonus');
-  notify(`🪙 Куплено ${amount} Слотік${amount>1?'ів':''}!`, 'success');
-  addToHistory(`Куплено ${amount} Слотік${amount>1?'ів':''}: -${formatNumber(cost)}₴`);
-  setTimeout(()=>{ const b=document.getElementById('slotikyBalance'); if(b) b.textContent=formatNumber((userData.slotiky||0)+amount); }, 300);
+  notify('Куплено ' + n + ' ' + slotikyWord(n), 'success');
+  initSlotiky();
 }
 
+function shopItemState(it, items, now) {
+  const rec = items[it.id];
+  if(SHOP_TAB_TYPES.style.includes(it.type)) return rec ? 'owned' : 'buy';
+  if(it.type === 'boost') return boostActive(rec, now) ? 'active' : 'buy';
+  return 'buy';
+}
 
-let _shopFilter = null;
-function filterShop(type, btn) {
-  _shopFilter = type;
-  document.querySelectorAll('[onclick^="filterShop"]').forEach(b => {
-    b.style.background = 'var(--surface-2)';
-    b.style.color = 'var(--fg-2)';
-    b.style.border = '1px solid var(--line)';
-  });
-  if(btn) { btn.style.background='var(--accent)'; btn.style.color='var(--on-accent)'; btn.style.border='none'; }
-  renderSlotikyShop();
+function shopCounterOf(it) {
+  if(!it.counter) return 0;
+  return it.counter.split('/').reduce((o, k) => (o && typeof o === 'object') ? o[k] : 0, userData) || 0;
+}
+
+function shopCardHtml(it, items, worn, now) {
+  const st = shopItemState(it, items, now);
+  const isWorn = worn[it.type] === it.id;
+  let meta = '', action = '';
+  if(st === 'owned') {
+    action = isWorn
+      ? `<button type="button" class="btn btn-secondary btn-sm btn-block" onclick="equipCosmetic('${it.type}', null)">Зняти</button>`
+      : `<button type="button" class="btn btn-primary btn-sm btn-block" onclick="equipCosmetic('${it.type}', '${it.id}')">Надіти</button>`;
+    meta = isWorn ? '<span class="badge is-pos">Надіто</span>' : '<span class="badge">Куплено</span>';
+  } else {
+    if(st === 'active') {
+      const left = Math.max(1, Math.ceil((items[it.id].expires - now) / 86400000));
+      meta = `<span class="badge is-pos">Діє ще ${left} дн.</span>`;
+    }
+    const have = shopCounterOf(it);
+    if(it.type === 'item' && have > 0) meta = `<span class="badge">У вас: ${have}</span>`;
+    action = `<button type="button" class="btn ${st === 'active' ? 'btn-secondary' : 'btn-primary'} btn-sm btn-block" onclick="buyShopItem('${it.id}')">
+      ${st === 'active' ? 'Продовжити' : 'Купити'} · ${it.price} <span class="ic i-coin" aria-hidden="true"></span></button>`;
+  }
+  const preview = SHOP_TAB_TYPES.style.includes(it.type)
+    ? `<div class="shop-preview">${cosmeticPreviewHtml(it)}</div>`
+    : `<span class="shop-card-ic"><span class="ic i-${it.icon}" aria-hidden="true"></span></span>`;
+  return `<div class="shop-card${isWorn ? ' is-worn' : ''}">
+    ${preview}
+    <div class="shop-card-body">
+      <div class="shop-card-title">${it.name}</div>
+      <div class="shop-card-desc">${it.desc}</div>
+      ${meta}
+    </div>
+    ${action}
+  </div>`;
 }
 
 function renderSlotikyShop() {
-  const grid = document.getElementById('slotikyShopGrid'); if(!grid) return;
-  const owned = userData.slotikyItems || {};
-  const filteredItems = _shopFilter
-    ? SLOTIKY_SHOP_ITEMS.filter(i => i.type === _shopFilter)
-    : SLOTIKY_SHOP_ITEMS;
-  grid.innerHTML = filteredItems.map(item => {
-    const isOwned = owned[item.id];
-    const typeColor = item.type==='boost'?'#f39c12':item.type==='cosmetic'?'#c9a0ff':item.type==='feature'?'#27ae60':'#4a90e2';
-    return `<div style="background:linear-gradient(180deg,var(--surface-1),var(--bg));border:1px solid ${isOwned?'var(--pos)':'var(--special)'};border-radius:var(--r-lg);padding:14px;position:relative;">
-      ${isOwned?'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:var(--pos);font-weight:bold;">✅ Є</div>':''}
-      <div style="font-size:28px;margin-bottom:6px;">${item.icon}</div>
-      <div style="font-size:12px;font-weight:bold;color:var(--fg);margin-bottom:3px;">${item.name}</div>
-      <div style="font-size:10px;color:var(--fg-3);margin-bottom:8px;">${item.desc}</div>
-      <div style="font-size:11px;color:var(--special);font-weight:bold;margin-bottom:8px;">🪙 ${item.price} Слотік${item.price>1?'ів':''}</div>
-      <button onclick="buyShopItem('${item.id}',${item.price})" ${isOwned?'disabled':''} style="width:100%;padding:7px;background:${isOwned?'var(--surface-2)':'var(--special)'};border:none;border-radius:var(--r-md);color:${isOwned?'var(--fg-4)':'var(--fg)'};font-size:11px;font-weight:bold;cursor:${isOwned?'default':'pointer'};">${isOwned?'Придбано':'Купити'}</button>
-    </div>`;
-  }).join('');
-}
-
-function buyShopItem(itemId, price) {
-  const currentSlotiky = userData.slotiky || 0;
-  if(currentSlotiky < price) { notify(`❌ Недостатньо слотіків! Потрібно ${price} 🪙`, 'error'); return; }
-  const item = SLOTIKY_SHOP_ITEMS.find(i=>i.id===itemId); if(!item) return;
-  const owned = userData.slotikyItems || {};
-  if(owned[itemId] && item.type !== 'boost' && item.type !== 'item') {
-    notify('Вже придбано!', 'info'); return;
-  }
-  owned[itemId] = { boughtAt: Date.now(), expires: getItemExpiry(item) };
-  const updates = {
-    slotiky:       currentSlotiky - price,
-    slotikyItems:  owned,
-    slotikySpent:  (userData.slotikySpent||0) + price
-  };
-  // Apply instant effects
-  applyShopItemEffect(itemId, item, updates);
-  db.ref('users/'+currentUser).update(updates);
-  playSound('bonus');
-  notify(`🎉 Придбано: ${item.icon} ${item.name}!
-${getItemEffectDesc(item)}`, 'success');
-  setTimeout(()=>{ renderSlotikyShop(); applyAllShopEffects(); }, 300);
-}
-
-function getItemExpiry(item) {
-  const durations = {
-    vip_boost_3d:3*86400000, vip_boost_7d:7*86400000,
-    cashback_x2:3*86400000, cashback_x3:7*86400000,
-    daily_x2:7*86400000, daily_x3:7*86400000,
-    lucky_boost:86400000, xp_boost:3*86400000
-  };
-  return durations[item.id] ? Date.now() + durations[item.id] : null;
-}
-
-function getItemEffectDesc(item) {
-  const effects = {
-    avatar_silver:'✓ Срібна рамка активована в профілі',
-    avatar_gold:'✓ Золота рамка активована в профілі',
-    avatar_diamond:'✓ Алмазна рамка активована в профілі',
-    avatar_fire:'✓ Вогняна рамка активована',
-    avatar_cosmic:'✓ Космічна рамка активована',
-    username_gold:'✓ Золотий нікнейм у чаті',
-    username_rainbow:'✓ Веселковий нікнейм активовано',
-    username_red:'✓ Червоний нікнейм активовано',
-    vip_boost_3d:'✓ 2× вагер зараховується 3 дні',
-    vip_boost_7d:'✓ 2× вагер зараховується 7 днів',
-    cashback_x2:'✓ Подвійний кешбек на 3 дні',
-    cashback_x3:'✓ Потрійний кешбек на 7 днів',
-    daily_x2:'✓ Подвоєний щоденний бонус 7 днів',
-    daily_x3:'✓ Потрійний щоденний бонус 7 днів',
-    lucky_boost:'✓ +50% шанс виграшу на 24 год',
-    slot_free_5:'✓ Додано 5 безкоштовних спінів',
-    slot_free_20:'✓ Додано 20 безкоштовних спінів',
-    fortune_free:'✓ Додано 3 безкоштовні прокрутки',
-    mines_hint:'✓ Додано 3 підказки в майнер',
-    guaranteed_win:'✓ Наступна гра — 100% виграш!',
-    crash_insurance:'✓ Страховка краша <1.2 активна',
-    lootbox_basic:'✓ Відкрий лут-бокс у розділі Бонуси',
-    lootbox_ultra:'✓ Відкрий лут-бокс у розділі Бонуси',
-    lootbox_legend:'✓ Відкрий лут-бокс у розділі Бонуси',
-    vip_trial:'✓ VIP бонуси активні на 7 днів',
-    monthly_pass:'✓ Місячний пропуск активовано',
-  };
-  return effects[item.id] || '✓ Предмет додано до акаунту';
-}
-
-function applyShopItemEffect(itemId, item, updates) {
-  // Items with immediate stat effects
-  if(itemId === 'slot_free_5')   updates.freeSlots = (userData.freeSlots||0) + 5;
-  if(itemId === 'slot_free_20')  updates.freeSlots = (userData.freeSlots||0) + 20;
-  if(itemId === 'fortune_free')  updates.freeFortune = (userData.freeFortune||0) + 3;
-  if(itemId === 'mines_hint')    updates.minesHints = (userData.minesHints||0) + 3;
-  if(itemId === 'sport_bet_free')updates.freeSportBet = (userData.freeSportBet||0) + 1;
-  if(itemId === 'guaranteed_win')updates.guaranteedWin = true;
-  if(itemId === 'crash_insurance')updates.crashInsurance = true;
-}
-
-let _applyShopTimer = null;
-function applyAllShopEffects() {
-  clearTimeout(_applyShopTimer);
-  _applyShopTimer = setTimeout(_doApplyShopEffects, 300);
-}
-function _doApplyShopEffects() {
+  const grid = document.getElementById('slotikyShopGrid');
+  if(!grid) return;
   const items = userData.slotikyItems || {};
   const now = Date.now();
-
-  // Avatar frames
-  const frames = ['avatar_cosmic','avatar_fire','avatar_diamond','avatar_gold','avatar_silver'];
-  let activeFrame = null;
-  for(const f of frames) {
-    const it = items[f];
-    if(it && (it === true || !it.expires || it.expires > now)) { activeFrame = f; break; }
-  }
-  const frameColors = {
-    avatar_cosmic: 'linear-gradient(135deg,#1a0a2e,#4a1080)',
-    avatar_fire:   'linear-gradient(135deg,#8b0000,#ff4500)',
-    avatar_diamond:'linear-gradient(135deg,#0a2a4a,#00b4d8)',
-    avatar_gold:   'linear-gradient(135deg,#6b4c00,var(--accent))',
-    avatar_silver: 'linear-gradient(135deg,#333,#aaa)',
-  };
-  const avatarEl = document.getElementById('currentAvatar');
-  if(avatarEl && activeFrame) {
-    avatarEl.style.background = frameColors[activeFrame] || '';
-    avatarEl.style.border = '3px solid ' + (activeFrame==='avatar_gold'?'var(--accent)':activeFrame==='avatar_diamond'?'var(--primary)':activeFrame==='avatar_fire'?'var(--accent)':'var(--fg-3)');
-    avatarEl.style.borderRadius = '50%';
-  }
-
-  // Nick colors in chat
-  const nickColorItems = { username_rainbow:'rainbow', username_gold:'#d4af37', username_red:'#e74c3c' };
-  let activeNick = null;
-  for(const [id, color] of Object.entries(nickColorItems)) {
-    if(items[id]) { activeNick = color; break; }
-  }
-  window._chatNickColor = activeNick;
-
-  // Active boosts display
-  updateActiveBoostsUI(items, now);
+  const worn = resolveCosmetics(items, userData.cosmetics);
+  if(_shopTab === 'inv') { grid.innerHTML = shopInventoryHtml(items, worn, now); return; }
+  const types = SHOP_TAB_TYPES[_shopTab] || [];
+  grid.innerHTML = types.map(type => {
+    const list = SHOP_ITEMS.filter(i => i.type === type);
+    return (types.length > 1 ? `<h3 class="shop-group-title">${SHOP_TYPE_TITLES[type]}</h3>` : '') + `
+      <div class="shop-grid">${list.map(it => shopCardHtml(it, items, worn, now)).join('')}</div>`;
+  }).join('') + (_shopTab === 'boost' ? '<p class="field-hint">Бусти рахує сервер: множник діє на ставки й бонуси, поки буст активний. Повторна купівля продовжує строк.</p>' : '');
 }
 
-function updateActiveBoostsUI(items, now) {
-  const el = document.getElementById('activeBoostsList');
-  if(!el) return;
-  const boostLabels = {
-    vip_boost_3d:'🚀 VIP Буст', vip_boost_7d:'🚀 VIP Буст',
-    cashback_x2:'💰 Кешбек ×2', cashback_x3:'💸 Кешбек ×3',
-    daily_x2:'🎁 Щоден. ×2', daily_x3:'🎁 Щоден. ×3',
-    lucky_boost:'🍀 Везіння', monthly_pass:'📅 Місяч. пропуск',
-    vip_trial:'💠 VIP Пробний',
-  };
-  const active = Object.entries(items).filter(([id, val]) => {
-    if(!boostLabels[id]) return false;
-    const expires = val?.expires;
-    return !expires || expires > now;
-  });
-  if(!active.length) { el.innerHTML = '<div style="color:var(--fg-4);font-size:11px;">Немає активних бустів</div>'; return; }
-  el.innerHTML = active.map(([id, val]) => {
-    const expires = val?.expires;
-    const left = expires ? Math.max(0, Math.ceil((expires - now) / 86400000)) : null;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg);border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);margin-bottom:5px;">
-      <span style="font-size:12px;color:var(--fg-2);">${boostLabels[id]}</span>
-      <span style="font-size:10px;color:var(--accent);">${left!==null?left+'д':'Активно'}</span>
-    </div>`;
-  }).join('');
+// «Моє»: надіте, активні бусти, предмети з кількістю, скрині з кнопкою «Відкрити».
+function shopInventoryHtml(items, worn, now) {
+  const rows = [];
+  const wornList = COSMETIC_SLOTS.map(s => worn[s] && shopItem(worn[s])).filter(Boolean);
+  rows.push(`<h3 class="shop-group-title">Надіто</h3>` + (wornList.length
+    ? `<div class="list">${wornList.map(it => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${it.name}</span><span class="list-row-sub">${SHOP_TYPE_TITLES[it.type]}</span></span></div>`).join('')}</div>`
+    : '<p class="field-hint">Нічого. Рамки, кольори ніку й значки — у розділі «Стиль».</p>'));
+  const boosts = SHOP_ITEMS.filter(it => it.type === 'boost' && boostActive(items[it.id], now));
+  rows.push(`<h3 class="shop-group-title">Активні бусти</h3>` + (boosts.length
+    ? `<div class="list">${boosts.map(it => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${it.name}</span><span class="list-row-sub">до ${new Date(items[it.id].expires).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></span></div>`).join('')}</div>`
+    : '<p class="field-hint">Немає активних бустів.</p>'));
+  const counters = [
+    { label: 'Фріспіни по ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', where: 'Слоти «777»', n: userData.shopSpins || 0, go: 'slots' },
+    { label: 'Прокрутки Колеса по ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', where: 'Колесо фортуни', n: userData.shopFortune || 0, go: 'fortune' },
+    { label: 'Прокрутки Колеса по ' + formatNumber(FREE_FORTUNE_STAKE) + ' ₴', where: 'Колесо фортуни · з Battle Pass', n: userData.freeFortune || 0, go: 'fortune' },
+    { label: 'Підказки в Мінах', where: 'Міни', n: userData.minesHints || 0, go: 'mines' },
+    { label: 'Страховки Крашу', where: 'Краш', n: Number(userData.crashInsurance) || 0, go: 'crash' },
+  ].filter(c => c.n > 0);
+  rows.push(`<h3 class="shop-group-title">Предмети</h3>` + (counters.length
+    ? `<div class="list">${counters.map(c => `<button type="button" class="list-row" onclick="openGame('${c.go}')"><span class="list-row-main"><span class="list-row-title">${c.label}</span><span class="list-row-sub">${c.where}</span></span><span class="badge num">${c.n}</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>`).join('')}</div>`
+    : '<p class="field-hint">Предметів немає.</p>'));
+  const inv = userData.lootboxInv || {};
+  const boxes = Object.keys(SHOP_BOXES).filter(t => inv[t] > 0);
+  rows.push(`<h3 class="shop-group-title">Скрині</h3>` + (boxes.length
+    ? `<div class="list">${boxes.map(t => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${SHOP_BOXES[t].name}</span><span class="list-row-sub">Виграш до ×${Math.max.apply(null, SHOP_BOXES[t].prizes.map(p => p.mult))} від ${formatNumber(SHOP_BOXES[t].value)} ₴</span></span><span class="badge num">${inv[t]}</span><button type="button" class="btn btn-primary btn-sm btn-inline" onclick="openShopBox('${t}')">Відкрити</button></div>`).join('')}</div>`
+    : '<p class="field-hint">Скринь немає. Їх можна купити в «Предметах» або отримати в Battle Pass.</p>'));
+  return rows.join('');
+}
+
+async function buyShopItem(itemId) {
+  const it = shopItem(itemId);
+  if(!it) return;
+  const have = userData.slotiky || 0;
+  if(have < it.price) return notify('Потрібно ' + it.price + ' ' + slotikyWord(it.price) + '. У вас: ' + have, 'error');
+  const ok = await confirmAction({ title: it.name, text: it.desc + '. Ціна: ' + it.price + ' ' + slotikyWord(it.price) + '.', confirm: 'Купити' });
+  if(!ok) return;
+  const srv = await serverReward('shopBuy', { item: itemId });
+  if(srv.mode === 'error') return;
+  const items = userData.slotikyItems = userData.slotikyItems || {};
+  const now = Date.now();
+  if(srv.mode === 'legacy') {
+    const tx = await db.ref('users/' + currentUser + '/slotiky').transaction(c => (c == null || c < it.price) ? undefined : c - it.price);
+    if(!tx.committed) return notify('Недостатньо Слотіків', 'error');
+    const rec = it.type === 'boost'
+      ? { boughtAt: now, expires: Math.max((items[itemId] || {}).expires || 0, now) + it.days * 86400000 }
+      : { boughtAt: now };
+    await db.ref('users/' + currentUser + '/slotikyItems/' + itemId).set(rec);
+    if(it.counter) await db.ref('users/' + currentUser + '/' + it.counter).set(firebase.database.ServerValue.increment(it.qty));
+    items[itemId] = rec;
+    userData.slotiky = have - it.price;
+  } else {
+    userData.slotiky = srv.r.slotiky;
+    items[itemId] = it.type === 'boost' ? { boughtAt: now, expires: srv.r.expires } : { boughtAt: now };
+    if(it.counter && srv.r.count !== undefined) {
+      const path = it.counter.split('/');
+      let o = userData;
+      for(let i = 0; i < path.length - 1; i++) o = o[path[i]] = o[path[i]] || {};
+      o[path[path.length - 1]] = srv.r.count;
+    }
+  }
+  playSound('bonus');
+  notify('Придбано: ' + it.name, 'success');
+  initSlotiky();
+  invalidatePlayerStyle(currentUser);
+}
+
+function equipCosmetic(slot, id) {
+  if(!currentUser || !COSMETIC_SLOTS.includes(slot)) return;
+  if(id && !(userData.slotikyItems || {})[id]) return;
+  userData.cosmetics = Object.assign({}, userData.cosmetics || {}, { [slot]: id || null });
+  // null у виборі — «нічого не надіто», тож пишемо false, щоб база не стерла ключ
+  db.ref('users/' + currentUser + '/cosmetics/' + slot).set(id || false);
+  userData.cosmetics[slot] = id || false;
+  invalidatePlayerStyle(currentUser);
+  renderSlotikyShop();
+}
+
+let _boxOpening = false;
+async function openShopBox(tier) {
+  const box = SHOP_BOXES[tier];
+  if(!box || _boxOpening) return;
+  _boxOpening = true;
+  try {
+    const srv = await serverReward('openBox', { tier });
+    if(srv.mode === 'error') return;
+    let win;
+    if(srv.mode === 'server') {
+      win = srv.r.win;
+      userData.lootboxInv = Object.assign({}, userData.lootboxInv, { [tier]: srv.r.left });
+    } else {
+      const tx = await db.ref('users/' + currentUser + '/lootboxInv/' + tier).transaction(c => (c > 0 ? c - 1 : undefined));
+      if(!tx.committed) return notify('Таких скринь немає', 'error');
+      const total = box.prizes.reduce((s, p) => s + p.weight, 0);
+      let r = Math.random() * total, prize = box.prizes[box.prizes.length - 1];
+      for(const p of box.prizes) { if(r < p.weight) { prize = p; break; } r -= p.weight; }
+      win = Math.floor(box.value * prize.mult);
+      await db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
+      addToHistory(box.name + ': +' + formatNumber(win) + '₴');
+    }
+    playSound(win >= box.value ? 'win' : 'click');
+    notify(box.name + ': +' + formatNumber(win) + ' ₴', win >= box.value ? 'success' : 'info');
+    renderSlotikyShop();
+  } finally { _boxOpening = false; }
+}
+
+// ── Предмети в самих іграх: панель над головною кнопкою ──
+const GAME_ITEM_ANCHORS = { slots: 'slotsSpinBtn', fortune: 'fortuneBtn', mines: 'minesGrid', crash: 'crashBtn' };
+function renderGameItems(game) {
+  const anchor = document.getElementById(GAME_ITEM_ANCHORS[game]);
+  if(!anchor || !userData) return;
+  let bar = document.getElementById('gameItems-' + game);
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'gameItems-' + game;
+    bar.className = 'game-items';
+    anchor.before(bar);
+  }
+  const btn = (fn, label, n) => `<button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="${fn}">${label}<span class="badge num">${n}</span></button>`;
+  const parts = [];
+  if(game === 'slots' && userData.shopSpins > 0) parts.push(btn('spinSlotsShop()', 'Фріспін ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', userData.shopSpins));
+  if(game === 'fortune') {
+    if(userData.shopFortune > 0) parts.push(btn("spinFortune('shop')", 'Прокрутка ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', userData.shopFortune));
+    if(userData.freeFortune > 0) parts.push(btn("spinFortune('free')", 'Прокрутка ' + formatNumber(FREE_FORTUNE_STAKE) + ' ₴', userData.freeFortune));
+  }
+  if(game === 'mines' && userData.minesHints > 0) parts.push(btn('minesHint()', '<span class="ic i-bulb" aria-hidden="true"></span> Підказка', userData.minesHints));
+  const ins = Number(userData.crashInsurance) || 0;
+  if(game === 'crash' && ins > 0) parts.push(`<label class="game-items-check"><input type="checkbox" id="crashInsure"> Застрахувати раунд: вибух до ×${CRASH_INSURANCE_BELOW.toFixed(2)} — ставка повертається <span class="badge num">${ins}</span></label>`);
+  bar.innerHTML = parts.join('');
+  bar.classList.toggle('hidden', !parts.length);
+}
+
+// Разове повернення Слотіків за прибрані товари (v121) — робить сервер.
+async function runShopMigration() {
+  if(!currentUser || userData.shopV2) return;
+  const srv = await serverReward('shopMigrate');
+  if(srv.mode === 'server' && srv.r.refund > 0) {
+    notify('Магазин оновлено: за прибрані товари повернуто ' + srv.r.refund + ' ' + slotikyWord(srv.r.refund), 'info');
+  }
 }
 
 // ============================================================
@@ -18285,12 +18224,12 @@ async function claimBpBonus() {
   const srv = await serverReward('bpBonus');
   if(srv.mode !== 'legacy') {
     _bpBonusLock = false;
-    if(srv.mode === 'server') { playSound('bonus'); notify('🎁 Бонусна скриня: 📦 лут-бокс' + (srv.r.slotiky ? ` + 🪙 ${srv.r.slotiky} Слотіки` : '') + '!', 'success'); }
+    if(srv.mode === 'server') { playSound('bonus'); notify('🎁 Бонусна скриня: 📦 скриня Battle Pass' + (srv.r.slotiky ? ` + 🪙 ${srv.r.slotiky} Слотіки` : '') + '! Відкрити — Магазин Слотіків → «Моє»', 'success'); }
     setTimeout(initBattlePass, 400);
     return;
   }
   const inc = firebase.database.ServerValue.increment;
-  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, lootboxes: inc(1) };
+  const updates = { bpBonusClaimed: bp.bonusClaimed + 1, 'lootboxInv/bp': inc(1) };
   if(bp.isVip) updates.slotiky = inc(2);
   db.ref('users/'+currentUser).update(updates).then(() => {
     playSound('bonus');
@@ -18333,7 +18272,7 @@ async function claimBpReward(lv, track) {
   if(reward.type === 'freeSlots')     updates.freeSlots = inc(reward.val);
   if(reward.type === 'freeFortune')   updates.freeFortune = inc(reward.val);
   if(reward.type === 'minesHints')    updates.minesHints = inc(reward.val);
-  if(reward.type === 'crashInsurance')updates.crashInsurance = true;
+  if(reward.type === 'crashInsurance')updates.crashInsurance = inc(1);
   if(reward.type === 'vipBoost') {
     const days = reward.val;
     const expiry = Date.now() + days * 86400000;
@@ -18342,7 +18281,7 @@ async function claimBpReward(lv, track) {
     updates.slotikyItems = items;
   }
   if(reward.type === 'lootbox') {
-    updates.lootboxes = inc(reward.val);
+    updates['lootboxInv/bp'] = inc(reward.val);
   }
   if(reward.type === 'cosmetic') {
     const items = userData.slotikyItems || {};
@@ -19203,7 +19142,7 @@ function renderPmInbox() {
         : escapeHtml(msg.text || '');
       const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
       div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile(${jsArg(name)})" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}"><span data-pn="${escapeHtml(name)}">${escapeHtml(name)}</span>${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
           <div style="font-size:11px;color:${isUnread?'var(--fg-2)':'var(--fg-4)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
@@ -19357,7 +19296,7 @@ function openPmThread(otherUser) {
       <div onclick="openPublicProfile(${jsArg(otherUser)})" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
         <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,color-mix(in srgb, var(--info) 19%, var(--surface-1)),var(--info));border:2px solid rgb(var(--info-rgb) / 0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
         <div style="min-width:0;">
-          <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
+          <div style="font-weight:800;font-size:14px;"><span data-pn="${escapeHtml(otherUser)}">${escapeHtml(otherUser)}</span></div>
           <div id="pmThreadStatus" style="font-size:10px;color:var(--fg-4);">● ...</div>
         </div>
       </div>
@@ -20666,7 +20605,7 @@ function copyCardNumberFlash(e) {
   var num = numEl ? numEl.textContent.replace(/\s/g,'') : '';
   if(!/^[0-9]{12,19}$/.test(num)) return notify(hasConnectedCard()
     ? 'Повний номер картки зберігається у вашому банку, не в SlotOK'
-    : 'Спочатку підключіть картку в Гаманці', 'error');
+    : 'Спочатку випустіть картку в Гаманці', 'error');
   navigator.clipboard && navigator.clipboard.writeText(num).then(function() {
     notify('Номер скопійовано', 'success');
     if(numEl) { numEl.classList.add('copied'); setTimeout(function(){ numEl.classList.remove('copied'); }, 600); }
@@ -20684,7 +20623,7 @@ function toggleCvvVisibility() {
   var card = getActiveCard();
   if(!card) return notify(hasConnectedCard()
     ? 'CVV своєї картки SlotOK не зберігає — дивіться його на самій картці'
-    : 'Спочатку підключіть картку в Гаманці', 'error');
+    : 'Спочатку випустіть картку в Гаманці', 'error');
   var cvv = card.cvv || '•••';
   var hidden = cvvFront && cvvFront.textContent === '•••';
   if(cvvFront) cvvFront.textContent = hidden ? cvv : '•••';
@@ -20742,12 +20681,11 @@ function ksEsc(str) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ПІДКЛЮЧЕНІ КАРТКИ
-// SlotOK не випускає власних карток — ні тимчасових, ні постійних.
-// У Касі показується лише та картка, яку гравець підключив сам:
-//   • своя картка свого банку — зберігаємо ТІЛЬКИ банк, ім'я власника,
-//     останні 4 цифри й термін дії. Повний номер і CVV не приймаємо
-//     й не пишемо в базу взагалі;
+// КАРТКИ ГРАВЦЯ
+//   • ігрова картка SlotOK (bank 'slotok', game: true) — з v121 єдиний спосіб
+//     завести нову картку: лише назва, «останні 4» для розрізнення і баланс;
+//   • старі «свої» картки банків (лише банк, ім'я, останні 4, термін) і
+//     Партнер-картки — нових не створюємо, наявні працюють як і раніше;
 //   • картка Аксіома Банку — приходить через 6-значний код і має повні
 //     дані, бо їх видає сам банк-партнер.
 // ═══════════════════════════════════════════════════════════════════
@@ -20756,6 +20694,7 @@ var KS_BANKS = {
   mono:   { name: 'Monobank',          color: '#1c1c1c', short: 'М'  },
   visa:   { name: 'Visa / Mastercard', color: '#1a1f71', short: 'VM' },
   partner:{ name: 'Партнер Банк',      color: '#4a9eff', short: 'PB' },
+  slotok: { name: 'SlotOK',            color: '#ff7a3d', short: 'S'  },
   abank:  { name: 'A-Bank',            color: '#e2333a', short: 'A'  },
   sense:  { name: 'Sense Bank',        color: '#7b3fe4', short: 'S'  },
   pumb:   { name: 'ПУМБ',              color: '#c8102e', short: 'ПБ' },
@@ -20787,7 +20726,8 @@ function getLinkedCards() {
     // і 30-денний термін; звичайна підключена картка — лише маску.
     var gen = !!c.generated;
     out.push({
-      id: id, kind: gen ? 'partner' : 'external', bank: c.bank || 'other', bankName: b.name,
+      id: id, kind: c.game ? 'game' : gen ? 'partner' : 'external', bank: c.bank || 'other',
+      bankName: c.game ? (c.label || 'Картка SlotOK') : b.name,
       mark: b.short, markColor: b.color,
       holder: String(c.holder || '').toUpperCase(),
       last4: c.last4 || (c.number ? String(c.number).replace(/\D/g,'').slice(-4) : '••••'),
@@ -20970,7 +20910,7 @@ function noteCardSpend(id, amount) {
 
 function openCardLimitModal() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
+  if(!card) return notify('Спочатку випустіть картку в Гаманці', 'error');
   var old = document.getElementById('ksLimitModal'); if(old) old.remove();
   var cur = cardDayLimit(card.id);
   var m = document.createElement('div');
@@ -21028,11 +20968,10 @@ function renderLinkedCards() {
   if(!cards.length) {
     el.innerHTML =
       '<div class="ks-empty" style="padding:22px 18px;">' +
-        '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що не підключено жодної картки. ' +
-          'Підключіть свою, згенеруйте Партнер-картку або прив\'яжіть Аксіому.</div>' +
+        '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що жодної картки. ' +
+          'Випустіть ігрову картку SlotOK або прив\'яжіть Аксіому.</div>' +
         '<div class="ks-btn-row" style="margin-bottom:8px;">' +
-          '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
-          '<button class="ks-btn" onclick="createPartnerCard()">' + ksIcon('card') + ' Партнер</button>' +
+          '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
         '</div>' +
         '<button class="ks-btn is-quiet is-block" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Прив\'язати Аксіому</button>' +
       '</div>';
@@ -21084,11 +21023,11 @@ function renderCardMetaRow(card) {
       '<section class="ks-panel">' +
         '<div class="ks-empty">' +
           '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
-          '<div class="ks-empty-title">Підключіть свою картку</div>' +
-          '<div class="ks-empty-text">SlotOK не випускає власних карток. Підключіть <b>свою картку</b> ' +
-            'або картку <b>Аксіома Банку</b> — саме вона й стане вашою карткою в Гаманці.</div>' +
+          '<div class="ks-empty-title">Випустіть картку</div>' +
+          '<div class="ks-empty-text">Ігрова картка SlotOK — окремий гаманець у грі. Без справжніх банків і номерів. ' +
+            'Можна також привʼязати картку <b>Аксіома Банку</b>.</div>' +
           '<div class="ks-btn-row">' +
-            '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Своя картка</button>' +
+            '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
             '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
           '</div>' +
         '</div>' +
@@ -21119,7 +21058,7 @@ function renderCardMetaRow(card) {
       '<button class="ks-btn is-quiet" style="flex:0 0 auto;padding:13px 15px;" onclick="openCardColorPicker()" title="Скін картки">' + ksIcon('palette') + '</button>' +
     '</div>' +
     '<p class="ks-hint" style="text-align:center;margin:0 0 14px;">' +
-      'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.</p>';
+      (card.kind === 'game' ? 'Ігрова картка SlotOK — без справжнього банку й номера.' : 'Повний номер і CVV лишаються у вашому банку — SlotOK зберігає лише останні 4 цифри.') + '</p>';
 }
 
 function renderCardQuickActions(card) {
@@ -21141,25 +21080,22 @@ function renderCardQuickActions(card) {
   el.innerHTML = acts.map(function(a) {
     var off = a.needsCard && !card;
     return '<button class="ks-quick-btn" onclick="bankAction(\'' + a.k + '\')"' +
-      (off ? ' disabled title="Спочатку підключіть картку"' : '') + '>' +
+      (off ? ' disabled title="Спочатку випустіть картку"' : '') + '>' +
       ksIcon(a.icon) + '<span>' + a.label + '</span></button>';
   }).join('');
 }
 
-// ── Додавання своєї картки ───────────────────────────────────────
-var _ksAddBank = 'privat';
+// ── Нова ігрова картка ───────────────────────────────────────────
+// З v121 картки лише ігрові: SlotOK випускає їх сам — без справжнього банку,
+// номера, імені й CVV. Видно тільки назву, останні 4 «цифри» для розрізнення
+// і баланс. Раніше підключені картки банків і Партнер-картки лишаються як були.
+var GAME_CARDS_MAX = 5;
 
 function openAddCardModal() {
   if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
   closeAddCardModal();
-  var banks = Object.keys(KS_BANKS).map(function(id) {
-    var b = KS_BANKS[id];
-    return '<button class="ks-btn is-sm' + (id === _ksAddBank ? ' is-primary' : ' is-quiet') + '" ' +
-      'data-bank="' + id + '" onclick="selectAddCardBank(\'' + id + '\')" style="justify-content:flex-start;">' +
-      '<span class="ks-bank" style="width:20px;height:20px;border-radius:var(--r-sm);display:flex;align-items:center;' +
-      'justify-content:center;font-size:10px;font-weight:800;color:var(--fg);background:' + b.color + ';">' + b.short + '</span>' +
-      b.name + '</button>';
-  }).join('');
+  var count = getLinkedCards().filter(function(c) { return c.kind !== 'axiom'; }).length;
+  if(count >= GAME_CARDS_MAX) return notify('Максимум ' + GAME_CARDS_MAX + ' карток. Відключіть зайву, щоб випустити нову.', 'error');
   var m = document.createElement('div');
   m.className = 'ks-modal';
   m.id = 'ksAddCardModal';
@@ -21167,105 +21103,51 @@ function openAddCardModal() {
   m.innerHTML =
     '<div class="ks-modal-box">' +
       '<div class="ks-modal-head">' +
-        '<div class="ks-modal-title">Підключити свою картку</div>' +
+        '<div class="ks-modal-title">Нова картка SlotOK</div>' +
         '<button class="ks-modal-x" onclick="closeAddCardModal()">' + ksIcon('x') + '</button>' +
       '</div>' +
-      '<label class="ks-label">Банк</label>' +
-      '<div id="ksAddBankGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">' + banks + '</div>' +
+      '<p class="ks-hint" style="margin:0 0 16px;">Ігрова картка — окремий гаманець усередині SlotOK. Можна завести кілька: ' +
+        'для слотів, для турнірів, «відкладене». Баланс у кожної свій, перекидати між ними можна будь-коли.</p>' +
       '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcHolder">Ім\'я власника</label>' +
-        '<input id="ksAcHolder" maxlength="26" autocomplete="off" placeholder="IVAN KOVALENKO">' +
-      '</div>' +
-      '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcNum">Номер картки</label>' +
-        '<input id="ksAcNum" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="0000 0000 0000 0000" ' +
-          'oninput="ksFormatCardNum(this)" style="font-family:var(--font-mono);letter-spacing:1.5px;">' +
-      '</div>' +
-      '<div class="ks-field">' +
-        '<label class="ks-label" for="ksAcExp">Дійсна до</label>' +
-        '<input id="ksAcExp" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/YY" ' +
-          'oninput="ksFormatExpiry(this)" style="font-family:var(--font-mono);">' +
+        '<label class="ks-label" for="ksAcLabel">Назва картки</label>' +
+        '<input id="ksAcLabel" maxlength="20" autocomplete="off" placeholder="Напр. «Основна» чи «Турніри»">' +
       '</div>' +
       '<div class="ks-copy" style="align-items:flex-start;">' +
         '<span style="color:var(--pos);margin-top:1px;">' + ksIcon('shield', 17) + '</span>' +
-        '<div class="ks-copy-main ks-hint">У базу SlotOK запишемо лише <b>банк, ім\'я, термін дії та останні 4 цифри</b>. ' +
-          'Повний номер використовується лише тут, у браузері, для перевірки — і не зберігається. CVV не запитуємо ніколи.</div>' +
+        '<div class="ks-copy-main ks-hint">Справжні банківські картки SlotOK не підключає і не просить номер, ім\'я чи CVV. ' +
+          'Усі гроші тут — ігрові.</div>' +
       '</div>' +
-      '<button class="ks-btn is-primary is-block" onclick="submitAddCard()">Підключити картку</button>' +
-      '<div style="display:flex;align-items:center;gap:10px;margin:16px 0 12px;">' +
-        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
-        '<span class="ks-hint">або</span>' +
-        '<div style="flex:1;height:1px;background:var(--ks-line);"></div>' +
-      '</div>' +
-      '<button class="ks-btn is-block" style="margin-bottom:8px;" onclick="createPartnerCard()">' + ksIcon('card') + ' Згенерувати Партнер-картку (30 днів)</button>' +
-      '<button class="ks-btn is-block" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
-      '<p class="ks-hint" style="margin:10px 0 0;text-align:center;">Партнер-картку створює SlotOK (діє 30 днів). Аксіому — привʼяжи 6-значним кодом із застосунку Аксіома.</p>' +
+      '<button class="ks-btn is-primary is-block" onclick="createGameCard()">' + ksIcon('plus') + ' Випустити картку</button>' +
+      '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
     '</div>';
   document.body.appendChild(m);
-  setTimeout(function() { var f = document.getElementById('ksAcHolder'); if(f) f.focus(); }, 60);
+  setTimeout(function() { var f = document.getElementById('ksAcLabel'); if(f) f.focus(); }, 60);
 }
 function closeAddCardModal() {
   var m = document.getElementById('ksAddCardModal');
   if(m) m.remove();
 }
-function selectAddCardBank(id) {
-  _ksAddBank = id;
-  var grid = document.getElementById('ksAddBankGrid');
-  if(!grid) return;
-  Array.prototype.forEach.call(grid.querySelectorAll('[data-bank]'), function(b) {
-    var on = b.getAttribute('data-bank') === id;
-    b.className = 'ks-btn is-sm' + (on ? ' is-primary' : ' is-quiet');
-  });
-}
-function ksFormatCardNum(inp) {
-  var d = inp.value.replace(/\D/g,'').slice(0,16);
-  inp.value = d.replace(/(.{4})(?=.)/g,'$1 ');
-}
-function ksFormatExpiry(inp) {
-  var d = inp.value.replace(/\D/g,'').slice(0,4);
-  inp.value = d.length > 2 ? d.slice(0,2) + '/' + d.slice(2) : d;
-}
 
-function submitAddCard() {
+function createGameCard() {
   if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
-  var holder = (document.getElementById('ksAcHolder') || {value:''}).value.trim();
-  var digits = (document.getElementById('ksAcNum') || {value:''}).value.replace(/\D/g,'');
-  var exp    = (document.getElementById('ksAcExp') || {value:''}).value.trim();
-
-  if(holder.length < 3)  return notify('Вкажіть ім\'я власника картки', 'error');
-  if(digits.length !== 16) return notify('Номер картки — 16 цифр', 'error');
-  if(!ksLuhn(digits))    return notify('Такого номера картки не існує — перевірте цифри', 'error');
-  var m = /^(\d{2})\/(\d{2})$/.exec(exp);
-  if(!m)                 return notify('Термін дії у форматі MM/YY', 'error');
-  var mm = parseInt(m[1], 10), yy = 2000 + parseInt(m[2], 10);
-  if(mm < 1 || mm > 12)  return notify('Некоректний місяць у терміні дії', 'error');
-  // Картка дійсна до останнього дня вказаного місяця включно
-  if(new Date(yy, mm, 1).getTime() <= Date.now()) return notify('Термін дії цієї картки вже сплив', 'error');
-
-  var last4 = digits.slice(-4);
-  var dup = getLinkedCards().some(function(c) {
-    return c.kind === 'external' && c.bank === _ksAddBank && c.last4 === last4;
-  });
-  if(dup) return notify('Ця картка вже підключена', 'error');
-
-  // Повний номер далі не йде: у базу пишемо лише маску.
+  var label = ((document.getElementById('ksAcLabel') || { value: '' }).value || '').replace(/[<>"'`]/g, '').trim().slice(0, 20);
+  var used = getLinkedCards().map(function(c) { return c.last4; });
+  var last4;
+  do { last4 = String(Math.floor(1000 + Math.random() * 9000)); } while(used.indexOf(last4) >= 0);
   var rec = {
-    bank: _ksAddBank,
-    holder: holder.toUpperCase().slice(0, 26),
-    last4: last4,
-    expiry: exp,
-    addedAt: Date.now(),
+    bank: 'slotok', game: true,
+    label: label || ('Картка ' + (getLinkedCards().length + 1)),
+    holder: String(currentUser || '').toUpperCase().slice(0, 26),
+    last4: last4, addedAt: Date.now(), balance: 0,
   };
   var ref = db.ref('users/' + currentUser + '/linkedCards').push();
-  rec.balance = 0;
   ref.set(rec);
   userData.linkedCards = userData.linkedCards || {};
   userData.linkedCards[ref.key] = rec;
   _adoptOrZeroBalance(ref.key, ref);
-
   closeAddCardModal();
-  notify('Картку підключено', 'success');
-  if(navigator.vibrate) navigator.vibrate([40,30,60]);
+  notify('Картку «' + rec.label + '» випущено', 'success');
+  if(navigator.vibrate) navigator.vibrate([40, 30, 60]);
   renderCardPanel();
 }
 
@@ -21383,8 +21265,8 @@ function sourceBarHtml(ctx) {
   var a = getActiveCardObj();
   if(!a) {
     return '<div class="ks-copy" style="margin-bottom:14px;"><div class="ks-copy-main ks-hint">' +
-      'Картку не підключено — кошти йдуть на спільний баланс. ' +
-      '<b style="color:var(--ks-acc);cursor:pointer;" onclick="switchCashierTab(\'card\',document.getElementById(\'ctb-card\'))">Підключити</b></div></div>';
+      'Картки ще немає — кошти йдуть на спільний баланс. ' +
+      '<b style="color:var(--ks-acc);cursor:pointer;" onclick="switchCashierTab(\'card\',document.getElementById(\'ctb-card\'))">Випустити</b></div></div>';
   }
   var verb = ctx === 'withdraw' ? 'Вивід з картки' : ctx === 'transfer' ? 'Переказ з картки' : 'Зарахувати на картку';
   return '<div class="ks-copy" style="margin-bottom:14px;">' +
@@ -21766,11 +21648,12 @@ function renderCardPanel() {
         badgeEl.innerHTML = partnerExpired
           ? '<span class="ks-badge is-neg">Прострочена</span>'
           : '<span class="ks-badge is-acc">Партнер · ' + dLeft + 'д</span>';
-      } else badgeEl.innerHTML = '<span class="ks-badge">Підключена</span>';
+      } else if(primary.kind === 'game') badgeEl.innerHTML = '<span class="ks-badge is-acc">Ігрова</span>';
+      else badgeEl.innerHTML = '<span class="ks-badge">Підключена</span>';
     }
     if(numEl)    numEl.textContent    = isFull ? primary.number : ('•••• •••• •••• ' + primary.last4);
     if(holderEl) holderEl.textContent = primary.holder || String(currentUser || '').toUpperCase();
-    if(expiryEl) expiryEl.textContent = primary.expiry || '••/••';
+    if(expiryEl) expiryEl.textContent = primary.kind === 'game' ? '∞' : (primary.expiry || '••/••');
     if(sigEl)    sigEl.textContent    = primary.holder || String(currentUser || '').toUpperCase();
     // CVV скидаємо в приховане; гравець відкриває сам через кнопку
     if(cvvFront) cvvFront.textContent = '•••';
@@ -21932,7 +21815,7 @@ function showAllTransactions() {
 function bankAction(action) {
   var needsCard = { transfer:1, skinShop:1, freeze:1 };
   if(needsCard[action] && !hasConnectedCard()) {
-    notify('Спочатку підключіть картку в Гаманці', 'error');
+    notify('Спочатку випустіть картку в Гаманці', 'error');
     return;
   }
   var actions = {
@@ -21953,7 +21836,7 @@ function bankAction(action) {
 // й з якої йдуть гроші. Решта карток гаманця своїх станів не змінює.
 function toggleCardFreeze() {
   var card = getActiveCardObj();
-  if(!card) return notify('Спочатку підключіть картку в Гаманці', 'error');
+  if(!card) return notify('Спочатку випустіть картку в Гаманці', 'error');
   var frozen = isCardFrozen(card.id);
   db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
   if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }
@@ -22318,13 +22201,6 @@ function updateBannerDynamicContent() {
   // Реферальний заробіток
   var refEl = document.getElementById('bannerRefEarned');
   if(refEl) refEl.textContent = '₴' + formatNumber(userData.referralEarnings || 0);
-  // BTC ціна (якщо крипто-модуль вже ініціалізований)
-  var btcEl = document.getElementById('bannerBtcPrice');
-  if(btcEl && typeof _cryptoPrices !== 'undefined' && _cryptoPrices.BTC) {
-    btcEl.textContent = '₴' + formatNumber(Math.round(_cryptoPrices.BTC));
-  } else if(btcEl) {
-    btcEl.textContent = '₴95 000';
-  }
   // Моє місце в денному рейтингу (та сама таблиця, що й у «Ще» → Рейтинги)
   var lbRankEl = document.getElementById('bannerLbRank');
   if(lbRankEl && db && currentUser) {
@@ -27429,3 +27305,116 @@ async function revokeSupport(nick) {
     loadSupportList();
   });
 }
+// ─── src/app/54-cosmetics.js ───
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  Косметика з магазину Слотіків — видно всім гравцям           ║
+// ║                                                              ║
+// ║  Розмітка лише позначає, чий це нік чи аватар:                ║
+// ║    <span data-pn="нік">нік</span>   — колір ніку, табличка,   ║
+// ║                                       значок після ніку;      ║
+// ║    <img|div data-pa="нік">           — рамка аватара.         ║
+// ║  data-pn="@me" / data-pa="@me" — поточний гравець.            ║
+// ║  Стиль гравця (що куплено й надіто) підтягується з бази раз   ║
+// ║  на кілька хвилин і кешується; MutationObserver сам оформлює  ║
+// ║  нові повідомлення в чатах. Каталог — shared/shop.js.         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const COSMETIC_CLASS = {
+  avatar_silver: 'pa-silver', avatar_gold: 'pa-gold', avatar_fire: 'pa-ember',
+  avatar_diamond: 'pa-platinum', avatar_cosmic: 'pa-obsidian',
+  username_red: 'pn-crimson', username_gold: 'pn-gold', username_rainbow: 'pn-iris',
+  name_frame_neon: 'pp-neon', name_frame: 'pp-supreme',
+};
+const PLAYER_STYLE_TTL = 5 * 60000;
+const _playerStyles = new Map(); // нік → { worn, at } | { pending: Promise }
+
+function cosmeticPreviewHtml(it) {
+  const cls = COSMETIC_CLASS[it.id] || '';
+  if(it.type === 'frame') return `<span class="pa-demo pa ${cls}" aria-hidden="true">${escapeHtml((currentUser || 'S')[0].toUpperCase())}</span>`;
+  if(it.type === 'nick') return `<span class="${cls}">${escapeHtml(currentUser || 'Гравець')}</span>`;
+  if(it.type === 'plate') return `<span class="${cls}">${escapeHtml(currentUser || 'Гравець')}</span>`;
+  return `<span class="pbadge pbadge-lg" aria-hidden="true"><span class="ic i-${it.icon}"></span></span>`;
+}
+
+function _styleNick(raw) { return raw === '@me' ? currentUser : raw; }
+
+function _wornFromData(items, chosen) { return resolveCosmetics(items || {}, chosen || {}); }
+
+function getPlayerStyle(nick) {
+  if(!nick) return null;
+  if(nick === currentUser && userData) return _wornFromData(userData.slotikyItems, userData.cosmetics);
+  const c = _playerStyles.get(nick);
+  if(c && c.worn && Date.now() - c.at < PLAYER_STYLE_TTL) return c.worn;
+  return null;
+}
+
+function loadPlayerStyle(nick) {
+  const c = _playerStyles.get(nick);
+  if(c && c.pending) return c.pending;
+  if(!db || !nick || /[.#$[\]/]/.test(nick)) return Promise.resolve(null);
+  const p = Promise.all([
+    db.ref('users/' + nick + '/slotikyItems').once('value'),
+    db.ref('users/' + nick + '/cosmetics').once('value'),
+  ]).then(([a, b]) => {
+    const worn = _wornFromData(a.val(), b.val());
+    _playerStyles.set(nick, { worn, at: Date.now() });
+    return worn;
+  }).catch(() => { _playerStyles.delete(nick); return null; });
+  _playerStyles.set(nick, { pending: p });
+  return p;
+}
+
+function invalidatePlayerStyle(nick) {
+  _playerStyles.delete(nick);
+  applyPlayerStyles(document.body);
+}
+
+function _applyNick(el, worn) {
+  el.classList.remove('pn-crimson', 'pn-gold', 'pn-iris', 'pp-neon', 'pp-supreme');
+  if(worn && worn.nick && COSMETIC_CLASS[worn.nick]) el.classList.add(COSMETIC_CLASS[worn.nick]);
+  if(worn && worn.plate && COSMETIC_CLASS[worn.plate]) el.classList.add(COSMETIC_CLASS[worn.plate]);
+  let badge = el.nextElementSibling && el.nextElementSibling.classList.contains('pbadge') ? el.nextElementSibling : null;
+  const it = worn && worn.badge && shopItem(worn.badge);
+  if(!it) { if(badge) badge.remove(); return; }
+  if(!badge) {
+    badge = document.createElement('span');
+    badge.className = 'pbadge';
+    el.after(badge);
+  }
+  badge.title = it.name;
+  badge.innerHTML = '<span class="ic i-' + it.icon + '" aria-hidden="true"></span>';
+}
+
+function _applyAvatar(el, worn) {
+  el.classList.remove('pa', 'pa-silver', 'pa-gold', 'pa-ember', 'pa-platinum', 'pa-obsidian');
+  if(worn && worn.frame && COSMETIC_CLASS[worn.frame]) el.classList.add('pa', COSMETIC_CLASS[worn.frame]);
+}
+
+function applyPlayerStyles(root) {
+  if(!root || !root.querySelectorAll) return;
+  const els = root.matches && root.matches('[data-pn],[data-pa]') ? [root] : [];
+  root.querySelectorAll('[data-pn],[data-pa]').forEach(e => els.push(e));
+  const waiting = new Map();
+  els.forEach(el => {
+    const nick = _styleNick(el.getAttribute('data-pn') || el.getAttribute('data-pa'));
+    if(!nick) return;
+    const worn = getPlayerStyle(nick);
+    if(worn) { el.hasAttribute('data-pn') ? _applyNick(el, worn) : _applyAvatar(el, worn); return; }
+    if(!waiting.has(nick)) waiting.set(nick, []);
+    waiting.get(nick).push(el);
+  });
+  waiting.forEach((list, nick) => loadPlayerStyle(nick).then(worn => {
+    list.forEach(el => { if(el.isConnected) el.hasAttribute('data-pn') ? _applyNick(el, worn) : _applyAvatar(el, worn); });
+  }));
+}
+
+// Нові повідомлення в чатах, рядки рейтингів, профілі — оформлюємо самі.
+(function watchPlayerStyles() {
+  let queued = [];
+  let scheduled = false;
+  const flush = () => { scheduled = false; const q = queued; queued = []; q.forEach(n => { if(n.isConnected) applyPlayerStyles(n); }); };
+  new MutationObserver(muts => {
+    muts.forEach(m => m.addedNodes.forEach(n => { if(n.nodeType === 1 && !n.classList.contains('pbadge')) queued.push(n); }));
+    if(queued.length && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
+  }).observe(document.body, { childList: true, subtree: true });
+})();

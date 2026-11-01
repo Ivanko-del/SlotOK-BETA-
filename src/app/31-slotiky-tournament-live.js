@@ -1,275 +1,276 @@
 // ============================================================
-// ===== СЛОТІКИ — внутрішня валюта =====
+// ===== СЛОТІКИ — магазин =====
+// Каталог, ціни й ефекти — shared/shop.js (SHOP_ITEMS, SLOTIKY_PACKS, …),
+// той самий файл читає сервер. Купівлю, бусти, скрині й предмети рахує
+// api/reward.js (lib/shop.js); тут лише екран. Без сервера (503) працює
+// старий шлях у браузері — тоді бусти не діють (їх рахує лише сервер).
 // ============================================================
-const SLOTIKY_PRICE = 10000000; // 10M UAH per 1 slotik
+let _shopTab = 'style';
 
-const SLOTIKY_SHOP_ITEMS = [
-  // ── КОСМЕТИКА ──
-  { id:'avatar_silver',   name:'Срібний аватар',       icon:'🥈', price:1,  desc:'Срібна рамка профілю',             type:'cosmetic' },
-  { id:'avatar_gold',     name:'Золотий аватар',       icon:'👑', price:2,  desc:'Золота рамка профілю',             type:'cosmetic' },
-  { id:'avatar_diamond',  name:'Diamond аватар',       icon:'💎', price:5,  desc:'Алмазна рамка профілю',            type:'cosmetic' },
-  { id:'avatar_fire',     name:'Вогняний аватар',      icon:'🔥', price:4,  desc:'Вогняна анімація рамки',           type:'cosmetic' },
-  { id:'avatar_cosmic',   name:'Космічний аватар',     icon:'🌌', price:8,  desc:'Зоряна рамка профілю',             type:'cosmetic' },
-  { id:'username_gold',   name:'Золотий нік',          icon:'✨', price:2,  desc:'Золотий колір у чаті',             type:'cosmetic' },
-  { id:'username_rainbow',name:'Веселковий нік',       icon:'🌈', price:4,  desc:'Анімований веселковий нік',        type:'cosmetic' },
-  { id:'username_red',    name:'Червоний нік',         icon:'❤️', price:1,  desc:'Червоний колір нікнейму',          type:'cosmetic' },
-  { id:'name_frame',      name:'Рамка "Supreme"',      icon:'🔱', price:15, desc:'Supreme рамка для імені',          type:'cosmetic' },
-  { id:'name_frame_neon', name:'Неонова рамка',        icon:'💜', price:7,  desc:'Неонова анімована рамка',          type:'cosmetic' },
-  { id:'badge_whale',     name:'Значок "Кит"',         icon:'🐋', price:10, desc:'Рідкісний значок у профілі',       type:'cosmetic' },
-  { id:'badge_shark',     name:'Значок "Акула"',       icon:'🦈', price:6,  desc:'Значок Акули',                     type:'cosmetic' },
-  { id:'badge_crown',     name:'Значок "Корона"',      icon:'👑', price:8,  desc:'Значок монарха',                   type:'cosmetic' },
-  { id:'badge_dragon',    name:'Значок "Дракон"',      icon:'🐉', price:12, desc:'Легендарний значок',               type:'cosmetic' },
-  { id:'badge_alien',     name:'Значок "Прибулець"',   icon:'👽', price:5,  desc:'Загадковий значок',                type:'cosmetic' },
-  { id:'chat_emoji_pack', name:'Емодзі Пак 1',         icon:'😎', price:1,  desc:'+20 емодзі у чаті',                type:'feature'  },
-  { id:'chat_emoji_pro',  name:'Емодзі Пак PRO',       icon:'🎭', price:3,  desc:'+50 преміум емодзі',               type:'feature'  },
-  { id:'chat_gif',        name:'GIF у чаті',           icon:'📹', price:5,  desc:'Відправляй GIF у чаті',            type:'feature'  },
-  { id:'chat_sticker',    name:'Стікери',              icon:'🎨', price:4,  desc:'10 ексклюзивних стікерів',         type:'feature'  },
-  // ── БУСТИ ──
-  { id:'vip_boost_3d',    name:'VIP Буст 3 дні',       icon:'🚀', price:4,  desc:'2x вагер 3 дні',                   type:'boost'    },
-  { id:'vip_boost_7d',    name:'VIP Буст 7 днів',      icon:'🚀', price:8,  desc:'2x вагер 7 днів',                  type:'boost'    },
-  { id:'cashback_x2',     name:'Кешбек x2',            icon:'💰', price:4,  desc:'Подвоєний кешбек 3 дні',           type:'boost'    },
-  { id:'cashback_x3',     name:'Кешбек x3',            icon:'💸', price:9,  desc:'Потрійний кешбек 7 днів',          type:'boost'    },
-  { id:'daily_x2',        name:'Щоденний бонус x2',    icon:'🎁', price:2,  desc:'Подвоєний щоденний 7 днів',        type:'boost'    },
-  { id:'daily_x3',        name:'Щоденний бонус x3',    icon:'🎁', price:4,  desc:'Потрійний щоденний 7 днів',        type:'boost'    },
-  { id:'lucky_boost',     name:'Везіння x2',           icon:'🍀', price:6,  desc:'+50% шанс виграшу 24 год',         type:'boost'    },
-  { id:'xp_boost',        name:'XP Буст x2',           icon:'⚡', price:3,  desc:'2x досягнення очки 3 дні',          type:'boost'    },
-  { id:'transfer_free',   name:'Переказ без комісії',  icon:'🔄', price:2,  desc:'10 переказів без комісії',         type:'feature'  },
-  // ── ПРЕДМЕТИ ──
-  { id:'lootbox_basic',   name:'Лут-бокс Basic',       icon:'📦', price:1,  desc:'Звичайний лут-бокс',               type:'item'     },
-  { id:'lootbox_ultra',   name:'Ultra Лут-бокс',       icon:'🎁', price:3,  desc:'Рідкісний лут-бокс',               type:'item'     },
-  { id:'lootbox_legend',  name:'Legendary Лут-бокс',   icon:'🔮', price:8,  desc:'Легендарний лут-бокс',             type:'item'     },
-  { id:'slot_free_5',     name:'5 Безкоштовних Спінів',icon:'🎰', price:2,  desc:'5 безкоштовних ставок у слотах',   type:'item'     },
-  { id:'slot_free_20',    name:'20 Безкоштов. Спінів', icon:'🎰', price:6,  desc:'20 безкоштовних ставок у слотах',  type:'item'     },
-  { id:'fortune_free',    name:'Безкошт. Прокрутка',   icon:'🎡', price:2,  desc:'3 безкоштовних прокруток Колеса',  type:'item'     },
-  { id:'crash_insurance', name:'Краш-страховка',       icon:'🛡️', price:5,  desc:'Повернення ставки при краші <1.2',  type:'item'     },
-  { id:'mines_hint',      name:'Підказка в Майнері',   icon:'💡', price:3,  desc:'3 підказки безпечної клітинки',    type:'item'     },
-  { id:'sport_bet_free',  name:'Безкошт. Спортставка', icon:'⚽', price:4,  desc:'1 безкоштовна спортивна ставка',   type:'item'     },
-  { id:'nickname_change', name:'Зміна нікнейму',       icon:'✏️', price:5,  desc:'Змінити нікнейм без перереєстр.',  type:'feature'  },
-  { id:'profile_bio',     name:'Біографія профілю',    icon:'📝', price:2,  desc:'Додати опис до профілю',           type:'feature'  },
-  // ── ЕКСКЛЮЗИВ ──
-  { id:'vip_trial',       name:'VIP Пробний тиждень',  icon:'💠', price:10, desc:'Всі VIP бонуси на 7 днів',         type:'exclusive'},
-  { id:'private_room',    name:'Приватна кімната',     icon:'🏠', price:20, desc:'Власна кімната для гри з друзями', type:'exclusive'},
-  { id:'custom_bet_limit',name:'Підвищений Max-Bet',   icon:'📈', price:15, desc:'Max ставка x10 на 7 днів',         type:'exclusive'},
-  { id:'guaranteed_win',  name:'Гарантований виграш',  icon:'🎯', price:25, desc:'100% виграш у наступній грі',      type:'exclusive'},
-  { id:'monthly_pass',    name:'Місячний Пропуск',     icon:'📅', price:30, desc:'Всі буст бонуси на місяць',        type:'exclusive'},
-];
+const SHOP_TAB_TYPES = { style: ['frame', 'nick', 'plate', 'badge'], boost: ['boost'], item: ['item'] };
+const SHOP_TYPE_TITLES = { frame: 'Рамка аватара', nick: 'Колір ніку', plate: 'Табличка імені', badge: 'Значок біля ніку', boost: 'Бусти', item: 'Предмети' };
+
+function slotikyWord(n) {
+  n = Math.abs(n) % 100;
+  const d = n % 10;
+  if(n > 10 && n < 20) return 'Слотіків';
+  if(d === 1) return 'Слотік';
+  if(d >= 2 && d <= 4) return 'Слотіки';
+  return 'Слотіків';
+}
 
 function initSlotiky() {
   const bal = document.getElementById('slotikyBalance');
   if(bal) bal.textContent = formatNumber(userData.slotiky || 0);
+  const rate = document.getElementById('slotikyRateLbl');
+  if(rate) rate.textContent = SLOTIKY_PRICE.toLocaleString('uk-UA');
+  renderSlotikyPacks();
   renderSlotikyShop();
 }
 
-function buySlotiky(amount) {
-  const prices = { 1: 10000000, 5: 50000000, 10: 95000000, 50: 450000000 };
-  const cost = prices[amount] || amount * SLOTIKY_PRICE;
-  const bal = userData.balance || 0;
-  if(bal < cost) {
-    notify(`❌ Недостатньо коштів! Потрібно ${formatNumber(cost)} ₴`, 'error');
-    return;
+function renderSlotikyPacks() {
+  const el = document.getElementById('slotikyPacks');
+  if(!el) return;
+  el.innerHTML = SLOTIKY_PACKS.map(p => `
+    <button type="button" class="shop-pack" onclick="buySlotiky(${p.n})">
+      ${p.tag ? `<span class="badge is-pos">${p.tag}</span>` : ''}
+      <span class="shop-pack-n num">${p.n} <span class="ic i-coin" aria-hidden="true"></span></span>
+      <span class="shop-pack-price num">${p.price.toLocaleString('uk-UA')} ₴</span>
+    </button>`).join('');
+}
+
+function setShopTab(tab) {
+  _shopTab = tab;
+  document.querySelectorAll('#tab-slotiky [data-shop-tab]').forEach(b => {
+    const on = b.dataset.shopTab === tab;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on);
+  });
+  renderSlotikyShop();
+}
+
+async function buySlotiky(n) {
+  const pack = SLOTIKY_PACKS.find(p => p.n === n);
+  if(!pack) return;
+  if((userData.balance || 0) < pack.price) return notify('Недостатньо коштів: потрібно ' + formatNumber(pack.price) + ' ₴', 'error');
+  const ok = await confirmAction({
+    title: 'Купити ' + n + ' ' + slotikyWord(n) + '?',
+    text: 'З балансу спишеться ' + pack.price.toLocaleString('uk-UA') + ' ₴.',
+    confirm: 'Купити',
+  });
+  if(!ok) return;
+  const srv = await serverReward('buySlotiky', { n });
+  if(srv.mode === 'error') return;
+  if(srv.mode === 'legacy') {
+    const tx = await db.ref('users/' + currentUser + '/balance').transaction(b => (b == null || b < pack.price) ? undefined : b - pack.price);
+    if(!tx.committed) return notify('Недостатньо коштів', 'error');
+    await db.ref('users/' + currentUser + '/slotiky').set(firebase.database.ServerValue.increment(n));
+    addToHistory('Куплено ' + n + ' ' + slotikyWord(n) + ': -' + formatNumber(pack.price) + '₴');
   }
-  // Confirm
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-  modal.innerHTML = `
-    <div style="background:var(--surface-1);border:1px solid var(--special);border-radius:var(--r-xl);padding:24px;max-width:320px;width:100%;text-align:center;">
-      <div style="font-size:40px;margin-bottom:12px;">🪙</div>
-      <div style="font-size:18px;font-weight:bold;color:var(--special);margin-bottom:8px;">Купити ${amount} Слотік${amount>1?'ів':''}?</div>
-      <div style="font-size:14px;color:var(--fg-3);margin-bottom:20px;">Вартість: <b style="color:var(--fg);">${formatNumber(cost)} ₴</b></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-2);cursor:pointer;">Скасувати</button>
-        <button onclick="confirmBuySlotiky(${amount},${cost});this.closest('div[style*=fixed]').remove();" style="padding:12px;background:var(--special);border:none;border-radius:var(--r-md);color:var(--on-special);font-weight:bold;cursor:pointer;">✅ Купити</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-function confirmBuySlotiky(amount, cost) {
-  db.ref('users/'+currentUser).update({
-    balance:  (userData.balance  || 0) - cost,
-    slotiky:  (userData.slotiky  || 0) + amount,
-  });
+  userData.slotiky = srv.mode === 'server' ? srv.r.slotiky : (userData.slotiky || 0) + n;
   playSound('bonus');
-  notify(`🪙 Куплено ${amount} Слотік${amount>1?'ів':''}!`, 'success');
-  addToHistory(`Куплено ${amount} Слотік${amount>1?'ів':''}: -${formatNumber(cost)}₴`);
-  setTimeout(()=>{ const b=document.getElementById('slotikyBalance'); if(b) b.textContent=formatNumber((userData.slotiky||0)+amount); }, 300);
+  notify('Куплено ' + n + ' ' + slotikyWord(n), 'success');
+  initSlotiky();
 }
 
+function shopItemState(it, items, now) {
+  const rec = items[it.id];
+  if(SHOP_TAB_TYPES.style.includes(it.type)) return rec ? 'owned' : 'buy';
+  if(it.type === 'boost') return boostActive(rec, now) ? 'active' : 'buy';
+  return 'buy';
+}
 
-let _shopFilter = null;
-function filterShop(type, btn) {
-  _shopFilter = type;
-  document.querySelectorAll('[onclick^="filterShop"]').forEach(b => {
-    b.style.background = 'var(--surface-2)';
-    b.style.color = 'var(--fg-2)';
-    b.style.border = '1px solid var(--line)';
-  });
-  if(btn) { btn.style.background='var(--accent)'; btn.style.color='var(--on-accent)'; btn.style.border='none'; }
-  renderSlotikyShop();
+function shopCounterOf(it) {
+  if(!it.counter) return 0;
+  return it.counter.split('/').reduce((o, k) => (o && typeof o === 'object') ? o[k] : 0, userData) || 0;
+}
+
+function shopCardHtml(it, items, worn, now) {
+  const st = shopItemState(it, items, now);
+  const isWorn = worn[it.type] === it.id;
+  let meta = '', action = '';
+  if(st === 'owned') {
+    action = isWorn
+      ? `<button type="button" class="btn btn-secondary btn-sm btn-block" onclick="equipCosmetic('${it.type}', null)">Зняти</button>`
+      : `<button type="button" class="btn btn-primary btn-sm btn-block" onclick="equipCosmetic('${it.type}', '${it.id}')">Надіти</button>`;
+    meta = isWorn ? '<span class="badge is-pos">Надіто</span>' : '<span class="badge">Куплено</span>';
+  } else {
+    if(st === 'active') {
+      const left = Math.max(1, Math.ceil((items[it.id].expires - now) / 86400000));
+      meta = `<span class="badge is-pos">Діє ще ${left} дн.</span>`;
+    }
+    const have = shopCounterOf(it);
+    if(it.type === 'item' && have > 0) meta = `<span class="badge">У вас: ${have}</span>`;
+    action = `<button type="button" class="btn ${st === 'active' ? 'btn-secondary' : 'btn-primary'} btn-sm btn-block" onclick="buyShopItem('${it.id}')">
+      ${st === 'active' ? 'Продовжити' : 'Купити'} · ${it.price} <span class="ic i-coin" aria-hidden="true"></span></button>`;
+  }
+  const preview = SHOP_TAB_TYPES.style.includes(it.type)
+    ? `<div class="shop-preview">${cosmeticPreviewHtml(it)}</div>`
+    : `<span class="shop-card-ic"><span class="ic i-${it.icon}" aria-hidden="true"></span></span>`;
+  return `<div class="shop-card${isWorn ? ' is-worn' : ''}">
+    ${preview}
+    <div class="shop-card-body">
+      <div class="shop-card-title">${it.name}</div>
+      <div class="shop-card-desc">${it.desc}</div>
+      ${meta}
+    </div>
+    ${action}
+  </div>`;
 }
 
 function renderSlotikyShop() {
-  const grid = document.getElementById('slotikyShopGrid'); if(!grid) return;
-  const owned = userData.slotikyItems || {};
-  const filteredItems = _shopFilter
-    ? SLOTIKY_SHOP_ITEMS.filter(i => i.type === _shopFilter)
-    : SLOTIKY_SHOP_ITEMS;
-  grid.innerHTML = filteredItems.map(item => {
-    const isOwned = owned[item.id];
-    const typeColor = item.type==='boost'?'#f39c12':item.type==='cosmetic'?'#c9a0ff':item.type==='feature'?'#27ae60':'#4a90e2';
-    return `<div style="background:linear-gradient(180deg,var(--surface-1),var(--bg));border:1px solid ${isOwned?'var(--pos)':'var(--special)'};border-radius:var(--r-lg);padding:14px;position:relative;">
-      ${isOwned?'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:var(--pos);font-weight:bold;">✅ Є</div>':''}
-      <div style="font-size:28px;margin-bottom:6px;">${item.icon}</div>
-      <div style="font-size:12px;font-weight:bold;color:var(--fg);margin-bottom:3px;">${item.name}</div>
-      <div style="font-size:10px;color:var(--fg-3);margin-bottom:8px;">${item.desc}</div>
-      <div style="font-size:11px;color:var(--special);font-weight:bold;margin-bottom:8px;">🪙 ${item.price} Слотік${item.price>1?'ів':''}</div>
-      <button onclick="buyShopItem('${item.id}',${item.price})" ${isOwned?'disabled':''} style="width:100%;padding:7px;background:${isOwned?'var(--surface-2)':'var(--special)'};border:none;border-radius:var(--r-md);color:${isOwned?'var(--fg-4)':'var(--fg)'};font-size:11px;font-weight:bold;cursor:${isOwned?'default':'pointer'};">${isOwned?'Придбано':'Купити'}</button>
-    </div>`;
-  }).join('');
-}
-
-function buyShopItem(itemId, price) {
-  const currentSlotiky = userData.slotiky || 0;
-  if(currentSlotiky < price) { notify(`❌ Недостатньо слотіків! Потрібно ${price} 🪙`, 'error'); return; }
-  const item = SLOTIKY_SHOP_ITEMS.find(i=>i.id===itemId); if(!item) return;
-  const owned = userData.slotikyItems || {};
-  if(owned[itemId] && item.type !== 'boost' && item.type !== 'item') {
-    notify('Вже придбано!', 'info'); return;
-  }
-  owned[itemId] = { boughtAt: Date.now(), expires: getItemExpiry(item) };
-  const updates = {
-    slotiky:       currentSlotiky - price,
-    slotikyItems:  owned,
-    slotikySpent:  (userData.slotikySpent||0) + price
-  };
-  // Apply instant effects
-  applyShopItemEffect(itemId, item, updates);
-  db.ref('users/'+currentUser).update(updates);
-  playSound('bonus');
-  notify(`🎉 Придбано: ${item.icon} ${item.name}!
-${getItemEffectDesc(item)}`, 'success');
-  setTimeout(()=>{ renderSlotikyShop(); applyAllShopEffects(); }, 300);
-}
-
-function getItemExpiry(item) {
-  const durations = {
-    vip_boost_3d:3*86400000, vip_boost_7d:7*86400000,
-    cashback_x2:3*86400000, cashback_x3:7*86400000,
-    daily_x2:7*86400000, daily_x3:7*86400000,
-    lucky_boost:86400000, xp_boost:3*86400000
-  };
-  return durations[item.id] ? Date.now() + durations[item.id] : null;
-}
-
-function getItemEffectDesc(item) {
-  const effects = {
-    avatar_silver:'✓ Срібна рамка активована в профілі',
-    avatar_gold:'✓ Золота рамка активована в профілі',
-    avatar_diamond:'✓ Алмазна рамка активована в профілі',
-    avatar_fire:'✓ Вогняна рамка активована',
-    avatar_cosmic:'✓ Космічна рамка активована',
-    username_gold:'✓ Золотий нікнейм у чаті',
-    username_rainbow:'✓ Веселковий нікнейм активовано',
-    username_red:'✓ Червоний нікнейм активовано',
-    vip_boost_3d:'✓ 2× вагер зараховується 3 дні',
-    vip_boost_7d:'✓ 2× вагер зараховується 7 днів',
-    cashback_x2:'✓ Подвійний кешбек на 3 дні',
-    cashback_x3:'✓ Потрійний кешбек на 7 днів',
-    daily_x2:'✓ Подвоєний щоденний бонус 7 днів',
-    daily_x3:'✓ Потрійний щоденний бонус 7 днів',
-    lucky_boost:'✓ +50% шанс виграшу на 24 год',
-    slot_free_5:'✓ Додано 5 безкоштовних спінів',
-    slot_free_20:'✓ Додано 20 безкоштовних спінів',
-    fortune_free:'✓ Додано 3 безкоштовні прокрутки',
-    mines_hint:'✓ Додано 3 підказки в майнер',
-    guaranteed_win:'✓ Наступна гра — 100% виграш!',
-    crash_insurance:'✓ Страховка краша <1.2 активна',
-    lootbox_basic:'✓ Відкрий лут-бокс у розділі Бонуси',
-    lootbox_ultra:'✓ Відкрий лут-бокс у розділі Бонуси',
-    lootbox_legend:'✓ Відкрий лут-бокс у розділі Бонуси',
-    vip_trial:'✓ VIP бонуси активні на 7 днів',
-    monthly_pass:'✓ Місячний пропуск активовано',
-  };
-  return effects[item.id] || '✓ Предмет додано до акаунту';
-}
-
-function applyShopItemEffect(itemId, item, updates) {
-  // Items with immediate stat effects
-  if(itemId === 'slot_free_5')   updates.freeSlots = (userData.freeSlots||0) + 5;
-  if(itemId === 'slot_free_20')  updates.freeSlots = (userData.freeSlots||0) + 20;
-  if(itemId === 'fortune_free')  updates.freeFortune = (userData.freeFortune||0) + 3;
-  if(itemId === 'mines_hint')    updates.minesHints = (userData.minesHints||0) + 3;
-  if(itemId === 'sport_bet_free')updates.freeSportBet = (userData.freeSportBet||0) + 1;
-  if(itemId === 'guaranteed_win')updates.guaranteedWin = true;
-  if(itemId === 'crash_insurance')updates.crashInsurance = true;
-}
-
-let _applyShopTimer = null;
-function applyAllShopEffects() {
-  clearTimeout(_applyShopTimer);
-  _applyShopTimer = setTimeout(_doApplyShopEffects, 300);
-}
-function _doApplyShopEffects() {
+  const grid = document.getElementById('slotikyShopGrid');
+  if(!grid) return;
   const items = userData.slotikyItems || {};
   const now = Date.now();
-
-  // Avatar frames
-  const frames = ['avatar_cosmic','avatar_fire','avatar_diamond','avatar_gold','avatar_silver'];
-  let activeFrame = null;
-  for(const f of frames) {
-    const it = items[f];
-    if(it && (it === true || !it.expires || it.expires > now)) { activeFrame = f; break; }
-  }
-  const frameColors = {
-    avatar_cosmic: 'linear-gradient(135deg,#1a0a2e,#4a1080)',
-    avatar_fire:   'linear-gradient(135deg,#8b0000,#ff4500)',
-    avatar_diamond:'linear-gradient(135deg,#0a2a4a,#00b4d8)',
-    avatar_gold:   'linear-gradient(135deg,#6b4c00,var(--accent))',
-    avatar_silver: 'linear-gradient(135deg,#333,#aaa)',
-  };
-  const avatarEl = document.getElementById('currentAvatar');
-  if(avatarEl && activeFrame) {
-    avatarEl.style.background = frameColors[activeFrame] || '';
-    avatarEl.style.border = '3px solid ' + (activeFrame==='avatar_gold'?'var(--accent)':activeFrame==='avatar_diamond'?'var(--primary)':activeFrame==='avatar_fire'?'var(--accent)':'var(--fg-3)');
-    avatarEl.style.borderRadius = '50%';
-  }
-
-  // Nick colors in chat
-  const nickColorItems = { username_rainbow:'rainbow', username_gold:'#d4af37', username_red:'#e74c3c' };
-  let activeNick = null;
-  for(const [id, color] of Object.entries(nickColorItems)) {
-    if(items[id]) { activeNick = color; break; }
-  }
-  window._chatNickColor = activeNick;
-
-  // Active boosts display
-  updateActiveBoostsUI(items, now);
+  const worn = resolveCosmetics(items, userData.cosmetics);
+  if(_shopTab === 'inv') { grid.innerHTML = shopInventoryHtml(items, worn, now); return; }
+  const types = SHOP_TAB_TYPES[_shopTab] || [];
+  grid.innerHTML = types.map(type => {
+    const list = SHOP_ITEMS.filter(i => i.type === type);
+    return (types.length > 1 ? `<h3 class="shop-group-title">${SHOP_TYPE_TITLES[type]}</h3>` : '') + `
+      <div class="shop-grid">${list.map(it => shopCardHtml(it, items, worn, now)).join('')}</div>`;
+  }).join('') + (_shopTab === 'boost' ? '<p class="field-hint">Бусти рахує сервер: множник діє на ставки й бонуси, поки буст активний. Повторна купівля продовжує строк.</p>' : '');
 }
 
-function updateActiveBoostsUI(items, now) {
-  const el = document.getElementById('activeBoostsList');
-  if(!el) return;
-  const boostLabels = {
-    vip_boost_3d:'🚀 VIP Буст', vip_boost_7d:'🚀 VIP Буст',
-    cashback_x2:'💰 Кешбек ×2', cashback_x3:'💸 Кешбек ×3',
-    daily_x2:'🎁 Щоден. ×2', daily_x3:'🎁 Щоден. ×3',
-    lucky_boost:'🍀 Везіння', monthly_pass:'📅 Місяч. пропуск',
-    vip_trial:'💠 VIP Пробний',
-  };
-  const active = Object.entries(items).filter(([id, val]) => {
-    if(!boostLabels[id]) return false;
-    const expires = val?.expires;
-    return !expires || expires > now;
-  });
-  if(!active.length) { el.innerHTML = '<div style="color:var(--fg-4);font-size:11px;">Немає активних бустів</div>'; return; }
-  el.innerHTML = active.map(([id, val]) => {
-    const expires = val?.expires;
-    const left = expires ? Math.max(0, Math.ceil((expires - now) / 86400000)) : null;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg);border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);margin-bottom:5px;">
-      <span style="font-size:12px;color:var(--fg-2);">${boostLabels[id]}</span>
-      <span style="font-size:10px;color:var(--accent);">${left!==null?left+'д':'Активно'}</span>
-    </div>`;
-  }).join('');
+// «Моє»: надіте, активні бусти, предмети з кількістю, скрині з кнопкою «Відкрити».
+function shopInventoryHtml(items, worn, now) {
+  const rows = [];
+  const wornList = COSMETIC_SLOTS.map(s => worn[s] && shopItem(worn[s])).filter(Boolean);
+  rows.push(`<h3 class="shop-group-title">Надіто</h3>` + (wornList.length
+    ? `<div class="list">${wornList.map(it => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${it.name}</span><span class="list-row-sub">${SHOP_TYPE_TITLES[it.type]}</span></span></div>`).join('')}</div>`
+    : '<p class="field-hint">Нічого. Рамки, кольори ніку й значки — у розділі «Стиль».</p>'));
+  const boosts = SHOP_ITEMS.filter(it => it.type === 'boost' && boostActive(items[it.id], now));
+  rows.push(`<h3 class="shop-group-title">Активні бусти</h3>` + (boosts.length
+    ? `<div class="list">${boosts.map(it => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${it.name}</span><span class="list-row-sub">до ${new Date(items[it.id].expires).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></span></div>`).join('')}</div>`
+    : '<p class="field-hint">Немає активних бустів.</p>'));
+  const counters = [
+    { label: 'Фріспіни по ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', where: 'Слоти «777»', n: userData.shopSpins || 0, go: 'slots' },
+    { label: 'Прокрутки Колеса по ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', where: 'Колесо фортуни', n: userData.shopFortune || 0, go: 'fortune' },
+    { label: 'Прокрутки Колеса по ' + formatNumber(FREE_FORTUNE_STAKE) + ' ₴', where: 'Колесо фортуни · з Battle Pass', n: userData.freeFortune || 0, go: 'fortune' },
+    { label: 'Підказки в Мінах', where: 'Міни', n: userData.minesHints || 0, go: 'mines' },
+    { label: 'Страховки Крашу', where: 'Краш', n: Number(userData.crashInsurance) || 0, go: 'crash' },
+  ].filter(c => c.n > 0);
+  rows.push(`<h3 class="shop-group-title">Предмети</h3>` + (counters.length
+    ? `<div class="list">${counters.map(c => `<button type="button" class="list-row" onclick="openGame('${c.go}')"><span class="list-row-main"><span class="list-row-title">${c.label}</span><span class="list-row-sub">${c.where}</span></span><span class="badge num">${c.n}</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>`).join('')}</div>`
+    : '<p class="field-hint">Предметів немає.</p>'));
+  const inv = userData.lootboxInv || {};
+  const boxes = Object.keys(SHOP_BOXES).filter(t => inv[t] > 0);
+  rows.push(`<h3 class="shop-group-title">Скрині</h3>` + (boxes.length
+    ? `<div class="list">${boxes.map(t => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${SHOP_BOXES[t].name}</span><span class="list-row-sub">Виграш до ×${Math.max.apply(null, SHOP_BOXES[t].prizes.map(p => p.mult))} від ${formatNumber(SHOP_BOXES[t].value)} ₴</span></span><span class="badge num">${inv[t]}</span><button type="button" class="btn btn-primary btn-sm btn-inline" onclick="openShopBox('${t}')">Відкрити</button></div>`).join('')}</div>`
+    : '<p class="field-hint">Скринь немає. Їх можна купити в «Предметах» або отримати в Battle Pass.</p>'));
+  return rows.join('');
+}
+
+async function buyShopItem(itemId) {
+  const it = shopItem(itemId);
+  if(!it) return;
+  const have = userData.slotiky || 0;
+  if(have < it.price) return notify('Потрібно ' + it.price + ' ' + slotikyWord(it.price) + '. У вас: ' + have, 'error');
+  const ok = await confirmAction({ title: it.name, text: it.desc + '. Ціна: ' + it.price + ' ' + slotikyWord(it.price) + '.', confirm: 'Купити' });
+  if(!ok) return;
+  const srv = await serverReward('shopBuy', { item: itemId });
+  if(srv.mode === 'error') return;
+  const items = userData.slotikyItems = userData.slotikyItems || {};
+  const now = Date.now();
+  if(srv.mode === 'legacy') {
+    const tx = await db.ref('users/' + currentUser + '/slotiky').transaction(c => (c == null || c < it.price) ? undefined : c - it.price);
+    if(!tx.committed) return notify('Недостатньо Слотіків', 'error');
+    const rec = it.type === 'boost'
+      ? { boughtAt: now, expires: Math.max((items[itemId] || {}).expires || 0, now) + it.days * 86400000 }
+      : { boughtAt: now };
+    await db.ref('users/' + currentUser + '/slotikyItems/' + itemId).set(rec);
+    if(it.counter) await db.ref('users/' + currentUser + '/' + it.counter).set(firebase.database.ServerValue.increment(it.qty));
+    items[itemId] = rec;
+    userData.slotiky = have - it.price;
+  } else {
+    userData.slotiky = srv.r.slotiky;
+    items[itemId] = it.type === 'boost' ? { boughtAt: now, expires: srv.r.expires } : { boughtAt: now };
+    if(it.counter && srv.r.count !== undefined) {
+      const path = it.counter.split('/');
+      let o = userData;
+      for(let i = 0; i < path.length - 1; i++) o = o[path[i]] = o[path[i]] || {};
+      o[path[path.length - 1]] = srv.r.count;
+    }
+  }
+  playSound('bonus');
+  notify('Придбано: ' + it.name, 'success');
+  initSlotiky();
+  invalidatePlayerStyle(currentUser);
+}
+
+function equipCosmetic(slot, id) {
+  if(!currentUser || !COSMETIC_SLOTS.includes(slot)) return;
+  if(id && !(userData.slotikyItems || {})[id]) return;
+  userData.cosmetics = Object.assign({}, userData.cosmetics || {}, { [slot]: id || null });
+  // null у виборі — «нічого не надіто», тож пишемо false, щоб база не стерла ключ
+  db.ref('users/' + currentUser + '/cosmetics/' + slot).set(id || false);
+  userData.cosmetics[slot] = id || false;
+  invalidatePlayerStyle(currentUser);
+  renderSlotikyShop();
+}
+
+let _boxOpening = false;
+async function openShopBox(tier) {
+  const box = SHOP_BOXES[tier];
+  if(!box || _boxOpening) return;
+  _boxOpening = true;
+  try {
+    const srv = await serverReward('openBox', { tier });
+    if(srv.mode === 'error') return;
+    let win;
+    if(srv.mode === 'server') {
+      win = srv.r.win;
+      userData.lootboxInv = Object.assign({}, userData.lootboxInv, { [tier]: srv.r.left });
+    } else {
+      const tx = await db.ref('users/' + currentUser + '/lootboxInv/' + tier).transaction(c => (c > 0 ? c - 1 : undefined));
+      if(!tx.committed) return notify('Таких скринь немає', 'error');
+      const total = box.prizes.reduce((s, p) => s + p.weight, 0);
+      let r = Math.random() * total, prize = box.prizes[box.prizes.length - 1];
+      for(const p of box.prizes) { if(r < p.weight) { prize = p; break; } r -= p.weight; }
+      win = Math.floor(box.value * prize.mult);
+      await db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(win));
+      addToHistory(box.name + ': +' + formatNumber(win) + '₴');
+    }
+    playSound(win >= box.value ? 'win' : 'click');
+    notify(box.name + ': +' + formatNumber(win) + ' ₴', win >= box.value ? 'success' : 'info');
+    renderSlotikyShop();
+  } finally { _boxOpening = false; }
+}
+
+// ── Предмети в самих іграх: панель над головною кнопкою ──
+const GAME_ITEM_ANCHORS = { slots: 'slotsSpinBtn', fortune: 'fortuneBtn', mines: 'minesGrid', crash: 'crashBtn' };
+function renderGameItems(game) {
+  const anchor = document.getElementById(GAME_ITEM_ANCHORS[game]);
+  if(!anchor || !userData) return;
+  let bar = document.getElementById('gameItems-' + game);
+  if(!bar) {
+    bar = document.createElement('div');
+    bar.id = 'gameItems-' + game;
+    bar.className = 'game-items';
+    anchor.before(bar);
+  }
+  const btn = (fn, label, n) => `<button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="${fn}">${label}<span class="badge num">${n}</span></button>`;
+  const parts = [];
+  if(game === 'slots' && userData.shopSpins > 0) parts.push(btn('spinSlotsShop()', 'Фріспін ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', userData.shopSpins));
+  if(game === 'fortune') {
+    if(userData.shopFortune > 0) parts.push(btn("spinFortune('shop')", 'Прокрутка ' + formatNumber(SHOP_SPIN_STAKE) + ' ₴', userData.shopFortune));
+    if(userData.freeFortune > 0) parts.push(btn("spinFortune('free')", 'Прокрутка ' + formatNumber(FREE_FORTUNE_STAKE) + ' ₴', userData.freeFortune));
+  }
+  if(game === 'mines' && userData.minesHints > 0) parts.push(btn('minesHint()', '<span class="ic i-bulb" aria-hidden="true"></span> Підказка', userData.minesHints));
+  const ins = Number(userData.crashInsurance) || 0;
+  if(game === 'crash' && ins > 0) parts.push(`<label class="game-items-check"><input type="checkbox" id="crashInsure"> Застрахувати раунд: вибух до ×${CRASH_INSURANCE_BELOW.toFixed(2)} — ставка повертається <span class="badge num">${ins}</span></label>`);
+  bar.innerHTML = parts.join('');
+  bar.classList.toggle('hidden', !parts.length);
+}
+
+// Разове повернення Слотіків за прибрані товари (v121) — робить сервер.
+async function runShopMigration() {
+  if(!currentUser || userData.shopV2) return;
+  const srv = await serverReward('shopMigrate');
+  if(srv.mode === 'server' && srv.r.refund > 0) {
+    notify('Магазин оновлено: за прибрані товари повернуто ' + srv.r.refund + ' ' + slotikyWord(srv.r.refund), 'info');
+  }
 }
 
 // ============================================================

@@ -106,8 +106,8 @@ function initLobbyChat() {
       const nickColor = isMe ? 'var(--accent)' : (isAdmin ? '#ff6b6b' : '#4a9eff');
       const av = m.avatarEmoji || '👤';
       const avHtml = m.avatarUrl
-        ? '<div class="chat-avatar-sm"><img src="' + safeUrl(m.avatarUrl) + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
-        : '<div class="chat-avatar-sm">' + escapeHtml(av) + '</div>';
+        ? '<div class="chat-avatar-sm" data-pa="' + escapeHtml(m.sender) + '"><img src="' + safeUrl(m.avatarUrl) + '" onerror="this.parentElement.textContent=\'👤\'"></div>'
+        : '<div class="chat-avatar-sm" data-pa="' + escapeHtml(m.sender) + '">' + escapeHtml(av) + '</div>';
       const adminTag = isAdmin ? '<span style="background:var(--neg);color:var(--on-neg);font-size:8px;padding:1px 5px;border-radius:var(--r-sm);margin-left:3px;">ADMIN</span>' : '';
       const botTag = '';  // bots look like regular players
       const msgKey = snap.key;
@@ -115,7 +115,7 @@ function initLobbyChat() {
       const delBtn = isAdminUserLocal ? '<button onclick="adminDeleteMsg(\'' + msgKey + '\')" style="background:none;border:none;color:var(--neg);font-size:11px;cursor:pointer;padding:0 3px;opacity:0.5;" title="Видалити">✕</button>' : '';
       el.innerHTML =
         '<div class="chat-header-line">' + avHtml +
-          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(' + jsArg(m.sender) + ')">' + escapeHtml(m.sender) + '</span>' +
+          '<span class="chat-nick" style="color:' + nickColor + '" onclick="openPublicProfile(' + jsArg(m.sender) + ')"><span data-pn="' + escapeHtml(m.sender) + '">' + escapeHtml(m.sender) + '</span></span>' +
           adminTag + botTag +
           '<span class="chat-time" style="margin-left:auto;">' + time + '</span>' +
           delBtn +

@@ -439,7 +439,7 @@ function renderPmInbox() {
         : escapeHtml(msg.text || '');
       const isUnread = msg.from !== currentUser && msg.ts > (lastRead[name] || 0);
       div.innerHTML = `<div class="pm-avatar" onclick="event.stopPropagation();openPublicProfile(${jsArg(name)})" title="Профіль ${escapeHtml(name)}">${escapeHtml(name[0].toUpperCase())}</div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}">${escapeHtml(name)}${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:bold;font-size:13px;${isUnread?'color:#4a9eff;':''}"><span data-pn="${escapeHtml(name)}">${escapeHtml(name)}</span>${isUnread?' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--info);margin-left:4px;"></span>':''}</div>
           <div style="font-size:11px;color:${isUnread?'var(--fg-2)':'var(--fg-4)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;${isUnread?'font-weight:600;':''}">${previewText}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
@@ -593,7 +593,7 @@ function openPmThread(otherUser) {
       <div onclick="openPublicProfile(${jsArg(otherUser)})" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;flex:1;">
         <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,color-mix(in srgb, var(--info) 19%, var(--surface-1)),var(--info));border:2px solid rgb(var(--info-rgb) / 0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(otherUser[0].toUpperCase())}</div>
         <div style="min-width:0;">
-          <div style="font-weight:800;font-size:14px;">${escapeHtml(otherUser)}</div>
+          <div style="font-weight:800;font-size:14px;"><span data-pn="${escapeHtml(otherUser)}">${escapeHtml(otherUser)}</span></div>
           <div id="pmThreadStatus" style="font-size:10px;color:var(--fg-4);">● ...</div>
         </div>
       </div>

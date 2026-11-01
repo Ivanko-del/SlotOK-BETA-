@@ -317,6 +317,7 @@ function startDataSync() {
             checkTermsGate();
             loadContacts();
             checkAdmin();
+            try { applyPlayerStyles(document.body); } catch(e) {}
             checkDailyBonus();
             loadNotifsFromStorage();
             updateNotifBadge();
@@ -332,6 +333,8 @@ function startDataSync() {
               setTimeout(checkCardOnboarding, 3500);
               setTimeout(checkChangelogBadge, 1000);
               setTimeout(seedChangelogIfAdmin, 3000);
+              setTimeout(() => { try { refundCryptoSimulator(); } catch(e) { console.warn(e); } }, 2500);
+              setTimeout(() => { try { runShopMigration(); } catch(e) { console.warn(e); } }, 4000);
               setTimeout(initChatAutoClear, 500);
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);

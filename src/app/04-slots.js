@@ -8,6 +8,14 @@ let _spinBtn = null; // global ref so finishSlots can re-enable it
 // Безкоштовний спін грається на ставку не більше 100 ₴ (раніше — на будь-яку з
 // поля вводу: 75 фріспінів з Battle Pass на ставці 1 000 000 давали мільйони).
 const SLOTS_FREE_SPIN_MAX_BET = 100;
+// Спін, куплений за Слотіки (shopSpins): ставка SHOP_SPIN_STAKE, списує сервер.
+let _slotsShopSpin = false;
+async function spinSlotsShop() {
+    if(!(await serverAuthEnabled())) return notify('Куплені фріспіни працюють лише з сервером', 'error');
+    if(!((userData.shopSpins || 0) > 0)) return notify('Куплених фріспінів немає', 'info');
+    _slotsShopSpin = true;
+    try { await spinSlots(); } finally { _slotsShopSpin = false; }
+}
 async function spinSlots() { 
     if(_spinBtn && _spinBtn.disabled) return;
     // Free spins check
@@ -15,10 +23,11 @@ async function spinSlots() {
     let b;
     _spinBtn = document.getElementById('slotsSpinBtn');
     if(_spinBtn) _spinBtn.disabled = true;
-    const mode = slotBonusRound > 0 ? 'bonus' : freeSp > 0 ? 'free' : 'paid';
+    const mode = slotBonusRound > 0 ? 'bonus' : _slotsShopSpin ? 'shop' : freeSp > 0 ? 'free' : 'paid';
     let srv = { mode: 'legacy' };
     try {
-    if(mode !== 'bonus') {
+    if(mode === 'shop') b = SHOP_SPIN_STAKE;
+    else if(mode !== 'bonus') {
       b = mode === 'free'
         ? Math.min(parseInt(document.getElementById('betAmountSlots').value) || 100, SLOTS_FREE_SPIN_MAX_BET)
         : validateBet(document.getElementById('betAmountSlots').value);
@@ -34,6 +43,7 @@ async function spinSlots() {
     }
     if(srv.mode === 'server') {
       if(srv.r.freeSlots !== undefined) { userData.freeSlots = srv.r.freeSlots; setTimeout(updateFreeSlotsUI, 50); }
+      if(srv.r.shopSpins !== undefined) { userData.shopSpins = srv.r.shopSpins; renderGameItems('slots'); }
       if(mode === 'free') notify('🎟️ Використано 1 безкоштовний спін! Залишилось: ' + (srv.r.freeSlots || 0), 'info');
       if(mode === 'paid') { addWager(b); trackLbStat('wager', b); trackLbStat('games', 1); publishLiveBet('Slots','🎰', b, ''); if(userData.clanId) trackClanWager(b); }
     } else if(mode === 'free') {

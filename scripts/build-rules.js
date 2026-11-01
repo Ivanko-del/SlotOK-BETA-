@@ -98,6 +98,19 @@ function build(strict) {
       isAdmin: adminOnly,
       adminPerms: adminOnly,
       role: { ...adminOnly, ...v("newData.isString() && newData.val().matches(/^(support|admin)$/)") },
+      // Магазин Слотіків (v121): Слотіки, куплене й лічильники предметів
+      // змінює лише сервер (lib/shop.js, api/play.js, api/round.js). Що надіто
+      // (cosmetics) — сам гравець; показується лише те, що він справді купив.
+      slotiky: adminOnly,
+      slotikyItems: adminOnly,
+      shopV2: adminOnly,
+      shopSpins: adminOnly,
+      shopFortune: adminOnly,
+      freeFortune: adminOnly,
+      minesHints: adminOnly,
+      crashInsurance: adminOnly,
+      lootboxInv: adminOnly,
+      cosmetics: { ...userFieldOwner, $slot: v("newData.val() === false || (newData.isString() && newData.val().matches(/^[a-z_]{1,32}$/))") },
       banned: adminOnly,
       banReason: adminOnly,
       autoFrozen: adminOnly,

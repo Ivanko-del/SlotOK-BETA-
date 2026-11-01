@@ -929,6 +929,7 @@ function switchTab(id, el) {
     db.ref('users/'+currentUser+'/pmUnread').set(0);
   });
   if(id==='themes')       safe(() => renderThemeGrid());
+  if(['slots','fortune','mines','crash'].includes(id)) safe(() => renderGameItems(id));
   if(id==='coinflip')     safe(() => loadCfRooms());
   if(id==='rps')          safe(() => loadRpsRooms());
   if(id==='predict')      safe(() => loadPdRooms());

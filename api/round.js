@@ -6,6 +6,10 @@
 //   { action: "move",    game, move }         — хід (клітинка / стовпчик / вище-нижче)
 //   { action: "cashout", game }               — забрати поточний виграш
 //   { action: "state",   game }               — поточний раунд (після перезавантаження)
+//   { action: "hint",    game: "mines" }      — підказка: одна безпечна клітинка (−1 minesHints)
+//
+// Страховка Крашу: start з params.insure = true списує 1 crashInsurance; якщо
+// такий раунд вибухне нижче ×1.20 (shared/shop.js), ставка повертається.
 //
 // Стан раунду — game_sessions/<нік>/<гра>, браузеру недоступний: де міни і
 // порядок карт клієнт дізнається лише тоді, коли гравець їх відкрив або раунд
@@ -23,6 +27,11 @@ const { parseBet, payFor } = require("../lib/games");
 const { SESSION_GAMES } = require("../lib/sessions");
 const { rng, fail, authNick, tooFast, blockedReason, moveBalance } = require("../lib/player");
 const { safeRecordWager } = require("../lib/progress");
+const SHOP = require("../shared/shop");
+
+// Застрахований раунд Крашу, що вибухнув нижче порогу, — повернення ставки.
+const insuredLoss = (cur) => !!(cur && cur.insured && cur.state && cur.state.point < SHOP.CRASH_INSURANCE_BELOW);
+const num = (v) => Number(v) || 0;
 
 const sessionPath = (nick, game) => `game_sessions/${nick}/${game}`;
 
@@ -59,6 +68,7 @@ async function settlePrevious(nick, game) {
       // Не забраний раунд Crash/Balloon: автокешаут, якщо досяг цілі; якщо ще
       // летить — забираємо поточний множник; якщо вже вибухнув — програш.
       const r = def.resolve(cur.state, Date.now(), Infinity);
+      if (r.status === "lost" && insuredLoss(cur)) { action = "refund"; return { ...cur, status: "refunded", doneAt: Date.now() }; }
       if (r.status === "lost") return { ...cur, status: "lost", doneAt: Date.now() };
       action = "pay";
       return { ...cur, status: "cashing", payout: payFor(cur.bet, r.mult) };
@@ -107,15 +117,25 @@ async function start(req, res, nick, game, def, body) {
       : { status: "starting", startedAt: Date.now() });
   if (!claim.committed) return fail(res, 409, "in_progress", "Раунд уже починається");
 
+  let insured = false;
+  if (game === "crash" && body.params && body.params.insure === true) {
+    const t = await dbTransaction(`users/${nick}/crashInsurance`, (c) => (num(c) > 0 ? num(c) - 1 : undefined));
+    if (!t.committed) {
+      await dbUpdate(path, { status: "void" });
+      return fail(res, 409, "no_insurance", "Страховок Крашу немає");
+    }
+    insured = true;
+  }
   const debit = await moveBalance(nick, -bet);
   if (!debit.ok) {
     await dbUpdate(path, { status: "void" });
+    if (insured) await dbTransaction(`users/${nick}/crashInsurance`, (c) => num(c) + 1);
     return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: debit.balance });
   }
   // Ставка списана — облік вейджеру/XP/кешбеку йде паралельно з роздачею.
   const progressP = safeRecordWager(nick, bet);
   const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
-  const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0 };
+  const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0, ...(insured ? { insured: true } : {}) };
   if (def.finished(session.state)) {
     // Раунд завершився одразу (blackjack з роздачі) — розраховуємось тут же.
     const pay = payoutOf(def, session, session.state);
@@ -126,7 +146,7 @@ async function start(req, res, nick, game, def, body) {
     return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance, progress });
   }
   const [progress] = await Promise.all([progressP, dbUpdate(path, session)]);
-  res.status(200).json({ ...publicView(def, session, false), balance: debit.balance, progress });
+  res.status(200).json({ ...publicView(def, session, false), balance: debit.balance, progress, ...(insured ? { insured: true } : {}) });
 }
 
 async function move(req, res, nick, game, def, body) {
@@ -206,6 +226,7 @@ async function timedSettle(res, nick, game, def, claim) {
     const r = def.resolve(cur.state, Date.now(), claim);
     outcome = r.status;
     if (r.status === "active") { mult = r.mult; return undefined; }
+    if (r.status === "lost" && insuredLoss(cur)) { outcome = "refunded"; return { ...cur, status: "refunded", doneAt: Date.now() }; }
     if (r.status === "lost") return { ...cur, status: "lost", doneAt: Date.now() };
     mult = r.mult;
     return { ...cur, status: "cashing", payout: payFor(cur.bet, r.mult) };
@@ -214,6 +235,10 @@ async function timedSettle(res, nick, game, def, claim) {
   const s = load(def, tx.value);
   if (outcome === "active") return res.status(200).json({ status: "active", mult });
   if (outcome === "lost") return res.status(200).json(publicView(def, s, true));
+  if (outcome === "refunded") {
+    const { balance } = await moveBalance(nick, s.bet);
+    return res.status(200).json({ ...publicView(def, s, true), refunded: s.bet, balance });
+  }
   const balance = await payOut(nick, game, s);
   res.status(200).json({ ...publicView(def, { ...s, status: "done" }, true), mult, payout: s.payout, balance });
 }
@@ -248,7 +273,25 @@ async function state(req, res, nick, game, def) {
   res.status(200).json(publicView(def, s, false));
 }
 
-const ACTIONS = { start, move, cashout, state };
+// Підказка в Мінах: випадкова ще не відкрита безпечна клітинка. Сама клітинка
+// не відкривається — гравець тисне її сам. Одна підказка = −1 minesHints.
+async function hint(req, res, nick, game, def) {
+  if (game !== "mines") return fail(res, 400, "bad_request", "Підказки є лише в Мінах");
+  const path = sessionPath(nick, game);
+  const cur = load(def, await dbGet(path));
+  if (!cur || cur.status !== "active") return fail(res, 409, "no_round", "Спершу почни раунд");
+  const shown = Array.isArray(cur.hints) ? cur.hints : [];
+  const free = [];
+  for (let i = 0; i < 25; i++) if (!cur.state.mines.includes(i) && !cur.state.opened.includes(i) && !shown.includes(i)) free.push(i);
+  if (!free.length) return fail(res, 409, "no_cells", "Безпечних клітинок для підказки не лишилось");
+  const t = await dbTransaction(`users/${nick}/minesHints`, (c) => (num(c) > 0 ? num(c) - 1 : undefined));
+  if (!t.committed) return fail(res, 409, "no_hints", "Підказок немає — їх можна купити в магазині Слотіків");
+  const cell = free[rng.int(0, free.length)];
+  await dbUpdate(path, { hints: [...shown, cell] });
+  res.status(200).json({ cell, minesHints: num(t.value) });
+}
+
+const ACTIONS = { start, move, cashout, state, hint };
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).end();

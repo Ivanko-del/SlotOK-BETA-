@@ -292,19 +292,6 @@
                 <div class="banner-stat-box"><div class="banner-stat-lbl">Останнє</div><div class="banner-stat-val" id="bannerRouletteLast">—</div><div class="banner-stat-sub">Випало</div></div>
               </div>
             </div>
-            <div class="banner-slide tone-accent" role="button" tabindex="0" onclick="openCryptoSimulator()">
-              <div class="banner-deco">📈</div>
-              <div class="banner-inner">
-                <div>
-                  <div class="banner-kicker">Симулятор</div>
-                  <div class="banner-title">Крипто-торгівля</div>
-                  <div class="banner-sub">BTC, ETH, SOL, BNB</div>
-                  <div class="banner-desc">Ціни оновлюються кожні 5 с</div>
-                  <div class="banner-pills"><span class="banner-pill">🪙 Свій портфель</span></div>
-                </div>
-                <div class="banner-stat-box"><div class="banner-stat-lbl">BTC</div><div class="banner-stat-val is-sm" id="bannerBtcPrice">—</div><div class="banner-stat-sub">Зараз</div></div>
-              </div>
-            </div>
             <div class="banner-slide tone-neg" role="button" tabindex="0" onclick="switchTab('lootboxes')">
               <div class="banner-deco">📦</div>
               <div class="banner-inner">
@@ -1608,7 +1595,7 @@
         <!-- Підключені картки -->
         <section class="ks-panel">
           <div class="ks-panel-head">
-            <div class="ks-panel-title">Підключені картки</div>
+            <div class="ks-panel-title">Мої картки</div>
             <div style="display:flex;align-items:center;gap:14px;">
               <!-- Перекид між своїми картками; JS ховає кнопку, поки картка одна -->
               <button class="ks-link" id="cardMoveBtn" hidden onclick="openCardMoveModal()">
@@ -2028,7 +2015,7 @@
         <div class="ks-panel-body">
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
             <div style="position:relative;flex-shrink:0;">
-              <div id="currentAvatar" onclick="document.getElementById('avatarInput').click()"
+              <div id="currentAvatar" data-pa="@me" onclick="document.getElementById('avatarInput').click()"
                 style="width:64px;height:64px;border-radius:var(--r-lg);background:var(--ks-surface-3);border:1px solid var(--ks-line-2);display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;overflow:hidden;">👤</div>
               <div onclick="document.getElementById('avatarInput').click()"
                 style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;background:var(--ks-acc);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--ks-surface);color:var(--on-accent);">
@@ -2037,7 +2024,7 @@
             </div>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span id="profileName" style="font-size:20px;font-weight:650;letter-spacing:-.01em;color:var(--ks-fg);"></span>
+                <span id="profileName" data-pn="@me" style="font-size:20px;font-weight:650;letter-spacing:-.01em;"></span>
                 <span id="adminBadge" class="ks-badge is-neg hidden">ADMIN</span>
               </div>
               <div id="profileTag" style="font-size:12px;color:var(--ks-fg-3);margin-top:2px;"></div>
@@ -2161,8 +2148,7 @@
           <button type="button" class="list-row menu-item" onclick="switchTab('pm')"><span class="menu-ic">✉️</span><span class="list-row-main"><span class="list-row-title">Приватні повідомлення</span></span> <span id="pmBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('contacts')"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Знайомі</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('clans')"><span class="menu-ic">🛡️</span><span class="list-row-main"><span class="list-row-title">Клани</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Чат підтримки</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="openFeedbackModal()"><span class="menu-ic">📨</span><span class="list-row-main"><span class="list-row-title">Підтримка / Пропозиція</span><span class="list-row-sub">Питання, скарга чи ідея — з відповіддю</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Підтримка</span><span class="list-row-sub">Чат, скарги й пропозиції</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="showReferralQR()"><span class="menu-ic">📲</span><span class="list-row-main"><span class="list-row-title">QR-код запрошення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
       </nav>
       <div class="section-header"><span>Змагання</span></div>
@@ -2191,7 +2177,6 @@
       <nav class="list menu-group" aria-label="Інструменти">
           <button type="button" class="list-row menu-item" onclick="switchTab('lottery')"><span class="menu-ic">🎟️</span><span class="list-row-main"><span class="list-row-title">Лотерея</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('investpool')"><span class="menu-ic">📈</span><span class="list-row-main"><span class="list-row-title">Інвест-пул</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="openCryptoSimulator()"><span class="menu-ic">📈</span><span class="list-row-main"><span class="list-row-title">Крипто-симулятор</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
       </nav>
       <div class="section-header"><span>Підтримати проєкт</span></div>
       <a class="btn btn-secondary" href="https://send.monobank.ua/jar/3iLuXEs9Uz" target="_blank" rel="noopener">💜 Задонатити на оновлення SlotOK</a>
@@ -2709,16 +2694,6 @@
           <span class="settings-text"><span class="settings-label">Встановити SlotOK як застосунок</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
-        <button type="button" class="settings-row is-link" onclick="openProfileEffectShop()">
-          <span class="settings-icon">🎭</span>
-          <span class="settings-text"><span class="settings-label">Ефекти профілю</span></span>
-          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
-        </button>
-        <button type="button" class="settings-row is-link" onclick="openCustomTagShop()">
-          <span class="settings-icon">🏷️</span>
-          <span class="settings-text"><span class="settings-label">Купити тег</span></span>
-          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
-        </button>
         <button type="button" class="settings-row is-link" onclick="openGiftVIPModal()">
           <span class="settings-icon">🎁</span>
           <span class="settings-text"><span class="settings-label">Подарувати VIP</span></span>
@@ -2737,11 +2712,6 @@
         <button type="button" class="settings-row is-link" onclick="showWishlist()">
           <span class="settings-icon">❤️</span>
           <span class="settings-text"><span class="settings-label">Список побажань</span></span>
-          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
-        </button>
-        <button type="button" class="settings-row is-link" onclick="openCryptoSimulator()">
-          <span class="settings-icon">📈</span>
-          <span class="settings-text"><span class="settings-label">Крипто-симулятор</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
       </div>
@@ -3723,66 +3693,28 @@
 
     <!-- СЛОТІКИ — внутрішня валюта казино -->
     <div id="tab-slotiky" class="screen hidden">
-      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
-
-      <!-- Balance -->
-      <div style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);border-radius:var(--r-xl);padding:20px;margin:12px 0;text-align:center;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;font-size:100px;opacity:0.08;">🪙</div>
-        <div style="font-size:11px;color:var(--special);margin-bottom:4px;text-transform:uppercase;letter-spacing:2px;">Ваш баланс</div>
-        <div style="font-size:48px;font-weight:900;color:var(--special);" id="slotikyBalance">0</div>
-        <div style="font-size:14px;color:var(--special);margin-top:2px;">🪙 Слотіків</div>
-        <div style="font-size:10px;color:var(--special);margin-top:8px;">1 Слотік = 10,000,000 ₴ • Купується окремо</div>
+      <div class="screen-head">
+        <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
+        <h2>Магазин Слотіків</h2>
       </div>
 
-      <!-- Buy slotiky -->
-      <div style="background:var(--box);border:1px solid var(--special);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;">
-        <div style="font-size:14px;font-weight:bold;color:var(--special);margin-bottom:12px;">💎 Придбати Слотіки</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-          <div onclick="buySlotiky(1)" style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;">
-            <div style="font-size:24px;">🪙</div>
-            <div style="font-size:16px;font-weight:bold;color:var(--special);margin:4px 0;">1 Слотік</div>
-            <div style="font-size:13px;color:var(--special);">10,000,000 ₴</div>
-          </div>
-          <div onclick="buySlotiky(5)" style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;">
-            <div style="font-size:24px;">🪙🪙🪙</div>
-            <div style="font-size:16px;font-weight:bold;color:var(--special);margin:4px 0;">5 Слотіків</div>
-            <div style="font-size:13px;color:var(--special);">50,000,000 ₴</div>
-            <div style="font-size:9px;background:var(--special);color:var(--on-special);border-radius:var(--r-sm);padding:2px 6px;margin-top:4px;display:inline-block;">-0%</div>
-          </div>
-          <div onclick="buySlotiky(10)" style="background:linear-gradient(135deg,color-mix(in srgb, var(--special) 12%, var(--surface-1)),color-mix(in srgb, var(--special) 24%, var(--surface-1)));border:1px solid var(--special);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;position:relative;">
-            <div style="position:absolute;top:-6px;right:8px;background:var(--accent);color:var(--on-accent);font-size:9px;font-weight:bold;padding:2px 6px;border-radius:var(--r-md);">ЗНИЖКА</div>
-            <div style="font-size:24px;">💎</div>
-            <div style="font-size:16px;font-weight:bold;color:var(--special);margin:4px 0;">10 Слотіків</div>
-            <div style="font-size:13px;color:var(--special);">95,000,000 ₴</div>
-            <div style="font-size:9px;background:var(--accent);color:var(--on-accent);border-radius:var(--r-sm);padding:2px 6px;margin-top:4px;display:inline-block;">Знижка 5%</div>
-          </div>
-          <div onclick="buySlotiky(50)" style="background:linear-gradient(135deg,color-mix(in srgb, var(--neg) 12%, var(--surface-1)),color-mix(in srgb, var(--neg) 24%, var(--surface-1)));border:1px solid var(--neg);border-radius:var(--r-lg);padding:12px;text-align:center;cursor:pointer;position:relative;">
-            <div style="position:absolute;top:-6px;right:8px;background:var(--neg);color:var(--on-neg);font-size:9px;font-weight:bold;padding:2px 6px;border-radius:var(--r-md);">BEST</div>
-            <div style="font-size:24px;">👑</div>
-            <div style="font-size:16px;font-weight:bold;color:var(--neg);margin:4px 0;">50 Слотіків</div>
-            <div style="font-size:13px;color:var(--neg);">450,000,000 ₴</div>
-            <div style="font-size:9px;background:var(--neg);color:var(--on-neg);border-radius:var(--r-sm);padding:2px 6px;margin-top:4px;display:inline-block;">Знижка 10%</div>
-          </div>
+      <section class="panel shop-wallet">
+        <div class="shop-wallet-main">
+          <span class="field-label">Баланс</span>
+          <div class="shop-wallet-val num"><span class="ic i-coin" aria-hidden="true"></span><span id="slotikyBalance">0</span></div>
+          <span class="field-hint">1 Слотік = <span id="slotikyRateLbl">1 000 000</span> ₴</span>
         </div>
-      </div>
+        <div class="shop-packs" id="slotikyPacks"></div>
+      </section>
 
-      <!-- Shop -->
-      <div style="font-size:15px;font-weight:bold;color:var(--special);margin-bottom:10px;">🛒 Магазин Слотіків</div>
-      <!-- Active boosts display -->
-      <div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;margin-bottom:14px;">
-        <div style="font-size:12px;font-weight:bold;color:var(--special);margin-bottom:8px;">⚡ Активні буст-предмети</div>
-        <div id="activeBoostsList"><div style="color:var(--fg-4);font-size:11px;">Немає активних бустів</div></div>
+      <div class="seg shop-tabs" role="tablist" aria-label="Розділи магазину">
+        <button type="button" class="seg-item active" role="tab" data-shop-tab="style" onclick="setShopTab('style')"><span class="seg-label">Стиль</span></button>
+        <button type="button" class="seg-item" role="tab" data-shop-tab="boost" onclick="setShopTab('boost')"><span class="seg-label">Бусти</span></button>
+        <button type="button" class="seg-item" role="tab" data-shop-tab="item" onclick="setShopTab('item')"><span class="seg-label">Предмети</span></button>
+        <button type="button" class="seg-item" role="tab" data-shop-tab="inv" onclick="setShopTab('inv')"><span class="seg-label">Моє</span></button>
       </div>
-      <!-- Shop filter tabs -->
-      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:10px;">
-        <button onclick="filterShop(null,this)" style="flex-shrink:0;background:var(--accent);color:var(--on-accent);border:none;border-radius:var(--r-md);padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">Всі</button>
-        <button onclick="filterShop('cosmetic',this)" style="flex-shrink:0;background:var(--surface-2);color:var(--fg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;font-size:11px;cursor:pointer;">🎨 Косметика</button>
-        <button onclick="filterShop('boost',this)" style="flex-shrink:0;background:var(--surface-2);color:var(--fg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;font-size:11px;cursor:pointer;">🚀 Буст</button>
-        <button onclick="filterShop('item',this)" style="flex-shrink:0;background:var(--surface-2);color:var(--fg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;font-size:11px;cursor:pointer;">📦 Предмети</button>
-        <button onclick="filterShop('exclusive',this)" style="flex-shrink:0;background:var(--surface-2);color:var(--fg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;font-size:11px;cursor:pointer;">💎 Ексклюзив</button>
-      </div>
-      <div id="slotikyShopGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-      <div style="height:20px;"></div>
+      <div id="slotikyShopGrid"></div>
+      <div style="height:var(--sp-6);"></div>
     </div>
 
     <!-- ДОСЯГНЕННЯ -->
@@ -4189,6 +4121,13 @@
     <div id="supportInfoBanner" style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--fg-2);">
       💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.
     </div>
+    <div class="support-fb-bar">
+      <span>Не допоміг чат? Оформи звернення — підтримка відповість, а статус буде видно.</span>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary btn-sm btn-inline" onclick="openFeedbackModal()"><span class="ic i-write" aria-hidden="true"></span> Оформити звернення</button>
+        <button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="openMyFeedback()">Мої звернення</button>
+      </div>
+    </div>
     <div id="supportChatBox" style="height:300px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);margin-bottom:8px;padding:10px;border-radius:var(--r-lg);"></div>
     <!-- Support media preview -->
     <div id="supportMediaPreview" style="display:none;padding:6px 0;margin-bottom:6px;">
@@ -4210,7 +4149,7 @@
     <button class="btn-outline" onclick="closeTabModal('transfer-modal')" style="width:50px;">⬅</button>
     <h2>↗️ Переказ гравцю</h2>
     <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:12px;font-size:11px;color:var(--fg-3);line-height:1.6;">
-      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> або за <b style="color:var(--fg);">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. SlotOK власних карток не випускає, тому номер є не в кожного — нік працює завжди.
+      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> або за <b style="color:var(--fg);">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. Нік працює завжди.
     </div>
     <div id="transferSourceBar"></div>
     <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Нік або номер картки отримувача</div>
@@ -4583,21 +4522,20 @@
   <div id="cardOnboardModal" class="card-onboard-modal hidden">
     <div class="card-onboard-box">
       <div class="ks-modal-head">
-        <div class="ks-modal-title">Підключення картки</div>
+        <div class="ks-modal-title">Картка в Гаманці</div>
         <button class="ks-modal-x" onclick="dismissCardOnboard()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </div>
 
       <p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 18px;text-align:left;">
-        SlotOK не випускає власних карток. Щоб у Гаманці з’явилася картка, підключіть
-        <b style="color:var(--fg);">свою картку</b> будь-якого банку або
-        <b style="color:var(--fg);">картку Аксіома Банку</b> — будь-що одне.
+        Випустіть <b style="color:var(--fg);">ігрову картку SlotOK</b> — окремий гаманець у грі без справжніх банків і номерів.
+        Або привʼяжіть <b style="color:var(--fg);">картку Аксіома Банку</b>.
       </p>
 
       <button class="ks-btn is-primary is-block" style="margin-bottom:10px;" onclick="dismissCardOnboard();switchTab('cashier');setTimeout(openAddCardModal,300)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Підключити свою картку
+        Випустити картку SlotOK
       </button>
 
       <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
@@ -5277,6 +5215,8 @@
   <script defer src="shared/rewards.js"></script>
   <!-- Мінімальний вік (MIN_AGE) — той самий файл перевіряє сервер при реєстрації -->
   <script defer src="shared/age.js"></script>
+  <!-- Каталог магазину Слотіків — той самий файл читає сервер (lib/shop.js) -->
+  <script defer src="shared/shop.js"></script>
   <!-- Main app -->
   <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
        боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->

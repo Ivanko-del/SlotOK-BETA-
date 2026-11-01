@@ -10,6 +10,10 @@
 //   { action: "bp", lv, track: "f"|"v" }  — нагорода рівня Battle Pass
 //   { action: "bpBonus" }                 — бонусна скриня після 50 рівня
 //   { action: "bpVip" }                   — купити VIP-пропуск за Слотіки
+//   { action: "buySlotiky", n }           — купити пакет Слотіків за ₴ (lib/shop.js)
+//   { action: "shopBuy", item }           — купити товар магазину за Слотіки
+//   { action: "openBox", tier }           — відкрити скриню з інвентаря
+//   { action: "shopMigrate" }             — разове повернення за прибрані товари
 //
 // Сума, право на нагороду і час рахує сервер (lib/progress.js) — з тіла
 // запиту береться лише що саме забрати. Раніше браузер передавав суму сам
@@ -22,6 +26,7 @@
 const { getServiceAccount } = require("../lib/google-auth");
 const { rng, fail, authNick, tooFast, blockedReason } = require("../lib/player");
 const P = require("../lib/progress");
+const SHOP = require("../lib/shop");
 
 const ACTIONS = {
   daily: (nick) => P.claimDaily(nick),
@@ -32,6 +37,10 @@ const ACTIONS = {
   bp: (nick, body) => P.claimBpReward(nick, Number.isInteger(body.lv) ? body.lv : 0, body.track),
   bpBonus: (nick) => P.claimBpBonus(nick),
   bpVip: (nick) => P.buyBpVip(nick),
+  buySlotiky: (nick, body) => SHOP.buySlotiky(nick, Number.isInteger(body.n) ? body.n : 0),
+  shopBuy: (nick, body) => SHOP.buyItem(nick, typeof body.item === "string" ? body.item : ""),
+  openBox: (nick, body) => SHOP.openBox(nick, typeof body.tier === "string" ? body.tier : "", rng),
+  shopMigrate: (nick) => SHOP.migrate(nick),
 };
 
 module.exports = async (req, res) => {

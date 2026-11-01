@@ -185,6 +185,20 @@ function updateMinesInfo() {
 }
 
 let minesServer = false, minesBusy = false;
+
+// Підказка (предмет з магазину / Battle Pass): сервер називає безпечну клітинку.
+async function minesHint() {
+    if(!isMinesPlaying || !minesServer || minesBusy) return notify('Підказка доступна під час раунду', 'info');
+    if(!((userData.minesHints || 0) > 0)) return notify('Підказок немає — їх можна купити в магазині Слотіків', 'info');
+    minesBusy = true;
+    let srv;
+    try { srv = await serverRound('hint', 'mines'); } finally { minesBusy = false; }
+    if(srv.mode !== 'server') return;
+    userData.minesHints = srv.r.minesHints;
+    const cell = document.getElementById('minesGrid').children[srv.r.cell];
+    if(cell) cell.classList.add('mine-hint');
+    renderGameItems('mines');
+}
 async function startMines() {
     const bet = validateBet(document.getElementById('betAmountMines').value);
     if(!bet) return;
