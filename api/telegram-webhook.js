@@ -198,8 +198,10 @@ async function routeSupportReply(msg) {
     return true;
   }
 
-  await dbPush(`support_chats/${nick}`, { text: replyText, sender: "admin", time: Date.now() });
+  await dbPush(`support_chats/${nick}`, { text: replyText, sender: "admin", by: "Telegram", time: Date.now() });
   await dbIncrement(`users/${nick}/supportUnread`, 1);
+  // Стан розмови для вкладки «Чати» (lib/support.js)
+  await dbUpdate(`support_threads/${nick}`, { status: "answered", lastTs: Date.now(), lastText: replyText.slice(0, 120), lastFrom: "admin", unreadStaff: 0, by: "Telegram" }).catch(() => {});
   const playerChatId = await dbGet(`users/${nick}/telegramChatId`);
   if (playerChatId) await sendMessage(playerChatId, `💬 Відповідь підтримки:\n${esc(replyText)}`);
   await sendMessage(msg.chat.id, `✅ Надіслано ${esc(nick)}`);

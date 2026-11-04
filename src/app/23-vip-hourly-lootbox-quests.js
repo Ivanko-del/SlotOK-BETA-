@@ -820,6 +820,7 @@ function showAdminBypassBanner(gameId) {
 function switchTab(id, el) {
   // Переписка ПМ висить поверх усього (у <body>) — закриваємо при виході
   if(id !== 'pm') try { pmThreadForceClose(); } catch(e) {}
+  try { if(!document.getElementById('support-modal')?.classList.contains('hidden')) closeSupportModal(); } catch(e) {}
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
     if(!isAdminUser()) {
@@ -930,6 +931,9 @@ function switchTab(id, el) {
   });
   if(id==='themes')       safe(() => renderThemeGrid());
   if(['slots','fortune','mines','crash'].includes(id)) safe(() => renderGameItems(id));
+  if(id==='penalty')      safe(() => initPenalty());
+  if(id==='cups')         safe(() => initCups());
+  if(id==='darts')        safe(() => initDarts());
   if(id==='coinflip')     safe(() => loadCfRooms());
   if(id==='rps')          safe(() => loadRpsRooms());
   if(id==='predict')      safe(() => loadPdRooms());

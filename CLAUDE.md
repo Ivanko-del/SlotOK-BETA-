@@ -17,6 +17,10 @@ The Slotiky shop catalog (items, prices, boosts, chests) lives in
 `shared/shop.js`; purchases/boosts/chests are server-side (`lib/shop.js` via
 `api/reward`). Cosmetics render anywhere via `data-pn`/`data-pa` attributes
 (`src/app/54-cosmetics.js`).
+Support chat: messages in `support_chats/<nick>` (old history kept), thread
+state in `support_threads/<nick>`; server `api/support.js` → `lib/support.js`,
+bot knowledge base `shared/support-kb.js` (shared with the browser fallback).
+Tests: `scripts/selfcheck-support-api.js`.
 
 ## `style.css` is generated too — edit `src/css/*.css`
 

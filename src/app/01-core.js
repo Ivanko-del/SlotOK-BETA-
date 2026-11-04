@@ -336,7 +336,6 @@ function startDataSync() {
               setTimeout(() => { try { refundCryptoSimulator(); } catch(e) { console.warn(e); } }, 2500);
               setTimeout(() => { try { runShopMigration(); } catch(e) { console.warn(e); } }, 4000);
               setTimeout(initChatAutoClear, 500);
-              setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
               setTimeout(checkPendingBetsOnStartup, 3000);
               setTimeout(watchPmUnread, 1500);

@@ -144,6 +144,7 @@ const ADMIN_PERMS = [
   { key:'moderation', icon:'🎛️', name:'Модерація',  desc:'Бани, мути, вимкнення ігор, обслуговування' },
   { key:'admins',     icon:'👑', name:'Адміни',     desc:'Призначати адмінів, міняти права, налаштовувати анти-чіт' },
   { key:'feedback',   icon:'📨', name:'Звернення',  desc:'Питання, скарги й пропозиції гравців (є в усіх адмінів і в ролі support)' },
+  { key:'chats',      icon:'💬', name:'Чати',       desc:'Чати підтримки з гравцями (є в усіх адмінів і в ролі support)' },
 ];
 
 function isOwnerUser() {
@@ -154,7 +155,7 @@ function isOwnerUser() {
 // нічого не змінюється (повний доступ), доки власник не обмежить явно.
 function adminCan(perm) {
   if(isOwnerUser()) return true;
-  if(perm === 'feedback') return isSupportUser();
+  if(perm === 'feedback' || perm === 'chats') return isSupportUser();
   if(!isAdminUser()) return false;
   const perms = userData && userData.adminPerms;
   if(!perms || typeof perms !== 'object') return true;

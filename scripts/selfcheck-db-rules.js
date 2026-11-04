@@ -216,6 +216,15 @@ async function feedbackAndPm(ns, owner, bob, carol) {
   assert.strictEqual(await bob.put("users/bob/cosmetics/badge", false), OK, "зняти значок");
   assert.strictEqual(await bob.put("users/bob/cosmetics/frame", "<img>"), NO);
   assert.strictEqual(await bob.put("users/carol/cosmetics/frame", "avatar_gold"), NO, "чуже — ні");
+
+  // Чат підтримки v122: стан розмови пише сервер; підтримка читає всі чати
+  assert.strictEqual(await bob.put("support_threads/bob", { status: "closed" }), NO, "свій стан чату не підробити");
+  assert.strictEqual(await bob.get("support_threads/bob"), OK, "свій стан видно");
+  assert.strictEqual(await dave.get("support_threads"), NO, "чужі чати не видно");
+  assert.strictEqual(await carol.get("support_threads"), OK, "support бачить усі розмови");
+  assert.strictEqual(await carol.get("support_chats"), OK, "support читає чати");
+  assert.strictEqual(await dave.get("support_chats/bob"), NO);
+  assert.strictEqual(await bob.post("support_chats/bob", { sender: "user", text: "hi", time: 1 }), OK, "своє повідомлення");
 }
 
 // Онлайн-кімнати: пише лише сервер; приватне бачить лише власник; повний стан — ніхто.

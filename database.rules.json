@@ -283,6 +283,12 @@
           "sender": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "topic": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
           "avatar": {
             ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
           },
@@ -311,6 +317,17 @@
             ".validate": "newData.isString() && newData.val().length <= 4000"
           }
         }
+      }
+    },
+    "support_threads": {
+      ".read": true,
+      ".indexOn": [
+        "status",
+        "lastTs"
+      ],
+      "$u": {
+        ".read": true,
+        ".write": true
       }
     },
     "casino_news": {

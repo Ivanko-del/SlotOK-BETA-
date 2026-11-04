@@ -599,6 +599,18 @@
           <div class="casino-game-card-img">🎟️</div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Скретч</div><div class="casino-game-card-prov">Слот</div></div>
         </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('penalty')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">⚽</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Пенальті</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('cups')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">⚪</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Наперстки</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
+        <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('darts')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎯</div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Дартс</div><div class="casino-game-card-prov">Міні-гра</div></div>
+        </div>
         <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('limbo')" onkeydown="if(event.key==='Enter')this.click()">
           <div class="casino-game-card-img">🎯</div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Limbo</div><div class="casino-game-card-prov">Міні-гра</div></div>
@@ -2942,6 +2954,40 @@
         <button class="adm-tab-btn" id="admtb-moderation" onclick="switchAdminTab('moderation',this)">🎛️ Модерація</button>
         <button class="adm-tab-btn" id="admtb-admins" onclick="switchAdminTab('admins',this)">👑 Адміни</button>
         <button class="adm-tab-btn" id="admtb-feedback" onclick="switchAdminTab('feedback',this)">📨 Звернення <span id="fbAdminBadge" class="tab-badge hidden">0</span></button>
+        <button class="adm-tab-btn" id="admtb-chats" onclick="switchAdminTab('chats',this)">💬 Чати <span id="supAdminBadge" class="tab-badge hidden">0</span></button>
+      </div>
+
+      <!-- ══ TAB: ЧАТИ ПІДТРИМКИ (support / admin) ══ -->
+      <div class="adm-panel" id="adm-panel-chats" style="display:none;padding:12px;">
+        <div id="supAdminListView">
+          <div class="panel-head">
+            <h3 class="panel-title">Чати підтримки</h3>
+          </div>
+          <div class="seg fb-filter" role="radiogroup" aria-label="Фільтр чатів" id="supAdminFilter"></div>
+          <div id="supAdminList" class="list"></div>
+        </div>
+        <div id="supAdminThread" class="sup-admin-thread hidden">
+          <div class="sup-head">
+            <button type="button" class="btn btn-ghost btn-icon" onclick="closeAdminSupportThread()" aria-label="До списку"><span class="ic i-arrow-left" aria-hidden="true"></span></button>
+            <div class="sup-head-main">
+              <button type="button" class="link-btn sup-title" id="supAdminNick"></button>
+              <div class="sup-status" id="supAdminStatus"></div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm btn-inline" id="supAdminCloseBtn" onclick="toggleAdminSupportClosed()">Закрити</button>
+          </div>
+          <div class="sup-msgs" id="supAdminMsgs"></div>
+          <select id="supAdminCanned" aria-label="Шаблон відповіді" onchange="useAdminCanned(this)"></select>
+          <div class="sup-preview hidden" id="supAdminPreview">
+            <img id="supAdminPreviewImg" alt="Фото до відповіді">
+            <button type="button" class="btn btn-ghost btn-sm btn-inline" onclick="clearAdminSupportMedia()"><span class="ic i-trash" aria-hidden="true"></span> Прибрати</button>
+          </div>
+          <div class="pm-composer sup-composer">
+            <button type="button" class="btn btn-secondary btn-icon" onclick="document.getElementById('supAdminFile').click()" aria-label="Прикріпити фото"><span class="ic i-paperclip" aria-hidden="true"></span></button>
+            <input type="file" id="supAdminFile" accept="image/*" class="hidden" onchange="handleAdminSupportMedia(this)">
+            <textarea id="supAdminReply" rows="2" maxlength="2000" placeholder="Відповідь гравцю…"></textarea>
+            <button type="button" class="btn btn-primary btn-icon" onclick="sendAdminSupportReply()" aria-label="Надіслати"><span class="ic i-send" aria-hidden="true"></span></button>
+          </div>
+        </div>
       </div>
 
       <!-- ══ TAB: ЗВЕРНЕННЯ (support / admin) ══ -->
@@ -3158,10 +3204,6 @@
         </div>
         <button class="btn-outline" style="font-size:13px;margin-bottom:8px;" onclick="loadAdminNews()">🔄 Мої новини</button>
         <div id="adminNewsList" style="margin-top:4px;max-height:200px;overflow-y:auto;"></div>
-        <!-- Support chats -->
-        <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;margin:12px 0 8px;">💬 Підтримка</div>
-        <button class="btn-outline" style="font-size:13px;margin-bottom:8px;" onclick="loadSupportThreads()">🔄 Чати підтримки</button>
-        <div id="supportThreadsList"></div>
       </div><!-- /content panel -->
 
       <!-- ══ TAB: ФІНАНСИ ══ -->
@@ -3571,6 +3613,62 @@
     </div>
 
     <!-- LIMBO -->
+
+    <!-- ══════════════ ПЕНАЛЬТІ / НАПЕРСТКИ / ДАРТС (v122, 55-new-games.js) ══════════════ -->
+    <div id="tab-penalty" class="screen hidden">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Пенальті</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('penalty')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <section class="panel ng-stage">
+        <div class="pen-goal" id="penGoal" role="radiogroup" aria-label="Куди бити"></div>
+        <div class="ng-result" id="penResult" role="status">Обери кут воріт</div>
+      </section>
+      <div class="field">
+        <span class="field-label" id="penKeepLbl">Скільки зон закриває воротар</span>
+        <div class="seg" id="penKeepers" role="radiogroup" aria-labelledby="penKeepLbl"></div>
+      </div>
+      <label class="field"><span class="field-label">Ставка</span><input type="number" id="penBet" value="100" min="1" inputmode="numeric"></label>
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="penBtn" onclick="playPenalty()">Бити</button>
+    </div>
+
+    <div id="tab-cups" class="screen hidden">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Наперстки</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('cups')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <section class="panel ng-stage">
+        <div class="cups-row" id="cupsRow" role="radiogroup" aria-label="Під яким наперстком кулька"></div>
+        <div class="ng-result" id="cupsResult" role="status">Обери наперсток</div>
+      </section>
+      <div class="field">
+        <span class="field-label" id="cupsCountLbl">Кількість наперстків</span>
+        <div class="seg" id="cupsCount" role="radiogroup" aria-labelledby="cupsCountLbl"></div>
+      </div>
+      <label class="field"><span class="field-label">Ставка</span><input type="number" id="cupsBet" value="100" min="1" inputmode="numeric"></label>
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="cupsBtn" onclick="playCups()">Відкрити</button>
+    </div>
+
+    <div id="tab-darts" class="screen hidden">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Дартс</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('darts')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <section class="panel ng-stage">
+        <div class="darts-board" id="dartsBoard" aria-hidden="true">
+          <span class="db-ring db-outer"></span><span class="db-ring db-inner"></span><span class="db-ring db-treble"></span>
+          <span class="db-ring db-bull"></span><span class="db-ring db-eye"></span><span class="db-dart hidden" id="dartsDart"></span>
+        </div>
+        <div class="ng-result" id="dartsResult" role="status">Кидай дротик</div>
+      </section>
+      <div class="list darts-legend" id="dartsLegend"></div>
+      <label class="field"><span class="field-label">Ставка</span><input type="number" id="dartsBet" value="100" min="1" inputmode="numeric"></label>
+      <button type="button" class="btn btn-primary btn-lg btn-block" id="dartsBtn" onclick="throwDart()">Кинути</button>
+    </div>
+
     <div id="tab-limbo" class="screen hidden" style="padding:16px;padding-bottom:100px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
@@ -3805,17 +3903,6 @@
     <div id="pub-profile-modal" class="full-modal hidden">
       <button class="btn-outline" onclick="closeTabModal('pub-profile-modal')" style="width:50px;">⬅</button>
       <div id="pubProfileContent" style="margin-top:10px;"></div>
-    </div>
-
-    <!-- АДМІН ПІДТРИМКА -->
-    <div id="admin-support-modal" class="full-modal hidden">
-      <button class="btn-outline" onclick="closeTabModal('admin-support-modal')" style="width:50px;">⬅</button>
-      <h2 id="admSupportTitle" style="color:var(--accent);">Чат підтримки</h2>
-      <div id="admSupportChat" style="height:320px;overflow-y:auto;background:var(--surface-1);border:1px solid var(--line);margin-bottom:10px;padding:10px;border-radius:var(--r-md);"></div>
-      <div style="display:flex;gap:8px;">
-        <input id="admSupportReply" placeholder="Відповідь..." style="margin:0;" onkeydown="if(event.key==='Enter')sendAdminSupportReply()">
-        <button class="btn-gold" style="width:auto;margin:0;" onclick="sendAdminSupportReply()">➤</button>
-      </div>
     </div>
 
     <!-- STREAM VIEWER MODAL -->
@@ -4110,38 +4197,27 @@
       </div>
   </div>
 
-  <div id="support-modal" class="full-modal hidden">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <button class="btn-outline" onclick="closeTabModal('support-modal')" style="width:50px;">⬅</button>
-      <div style="flex:1;">
-        <div style="font-size:18px;font-weight:bold;">💬 Підтримка</div>
-        <div id="supportAdminStatus" style="font-size:11px;color:var(--info);margin-top:2px;">🤖 AI Підтримка активна</div>
+  <!-- ЧАТ ПІДТРИМКИ (v122, src/app/29-support-chat.js; сервер — api/support.js) -->
+  <div id="support-modal" class="sup-screen hidden" role="dialog" aria-modal="true" aria-labelledby="supTitle">
+    <div class="sup-head">
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeSupportModal()" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span></button>
+      <div class="sup-head-main">
+        <h2 class="sup-title" id="supTitle">Підтримка</h2>
+        <div class="sup-status" id="supStatus">Відповідає бот</div>
       </div>
+      <button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="openFeedbackModal()" title="Оформити звернення"><span class="ic i-write" aria-hidden="true"></span> Звернення</button>
     </div>
-    <div id="supportInfoBanner" style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--fg-2);">
-      💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.
+    <div class="sup-topics" id="supTopics" role="toolbar" aria-label="Швидкі теми"></div>
+    <div class="sup-msgs" id="supportChatBox" aria-live="polite"></div>
+    <div class="sup-preview hidden" id="supPreview">
+      <img id="supPreviewImg" alt="Фото до повідомлення">
+      <button type="button" class="btn btn-ghost btn-sm btn-inline" onclick="clearSupportMedia()"><span class="ic i-trash" aria-hidden="true"></span> Прибрати</button>
     </div>
-    <div class="support-fb-bar">
-      <span>Не допоміг чат? Оформи звернення — підтримка відповість, а статус буде видно.</span>
-      <div class="btn-row">
-        <button type="button" class="btn btn-primary btn-sm btn-inline" onclick="openFeedbackModal()"><span class="ic i-write" aria-hidden="true"></span> Оформити звернення</button>
-        <button type="button" class="btn btn-secondary btn-sm btn-inline" onclick="openMyFeedback()">Мої звернення</button>
-      </div>
-    </div>
-    <div id="supportChatBox" style="height:300px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);margin-bottom:8px;padding:10px;border-radius:var(--r-lg);"></div>
-    <!-- Support media preview -->
-    <div id="supportMediaPreview" style="display:none;padding:6px 0;margin-bottom:6px;">
-      <div style="position:relative;display:inline-block;max-width:90px;">
-        <img id="supportPreviewImg" alt="Прев'ю зображення" style="max-height:60px;max-width:90px;border-radius:var(--r-md);border:1px solid var(--line);display:block;object-fit:cover;">
-        <video id="supportPreviewVid" style="display:none;max-height:60px;max-width:90px;border-radius:var(--r-md);" controls muted></video>
-        <div onclick="clearSupportMedia()" style="position:absolute;top:-6px;right:-6px;background:var(--neg);color:var(--on-neg);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;">×</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button onclick="document.getElementById('supportFileInput').click()" style="background:rgb(var(--tint-rgb) / 0.08);border:1px solid rgb(var(--tint-rgb) / 0.12);border-radius:var(--r-md);padding:9px 11px;font-size:17px;cursor:pointer;width:auto;flex-shrink:0;line-height:1;" title="Фото / Відео">📎</button>
-      <input type="file" id="supportFileInput" accept="image/*,video/*,.gif" style="display:none;" onchange="handleSupportMedia(this)">
-      <input id="supportMsg" placeholder="Повідомлення..." style="margin-bottom:0;flex:1;min-width:0;text-align:left;" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendSupportMsg()">
-      <button class="btn-gold" style="width:auto;margin-bottom:0;padding:12px 18px;flex-shrink:0;" onclick="sendSupportMsg()">➤</button>
+    <div class="pm-composer sup-composer">
+      <button type="button" class="btn btn-secondary btn-icon" onclick="document.getElementById('supportFileInput').click()" aria-label="Прикріпити фото"><span class="ic i-paperclip" aria-hidden="true"></span></button>
+      <input type="file" id="supportFileInput" accept="image/*" class="hidden" onchange="handleSupportMedia(this)">
+      <input id="supportMsg" placeholder="Опиши питання…" maxlength="2000" autocomplete="off" enterkeyhint="send" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();sendSupportMsg()}">
+      <button type="button" class="btn btn-primary btn-icon" onclick="sendSupportMsg()" aria-label="Надіслати"><span class="ic i-send" aria-hidden="true"></span></button>
     </div>
   </div>
 
@@ -5217,6 +5293,8 @@
   <script defer src="shared/age.js"></script>
   <!-- Каталог магазину Слотіків — той самий файл читає сервер (lib/shop.js) -->
   <script defer src="shared/shop.js"></script>
+  <!-- База відповідей бота підтримки — той самий файл читає сервер (lib/support.js) -->
+  <script defer src="shared/support-kb.js"></script>
   <!-- Main app -->
   <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
        боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->

@@ -341,7 +341,6 @@ function startDataSync() {
               setTimeout(() => { try { refundCryptoSimulator(); } catch(e) { console.warn(e); } }, 2500);
               setTimeout(() => { try { runShopMigration(); } catch(e) { console.warn(e); } }, 4000);
               setTimeout(initChatAutoClear, 500);
-              setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
               setTimeout(checkPendingBetsOnStartup, 3000);
               setTimeout(watchPmUnread, 1500);
@@ -503,6 +502,7 @@ const ADMIN_PERMS = [
   { key:'moderation', icon:'🎛️', name:'Модерація',  desc:'Бани, мути, вимкнення ігор, обслуговування' },
   { key:'admins',     icon:'👑', name:'Адміни',     desc:'Призначати адмінів, міняти права, налаштовувати анти-чіт' },
   { key:'feedback',   icon:'📨', name:'Звернення',  desc:'Питання, скарги й пропозиції гравців (є в усіх адмінів і в ролі support)' },
+  { key:'chats',      icon:'💬', name:'Чати',       desc:'Чати підтримки з гравцями (є в усіх адмінів і в ролі support)' },
 ];
 
 function isOwnerUser() {
@@ -513,7 +513,7 @@ function isOwnerUser() {
 // нічого не змінюється (повний доступ), доки власник не обмежить явно.
 function adminCan(perm) {
   if(isOwnerUser()) return true;
-  if(perm === 'feedback') return isSupportUser();
+  if(perm === 'feedback' || perm === 'chats') return isSupportUser();
   if(!isAdminUser()) return false;
   const perms = userData && userData.adminPerms;
   if(!perms || typeof perms !== 'object') return true;
@@ -4582,42 +4582,6 @@ function openHistoryModal() {
         else c.innerHTML="<div style='padding:10px;color:var(--fg-3);'>Порожньо</div>"; 
     }); 
 }
-// openSupportModal() — визначено нижче, єдина версія (стару дублюючу прибрано)
-var _supportPendingMedia = null;
-var _supportPendingIsVideo = false;
-
-function handleSupportMedia(input) {
-  const file = input.files[0]; if(!file) return;
-  const isVideo = file.type.startsWith('video/');
-  const maxSize = isVideo ? 25*1024*1024 : 4*1024*1024;
-  if(file.size > maxSize) return notify(isVideo?'Відео макс 25 МБ':'Фото макс 4 МБ','error');
-  const reader = new FileReader();
-  reader.onload = e => {
-    _supportPendingMedia = e.target.result;
-    _supportPendingIsVideo = isVideo;
-    const prev = document.getElementById('supportMediaPreview');
-    const img = document.getElementById('supportPreviewImg');
-    const vid = document.getElementById('supportPreviewVid');
-    if(prev) prev.style.display = 'block';
-    if(isVideo) {
-      if(img) img.style.display = 'none';
-      if(vid) { vid.src = e.target.result; vid.style.display = 'block'; }
-    } else {
-      if(vid) vid.style.display = 'none';
-      if(img) { img.src = e.target.result; img.style.display = 'block'; }
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearSupportMedia() {
-  _supportPendingMedia = null; _supportPendingIsVideo = false;
-  const prev = document.getElementById('supportMediaPreview');
-  if(prev) prev.style.display = 'none';
-  const inp = document.getElementById('supportFileInput');
-  if(inp) inp.value = '';
-}
-
 window.openUserProfile = function(name) { 
     if(name===currentUser) return switchTab('profile'); 
     db.ref('users/'+name).once('value', s=>{ 
@@ -5540,10 +5504,48 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '121';
+const CURRENT_VERSION = '122';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '122',
+    title: 'Оновлення v122 — нова підтримка, три ігри й більше товарів',
+    date: Date.UTC(2026, 10, 4),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '💬 Нова підтримка',
+        items: [
+          'Чат підтримки переписано з нуля: кнопки швидких тем — «Не прийшов донат», «Забув пароль», «Акаунт заблоковано» та інші',
+          'Бот відповідає одразу за великою базою відповідей і не повторюється, а якщо не впорався — передає розмову живій підтримці',
+          'Кнопка «Покликати людину»: підтримка бачить розмову й відповідає прямо в чат, а вгорі видно статус — бот, чекає, відповіли чи закрито',
+          'У чат можна надіслати скріншот',
+          'Уся стара переписка з підтримкою збереглась',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🎯 Три нові міні-ігри',
+        items: [
+          '«Пенальті»: обери кут воріт і скільки зон закриває воротар — до ×2.91',
+          '«Наперстки»: 3, 4 чи 5 наперстків — до ×4.8',
+          '«Дартс»: влуч у яблучко — ×20',
+        ]
+      },
+      {
+        type: 'new',
+        title: '🪙 Більше товарів у магазині Слотіків',
+        items: [
+          'Нові рамки аватара: «Графіт», «Смарагд», «Сапфір», «Неон», «Відбиток», «Аврора»',
+          'Нові кольори ніку: «Смарагдовий», «Сапфіровий», «Аметист», «Полум’я», «Іній»; таблички «Квиток», «Друкарня», «Обсидіан»',
+          'Вісім нових значків — від «Конюшини» до «Нескінченності»',
+          'Нові бусти (VIP-прогрес ×3, досвід ×3, кешбек ×2 на тиждень, щоденний ×2 на місяць, VIP +2 рівні), великі набори предметів і скриня «Платина»',
+        ]
+      },
+    ]
+  },
   {
     version: '121',
     title: 'Оновлення v121 — новий магазин Слотіків і ігрові картки',
@@ -8787,14 +8789,14 @@ function loadAdminsList() {
       const legacy = !owner && (!perms || typeof perms !== 'object');
       // Показуємо лише видані права — так одразу видно обсяг доступу,
       // а не сіро-зелену мозаїку з усіх дев'яти
-      const granted = legacy || owner ? [] : ADMIN_PERMS.filter(p => p.key !== 'feedback' && perms[p.key] === true);
+      const granted = legacy || owner ? [] : ADMIN_PERMS.filter(p => p.key !== 'feedback' && p.key !== 'chats' && perms[p.key] === true);
       const chips = owner
         ? '<span class="adm-perm-chip on">Повний доступ (власник)</span>'
         : legacy
           ? '<span class="adm-perm-chip legacy">Повний доступ — права не обмежено</span>'
           : granted.length
             ? granted.map(p => `<span class="adm-perm-chip on">${p.icon} ${p.name}</span>`).join('')
-              + (granted.length < ADMIN_PERMS.length - 1 ? `<span class="adm-perm-chip">решта закрита</span>` : '')
+              + (granted.length < ADMIN_PERMS.length - 2 ? `<span class="adm-perm-chip">решта закрита</span>` : '')
             : '<span class="adm-perm-chip off">Доступу немає жодного</span>';
 
       return `<div class="adm-admin-card">
@@ -8807,7 +8809,7 @@ function loadAdminsList() {
         </div>
         <div class="adm-perm-chips">${chips}</div>
         ${owner ? '' : `<div class="adm-perm-toggles" id="admPerms-${escapeHtml(nick)}" style="display:none;">
-          ${ADMIN_PERMS.filter(p => p.key !== 'feedback').map(p => `<label class="adm-perm-row">
+          ${ADMIN_PERMS.filter(p => p.key !== 'feedback' && p.key !== 'chats').map(p => `<label class="adm-perm-row">
             <input type="checkbox" data-admin-nick="${escapeHtml(nick)}" data-perm="${p.key}" ${(!legacy && perms[p.key] === true) ? 'checked' : ''}>
             <span><b>${p.icon} ${p.name}</b><br><span style="color:var(--fg-3);font-size:10px;">${p.desc}</span></span>
           </label>`).join('')}
@@ -9430,7 +9432,7 @@ function switchAdminTab(tab, el) {
   // Адмін без права на цю вкладку не має її відкривати навіть прямим викликом
   if(!adminCan(tab)) { requireAdminPerm(tab); return; }
   // Hide ALL panels cleanly
-  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback','chats'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) { p.style.display = 'none'; }
   });
@@ -9444,15 +9446,15 @@ function switchAdminTab(tab, el) {
   if(tab==='users')   { try{setupAutoWipe();}catch(e) { console.warn(e); } }
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
   if(tab==='bots')    { try{loadBots();}catch(e) { console.warn(e); } }
-  if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
   if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } try{loadLootboxEdgeSetting();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
   if(tab==='admins')  { try{initAdminsPanel();}catch(e){console.error(e);} }
   if(tab==='feedback') { try{loadFeedbackAdmin();}catch(e){console.error(e);} }
+  if(tab==='chats')    { try{initAdminSupportChats();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
   // Force clear all panels first
-  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback','chats'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) p.style.display = 'none';
   });
@@ -9872,72 +9874,6 @@ function deletePromo(code) {
   db.ref('promos/'+code).remove();
   notify('Промокод видалено', 'info');
   loadPromos();
-}
-
-let _supportThreadsListener = null;
-function loadSupportThreads() {
-  const list = document.getElementById('supportThreadsList');
-  if(!list) return;
-  if(_supportThreadsListener) { db.ref('support_chats').off('value', _supportThreadsListener); _supportThreadsListener = null; }
-  _supportThreadsListener = db.ref('support_chats').on('value', snap => {
-    const data = snap.val();
-    if(!data) { list.innerHTML='<div style="color:var(--fg-3);font-size:13px;">Немає чатів</div>'; return; }
-    const threads = Object.entries(data)
-      .map(([user, msgs]) => [user, Object.values(msgs).pop()])
-      .filter(([,lastMsg]) => lastMsg)
-      .sort((a,b) => (b[1].time||0) - (a[1].time||0));
-    list.innerHTML = threads.map(([user, lastMsg]) => {
-      const preview = lastMsg.mediaUrl ? (lastMsg.isVideo ? '🎥 Відео' : '📷 Фото') : (lastMsg.text||'');
-      const isActive = user === admSupportUser;
-      return `<div class="support-thread" style="${isActive?'border-color:var(--accent);':''}" onclick="openAdminSupport(${jsArg(user)})">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <b>${escapeHtml(user)}</b>
-          ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
-        </div>
-        <div style="color:var(--fg-3);font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
-      </div>`;
-    }).join('');
-  });
-}
-
-let admSupportUser = null;
-let _admSupportListener = null;
-let _admSupportListenerUser = null;
-function openAdminSupport(user) {
-  admSupportUser = user;
-  document.getElementById('admSupportTitle').textContent = 'Чат з ' + user;
-  const chat = document.getElementById('admSupportChat');
-  chat.innerHTML = '';
-  if(_admSupportListener) { db.ref('support_chats/'+_admSupportListenerUser).off('child_added', _admSupportListener); _admSupportListener = null; }
-  _admSupportListenerUser = user;
-  _admSupportListener = db.ref('support_chats/'+user).limitToLast(30).on('child_added', snap => {
-    const m = snap.val();
-    const isUser = m.sender === 'user';
-    const timeStr = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
-    const senderLabel = m.sender==='admin' ? '[Підтримка] ' : m.sender==='ai' ? '[AI] ' : '';
-    let mediaHtml = '';
-    if(m.mediaUrl) {
-      mediaHtml = m.isVideo
-        ? `<video src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;" controls muted playsinline></video>`
-        : `<img src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;cursor:pointer;" onclick="window.open(this.src,'_blank','noopener')">`;
-    }
-    const div = document.createElement('div');
-    div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'color-mix(in srgb, var(--primary) 20%, var(--surface-1))':'var(--info)'};border-radius:var(--r-md);width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
-    div.innerHTML = `${m.text ? senderLabel + escapeHtml(m.text) : (senderLabel ? senderLabel : '')}${mediaHtml}<div style="font-size:9px;color:rgb(var(--fg-rgb) / 0.5);margin-top:4px;">${timeStr}</div>`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  });
-  openTabModal('admin-support-modal');
-  setTimeout(() => document.getElementById('admSupportReply')?.focus(), 100);
-}
-
-function sendAdminSupportReply() {
-  const inp = document.getElementById('admSupportReply');
-  const txt = inp.value.trim();
-  if(!txt || !admSupportUser) return;
-  inp.value = '';
-  db.ref('support_chats/'+admSupportUser).push({text:txt, sender:'admin', time:Date.now()});
-  db.ref('users/'+admSupportUser+'/supportUnread').set(firebase.database.ServerValue.increment(1));
 }
 
 // ── ADMIN PANEL INIT (called once per open) ──
@@ -11827,6 +11763,7 @@ function showAdminBypassBanner(gameId) {
 function switchTab(id, el) {
   // Переписка ПМ висить поверх усього (у <body>) — закриваємо при виході
   if(id !== 'pm') try { pmThreadForceClose(); } catch(e) {}
+  try { if(!document.getElementById('support-modal')?.classList.contains('hidden')) closeSupportModal(); } catch(e) {}
   // Kill-switch: якщо гру вимкнено адміном — не пускаємо звичайних гравців
   if(_disabledGamesCache[id]) {
     if(!isAdminUser()) {
@@ -11937,6 +11874,9 @@ function switchTab(id, el) {
   });
   if(id==='themes')       safe(() => renderThemeGrid());
   if(['slots','fortune','mines','crash'].includes(id)) safe(() => renderGameItems(id));
+  if(id==='penalty')      safe(() => initPenalty());
+  if(id==='cups')         safe(() => initCups());
+  if(id==='darts')        safe(() => initDarts());
   if(id==='coinflip')     safe(() => loadCfRooms());
   if(id==='rps')          safe(() => loadRpsRooms());
   if(id==='predict')      safe(() => loadPdRooms());
@@ -16059,596 +15999,386 @@ document.head.appendChild(pvpStyle);
 
 
 // ─── src/app/29-support-chat.js ───
-    // ============================================================
-// ===== AI SUPPORT CHAT =====
 // ============================================================
-let supportChatListener = null;
-let adminOnlineStatus = false;
+// ===== ЧАТ ПІДТРИМКИ (v122) =====
+// Гравець: екран #support-modal — швидкі теми, бот, фото, жива підтримка.
+// Підтримка: вкладка адмінки «Чати» — список розмов зі статусами й відповідь.
+//
+// Повідомлення — support_chats/<нік> (стара історія там же й лишається),
+// стан розмови — support_threads/<нік>. Пише сервер (api/support.js →
+// lib/support.js), бот відповідає там же за shared/support-kb.js. Без сервера
+// (503) — запасний режим: браузер пише сам і бот відповідає тут, за тією ж базою.
+// ============================================================
+const SUP_STATUS_TEXT = {
+  bot: 'Відповідає бот · людину можна покликати кнопкою «Покликати людину»',
+  waiting: 'Чекаємо на підтримку — відповідь прийде сюди',
+  answered: 'Підтримка відповіла',
+  closed: 'Розмову закрито — напиши, щоб відкрити знову',
+};
+const SUP_STATUS_SHORT = { bot: 'Бот', waiting: 'Чекає', answered: 'Відповіли', closed: 'Закрито' };
+const SUP_IMG_MAX_BYTES = 8 * 1024 * 1024;
 
-let _aiSupportInited = false;
-function updateSupportStatusUI() {
-  const statusEl = document.getElementById('supportAdminStatus');
-  if(statusEl) {
-    statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
-    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : 'var(--info)';
+let _supMsgsRef = null, _supMsgsCb = null, _supThreadRef = null, _supThreadCb = null;
+let _supThread = {};
+let _supPendingImg = null;
+let _supSending = false;
+
+function supportApi(action, body) {
+  return serverApi('/api/support', Object.assign({ action }, body || {}));
+}
+
+function supTime(m) { return m.time || m.ts || 0; }
+
+// Одне повідомлення → HTML. Спільне для гравця й підтримки (side: хто «я»).
+function supMessageHtml(m, mine) {
+  const isMe = mine(m);
+  const who = m.sender === 'user' ? (isMe ? 'Ви' : 'Гравець')
+    : m.sender === 'ai' ? 'Бот підтримки'
+    : 'Підтримка' + (m.by ? ' · ' + m.by : '');
+  const media = m.imgUrl || m.mediaUrl;
+  let mediaHtml = '';
+  if(media) {
+    const url = safeUrl(media);
+    mediaHtml = !url ? pmImgPlaceholderHtml()
+      : m.isVideo ? `<video class="pm-img" src="${url}" controls muted playsinline></video>`
+      : `<img class="pm-img" src="${url}" alt="Фото" loading="lazy" onerror="pmImgFailed(this)" onclick="pmOpenImage(this.src)">`;
   }
-  const banner = document.getElementById('supportInfoBanner');
-  if(banner) {
-    banner.innerHTML = adminOnlineStatus
-      ? '💡 Адміністратор зараз онлайн і відповідає особисто.'
-      : '💡 Адмін офлайн — автоматично відповідає AI асистент. Складні питання будуть передані адміну.';
-  }
+  const t = supTime(m);
+  return `<div class="sup-msg${isMe ? ' is-me' : ''} is-${m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'bot' : 'staff'}">
+    <div class="sup-bubble">
+      <div class="sup-who">${escapeHtml(who)}</div>
+      ${mediaHtml}
+      ${m.text ? `<div class="sup-text">${escapeHtml(m.text)}</div>` : ''}
+      ${t ? `<div class="sup-time">${new Date(t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>` : ''}
+    </div>
+  </div>`;
 }
 
-function initAiSupport() {
-  if(_aiSupportInited) return;
-  _aiSupportInited = true;
-  db.ref('online').on('value', snap => {
-    const onlineUsers = snap.val() || {};
-    adminOnlineStatus = Object.keys(onlineUsers).some(u => u.toLowerCase() === 'theivankoo');
-    updateSupportStatusUI();
-  });
-}
-
-function openSupportModal() {
-  openTabModal('support-modal');
-  initAiSupport();
-  initSupportChat();
-  updateSupportStatusUI();
-  if(currentUser) db.ref('users/'+currentUser+'/supportUnread').set(0);
-}
-
-function initSupportChat() {
-  const box = document.getElementById('supportChatBox');
+function supRenderList(box, data, mine) {
   if(!box) return;
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const list = Object.values(data || {}).filter(Boolean).sort((a, b) => supTime(a) - supTime(b));
+  box.innerHTML = list.length ? list.map(m => supMessageHtml(m, mine)).join('')
+    : '<div class="empty-state"><div class="empty-state-title">Повідомлень ще немає</div>Обери тему вгорі або напиши питання.</div>';
+  if(nearBottom || !box.dataset.scrolled) { box.scrollTop = box.scrollHeight; box.dataset.scrolled = '1'; }
+}
 
-  if(!supportChatListener) {
-    supportChatListener = db.ref('support_chats/'+currentUser).limitToLast(50).on('child_added', snap => {
-      const m = snap.val(); if(!m) return;
-      const isMe = m.sender === 'user';
-      const isAI = m.sender === 'ai';
-      const div = document.createElement('div');
-      div.style.cssText = 'margin-bottom:10px;display:flex;flex-direction:'+(isMe?'row-reverse':'row')+';gap:8px;align-items:flex-end;animation:slideUp .2s ease;';
+// ══════════════════════ Гравець ══════════════════════
+function renderSupportTopics() {
+  const el = document.getElementById('supTopics');
+  if(!el) return;
+  el.innerHTML = SUPPORT_TOPICS.filter(t => t.quick).map(t =>
+    `<button type="button" class="chip${t.id === SUPPORT_HUMAN_TOPIC ? ' is-human' : ''}" onclick="sendSupportTopic(${jsArg(t.id)})">${escapeHtml(t.quick)}</button>`).join('');
+}
 
-      const bubble = document.createElement('div');
-      bubble.style.cssText = 'max-width:80%;padding:10px 14px;border-radius:'+(isMe?'16px 16px 4px 16px':'16px 16px 16px 4px')+';'
-        +'background:'+(isMe?'rgba(212,175,55,.15)':isAI?'#0d1a2e':'#1a1a1a')+';'
-        +'color:#fff;font-size:13px;border:1px solid '+(isMe?'rgba(212,175,55,.25)':isAI?'rgba(74,158,255,.2)':'#222')+';';
+function supFitViewport() {
+  const el = document.getElementById('support-modal');
+  const vv = window.visualViewport;
+  if(!el || !vv) return;
+  el.style.setProperty('--sup-vv-h', Math.round(vv.height) + 'px');
+  el.style.setProperty('--sup-vv-top', Math.round(vv.offsetTop) + 'px');
+}
 
-      const name = document.createElement('div');
-      name.style.cssText = 'font-size:9px;margin-bottom:4px;color:'+(isAI?'#4a90e2':'#777')+';font-weight:bold;';
-      name.textContent = isMe ? 'Ви' : isAI ? '🤖 AI Підтримка' : '👨‍💼 Адміністратор';
-      bubble.appendChild(name);
-
-      if(m.text) {
-        const textNode = document.createElement('div');
-        textNode.style.cssText = 'line-height:1.4;word-break:break-word;white-space:pre-wrap;';
-        textNode.textContent = m.text;
-        bubble.appendChild(textNode);
-      }
-
-      if(m.mediaUrl) {
-        if(m.isVideo) {
-          const vid = document.createElement('video');
-          vid.src = m.mediaUrl;
-          vid.style.cssText = 'max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:6px;cursor:pointer;';
-          vid.controls = true; vid.muted = true; vid.playsInline = true;
-          vid.onclick = () => { vid.requestFullscreen && vid.requestFullscreen(); };
-          bubble.appendChild(vid);
-        } else {
-          const img = document.createElement('img');
-          img.src = m.mediaUrl;
-          img.style.cssText = 'max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:6px;cursor:pointer;';
-          img.onclick = () => window.open(m.mediaUrl, '_blank');
-          bubble.appendChild(img);
-        }
-      }
-
-      const time = document.createElement('div');
-      time.style.cssText = 'font-size:9px;color:var(--fg-4);margin-top:4px;text-align:'+(isMe?'right':'left')+';';
-      time.textContent = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
-      bubble.appendChild(time);
-
-      div.appendChild(bubble);
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
+async function openSupportModal() {
+  if(!currentUser || !db) return notify('Увійди, щоб написати в підтримку', 'error');
+  const el = document.getElementById('support-modal');
+  if(!el) return;
+  if(el.parentElement !== document.body) document.body.appendChild(el);
+  el.classList.remove('hidden');
+  document.body.classList.add('pm-thread-open');
+  if(window.visualViewport) {
+    window.visualViewport.addEventListener('resize', supFitViewport);
+    window.visualViewport.addEventListener('scroll', supFitViewport);
+  }
+  supFitViewport();
+  renderSupportTopics();
+  const box = document.getElementById('supportChatBox');
+  if(box) delete box.dataset.scrolled;
+  if(!_supMsgsRef) {
+    _supMsgsRef = db.ref('support_chats/' + currentUser).limitToLast(100);
+    _supMsgsCb = _supMsgsRef.on('value', snap => supRenderList(document.getElementById('supportChatBox'), snap.val(), m => m.sender === 'user'));
+    _supThreadRef = db.ref('support_threads/' + currentUser);
+    _supThreadCb = _supThreadRef.on('value', snap => {
+      _supThread = snap.val() || {};
+      const st = document.getElementById('supStatus');
+      if(st) { st.textContent = SUP_STATUS_TEXT[_supThread.status || 'bot']; st.dataset.status = _supThread.status || 'bot'; }
     });
   }
-
-  // Привітання при першому відкритті (якщо історія порожня)
-  db.ref('support_chats/'+currentUser).limitToLast(1).once('value', snap => {
-    if(!snap.exists()) {
-      db.ref('support_chats/'+currentUser).push({
-        text: 'Привіт! 👋 Я AI-асистент SlotOK. Запитай про донат, VIP, бонуси чи будь-яку гру — відповім одразу. Для складних питань покличу адміністратора.',
-        sender: 'ai', time: Date.now()
-      });
-    }
-  });
-
-  const statusEl = document.getElementById('supportAdminStatus');
-  if(statusEl) {
-    statusEl.textContent = adminOnlineStatus ? '🟢 Адмін онлайн' : '🤖 AI Підтримка активна';
-    statusEl.style.color = adminOnlineStatus ? 'var(--green)' : 'var(--info)';
-  }
+  const srv = await supportApi('open');
+  if(srv.mode === 'legacy') await supLegacyGreeting();
+  supMarkRead();
 }
 
-function sendSupportMsg() {
-  const inp = document.getElementById('supportMsg');
-  const t = inp ? inp.value.trim() : '';
-  if(!t && !_supportPendingMedia) return;
-  const msg = { sender: 'user', time: Date.now() };
-  if(t) msg.text = t;
-  if(_supportPendingMedia) {
-    msg.mediaUrl = _supportPendingMedia;
-    if(_supportPendingIsVideo) msg.isVideo = true;
+function closeSupportModal() {
+  const el = document.getElementById('support-modal');
+  if(el) el.classList.add('hidden');
+  document.body.classList.remove('pm-thread-open');
+  if(window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', supFitViewport);
+    window.visualViewport.removeEventListener('scroll', supFitViewport);
   }
+  supMarkRead();
+}
+
+function supMarkRead() {
+  if(!currentUser) return;
+  supportApi('read').then(srv => {
+    if(srv.mode === 'legacy') db.ref('users/' + currentUser + '/supportUnread').set(0);
+  });
+}
+
+async function handleSupportMedia(input) {
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(file.size > SUP_IMG_MAX_BYTES) { input.value = ''; return notify('Фото до 8 МБ', 'error'); }
+  try { _supPendingImg = await compressImageFile(file, { maxSide: 1280, quality: 0.78 }); }
+  catch(e) { input.value = ''; return notify(e.message || 'Не вдалося відкрити фото', 'error'); }
+  const prev = document.getElementById('supPreview');
+  const img = document.getElementById('supPreviewImg');
+  if(img) img.src = _supPendingImg;
+  if(prev) prev.classList.remove('hidden');
+}
+
+function clearSupportMedia() {
+  _supPendingImg = null;
+  const prev = document.getElementById('supPreview');
+  if(prev) prev.classList.add('hidden');
+  const inp = document.getElementById('supportFileInput');
   if(inp) inp.value = '';
-  clearSupportMedia();
-  db.ref('support_chats/'+currentUser).push(msg).then(ref => {
-    notifyBot('support', ref.key, { user: currentUser });
-  });
-  // Якщо адмін офлайн — відповідає AI (тільки на текстові повідомлення)
-  if(!adminOnlineStatus && t) {
-    setTimeout(() => aiSupportReply(t), 900 + Math.random()*900);
-  } else if(adminOnlineStatus) {
-    notify('✉️ Повідомлення надіслано адміністратору', 'info');
-  }
 }
 
-// ── FAQ-бот на ключових словах — працює миттєво, без зовнішніх API ──
-// reply може бути рядком або масивом варіантів (тоді береться випадковий,
-// щоб відповіді не звучали однаково у різних розмовах).
-const SUPPORT_FAQ = [
-  { keys: ['поповн','депозит','закинут','внест','вклад','поповнити','донат'],
-    reply: [
-      '💳 Донат: перейди в Гаманець → Донат, обери суму й спосіб (Monobank або Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
-      '💳 Щоб задонатити: Гаманець → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
-    ] },
-  { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
-    reply: [
-      '🎮 SlotOK — ігрова платформа: баланс віртуальний, і вивід коштів на картку не передбачений. Грай на здоров’я!',
-      '🎮 Виводу грошей на сайті немає — увесь баланс ігровий і використовується тільки всередині платформи.'
-    ] },
-  { keys: ['vip','віп','рівен','статус гравц'],
-    reply: [
-      '👑 VIP програма: рівень залежить від суми твоїх ставок (Iron → Bronze → Silver → Gold → Platinum → Diamond → Master → Supreme). Вищий рівень = більший кешбек і множник на щоденний бонус. Деталі в Профіль → VIP Статус.',
-      '👑 Твій VIP-рівень росте автоматично разом із загальною сумою ставок (wager). Кожен новий рівень дає більший кешбек та бонусні множники. Перевірити прогрес можна в Профіль → VIP Статус.'
-    ] },
-  { keys: ['бонус','фріспін','подарун','промокод','промо код'],
-    reply: [
-      '🎁 Бонуси: щоденний бонус росте кожен день серії (до 7 днів), є ще погодинний бонус і бонус за реєстрацію. Всі активні бонуси — в розділі «Ще» → Бонуси та Магазин.',
-      '🎁 На сайті кілька видів бонусів: щоденний (росте до 7 днів серії), погодинний і бонус за реєстрацію. Всі зараз доступні тобі — в «Ще» → Бонуси та Магазин.'
-    ] },
-  { keys: ['вейджер','відіграт','wager','умови бонус','відіграш'],
-    reply: '🔄 Відіграш (вейджер): бонусні кошти потрібно прокрутити у грі перш ніж вивести — умови показані прямо при отриманні бонусу. Загальна сума всіх твоїх ставок також впливає на VIP-рівень.' },
-  { keys: ['забув пароль','забула пароль','втратив пароль','не пам\'ятаю пароль','скинь пароль','скинути пароль','відновити пароль','відновлення пароля'],
-    reply: [
-      '🔑 Відновлення пароля: на екрані входу натисни «Забули пароль?» — там можна відповісти на контрольне питання (якщо задавав при реєстрації) або подати заявку через Telegram-бота, і адміністратор скине пароль вручну.',
-      '🔑 Забув пароль? На екрані входу є кнопка «Забули пароль?» — відповідай на контрольне питання або подавай заявку через Telegram-бота, і адмін скине пароль вручну.'
-    ] },
-  { keys: ['змінити нік','поміняти нік','змінити ім\'я','нікнейм змінити'],
-    reply: [
-      '✏️ Змінити нікнейм самостійно не можна — це робить лише адміністратор вручну. Напиши сюди свій поточний нік і бажаний новий, я передам заявку.',
-      '✏️ Нікнейм змінює лише адміністратор вручну, самому це зробити не можна. Напиши поточний і бажаний новий нік — передам заявку.'
-    ] },
-  { keys: ['видалити акаунт','видалення акаунта','закрити акаунт','видали мій акаунт'],
-    reply: [
-      '🗑️ Видалення акаунта: опиши причину і підтверди свій нікнейм — передам заявку адміністратору. Врахуй, що дію не можна скасувати, а баланс перед видаленням варто вивести.',
-      '🗑️ Щоб видалити акаунт, опиши причину й підтверди свій нік — я передам заявку адміну. Дія незворотна, тож спершу виведи баланс.'
-    ] },
-  { keys: ['пароль','акаунт','логін','увійт','зареєстр','не можу зайти','не заходить'],
-    reply: [
-      '🔑 З акаунтом: пароль можна змінити в Налаштування → Змінити пароль. Забув пароль — на екрані входу є кнопка «Забули пароль?». Проблеми зі входом — перевір правильність ніку (регістр не важливий) і опиши детальніше, покличу адміна.',
-      '🔑 Пароль міняється в Налаштування → Змінити пароль. Не заходить в акаунт? Перевір правильність ніку (регістр не грає ролі) і опиши, що саме відбувається — покличу адміна.'
-    ] },
-  { keys: ['два акаунт','кілька акаунт','мультиакаунт','другий акаунт','подвійн акаунт'],
-    reply: '⚠️ Правила дозволяють лише один акаунт на гравця. Кілька акаунтів (мультиакаунтинг) можуть призвести до блокування всіх пов’язаних профілів. Якщо потрібно щось уточнити — опиши ситуацію, передам адміну.' },
-  { keys: ['заблокован','забанен','бан ','мене забанили','розблокуй'],
-    reply: [
-      '🚫 Заблокований акаунт: опиши, будь ласка, свій нікнейм і що сталось — передам адміністратору на перевірку. Самостійно розблокувати акаунт я не можу.',
-      '🚫 Акаунт заблоковано? Опиши свій нік і обставини — передам адміну на перевірку. Сам розблокувати я, на жаль, не можу.'
-    ] },
-  { keys: ['оскарж','апеляц','несправедлив бан','незаслужен бан'],
-    reply: '⚖️ Оскарження блокування: опиши детально свій нікнейм, дату і причину, яку тобі, можливо, вказали — передам все адміністратору для повторного розгляду.' },
-  { keys: ['слот','крутит','барабан'],
-    reply: [
-      '🎰 Слоти: онлайн в розділі Казино → Слоти. Є безкоштовні спіни (нараховуються при реєстрації й іноді в бонусах) і бонусний раунд на комбінації 🎰🎰🎰.',
-      '🎰 Слоти шукай у Казино → Слоти. За реєстрацію й деякі бонуси дають безкоштовні спіни, а комбінація 🎰🎰🎰 запускає бонусний раунд.'
-    ] },
-  { keys: ['краш','crash'],
-    reply: [
-      '🚀 Краш: став ставку, множник росте — забери виграш до того як «крашнеться». Є Provably Fair перевірка чесності результату прямо в грі.',
-      '🚀 У Краші множник постійно росте після ставки — головне встигнути забрати виграш до краху. Чесність кожного раунду можна перевірити прямо в грі (Provably Fair).'
-    ] },
-  { keys: ['блекджек','blackjack','21'],
-    reply: [
-      '🃏 Блекджек: класичні правила, дилер добирає до 17+. Доступні Double, Split (на парах) і Страховка (коли у дилера туз). Split тепер повністю працює — обидві руки розігруються послідовно.',
-      '🃏 Блекджек за класичними правилами (дилер добирає до 17+), доступні Double, Split на парах і Страховка проти тузу дилера.'
-    ] },
-  { keys: ['рулетк рос','russian roulette','рулетк на вибуван','рулетк на кулю'],
-    reply: [
-      '🔫 Russian Roulette: обери скільки набоїв у барабані — чим більше, тим вищий ризик і виплата. Крутиш барабан і натискаєш «Вистрілити», поки не вирішиш забрати виграш.',
-      '🔫 У Russian Roulette сам обираєш кількість набоїв — більше набоїв означає більший ризик і більшу виплату. Стріляй, поки не вирішиш зупинитись і забрати виграш.'
-    ] },
-  { keys: ['рулетк','roulette'],
-    reply: [
-      '🎡 Рулетка: став на колір, число чи сектор — колесо крутиться в реальному часі. Правила й коефіцієнти виплат — прямо на екрані гри.',
-      '🎡 У рулетці ставиш на колір, число або сектор, і дивишся, як колесо крутиться наживо. Всі коефіцієнти показані прямо на екрані гри.'
-    ] },
-  { keys: ['кості','дайс','dice','кубик'],
-    reply: [
-      '🎲 Dice: обери діапазон і напрямок (більше/менше), рушій Provably Fair — можна перевірити чесність кожного результату.',
-      '🎲 У Dice обираєш діапазон і напрямок (більше/менше) — результат генерується Provably Fair, чесність можна перевірити самостійно.'
-    ] },
-  { keys: ['шахи','chess'],
-    reply: [
-      '♟️ Шахи: грай проти AI (3 рівні складності) або проти живого гравця (PvP з реальною ставкою) — обидва режими в розділі Казино → Шахи.',
-      '♟️ Шахи доступні проти AI (3 рівні складності) або проти живого суперника на реальну ставку — обидва режими в Казино → Шахи.'
-    ] },
-  { keys: ['спорт','ставк на матч','футбол ставк','баскетбол ставк','sportbet','sport betting','лайв ставк'],
-    reply: [
-      '⚽ Спортивні ставки: розділ Казино → Спортбетинг — реальні матчі (футбол, баскетбол та інші) з live-коефіцієнтами. Постав на переможця/нічию, стеж за рахунком прямо на екрані, виплата — автоматично після завершення матчу.',
-      '⚽ Спортбетинг у Казино → Спортбетинг: реальні матчі з live-коефіцієнтами, ставиш на переможця чи нічию, а виплата приходить автоматично після фінального свистка.'
-    ] },
-  { keys: ['монополі','monopoly'],
-    reply: [
-      '🎩 Монополія: постав ставку (від 100₴) і грай проти AI на класичному ігровому полі — купуй вулиці, будуй будинки, розоряй суперника. Виграш залежить від того, хто збанкрутує першим.',
-      '🎩 У Монополії граєш проти AI на класичному полі: купуй вулиці, будуй будинки й розоряй суперника — хто перший збанкрутує, той програв.'
-    ] },
-  { keys: ['дурень','карти дурень','гра в дурня','war карти'],
-    reply: [
-      '🃏 Дурень: класична карткова гра проти AI (або іншого гравця) — постав ставку, козир визначається автоматично. Хто перший скидає всі карти, той забирає банк.',
-      '🃏 У Дурня граєш проти AI чи іншого гравця, козир визначається автоматично — перший, хто скидає всі карти, забирає банк.'
-    ] },
-  { keys: ['tower climb','tower','вежа','підйом по вежі'],
-    reply: [
-      '🗼 Tower Climb: постав ставку і піднімайся поверх за поверхом, обираючи безпечну клітинку — кожен рівень збільшує множник. Забирай виграш у будь-який момент або йди далі на свій ризик.',
-      '🗼 У Tower Climb піднімаєшся поверх за поверхом, вибираючи безпечну клітинку — кожен рівень підвищує множник. Забрати виграш можна в будь-яку мить.'
-    ] },
-  { keys: ['hi-lo','hilo','більше менше карт','вище нижче карт'],
-    reply: [
-      '🃏 Hi-Lo: постав ставку, вгадуй чи наступна карта буде вищою чи нижчою за поточну — кожна правильна відповідь підвищує множник у x1.5. Забирай накопичене у будь-який момент.',
-      '🃏 У Hi-Lo вгадуєш, чи наступна карта буде вищою чи нижчою за поточну — кожна вірна відповідь дає x1.5 до множника.'
-    ] },
-  { keys: ['sic bo','сік бо','три кубики'],
-    reply: [
-      '🎲 Sic Bo: кидаються три кубики — став на «Велике/Мале», конкретну суму або трипл (усі три однакові = x24). Класична азійська гра, миттєвий результат.',
-      '🎲 У Sic Bo кидаються три кубики: ставиш на «Велике/Мале», конкретну суму чи трипл (x24 за три однакові) — результат миттєвий.'
-    ] },
-  { keys: ['card war','карти війна','війна карт'],
-    reply: [
-      '⚔️ Card War: твоя карта проти карти дилера — вища виграє x2, нічия повертає ставку. Просто, швидко, без зайвих правил.',
-      '⚔️ Card War максимально просто: твоя карта проти карти дилера, вища виграє x2, нічия — повернення ставки.'
-    ] },
-  { keys: ['balloon','кульк','лопнути кульку'],
-    reply: [
-      '🎈 Balloon Pop: постав ставку і чекай — множник росте з кожною секундою, але кулька може лопнути будь-якої миті. Встигни забрати виграш до вибуху!',
-      '🎈 У Balloon Pop множник росте щосекунди, поки кулька не лопне будь-якої миті — головне встигнути забрати виграш вчасно.'
-    ] },
-  { keys: ['horse racing','скачки','перегони коней','кінні перегони'],
-    reply: [
-      '🏇 Horse Racing: обери коня з 4 і постав на нього — переможець визначається шансами кожного коня (до x8). Дивись перегони в реальному часі прямо на екрані.',
-      '🏇 У Horse Racing обираєш одного з 4 коней і дивишся перегони наживо — виплата залежить від шансів обраного коня (до x8).'
-    ] },
-  { keys: ['color bet','кольорова ставк','ставка на колір'],
-    reply: [
-      '🎨 Color Bet: постав на червоний, білий чи зелений — колесо крутиться і показує результат. Червоний/зелений — x2, білий (рідкісний) — x14.',
-      '🎨 У Color Bet ставиш на червоний, білий чи зелений — червоний/зелений дають x2, а рідкісний білий сектор аж x14.'
-    ] },
-  { keys: ['кено','keno'],
-    reply: [
-      '🔢 Keno: обери від 1 до 10 чисел з 40, натисни «Грати» — тягнеться 20 випадкових чисел, виплата залежить від кількості влучань і скільки чисел ти обрав.',
-      '🔢 У Keno обираєш до 10 чисел з 40 — тягнеться 20 випадкових, і чим більше влучань відносно обраної кількості, тим вища виплата.'
-    ] },
-  { keys: ['скретч','scratch','скретч-картк'],
-    reply: [
-      '🎟️ Скретч-картки: купи картку і стирай клітинки — три однакові символи дають виграш (💎 x20, 💰 x5, ⭐ x3).',
-      '🎟️ Скретч-картка проста: купи й стирай клітинки — три однакові символи одразу дають виграш (найкращий — 💎 з x20).'
-    ] },
-  { keys: ['бакара','baccarat'],
-    reply: [
-      '🃏 Бакара: класична гра Гравець проти Банкіра — постав на те, хто набере ближче до 9 (або на нічию, x8). Карти роздаються автоматично за стандартними правилами.',
-      '🃏 У Бакарі ставиш на Гравця, Банкіра чи нічию (x8) — хто набере карт ближче до 9, той переміг, роздача повністю автоматична.'
-    ] },
-  { keys: ['double гра','double game','дабл гра'],
-    reply: [
-      '🎰 Double: постав на колір і крути — просте й швидке колесо з двома основними кольорами та рідкісним джекпотним сектором.',
-      '🎰 Double — швидка гра: ставиш на колір і крутиш колесо з двома основними кольорами й рідкісним джекпотним сектором.'
-    ] },
-  { keys: ['dragon tower','дракон тавер','вежа дракона'],
-    reply: [
-      '🐉 Dragon Tower: постав ставку, обери складність (кількість колонок/драконів) і піднімайся рівень за рівнем, обираючи безпечне яйце. Дракон — програш, кешаут у будь-який момент — забираєш накопичене.',
-      '🐉 У Dragon Tower обираєш складність і піднімаєшся рівень за рівнем, вибираючи безпечне яйце — натрапив на дракона, програв, а кешаут можна зробити будь-коли.'
-    ] },
-  { keys: ['battle pass','баттлпас','бойовий пропуск','боевой пропуск'],
-    reply: [
-      '🎫 Battle Pass: сезонна система нагород — заробляєш XP граючи в будь-які ігри, піднімаєш рівні й відкриваєш нагороди. VIP Battle Pass дає більше й швидше. Розділ «Ще» → Battle Pass.',
-      '🎫 Battle Pass — сезонна прогресія: граєш у будь-що, заробляєш XP, піднімаєш рівні й відкриваєш нагороди. VIP-версія дає більше. Шукай у «Ще» → Battle Pass.'
-    ] },
-  { keys: ['досягнен','ачівк','achievement'],
-    reply: [
-      '🏆 Досягнення: розділ «Ще» → Досягнення — 50+ завдань за різні дії в іграх (перший виграш, джекпот, серії перемог тощо), кожне дає XP.',
-      '🏆 У «Ще» → Досягнення чекає понад 50 завдань за різні ігрові дії (перший виграш, джекпот, серії перемог) — кожне дає XP.'
-    ] },
-  { keys: ['топ гравц','рейтинг гравц','leaderboard','лідерборд'],
-    reply: [
-      '📊 Рейтинг гравців: розділ «Ще» → Рейтинг — топи за ставками, виграшами й активністю за різні періоди. Найкращі місця дають додаткові нагороди.',
-      '📊 Рейтинг гравців («Ще» → Рейтинг) показує топи за ставками, виграшами й активністю — найкращі місця дають додаткові нагороди.'
-    ] },
-  { keys: ['мут','замучен','забанили в чаті','правила чату','спам чат'],
-    reply: '💬 Правила чату: без спаму, реклами, образ і читерських порад. За порушення — тимчасовий мут. Якщо вважаєш мут помилковим, опиши ситуацію — передам адміну на перевірку.' },
-  { keys: ['гроші списались а не зарахувал','платіж завис','оплата пройшла а грошей нема','гроші не прийшли'],
-    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на донат обробляються до 24 год — бонус зарахують після перевірки платежу. Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
-  { keys: ['баланс не оновлюється','не бачу баланс','баланс завис','вилетіло з гри'],
-    reply: '🔄 Якщо баланс не оновлюється або гру "вибило" — спробуй оновити сторінку (стан гри й баланс зберігаються на сервері, нічого не втрачається). Якщо після оновлення проблема лишається, опиши деталі — передам адміну.' },
-  { keys: ['мінер','mines','сапер'],
-    reply: [
-      '💣 Mines: обери кількість мін на полі 5×5 і відкривай клітинки — множник росте з кожною безпечною клітинкою. Забирай виграш у будь-який момент до того, як натрапиш на міну.',
-      '💣 У Mines обираєш кількість мін на полі 5×5 і відкриваєш клітинки — кожна безпечна піднімає множник, а забрати виграш можна будь-коли до вибуху.'
-    ] },
-  { keys: ['лімбо','limbo'],
-    reply: [
-      '🌀 Limbo: задай цільовий множник, натисни «Грати» — якщо випаде число вище твого множника, ти виграв. Чим вищий обраний множник, тим менші шанси, але й більша виплата.',
-      '🌀 У Limbo сам задаєш цільовий множник — вищий множник означає менші шанси, зате й більшу виплату при виграші.'
-    ] },
-  { keys: ['плінко','plinko'],
-    reply: [
-      '🔻 Plinko: постав ставку, обери рівень ризику (низький/середній/високий) і кинь кульку — вона впаде в один із коефіцієнтних кошиків внизу поля.',
-      '🔻 У Plinko обираєш рівень ризику й кидаєш кульку — куди вона впаде серед коефіцієнтних кошиків внизу, залежить від випадку.'
-    ] },
-  { keys: ['покер','poker','відеопокер','video poker'],
-    reply: [
-      '🃏 Video Poker: постав ставку, тобі роздають 5 карт — обери які лишити, а які замінити, і натисни «Замінити». Виплата залежить від фінальної комбінації (від пари J і вище).',
-      '🃏 У Video Poker отримуєш 5 карт, обираєш які замінити — виплата залежить від фінальної комбінації, починаючи від пари J.'
-    ] },
-  { keys: ['колесо фортун','wheel of fortune','fortune wheel'],
-    reply: [
-      '🎡 Колесо Фортуни: постав ставку і крути колесо — сектори дають різні множники, є й рідкісний джекпотний сектор x50.',
-      '🎡 Колесо Фортуни просте: крутиш і дивишся, який сектор випаде — більшість дають звичайні множники, але є й рідкісний джекпотний x50.'
-    ] },
-  { keys: ['coinflip','монетк','орел чи решк','орел решка'],
-    reply: [
-      '🪙 Coinflip: створи гру зі своєю ставкою (орел/решка) і чекай суперника, або приєднайся до чужої гри. Переможець забирає весь банк мінус 5% комісії.',
-      '🪙 У Coinflip створюєш гру зі своєю ставкою (орел/решка) або приєднуєшся до чужої — переможець забирає банк мінус 5% комісії.'
-    ] },
-  { keys: ['камінь-ножиц','камінь ножиц','rock paper scissors','rps'],
-    reply: [
-      '✂️ Камінь-Ножиці-Папір (PvP): постав ставку, обери свій хід і чекай суперника — переможець отримує банк за вирахуванням 5% комісії.',
-      '✂️ У PvP Камінь-Ножиці-Папір ставиш, обираєш хід і чекаєш суперника — переможець забирає банк мінус 5% комісії.'
-    ] },
-  { keys: ['prediction duel','предикшн','вгадай число','передбач'],
-    reply: [
-      '🔮 Prediction Duel: обидва гравці ставлять на число — хто вгадає ближче до випадкового результату, той забирає банк (мінус 5% комісії).',
-      '🔮 У Prediction Duel обидва гравці називають число — хто ближче до випадкового результату, той і забирає банк (мінус 5% комісії).'
-    ] },
-  { keys: ['вікторин','quiz','питання за гроші'],
-    reply: [
-      '🧠 Quiz Battle: постав ставку і відповідай на 10 питань — за кожну правильну відповідь ставка росте (+12%), помилка чи вихід забирає накопичене на момент зупинки.',
-      '🧠 У Quiz Battle відповідаєш на 10 питань — кожна правильна відповідь додає +12% до ставки, а помилка забирає накопичене на той момент.'
-    ] },
-  { keys: ['дуел','duel'],
-    reply: [
-      '🤺 Дуелі: викликай іншого гравця на ставку в грі за твоїм вибором — переможець забирає банк. Знайти суперників можна там, де відкрита відповідна гра з PvP-режимом.',
-      '🤺 Дуель — виклик іншого гравця на ставку в обраній тобою грі, переможець забирає весь банк. Шукай суперників у будь-якій грі з PvP-режимом.'
-    ] },
-  { keys: ['лутбокс','лут-бокс','lootbox','кейс відкри','кейс'],
-    reply: [
-      '📦 Лут-Бокси: розділ «Ще» → Лут-Бокси — купуй кейси й відкривай їх на випадкові призи (баланс, Слотіки, скіни). Ймовірності випадання вказані на кожному кейсі.',
-      '📦 Лут-Бокси («Ще» → Лут-Бокси) — купуєш кейс, відкриваєш і отримуєш випадковий приз (баланс, Слотіки, скін). Шанси випадання завжди вказані на кейсі.'
-    ] },
-  { keys: ['кешбек','cashback'],
-    reply: [
-      '💰 Кешбек: частина програного в іграх повертається автоматично, відсоток залежить від твого рівня. Забрати накопичений кешбек можна в Гаманець → Кешбек.',
-      '💰 Кешбек нараховується автоматично з частини програного в іграх — відсоток залежить від твого рівня, забрати накопичене можна в Гаманець → Кешбек.'
-    ] },
-  { keys: ['квест','завдан','daily quest','щоденне завдання'],
-    reply: [
-      '📋 Завдання (квести): розділ «Ще» → Завдання — щоденні й тижневі цілі (зіграти N ігор, поставити суму тощо) за нагороди у балансі та Слотіках.',
-      '📋 Квести («Ще» → Завдання) — щоденні й тижневі цілі на кшталт «зіграй N ігор» за нагороди в балансі й Слотіках.'
-    ] },
-  { keys: ['турнір','tournament'],
-    reply: [
-      '🏆 Турніри: розділ «Ще» → Турніри — змагайся за місце в рейтингу за визначений період, топ гравці отримують призи з призового фонду.',
-      '🏆 У турнірах («Ще» → Турніри) змагаєшся за місце в рейтингу за певний період — найкращі забирають частку призового фонду.'
-    ] },
-  { keys: ['слотік','монетка сайту','ігрова валюта'],
-    reply: [
-      '🪙 Слотіки — внутрішня валюта сайту: заробляються за квести, лут-бокси, досягнення. Витратити їх можна в Магазині («Ще» → Магазин) на скіни, бонуси й інші плюшки.',
-      '🪙 Слотіки — внутрішня валюта: заробляєш їх за квести, лут-бокси й досягнення, а витрачаєш у Магазині («Ще» → Магазин) на скіни й бонуси.'
-    ] },
-  { keys: ['клан','clan'],
-    reply: [
-      '🛡️ Клани: створити (500₴) або вступити — розділ «Ще» → Клани. Є спільний банк, тижневі завдання й клановий чат.',
-      '🛡️ Клан можна створити за 500₴ або вступити в чужий («Ще» → Клани) — усередині спільний банк, тижневі завдання й окремий чат.'
-    ] },
-  { keys: ['рефера','запрос','партнер'],
-    reply: [
-      '🤝 Реферальна програма: своє посилання знайдеш в «Ще» → Реферали. Отримуєш 1% з кожної ставки запрошеного гравця довічно.',
-      '🤝 Реферальне посилання шукай у «Ще» → Реферали — з кожної ставки запрошеного тобою гравця ти отримуєш 1% довічно.'
-    ] },
-  { keys: ['баг','глюк','не працю','зависа','помилк','лаг','зламал'],
-    reply: [
-      '🐞 Дякую що повідомив про проблему! Опиши детальніше що саме сталось (яка гра/екран, що очікував побачити) — передам адміністратору для перевірки.',
-      '🐞 Зрозумів, схоже на технічний збій. Напиши, будь ласка, в якій грі/розділі це сталось і що саме пішло не так (скріншот теж підійде) — передам адміну на перевірку.'
-    ] },
-  { keys: ['сайт не відкрива','сайт не заванта','не завантажується','білий екран','зависло назавжди'],
-    reply: '🌐 Якщо сайт не відкривається: спробуй оновити сторінку (або перезапустити застосунок), перевір інтернет-з’єднання й, за можливості, інший браузер. Якщо не допомогло — опиши, на якому пристрої й що саме бачиш.' },
-  { keys: ['комісі','відсоток каз','edge'],
-    reply: '📊 Комісія казино закладена в коефіцієнти кожної гри (зазвичай 3-8%, вказано в правилах гри). PvP ігри (Coinflip, RPS, Predict) мають фіксовану комісію 5% з виграшу.' },
-  { keys: ['provably fair','чесність','чесна гра','рандом чесний','накрутка','обман','шахрайств'],
-    reply: '🔒 Всі результати генеруються Provably Fair алгоритмом — випадковість перевіряється незалежно, накрутити чи вплинути на результат неможливо ні гравцям, ні адміністрації. У грі є кнопка перевірки чесності конкретного раунду.' },
-  { keys: ['карт','skin','скін'],
-    reply: [
-      '🎨 Картка: у Гаманець → Картка її можна перевернути (натисни), скопіювати номер і обрати скін — їх понад сотню.',
-      '🎨 Картку знайдеш у Гаманець → Картка — натисни, щоб перевернути й скопіювати номер, а скінів для неї понад сотню.'
-    ] },
-  { keys: ['скарг','пропозиц','ідея','ідею','звернен','поскарж'],
-    reply: '📨 Скаргу чи пропозицію краще оформити як звернення — кнопка «Оформити звернення» вгорі цього чату. Підтримка відповість у ПМ, а статус буде видно в «Мої звернення».' },
-  { keys: ['правил','13+','18+','вік','вікові обмеж'],
-    reply: '📜 Правила: SlotOK доступний з ' + MIN_AGE + ' років, вік перевіряється за датою народження при реєстрації. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
-  { keys: ['телеграм бот','telegram бот','прив\'язати телеграм','підключити телеграм','бот повідомлення'],
-    reply: '📲 Telegram-бот: прив’яжи акаунт у Профіль → Сповіщення, щоб отримувати миттєві повідомлення про донат та відповіді підтримки прямо в Telegram.' },
-  { keys: ['встановити застосунок','встановити додаток','pwa','install app','іконка на екран'],
-    reply: '📱 Встановити застосунок: у більшості браузерів з’явиться кнопка «Встановити» або пункт «Додати на головний екран» у меню браузера — після цього сайт відкриватиметься як окремий додаток.' },
-  { keys: ['сповіщен','notification','пуш','повідомлення не приход'],
-    reply: [
-      '🔔 Сповіщення: керувати ними можна в Профіль → Налаштування → Сповіщення. Якщо push-повідомлення не приходять, перевір дозволи браузера/застосунку на сповіщення.',
-      '🔔 Налаштувати сповіщення можна в Профіль → Налаштування → Сповіщення — а якщо push не приходять, перевір дозволи браузера чи застосунку.'
-    ] },
-  { keys: ['валют','гривн','долар','₴ це що'],
-    reply: '💱 Валюта сайту — гривня (₴). Усі баланси, ставки й виплати відображаються саме в гривні.' },
-  { keys: ['мінімальн ставк','мінімум ставк','мінімальна сума гри'],
-    reply: [
-      '🎯 Мінімальна ставка в більшості ігор — від 1₴ до 10₴ залежно від гри, максимальна — залежить від твого поточного балансу й ліміту гри.',
-      '🎯 Мінімальні ставки зазвичай 1-10₴ залежно від гри, а максимум обмежений твоїм балансом і лімітом конкретної гри.'
-    ] },
-  { keys: ['графік роботи','час роботи підтримк','коли відповіда адмін','робочі години'],
-    reply: '🕒 AI-підтримка працює цілодобово й відповідає миттєво. Адміністратор онлайн не завжди, але кожне повідомлення, яке AI не зміг вирішити, передається йому і він відповідає, щойно з’являється.' },
-  { keys: ['людин','оператор','живу людину','справжн','адміністратор','з адміном','покличт','з людиною'],
-    reply: '👨‍💼 Звʼязатись з адміністратором: якщо він зараз онлайн — повідомлення підуть напряму йому. Якщо офлайн — просто опиши питання, воно передасться адміну і він відповість тут, щойно зможе.' },
-  { keys: ['привіт','вітаю','добрий день','доброго дня','здоров'],
-    reply: [
-      '👋 Привіт! Питай про донат, бонуси, VIP чи будь-яку гру — відповім одразу.',
-      '👋 Вітаю в SlotOK! Чим можу допомогти — донат, бонуси, ігри чи щось інше?',
-      '😊 Привіт-привіт! Пиши своє питання — про будь-яку гру чи розділ сайту, спробую відповісти одразу.'
-    ] },
-  { keys: ['дяк','дякую','спасибі','thanks'],
-    reply: [
-      '🙌 Нема за що! Якщо виникнуть ще питання — я тут.',
-      '😊 Завжди радий допомогти! Пиши, якщо буде ще щось незрозуміле.',
-      '🙌 Будь ласка! Гарної гри та удачі 🍀'
-    ] },
-  { keys: ['бувай','до побач','па-па','пока','гарного дня','гарного вечора'],
-    reply: '👋 Гарного дня і удачі в іграх! Якщо знадобиться допомога — я завжди тут.' },
+async function sendSupportMsg(topic) {
+  if(_supSending || !currentUser) return;
+  const inp = document.getElementById('supportMsg');
+  const text = topic ? '' : (inp ? inp.value.trim() : '');
+  const img = topic ? null : _supPendingImg;
+  if(!text && !img && !topic) return;
+  if(text && isAbusiveText(text)) return notify('Повідомлення містить заборонені слова', 'error');
+  _supSending = true;
+  try {
+    const body = {};
+    if(text) body.text = text;
+    if(img) body.imgUrl = img;
+    if(topic) body.topic = topic;
+    const srv = await supportApi('send', body);
+    if(srv.mode === 'error') return;
+    if(srv.mode === 'legacy') await supLegacySend(body);
+    if(inp && !topic) inp.value = '';
+    if(!topic) clearSupportMedia();
+  } finally { _supSending = false; }
+}
+function sendSupportTopic(id) { return sendSupportMsg(id); }
 
-  // ── Ще 42 нові теми ──
-  { keys: ['лотере','квиток лотере','купити квиток'],
-    reply: '🎟️ Лотерея: розділ «Ще» → Лотерея — купуй квитки (100₴/шт), щотижня в неділю о 20:00 розігрується призовий фонд серед усіх учасників.' },
-  { keys: ['інвест пул','invest pool','інвестиційний пул'],
-    reply: '📈 Інвестиційний пул: вклади частину балансу в спільний пул («Ще» → Invest Pool) і отримуй частку від його прибутку пропорційно своєму внеску.' },
-  { keys: ['автобет','autobet','автоматичні ставки','авто ставк'],
-    reply: '🤖 AutoBet: задай кількість ставок, суму і стратегію (наприклад, збільшення після програшу) — бот робить ставки за тебе, поки не зупиниш вручну або не закінчаться умови.' },
-  { keys: ['копітрейд','copytrade','копіювати ставки'],
-    reply: '📊 CopyTrade: обери успішного гравця й автоматично копіюй його ставки у визначеній пропорції від власного балансу.' },
-  { keys: ['страхування ставк','insurance ставк','застрахувати ставку'],
-    reply: '🛡️ Страхування ставки: за невелику доплату можна застрахувати частину ставки — при програші повернеться відсоток застрахованої суми.' },
-  { keys: ['сезон','season пройшов','нагороди сезону'],
-    reply: '🗓️ Сезони — це Battle Pass на Головній: кожен сезон триває 30 днів, має власну назву й тему, рівні з нагородами за XP. Наприкінці сезону прогрес скидається і починається новий.' },
-  { keys: ['тема оформлен','змінити тему','темна тема','світла тема'],
-    reply: '🎨 Теми оформлення: розділ «Ще» → Теми — обери інший вигляд інтерфейсу, деякі теми відкриваються за досягнення чи Слотіки.' },
-  { keys: ['мова сайту','змінити мову','change language','язык сайта'],
-    reply: '🌍 Мова сайту: підтримується кілька мов (українська, англійська, російська, польська) — перемкнути можна в Налаштування → Мова.' },
-  { keys: ['аватар','фото профілю','змінити фото'],
-    reply: '🖼️ Аватарка: змінити можна в Профіль → редагувати — обери одну з готових ілюстрацій або завантаж власне фото.' },
-  { keys: ['історія ставок','історія операцій','мої транзакції'],
-    reply: '📜 Історія: усі твої ставки й донати зберігаються в Профіль → Історія — можна переглянути будь-яку операцію за датою.' },
-  { keys: ['моя статистика','статистика гравц','кількість ігор всього'],
-    reply: '📈 Статистика: Профіль → Статистика показує загальну кількість ігор, ставок, виграшів і твій вінрейт по кожній грі окремо.' },
-  { keys: ['демо режим','пограти без реєстрації','спробувати без реєстрації'],
-    reply: '🎮 Демо-режим: кнопка «Спробувати без реєстрації» на екрані входу дає віртуальні 50 000₴ для ознайомлення з іграми — прогрес і баланс у демо не зберігаються.' },
-  { keys: ['донат','підтримати проект','задонатити'],
-    reply: '❤️ Підтримати проект: посилання для донату є в розділі «Ще» — це суто добровільна підтримка розробки, жодних переваг у грі вона не дає.' },
-  { keys: ['залежність від ігор','самообмеження','ліміт на депозит для себе','грати відповідально'],
-    reply: '🧘 Відповідальна гра: у Налаштуваннях можна встановити особисті ліміти на ставки/депозити або тимчасово заморозити акаунт, якщо відчуваєш, що граєш забагато. Пиши, якщо потрібна допомога з налаштуванням.' },
-  { keys: ['хто адмін','як стати адміном','хто власник сайту'],
-    reply: '👑 Адміністрація: адміном стає лише той, кому надає права власник сайту вручну. Самостійно отримати адмін-права неможливо, і жоден офіційний співробітник не попросить пароль чи код підтвердження.' },
-  { keys: ['конфіденційність','мої дані','gdpr','хто бачить мої дані'],
-    reply: '🔒 Конфіденційність: твої особисті дані (нік, статистика, історія) бачиш тільки ти й адміністрація — іншим гравцям видно лише публічний профіль і рейтинги.' },
-  { keys: ['rtp гри','повернення гравцю','яка віддача гри'],
-    reply: '📊 RTP (повернення гравцю): орієнтовний відсоток повернення закладено в кожну гру (зазвичай 92-97%) — це середнє значення на дистанції, а не гарантія для кожної окремої ставки.' },
-  { keys: ['чому я програю','чому завжди програш','гра нечесна програш'],
-    reply: '📉 Програші — нормальна частина будь-якої азартної гри: кожна гра має закладену комісію казино (RTP < 100%), тож на довгій дистанції баланс статистично тяжіє до зниження. Всі результати при цьому Provably Fair — перевірити чесність можна прямо в грі.' },
-  { keys: ['клан війн','війна кланів','клан рівень'],
-    reply: '⚔️ Клани мають спільний рівень, що росте з активністю учасників — вищий рівень клану відкриває бонуси для всіх його членів. Окремих "воєн" між кланами наразі немає, є лише тижневі завдання клану.' },
-  { keys: ['реферал не зарахувався','друг не зарахувався','запросив друга нема бонусу'],
-    reply: '🤝 Якщо запрошений друг не з’явився у твоєму списку рефералів — переконайся, що він реєструвався саме за твоїм посиланням («Ще» → Реферали). Якщо посилання правильне, а бонусу все одно нема, опиши нік друга — передам адміну.' },
-  { keys: ['швидко заробити xp','як підняти рівень швидко','прокачати battle pass'],
-    reply: '⚡ XP для Battle Pass і Досягнень нараховується за будь-яку активність — найшвидше росте від виконання щоденних і тижневих завдань, а не просто від кількості ставок.' },
-  { keys: ['курс валют','обмін валют','конвертація валюти'],
-    reply: '💱 Курс валют: у шапці сайту (іконка валюти) можна переглянути баланс в еквіваленті інших валют для зручності — сам баланс і всі операції завжди в гривні.' },
-  { keys: ['фото не завантажу','картинка не грузиться','зображення не показ'],
-    reply: '🖼️ Якщо зображення/аватарки не завантажуються — спробуй оновити сторінку або перевір з’єднання. Якщо проблема лишається на кількох пристроях, опиши деталі — передам адміну.' },
-  { keys: ['обірвався інтернет під час гри','втратив звязок пд час ставки','інтернет пропав під час гри'],
-    reply: '📶 Якщо інтернет обірвався під час гри — не хвилюйся, результат раунду й баланс обробляються на сервері незалежно від з’єднання. Онови сторінку після відновлення інтернету, щоб побачити актуальний стан.' },
-  { keys: ['кілька пристроїв','грати з телефону і компа','два пристрої одночасно'],
-    reply: '📱💻 Можна заходити в один акаунт з різних пристроїв (телефон, комп’ютер) — баланс і прогрес завжди синхронізовані, оскільки все зберігається на сервері.' },
-  { keys: ['нова версія сайту','що нового оновлення','патчноут'],
-    reply: '🆕 Оновлення сайту виходять регулярно — нові ігри, фічі та виправлення. Слідкуй за новинами в розділі «Ще» → Оновлення.' },
-  { keys: ['ти бот','ти справжній','ти жива людина чи бот','ти шт'],
-    reply: '🤖 Я — AI-асистент SlotOK, автоматичний помічник, а не жива людина. Для складних питань завжди передаю розмову справжньому адміністратору.' },
-  { keys: ['що ти вмієш','які в тебе можливості','чим можеш допомогти'],
-    reply: '💬 Я допомагаю з питаннями про донат, бонуси, VIP, будь-яку гру на сайті й типові технічні проблеми. Якщо питання складніше — одразу передам його адміністратору.' },
-  { keys: ['напиши код','виріши задачу','допоможи з домашкою'],
-    reply: '🎰 Я спеціалізуюсь тільки на питаннях про SlotOK — донат, ігри, бонуси, акаунт. З завданнями поза темою сайту, на жаль, не допоможу.' },
-  { keys: ['підтвердити email','email не підтверджений','лист підтвердження'],
-    reply: '✉️ Email при реєстрації необов’язковий і не потребує підтвердження — акаунт повністю прив’язаний до нікнейму й пароля.' },
-  { keys: ['реклама на сайті','банери реклама','чому бачу рекламу'],
-    reply: '📢 Реклама: якщо на сторінці з’явився сторонній банер поза стандартним інтерфейсом сайту — це може бути ознакою розширення браузера чи фішингової копії. SlotOK не показує сторонню рекламу всередині застосунку.' },
-  { keys: ['партнерка для стрімер','співпраця блогер','реклама каналу'],
-    reply: '🎥 Співпраця зі стрімерами/блогерами: опиши свій канал і аудиторію — передам пропозицію адміністратору для розгляду індивідуальних умов.' },
-  { keys: ['де забрати приз турніру','приз за турнір','турнір нагорода'],
-    reply: '🏆 Призи турніру нараховуються автоматично на баланс (або Слотіки — залежно від турніру) одразу після завершення й підбиття підсумків, окремо забирати нічого не треба.' },
-  { keys: ['поскаржитись на гравця','пожалітись на гравця','гравець читер'],
-    reply: '🚩 Скарга на гравця: опиши нікнейм і що саме сталось (грубість, підозра на читерство тощо) — передам адміністратору на перевірку.' },
-  { keys: ['різниця vip і battle pass','vip чи battle pass','що краще vip або пропуск'],
-    reply: '❓ VIP росте назавжди від суми ставок і дає постійний кешбек/бонуси. Battle Pass — сезонна система: рівні й нагороди скидаються з новим сезоном. Це дві незалежні системи, які працюють одночасно.' },
-  { keys: ['передати клан','новий лідер клану','змінити лідера клану'],
-    reply: '🛡️ Передати лідерство клану може поточний лідер у налаштуваннях клану, обравши іншого учасника. Якщо лідер неактивний і клан «застряг» — опиши ситуацію, адміністратор може втрутитись вручну.' },
-  { keys: ['які вимоги для сайту','яка потрібна швидкість інтернету','на якому пристрої краще грати'],
-    reply: '⚙️ Технічні вимоги мінімальні: будь-який сучасний браузер (Chrome, Safari, Firefox) на телефоні чи комп’ютері й звичайне мобільне/домашнє з’єднання — важкого «заліза» не потрібно.' },
-  { keys: ['як швидко зв’язатись з підтримкою','контакти підтримки','де писати підтримці'],
-    reply: '💬 Найшвидший контакт — цей чат (AI відповідає миттєво) або кнопка «Підтримка» в розділі «Ще». Для питань про фінанси можна також писати в Telegram-бота, якщо він прив’язаний.' },
+// ── Запасний режим без сервера: те саме, що робить lib/support.js ──
+async function supLegacyGreeting() {
+  const snap = await db.ref('support_chats/' + currentUser).limitToLast(1).once('value');
+  if(snap.exists()) return;
+  await db.ref('support_chats/' + currentUser).push({ sender: 'ai', text: supportPick(SUPPORT_GREETING), time: Date.now() });
+}
+async function supLegacySend(body) {
+  const ref = db.ref('support_chats/' + currentUser);
+  const quick = body.topic ? supportTopic(body.topic) : null;
+  const msg = { sender: 'user', time: Date.now() };
+  if(body.text) msg.text = body.text; else if(quick && !body.imgUrl) msg.text = quick.quick;
+  if(body.imgUrl) msg.imgUrl = body.imgUrl;
+  const sent = await ref.push(msg);
+  notifyBot('support', sent.key, { user: currentUser });
+  const withHuman = _supThread.status === 'waiting' || _supThread.status === 'answered';
+  const tRef = db.ref('support_threads/' + currentUser);
+  const meta = { lastTs: msg.time, lastText: msg.text || '📷 Фото', lastFrom: 'user', updatedAt: msg.time };
+  if(withHuman && body.topic !== SUPPORT_HUMAN_TOPIC) {
+    await tRef.update(Object.assign(meta, { status: 'waiting', unreadStaff: (Number(_supThread.unreadStaff) || 0) + 1 }));
+    return;
+  }
+  let reply, handoff;
+  if(quick) { reply = supportPick(quick.replies); handoff = !!quick.human; }
+  else if(!body.text && body.imgUrl) { reply = supportPick(SUPPORT_PHOTO_REPLY); handoff = true; }
+  else {
+    const m = supportMatch(body.text);
+    reply = m ? supportPick(m.topic.replies) : supportPick(SUPPORT_FALLBACK);
+    handoff = m ? !!m.topic.human : true;
+  }
+  await new Promise(r => setTimeout(r, 500));
+  const t = Date.now();
+  await ref.push({ sender: 'ai', text: reply, time: t });
+  await tRef.update({ lastTs: t, lastText: reply.slice(0, 120), lastFrom: 'ai', updatedAt: t,
+    status: handoff ? 'waiting' : (_supThread.status === 'waiting' ? 'waiting' : 'bot'),
+    unreadStaff: (Number(_supThread.unreadStaff) || 0) + (handoff ? 1 : 0) });
+}
+
+// ══════════════════════ Підтримка (адмінка → «Чати») ══════════════════════
+let _supAdminFilter = 'waiting';
+let _supAdminThreads = {};
+let _supAdminListRef = null;
+let _supAdminNick = null, _supAdminMsgsRef = null;
+let _supAdminImg = null;
+
+const SUP_CANNED = [
+  'Дякуємо, що написав! Уже перевіряємо.',
+  'Донат знайшли й зарахували — перевір баланс у Гаманці.',
+  'Не бачимо такого платежу. Надішли, будь ласка, скрін квитанції з часом оплати.',
+  'Пароль скинуто. Новий тимчасовий пароль надіслали в ПМ — зміни його в Налаштуваннях.',
+  'Перевірили: збій з нашого боку, баланс повернуто. Вибач за незручності.',
+  'Акаунт перевірили, обмеження знято. Гарної гри!',
+  'Скаргу отримали, гравця перевіряє модерація. Дякуємо, що повідомив.',
+  'Передали ідею команді. Дякуємо!',
+  'Якщо питання вирішено — закриваю розмову. Пиши, якщо щось ще.',
 ];
 
-async function aiSupportReply(userMsg) {
-  const box = document.getElementById('supportChatBox');
-  const typing = document.createElement('div');
-  typing.id = 'aiTyping';
-  typing.style.cssText = 'display:flex;gap:4px;padding:8px 14px;background:color-mix(in srgb, var(--info) 13%, var(--surface-1));border-radius:var(--r-lg);width:fit-content;margin-bottom:8px;';
-  typing.innerHTML = '<span style="animation:blink 1s infinite">•</span><span style="animation:blink 1s 0.3s infinite">•</span><span style="animation:blink 1s 0.6s infinite">•</span>';
-  if(box) { box.appendChild(typing); box.scrollTop = box.scrollHeight; }
-
-  await new Promise(r => setTimeout(r, 500 + Math.random()*700)); // природня затримка "друку"
-
-  const lower = userMsg.toLowerCase();
-  // Рахуємо збіги для кожної теми й беремо найкращу, а не першу-ліпшу —
-  // так повідомлення з кількома словами потрапляють у найточнішу тему.
-  let best = null, bestScore = 0;
-  for(const f of SUPPORT_FAQ) {
-    const score = f.keys.reduce((n,k) => n + (lower.includes(k) ? 1 : 0), 0);
-    if(score > bestScore) { bestScore = score; best = f; }
-  }
-  const match = best;
-  let reply;
-  let needsAdmin = false;
-  if(match) {
-    reply = Array.isArray(match.reply) ? match.reply[Math.floor(Math.random()*match.reply.length)] : match.reply;
-  } else {
-    const FALLBACK_REPLIES = [
-      '🤔 Не зовсім впевнений, що правильно зрозумів питання. Передав його адміністратору — відповість особисто найближчим часом. А поки можеш глянути розділ «Ще» → там є відповіді на популярні запитання.',
-      '🤔 Хочу допомогти, але не до кінця зрозумів запит. Передав його адміністратору — відповість особисто. Спробуй, будь ласка, сформулювати іншими словами, можливо, я все ж зорієнтуюсь.',
-      '📩 Це питання краще передати живій людині — вже надіслав його адміністратору, він відповість тут, щойно зможе. Якщо хочеш, опиши детальніше — можливо, зрозумію з другої спроби.'
-    ];
-    reply = FALLBACK_REPLIES[Math.floor(Math.random()*FALLBACK_REPLIES.length)];
-    needsAdmin = true;
-  }
-
-  const t2 = document.getElementById('aiTyping'); if(t2) t2.remove();
-  db.ref('support_chats/'+currentUser).push({ text: reply, sender:'ai', time: Date.now() });
-
-  if(needsAdmin) {
-    // Реальна ескалація адміну через приватні повідомлення
-    db.ref('pm/theivankoo/'+db.ref().push().key).set({
-      from: '💬 Підтримка', to: 'theivankoo',
-      text: `Гравець @${currentUser} задав питання у чаті підтримки: "${userMsg}" — AI не зміг відповісти впевнено.`,
-      ts: Date.now()
-    });
-    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
+function initAdminSupportChats() {
+  if(!isSupportUser()) return;
+  const f = document.getElementById('supAdminFilter');
+  if(f) f.innerHTML = [['waiting', 'Чекають'], ['answered', 'Відповіли'], ['bot', 'Бот'], ['closed', 'Закриті'], ['all', 'Усі']]
+    .map(([k, n]) => `<button type="button" class="seg-item${k === _supAdminFilter ? ' active' : ''}" role="radio" aria-checked="${k === _supAdminFilter}" data-sup-filter="${k}" onclick="setAdminSupportFilter('${k}')"><span class="seg-label">${n}</span></button>`).join('');
+  const c = document.getElementById('supAdminCanned');
+  if(c && !c.options.length) c.innerHTML = '<option value="">Шаблон відповіді…</option>' + SUP_CANNED.map((t, i) => `<option value="${i}">${escapeHtml(t.slice(0, 60))}</option>`).join('');
+  if(!_supAdminListRef) {
+    _supAdminListRef = db.ref('support_threads').orderByChild('lastTs').limitToLast(300);
+    _supAdminListRef.on('value', snap => { _supAdminThreads = snap.val() || {}; renderAdminSupportList(); });
   }
 }
 
+function setAdminSupportFilter(k) {
+  _supAdminFilter = k;
+  initAdminSupportChats();
+  renderAdminSupportList();
+  // Старі розмови (до v122) не мають стану — показуємо їх у «Усі»
+  if(k === 'all' && !_supAdminLegacyLoaded) loadLegacySupportThreads();
+}
 
+let _supAdminLegacyLoaded = false;
+function loadLegacySupportThreads() {
+  _supAdminLegacyLoaded = true;
+  db.ref('support_chats').once('value').then(snap => {
+    Object.entries(snap.val() || {}).forEach(([nick, msgs]) => {
+      if(_supAdminThreads[nick]) return;
+      const last = Object.values(msgs || {}).filter(Boolean).sort((a, b) => supTime(a) - supTime(b)).pop();
+      if(last) _supAdminThreads[nick] = { status: 'closed', lastTs: supTime(last), lastText: last.text || '📷 Фото', lastFrom: last.sender, legacy: true };
+    });
+    renderAdminSupportList();
+  }).catch(() => {});
+}
 
+function renderAdminSupportList() {
+  const el = document.getElementById('supAdminList');
+  const waiting = Object.values(_supAdminThreads).filter(t => t && t.status === 'waiting').length;
+  const badge = document.getElementById('supAdminBadge');
+  if(badge) { badge.textContent = waiting; badge.classList.toggle('hidden', !waiting); }
+  if(!el) return;
+  const rows = Object.entries(_supAdminThreads)
+    .filter(([, t]) => t && (_supAdminFilter === 'all' || (t.status || 'bot') === _supAdminFilter))
+    .sort((a, b) => (b[1].lastTs || 0) - (a[1].lastTs || 0));
+  el.innerHTML = rows.length ? rows.map(([nick, t]) => `
+    <button type="button" class="list-row sup-row" onclick="openAdminSupportThread(${jsArg(nick)})">
+      <span class="list-row-main">
+        <span class="list-row-title"><span data-pn="${escapeHtml(nick)}">${escapeHtml(nick)}</span></span>
+        <span class="list-row-sub">${t.lastFrom === 'user' ? '' : (t.lastFrom === 'ai' ? 'Бот: ' : 'Ви: ')}${escapeHtml(t.lastText || '')}</span>
+      </span>
+      <span class="sup-row-end">
+        <span class="badge sup-st-${escapeHtml(t.status || 'bot')}">${SUP_STATUS_SHORT[t.status || 'bot'] || ''}</span>
+        ${t.unreadStaff > 0 ? `<span class="tab-badge">${Number(t.unreadStaff)}</span>` : ''}
+        <span class="sup-time">${t.lastTs ? getRelativeTime(t.lastTs) : ''}</span>
+      </span>
+    </button>`).join('')
+    : '<div class="empty-state"><div class="empty-state-title">Порожньо</div>Розмов з таким статусом немає.</div>';
+}
+
+function openAdminSupportThread(nick) {
+  if(!isSupportUser()) return;
+  _supAdminNick = nick;
+  document.getElementById('supAdminListView').classList.add('hidden');
+  document.getElementById('supAdminThread').classList.remove('hidden');
+  const n = document.getElementById('supAdminNick');
+  if(n) { n.textContent = nick; n.onclick = () => openPublicProfile(nick); }
+  renderAdminSupportHead();
+  if(_supAdminMsgsRef) _supAdminMsgsRef.off();
+  const box = document.getElementById('supAdminMsgs');
+  if(box) { box.innerHTML = ''; delete box.dataset.scrolled; }
+  _supAdminMsgsRef = db.ref('support_chats/' + nick).limitToLast(150);
+  _supAdminMsgsRef.on('value', snap => supRenderList(document.getElementById('supAdminMsgs'), snap.val(), m => m.sender !== 'user'));
+  supportApi('staffRead', { nick }).then(srv => { if(srv.mode === 'legacy') db.ref('support_threads/' + nick + '/unreadStaff').set(0); });
+}
+
+function renderAdminSupportHead() {
+  const t = _supAdminThreads[_supAdminNick] || {};
+  const st = document.getElementById('supAdminStatus');
+  if(st) st.textContent = SUP_STATUS_TEXT[t.status || 'bot'] || '';
+  const b = document.getElementById('supAdminCloseBtn');
+  if(b) b.textContent = t.status === 'closed' ? 'Відкрити знову' : 'Закрити';
+}
+
+function closeAdminSupportThread() {
+  if(_supAdminMsgsRef) { _supAdminMsgsRef.off(); _supAdminMsgsRef = null; }
+  _supAdminNick = null;
+  document.getElementById('supAdminThread').classList.add('hidden');
+  document.getElementById('supAdminListView').classList.remove('hidden');
+  renderAdminSupportList();
+}
+
+async function toggleAdminSupportClosed() {
+  if(!_supAdminNick) return;
+  const t = _supAdminThreads[_supAdminNick] || {};
+  const status = t.status === 'closed' ? 'waiting' : 'closed';
+  if(status === 'closed') {
+    const ok = await confirmAction({ title: 'Закрити розмову з ' + _supAdminNick + '?', text: 'Гравець побачить, що розмову закрито. Нове повідомлення відкриє її знову.', confirm: 'Закрити' });
+    if(!ok) return;
+  }
+  const srv = await supportApi('staffStatus', { nick: _supAdminNick, status });
+  if(srv.mode === 'legacy') await db.ref('support_threads/' + _supAdminNick).update({ status, updatedAt: Date.now(), by: currentUser });
+  if(srv.mode !== 'error') {
+    _supAdminThreads[_supAdminNick] = Object.assign({}, t, { status });
+    renderAdminSupportHead();
+  }
+}
+
+function useAdminCanned(sel) {
+  const i = sel.value;
+  if(i === '') return;
+  const ta = document.getElementById('supAdminReply');
+  if(ta) { ta.value = (ta.value ? ta.value + '\n' : '') + SUP_CANNED[Number(i)]; ta.focus(); }
+  sel.value = '';
+}
+
+async function handleAdminSupportMedia(input) {
+  const file = input.files && input.files[0];
+  if(!file) return;
+  try { _supAdminImg = await compressImageFile(file, { maxSide: 1280, quality: 0.78 }); }
+  catch(e) { input.value = ''; return notify(e.message || 'Не вдалося відкрити фото', 'error'); }
+  document.getElementById('supAdminPreviewImg').src = _supAdminImg;
+  document.getElementById('supAdminPreview').classList.remove('hidden');
+}
+function clearAdminSupportMedia() {
+  _supAdminImg = null;
+  document.getElementById('supAdminPreview').classList.add('hidden');
+  const inp = document.getElementById('supAdminFile');
+  if(inp) inp.value = '';
+}
+
+let _supAdminSending = false;
+async function sendAdminSupportReply() {
+  if(!_supAdminNick || _supAdminSending) return;
+  const ta = document.getElementById('supAdminReply');
+  const text = (ta ? ta.value : '').trim();
+  if(!text && !_supAdminImg) return;
+  _supAdminSending = true;
+  try {
+    const body = { nick: _supAdminNick };
+    if(text) body.text = text;
+    if(_supAdminImg) body.imgUrl = _supAdminImg;
+    const srv = await supportApi('staffReply', body);
+    if(srv.mode === 'error') return;
+    if(srv.mode === 'legacy') {
+      const msg = { sender: isAdminUser() ? 'admin' : 'support', by: currentUser, time: Date.now() };
+      if(text) msg.text = text;
+      if(_supAdminImg) msg.imgUrl = _supAdminImg;
+      await db.ref('support_chats/' + _supAdminNick).push(msg);
+      await db.ref('support_threads/' + _supAdminNick).update({ status: 'answered', lastTs: msg.time, lastText: text || '📷 Фото', lastFrom: msg.sender, unreadStaff: 0, by: currentUser });
+      db.ref('users/' + _supAdminNick + '/supportUnread').set(firebase.database.ServerValue.increment(1));
+    }
+    if(ta) ta.value = '';
+    clearAdminSupportMedia();
+  } finally { _supAdminSending = false; }
+}
 // ─── src/app/30-home-achievements-stream.js ───
 // ========================
 // HOME STATS + JACKPOT
@@ -19616,6 +19346,25 @@ const GAME_HELP = {
       Крайні комірки — високий множник (~x10–x100)<br><br>
       <b>Стратегія:</b> Більше кулек = стабільніший результат!`
   },
+  penalty: {
+    title: '⚽ Пенальті',
+    rules: `<b>Мета:</b> забити гол.<br><br>
+      <b>Як грати:</b> обери один із 6 кутів воріт і скільки зон закриває воротар (1–4), потім «Бити».<br><br>
+      <b>Виплата:</b> чим більше зон закриває воротар, тим вищий множник: 1 — ×1.16, 2 — ×1.45, 3 — ×1.94, 4 — ×2.91.<br><br>
+      Куди стрибає воротар, вирішує сервер випадково — він не «бачить», куди ти цілишся. RTP ≈ 97%.`
+  },
+  cups: {
+    title: '⚪ Наперстки',
+    rules: `<b>Мета:</b> вгадати, під яким наперстком кулька.<br><br>
+      <b>Як грати:</b> обери 3, 4 або 5 наперстків, тапни свій і натисни «Відкрити».<br><br>
+      <b>Виплата:</b> 3 — ×2.88, 4 — ×3.84, 5 — ×4.8. Кульку ховає сервер до твого вибору. RTP 96%.`
+  },
+  darts: {
+    title: '🎯 Дартс',
+    rules: `<b>Мета:</b> влучити ближче до центру.<br><br>
+      <b>Виплата за сектор:</b> яблучко ×20, центр ×5, потрійне коло ×2, внутрішнє поле ×1.2, зовнішнє ×0.5, повз дошку — 0.<br><br>
+      Шанси кожного сектора — під дошкою. Куди полетить дротик, вирішує сервер. RTP ≈ 96%.`
+  },
   limbo: {
     title: '🎯 Limbo',
     rules: `<b>Мета:</b> Вгадати, чи впаде результат вище твого цільового множника.<br><br>
@@ -22375,7 +22124,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash Aviator'}, {id:'mines', name:'💣 Mines'},
   {id:'blackjack', name:'🃏 Blackjack'}, {id:'plinko', name:'🔻 Plinko'}, {id:'dice', name:'🎲 Dice Roll'},
   {id:'fortune', name:'🎡 Колесо Фортуни'}, {id:'poker', name:'♠️ Video Poker'}, {id:'hilo', name:'🃏 Hi-Lo Cards'},
-  {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'tower', name:'🗼 Tower Climb'},
+  {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'penalty', name:'⚽ Пенальті'}, {id:'cups', name:'⚪ Наперстки'}, {id:'darts', name:'🎯 Дартс'}, {id:'tower', name:'🗼 Tower Climb'},
   {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
@@ -23712,6 +23461,7 @@ const BET_INPUT_IDS = [
   'sicboBet', 'cwBet', 'cfBetInput', 'rpsBetInput', 'pdBetInput',
   'monoEntryBet', 'mpBetInput', 'cgBet', 'chessBetAmount',
   'p3dBet', 'w3dBet', 'crBet', 's5Bet', 'm3Bet', 'msBet', 'bsBet', 'lwBet', 'lcBet', 'eightsBet', 'durakBet', 'ludoBet', 'holdemBet',
+  'penBet', 'cupsBet', 'dartsBet',
 ];
 const GAME_CTA_FNS = [
   'spinSlots', 'spinDiamondSlots', 'lwPlaceBet', 'lcAction', 'startCrash', 'dealPoker', 'startChests', 'startMines',
@@ -23720,6 +23470,7 @@ const GAME_CTA_FNS = [
   'rollSicBo', 'playCardWar', 'createCfRoom', 'createRpsRoom',
   'createPdRoom', 'startMonopoly', 'createMpRoom', 'startCardGame', 'chessStartFromSetup',
   'playPlinko3d', 'playWheel3d', 'playCraps', 'playSlot5', 'playMatch3', 'msDuelCreate', 'bsOnlineCreate', 'tableCreate',
+  'playPenalty', 'playCups', 'throwDart',
 ];
 const BET_CHIPS = [10, 50, 100, 500, 1000];
 
@@ -27319,12 +27070,10 @@ async function revokeSupport(nick) {
 // ║  нові повідомлення в чатах. Каталог — shared/shop.js.         ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-const COSMETIC_CLASS = {
-  avatar_silver: 'pa-silver', avatar_gold: 'pa-gold', avatar_fire: 'pa-ember',
-  avatar_diamond: 'pa-platinum', avatar_cosmic: 'pa-obsidian',
-  username_red: 'pn-crimson', username_gold: 'pn-gold', username_rainbow: 'pn-iris',
-  name_frame_neon: 'pp-neon', name_frame: 'pp-supreme',
-};
+// Клас оформлення кожного товару — поле cls у каталозі (shared/shop.js).
+const COSMETIC_CLASS = {};
+SHOP_ITEMS.forEach(it => { if(it.cls) COSMETIC_CLASS[it.id] = it.cls; });
+const _stripCosmeticClasses = (el, re) => Array.from(el.classList).forEach(c => { if(re.test(c)) el.classList.remove(c); });
 const PLAYER_STYLE_TTL = 5 * 60000;
 const _playerStyles = new Map(); // нік → { worn, at } | { pending: Promise }
 
@@ -27370,7 +27119,7 @@ function invalidatePlayerStyle(nick) {
 }
 
 function _applyNick(el, worn) {
-  el.classList.remove('pn-crimson', 'pn-gold', 'pn-iris', 'pp-neon', 'pp-supreme');
+  _stripCosmeticClasses(el, /^(pn|pp)-/);
   if(worn && worn.nick && COSMETIC_CLASS[worn.nick]) el.classList.add(COSMETIC_CLASS[worn.nick]);
   if(worn && worn.plate && COSMETIC_CLASS[worn.plate]) el.classList.add(COSMETIC_CLASS[worn.plate]);
   let badge = el.nextElementSibling && el.nextElementSibling.classList.contains('pbadge') ? el.nextElementSibling : null;
@@ -27386,7 +27135,8 @@ function _applyNick(el, worn) {
 }
 
 function _applyAvatar(el, worn) {
-  el.classList.remove('pa', 'pa-silver', 'pa-gold', 'pa-ember', 'pa-platinum', 'pa-obsidian');
+  _stripCosmeticClasses(el, /^pa(-|$)/);
+  el.classList.remove('pa');
   if(worn && worn.frame && COSMETIC_CLASS[worn.frame]) el.classList.add('pa', COSMETIC_CLASS[worn.frame]);
 }
 
@@ -27418,3 +27168,144 @@ function applyPlayerStyles(root) {
     if(queued.length && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
   }).observe(document.body, { childList: true, subtree: true });
 })();
+// ─── src/app/55-new-games.js ───
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  Пенальті, Наперстки, Дартс (v122)                            ║
+// ║  Результат і виплату рахує сервер (lib/games.js: penalty,     ║
+// ║  cups, darts через api/play). Без сервера ці ігри недоступні: ║
+// ║  нові ігри більше не рахуємо в браузері.                      ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// Ті самі множники, що в lib/games.js (тест звіряє RTP там).
+const PEN_MULT = { 1: 1.16, 2: 1.45, 3: 1.94, 4: 2.91 };
+const CUPS_MULT = { 3: 2.88, 4: 3.84, 5: 4.8 };
+const DARTS_RINGS = [
+  { id: 'eye',    label: 'Яблучко',       mult: 20,  chance: '0,6%' },
+  { id: 'bull',   label: 'Центр',         mult: 5,   chance: '3,4%' },
+  { id: 'treble', label: 'Потрійне коло', mult: 2,   chance: '11%' },
+  { id: 'inner',  label: 'Внутрішнє поле', mult: 1.2, chance: '25%' },
+  { id: 'outer',  label: 'Зовнішнє поле', mult: 0.5, chance: '30%' },
+  { id: 'miss',   label: 'Повз дошку',    mult: 0,   chance: '30%' },
+];
+const PEN_ZONE_NAMES = ['верхній лівий', 'верхній центр', 'верхній правий', 'нижній лівий', 'нижній центр', 'нижній правий'];
+
+let _penZone = 0, _penKeepers = 2, _cupsN = 3, _cupsPick = 0;
+const _ngBusy = {};
+
+function ngSegHtml(values, current, fn, label) {
+  return values.map(v => `<button type="button" class="seg-item${v === current ? ' active' : ''}" role="radio" aria-checked="${v === current}" onclick="${fn}(${v})"><span class="seg-label">${label(v)}</span></button>`).join('');
+}
+
+// Спільне: ставка через сервер, облік і результат.
+async function ngPlay(game, inputId, params, label) {
+  if(_ngBusy[game]) return null;
+  const bet = validateBet(document.getElementById(inputId).value);
+  if(!bet) return null;
+  if(!(await serverAuthEnabled())) { notify('Ця гра працює лише з сервером', 'error'); return null; }
+  _ngBusy[game] = true;
+  try {
+    const srv = await serverPlay(game, bet, params);
+    if(srv.mode !== 'server') return null;
+    addWager(bet); trackQuest('totalGames', 1); trackQuest('weekWager', bet);
+    trackLbStat('wager', bet); trackLbStat('games', 1);
+    publishLiveBet(label, '🎯', bet, '');
+    return { bet, r: srv.r };
+  } finally { _ngBusy[game] = false; }
+}
+
+function ngFinish(label, bet, r) {
+  if(r.win) {
+    playSound(r.mult >= 5 ? 'bonus' : 'win');
+    trackLbStat('wins', r.payout); trackLbStat('profit', r.payout - bet);
+    addToHistory(label + ': +' + r.payout + ' (×' + r.mult + ')');
+    if(r.payout >= 1000) addToWinFeed(label, r.payout, r.mult);
+    try { triggerWinReaction(r.payout, label); } catch(e) {}
+  } else {
+    playSound('loss');
+    addToHistory(label + ': -' + bet);
+  }
+  updateStreak(!!r.win);
+}
+
+// ── Пенальті ──
+function initPenalty() {
+  const goal = document.getElementById('penGoal');
+  if(goal) goal.innerHTML = PEN_ZONE_NAMES.map((n, i) => `<button type="button" class="pen-zone${i === _penZone ? ' is-aim' : ''}" role="radio" aria-checked="${i === _penZone}" aria-label="${n} кут" onclick="penAim(${i})"></button>`).join('');
+  const k = document.getElementById('penKeepers');
+  if(k) k.innerHTML = ngSegHtml([1, 2, 3, 4], _penKeepers, 'penSetKeepers', v => v + ' · ×' + PEN_MULT[v]);
+}
+function penAim(i) { if(_ngBusy.penalty) return; _penZone = i; initPenalty(); }
+function penSetKeepers(v) { if(_ngBusy.penalty) return; _penKeepers = v; initPenalty(); }
+
+async function playPenalty() {
+  const res = document.getElementById('penResult');
+  const done = await ngPlay('penalty', 'penBet', { zone: _penZone, keepers: _penKeepers }, 'Пенальті');
+  if(!done) return;
+  const { bet, r } = done;
+  initPenalty();
+  const zones = document.querySelectorAll('#penGoal .pen-zone');
+  r.saved.forEach(i => zones[i] && zones[i].classList.add('is-saved'));
+  if(zones[r.zone]) zones[r.zone].classList.add(r.win ? 'is-goal' : 'is-blocked');
+  if(res) res.innerHTML = r.win
+    ? `<span class="is-pos">Гол! +${formatNumber(r.payout)} ₴</span>`
+    : `<span class="is-neg">Воротар відбив</span>`;
+  ngFinish('Пенальті', bet, r);
+}
+
+// ── Наперстки ──
+function initCups() {
+  if(_cupsPick >= _cupsN) _cupsPick = 0;
+  const row = document.getElementById('cupsRow');
+  if(row) row.innerHTML = Array.from({ length: _cupsN }, (_, i) => `<button type="button" class="cup${i === _cupsPick ? ' is-pick' : ''}" role="radio" aria-checked="${i === _cupsPick}" aria-label="Наперсток ${i + 1}" onclick="cupsPick(${i})"><span class="cup-ball"></span></button>`).join('');
+  const c = document.getElementById('cupsCount');
+  if(c) c.innerHTML = ngSegHtml([3, 4, 5], _cupsN, 'cupsSetCount', v => v + ' · ×' + CUPS_MULT[v]);
+}
+function cupsPick(i) { if(_ngBusy.cups) return; _cupsPick = i; initCups(); }
+function cupsSetCount(n) { if(_ngBusy.cups) return; _cupsN = n; initCups(); }
+
+async function playCups() {
+  const res = document.getElementById('cupsResult');
+  const done = await ngPlay('cups', 'cupsBet', { cups: _cupsN, pick: _cupsPick }, 'Наперстки');
+  if(!done) return;
+  const { bet, r } = done;
+  initCups();
+  const cups = document.querySelectorAll('#cupsRow .cup');
+  if(cups[r.ball]) cups[r.ball].classList.add('has-ball');
+  cups.forEach(c => c.classList.add('is-up'));
+  if(res) res.innerHTML = r.win
+    ? `<span class="is-pos">Вгадав! +${formatNumber(r.payout)} ₴</span>`
+    : `<span class="is-neg">Кулька була під наперстком ${r.ball + 1}</span>`;
+  ngFinish('Наперстки', bet, r);
+}
+
+// ── Дартс ──
+// Радіус точки влучання (у % від половини дошки) для кожного сектора.
+const DARTS_RADIUS = { eye: [0, 4], bull: [5, 11], treble: [13, 22], inner: [24, 60], outer: [62, 92], miss: [96, 112] };
+function initDarts() {
+  const lg = document.getElementById('dartsLegend');
+  if(lg && !lg.dataset.built) {
+    lg.innerHTML = DARTS_RINGS.map(x => `<div class="list-row"><span class="list-row-main"><span class="list-row-title">${x.label}</span><span class="list-row-sub">шанс ${x.chance}</span></span><span class="badge num">×${x.mult}</span></div>`).join('');
+    lg.dataset.built = '1';
+  }
+}
+
+async function throwDart() {
+  const res = document.getElementById('dartsResult');
+  const dart = document.getElementById('dartsDart');
+  const done = await ngPlay('darts', 'dartsBet', {}, 'Дартс');
+  if(!done) return;
+  const { bet, r } = done;
+  const [a, b] = DARTS_RADIUS[r.ring] || [0, 0];
+  const rad = a + Math.random() * (b - a);
+  const ang = (r.angle || 0) * Math.PI / 180;
+  if(dart) {
+    dart.style.left = (50 + Math.cos(ang) * rad / 2) + '%';
+    dart.style.top = (50 + Math.sin(ang) * rad / 2) + '%';
+    dart.classList.remove('hidden');
+  }
+  const ring = DARTS_RINGS.find(x => x.id === r.ring) || { label: '' };
+  if(res) res.innerHTML = r.win
+    ? `<span class="${r.mult >= 1 ? 'is-pos' : ''}">${ring.label} · ×${r.mult} · +${formatNumber(r.payout)} ₴</span>`
+    : `<span class="is-neg">${ring.label}</span>`;
+  ngFinish('Дартс', bet, r);
+}

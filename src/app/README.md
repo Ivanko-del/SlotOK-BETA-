@@ -44,7 +44,7 @@
 | 26-tower-hilo-dice-double | Tower, Hi-Lo, Dice, Double |
 | 27-sports | спорт (ESPN) |
 | 28-pvp-leaderboard-limbo | Coinflip/RPS/Prediction PvP, лідерборд дня/тижня, Limbo |
-| 29-support-chat | підтримка (AI + адмін) |
+| 29-support-chat | чат підтримки: екран гравця (теми, бот, фото) і вкладка адмінки «Чати»; сервер — `api/support.js` → `lib/support.js`, база відповідей — `shared/support-kb.js` |
 | 30-home-achievements-stream | статистика Головної, досягнення, стріми |
 | 31-slotiky-tournament-live | магазин Слотіків (екран; каталог — `shared/shop.js`, купівля — `api/reward` → `lib/shop.js`), предмети в іграх (`renderGameItems`), турніри, live-матч |
 | 32-music-battlepass-stats | музика, **Battle Pass** (екран; таблиці — `shared/rewards.js`), особиста статистика |
@@ -66,6 +66,7 @@
 | 49-mass-games | Бінго, Вікторина-баттл, Королівська битва — масові столи через кімнати (`quick`) |
 | 50-tables | столи 2–4: Вісімка, Дурень онлайн, Лудо через кімнати (старт господарем `start`) |
 | 52-holdem | Покер Texas Hold'em 3D: three.js-стіл, підписи місць поверх сцени, керування ставками |
+| 55-new-games | Пенальті, Наперстки, Дартс (результат — `lib/games.js` через `serverPlay`) |
 | 54-cosmetics | косметика з магазину Слотіків видна всім: `data-pn` (нік) / `data-pa` (аватар) → класи, `applyPlayerStyles`, кеш стилів гравців |
 | 53-support-safety | роль `support` (`isSupportUser`), звернення `feedback/` (форма, «Мої звернення», вкладка адмінки), безпека ПМ: фільтр `isAbusiveText`, блок, скарга, розкладка переписки (`pmLayoutOpen`) |
 | 43-games-3d | 3D-ігри v110: Plinko 3D, Колесо удачі 3D, Кубики (Craps), Слот 5×3, Три в ряд — лише показ, результат з `lib/games.js` через `serverPlay`; three.js вантажиться ліниво з `vendor/` |

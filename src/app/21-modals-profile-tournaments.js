@@ -300,7 +300,7 @@ function switchAdminTab(tab, el) {
   // Адмін без права на цю вкладку не має її відкривати навіть прямим викликом
   if(!adminCan(tab)) { requireAdminPerm(tab); return; }
   // Hide ALL panels cleanly
-  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback','chats'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) { p.style.display = 'none'; }
   });
@@ -314,15 +314,15 @@ function switchAdminTab(tab, el) {
   if(tab==='users')   { try{setupAutoWipe();}catch(e) { console.warn(e); } }
   if(tab==='stats')   { refreshAdminDash(); try{loadAdminStats();}catch(e) { console.warn(e); } }
   if(tab==='bots')    { try{loadBots();}catch(e) { console.warn(e); } }
-  if(tab==='content') { try{loadSupportThreads();}catch(e) { console.warn(e); } }
   if(tab==='finance') { try{loadRTPSettings();}catch(e) { console.warn(e); } try{loadLootboxEdgeSetting();}catch(e) { console.warn(e); } }
   if(tab==='moderation') { try{initModerationPanel();}catch(e){console.error(e);} }
   if(tab==='admins')  { try{initAdminsPanel();}catch(e){console.error(e);} }
   if(tab==='feedback') { try{loadFeedbackAdmin();}catch(e){console.error(e);} }
+  if(tab==='chats')    { try{initAdminSupportChats();}catch(e){console.error(e);} }
 }
 function initAdminPanel() {
   // Force clear all panels first
-  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback'].forEach(function(t){
+  ['requests','stats','users','bots','content','finance','security','moderation','admins','feedback','chats'].forEach(function(t){
     var p = document.getElementById('adm-panel-'+t);
     if(p) p.style.display = 'none';
   });
@@ -742,72 +742,6 @@ function deletePromo(code) {
   db.ref('promos/'+code).remove();
   notify('Промокод видалено', 'info');
   loadPromos();
-}
-
-let _supportThreadsListener = null;
-function loadSupportThreads() {
-  const list = document.getElementById('supportThreadsList');
-  if(!list) return;
-  if(_supportThreadsListener) { db.ref('support_chats').off('value', _supportThreadsListener); _supportThreadsListener = null; }
-  _supportThreadsListener = db.ref('support_chats').on('value', snap => {
-    const data = snap.val();
-    if(!data) { list.innerHTML='<div style="color:var(--fg-3);font-size:13px;">Немає чатів</div>'; return; }
-    const threads = Object.entries(data)
-      .map(([user, msgs]) => [user, Object.values(msgs).pop()])
-      .filter(([,lastMsg]) => lastMsg)
-      .sort((a,b) => (b[1].time||0) - (a[1].time||0));
-    list.innerHTML = threads.map(([user, lastMsg]) => {
-      const preview = lastMsg.mediaUrl ? (lastMsg.isVideo ? '🎥 Відео' : '📷 Фото') : (lastMsg.text||'');
-      const isActive = user === admSupportUser;
-      return `<div class="support-thread" style="${isActive?'border-color:var(--accent);':''}" onclick="openAdminSupport(${jsArg(user)})">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <b>${escapeHtml(user)}</b>
-          ${lastMsg.sender==='user' ? '<span class="support-unread">Нове</span>' : ''}
-        </div>
-        <div style="color:var(--fg-3);font-size:12px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
-      </div>`;
-    }).join('');
-  });
-}
-
-let admSupportUser = null;
-let _admSupportListener = null;
-let _admSupportListenerUser = null;
-function openAdminSupport(user) {
-  admSupportUser = user;
-  document.getElementById('admSupportTitle').textContent = 'Чат з ' + user;
-  const chat = document.getElementById('admSupportChat');
-  chat.innerHTML = '';
-  if(_admSupportListener) { db.ref('support_chats/'+_admSupportListenerUser).off('child_added', _admSupportListener); _admSupportListener = null; }
-  _admSupportListenerUser = user;
-  _admSupportListener = db.ref('support_chats/'+user).limitToLast(30).on('child_added', snap => {
-    const m = snap.val();
-    const isUser = m.sender === 'user';
-    const timeStr = new Date(m.time||Date.now()).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
-    const senderLabel = m.sender==='admin' ? '[Підтримка] ' : m.sender==='ai' ? '[AI] ' : '';
-    let mediaHtml = '';
-    if(m.mediaUrl) {
-      mediaHtml = m.isVideo
-        ? `<video src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;" controls muted playsinline></video>`
-        : `<img src="${safeUrl(m.mediaUrl)}" style="max-width:200px;max-height:180px;border-radius:var(--r-md);display:block;margin-top:4px;cursor:pointer;" onclick="window.open(this.src,'_blank','noopener')">`;
-    }
-    const div = document.createElement('div');
-    div.style.cssText = `margin-bottom:8px;padding:8px 12px;background:${isUser?'color-mix(in srgb, var(--primary) 20%, var(--surface-1))':'var(--info)'};border-radius:var(--r-md);width:fit-content;max-width:80%;margin-left:${isUser?'0':'auto'}`;
-    div.innerHTML = `${m.text ? senderLabel + escapeHtml(m.text) : (senderLabel ? senderLabel : '')}${mediaHtml}<div style="font-size:9px;color:rgb(var(--fg-rgb) / 0.5);margin-top:4px;">${timeStr}</div>`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  });
-  openTabModal('admin-support-modal');
-  setTimeout(() => document.getElementById('admSupportReply')?.focus(), 100);
-}
-
-function sendAdminSupportReply() {
-  const inp = document.getElementById('admSupportReply');
-  const txt = inp.value.trim();
-  if(!txt || !admSupportUser) return;
-  inp.value = '';
-  db.ref('support_chats/'+admSupportUser).push({text:txt, sender:'admin', time:Date.now()});
-  db.ref('users/'+admSupportUser+'/supportUnread').set(firebase.database.ServerValue.increment(1));
 }
 
 // ── ADMIN PANEL INIT (called once per open) ──

@@ -5812,12 +5812,58 @@ body.pm-thread-open .bottom-nav { display: none; }
 .fb-support-box { margin-bottom: var(--sp-3); }
 .fb-support-row { padding: var(--sp-1) 0; }
 
-/* Чат підтримки → звернення */
-.support-fb-bar {
-  display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); padding: var(--sp-3);
-  border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface-1);
-  font-size: var(--fs-sm); color: var(--fg-2);
+
+/* ═══ Чат підтримки v122 (src/app/29-support-chat.js) ═══ */
+.sup-screen {
+  position: fixed; left: 0; right: 0; z-index: var(--z-drawer);
+  top: var(--sup-vv-top, 0px); height: var(--sup-vv-h, 100dvh);
+  display: flex; flex-direction: column; background: var(--bg);
 }
+.sup-screen.hidden { display: none; }
+.sup-head {
+  display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sp-2)) var(--sp-3) var(--sp-2);
+  border-bottom: var(--bw) solid var(--line); background: var(--surface-1);
+}
+.sup-head .btn { margin: 0; }
+.sup-head-main { flex: 1; min-width: 0; }
+.sup-title { margin: 0; font-size: var(--fs-lg); font-family: var(--font-display); }
+.sup-status { font-size: var(--fs-xs); color: var(--fg-3); }
+.sup-status[data-status="waiting"] { color: var(--warn); }
+.sup-status[data-status="answered"] { color: var(--pos); }
+.sup-topics { display: flex; gap: var(--sp-2); overflow-x: auto; scrollbar-width: none; padding: var(--sp-2) var(--sp-3); flex-shrink: 0; border-bottom: var(--bw) solid var(--line); }
+.sup-topics .chip { flex: none; margin: 0; }
+.sup-topics .chip.is-human { border-color: var(--accent); color: var(--accent); }
+.sup-msgs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.sup-msg { display: flex; }
+.sup-msg.is-me { justify-content: flex-end; }
+.sup-bubble {
+  max-width: 82%; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-lg);
+  background: var(--surface-1); border: var(--bw) solid var(--line);
+}
+.sup-msg.is-me .sup-bubble { background: rgb(var(--accent-rgb) / .1); border-color: rgb(var(--accent-rgb) / .35); }
+.sup-msg.is-bot .sup-bubble { border-color: rgb(var(--info-rgb) / .35); }
+.sup-msg.is-staff .sup-bubble { border-color: rgb(var(--pos-rgb) / .45); }
+.sup-who { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--fg-3); margin-bottom: 2px; }
+.sup-msg.is-staff .sup-who { color: var(--pos); }
+.sup-msg.is-bot .sup-who { color: var(--info); }
+.sup-text { white-space: pre-wrap; word-break: break-word; font-size: var(--fs-md); line-height: var(--lh-body); }
+.sup-time { font-size: var(--fs-2xs); color: var(--fg-4); margin-top: 2px; text-align: right; }
+.sup-preview { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-top: var(--bw) solid var(--line); flex-shrink: 0; }
+.sup-preview img { max-height: 64px; max-width: 96px; border-radius: var(--r-md); object-fit: cover; }
+.sup-composer textarea { flex: 1; min-width: 0; min-height: 44px; margin: 0; resize: none; }
+
+/* Адмінка → Чати */
+.sup-admin-thread { display: flex; flex-direction: column; height: min(78dvh, 720px); border: var(--bw) solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.sup-admin-thread.hidden { display: none; }
+.sup-admin-thread .sup-head { padding-top: var(--sp-2); }
+.sup-admin-thread select { margin: 0; border-radius: 0; border-left: 0; border-right: 0; }
+.sup-row { text-align: left; }
+.sup-row-end { display: grid; justify-items: end; gap: 2px; flex: none; }
+.sup-row .sup-time { margin: 0; }
+.badge.sup-st-waiting { color: var(--warn); }
+.badge.sup-st-answered { color: var(--pos); }
+.badge.sup-st-bot { color: var(--info); }
 /* ─── src/css/75-shop.css ─── */
 /* ═══ Магазин Слотіків і косметика гравців ═════════════════════════
    JS — src/app/31-slotiky-tournament-live.js (магазин),
@@ -5876,6 +5922,17 @@ body.pm-thread-open .bottom-nav { display: none; }
 .pa-platinum { --pa-ring: var(--info); box-shadow: 0 0 0 3px var(--pa-ring), 0 0 12px 2px rgb(var(--info-rgb) / .35); }
 .pa-obsidian { --pa-ring: var(--special); box-shadow: 0 0 0 3px var(--pa-ring), 0 0 0 6px rgb(var(--special-rgb) / .35); }
 .pa-ember    { --pa-ring: var(--accent); animation: pa-ember 2.4s var(--ease-out) infinite; }
+.pa-graphite { --pa-ring: var(--line-strong); }
+.pa-emerald  { --pa-ring: var(--pos); }
+.pa-sapphire { --pa-ring: var(--info); }
+.pa-neon     { --pa-ring: var(--primary); box-shadow: 0 0 0 2px var(--pa-ring), 0 0 14px 3px rgb(var(--primary-rgb) / .5); }
+.pa-misreg   { --pa-ring: var(--accent); box-shadow: 0 0 0 3px var(--accent), 3px 3px 0 5px var(--primary); }
+.pa-aurora   { --pa-ring: var(--special); animation: pa-aurora 8s linear infinite; }
+@keyframes pa-aurora {
+  0%, 100% { box-shadow: 0 0 0 3px var(--special), 0 0 12px 2px rgb(var(--special-rgb) / .4); }
+  33%      { box-shadow: 0 0 0 3px var(--primary), 0 0 12px 2px rgb(var(--primary-rgb) / .4); }
+  66%      { box-shadow: 0 0 0 3px var(--accent), 0 0 12px 2px rgb(var(--accent-rgb) / .4); }
+}
 @keyframes pa-ember {
   0%, 100% { box-shadow: 0 0 0 3px var(--accent), 0 0 6px 1px rgb(var(--accent-rgb) / .35); }
   50%      { box-shadow: 0 0 0 3px var(--accent), 0 0 16px 4px rgb(var(--accent-rgb) / .55); }
@@ -5895,14 +5952,81 @@ body.pm-thread-open .bottom-nav { display: none; }
   animation: pn-iris 6s linear infinite;
 }
 @keyframes pn-iris { to { background-position: 300% 0; } }
+.pn-emerald  { color: var(--pos); }
+.pn-sapphire { color: var(--info); }
+.pn-violet   { color: var(--special); }
+.pn-ember, .pn-frost {
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: pn-iris 5s linear infinite alternate;
+}
+.pn-ember { background-image: linear-gradient(90deg, var(--accent), var(--warn), var(--accent)); }
+.pn-frost { background-image: linear-gradient(90deg, var(--info), var(--fg), var(--info)); }
+.pp-ticket, .pp-ink, .pp-obsidian { display: inline-block; padding: 0 var(--sp-2); border-radius: var(--r-sm); line-height: 1.5; }
+.pp-ticket   { border: var(--bw) dashed var(--warn); }
+.pp-ink      { text-shadow: 2px 2px 0 rgb(var(--primary-rgb) / .7); border: var(--bw) solid var(--line-strong); }
+.pp-obsidian { background: var(--special); color: var(--on-special); }
+.pp-obsidian[class*="pn-"] { -webkit-background-clip: border-box; background-clip: border-box; color: var(--on-special); animation: none; }
 .pp-neon, .pp-supreme { display: inline-block; padding: 0 var(--sp-2); border-radius: var(--r-sm); line-height: 1.5; }
 .pp-neon { border: var(--bw) solid var(--primary); box-shadow: 0 0 8px rgb(var(--primary-rgb) / .45); }
 .pp-supreme { background: var(--warn); color: var(--on-warn); }
-.pp-supreme.pn-iris { color: var(--on-warn); background: var(--warn); animation: none; }
+.pp-supreme[class*="pn-"] { -webkit-background-clip: border-box; background-clip: border-box; background: var(--warn); color: var(--on-warn); animation: none; }
 .pbadge { display: inline-flex; align-items: center; vertical-align: middle; margin-left: var(--sp-1); color: var(--warn); }
 .pbadge .ic { width: 14px; height: 14px; }
 .pbadge-lg .ic { width: var(--icon-lg); height: var(--icon-lg); }
 
 @media (prefers-reduced-motion: reduce) {
-  .pa-ember, .pn-iris { animation: none; }
+  .pa-ember, .pa-aurora, .pn-iris, .pn-ember, .pn-frost { animation: none; }
 }
+/* ─── src/css/76-new-games.css ─── */
+/* ═══ Пенальті, Наперстки, Дартс (src/app/55-new-games.js) ═══ */
+.ng-stage { display: grid; gap: var(--sp-4); justify-items: center; margin-bottom: var(--sp-4); }
+.ng-result { min-height: 24px; font-weight: var(--fw-bold); text-align: center; }
+.ng-result .is-pos { color: var(--pos); }
+.ng-result .is-neg { color: var(--neg); }
+
+/* Пенальті: ворота 3 × 2 */
+.pen-goal {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1);
+  width: min(100%, 360px); aspect-ratio: 3 / 1.6; padding: var(--sp-2);
+  border: 4px solid var(--fg); border-bottom: 0; border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: repeating-linear-gradient(45deg, var(--surface-2) 0 6px, var(--surface-1) 6px 12px);
+}
+.pen-zone {
+  width: 100%; height: 100%; margin: 0; padding: 0; min-height: var(--hit);
+  background: transparent; border: var(--bw) dashed var(--line-strong); border-radius: var(--r-sm); box-shadow: none;
+}
+.pen-zone.is-aim { border: 2px solid var(--accent); background: rgb(var(--accent-rgb) / .12); }
+.pen-zone.is-saved { background: rgb(var(--info-rgb) / .3); border-color: var(--info); }
+.pen-zone.is-goal { background: rgb(var(--pos-rgb) / .35); border: 2px solid var(--pos); }
+.pen-zone.is-blocked { background: rgb(var(--neg-rgb) / .35); border: 2px solid var(--neg); }
+
+/* Наперстки */
+.cups-row { display: flex; justify-content: center; gap: var(--sp-3); flex-wrap: wrap; padding-top: var(--sp-4); }
+.cup {
+  position: relative; width: 56px; height: 64px; margin: 0; padding: 0;
+  background: var(--accent); border: var(--bw) solid var(--ink-shadow);
+  border-radius: 40% 40% var(--r-sm) var(--r-sm); box-shadow: var(--sh-1);
+  transition: transform var(--dur-3) var(--ease-out);
+}
+.cup.is-pick { outline: 3px solid var(--primary); outline-offset: 3px; }
+.cup.is-up { transform: translateY(-18px); }
+.cup-ball {
+  position: absolute; left: 50%; bottom: -26px; width: 18px; height: 18px; margin-left: -9px;
+  border-radius: 50%; background: var(--fg); opacity: 0;
+}
+.cup.has-ball .cup-ball { opacity: 1; }
+
+/* Дартс */
+.darts-board { position: relative; width: min(80vw, 260px); aspect-ratio: 1; }
+.db-ring { position: absolute; inset: 0; margin: auto; border-radius: 50%; border: var(--bw) solid var(--ink-shadow); }
+.db-outer  { width: 92%; height: 92%; background: var(--surface-3); }
+.db-inner  { width: 60%; height: 60%; background: var(--surface-2); }
+.db-treble { width: 22%; height: 22%; background: var(--info); }
+.db-bull   { width: 11%; height: 11%; background: var(--pos); }
+.db-eye    { width: 4%;  height: 4%;  background: var(--neg); }
+.db-dart {
+  position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--fg); box-shadow: var(--sh-1);
+  transition: left var(--dur-3) var(--ease-out), top var(--dur-3) var(--ease-out);
+}
+.darts-legend { margin-bottom: var(--sp-4); }

@@ -335,6 +335,36 @@ const dice = (extra = {}) => ({ game: "dice", bet: 100, params: { target: 50, di
     assert.strictEqual(GAMES.match3.findRuns(last).cells.length, 0);
   }
   assert.strictEqual(GAMES.plinko3d.parse({ risk: "ultra" }), null);
+  // Пенальті / Наперстки / Дартс: точний RTP для кожного режиму + симуляція
+  {
+    const prng = { int: (a, b) => require("crypto").randomInt(a, b) };
+    const P = GAMES.penalty;
+    for (let k = 1; k <= 4; k++) assert.ok((P.multFor(k) * (6 - k)) / 6 <= 0.9701, "Пенальті RTP, воротар " + k);
+    let paid = 0, n = 60000;
+    for (let i = 0; i < n; i++) {
+      const o = P.play(1000, { zone: i % 6, keepers: 2 }, prng);
+      assert.strictEqual(o.saved.length, 2);
+      assert.strictEqual(o.win, !o.saved.includes(i % 6));
+      paid += o.payout;
+    }
+    rtpNew.penalty = paid / (n * 1000);
+    assert.ok(rtpNew.penalty > 0.93 && rtpNew.penalty < 1.0, "Пенальті симуляція " + rtpNew.penalty);
+    assert.strictEqual(P.parse({ zone: 6, keepers: 2 }), null);
+    assert.strictEqual(P.parse({ zone: 1, keepers: 5 }), null);
+    for (let c = 3; c <= 5; c++) assert.ok(GAMES.cups.multFor(c) / c <= 0.97, "Наперстки RTP " + c);
+    paid = 0;
+    for (let i = 0; i < n; i++) paid += GAMES.cups.play(1000, { cups: 4, pick: i % 4 }, prng).payout;
+    rtpNew.cups = paid / (n * 1000);
+    assert.ok(rtpNew.cups > 0.92 && rtpNew.cups < 1.0, "Наперстки симуляція " + rtpNew.cups);
+    assert.strictEqual(GAMES.cups.parse({ cups: 3, pick: 3 }), null);
+    const R = GAMES.darts.RINGS;
+    assert.strictEqual(R.reduce((a, x) => a + x.weight, 0), 1000);
+    assert.ok(R.reduce((a, x) => a + x.weight * x.mult, 0) / 1000 <= 0.97, "Дартс RTP");
+    paid = 0;
+    for (let i = 0; i < n; i++) paid += GAMES.darts.play(1000, {}, prng).payout;
+    rtpNew.darts = paid / (n * 1000);
+    assert.ok(rtpNew.darts > 0.9 && rtpNew.darts < 1.02, "Дартс симуляція " + rtpNew.darts);
+  }
   console.log(`OK — api/play: ID token, валідація, атомарний баланс, ідемпотентність, блокування; RTP dice ${rtpDice.toFixed(3)}, limbo ${rtpLimbo.toFixed(3)}, sic bo ${rtpSb.toFixed(3)}, card war ${rtpCw.toFixed(3)}; нові: ${Object.entries(rtpNew).map(([k, v]) => k + ' ' + v.toFixed(3)).join(', ')}`);
 })().catch((e) => {
   console.error(e);

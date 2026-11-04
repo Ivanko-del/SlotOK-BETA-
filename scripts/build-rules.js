@@ -205,9 +205,18 @@ function build(strict) {
       ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin} || (newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists()))` : authed,
       ...chatMessage(["from", "to"]),
     } } },
+    // Чат підтримки (v122, api/support.js): повідомлення лишаються тут, як і
+    // раніше; відповіді бота й підтримки пише сервер. Браузер у запасному
+    // режимі (сервер не налаштований) пише лише свої повідомлення.
     support_chats: {
-      ".read": strict ? isAdmin : true,
-      $u: { ".read": strict ? `auth != null && auth.uid === $u` : true, $m: { ".write": owner("$u"), ...chatMessage(["sender"]) } },
+      ".read": strict ? isSupport : true,
+      $u: { ".read": strict ? `auth != null && auth.uid === $u` : true, $m: { ".write": owner("$u"), ...chatMessage(["sender", "by", "topic"]) } },
+    },
+    // Стан розмови (бот / чекає людину / відповіли / закрито) — лише сервер у строгому режимі.
+    support_threads: {
+      ".read": strict ? isSupport : true,
+      ".indexOn": ["status", "lastTs"],
+      $u: { ".read": strict ? `auth != null && auth.uid === $u` : true, ".write": strict ? isAdmin : true },
     },
     casino_news: {
       ".read": true,

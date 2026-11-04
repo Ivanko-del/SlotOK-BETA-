@@ -11,12 +11,10 @@
 // ║  нові повідомлення в чатах. Каталог — shared/shop.js.         ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-const COSMETIC_CLASS = {
-  avatar_silver: 'pa-silver', avatar_gold: 'pa-gold', avatar_fire: 'pa-ember',
-  avatar_diamond: 'pa-platinum', avatar_cosmic: 'pa-obsidian',
-  username_red: 'pn-crimson', username_gold: 'pn-gold', username_rainbow: 'pn-iris',
-  name_frame_neon: 'pp-neon', name_frame: 'pp-supreme',
-};
+// Клас оформлення кожного товару — поле cls у каталозі (shared/shop.js).
+const COSMETIC_CLASS = {};
+SHOP_ITEMS.forEach(it => { if(it.cls) COSMETIC_CLASS[it.id] = it.cls; });
+const _stripCosmeticClasses = (el, re) => Array.from(el.classList).forEach(c => { if(re.test(c)) el.classList.remove(c); });
 const PLAYER_STYLE_TTL = 5 * 60000;
 const _playerStyles = new Map(); // нік → { worn, at } | { pending: Promise }
 
@@ -62,7 +60,7 @@ function invalidatePlayerStyle(nick) {
 }
 
 function _applyNick(el, worn) {
-  el.classList.remove('pn-crimson', 'pn-gold', 'pn-iris', 'pp-neon', 'pp-supreme');
+  _stripCosmeticClasses(el, /^(pn|pp)-/);
   if(worn && worn.nick && COSMETIC_CLASS[worn.nick]) el.classList.add(COSMETIC_CLASS[worn.nick]);
   if(worn && worn.plate && COSMETIC_CLASS[worn.plate]) el.classList.add(COSMETIC_CLASS[worn.plate]);
   let badge = el.nextElementSibling && el.nextElementSibling.classList.contains('pbadge') ? el.nextElementSibling : null;
@@ -78,7 +76,8 @@ function _applyNick(el, worn) {
 }
 
 function _applyAvatar(el, worn) {
-  el.classList.remove('pa', 'pa-silver', 'pa-gold', 'pa-ember', 'pa-platinum', 'pa-obsidian');
+  _stripCosmeticClasses(el, /^pa(-|$)/);
+  el.classList.remove('pa');
   if(worn && worn.frame && COSMETIC_CLASS[worn.frame]) el.classList.add('pa', COSMETIC_CLASS[worn.frame]);
 }
 

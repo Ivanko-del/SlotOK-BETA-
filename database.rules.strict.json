@@ -418,12 +418,18 @@
       }
     },
     "support_chats": {
-      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".read": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
       "$u": {
         ".read": "auth != null && auth.uid === $u",
         "$m": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           "sender": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          },
+          "topic": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
           "avatar": {
@@ -454,6 +460,17 @@
             ".validate": "newData.isString() && newData.val().length <= 4000"
           }
         }
+      }
+    },
+    "support_threads": {
+      ".read": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+      ".indexOn": [
+        "status",
+        "lastTs"
+      ],
+      "$u": {
+        ".read": "auth != null && auth.uid === $u",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
       }
     },
     "casino_news": {

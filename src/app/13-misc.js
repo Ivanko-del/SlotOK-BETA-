@@ -160,42 +160,6 @@ function openHistoryModal() {
         else c.innerHTML="<div style='padding:10px;color:var(--fg-3);'>Порожньо</div>"; 
     }); 
 }
-// openSupportModal() — визначено нижче, єдина версія (стару дублюючу прибрано)
-var _supportPendingMedia = null;
-var _supportPendingIsVideo = false;
-
-function handleSupportMedia(input) {
-  const file = input.files[0]; if(!file) return;
-  const isVideo = file.type.startsWith('video/');
-  const maxSize = isVideo ? 25*1024*1024 : 4*1024*1024;
-  if(file.size > maxSize) return notify(isVideo?'Відео макс 25 МБ':'Фото макс 4 МБ','error');
-  const reader = new FileReader();
-  reader.onload = e => {
-    _supportPendingMedia = e.target.result;
-    _supportPendingIsVideo = isVideo;
-    const prev = document.getElementById('supportMediaPreview');
-    const img = document.getElementById('supportPreviewImg');
-    const vid = document.getElementById('supportPreviewVid');
-    if(prev) prev.style.display = 'block';
-    if(isVideo) {
-      if(img) img.style.display = 'none';
-      if(vid) { vid.src = e.target.result; vid.style.display = 'block'; }
-    } else {
-      if(vid) vid.style.display = 'none';
-      if(img) { img.src = e.target.result; img.style.display = 'block'; }
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearSupportMedia() {
-  _supportPendingMedia = null; _supportPendingIsVideo = false;
-  const prev = document.getElementById('supportMediaPreview');
-  if(prev) prev.style.display = 'none';
-  const inp = document.getElementById('supportFileInput');
-  if(inp) inp.value = '';
-}
-
 window.openUserProfile = function(name) { 
     if(name===currentUser) return switchTab('profile'); 
     db.ref('users/'+name).once('value', s=>{ 
