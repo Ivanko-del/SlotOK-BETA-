@@ -318,7 +318,7 @@ function loadTournamentsV2() {
       card.className = 'tournament-card';
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:bold;">${t.icon||'🏆'} ${t.name}</div>
+          <div style="font-size:16px;font-weight:bold;">${escapeHtml(t.icon||'🏆')} ${escapeHtml(t.name)}</div>
           <span style="font-size:10px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
         </div>
         <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border-radius:var(--r-md);padding:12px;margin-bottom:10px;">
@@ -330,7 +330,7 @@ function loadTournamentsV2() {
           👥 Ігри: ${(t.allowedGames||['crash','slots','mines']).join(', ')}
         </div>
         <div id="t-lb-${id}" style="margin-bottom:10px;"></div>
-        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2(${jsArg(id)},${jsArg(t.name)},${Number(t.prize)||0})">🎯 Взяти участь</button>` : ''}
       `;
       list.appendChild(card);
       loadTournamentLeaderboard(id);

@@ -97,13 +97,21 @@ function runGlobalSearch(q) {
     showSearchResults(results, res);
     return;
   }
-  db.ref('users').orderByKey().limitToFirst(100).once('value').then(function(snap) {
-    var users = snap.val() || {};
-    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !users[entry[0]].isBot && entry[0] !== currentUser; })
+  // Пошук за початком ніку (ключі в базі чутливі до регістру — пробуємо кілька
+  // варіантів). Раніше читали перші 100 користувачів цілком і шукали серед них:
+  // важко, а гравці далі за алфавітом не знаходились зовсім.
+  var cap = q.charAt(0).toUpperCase() + q.slice(1);
+  var variants = Array.from(new Set([q, ql, cap, q.toUpperCase()]));
+  Promise.all(variants.map(function(v) {
+    return db.ref('users').orderByKey().startAt(v).endAt(v + '\uf8ff').limitToFirst(15).once('value').then(function(s) { return s.val() || {}; }).catch(function() { return {}; });
+  })).then(function(parts) {
+    var users = Object.assign.apply(null, [{}].concat(parts));
+    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !entry[1].isBot && entry[0] !== currentUser; })
+      .slice(0, 15)
       .forEach(function(entry) {
         var nick = entry[0], u = entry[1];
-        results.push({type:'Гравець', icon:u.avatar||'👤', name:nick, sub:u.tag||'',
-          action:"showPlayerCard('" + nick + "');document.getElementById('globalSearchModal').remove()"});
+        results.push({type:'Гравець', icon:(u.avatar && u.avatar.length <= 8) ? u.avatar : '👤', name:nick, sub:u.tag||'',
+          action:"showPlayerCard(" + jsArg(nick) + ");document.getElementById('globalSearchModal').remove()"});
       });
     showSearchResults(results, res);
   });
@@ -112,8 +120,8 @@ function showSearchResults(results, res) {
   if(!results.length) { res.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
   res.innerHTML = results.slice(0,20).map(function(r) {
     return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer;">'
-      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
-      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + r.sub + '</div>' : '') + '</div>'
+      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + escapeHtml(r.icon) + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + escapeHtml(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + escapeHtml(r.sub) + '</div>' : '') + '</div>'
       + '<div style="font-size:9px;color:var(--fg-4);background:rgb(var(--tint-rgb) / 0.04);border-radius:var(--r-sm);padding:3px 8px;">' + r.type + '</div>'
       + '</div>';
   }).join('');
