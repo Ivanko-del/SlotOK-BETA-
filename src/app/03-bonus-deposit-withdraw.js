@@ -118,10 +118,7 @@ const DEPOSIT_REQUISITES = {
   mono:       '4874 0700 7092 4301 — Іван Колодєєв',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
-const DEPOSIT_METHOD_NAMES = {
-  // usdt — лише щоб старі заявки в історії мали назву; як спосіб донату прибраний
-  mono: 'Monobank', usdt: 'USDT (TRC20)', telegram: 'Telegram'
-};
+const DEPOSIT_METHOD_NAMES = { mono: 'Monobank', telegram: 'Telegram', privat: 'Банківська картка', usdt: 'Інше' };
 let selectedDepMethod = 'mono';
 
 const BANK_LOADING_STEPS = [
@@ -168,12 +165,12 @@ function showBankReceipt({ sign, amount, accent, title, subtitle, rows }) {
       <div style="width:64px;height:64px;border-radius:50%;background:${accent}1f;border:2px solid ${accent};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:${accent};">✓</div>
       <div style="font-size:16px;font-weight:800;color:var(--fg);margin-bottom:4px;">${title}</div>
       <div style="font-size:12px;color:var(--fg-3);margin-bottom:18px;">${subtitle}</div>
-      <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount}₴</div>
+      <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount} грн</div>
       <div style="background:var(--bg);border-radius:var(--r-lg);padding:12px 14px;text-align:left;font-size:12px;color:var(--fg-3);display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
         ${rowsHtml}
       </div>
       <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:${accent}1f;border:1px solid ${accent}4d;border-radius:var(--r-lg);padding:12px;color:${accent};cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
-      <div style="font-size:10px;color:var(--fg-4);line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
+      <div style="font-size:10px;color:var(--fg-4);line-height:1.5;">🔒 Підключення захищене<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
     </div>`;
   document.body.appendChild(modal);
 }
@@ -186,8 +183,8 @@ function showDepositReceipt(amount, method, reqId) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
   showBankReceipt({
-    sign: '+', amount, accent: '#3dd68c',
-    title: 'Заявку прийнято', subtitle: 'Очікуйте підтвердження адміністратора',
+    sign: '', amount, accent: '#3dd68c',
+    title: 'Заявку на донат прийнято', subtitle: 'Дякуємо за підтримку! Після підтвердження в профілі зʼявиться значок «Підтримав проєкт». Ігровий баланс не змінюється.',
     rows: [
       ['Спосіб', DEPOSIT_METHOD_NAMES[method] || method],
       ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
@@ -279,7 +276,7 @@ function submitDepositRequest() {
   let amount = selectedDepAmount;
   if(amount === 0 && customInput && customInput.value) amount = parseInt(customInput.value);
   if(!amount || amount < 50) {
-    notify('Оберіть суму поповнення (мін. 50₴)', 'error');
+    notify('Оберіть суму донату (мін. 50 грн)', 'error');
     return;
   }
   const userId = userData.id || currentUser;
@@ -303,7 +300,7 @@ function submitDepositRequest() {
     // Notify admin via PM
     db.ref('pm/theivankoo/' + db.ref().push().key).set({
       from: '📥 Система', to: 'theivankoo',
-      text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴ (${selectedDepMethod || 'mono'})`,
+      text: `💰 Нова заявка на донат від @${userName}: ${amount} грн (${selectedDepMethod || 'mono'})`,
       ts: Date.now()
     });
     db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -314,14 +311,14 @@ function submitDepositRequest() {
         if(admNick === 'theivankoo') return;
         db.ref('pm/' + admNick + '/' + db.ref().push().key).set({
           from: '📥 Система', to: admNick,
-          text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴`,
+          text: `💰 Нова заявка на донат від @${userName}: ${amount} грн`,
           ts: Date.now()
         });
         db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
       });
     });
     showDepositLoading(amount, selectedDepMethod || 'mono', reqId);
-    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку на донат'; }
     selectedDepAmount = 0;
     ksClearDepositAmountUI();
     if(customInput) customInput.value = '';
@@ -329,7 +326,7 @@ function submitDepositRequest() {
     loadMyDeposits();
   }).catch(err => {
     notify('Помилка подачі заявки. Спробуй ще.', 'error');
-    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку на донат'; }
   });
 }
 
@@ -338,7 +335,7 @@ function openTelegramBot() {
   let amount = selectedDepAmount;
   if(amount === 0 && customInput && customInput.value) amount = parseInt(customInput.value);
   if(!amount || amount < 50) {
-    notify('Оберіть суму поповнення (мін. 50₴)', 'error');
+    notify('Оберіть суму донату (мін. 50 грн)', 'error');
     return;
   }
   const userId = userData.id || currentUser;
@@ -359,8 +356,9 @@ function linkTelegram() {
 }
 
 function unlinkTelegram() {
-  db.ref('users/' + currentUser + '/telegramChatId').once('value', snap => {
+  db.ref('user_private/' + currentUser + '/telegramChatId').once('value', snap => {
     const chatId = snap.val();
+    db.ref('user_private/' + currentUser + '/telegramChatId').remove();
     db.ref('users/' + currentUser + '/telegramChatId').remove();
     if (chatId) db.ref('telegram_links/' + chatId).remove();
     notify('Telegram відв\'язано', 'info');
@@ -372,7 +370,7 @@ function initTelegramLinkStatus() {
   // функція викликається в шляху успішного входу ДО startDataSync(), тож
   // виняток залишав користувача з «увійшов», але без жодної синхронізації даних.
   if (!currentUser || !db) return;
-  const tgStatusRef = db.ref('users/' + currentUser + '/telegramChatId');
+  const tgStatusRef = db.ref('user_private/' + currentUser + '/telegramChatId');
   tgStatusRef.off('value'); // avoid stacking duplicate listeners if called more than once per session
   tgStatusRef.on('value', snap => {
     const statusEl = document.getElementById('tgLinkStatus');
@@ -401,12 +399,12 @@ function loadMyDeposits() {
       const date = new Date(d.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
       const done = d.status === 'done', bad = d.status === 'rejected';
       const cls  = done ? 'pw-done' : bad ? 'pw-rejected' : 'pw-pending';
-      const text = done ? 'Зараховано' : bad ? 'Відхилено' : 'Очікує';
+      const text = done ? 'Підтверджено' : bad ? 'Відхилено' : 'Очікує';
       const icon = done ? 'check' : bad ? 'x' : 'clock';
       return `<div class="pending-withdraw">
         <div class="ks-icn ${done ? 'is-pos' : bad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
         <div class="ks-row-main">
-          <div class="ks-row-title ks-num">+${formatNumber(d.amount)} ₴</div>
+          <div class="ks-row-title ks-num">${formatNumber(d.amount)} грн</div>
           <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[d.method] || d.method || '—'} · ${date}</div>
         </div>
         <span class="pw-status ${cls}">${text}</span>
@@ -438,138 +436,9 @@ function selectCustomAmount() {
 }
 
 // ============================================
-// ВИВІД КОШТІВ
+// ВИВІД КОШТІВ — НЕ ІСНУЄ
 // ============================================
-function submitWithdraw() {
-    const card = document.getElementById('withdrawCard').value.trim();
-    const amount = parseInt(document.getElementById('withdrawAmount').value);
-
-    if(!card) return notify("Введіть реквізити для виводу", "error");
-    if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
-    if(userData.balance < amount) return notify("Недостатньо коштів", "error");
-    if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
-    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Гаманці", "error");
-    if(!checkCardLimit(getActiveCardId(), amount)) return;
-
-    // Перевірка на pending заявки
-    if(userData.pendingWithdraw) {
-        return notify("У вас вже є активна заявка на вивід. Дочекайтесь її обробки.", "error");
-    }
-
-    // Великі суми — реальне 2FA: підтвердження тапом у Telegram гравця
-    // (webhook перевіряє, що це саме його chatId), а не код, видимий у
-    // тому ж вікні браузера, звідки подано заявку.
-    const needs2FA = amount >= WITHDRAW_2FA_THRESHOLD;
-    if(needs2FA && !userData.telegramChatId) {
-        notify('🔐 Для виводу від '+formatNumber(WITHDRAW_2FA_THRESHOLD)+'₴ потрібно прив’язати Telegram (Профіль → Сповіщення) — звідти прийде підтвердження.', 'error');
-        return;
-    }
-
-    const requestId = `${currentUser}_${Date.now()}`;
-    const status = needs2FA ? 'pending_2fa' : 'pending';
-
-    // Заморозити гроші
-    db.ref('users/' + currentUser).update({
-        balance: firebase.database.ServerValue.increment(-amount),
-        pendingWithdraw: true
-    });
-
-    // Зберегти заявку
-    db.ref('withdraw_requests/' + requestId).set({
-        user: currentUser,
-        userId: userData.id,
-        amount: amount,
-        method: selectedWithdrawMethod,
-        card: card,
-        // Картка, з якої кошти заморозили: на неї ж повернемо при відмові й
-        // її ж історію позначимо при схваленні, навіть якщо гравець тим часом
-        // перемкнув активну.
-        cardId: getActiveCardId() || null,
-        status: status,
-        time: Date.now()
-    }).then(() => notifyBot(needs2FA ? 'withdraw-2fa' : 'withdraw', requestId));
-
-    db.ref('users/' + currentUser + '/withdraws/' + requestId).set({
-        amount: amount,
-        method: selectedWithdrawMethod,
-        status: status,
-        time: Date.now()
-    });
-
-    noteCardSpend(getActiveCardId(), amount);
-    addToHistory(needs2FA ? `Заявка на вивід: -${amount} ₴ (очікує підтвердження в Telegram)` : `Заявка на вивід: -${amount} ₴ (обробляється)`);
-    // Адміна повідомляємо одразу лише для заявок БЕЗ 2FA — підтверджені 2FA-заявки
-    // сам webhook сповістить адміна, щойно гравець тапне "Підтвердити" в Telegram.
-    if(!needs2FA) {
-        db.ref('pm/theivankoo/'+db.ref().push().key).set({from:'📤 Система', to:'theivankoo', text:`💸 Нова заявка на вивід від @${currentUser}: ${amount}₴ (${selectedWithdrawMethod})`, ts:Date.now()});
-        db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    }
-
-    if(needs2FA) {
-        showWithdraw2FAWait(amount, requestId);
-    } else {
-        showWithdrawLoading(amount, selectedWithdrawMethod, card, requestId);
-    }
-
-    document.getElementById('withdrawCard').value = '';
-    document.getElementById('withdrawAmount').value = '';
-    loadMyWithdraws();
-}
-
-const WITHDRAW_METHOD_NAMES = { privat: 'PrivatBank', mono: 'Monobank', card: 'Visa/Mastercard', usdt: 'USDT (TRC20)' };
-
-function maskDest(dest) {
-  if(dest.length <= 8) return dest;
-  return dest.slice(0, 4) + '••••' + dest.slice(-4);
-}
-
-function showWithdrawLoading(amount, method, dest, reqId) {
-  showBankProcessing('#e74c3c', () => showWithdrawReceipt(amount, method, dest, reqId));
-}
-
-function showWithdrawReceipt(amount, method, dest, reqId) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
-  showBankReceipt({
-    sign: '-', amount, accent: '#e74c3c',
-    title: 'Заявку на вивід прийнято', subtitle: 'Кошти надійдуть протягом 1-24 год',
-    rows: [
-      ['Спосіб', WITHDRAW_METHOD_NAMES[method] || method],
-      ['Отримувач', `<span style="font-family:var(--font-mono);">${maskDest(dest)}</span>`],
-      ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
-      ['Дата', dateStr],
-      ['Статус', '<span style="color:var(--accent);">Обробка</span>']
-    ]
-  });
-}
-
-function loadMyWithdraws() {
-    const list = document.getElementById('myWithdrawsList');
-    if(!list) return;
-    
-    db.ref('users/' + currentUser + '/withdraws').limitToLast(5).once('value', snap => {
-        const data = snap.val();
-        if(!data) { list.innerHTML = '<div class="ks-muted">Заявок немає</div>'; return; }
-
-        list.innerHTML = Object.entries(data).reverse().map(([id, w]) => {
-            const date = new Date(w.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-            const done = w.status === 'done';
-            const isBad = w.status === 'rejected' || w.status === 'cancelled';
-            const cls = done ? 'pw-done' : isBad ? 'pw-rejected' : 'pw-pending';
-            const text = done ? 'Виконано' : w.status === 'rejected' ? 'Відхилено'
-              : w.status === 'cancelled' ? 'Скасовано' : w.status === 'pending_2fa' ? 'Підтвердіть у Telegram' : 'Обробляється';
-            const icon = done ? 'check' : isBad ? 'x' : w.status === 'pending_2fa' ? 'shield' : 'clock';
-            return `
-                <div class="pending-withdraw">
-                    <div class="ks-icn ${done ? 'is-pos' : isBad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
-                    <div class="ks-row-main">
-                        <div class="ks-row-title ks-num">−${formatNumber(w.amount)} ₴</div>
-                        <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[w.method] || w.method || '—'} · ${date}</div>
-                    </div>
-                    <span class="pw-status ${cls}">${text}</span>
-                </div>
-            `;
-        }).join('');
-    });
-}
-
+// Ігрова валюта віртуальна й не виводиться (див. Умови користування). Колишній
+// код заявок на вивід прибрано; заглушки лишені, щоб старі виклики не падали.
+function submitWithdraw() { notify('Вивід неможливий: ігрова валюта віртуальна й не виводиться.', 'error'); }
+function loadMyWithdraws() {}

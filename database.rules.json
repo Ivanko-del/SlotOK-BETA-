@@ -9,7 +9,6 @@
         "totalWins",
         "totalProfit",
         "lastSeen",
-        "lastIpHash",
         "stats/gamesPlayed",
         "stats/biggestWin",
         "isBot",
@@ -33,13 +32,13 @@
           ".validate": "newData.isString() && newData.val().length <= 1000"
         },
         "email": {
-          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "lastIP": {
           ".validate": "false"
         },
         "lastIpHash": {
-          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "avatar": {
           ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
@@ -66,6 +65,32 @@
     "user_secrets": {
       ".read": false,
       ".write": "false"
+    },
+    "user_private": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "true",
+        ".write": "true",
+        ".validate": "newData.hasChildren() || !newData.exists()",
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "lastIpHash": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "telegramChatId": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        }
+      }
+    },
+    "ip_index": {
+      ".read": true,
+      "$h": {
+        "$n": {
+          ".write": true
+        }
+      }
     },
     "notify_rate": {
       ".read": false,
@@ -458,6 +483,30 @@
         ]
       }
     },
+    "missions": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "league": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "league_pub": {
+      ".read": false,
+      ".write": false,
+      "$season": {
+        ".read": true,
+        ".indexOn": [
+          "rating"
+        ]
+      }
+    },
     "room_private": {
       ".read": false,
       ".write": false,
@@ -465,6 +514,37 @@
         "$nick": {
           ".read": "auth != null && auth.uid === $nick"
         }
+      }
+    },
+    "room_watchers": {
+      ".read": true,
+      ".write": false,
+      "$id": {
+        "$nick": {
+          ".write": "auth != null && auth.uid === $nick",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "friends": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "friend_requests": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "room_invites": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
       }
     },
     "live_results": {
@@ -499,13 +579,10 @@
       ".read": true,
       "$k": {
         ".write": "true"
-      }
-    },
-    "sport_matches": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      },
+      ".indexOn": [
+        "userId"
+      ]
     },
     "tournaments": {
       ".read": true,
@@ -703,24 +780,6 @@
         "$f": {
           ".write": "true"
         }
-      }
-    },
-    "axiomPublic": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
-    },
-    "axiomCardIndex": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
-    },
-    "axiomLinkCodes": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
       }
     }
   }

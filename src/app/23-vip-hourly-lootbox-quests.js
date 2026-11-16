@@ -212,7 +212,9 @@ function updateVipUI() {
   // захардкоджені картки (Bronze 0% / Silver 1% / Gold 2% / Platinum 5%),
   // яких движок ніколи не платив.
   const allEl = document.getElementById('vipAllLevels');
-  if(allEl) {
+  // Списки статичні для рівня — перебудовуємо лише коли рівень змінився (а не на кожну ставку)
+  if(allEl && allEl.dataset.vipIdx !== String(vip.index)) {
+    allEl.dataset.vipIdx = String(vip.index);
     allEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const titleColor = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `
@@ -232,6 +234,8 @@ function updateVipUI() {
   // підсвітка по індексу працювала лише для перших чотирьох із 14 рівнів.
   const hourlyEl = document.getElementById('hourlyVipTiers');
   if(hourlyEl) {
+    if(hourlyEl.dataset.vipIdx !== String(vip.index)) {
+    hourlyEl.dataset.vipIdx = String(vip.index);
     hourlyEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const c = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `<div class="hourly-vip-tier${i === vip.index ? ' active' : ''}">
@@ -239,8 +243,9 @@ function updateVipUI() {
         <div style="color:${c};">${lv.icon} ${lv.name}</div>
       </div>`;
     }).join('');
+    }
     const active = hourlyEl.querySelector('.hourly-vip-tier.active');
-    if(active) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+    if(active && hourlyEl.getClientRects().length) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
   }
 }
 
@@ -269,6 +274,7 @@ function updateHourlyTimer() {
   const statusText = document.getElementById('hourlyStatusText');
   const claimBtn = document.getElementById('hourlyClaimBtn');
   if(!ring) return;
+  if(!ring.getClientRects().length) return; // екран бонусу сховано — не чіпаємо DOM щосекунди
 
   if(diff >= hourMs) {
     ring.classList.add('ready');
@@ -721,7 +727,7 @@ const NAV_TAB_MAP = {
   home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:5,
   slots:1, roulette:1, crash:1, mines:1, fortune:1, poker:1, blackjack:1,
   scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
-  cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1,
+  cardgame:1, monopoly:1, 'monopoly-mp':1,
   tournaments:5, referrals:5, vip:5, quests:5, lootboxes:5,
   hourly:5, clans:5, leaderboard:5, slotiky:5,
   achievements:5, battlepass:5, stats:5, bank:5, admin:4,
@@ -729,7 +735,7 @@ const NAV_TAB_MAP = {
   pm:5, themes:5,
   coinflip:1, rps:1, predict:1,
   limbo:1, dragon:1, sicbo:1, cardwar:1,
-  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, livecrash:1, bingo:1, quizbattle:1, royale:1, eights:1, durak:1, ludo:1, holdem:1,
+  plinko3d:1, wheel3d:1, craps:1, slot5:1, match3:1, minesweeper:1, battleship:1, fourrow:1, livecrash:1, bingo:1, quizbattle:1, royale:1, eights:1, durak:1, ludo:1, holdem:1,
   balloon:1, russianroulette:1, quiz:5, horseracing:1, colorbet:1, chat:5,
   autobet:5, insurance:5, copytrade:5,
   lottery:5, investpool:5,
@@ -909,14 +915,13 @@ function switchTab(id, el) {
   if(id==='affiliate')    safe(() => initAffiliate());
   if(id==='battlepass')   safe(() => initBattlePass());
   if(id==='stats')        safe(() => initStatsTab());
-  if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
   if(id==='colorbet')     safe(() => renderColorHistory());
   if(id==='russianroulette') safe(() => updateRRDisplay());
   if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
   if(id==='monopoly-mp')  safe(() => loadMpRooms());
   if(id==='notifications') safe(() => renderNotifs());
   if(id==='settings')     safe(() => { loadSettings(); updateRGLossWarnUI(); updateRakebackUI(); });
-  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); renderHomeAxiomWidget(); updateDisabledGameCardsUI(); renderFavoriteHearts(); });
+  if(id==='home')         safe(() => { initHomeTab(); updateHomeStats(); renderHomeProgressBars(); updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='lobby')        safe(() => { updateDisabledGameCardsUI(); renderFavoriteHearts(); });
   if(id==='baccarat')     safe(() => initBaccarat());
   if(id==='videpoker')    safe(() => initVideoPoker());
@@ -950,6 +955,7 @@ function switchTab(id, el) {
   if(id==='match3')       safe(() => initMatch3());
   if(id==='minesweeper')  safe(() => initMinesweeper());
   if(id==='battleship')   safe(() => initBattleship());
+  if(id==='fourrow')      safe(() => initFourRow());
   if(id==='cardwar')      safe(() => initCardWar());
   if(id==='chess')        safe(() => {
     // Скидаємо на екран налаштувань щоразу коли заходимо в шахи ззовні

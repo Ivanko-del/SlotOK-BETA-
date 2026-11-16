@@ -401,7 +401,6 @@ function initStatsTab() {
   const biggestWin   = d.biggestWin    || 0;
   const slotsPlayed  = d.slotsPlayed   || 0;
   const crashGames   = d.crashGames    || 0;
-  const sportBets    = d.sportBets     || 0;
   const rouletteBets = d.rouletteBets  || 0;
   const minesGames   = d.minesGames    || 0;
   const winRate      = totalBets > 0 ? Math.round(totalWins/totalBets*100) : 0;
@@ -417,7 +416,6 @@ function initStatsTab() {
     const games = {
       '🎰 Слоти': slotsPlayed,
       '🚀 Краш': crashGames,
-      '⚽ Спорт': sportBets,
       '🎡 Рулетка': rouletteBets,
       '💣 Майнер': minesGames,
     };
@@ -489,11 +487,10 @@ function initStatsTab() {
       ${[
         ['🎰 Слоти',    slotsPlayed],
         ['🚀 Краш',     crashGames],
-        ['⚽ Спорт',    sportBets],
         ['🎡 Рулетка',  rouletteBets],
         ['💣 Майнер',   minesGames],
       ].map(([label, count])=>{
-        const maxCount = Math.max(slotsPlayed, crashGames, sportBets, rouletteBets, minesGames, 1);
+        const maxCount = Math.max(slotsPlayed, crashGames, rouletteBets, minesGames, 1);
         const pct = Math.round(count/maxCount*100);
         return `<div style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">

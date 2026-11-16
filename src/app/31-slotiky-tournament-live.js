@@ -318,7 +318,7 @@ function loadTournamentsV2() {
       card.className = 'tournament-card';
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:bold;">${t.icon||'🏆'} ${t.name}</div>
+          <div style="font-size:16px;font-weight:bold;">${escapeHtml(t.icon||'🏆')} ${escapeHtml(t.name)}</div>
           <span style="font-size:10px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
         </div>
         <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border-radius:var(--r-md);padding:12px;margin-bottom:10px;">
@@ -330,7 +330,7 @@ function loadTournamentsV2() {
           👥 Ігри: ${(t.allowedGames||['crash','slots','mines']).join(', ')}
         </div>
         <div id="t-lb-${id}" style="margin-bottom:10px;"></div>
-        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2(${jsArg(id)},${jsArg(t.name)},${Number(t.prize)||0})">🎯 Взяти участь</button>` : ''}
       `;
       list.appendChild(card);
       loadTournamentLeaderboard(id);
@@ -459,49 +459,31 @@ function loadTourneyStatsBar() {
 // ═══════════════════════════════════════
 // CASINO LOBBY v2 — Jackpot + Wins feed
 // ═══════════════════════════════════════
-let _lobbyJackpot = 4287341 + Math.floor(Math.random()*500000);
-let _lobbyJackpotTimer = null;
-let _lobbyWinsTimer    = null;
-
-const LOBBY_WIN_POOL = [
-  {user:'Дмитро Л.', game:'Plinko',       avatar:'🦅'},
-  {user:'Оля Т.',    game:'Mines',         avatar:'🦋'},
-  {user:'Саша П.',   game:'Crash Aviator', avatar:'🐬'},
-  {user:'Вова Д.',   game:'Classic 777',   avatar:'🦜'},
-  {user:'Юля К.',    game:'Blackjack',     avatar:'🐱'},
-  {user:'Петро М.',  game:'Limbo',         avatar:'🦊'},
-];
+// Стрічка «Останні виграші» — лише РЕАЛЬНІ записи win_feed (без вигаданих
+// гравців і сум). Немає даних — блок схований. Джекпот-лічильник прибрано.
+let _lobbyWinsRef = null, _lobbyWinsCb = null;
 
 function startLobbyTimers() {
   try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
-  // Jackpot counter
-  _lobbyJackpotTimer = setInterval(() => {
-    _lobbyJackpot += Math.floor(Math.random()*180 + 40);
-    const el = document.getElementById('lobbyJackpotNum');
-    if(el) el.textContent = _lobbyJackpot.toLocaleString('uk');
-  }, 1200);
-
-  // Wins feed rotation
-  const pushWin = () => {
-    const feed = document.getElementById('lobbyWinsFeed');
-    if(!feed) return;
-    const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
-    const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
-    const row = document.createElement('div');
-    row.className = 'win-feed-row list-row';
-    row.innerHTML = `<div class="win-feed-avatar">${p.avatar}</div><div class="list-row-main"><div class="win-feed-user list-row-title">${p.user}</div><div class="win-feed-game list-row-sub">${p.game}</div></div><div class="win-feed-amount num">+₴ ${amt}</div>`;
-    feed.insertBefore(row, feed.firstChild);
-    const rows = feed.querySelectorAll('.win-feed-row');
-    if(rows.length > 5) rows[rows.length-1].remove();
+  // Повторний вхід у вкладку без виходу не має множити слухачі
+  stopLobbyTimers();
+  const feed = document.getElementById('lobbyWinsFeed');
+  const head = document.getElementById('lobbyWinsHead');
+  if(!feed || !db) return;
+  _lobbyWinsRef = db.ref('win_feed').orderByChild('time').limitToLast(5);
+  _lobbyWinsCb = snap => {
+    const items = Object.values(snap.val() || {}).filter(it => it && !it.isBot && it.user && it.amount).sort((a, b) => b.time - a.time);
+    feed.innerHTML = items.map(it =>
+      `<div class="win-feed-row list-row"><div class="list-row-main"><div class="win-feed-user list-row-title">${escapeHtml(it.user)}</div><div class="win-feed-game list-row-sub">${escapeHtml(it.game || '')}</div></div><div class="win-feed-amount num">+₴ ${formatNumber(it.amount)}</div></div>`).join('');
+    feed.hidden = !items.length;
+    if(head) head.hidden = !items.length;
   };
-  const feedEl = document.getElementById('lobbyWinsFeed');
-  if(feedEl && !feedEl.children.length) { for(let i = 0; i < 4; i++) pushWin(); }
-  _lobbyWinsTimer = setInterval(pushWin, 3000);
+  _lobbyWinsRef.on('value', _lobbyWinsCb);
 }
 
 function stopLobbyTimers() {
-  clearInterval(_lobbyJackpotTimer);
-  clearInterval(_lobbyWinsTimer);
+  if(_lobbyWinsRef && _lobbyWinsCb) { try { _lobbyWinsRef.off('value', _lobbyWinsCb); } catch(e) {} }
+  _lobbyWinsRef = _lobbyWinsCb = null;
 }
 
 // ── Фільтри лоббі ────────────────────────────────────────────────
@@ -601,334 +583,3 @@ function closeCasinoModal() {
     if(_orig) _orig(tab);
   };
 })();
-
-
-// ============================================================
-// ===== LIVE MATCH TRACKER — animated pitch =====
-// ============================================================
-let trackerMatchId  = null;
-let trackerInterval = null;
-let trackerMinute   = 0;
-let trackerHomeScore = 0;
-let trackerAwayScore = 0;
-let trackerEvents   = [];
-let trackerBallX    = 0.5;  // 0–1 normalized
-let trackerBallY    = 0.5;
-let trackerBallTargetX = 0.5;
-let trackerBallTargetY = 0.5;
-let pitchAnimFrame  = null;
-
-const SPORT_PITCH_CONFIGS = {
-  soccer:     { field:'football', color:'#2d5a27', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','🔴 Червона','↔️ Заміна','⛳ Кутовий','🛡️ Сейв'] },
-  ucl:        { field:'football', color:'#1a3a7a', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','↔️ Заміна'] },
-  basketball: { field:'basketball', color:'#8B4513', lineColor:'rgba(255,255,255,0.4)', events:['🏀 М\u02BCяч у кільці','🚫 Фол','⏱️ Тайм-аут'] },
-  hockey:     { field:'hockey', color:'#c0d8e8', lineColor:'rgba(0,0,0,0.4)', events:['🏒 Гол!','🚫 Пенальті','↔️ Заміна'] },
-  tennis:     { field:'tennis', color:'#2d6a4f', lineColor:'rgba(255,255,255,0.5)', events:['🎾 Ейс!','🚫 Подвійна','🏆 Гейм'] },
-  csgo:       { field:'esport', color:'#1a1a2e', lineColor:'rgba(0,200,255,0.4)', events:['💀 Вбивство','💣 Бомба посаджена','🛡️ Раунд виграно'] },
-  default:    { field:'football', color:'#2d5a27', lineColor:'rgba(255,255,255,0.5)', events:['⚽ Гол','🟡 Жовта','↔️ Заміна'] },
-};
-
-function openMatchTracker(matchId) {
-  if(!realMatches || Object.keys(realMatches).length === 0) {
-    notify('⏳ Матчі ще завантажуються, спробуй через секунду', 'info'); return;
-  }
-  const m = realMatches[matchId];
-  if(!m) { notify('Матч не знайдено', 'error'); return; }
-
-  trackerMatchId    = matchId;
-  trackerMinute     = m.isLive ? (30 + Math.floor(Math.random()*30)) : 0;
-  trackerHomeScore  = m.isLive ? (Math.floor(Math.random()*3)) : 0;
-  trackerAwayScore  = m.isLive ? (Math.floor(Math.random()*3)) : 0;
-  trackerEvents     = [];
-  trackerBallX = trackerBallY = 0.5;
-
-  // Set UI info
-  const sportCfg = SPORT_PITCH_CONFIGS[m.sport] || SPORT_PITCH_CONFIGS.default;
-  const sportEmoji = { soccer:'⚽', ucl:'🏆', basketball:'🏀', hockey:'🏒', tennis:'🎾', csgo:'🎮', dota2:'⚔️', lol:'🏆', valorant:'🔫', efootball:'⚡', football:'🏈', baseball:'⚾' };
-
-  document.getElementById('trackerMatchTitle').textContent = m.home + ' vs ' + m.away;
-  document.getElementById('trackerHomeName').textContent   = m.home;
-  document.getElementById('trackerAwayName').textContent   = m.away;
-  document.getElementById('trackerHomeEmoji').textContent  = sportEmoji[m.sport] || '🏅';
-  document.getElementById('trackerAwayEmoji').textContent  = sportEmoji[m.sport] || '🏅';
-  document.getElementById('trackerSport').textContent      = (m.league || m.sport || '').toUpperCase();
-  document.getElementById('trackerStatus').textContent     = m.isLive ? '🟢 LIVE' : '⏳ Очікується';
-
-  updateTrackerScore();
-  renderTrackerEvents();
-  renderMatchStats(m);
-  renderTrackerBets(m);
-
-  // Populate initial events if live
-  if(m.isLive && trackerHomeScore + trackerAwayScore > 0) {
-    const totalGoals = trackerHomeScore + trackerAwayScore;
-    for(let i = 0; i < totalGoals; i++) {
-      const isHome = i < trackerHomeScore;
-      const min = 5 + Math.floor(Math.random() * (trackerMinute - 5));
-      trackerEvents.push({ min, icon:'⚽', title:'Гол!', sub: isHome ? m.home : m.away, side: isHome ? 'home' : 'away', score: (isHome?i+1:trackerHomeScore)+'-'+(isHome?trackerAwayScore:i+1) });
-    }
-    trackerEvents.sort((a,b) => a.min - b.min);
-    renderTrackerEvents();
-  }
-
-  // Show modal
-  document.getElementById('matchTrackerModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-
-  // Draw pitch
-  drawPitch(sportCfg);
-
-  // Start simulation
-  if(trackerInterval) clearInterval(trackerInterval);
-  trackerInterval = setInterval(() => simulateTrackerTick(m, sportCfg), 1500);
-
-  // Animate ball
-  animateBall();
-}
-
-function closeMatchTracker() {
-  document.getElementById('matchTrackerModal').classList.add('hidden');
-  document.body.style.overflow = '';
-  if(trackerInterval) { clearInterval(trackerInterval); trackerInterval = null; }
-  if(pitchAnimFrame)  { cancelAnimationFrame(pitchAnimFrame); pitchAnimFrame = null; }
-}
-
-function drawPitch(cfg) {
-  const canvas = document.getElementById('pitchCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = cfg.color;
-  ctx.fillRect(0,0,W,H);
-
-  for(let i = 0; i < 8; i++) {
-    ctx.fillStyle = i%2===0 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.03)';
-    ctx.fillRect(i * W/8, 0, W/8, H);
-  }
-
-  ctx.strokeStyle = cfg.lineColor;
-  ctx.lineWidth = 1.5;
-
-  if(cfg.field === 'football') {
-    ctx.strokeRect(12, 8, W-24, H-16);
-    ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
-    ctx.beginPath(); ctx.arc(W/2, H/2, 32, 0, Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(W/2, H/2, 3, 0, Math.PI*2);
-    ctx.fillStyle = cfg.lineColor; ctx.fill();
-    ctx.strokeRect(12, H/2-24, 30, 48);
-    ctx.strokeRect(12, H/2-44, 56, 88);
-    ctx.strokeRect(W-42, H/2-24, 30, 48);
-    ctx.strokeRect(W-68, H/2-44, 56, 88);
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(6, H/2-20, 6, 40);
-    ctx.fillRect(W-12, H/2-20, 6, 40);
-    ctx.strokeRect(6, H/2-20, 6, 40);
-    ctx.strokeRect(W-12, H/2-20, 6, 40);
-  } else if(cfg.field === 'basketball') {
-    ctx.strokeRect(12, 8, W-24, H-16);
-    ctx.beginPath(); ctx.moveTo(W/2, 8); ctx.lineTo(W/2, H-8); ctx.stroke();
-    ctx.beginPath(); ctx.arc(W/2, H/2, 40, 0, Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(50, H/2, 18, 0, Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(W-50, H/2, 18, 0, Math.PI*2); ctx.stroke();
-  } else if(cfg.field === 'esport') {
-    ctx.strokeStyle = 'rgba(0,200,255,0.2)';
-    for(let x = 0; x < W; x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for(let y = 0; y < H; y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-    ctx.strokeStyle = cfg.lineColor; ctx.strokeRect(12,8,W-24,H-16);
-  }
-}
-
-function drawBall(x, y, sport) {
-  const canvas = document.getElementById('pitchCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const bx = x * W, by = y * H;
-  // Без емодзі на canvas (на різних телефонах вони різні) — м'яч малюємо самі.
-  ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI*2);
-  ctx.fillStyle = '#fff'; ctx.fill();
-  ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill();
-
-  ctx.beginPath(); ctx.ellipse(bx, by+8, 6, 2, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
-}
-
-function animateBall() {
-  const canvas = document.getElementById('pitchCanvas');
-  if(!canvas) return;
-  const m = realMatches[trackerMatchId];
-  const cfg = m ? (SPORT_PITCH_CONFIGS[m.sport] || SPORT_PITCH_CONFIGS.default) : SPORT_PITCH_CONFIGS.default;
-
-  // Lerp ball toward target
-  trackerBallX += (trackerBallTargetX - trackerBallX) * 0.08;
-  trackerBallY += (trackerBallTargetY - trackerBallY) * 0.08;
-
-  drawPitch(cfg);
-  drawBall(trackerBallX, trackerBallY, m?.sport);
-  pitchAnimFrame = requestAnimationFrame(animateBall);
-}
-
-function simulateTrackerTick(m, cfg) {
-  if(!m) return;
-  trackerMinute = Math.min(trackerMinute + 1, 90);
-  document.getElementById('trackerMinute').textContent = trackerMinute + "'";
-  if(trackerMinute >= 90) {
-    document.getElementById('trackerStatus').textContent = '🏁 Завершено';
-    clearInterval(trackerInterval); trackerInterval = null;
-  }
-
-  // Move ball randomly
-  trackerBallTargetX = 0.1 + Math.random() * 0.8;
-  trackerBallTargetY = 0.05 + Math.random() * 0.9;
-
-  // Update shot stats
-  const homeShots = parseInt(document.getElementById('statHomeVal')?.textContent || '0');
-  const awayShots = parseInt(document.getElementById('statAwayVal')?.textContent || '0');
-  if(Math.random() < 0.15) {
-    const isHome = Math.random() < 0.5;
-    if(isHome) document.getElementById('statHomeVal').textContent = homeShots + 1;
-    else       document.getElementById('statAwayVal').textContent = awayShots + 1;
-    renderMatchStatsLive(homeShots + (isHome?1:0), awayShots + (isHome?0:1));
-  }
-
-  // Random events (5% chance per tick)
-  if(Math.random() < 0.05) {
-    const eventIdx = Math.floor(Math.random() * cfg.events.length);
-    const evText   = cfg.events[eventIdx];
-    const isGoal   = evText.includes('Гол') || evText.includes('кільце');
-    const isHome   = Math.random() < 0.5;
-
-    if(isGoal) {
-      if(isHome) trackerHomeScore++;
-      else trackerAwayScore++;
-      updateTrackerScore();
-
-      // Ball fly to goal
-      trackerBallTargetX = isHome ? 0.97 : 0.03;
-      trackerBallTargetY = 0.4 + Math.random() * 0.2;
-
-      // Particle burst
-      goalBurst(isHome);
-    }
-
-    const eventIcons = { '⚽':1,'🟡':2,'🔴':3,'↔️':4,'⛳':5,'🛡️':6,'🏀':7,'🏒':8,'🎾':9,'💀':10,'💣':11 };
-    const parts = evText.split(' ');
-    const ev = {
-      min:   trackerMinute,
-      icon:  parts[0] || '⚽',
-      title: parts.slice(1).join(' ') || evText,
-      sub:   isHome ? m.home : m.away,
-      side:  isHome ? 'home' : 'away',
-    };
-    trackerEvents.unshift(ev);
-    if(trackerEvents.length > 15) trackerEvents.pop();
-    renderTrackerEvents();
-
-    // Show overlay
-    showEventOverlay(ev.icon, ev.title, ev.sub);
-  }
-}
-
-function updateTrackerScore() {
-  const el = document.getElementById('trackerScore');
-  if(el) el.textContent = trackerHomeScore + ' – ' + trackerAwayScore;
-}
-
-function renderTrackerEvents() {
-  const el = document.getElementById('trackerEventsList');
-  if(!el) return;
-  if(!trackerEvents.length) {
-    el.innerHTML = '<div style="color:var(--fg-4);font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>';
-    return;
-  }
-  el.innerHTML = trackerEvents.map(ev => `
-    <div class="tracker-event-row">
-      <span class="ev-min">${ev.min}'</span>
-      <span style="font-size:16px;">${ev.icon}</span>
-      <span class="ev-text ${ev.side==='home'?'ev-side-home':'ev-side-away'}">${ev.title} — <b>${ev.sub}</b></span>
-      ${ev.score ? `<span class="ev-score">${ev.score}</span>` : ''}
-    </div>`).join('');
-}
-
-function renderMatchStats(m) {
-  const el = document.getElementById('matchStatsGrid');
-  if(!el) return;
-  const stats = [
-    { label:'Удари', home: Math.floor(Math.random()*8)+1, away: Math.floor(Math.random()*8)+1 },
-    { label:'У ціль', home: Math.floor(Math.random()*5), away: Math.floor(Math.random()*5) },
-    { label:'Кутові', home: Math.floor(Math.random()*6), away: Math.floor(Math.random()*6) },
-    { label:'Офсайди', home: Math.floor(Math.random()*4), away: Math.floor(Math.random()*4) },
-    { label:'Жовті', home: Math.floor(Math.random()*3), away: Math.floor(Math.random()*3) },
-    { label:'Воло\u02BCяч', home: null, away: null, pct: true },
-  ];
-  el.innerHTML = stats.map(s => {
-    const pctHome = s.pct ? (40+Math.floor(Math.random()*20)) : null;
-    const hVal = s.pct ? pctHome+'%' : s.home;
-    const aVal = s.pct ? (100-pctHome)+'%' : s.away;
-    const pctW  = s.pct ? pctHome : (s.home+s.away > 0 ? Math.round(s.home/(s.home+s.away)*100) : 50);
-    return `<div style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--fg-2);margin-bottom:3px;">
-        <span style="font-weight:bold;">${hVal}</span>
-        <span style="color:var(--fg-4);">${s.label}</span>
-        <span style="font-weight:bold;">${aVal}</span>
-      </div>
-      <div style="height:4px;background:var(--surface-1);border-radius:var(--r-xs);overflow:hidden;">
-        <div style="height:100%;width:${pctW}%;background:linear-gradient(90deg,var(--info),var(--primary));border-radius:var(--r-xs);"></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderMatchStatsLive(hShots, aShots) {
-  const el = document.getElementById('statHomeVal');
-  const el2 = document.getElementById('statAwayVal');
-  if(el) el.textContent = hShots;
-  if(el2) el2.textContent = aShots;
-}
-
-function renderTrackerBets(m) {
-  const el = document.getElementById('trackerBetButtons');
-  if(!el || !m) return;
-  el.innerHTML = [
-    { label: '1 ' + (m.home.split(' ')[0]||'Хазяїн'), odds: m.homeOdds, outcome:'home' },
-    ...(m.drawOdds ? [{ label: 'X Нічия', odds: m.drawOdds, outcome:'draw' }] : []),
-    { label: '2 ' + (m.away.split(' ')[0]||'Гість'), odds: m.awayOdds, outcome:'away' },
-  ].map(b => `
-    <div onclick="openBetSlip('${m.id}','${b.outcome}','${b.outcome==='home'?m.home:b.outcome==='away'?m.away:'Нічия'}')"
-         style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;text-align:center;cursor:pointer;transition:all 0.15s;"
-         onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''">
-      <div style="font-size:10px;color:var(--fg-3);margin-bottom:3px;">${b.label}</div>
-      <div style="font-size:18px;font-weight:900;color:var(--accent);">${b.odds}</div>
-    </div>`).join('');
-}
-
-function showEventOverlay(icon, title, sub) {
-  const ov = document.getElementById('eventOverlay');
-  const ic = document.getElementById('evIcon');
-  const ti = document.getElementById('evTitle');
-  const su = document.getElementById('evSub');
-  if(!ov) return;
-  if(ic) ic.textContent = icon;
-  if(ti) ti.textContent = title;
-  if(su) su.textContent = sub;
-  ov.classList.add('show');
-  setTimeout(()=>ov.classList.remove('show'), 2500);
-}
-
-function goalBurst(isHome) {
-  const canvas = document.getElementById('pitchCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const bx = isHome ? W-20 : 20;
-  const by = H/2;
-  ctx.fillStyle = 'rgba(255,220,0,0.3)';
-  ctx.fillRect(0,0,W,H);
-}
-
-
-

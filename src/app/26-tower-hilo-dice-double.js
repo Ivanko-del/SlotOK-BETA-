@@ -366,6 +366,7 @@ async function rollDiceClassic(dir) {
   const resEl = document.getElementById('diceResult');
   const histEl = document.getElementById('diceHistory');
   resEl.innerHTML = '';
+  typeof dice3dRoll === 'function' && dice3dRoll(result, win);
 
   setTimeout(() => {
     if(win) {

@@ -97,13 +97,21 @@ function runGlobalSearch(q) {
     showSearchResults(results, res);
     return;
   }
-  db.ref('users').orderByKey().limitToFirst(100).once('value').then(function(snap) {
-    var users = snap.val() || {};
-    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !users[entry[0]].isBot && entry[0] !== currentUser; })
+  // Пошук за початком ніку (ключі в базі чутливі до регістру — пробуємо кілька
+  // варіантів). Раніше читали перші 100 користувачів цілком і шукали серед них:
+  // важко, а гравці далі за алфавітом не знаходились зовсім.
+  var cap = q.charAt(0).toUpperCase() + q.slice(1);
+  var variants = Array.from(new Set([q, ql, cap, q.toUpperCase()]));
+  Promise.all(variants.map(function(v) {
+    return db.ref('users').orderByKey().startAt(v).endAt(v + '\uf8ff').limitToFirst(15).once('value').then(function(s) { return s.val() || {}; }).catch(function() { return {}; });
+  })).then(function(parts) {
+    var users = Object.assign.apply(null, [{}].concat(parts));
+    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !entry[1].isBot && entry[0] !== currentUser; })
+      .slice(0, 15)
       .forEach(function(entry) {
         var nick = entry[0], u = entry[1];
-        results.push({type:'Гравець', icon:u.avatar||'👤', name:nick, sub:u.tag||'',
-          action:"showPlayerCard('" + nick + "');document.getElementById('globalSearchModal').remove()"});
+        results.push({type:'Гравець', icon:(u.avatar && u.avatar.length <= 8) ? u.avatar : '👤', name:nick, sub:u.tag||'',
+          action:"showPlayerCard(" + jsArg(nick) + ");document.getElementById('globalSearchModal').remove()"});
       });
     showSearchResults(results, res);
   });
@@ -112,8 +120,8 @@ function showSearchResults(results, res) {
   if(!results.length) { res.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
   res.innerHTML = results.slice(0,20).map(function(r) {
     return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer;">'
-      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
-      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + r.sub + '</div>' : '') + '</div>'
+      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + escapeHtml(r.icon) + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + escapeHtml(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + escapeHtml(r.sub) + '</div>' : '') + '</div>'
       + '<div style="font-size:9px;color:var(--fg-4);background:rgb(var(--tint-rgb) / 0.04);border-radius:var(--r-sm);padding:3px 8px;">' + r.type + '</div>'
       + '</div>';
   }).join('');
@@ -500,10 +508,10 @@ function loadFlaggedPlayers() {
     el.innerHTML = entries.map(([nick, u]) => `
       <div style="background:var(--surface-1);border:1px solid rgb(var(--neg-rgb) / 0.25);border-radius:var(--r-md);padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
+          <span style="font-weight:700;font-size:12px;">🚩 ${escapeHtml(nick)} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
           <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-sm);color:var(--pos);font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
-        <div style="font-size:10px;color:var(--fg-3);">${u.flagReason || 'без деталей'}</div>
+        <div style="font-size:10px;color:var(--fg-3);">${escapeHtml(u.flagReason || 'без деталей')}</div>
         <div style="font-size:10px;color:var(--fg-4);margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
       </div>`).join('');
   });
@@ -749,7 +757,14 @@ function saveUserIP() {
   fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(async function(data) {
     const ip = data.ip || 'unknown';
     const ipHash = ip === 'unknown' ? null : await hashIp(ip);
-    db.ref('users/' + currentUser).update({ lastIP: null, lastIpHash: ipHash });
+    // Хеш IP — приватне поле (user_private), а для пошуку мультиакаунтів — індекс
+    // ip_index/<хеш>/<нік>, який читає лише той, чий це хеш (правила бази).
+    const me = currentUser;
+    const oldHash = (typeof getPrivateProfile === 'function' && getPrivateProfile('lastIpHash')) || null;
+    const upd = { ['users/' + me + '/lastIP']: null, ['user_private/' + me + '/lastIpHash']: ipHash };
+    if(oldHash && oldHash !== ipHash) upd['ip_index/' + oldHash + '/' + me] = null;
+    if(ipHash) upd['ip_index/' + ipHash + '/' + me] = firebase.database.ServerValue.TIMESTAMP;
+    await db.ref().update(upd);
     logSecurityEvent('login', 'IP: ' + maskIp(ip));
     if(ipHash) antiCheatCheckMultiAccount(ipHash);
   }).catch(function() {
@@ -771,9 +786,9 @@ function maskIp(ip) {
 }
 function antiCheatCheckMultiAccount(ipHash) {
   if(!currentUser || !_acConfig.enabled || !_acConfig.multiAccount) return;
-  db.ref('users').orderByChild('lastIpHash').equalTo(ipHash).once('value').then(snap => {
+  db.ref('ip_index/' + ipHash).once('value').then(snap => {
     const users = snap.val() || {};
-    const others = Object.keys(users).filter(n => n !== currentUser && !users[n].isBot);
+    const others = Object.keys(users).filter(n => n !== currentUser);
     if(others.length >= _acConfig.multiAccountMin) {
       antiCheatFlag('multi_account', `Та сама IP що й у ${others.length} інших акаунтів: ${others.slice(0,5).join(', ')}`, 'medium');
     }
@@ -868,7 +883,7 @@ function doComparePlayers(nick) {
       {label:'Серія', me: me.dailyStreak||0, them: them.dailyStreak||0},
     ];
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:11px;text-align:center;">'
-      + '<div style="color:var(--accent);font-weight:800;">@' + currentUser + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + nick + '</div></div>'
+      + '<div style="color:var(--accent);font-weight:800;">@' + escapeHtml(currentUser) + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + escapeHtml(nick) + '</div></div>'
       + stats.map(function(s) {
           var meWins = s.me >= s.them;
           return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">'

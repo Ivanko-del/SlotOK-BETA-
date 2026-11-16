@@ -110,7 +110,7 @@ function toggleCvvVisibility() {
   var btn = document.getElementById('cvvToggleBtn');
   var cvvFront = document.getElementById('vcardCvvDisplay');
   var cvvBack  = document.getElementById('vcardCvvBack');
-  // CVV є лише в прив'язаної картки Аксіоми. Свої зовнішні картки ми
+  // CVV є лише в згенерованих ігрових карток. Інші картки ми
   // зберігаємо замасковано й CVV не приймаємо взагалі — тому тут нічого
   // показувати, і про це треба сказати прямо, а не мовчки нічого не робити.
   var card = getActiveCard();
@@ -179,8 +179,6 @@ function ksEsc(str) {
 //     завести нову картку: лише назва, «останні 4» для розрізнення і баланс;
 //   • старі «свої» картки банків (лише банк, ім'я, останні 4, термін) і
 //     Партнер-картки — нових не створюємо, наявні працюють як і раніше;
-//   • картка Аксіома Банку — приходить через 6-значний код і має повні
-//     дані, бо їх видає сам банк-партнер.
 // ═══════════════════════════════════════════════════════════════════
 var KS_BANKS = {
   privat: { name: 'PrivatBank',        color: '#4caf50', short: 'П'  },
@@ -199,18 +197,6 @@ function getLinkedCards() {
   if(!userData) return [];
   var out = [];
   var activeId = getActiveCardId();
-  var vc = userData.virtualCard;
-  if(vc && vc.axiomLinked) {
-    out.push({
-      id: 'axiom', kind: 'axiom', bank: 'axiom', bankName: 'Аксіома Банк',
-      mark: 'А', markColor: '#5c6ef8',
-      holder: String(vc.holder || currentUser || '').toUpperCase(),
-      last4: String(vc.number || '').replace(/\D/g,'').slice(-4) || '••••',
-      number: vc.number, cvv: vc.cvv, expiry: vc.expiry || '',
-      addedAt: vc.axiomLinkedAt || 0, storedBalance: vc.balance || 0, frozen: !!vc.frozen,
-      skin: vc.skin || '', customPhotoUrl: vc.customPhotoUrl || '',
-    });
-  }
   var linked = userData.linkedCards || {};
   Object.keys(linked).forEach(function(id) {
     var c = linked[id] || {};
@@ -242,12 +228,11 @@ function hasConnectedCard() { return getLinkedCards().length > 0; }
 // Проєкційна модель: userData.balance ЗАВЖДИ дорівнює балансу активної
 // картки, тож ігри пишуть у balance як і раніше, нічого не знаючи про картки.
 // Баланс кожної картки зберігається окремо (linkedCards/<id>/balance або
-// virtualCard/balance для Аксіоми) й авторитетний лише поки картка НЕ активна;
+// ) й авторитетний лише поки картка НЕ активна;
 // в активної живий баланс — це userData.balance.
 // ═══════════════════════════════════════════════════════════════════
 function _cardIdsOf(u) {
   var ids = [];
-  if(u && u.virtualCard && u.virtualCard.axiomLinked) ids.push('axiom');
   if(u && u.linkedCards) Object.keys(u.linkedCards).forEach(function(k){ ids.push(k); });
   return ids;
 }
@@ -268,21 +253,18 @@ function getActiveCardObj() {
   for(var i=0;i<cards.length;i++) if(cards[i].id === id) return cards[i];
   return null;
 }
-// Аксіома тримає свої поля у virtualCard/, підключені картки — у своєму записі.
-// Один шлях на всі поля, щоб баланс, заморозка й ліміт не розповзались по трьох
-// різних уявленнях про те, де що лежить.
-function _cardFieldPath(id, field) { return (id === 'axiom' ? 'virtualCard/' : 'linkedCards/' + id + '/') + field; }
+// Один шлях на всі поля картки, щоб баланс, заморозка й ліміт не розповзались
+// по різних уявленнях про те, де що лежить.
+function _cardFieldPath(id, field) { return 'linkedCards/' + id + '/' + field; }
 function _cardRecOf(u, id) {
   if(!u || !id) return null;
-  return id === 'axiom' ? (u.virtualCard || null) : ((u.linkedCards && u.linkedCards[id]) || null);
+  return (u.linkedCards && u.linkedCards[id]) || null;
 }
 function _cardBalPath(id) { return _cardFieldPath(id, 'balance'); }
 
 // ── Заморозка ────────────────────────────────────────────────────
 // Блокування — властивість однієї картки, а не всього гаманця: заблокував
-// Приват, Аксіома далі працює. Аксіома тримає прапорець там само, де й раніше
-// (virtualCard/frozen), тож стан, який синхронізує банк-партнер, лишається
-// сумісним; підключені картки тримають свій на собі.
+// Приват, решта працює. Кожна картка тримає свій прапорець на собі.
 function _freezePath(id) { return _cardFieldPath(id, 'frozen'); }
 function isCardFrozenOf(u, id) { return !!(_cardRecOf(u, id) || {}).frozen; }
 function isCardFrozen(id) { return isCardFrozenOf(userData, id); }
@@ -305,7 +287,6 @@ function migrateCardFreeze() {
   db.ref('users/' + currentUser).update(updates);
 }
 function _storedBalOf(id) {
-  if(id === 'axiom') return (userData.virtualCard && userData.virtualCard.balance) || 0;
   return (userData.linkedCards && userData.linkedCards[id] && userData.linkedCards[id].balance) || 0;
 }
 
@@ -325,8 +306,7 @@ function switchActiveCard(id) {
   updates['balance'] = newBal;                    // підвантажити баланс нової
   updates['activeCardId'] = id;
   // локально теж — щоб UI не блимав старими значеннями до відповіді Firebase
-  if(cur === 'axiom' && userData.virtualCard) userData.virtualCard.balance = liveBal;
-  else if(cur && userData.linkedCards && userData.linkedCards[cur]) userData.linkedCards[cur].balance = liveBal;
+  if(cur && userData.linkedCards && userData.linkedCards[cur]) userData.linkedCards[cur].balance = liveBal;
   userData.balance = newBal;
   userData.activeCardId = id;
   db.ref('users/' + currentUser).update(updates);
@@ -462,11 +442,10 @@ function renderLinkedCards() {
     el.innerHTML =
       '<div class="ks-empty" style="padding:22px 18px;">' +
         '<div class="ks-empty-text" style="margin-bottom:16px;">Поки що жодної картки. ' +
-          'Випустіть ігрову картку SlotOK або прив\'яжіть Аксіому.</div>' +
+          'Випустіть ігрову картку SlotOK.</div>' +
         '<div class="ks-btn-row" style="margin-bottom:8px;">' +
           '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
         '</div>' +
-        '<button class="ks-btn is-quiet is-block" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Прив\'язати Аксіому</button>' +
       '</div>';
     return;
   }
@@ -476,7 +455,7 @@ function renderLinkedCards() {
               : c.active ? '<span class="ks-badge is-pos">Активна</span>' : '';
     var act = '';
     if(expired) act += '<button class="ks-copy-btn" style="width:auto;padding:0 10px;color:var(--ks-acc);" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();renewPartnerCard(this.getAttribute(\'data-id\'))" title="Продовжити на 30 днів">' + ksIcon('clock') + '</button>';
-    if(c.kind !== 'axiom') act += '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();confirmRemoveLinkedCard(this)" title="Відключити картку">' + ksIcon('trash') + '</button>';
+    act += '<button class="ks-copy-btn" data-id="' + ksEsc(c.id) + '" onclick="event.stopPropagation();confirmRemoveLinkedCard(this)" title="Відключити картку">' + ksIcon('trash') + '</button>';
     var sub = '•••• ' + ksEsc(c.last4) + (c.holder ? ' · ' + ksEsc(c.holder) : '') + (c.expiry ? ' · ' + ksEsc(c.expiry) : '');
     return '<div class="ks-row is-tappable" onclick="switchActiveCard(\'' + ksEsc(c.id) + '\')"' + (c.active ? ' style="background:var(--ks-acc-dim);"' : '') + '>' +
       '<div class="ks-icn" style="background:' + c.markColor + ';color:var(--fg);font-weight:800;font-size:11px;">' + ksEsc(c.mark) + '</div>' +
@@ -517,17 +496,15 @@ function renderCardMetaRow(card) {
         '<div class="ks-empty">' +
           '<div class="ks-empty-icn">' + ksIcon('card') + '</div>' +
           '<div class="ks-empty-title">Випустіть картку</div>' +
-          '<div class="ks-empty-text">Ігрова картка SlotOK — окремий гаманець у грі. Без справжніх банків і номерів. ' +
-            'Можна також привʼязати картку <b>Аксіома Банку</b>.</div>' +
+          '<div class="ks-empty-text">Ігрова картка SlotOK — окремий гаманець у грі. Без справжніх банків і номерів.</div>' +
           '<div class="ks-btn-row">' +
             '<button class="ks-btn is-primary" onclick="openAddCardModal()">' + ksIcon('plus') + ' Нова картка</button>' +
-            '<button class="ks-btn" onclick="openAxiomLinkFlow()">' + ksIcon('bank') + ' Аксіома</button>' +
           '</div>' +
         '</div>' +
       '</section>';
     return;
   }
-  if(card.kind === 'axiom' || card.kind === 'partner') {
+  if(card.kind === 'partner') {
     var renewBtn = '';
     if(card.kind === 'partner') {
       var dLeft = Math.max(0, Math.ceil(((card.expiresAt || 0) - Date.now()) / 86400000));
@@ -587,7 +564,7 @@ var GAME_CARDS_MAX = 5;
 function openAddCardModal() {
   if(!currentUser || !db) return notify('Спочатку увійдіть', 'error');
   closeAddCardModal();
-  var count = getLinkedCards().filter(function(c) { return c.kind !== 'axiom'; }).length;
+  var count = getLinkedCards().length;
   if(count >= GAME_CARDS_MAX) return notify('Максимум ' + GAME_CARDS_MAX + ' карток. Відключіть зайву, щоб випустити нову.', 'error');
   var m = document.createElement('div');
   m.className = 'ks-modal';
@@ -611,7 +588,6 @@ function openAddCardModal() {
           'Усі гроші тут — ігрові.</div>' +
       '</div>' +
       '<button class="ks-btn is-primary is-block" onclick="createGameCard()">' + ksIcon('plus') + ' Випустити картку</button>' +
-      '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="closeAddCardModal();openAxiomLinkFlow()">' + ksIcon('bank') + ' Привʼязати картку Аксіома Банку</button>' +
     '</div>';
   document.body.appendChild(m);
   setTimeout(function() { var f = document.getElementById('ksAcLabel'); if(f) f.focus(); }, 60);
@@ -666,7 +642,7 @@ function confirmRemoveLinkedCard(btn) {
 }
 
 function removeLinkedCard(id) {
-  if(!id || !db || !currentUser || id === 'axiom') return;
+  if(!id || !db || !currentUser) return;
   var activeId = getActiveCardId();
   // Баланс картки, що відключається (для активної — це живий userData.balance)
   var remBal = (id === activeId) ? (userData.balance || 0) : _storedBalOf(id);
@@ -692,10 +668,6 @@ function removeLinkedCard(id) {
     if(id === activeId) { /* userData.balance вже містить залишок */ }
     else { db.ref('users/' + currentUser + '/balance').set((userData.balance || 0) + remBal); userData.balance = (userData.balance || 0) + remBal; }
     db.ref('users/' + currentUser + '/activeCardId').remove();
-    if(id === 'axiom' && userData.virtualCard && userData.virtualCard.frozen) {
-      db.ref('users/' + currentUser + '/virtualCard/frozen').set(false);
-      userData.virtualCard.frozen = false;
-    }
   }
   notify(remBal > 0 ? ('Картку відключено · ' + formatNumber(remBal) + ' ₴ перенесено') : 'Картку відключено', 'info');
   renderCardPanel();
@@ -918,7 +890,6 @@ function moveBetweenCards(fromId, toId, amount) {
 // решта — у власному полі. Без цього панель показувала б старі числа до відповіді Firebase.
 function _applyLocalCardDelta(id, delta) {
   if(id === getActiveCardId()) { userData.balance = (userData.balance || 0) + delta; return; }
-  if(id === 'axiom') { if(userData.virtualCard) userData.virtualCard.balance = (userData.virtualCard.balance || 0) + delta; return; }
   if(userData.linkedCards && userData.linkedCards[id]) userData.linkedCards[id].balance = (userData.linkedCards[id].balance || 0) + delta;
 }
 
@@ -934,14 +905,15 @@ function _applyLocalCardDelta(id, delta) {
 // Піднімаємо TERMS_VERSION, коли текст правил змінюється по суті: тоді
 // згоду запитають наново.
 // ═══════════════════════════════════════════════════════════════════
-var TERMS_VERSION = '2';
+var TERMS_VERSION = '3';
 
 var TERMS_SECTIONS = [
   {
     title: 'Вік',
     items: [
       'Користуватись SlotOK можна з ' + MIN_AGE + ' років. Підтверджуючи згоду, ти заявляєш, що тобі вже виповнилось ' + MIN_AGE + '.',
-      'Якщо тобі менше — закрий сайт. Акаунти, власники яких не досягли цього віку, блокуються без повернення балансу.',
+      'Якщо тобі від 13 до 17 років — користуйся сайтом лише з дозволу батьків або опікунів.',
+      'Якщо тобі менше 13 — закрий сайт. Акаунти, власники яких не досягли цього віку, видаляються.',
     ]
   },
   {
@@ -979,10 +951,9 @@ var TERMS_SECTIONS = [
   {
     title: 'Гаманець',
     items: [
-      'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
-      'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
-      'Заявка на донат прив’язується до картки, активної на момент подачі: бонус зарахується саме на неї.',
-      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку немає.',
+      'Донат — добровільний подарунок на розвиток проєкту, не купівля товару. Він нічого не додає в гру: ні баланс, ні Слотіки, ні VIP.',
+      'Донати обробляє адміністратор вручну; після підтвердження в профілі зʼявляється значок «Підтримав проєкт».',
+      'Баланс ігровий і віртуальний: його не можна купити, продати, обміняти чи вивести.',
     ]
   },
   {
@@ -998,7 +969,7 @@ var TERMS_SECTIONS = [
     items: [
       'Зберігаються: нік, хеш пароля, баланс і його історія, операції по картках, налаштування, прив’язаний Telegram (якщо прив’язав) і токен пристрою для сповіщень (якщо дозволив).',
       'Іншим гравцям видно твій нік, аватар, рівень, досягнення й публічну статистику. Баланс картки, операції та Telegram — не видно.',
-      'Видалення акаунта — через підтримку.',
+      'Завантажити свої дані й видалити акаунт можна в Налаштуваннях. Докладно — вкладка «Конфіденційність».',
     ]
   },
   {
@@ -1025,27 +996,16 @@ function termsSectionsHtml() {
   }).join('');
 }
 
-// Правила можна відкрити будь-коли — з вкладки «Ще» або з самого гейта.
-function openRulesModal() {
-  var old = document.getElementById('ksRulesModal'); if(old) old.remove();
-  var m = document.createElement('div');
-  m.className = 'ks-modal'; m.id = 'ksRulesModal';
-  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
-  m.innerHTML = '<div class="ks-modal-box">' +
-    '<div class="ks-modal-head"><div class="ks-modal-title">Правила SlotOK</div>' +
-      '<button class="ks-modal-x" onclick="document.getElementById(\'ksRulesModal\').remove()">' + ksIcon('x') + '</button></div>' +
-    '<p class="ks-hint" style="margin:0;">Правила користування сайтом. Версія ' + ksEsc(TERMS_VERSION) + '.</p>' +
-    termsSectionsHtml() +
-    '<button class="ks-btn is-quiet is-block" style="margin-top:18px;" onclick="document.getElementById(\'ksRulesModal\').remove()">Закрити</button>' +
-    '</div>';
-  document.body.appendChild(m);
-}
+// Правила можна відкрити будь-коли — з вкладки «Ще», з екрана входу або з гейта.
+// openRulesModal(tab) живе в 55-legal.js (вкладки Умови / Конфіденційність /
+// Відповідальна гра / Правила).
 
 // ── Гейт згоди ───────────────────────────────────────────────────
 var TERMS_CHECKS = [
   { k: 'age',    text: 'Мені виповнилось ' + MIN_AGE + ' років' },
   { k: 'noHack', text: 'Я не лізтиму в консоль, не змінюватиму код сайту й не намагатимусь його зламати' },
-  { k: 'read',   text: 'Я прочитав правила й погоджуюсь із ними' },
+  { k: 'read',   text: 'Я прочитав Умови та Політику конфіденційності й погоджуюсь із ними' },
+  { k: 'parent', text: 'Якщо мені менше 18 років — я користуюсь сайтом із дозволу батьків або опікунів' },
 ];
 var _termsChecked = {};
 
@@ -1066,7 +1026,7 @@ function checkTermsGate() {
     '<div class="ks-modal-head"><div class="ks-modal-title">Перш ніж грати</div></div>' +
     '<p class="ks-hint" style="margin:0 0 14px;">Коротко про головне. Повний текст — за кнопкою нижче.</p>' +
     '<div id="ksTermsChecks"></div>' +
-    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати повні правила</button>' +
+    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати Умови та Політику</button>' +
     '<button class="ks-btn is-primary is-block" id="ksTermsAccept" disabled onclick="acceptTerms()">Підтверджую</button>' +
     '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="logout()">Вийти</button>' +
     '</div>';
@@ -1105,7 +1065,6 @@ function acceptTerms() {
   notify('Дякуємо. Гарної гри!', 'success');
 }
 
-function openAxiomLinkFlow() { openTabModal('axiomLinkModal'); renderAxiomLinkContent(); }
 
 // ═══════════════════════════════════════════════════════════════════
 // ПАНЕЛЬ КАРТКИ
@@ -1114,8 +1073,7 @@ function renderCardPanel() {
   if(!userData) return;
   var cards   = getLinkedCards();
   var primary = getActiveCardObj() || cards[0] || null;
-  var isAxiom = !!(primary && primary.kind === 'axiom');
-  var isFull  = !!(primary && (primary.kind === 'axiom' || primary.kind === 'partner')); // повний номер видно
+  var isFull  = !!(primary && (primary.kind === 'partner')); // повний номер видно
 
   var bankNameEl = document.getElementById('vcardBankName');
   var badgeEl    = document.getElementById('vcardBadgeArea');
@@ -1135,8 +1093,7 @@ function renderCardPanel() {
   if(primary) {
     if(bankNameEl) bankNameEl.textContent = primary.bankName;
     if(badgeEl) {
-      if(primary.kind === 'axiom') badgeEl.innerHTML = '<span class="ks-badge is-acc">Партнер</span>';
-      else if(primary.kind === 'partner') {
+      if(primary.kind === 'partner') {
         var dLeft = Math.max(0, Math.ceil(((primary.expiresAt || 0) - Date.now()) / 86400000));
         badgeEl.innerHTML = partnerExpired
           ? '<span class="ks-badge is-neg">Прострочена</span>'
@@ -1332,8 +1289,7 @@ function toggleCardFreeze() {
   if(!card) return notify('Спочатку випустіть картку в Гаманці', 'error');
   var frozen = isCardFrozen(card.id);
   db.ref('users/' + currentUser + '/' + _freezePath(card.id)).set(!frozen);
-  if(card.id === 'axiom') { if(userData.virtualCard) userData.virtualCard.frozen = !frozen; }
-  else if(userData.linkedCards && userData.linkedCards[card.id]) userData.linkedCards[card.id].frozen = !frozen;
+  if(userData.linkedCards && userData.linkedCards[card.id]) userData.linkedCards[card.id].frozen = !frozen;
   notify(frozen
     ? ('Картку ····' + card.last4 + ' розблоковано')
     : ('Картку ····' + card.last4 + ' заблоковано — списання з неї не пройде'), frozen ? 'success' : 'info');
@@ -1341,7 +1297,7 @@ function toggleCardFreeze() {
 }
 
 // ── CARD COLOR PICKER (existing enhanced) ─────────────────────
-// Каталог скінів карток — спільний для вибору скіна і для показу картки Аксіоми.
+// Каталог скінів карток.
 var CARD_SKINS = [
   // Класика
   {id:'gold',     name:'Золото',     accent:'#d4af37', prev:'linear-gradient(135deg,#1a0d00,#3a2200)'},
@@ -1421,42 +1377,7 @@ var CARD_SKINS = [
   {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
   {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
   {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
-  // Меми (тягнуться напряму з i.imgflip.com)
-  {id:'meme-drake',            name:'Drake',           accent:'#fff', prev:"url('https://i.imgflip.com/30b1gx.jpg') center/cover"},
-  {id:'meme-distracted',       name:'Хлопець і дівчина', accent:'#fff', prev:"url('https://i.imgflip.com/1ur9b0.jpg') center/cover"},
-  {id:'meme-womancat',         name:'Жінка й кіт',     accent:'#fff', prev:"url('https://i.imgflip.com/345v97.jpg') center/cover"},
-  {id:'meme-twobuttons',       name:'Дві кнопки',      accent:'#fff', prev:"url('https://i.imgflip.com/1g8my4.jpg') center/cover"},
-  {id:'meme-changemymind',     name:'Переконай мене',  accent:'#fff', prev:"url('https://i.imgflip.com/24y43o.jpg') center/cover"},
-  {id:'meme-successkid',       name:'Success Kid',     accent:'#fff', prev:"url('https://i.imgflip.com/1bhk.jpg') center/cover"},
-  {id:'meme-doge',             name:'Doge',            accent:'#fff', prev:"url('https://i.imgflip.com/4t0m5.jpg') center/cover"},
-  {id:'meme-thisisfine',       name:'This is Fine',    accent:'#fff', prev:"url('https://i.imgflip.com/wxica.jpg') center/cover"},
-  {id:'meme-stonks',           name:'Stonks',          accent:'#fff', prev:"url('https://i.imgflip.com/3si4.jpg') center/cover"},
-  {id:'meme-rollsafe',         name:'Roll Safe',       accent:'#fff', prev:"url('https://i.imgflip.com/1h7in3.jpg') center/cover"},
-  {id:'meme-pikachu',          name:'Здивований Пікачу', accent:'#fff', prev:"url('https://i.imgflip.com/2kbn1e.jpg') center/cover"},
-  {id:'meme-disastergirl',     name:'Disaster Girl',   accent:'#fff', prev:"url('https://i.imgflip.com/23ls.jpg') center/cover"},
-  {id:'meme-grumpycat',        name:'Grumpy Cat',      accent:'#fff', prev:"url('https://i.imgflip.com/8p0a.jpg') center/cover"},
-  {id:'meme-expandingbrain',   name:'Галактичний мозок', accent:'#fff', prev:"url('https://i.imgflip.com/1jwhww.jpg') center/cover"},
-  {id:'meme-onedoesnotsimply', name:'One Does Not Simply', accent:'#fff', prev:"url('https://i.imgflip.com/1bij.jpg') center/cover"},
-  {id:'meme-ancientaliens',    name:'Древні прибульці', accent:'#fff', prev:"url('https://i.imgflip.com/26am.jpg') center/cover"},
-  {id:'meme-dicaprio',         name:'ДіКапріо',        accent:'#fff', prev:"url('https://i.imgflip.com/39t1o.jpg') center/cover"},
-  {id:'meme-pigeon',           name:'Це голуб?',       accent:'#fff', prev:"url('https://i.imgflip.com/1o00in.jpg') center/cover"},
-  {id:'meme-batman',           name:'Бетмен ляпас',    accent:'#fff', prev:"url('https://i.imgflip.com/9ehk.jpg') center/cover"},
-  {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
-  {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
-  {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
   // Свіжі "молодіжні" тренд-меми
-  {id:'meme-67kid',       name:'6-7',               accent:'#fff', prev:"url('https://i.imgflip.com/4/a9fxer.jpg') center/cover"},
-  {id:'meme-skibidi',     name:'Skibidi Toilet',    accent:'#fff', prev:"url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover"},
-  {id:'meme-tralalero',   name:'Tralalero Tralala', accent:'#fff', prev:"url('https://i.imgflip.com/4/9p82jm.jpg') center/cover"},
-  {id:'meme-bombardiro',  name:'Bombardiro Crocodilo', accent:'#fff', prev:"url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover"},
-  {id:'meme-tungtung',    name:'Tung Tung Sahur',   accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover"},
-  {id:'meme-chimpanzini', name:'Chimpanzini Bananini', accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover"},
-  {id:'meme-gigachad',    name:'Gigachad',          accent:'#fff', prev:"url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover"},
-  {id:'meme-sigma',       name:'Sigma',             accent:'#fff', prev:"url('https://i.imgflip.com/4/5imrkq.jpg') center/cover"},
-  {id:'meme-chillguy',    name:'Chill Guy',         accent:'#fff', prev:"url('https://i.imgflip.com/4/9au02y.jpg') center/cover"},
-  {id:'meme-ohio',        name:'Ohio',              accent:'#fff', prev:"url('https://i.imgflip.com/4/46e43q.jpg') center/cover"},
-  {id:'meme-npc',         name:'NPC',               accent:'#fff', prev:"url('https://i.imgflip.com/4/2k0qad.jpg') center/cover"},
-  {id:'meme-rizzler',     name:'Rizzler',           accent:'#fff', prev:"url('https://i.imgflip.com/4/93etli.jpg') center/cover"},
 ];
 
 function openCardColorPicker() {
@@ -1468,8 +1389,6 @@ function openCardColorPicker() {
     { name:'Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
     { name:'Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
     { name:'Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
-    { name:'Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
-    { name:'Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
@@ -1571,11 +1490,10 @@ function uploadCustomCardPhoto() {
   input.click();
 }
 
-// Скін пишеться на АКТИВНУ картку (linkedCards/<id> або virtualCard), а до
+// Скін пишеться на АКТИВНУ картку (linkedCards/<id>), а до
 // підключення першої картки — у тимчасовий pendingCardSkin.
 function _activeSkinTarget() {
   var a = getActiveCardObj();
-  if(a && a.kind === 'axiom') return { base: 'virtualCard', local: userData.virtualCard };
   if(a && userData.linkedCards && userData.linkedCards[a.id]) return { base: 'linkedCards/' + a.id, local: userData.linkedCards[a.id] };
   return { base: null, local: null }; // ще немає картки
 }

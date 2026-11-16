@@ -956,7 +956,7 @@ body > .screen, .container ~ .screen {
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
 }
-:is(#tab-home, #tab-lobby, #tab-leaderboard, #tab-sports, #tab-admin, #tab-tournaments, #tab-clans, #tab-achievements) {
+:is(#tab-home, #tab-lobby, #tab-leaderboard, #tab-admin, #tab-tournaments, #tab-clans, #tab-achievements) {
   max-width: var(--w-page);
 }
 .screen.screen-enter { animation: rise-in var(--dur-3) var(--ease-out) both; }
@@ -1528,35 +1528,6 @@ body > .screen, .container ~ .screen {
     .chart-period-btn:active { transform:scale(.94); }
     .chart-period-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.2); }
 
-    /* ===== SPORT BETTING v2 — REAL ===== */
-    .match-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
-    .match-card:hover { border-color:rgb(var(--tint-rgb) / 0.1); }
-    .match-card.live { border-color:var(--neg);box-shadow: var(--bevel), var(--elev-1); }
-    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
-    .odds-btn { flex:1;background:var(--input);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s; }
-    .odds-btn:hover:not(.disabled) { border-color:rgb(var(--accent-rgb) / 0.5);background:rgb(var(--accent-rgb) / 0.08); }
-    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
-    .odds-btn.disabled { opacity:0.4;cursor:not-allowed;box-shadow: var(--bevel); }
-    .odds-label { font-size:10px;color:var(--sub);margin-bottom:4px; }
-    .odds-val { font-size:16px;font-weight:900;color:var(--accent); }
-
-        /* ===== SPORT BETTING ===== */
-    .sport-tab-btn { padding:7px 14px;background:var(--input);border:1px solid var(--border);color:var(--fg-3);border-radius:var(--r-xl);font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s, color .15s;-webkit-tap-highlight-color:transparent;box-shadow: var(--bevel), 0 6px 14px -8px rgb(var(--shade-rgb) / 0.5); }
-    .sport-tab-btn:active { transform: translateY(1px) scale(.96); }
-    .sport-tab-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
-    .sport-tab-btn:hover { border-color:var(--line-strong);color:var(--fg-2); }
-    #sportTabsRow::-webkit-scrollbar { display:none; }
-    #sportTabsRow { -ms-overflow-style:none; }
-    .match-card { background:linear-gradient(160deg, rgb(var(--tint-rgb) / 0.035), transparent 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:10px;cursor:pointer;box-shadow: var(--bevel), var(--elev-1);transition: border-color .2s, box-shadow .2s, transform .14s var(--ease-tactile); }
-    .match-card:hover { border-color:var(--line-strong); }
-    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
-    .odds-btn { flex:1;padding:10px 4px;background:var(--input);border:1px solid var(--border);border-radius:var(--r-sm);text-align:center;cursor:pointer;transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s;box-shadow: var(--bevel), var(--elev-1); }
-    .odds-btn:active:not(.disabled) { transform: translateY(1px) scale(.97); box-shadow: var(--bevel); }
-    .odds-btn:hover { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
-    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.2);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
-    .odds-val { font-size:16px;font-weight:900;color:var(--green); }
-    .odds-label { font-size:10px;color:var(--fg-4);margin-top:2px; }
-
     .bet-status-won { color:var(--green);font-weight:bold; }
     .bet-status-lost { color:var(--red);font-weight:bold; }
     .bet-status-pending { color:var(--accent);font-weight:bold; }
@@ -1664,11 +1635,6 @@ body > .screen, .container ~ .screen {
     @keyframes wfSlide { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
 
     /* GAME MODAL */
-
-    /* STREAM FALLBACK FIX */
-    .stream-fallback-ui { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px; background:var(--surface-1); width:100%; height:100%; }
-    .stream-fallback-ui .retry-btn { background:var(--accent); color:var(--on-accent); border:none; border-radius:var(--r-md); padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; }
-    .stream-fallback-ui .open-ext-btn { background:transparent; border:1px solid var(--line); border-radius:var(--r-md); padding:8px 20px; font-size:12px; color:var(--fg-2); cursor:pointer; }
 
     /* ТУРНІРИ */
     .tournament-card { background: linear-gradient(135deg, var(--surface-1), var(--bg)); border: 1px solid var(--accent); border-radius: var(--r-lg); padding: 15px; margin-bottom: 12px; }
@@ -2018,9 +1984,6 @@ body > .screen, .container ~ .screen {
     /* ===== СЛОТІКИ ===== */
     #tab-slotiky .section-header { color:var(--special); }
 
-    /* ===== СТРІМ VIEWER ===== */
-    #streamViewerModal { }
-
     /* ===== ТУРНІР V2 ===== */
     .tournament-card { background:linear-gradient(135deg,var(--surface-1),var(--bg));border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);padding:14px;margin-bottom:10px; box-shadow: var(--bevel), var(--elev-1); }
     .t-prize { font-size:22px;font-weight:900;color:var(--accent);margin:6px 0; }
@@ -2032,90 +1995,7 @@ body > .screen, .container ~ .screen {
     #cashierCashbackPanel .btn-green { width:100%;padding:12px;font-size:14px;font-weight:bold;border:none;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--green),color-mix(in srgb, var(--pos) 25%, var(--surface-1)));color:var(--on-accent);cursor:pointer; }
     #cashierCashbackPanel .btn-green:disabled { background:var(--surface-2);color:var(--fg-4); }
 
-    /* ===== ESPORTS BADGE ===== */
-
-    /* ===== LIVE MATCH TRACKER ===== */
-    .tracker-container {
-      background: var(--surface-1);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    .tracker-header {
-      background: linear-gradient(90deg, var(--info), var(--primary));
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: bold;
-      color: var(--fg);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .tracker-header .live-dot {
-      width: 8px; height: 8px; background: var(--paper);
-      border-radius: 50%; animation: pulse2 1s infinite;
-    }
-    .pitch-area {
-      position: relative;
-      width: 100%;
-      height: 220px;
-      overflow: hidden;
-    }
-    .pitch-canvas { width: 100%; height: 100%; display: block; }
-    .event-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgb(var(--recess-rgb) / calc(0.75 * var(--recess-k)));
-      border-radius: var(--r-xl);
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--fg);
-      font-size: 13px;
-      font-weight: bold;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s;
-      min-width: 160px;
-    }
-    .event-overlay.show { opacity: 1; }
-    .event-overlay .ev-icon {
-      width: 28px; height: 28px;
-      background: linear-gradient(135deg, var(--info), var(--primary));
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
-    .tracker-events {
-      padding: 10px 14px;
-      max-height: 120px;
-      overflow-y: auto;
-      scrollbar-width: none;
-      border-top: 1px solid var(--line);
-    }
-    .tracker-event-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--line);
-      font-size: 12px;
-    }
-    .tracker-event-row:last-child { border-bottom: none; }
-    .ev-min { color: var(--accent); font-weight: bold; min-width: 34px; font-size: 11px; }
-    .ev-score { color: var(--accent); font-weight: 900; min-width: 34px; text-align: center; }
-    .ev-text { color: var(--fg-2); }
-    .ev-side-home { text-align: left; }
-    .ev-side-away { text-align: right; margin-left: auto; }
     @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    @keyframes ballMove {
-      0% { transform: translate(var(--bx0), var(--by0)); }
-      100% { transform: translate(var(--bx1), var(--by1)); }
-    }
 
     /* ============================================
        VIRTUAL BANK CARD
@@ -3102,53 +2982,7 @@ body > .screen, .container ~ .screen {
    рендериться окремо через applyCardSkin()/style.backgroundImage,
    бо це унікальні дані користувача, а не спільний CSS-клас.
 ═══════════════════════════════════════════════════════ */
-.vcard-skin-meme-drake .vcard-front            { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/30b1gx.jpg') center/cover; }
-.vcard-skin-meme-distracted .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1ur9b0.jpg') center/cover; }
-.vcard-skin-meme-womancat .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/345v97.jpg') center/cover; }
-.vcard-skin-meme-twobuttons .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1g8my4.jpg') center/cover; }
-.vcard-skin-meme-changemymind .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/24y43o.jpg') center/cover; }
-.vcard-skin-meme-successkid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bhk.jpg') center/cover; }
-.vcard-skin-meme-doge .vcard-front             { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4t0m5.jpg') center/cover; }
-.vcard-skin-meme-thisisfine .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/wxica.jpg') center/cover; }
-.vcard-skin-meme-stonks .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/3si4.jpg') center/cover; }
-.vcard-skin-meme-rollsafe .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1h7in3.jpg') center/cover; }
-.vcard-skin-meme-pikachu .vcard-front          { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2kbn1e.jpg') center/cover; }
-.vcard-skin-meme-disastergirl .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/23ls.jpg') center/cover; }
-.vcard-skin-meme-grumpycat .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/8p0a.jpg') center/cover; }
-.vcard-skin-meme-expandingbrain .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1jwhww.jpg') center/cover; }
-.vcard-skin-meme-onedoesnotsimply .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bij.jpg') center/cover; }
-.vcard-skin-meme-ancientaliens .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/26am.jpg') center/cover; }
-.vcard-skin-meme-dicaprio .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/39t1o.jpg') center/cover; }
-.vcard-skin-meme-pigeon .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1o00in.jpg') center/cover; }
-.vcard-skin-meme-batman .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/9ehk.jpg') center/cover; }
-.vcard-skin-meme-spongebob .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1otk96.jpg') center/cover; }
-.vcard-skin-meme-sadpablo .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1c1uej.jpg') center/cover; }
-.vcard-skin-meme-hidethepain .vcard-front      { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/gk5el.jpg') center/cover; }
 /* Свіжі меми — "молодіжний" тренд-набір */
-.vcard-skin-meme-67kid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/a9fxer.jpg') center/cover; }
-.vcard-skin-meme-skibidi .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover; }
-.vcard-skin-meme-tralalero .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9p82jm.jpg') center/cover; }
-.vcard-skin-meme-bombardiro .vcard-front  { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover; }
-.vcard-skin-meme-tungtung .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover; }
-.vcard-skin-meme-chimpanzini .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover; }
-.vcard-skin-meme-gigachad .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover; }
-.vcard-skin-meme-sigma .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/5imrkq.jpg') center/cover; }
-.vcard-skin-meme-chillguy .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9au02y.jpg') center/cover; }
-.vcard-skin-meme-ohio .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/46e43q.jpg') center/cover; }
-.vcard-skin-meme-npc .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/2k0qad.jpg') center/cover; }
-.vcard-skin-meme-rizzler .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/93etli.jpg') center/cover; }
-.vcard-skin-meme-drake .vcard-front, .vcard-skin-meme-distracted .vcard-front, .vcard-skin-meme-womancat .vcard-front,
-.vcard-skin-meme-twobuttons .vcard-front, .vcard-skin-meme-changemymind .vcard-front, .vcard-skin-meme-successkid .vcard-front,
-.vcard-skin-meme-doge .vcard-front, .vcard-skin-meme-thisisfine .vcard-front, .vcard-skin-meme-stonks .vcard-front,
-.vcard-skin-meme-rollsafe .vcard-front, .vcard-skin-meme-pikachu .vcard-front, .vcard-skin-meme-disastergirl .vcard-front,
-.vcard-skin-meme-grumpycat .vcard-front, .vcard-skin-meme-expandingbrain .vcard-front, .vcard-skin-meme-onedoesnotsimply .vcard-front,
-.vcard-skin-meme-ancientaliens .vcard-front, .vcard-skin-meme-dicaprio .vcard-front, .vcard-skin-meme-pigeon .vcard-front,
-.vcard-skin-meme-batman .vcard-front, .vcard-skin-meme-spongebob .vcard-front, .vcard-skin-meme-sadpablo .vcard-front,
-.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-meme-67kid .vcard-front, .vcard-skin-meme-skibidi .vcard-front,
-.vcard-skin-meme-tralalero .vcard-front, .vcard-skin-meme-bombardiro .vcard-front, .vcard-skin-meme-tungtung .vcard-front,
-.vcard-skin-meme-chimpanzini .vcard-front, .vcard-skin-meme-gigachad .vcard-front, .vcard-skin-meme-sigma .vcard-front,
-.vcard-skin-meme-chillguy .vcard-front, .vcard-skin-meme-ohio .vcard-front, .vcard-skin-meme-npc .vcard-front,
-.vcard-skin-meme-rizzler .vcard-front, .vcard-skin-custom-photo .vcard-front {
   border: 1px solid rgba(255,255,255,.25);
   box-shadow: 0 0 22px rgba(255,255,255,.1);
 }
@@ -3875,7 +3709,6 @@ body > .screen, .container ~ .screen {
 .casino-game-card[data-cat="crash"] { --tone: var(--neg); --tone-rgb: var(--neg-rgb); }
 .casino-game-card[data-cat="pvp"] { --tone: var(--special); --tone-rgb: var(--special-rgb); }
 .casino-game-card[data-cat="mini"] { --tone: var(--primary); --tone-rgb: var(--primary-rgb); }
-.casino-game-card[data-cat="sport"] { --tone: var(--pos); --tone-rgb: var(--pos-rgb); }
 @media (hover: hover) {
   .casino-game-card:hover { border-color: var(--fg); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 0 rgb(var(--tone-rgb) / .8); }
 }
@@ -4661,8 +4494,11 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
 .auth-live-item[hidden] { display: none; }
 .auth-live-item b { color: var(--fg); }
 .auth-live-item .ic { width: 16px; height: 16px; color: var(--fg-3); }
-.auth-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 0 rgb(var(--pos-rgb) / .6); animation: authPulse 1.6s var(--ease-out) infinite; }
-@keyframes authPulse { to { box-shadow: 0 0 0 8px rgb(var(--pos-rgb) / 0); } }
+/* Пульс — кільце з transform/opacity (на compositor), а не анімований box-shadow:
+   той перемальовував сторінку входу кожен кадр, поки екран відкритий. */
+.auth-live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); }
+.auth-live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgb(var(--pos-rgb) / .6); animation: authPulse 1.6s var(--ease-out) infinite; }
+@keyframes authPulse { to { transform: scale(3); opacity: 0; } }
 
 .auth-win-ticker { overflow: hidden; border-block: 1px solid var(--line); padding: var(--sp-2) 0; margin-top: var(--sp-4); mask-image: linear-gradient(90deg, transparent, var(--black) 8%, var(--black) 92%, transparent); }
 .auth-win-ticker-inner { display: flex; gap: var(--sp-6); width: max-content; animation: ticker-x 40s linear infinite; }
@@ -4739,7 +4575,7 @@ button.settings-row:active:not(:disabled) { transform: none; background: rgb(var
   .auth-disclaimer { max-width: 640px; margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-win-ticker-inner, .auth-show-card, .auth-show-card::after, .auth-live-dot, .auth-reg-step:not(.hidden) { animation: none; }
+  .auth-win-ticker-inner, .auth-show-card, .auth-show-card::after, .auth-live-dot::after, .auth-reg-step:not(.hidden) { animation: none; }
 }
 /* Про SlotOK — текст для людей і пошуковиків, під формою */
 .auth-about { padding-top: var(--sp-5); border-top: 1px solid var(--line); color: var(--fg-2); font-size: var(--fs-sm); line-height: var(--lh-body); }
@@ -5905,4 +5741,224 @@ body.pm-thread-open .bottom-nav { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .pa-ember, .pn-iris { animation: none; }
+}
+/* ─── src/css/76-legal.css ─── */
+/* Юридичні тексти: вкладки у вікні «Правила та політика», посилання на екрані входу.
+   Лише токени з 00-tokens.css. */
+.legal-box { max-width: 460px; }
+.legal-tabs { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.legal-tab {
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md);
+  background: var(--ks-surface-3); color: var(--ks-fg-2); border: var(--bw) solid var(--ks-line);
+  font-size: var(--fs-sm); cursor: pointer;
+}
+.legal-tab.is-on { background: var(--ks-acc); color: var(--on-accent); border-color: var(--ks-acc); }
+.legal-h { margin-top: var(--sp-4); }
+.legal-p { margin: 0 0 var(--sp-2); }
+.auth-legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin: var(--sp-3) 0 0; font-size: var(--fs-sm); }
+.auth-legal-links .link-btn { padding: 0; }
+.auth-consent { display: flex; align-items: flex-start; gap: var(--sp-2); margin: var(--sp-3) 0; font-size: var(--fs-sm); line-height: 1.4; text-align: left; cursor: pointer; }
+.auth-consent input { width: auto; flex: 0 0 auto; margin: 2px 0 0; min-height: 0; }
+.auth-consent .link-btn { padding: 0; font-size: inherit; display: inline; }
+/* ─── src/css/77-friends.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   ДРУЗІ Й ЗАПРОШЕННЯ ЗА СТІЛ. Логіка — src/app/56-friends.js.
+   ═══════════════════════════════════════════════════════════════════ */
+.friends-add { margin-bottom: var(--sp-4); }
+#friendsList .list { margin-bottom: var(--sp-4); }
+#friendsList .list-row .btn-sm { flex: none; width: auto; margin: 0; }
+.friends-badge { margin-left: auto; margin-right: var(--sp-2); }
+.fr-invite-list { margin-bottom: var(--sp-4); max-height: 40vh; overflow-y: auto; }
+.fr-invite-list .btn-sm { flex: none; width: auto; margin: 0; }
+.fr-invite-bar { margin-top: var(--sp-3); display: flex; justify-content: center; }
+.fr-invite-bar .btn { width: auto; margin: 0; }
+
+/* Спливаюче запрошення за стіл */
+.fr-popups {
+  position: fixed; left: 50%; bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px) + 64px); transform: translateX(-50%);
+  z-index: var(--z-toast); display: grid; gap: var(--sp-2); width: min(420px, calc(100vw - 2 * var(--sp-4))); pointer-events: none;
+}
+.fr-popup {
+  pointer-events: auto; display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-1); color: var(--fg); border: var(--bw) solid var(--line-strong);
+  border-left: 4px solid var(--accent); border-radius: var(--r-lg); box-shadow: var(--sh-float);
+  animation: stamp-in var(--dur-3) var(--ease-out);
+}
+.fr-popup-sub { color: var(--fg-3); font-size: var(--fs-sm); }
+.fr-popup-actions { display: flex; gap: var(--sp-2); }
+.fr-popup-actions .btn { flex: 1; margin: 0; }
+/* ─── src/css/78-missions.css ─── */
+/* ═══ Щоденні місії з серією (картка на Головній) ═══════════════════
+   JS — src/app/57-missions.js, логіка й нагороди — lib/missions.js.   */
+
+.missions-card .panel-title { display: flex; align-items: center; gap: var(--sp-2); }
+.missions-card .badge { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+
+.mission-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.mission-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border: var(--bw) solid var(--line); border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.mission-row.is-done { border-color: var(--primary); }
+.mission-row.is-claimed { opacity: 0.7; }
+.mission-ic {
+  display: grid; place-items: center; width: 36px; height: 36px; flex: none;
+  border-radius: var(--r-md); background: var(--surface-3); color: var(--primary); font-size: var(--fs-lg);
+}
+.mission-row.is-claimed .mission-ic { color: var(--pos); }
+.mission-body { min-width: 0; display: grid; gap: var(--sp-1); }
+.mission-title { font-size: var(--fs-md); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.mission-meta { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-xs); color: var(--fg-3); }
+.mission-reward { font-size: var(--fs-xs); color: var(--fg-3); white-space: nowrap; }
+.mission-act { display: flex; align-items: center; justify-content: flex-end; min-width: 72px; }
+.mission-act .btn { margin: 0; width: auto; }
+.mission-act .badge { white-space: nowrap; }
+
+.streak-box { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: var(--bw) dashed var(--line); }
+.streak-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.streak-title { display: inline-flex; align-items: center; gap: var(--sp-1); font-weight: var(--fw-bold); }
+.streak-note { font-size: var(--fs-xs); color: var(--fg-3); }
+.streak-ladder { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--sp-1); }
+.streak-step {
+  display: grid; justify-items: center; gap: 2px; padding: var(--sp-2) 0;
+  border: var(--bw) solid var(--line); border-radius: var(--r-sm); background: var(--surface-2);
+  font-size: var(--fs-2xs); color: var(--fg-3);
+}
+.streak-n { font-weight: var(--fw-bold); font-size: var(--fs-xs); }
+.streak-v { display: inline-flex; align-items: center; min-height: 1.2em; }
+.streak-step.is-done { border-color: var(--pos); color: var(--pos); }
+.streak-step.is-now { border-color: var(--primary); color: var(--fg); box-shadow: var(--sh-1); }
+.streak-act { margin-top: var(--sp-3); display: flex; justify-content: flex-end; }
+.streak-act .btn { margin: 0; width: auto; }
+
+@media (max-width: 420px) {
+  .mission-row { grid-template-columns: auto 1fr; }
+  .mission-act { grid-column: 1 / -1; justify-content: stretch; }
+  .mission-act .btn { width: 100%; }
+}
+/* ─── src/css/79-leagues.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   РЕЙТИНГОВІ ЛІГИ. Логіка — src/app/58-leagues.js.
+   ═══════════════════════════════════════════════════════════════════ */
+#leaguesBody .panel { margin-bottom: var(--sp-4); }
+.league-hero-top { display: flex; align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-3); }
+.league-hero-ic { width: 48px; height: 48px; flex: none; color: var(--accent); }
+.league-tier-name { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+.league-rating { font-size: var(--fs-xl); font-weight: var(--fw-bold); }
+.league-bar { height: 10px; border: var(--bw) solid var(--line-strong); border-radius: var(--r-pill); overflow: hidden; background: var(--surface-2); margin-bottom: var(--sp-3); }
+.league-bar > span { display: block; height: 100%; background: var(--accent); }
+.league-sub { color: var(--fg-3); font-size: var(--fs-sm); margin-top: var(--sp-2); }
+.league-badge { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+.league-badge .ic { width: 14px; height: 14px; }
+.league-delta.is-pos { color: var(--pos); }
+.league-delta.is-neg { color: var(--neg); }
+.league-pos { min-width: 28px; color: var(--fg-3); }
+#leaguesBoard .list-row.is-mine { border-color: var(--accent); }
+.league-claim .btn { width: auto; margin: var(--sp-3) 0 0; }
+.league-card-btn { width: 100%; text-align: left; }
+#leagueCard { margin-bottom: var(--sp-4); }
+/* ─── src/css/80-spectate.css ─── */
+/* Режим глядача: src/app/59-spectate.js */
+.sp-bar { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.sp-chip { display: inline-flex; align-items: center; gap: var(--sp-1); border-color: var(--info); color: var(--info); font-weight: var(--fw-bold); }
+.sp-chip .ic { width: 14px; height: 14px; }
+.sp-exit { width: auto; margin: 0 0 0 auto; min-height: 40px; padding: 0 var(--sp-3); }
+.sp-count { font-size: var(--fs-xs); color: var(--fg-3); }
+.sp-live { margin-bottom: var(--sp-2); }
+.sp-live .room-row-btn .ic { width: 16px; height: 16px; margin-right: var(--sp-1); }
+.sp-live .room-row-btn { display: inline-flex; align-items: center; }
+.is-spectating .tbl-acts, .is-spectating .tbl-hand, .is-spectating .he-bottom, .is-spectating #ludoRoll,
+.is-spectating .room-actions, .is-spectating #eightsSuit, .is-spectating .tbl-top .sp-count { display: none; }
+.is-spectating .tbl-top .sp-count { display: none; }
+/* ─── src/css/81-fourrow.css ─── */
+/* «Чотири в ряд»: CSS-3D поле. Рух лише через transform/opacity. */
+.fr-stage { perspective: 900px; padding: var(--sp-3) 0 var(--sp-4); }
+.fr-board {
+  --fr-gap: clamp(4px, 1.4vw, 8px);
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--fr-gap);
+  width: min(100%, 460px); margin-inline: auto; padding: var(--fr-gap);
+  background: color-mix(in srgb, var(--primary) 60%, var(--surface-3));
+  border: var(--bw-strong) solid var(--line-strong); border-radius: var(--r-lg);
+  box-shadow: 0 var(--sp-3) 0 0 var(--ink-shadow), var(--sh-float);
+  transform: rotateX(16deg); transform-origin: 50% 100%; transform-style: preserve-3d;
+}
+.fr-cell {
+  all: unset; box-sizing: border-box; position: relative; aspect-ratio: 1; border-radius: var(--r-pill);
+  background: rgb(var(--recess-rgb) / .85); box-shadow: inset 0 3px 6px rgb(var(--recess-rgb) / 1), inset 0 -1px 0 rgb(var(--fg-rgb) / .12);
+  overflow: hidden; cursor: default;
+}
+.fr-board.is-active .fr-cell { cursor: pointer; }
+.fr-board.is-active .fr-cell:hover::after {
+  content: ""; position: absolute; inset: 0; background: rgb(var(--primary-rgb) / .18);
+}
+.fr-cell:focus-visible { outline: var(--bw-strong) solid var(--primary); }
+.fr-disc { position: absolute; inset: 8%; border-radius: var(--r-pill); opacity: 0; will-change: transform; }
+.fr-disc.is-p0, .fr-disc.is-p1 { opacity: 1; box-shadow: inset 0 -4px 0 rgb(var(--shade-rgb) / .35), inset 0 3px 0 rgb(var(--fg-rgb) / .3), 0 2px 0 var(--ink-shadow); }
+.fr-disc.is-p0 { background: radial-gradient(circle at 35% 30%, rgb(var(--accent-rgb) / .75), var(--accent) 60%); }
+.fr-disc.is-p1 { background: radial-gradient(circle at 35% 30%, rgb(var(--primary-rgb) / .75), var(--primary) 60%); }
+.fr-disc.is-p0::after, .fr-disc.is-p1::after { content: ""; position: absolute; inset: 22%; border-radius: var(--r-pill); border: var(--bw) solid rgb(var(--shade-rgb) / .3); }
+.fr-disc.is-mine::before { content: ""; position: absolute; inset: 40%; border-radius: var(--r-pill); background: rgb(var(--shade-rgb) / .35); }
+.fr-disc.is-drop { animation: fr-drop var(--dur-4) cubic-bezier(.5, 0, .75, 1) both; }
+.fr-disc.is-win { box-shadow: 0 0 0 3px var(--warn), 0 0 14px 2px rgb(var(--warn-rgb) / .7); animation: fr-win .7s var(--ease-out) 3; z-index: 1; }
+@keyframes fr-drop {
+  0% { transform: translateY(var(--fr-from, -300%)); }
+  70% { transform: translateY(0); animation-timing-function: var(--ease-out); }
+  85% { transform: translateY(-9%); }
+  100% { transform: translateY(0); }
+}
+@keyframes fr-win { 50% { transform: scale(1.14); } }
+.fr-board.is-over:not(:has(.is-win)) { filter: saturate(.7); }
+.fr-legend { display: flex; justify-content: center; gap: var(--sp-4); font-size: var(--fs-sm); color: var(--fg-2); margin-bottom: var(--sp-2); }
+.fr-key { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.fr-chip { width: 14px; height: 14px; border-radius: var(--r-pill); display: inline-block; box-shadow: var(--sh-1); }
+.fr-chip.is-p0 { background: var(--accent); }
+.fr-chip.is-p1 { background: var(--primary); }
+@media (prefers-reduced-motion: reduce) {
+  .fr-disc.is-drop, .fr-disc.is-win { box-shadow: 0 0 0 3px var(--warn), 0 0 14px 2px rgb(var(--warn-rgb) / .7); animation: none; }
+  .fr-board { transform: none; }
+}
+body.turbo .fr-disc.is-drop { animation-duration: .2s; }
+/* ─── src/css/82-flip3d.css ─── */
+/* Кубик Dice і монета Coinflip — CSS-3D, лише transform/opacity */
+.d3-stage { perspective: 600px; display: grid; place-items: center; height: 120px; margin: var(--sp-3) 0 var(--sp-1); }
+.d3-cube { --d3: 76px; position: relative; width: var(--d3); height: var(--d3); transform-style: preserve-3d; will-change: transform; }
+.d3-face {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: var(--r-md);
+  background: linear-gradient(145deg, var(--paper), color-mix(in srgb, var(--paper) 80%, var(--fg-4)));
+  color: var(--paper-ink); border: var(--bw-strong) solid var(--paper-ink);
+  font-family: var(--font-display); font-weight: var(--fw-black); font-size: var(--fs-xl); backface-visibility: hidden;
+}
+.d3-front  { transform: translateZ(calc(var(--d3) / 2)); }
+.d3-back   { transform: rotateY(180deg) translateZ(calc(var(--d3) / 2)); }
+.d3-right  { transform: rotateY(90deg) translateZ(calc(var(--d3) / 2)); }
+.d3-left   { transform: rotateY(-90deg) translateZ(calc(var(--d3) / 2)); }
+.d3-top    { transform: rotateX(90deg) translateZ(calc(var(--d3) / 2)); }
+.d3-bottom { transform: rotateX(-90deg) translateZ(calc(var(--d3) / 2)); }
+.d3-cube:not(.is-win):not(.is-lose) .d3-front { color: var(--fg-4); }
+.d3-cube.is-win .d3-front  { background: var(--pos); color: var(--on-pos); }
+.d3-cube.is-lose .d3-front { background: var(--neg); color: var(--on-neg); }
+.d3-shadow { display: none; }
+
+.cf3d-stage { perspective: 700px; display: grid; place-items: center; height: 120px; margin-bottom: var(--sp-2); }
+.cf3d-coin {
+  --cf: 84px; position: relative; width: var(--cf); height: var(--cf); transform-style: preserve-3d;
+  animation: cf3d-spin 1.3s cubic-bezier(.25,.6,.3,1) both; transform: rotateY(1800deg);
+}
+.cf3d-coin.is-tails { animation-name: cf3d-spin-t; transform: rotateY(1980deg); }
+.cf3d-face {
+  position: absolute; inset: 0; border-radius: var(--r-pill); display: grid; place-items: center; backface-visibility: hidden;
+  border: var(--bw-strong) solid var(--ink-shadow); box-shadow: inset 0 0 0 5px rgb(var(--shade-rgb) / .18);
+  font-size: 34px;
+}
+.cf3d-heads { background: radial-gradient(circle at 35% 30%, rgb(var(--warn-rgb) / .8), var(--warn) 65%); color: var(--on-warn); transform: translateZ(3px); }
+.cf3d-tails { background: radial-gradient(circle at 35% 30%, rgb(var(--primary-rgb) / .8), var(--primary) 65%); color: var(--on-primary); transform: rotateY(180deg) translateZ(3px); }
+.cf3d-rim { position: absolute; inset: 0; border-radius: var(--r-pill); background: var(--fg-4); transform: translateZ(0); }
+.cf3d-reveal { animation: cf3d-fade .35s ease 1.2s both; }
+@keyframes cf3d-spin   { from { transform: translateY(0) rotateY(0) rotateX(12deg); } 45% { transform: translateY(-34px) rotateY(900deg) rotateX(12deg); } to { transform: translateY(0) rotateY(1800deg) rotateX(0); } }
+@keyframes cf3d-spin-t { from { transform: translateY(0) rotateY(0) rotateX(12deg); } 45% { transform: translateY(-34px) rotateY(990deg) rotateX(12deg); } to { transform: translateY(0) rotateY(1980deg) rotateX(0); } }
+@keyframes cf3d-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .cf3d-coin, .cf3d-coin.is-tails { animation: none; }
+  .cf3d-reveal { animation: none; }
 }

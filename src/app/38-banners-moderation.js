@@ -138,6 +138,19 @@ function logAdminAction(action, details) {
   });
 }
 
+// Ручна зміна балансу адміном: хто, кому, скільки, чому і коли (час — серверний).
+// Окремі поля (target/amount/reason), щоб журнал можна було фільтрувати й звіряти.
+function logAdminBalance(action, target, amount, reason) {
+  if(!currentUser) return;
+  const amt = Number(amount) || 0;
+  const why = String(reason || '').slice(0, 300);
+  db.ref('admin_action_log').push({
+    admin: currentUser, action: action, target: String(target || ''), amount: amt, reason: why,
+    details: '@' + target + ': ' + (amt > 0 ? '+' : '') + amt + '₴' + (why ? ' · ' + why : ''),
+    ts: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
 // ── БАН / МУТ (нарешті є сторона запису — раніше тільки перевірялось) ──
 // Єдина точка бана гравця — і вкладка "Модерація" (нік/причина з полів
 // форми), і швидкий бан з картки гравця (admBanUser нижче) йдуть сюди,
@@ -231,11 +244,11 @@ function loadOnlinePlayersAdmin() {
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
+          <div style="font-weight:700;font-size:12px;">${escapeHtml(nick)}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
           <div style="font-size:10px;color:var(--fg-4);">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
         </div>
-        <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
-        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value='${nick}':null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
+        <button onclick="document.getElementById('modUserNick').value=${jsArg(nick)};notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
+        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value=${jsArg(nick)}:null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
       </div>`;
     }).join('');
   });
@@ -265,14 +278,14 @@ function savePlayerNotes() {
 // Повний список усіх ігор сайту (синхронізовано з картками "Всі ігри" в лобі) —
 // раніше тут було лише 9 ігор і решту адмін не міг вимкнути з панелі модерації.
 const ADMIN_TOGGLEABLE_GAMES = [
-  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash Aviator'}, {id:'mines', name:'💣 Mines'},
+  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash'}, {id:'mines', name:'💣 Mines'},
   {id:'blackjack', name:'🃏 Blackjack'}, {id:'plinko', name:'🔻 Plinko'}, {id:'dice', name:'🎲 Dice Roll'},
   {id:'fortune', name:'🎡 Колесо Фортуни'}, {id:'poker', name:'♠️ Video Poker'}, {id:'hilo', name:'🃏 Hi-Lo Cards'},
   {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'tower', name:'🗼 Tower Climb'},
-  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
+  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Магнат'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
-  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'},
+  {id:'dragon', name:'🐉 Dragon Tower'},
   {id:'sicbo', name:'🎲 Sic Bo'},
   {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'},
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},

@@ -11,7 +11,7 @@
 //
 // GET                         → { serverAuth: bool }
 // POST { action: "login",    nick, password }
-// POST { action: "register", nick, password, birthDate ("YYYY-MM-DD"), email?, promo?, secQ, secA, ref? }
+// POST { action: "register", nick, password, birthDate ("YYYY-MM-DD"), termsAccepted: true, termsVersion, parentConsent (якщо <18), email?, promo?, secQ, secA, ref? }
 // POST { action: "reset",    nick, answer, newPassword }      (security question)
 // POST { action: "change-password", nick, password, newPassword }
 // POST { action: "set-security", nick, password, question, answer }
@@ -22,10 +22,11 @@
 // set — the app then falls back to its old client-side login.
 // ============================================================
 
-const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
+const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction, dbDelete } = require("../lib/firebase");
 const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
 const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
+const { setPrivate } = require("../lib/private-profile");
 const SlotOKPassword = require("../password.js");
 const { MIN_AGE, ageFromBirthDate } = require("../shared/age.js");
 
@@ -77,11 +78,12 @@ async function login(req, res, body) {
   if (!(await throttle(req, "login", nick))) {
     return fail(res, 429, "rate_limited", "Забагато спроб входу. Зачекай 10 хвилин.");
   }
-  const [pass, banned, banReason, isAdmin] = await Promise.all([
+  const [pass, banned, banReason, isAdmin, maintenance] = await Promise.all([
     getSecret(nick, "pass"),
     dbGet(`users/${nick}/banned`),
     dbGet(`users/${nick}/banReason`),
     dbGet(`users/${nick}/isAdmin`),
+    dbGet("site_config/maintenance"),
   ]);
   if (!pass) return fail(res, 404, "not_found", `Гравця "${nick}" не знайдено`);
   if (banned) return fail(res, 403, "banned", "Акаунт заблоковано" + (banReason ? ": " + banReason : ""));
@@ -93,7 +95,7 @@ async function login(req, res, body) {
   await migrateSecrets(nick);
 
   const admin = nick.toLowerCase() === OWNER || isAdmin === true;
-  if (!admin && (await dbGet("site_config/maintenance"))) {
+  if (!admin && maintenance) {
     return fail(res, 403, "maintenance", "Сайт тимчасово на технічному обслуговуванні. Спробуй пізніше.");
   }
   res.status(200).json({ token: createCustomToken(nick), nick });
@@ -117,6 +119,9 @@ async function register(req, res, body) {
   const age = ageFromBirthDate(birthDate);
   if (age === null) return fail(res, 400, "bad_birth_date", "Вкажи справжню дату народження");
   if (age < MIN_AGE) return fail(res, 403, "too_young", `SlotOK доступний з ${MIN_AGE} років. Повертайся, коли виповниться ${MIN_AGE}.`);
+  // Згода з Умовами й Політикою обов'язкова; до 18 років — ще й дозвіл батьків/опікунів.
+  if (body.termsAccepted !== true) return fail(res, 400, "terms_required", "Потрібно прийняти Умови користування та Політику конфіденційності");
+  if (age < 18 && body.parentConsent !== true) return fail(res, 400, "parent_consent_required", "До 18 років потрібен дозвіл батьків або опікунів");
   if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) return fail(res, 400, "bad_email", "Невірний email");
   if (!(await throttle(req, "register", null))) {
     return fail(res, 429, "rate_limited", "Забагато реєстрацій з цієї мережі. Спробуй пізніше.");
@@ -129,7 +134,6 @@ async function register(req, res, body) {
 
   const now = Date.now();
   const newUser = {
-    email,
     securityQuestion: secQ,
     hasSecurityAnswer: true,
     balance: bonus, freeSlots: spins,
@@ -138,7 +142,9 @@ async function register(req, res, body) {
     dailyStreak: 0, luckyGamesLeft: 3, luckyGamesUsed: 0,
     registeredAt: now, lastSeen: now,
     totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
+    termsAcceptedAt: now, termsVersion: (str(body.termsVersion, 8) || "3"),
   };
+  if (age < 18) newUser.parentConsent = true;
   if (promo) newUser.usedPromo = promo;
   if (ref && ref !== nick && /^[^.#$[\]/]{1,40}$/.test(ref) && (await getSecret(ref, "pass"))) {
     newUser.referredBy = ref;
@@ -147,11 +153,19 @@ async function register(req, res, body) {
   // Create-if-absent: two simultaneous sign-ups for one nick can't both win.
   const { committed } = await dbTransaction(`users/${nick}`, (cur) => (cur ? undefined : newUser));
   if (!committed) return fail(res, 409, "nick_taken", `Нікнейм "${nick}" вже зайнятий`);
-  await setSecrets(nick, {
-    pass: await SlotOKPassword.hash(password),
-    securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
-    birthDate, // не в публічному users/: вузол читають усі
-  });
+  try {
+    await setSecrets(nick, {
+      pass: await SlotOKPassword.hash(password),
+      securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
+      birthDate, // не в публічному users/: вузол читають усі
+    });
+    // email — приватне поле: user_private/<нік> (users/ читають усі).
+    if (email) await setPrivate(nick, { email });
+  } catch (e) {
+    // Без пароля акаунт недоступний, а нік зайнятий — прибираємо щойно створений вузол.
+    await dbDelete(`users/${nick}`).catch(() => {});
+    throw e;
+  }
 
   await Promise.allSettled([
     dbPush(`users/${nick}/history`, { text: "🎉 Реєстрація! Бонус: +" + bonus + "₴", date: now }),
@@ -236,7 +250,8 @@ module.exports = async (req, res) => {
   if (!configured) return fail(res, 503, "not_configured", "Серверний вхід ще не налаштований");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  const handler = ACTIONS[body.action];
+  // hasOwn: "constructor"/"__proto__" не мають давати «обробник» (запит завис би без відповіді)
+  const handler = typeof body.action === "string" && Object.prototype.hasOwnProperty.call(ACTIONS, body.action) ? ACTIONS[body.action] : null;
   if (!handler) return fail(res, 400, "bad_action", "Невідома дія");
   try {
     await handler(req, res, body);

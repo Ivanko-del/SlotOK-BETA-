@@ -13,7 +13,6 @@ const assert = require("assert");
 
 function _cardIdsOf(u) {
   var ids = [];
-  if (u && u.virtualCard && u.virtualCard.axiomLinked) ids.push("axiom");
   if (u && u.linkedCards) Object.keys(u.linkedCards).forEach(function (k) { ids.push(k); });
   return ids;
 }
@@ -24,7 +23,7 @@ function _activeCardIdOf(u) {
   return (a && ids.indexOf(a) >= 0) ? a : ids[0];
 }
 function _cardBalPath(id) {
-  return id === "axiom" ? "virtualCard/balance" : ("linkedCards/" + id + "/balance");
+  return "linkedCards/" + id + "/balance";
 }
 function cardBalancePath(u, cardId) {
   if (!u || !cardId) return "balance";
@@ -32,15 +31,14 @@ function cardBalancePath(u, cardId) {
   if (cardId === _activeCardIdOf(u)) return "balance";
   return _cardBalPath(cardId);
 }
-function _freezePath(id) { return id === "axiom" ? "virtualCard/frozen" : ("linkedCards/" + id + "/frozen"); }
+function _freezePath(id) { return "linkedCards/" + id + "/frozen"; }
 function isCardFrozenOf(u, id) {
   if (!u || !id) return false;
-  if (id === "axiom") return !!(u.virtualCard && u.virtualCard.frozen);
   return !!(u.linkedCards && u.linkedCards[id] && u.linkedCards[id].frozen);
 }
 function _cardRecOf(u, id) {
   if (!u || !id) return null;
-  return id === "axiom" ? (u.virtualCard || null) : ((u.linkedCards && u.linkedCards[id]) || null);
+  return (u.linkedCards && u.linkedCards[id]) || null;
 }
 function _dayKey(ts) {
   const d = new Date(ts || Date.now());
@@ -58,10 +56,8 @@ function cardLimitLeft(u, id) {
 function ksTxOnCard(t, cardId) { return !t || !t.cardId || !cardId || t.cardId === cardId; }
 
 const noCards = {};
-const axiomOnly = { virtualCard: { axiomLinked: true } };
 const wallet = {
-  virtualCard: { axiomLinked: true },
-  linkedCards: { mono1: {}, priv2: {} },
+  linkedCards: { mono1: {}, priv2: {}, game3: {} },
   activeCardId: "priv2",
 };
 
@@ -69,15 +65,12 @@ const wallet = {
 // A player with no cards has no active card, and money falls back to the shared balance.
 assert.strictEqual(_activeCardIdOf(noCards), null);
 assert.strictEqual(cardBalancePath(noCards, "mono1"), "balance");
-// Axiom counts as a card even though it lives outside linkedCards.
-assert.deepStrictEqual(_cardIdsOf(axiomOnly), ["axiom"]);
-assert.strictEqual(_activeCardIdOf(axiomOnly), "axiom");
 // Explicit activeCardId wins; the live balance IS the active card, so it uses `balance`.
 assert.strictEqual(_activeCardIdOf(wallet), "priv2");
 assert.strictEqual(cardBalancePath(wallet, "priv2"), "balance");
 // Non-active cards keep their own stored balance and must be credited there.
 assert.strictEqual(cardBalancePath(wallet, "mono1"), "linkedCards/mono1/balance");
-assert.strictEqual(cardBalancePath(wallet, "axiom"), "virtualCard/balance");
+assert.strictEqual(cardBalancePath(wallet, "game3"), "linkedCards/game3/balance");
 // A card removed while the request was pending must not send money nowhere.
 assert.strictEqual(cardBalancePath(wallet, "deleted9"), "balance");
 // A dangling activeCardId (card removed) falls back to the first real card, and
@@ -105,7 +98,7 @@ for (const from of ids) {
 }
 // Moving off the active card debits the shared balance and credits the card itself.
 assert.strictEqual(cardBalancePath(wallet, "priv2"), "balance");
-assert.strictEqual(cardBalancePath(wallet, "axiom"), "virtualCard/balance");
+assert.strictEqual(cardBalancePath(wallet, "game3"), "linkedCards/game3/balance");
 // Between two non-active cards the shared balance must not be touched at all.
 assert.strictEqual(cardBalancePath(wallet, "mono1"), "linkedCards/mono1/balance");
 assert.notStrictEqual(cardBalancePath(wallet, "mono1"), "balance");
@@ -115,20 +108,17 @@ assert.notStrictEqual(cardBalancePath(wallet, "mono1"), "balance");
 // multi-card wallet this was a single account-wide flag, and reusing it would
 // have killed every card at once.
 const frozenWallet = {
-  virtualCard: { axiomLinked: true, frozen: true },
-  linkedCards: { mono1: { frozen: true }, priv2: {} },
+  linkedCards: { mono1: { frozen: true }, priv2: {}, game3: { frozen: true } },
   activeCardId: "priv2",
 };
-assert.strictEqual(isCardFrozenOf(frozenWallet, "axiom"), true);
+assert.strictEqual(isCardFrozenOf(frozenWallet, "game3"), true);
 assert.strictEqual(isCardFrozenOf(frozenWallet, "mono1"), true);
 // The active card is NOT frozen, so spending must stay allowed.
 assert.strictEqual(isCardFrozenOf(frozenWallet, _activeCardIdOf(frozenWallet)), false);
 // Unknown / missing ids never read as frozen — a stale id must not lock a player out.
 assert.strictEqual(isCardFrozenOf(frozenWallet, "gone"), false);
 assert.strictEqual(isCardFrozenOf(frozenWallet, null), false);
-assert.strictEqual(isCardFrozenOf(null, "axiom"), false);
-// Axiom keeps its flag at the legacy path, so the partner bank stays compatible.
-assert.strictEqual(_freezePath("axiom"), "virtualCard/frozen");
+assert.strictEqual(isCardFrozenOf(null, "game3"), false);
 assert.strictEqual(_freezePath("mono1"), "linkedCards/mono1/frozen");
 
 // ── Daily card limit ───────────────────────────────────────────────────────

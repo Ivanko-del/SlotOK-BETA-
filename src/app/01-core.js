@@ -35,7 +35,6 @@ try {
     if(firebase.auth) firebase.auth().useEmulator(emu.auth, { disableWarnings: true });
   }
   db = firebase.database();
-  setTimeout(initAxioma, 0); // після виконання всього app.js — тоді змінні інтеграції вже оголошені
 } catch(e) {
   console.error('Firebase init error:', e);
   // Show friendly error but DON'T block the app
@@ -279,7 +278,7 @@ function startDataSync() {
             }
             userData = data;
             migrateCardFreeze();
-            retireMigratedAxiomCard();
+            retireLegacyExternalCard();
             syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
             // Само-виключення — раніше цей прапорець лише встановлювався і ніде
@@ -306,9 +305,13 @@ function startDataSync() {
               if(userData.balance < 0) antiCheatFlag('negative_balance', `Баланс пішов у мінус: ₴${formatNumber(userData.balance)}`, 'high');
             }
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
-            if(!isAdminAcc) {
-              db.ref('site_config/maintenance').once('value', mSnap => {
-                if(mSnap.val()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
+            // Одна підписка на сесію замість читання site_config/maintenance на КОЖНУ
+            // зміну профілю (а це кожна ставка). Логіка та сама: не-адмін при
+            // увімкненому техобслуговуванні виходить з акаунта.
+            if(!isAdminAcc && !window._maintWatch) {
+              window._maintWatch = true;
+              db.ref('site_config/maintenance').on('value', mSnap => {
+                if(mSnap.val() && !isAdminUser()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
               });
             }
             document.getElementById('auth-screen').classList.add('hidden');
@@ -317,11 +320,24 @@ function startDataSync() {
             checkTermsGate();
             loadContacts();
             checkAdmin();
-            try { applyPlayerStyles(document.body); } catch(e) {}
+            // Обхід усього документа — лише коли змінилась власна косметика (нові
+            // вузли оформлює MutationObserver у 54-cosmetics), а не на кожну ставку.
+            try {
+              const cosSig = JSON.stringify([userData.slotikyItems || null, userData.cosmetics || null]);
+              if(cosSig !== window._cosSig) { window._cosSig = cosSig; applyPlayerStyles(document.body); }
+            } catch(e) {}
             checkDailyBonus();
-            loadNotifsFromStorage();
-            updateNotifBadge();
-            loadSettings();
+            // Налаштування й сповіщення з localStorage читаємо один раз на сесію: це
+            // перезастосування теми/зуму/анімацій (перерахунок стилів усієї сторінки)
+            // на КОЖНУ зміну профілю, тобто на кожну ставку. Зміни налаштувань
+            // застосовуються самі (saveSetting/setTheme…), екран налаштувань
+            // викликає loadSettings() при відкритті.
+            if(!window._settingsApplied) {
+              window._settingsApplied = true;
+              loadNotifsFromStorage();
+              updateNotifBadge();
+              loadSettings();
+            }
             if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); watchAntiCheatConfig(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
@@ -338,12 +354,12 @@ function startDataSync() {
               setTimeout(initChatAutoClear, 500);
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
-              setTimeout(checkPendingBetsOnStartup, 3000);
+              setTimeout(refundOpenSportBets, 3000);
+              setTimeout(initPrivateProfile, 300);
               setTimeout(watchPmUnread, 1500);
               setTimeout(watchSupportUnread, 1500);
               setTimeout(initV62Features, 2200);
               setTimeout(renderActivityFeed, 2000);
-              if(userData.virtualCard?.axiomLinked) setTimeout(startAxiomFreezeSync, 1000);
             }
         }, (error) => {
             notify("Помилка зв'язку з базою.", "error");

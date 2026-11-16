@@ -9,7 +9,6 @@
         "totalWins",
         "totalProfit",
         "lastSeen",
-        "lastIpHash",
         "stats/gamesPlayed",
         "stats/biggestWin",
         "isBot",
@@ -40,7 +39,7 @@
         },
         "email": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
-          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "lastIP": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
@@ -48,7 +47,7 @@
         },
         "lastIpHash": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
-          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "avatar": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
@@ -134,6 +133,12 @@
         "isBot": {
           ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
         },
+        "supporter": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "supporterAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
         "telegramChatId": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))) && !newData.exists()"
         },
@@ -209,6 +214,35 @@
     "user_secrets": {
       ".read": false,
       ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "user_private": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+        ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+        ".validate": "newData.hasChildren() || !newData.exists()",
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "lastIpHash": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "telegramChatId": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        }
+      }
+    },
+    "ip_index": {
+      ".read": false,
+      ".write": false,
+      "$h": {
+        ".read": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)",
+        "$n": {
+          ".write": "auth != null && (auth.uid === $n || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isNumber()"
+        }
+      }
     },
     "notify_rate": {
       ".read": false,
@@ -601,6 +635,30 @@
         ]
       }
     },
+    "missions": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "league": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "league_pub": {
+      ".read": false,
+      ".write": false,
+      "$season": {
+        ".read": true,
+        ".indexOn": [
+          "rating"
+        ]
+      }
+    },
     "room_private": {
       ".read": false,
       ".write": false,
@@ -608,6 +666,37 @@
         "$nick": {
           ".read": "auth != null && auth.uid === $nick"
         }
+      }
+    },
+    "room_watchers": {
+      ".read": true,
+      ".write": false,
+      "$id": {
+        "$nick": {
+          ".write": "auth != null && auth.uid === $nick",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "friends": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "friend_requests": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "room_invites": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
       }
     },
     "live_results": {
@@ -640,14 +729,16 @@
     },
     "sport_bets": {
       ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "sport_matches": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
+      ".indexOn": [
+        "userId"
+      ],
+      "$b": {
+        "status": {
+          ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid"
+        },
+        "refundedAt": {
+          ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid"
+        }
       }
     },
     "tournaments": {
@@ -872,24 +963,6 @@
         "$f": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
         }
-      }
-    },
-    "axiomPublic": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "axiomCardIndex": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "axiomLinkCodes": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
       }
     }
   }

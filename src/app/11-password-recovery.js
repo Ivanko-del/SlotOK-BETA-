@@ -241,6 +241,7 @@ function regStep(n) {
   const form = document.getElementById('regForm');
   if(!form) return;
   form.dataset.step = String(n);
+  if(n === 2 && typeof updateRegConsentText === 'function') updateRegConsentText();
   document.getElementById('regStep1')?.classList.toggle('hidden', n !== 1);
   document.getElementById('regStep2')?.classList.toggle('hidden', n !== 2);
   form.querySelectorAll('.auth-step').forEach((el, i) => el.classList.toggle('is-on', i < n));

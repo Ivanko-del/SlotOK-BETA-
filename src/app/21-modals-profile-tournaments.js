@@ -127,30 +127,6 @@ function comparePlayersModal() {
   openModal('compare', html);
 }
 
-function showTopDonators() {
-  openModal('topdonators',
-    modalCloseBtn('topdonators') +
-    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏆 Топ Донатерів</div>' +
-    '<div id="topDonatorsList" style="color:var(--fg-4);text-align:center;padding:20px;">Завантаження...</div>'
-  );
-  db.ref('users').orderByChild('totalDeposits').limitToLast(20).once('value').then(function(snap) {
-    var el = document.getElementById('topDonatorsList'); if(!el) return;
-    var sorted = Object.entries(snap.val()||{}).filter(function(e){return !e[1].isBot&&(e[1].totalDeposits||0)>0;})
-      .sort(function(a,b){return (b[1].totalDeposits||0)-(a[1].totalDeposits||0);}).slice(0,10);
-    if(!sorted.length){el.innerHTML='<div style="color:var(--fg-4);">Даних немає</div>';return;}
-    var medals=['🥇','🥈','🥉'];
-    el.innerHTML=sorted.map(function(e,i){
-      var u=e[1];
-      return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
-        +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
-        +'<div style="font-size:18px;">'+(u.avatar||'👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e[0]+'</div><div style="font-size:10px;color:var(--fg-4);">'+(u.tag||'')+'</div></div>'
-        +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
-        +'</div>';
-    }).join('');
-  });
-}
-
 function showSecurityLog() {
   openModal('seclog',
     modalCloseBtn('seclog') +
@@ -225,75 +201,16 @@ function initAllNewFeatures() {
 
 
 
-function adminStartBotEngine() {
-  startBotEngine();
-  setTimeout(() => {
-    const count = Object.keys(_activeBotData).length;
-    const el = document.getElementById('botEngineStatus');
-    if(el) el.innerHTML = `<span style="color:var(--pos);">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
-    notify('▶ Бот-движок запущено для ' + count + ' ботів', 'success');
-  }, 1500);
-}
-
-function adminStopBotEngine() {
-  stopBotEngine();
-  _activeBotData = {};
-  const el = document.getElementById('botEngineStatus');
-  if(el) el.innerHTML = '<span style="color:var(--neg);">⏹ Зупинено</span>';
-  notify('⏹ Бот-движок зупинено', 'info');
-}
-
 function loadBots() {
   const listEl = document.getElementById('botList');
   if(!listEl) return;
   listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Завантаження...</div>';
   db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
-    const bots = snap.val() || {};
-    const entries = Object.entries(bots);
-    if(!entries.length) { listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>'; return; }
-    const persIcons = { aggressive:'🔥', balanced:'⚖️', conservative:'🛡️', whale:'🐋' };
-    listEl.innerHTML = entries.map(([nick, b]) => {
-      const isActive = !!_activeBotData[nick];
-      const persIcon = persIcons[b.personality] || '⚖️';
-      return `<div class="bot-card">
-        <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${safeUrl(b.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : escapeHtml(b.avatar||'🤖')}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;">${escapeHtml(nick)} ${persIcon}</div>
-          <div style="font-size:10px;color:var(--fg-3);">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:var(--pos);">● Активний</span>':'<span style="color:var(--fg-4);">⚫ Стоп</span>'}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgb(var(--neg-rgb) / 0.15)':'rgb(var(--pos-rgb) / 0.15)'};border:1px solid ${isActive?'var(--neg)':'var(--pos)'};border-radius:var(--r-sm);color:${isActive?'var(--neg)':'var(--pos)'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
-          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
-        </div>
-      </div>`;
-    }).join('');
-    const el = document.getElementById('botEngineStatus');
-    const activeCount = Object.keys(_activeBotData).length;
-    if(el) el.innerHTML = _botEngine
-      ? `<span style="color:var(--pos);">● Запущено</span> — ${activeCount} ботів активні`
-      : `<span style="color:var(--fg-4);">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
+    const entries = Object.keys(snap.val() || {});
+    listEl.innerHTML = entries.length
+      ? '<div style="color:var(--fg-3);font-size:12px;padding:8px;">Записів ботів у базі: ' + entries.length + ' (' + entries.slice(0, 30).map(escapeHtml).join(', ') + ')</div>'
+      : '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>';
   });
-}
-
-function toggleBot(nick) {
-  if(_activeBotData[nick]) {
-    delete _activeBotData[nick];
-    notify('⏹ Бот ' + nick + ' зупинено', 'info');
-  } else {
-    db.ref('users/' + nick).once('value', snap => {
-      if(snap.exists()) addBotToEngine(nick, snap.val());
-      notify('▶ Бот ' + nick + ' запущено', 'success');
-    });
-  }
-  setTimeout(loadBots, 300);
-}
-
-function deleteBot(nick) {
-  if(!confirm('Видалити бота ' + nick + '?')) return;
-  delete _activeBotData[nick];
-  db.ref('users/' + nick).remove();
-  notify('🗑 Бот ' + nick + ' видалено', 'info');
-  setTimeout(loadBots, 500);
 }
 
 function switchAdminTab(tab, el) {
@@ -342,6 +259,7 @@ function adminManualDeposit() {
   var amt  = parseInt(document.getElementById('adminDepAmt').value||0);
   var note = (document.getElementById('adminDepNote').value||'Ручне нарахування').trim();
   if(!user||!amt) return notify('Введіть нік і суму','error');
+  logAdminBalance('manual_deposit', user, amt, note);
   db.ref('users/'+user+'/balance').set(firebase.database.ServerValue.increment(amt));
   db.ref('users/'+user+'/history').push({text:(amt>0?'✅ ':'❌ ')+note+': '+(amt>0?'+':'')+amt+'₴', date:Date.now()});
   db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 Admin',to:user,text:(amt>0?'✅ Нараховано +'+amt+'₴':'⚠️ Списано '+Math.abs(amt)+'₴')+'. '+note,ts:Date.now()});
@@ -365,6 +283,7 @@ function adminGiveAllBonus() {
   var amt = parseInt(prompt('Бонус для ВСІХ гравців (₴):')||0);
   if(!amt||amt<1) return;
   if(!confirm('Видати '+amt+'₴ кожному?')) return;
+  logAdminBalance('give_all_bonus', '*', amt, 'Бонус усім гравцям (по ' + amt + '₴ кожному)');
   db.ref('users').once('value', function(snap){
     var users = snap.val()||{};
     var batch = {};
@@ -388,6 +307,7 @@ function adminForceJackpot() {
     if(amt<1) return notify('Джекпот порожній','error');
     var winner = prompt('Нік переможця:');
     if(!winner) return;
+    logAdminBalance('force_jackpot', winner, amt, 'Джекпот призначено вручну');
     db.ref('users/'+winner+'/balance').set(firebase.database.ServerValue.increment(amt));
     db.ref('jackpot/amount').set(0);
     db.ref('pm/'+winner+'/'+db.ref().push().key).set({from:'🎰 Jackpot',to:winner,text:'🎰 ДЖЕКПОТ! Вам нараховано ₴'+formatNumber(amt)+'!',ts:Date.now()});
@@ -571,10 +491,12 @@ function openPublicProfile(name) {
         <div style="display:flex;gap:8px;margin-top:15px;">
           <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
           <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value=${jsArg(name)};openTabModal('transfer-modal');">💸 Надіслати</button>
+          ${typeof friendsProfileButton === 'function' ? friendsProfileButton(name) : ''}
           <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;
     openTabModal('pub-profile-modal');
+    if(typeof leagueProfileBadge === 'function') leagueProfileBadge(name);
   });
 }
 
@@ -593,6 +515,7 @@ function computeBadges(d) {
   if(d.dailyStreak >= 7) badges += `<span class="badge gold">🔥 Серія 7+</span>`;
   if(d.stats?.gamesPlayed >= 100) badges += `<span class="badge">🎮 Ветеран</span>`;
   if(d.isAdmin) badges += `<span class="badge gold">⚙️ Адмін</span>`;
+  if(d.supporter) badges += `<span class="badge gold">💜 Підтримав проєкт</span>`;
   if(d.stats?.biggestWin >= 10000) badges += `<span class="badge gold">🏆 Великий виграш</span>`;
   if(d.referrals >= 5) badges += `<span class="badge">👥 Рекрутер</span>`;
   return badges || `<span class="badge">🆕 Новачок</span>`;
@@ -620,7 +543,7 @@ function loadTournaments() {
       const isActive = msLeft > 0;
       list.innerHTML += `<div class="tournament-card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:16px;font-weight:bold;">${t.name}</div>
+          <div style="font-size:16px;font-weight:bold;">${escapeHtml(t.name)}</div>
           <span style="font-size:11px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);">${isActive?'🟢 Активний':'🔴 Завершено'}</span>
         </div>
         <div class="t-prize">🏆 ${formatNumber(t.prize)} ₴</div>
@@ -628,7 +551,7 @@ function loadTournaments() {
         <div class="t-leaderboard" id="t-lb-${id}">
           <div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Завантаження рейтингу...</div>
         </div>
-        ${isActive ? `<button class="btn-gold" style="margin-top:10px;padding:10px;" onclick="joinTournament('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+        ${isActive ? `<button class="btn-gold" style="margin-top:10px;padding:10px;" onclick="joinTournament(${jsArg(id)},${jsArg(t.name)},${Number(t.prize)||0})">🎯 Взяти участь</button>` : ''}
       </div>`;
       loadTournamentLeaderboard(id);
     });
@@ -643,7 +566,7 @@ function loadTournamentLeaderboard(tId) {
     if(!data) { el.innerHTML = '<div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Ще немає учасників</div>'; return; }
     const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]);
     el.innerHTML = sorted.map(([name, score], i) =>
-      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${name}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
+      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${escapeHtml(name)}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
     ).join('');
   });
 }
@@ -836,14 +759,14 @@ function renderDepositCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">ID: ${req.userId||'—'} • ${methodIcon} ${methodName}</div>
+        <div class="req-card-meta">ID: ${escapeHtml(req.userId||'—')} • ${methodIcon} ${escapeHtml(methodName)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--pos);">+${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">${escapeHtml(req.amount)} грн</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount},'${req.cardId||''}')">✅ Зарахувати</button>
-      <button class="req-reject"  onclick="rejectDeposit('${id}','${req.user}')">❌ Відхилити</button>
+      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)})">✅ Підтвердити донат (значок)</button>
+      <button class="req-reject"  onclick="rejectDeposit(${jsArg(id)},${jsArg(req.user)})">❌ Відхилити</button>
     </div>
   </div>`;
 }
@@ -856,14 +779,13 @@ function renderWithdrawCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:var(--font-mono);font-size:11px;">${req.card||'—'}</span></div>
+        <div class="req-card-meta">${methodIcon} ${escapeHtml(req.method?.toUpperCase()||'—')} • <span style="font-family:var(--font-mono);font-size:11px;">${escapeHtml(req.card||'—')}</span></div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--accent);">−${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--accent);">−${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveWithdraw('${id}','${req.user}')">✅ Виплачено</button>
-      <button class="req-reject"  onclick="rejectWithdraw('${id}','${req.user}',${req.amount})">❌ Повернути</button>
+      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">↩ Повернути на баланс (вивід скасовано)</button>
     </div>
   </div>`;
 }
@@ -879,7 +801,7 @@ function renderPwrCard(id, req) {
       </div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approvePasswordReset('${id}','${req.user}')">🔑 Скинути пароль</button>
+      <button class="req-approve" onclick="approvePasswordReset(${jsArg(id)},${jsArg(req.user)})">🔑 Скинути пароль</button>
       <button class="req-reject"  onclick="rejectPasswordReset('${id}')">❌ Відхилити</button>
     </div>
   </div>`;
@@ -928,7 +850,7 @@ function startAdminRequestListeners() {
         .sort(function(a,b){ return (b[1].time||0)-(a[1].time||0); });
       depEl.innerHTML = pending.length
         ? pending.map(function(e){ return renderDepositCard(e[0], e[1]); }).join('')
-        : '<div class="req-empty">✅ Заявок на поповнення немає</div>';
+        : '<div class="req-empty">✅ Заявок на донат немає</div>';
       updateRequestBadge();
     });
   }
@@ -1002,34 +924,21 @@ function cardBalancePath(u, cardId) {
   return _cardBalPath(cardId);
 }
 
-function approveDeposit(id, user, amount, cardId) {
-  db.ref('users/'+user).once('value', function(snap) {
-    var u = snap.val() || {};
-    var path = cardBalancePath(u, cardId);
-    db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
-    // Якщо потрібну картку встигли відключити, кошти йдуть на активну —
-    // і в історію теж саме її, а не зниклої.
-    pushCardTx(user, {dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳'},
-               path === 'balance' ? _activeCardIdOf(u) : cardId);
-    if(path !== 'balance') {
-      var obj = (u.linkedCards && u.linkedCards[cardId]) || (cardId === 'axiom' ? u.virtualCard : null);
-      var last4 = obj ? (obj.last4 || String(obj.number||'').replace(/\D/g,'').slice(-4)) : '';
-      notify('Зараховано на картку ····' + last4 + ' (не активну)', 'info');
-    }
-  });
+// Донат — добровільна підтримка проєкту й НЕ нараховує нічого ігрового:
+// ні баланс, ні Слотіки, ні VIP/виграні ставки. Гравець отримує лише
+// косметичний значок «Підтримав проєкт» (однаковий для будь-якої суми).
+function approveDeposit(id, user) {
+  if(!requireAdminPerm('requests')) return;
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-  db.ref('users/'+user+'/history').push({text:`✅ Депозит підтверджено: +${amount}₴`, date:Date.now()});
-  db.ref('users/'+user+'/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:`✅ Ваш депозит ${amount}₴ зараховано! Гарної гри! 🎰`, ts:Date.now()});
+  db.ref('users/'+user).update({supporter:true, supporterAt:Date.now()});
+  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'Дякуємо за підтримку SlotOK! У вашому профілі з\'явився значок «Підтримав проєкт». Донат не змінює ігровий баланс.', ts:Date.now()});
   db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  // Update casino stats
-  db.ref('casino_stats/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  notify(`✅ Депозит ${amount}₴ зараховано гравцю ${user}`, 'success');
+  notify('Донат підтверджено, гравцю '+user+' видано значок підтримки', 'success');
 }
 
 function rejectDeposit(id, user) {
   db.ref('deposit_requests/'+id).update({status:'rejected', rejectedAt:Date.now()});
-  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Ваш запит на поповнення відхилено. Зверніться до підтримки.', ts:Date.now()});
+  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Вашу заявку про донат не підтверджено. Зверніться до підтримки.', ts:Date.now()});
   if(user) db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   notify('Депозит відхилено', 'info');
 }

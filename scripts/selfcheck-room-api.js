@@ -73,6 +73,10 @@ const rng = { int: (a, b) => crypto.randomInt(a, b) };
   tree = { users: Object.fromEntries(names.map((n) => [n, { balance: 10000 }])) };
 
   // ── Coinflip: сервер кидає монету при вході суперника ──
+  for (const g of ["constructor", "__proto__"]) {
+    assert.strictEqual((await call("ann", { action: "create", game: g, bet: 100 })).status, 400, "create " + g);
+    assert.strictEqual((await call("ann", { action: "quick", game: g, bet: 100 })).status, 400, "quick " + g);
+  }
   let r = await call("ann", { action: "create", game: "coinflip", bet: 1000, opts: { side: "heads" } });
   assert.strictEqual(r.status, 200, JSON.stringify(r.data));
   const cf = r.data.id;

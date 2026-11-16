@@ -48,7 +48,6 @@ function appendChatEmoji(emoji) {
 
 // ===== WIN TICKER =====
 const TICKER_GAMES = ['Slots','Blackjack','Crash','Roulette','Mines','Poker','Plinko','Keno','Fortune'];
-const TICKER_NAMES = ['Lucky_77','ProGamer','MaxWin','CashKing','SlotMaster','VegasPro','UkrChamp','BonusHunter'];
 let tickerIdx = 0;
 let tickerItems = [];
 
@@ -57,15 +56,10 @@ function startWinTicker() {
   if(!el) return;
   // Завантажимо реальні виграші + додамо фейкові між ними
   db.ref('win_feed').limitToLast(20).once('value', snap => {
-    const real = snap.val() ? Object.values(snap.val()) : [];
-    const fake = Array.from({length:10}, () => ({
-      user: TICKER_NAMES[Math.floor(Math.random()*TICKER_NAMES.length)],
-      game: TICKER_GAMES[Math.floor(Math.random()*TICKER_GAMES.length)],
-      amount: (Math.floor(Math.random()*200)+2)*50,
-      mult: (Math.random()*15+1.5).toFixed(1)
-    }));
-    tickerItems = [...real.map(r => ({ user:r.user, game:r.game, amount:r.amount, mult:r.mult })), ...fake];
-    tickerItems.sort(() => Math.random()-0.5);
+    // Лише реальні виграші з бази; немає даних — стрічка прихована.
+    const real = (snap.val() ? Object.values(snap.val()) : []).filter(r => r && !r.isBot && r.user && r.amount);
+    tickerItems = real.map(r => ({ user:r.user, game:r.game, amount:r.amount, mult:r.mult }));
+    if(!tickerItems.length) { el.textContent = ''; return; }
     animateTicker();
   });
 }
@@ -93,7 +87,7 @@ function initLobbyChat() {
   box.innerHTML = '';
   chatListener = db.ref('lobby_chat').limitToLast(60).on('child_added', snap => {
     const m = snap.val();
-    if(!m) return;
+    if(!m || m.isBot) return;
     const time = new Date(m.time).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
     const el = document.createElement('div');
     const isMe = m.sender === currentUser;

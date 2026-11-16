@@ -101,7 +101,7 @@ body > .screen, .container ~ .screen {
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
 }
-:is(#tab-home, #tab-lobby, #tab-leaderboard, #tab-sports, #tab-admin, #tab-tournaments, #tab-clans, #tab-achievements) {
+:is(#tab-home, #tab-lobby, #tab-leaderboard, #tab-admin, #tab-tournaments, #tab-clans, #tab-achievements) {
   max-width: var(--w-page);
 }
 .screen.screen-enter { animation: rise-in var(--dur-3) var(--ease-out) both; }

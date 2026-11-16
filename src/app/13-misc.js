@@ -5,71 +5,76 @@ function openGame(g) { trackRecentGame(g); switchTab(g); }
 function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); if(id === 'transfer-modal' && typeof renderSourceBars === 'function') renderSourceBars(); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
-// Приймаємо і 16 цифр (номер прив'язаної картки Аксіоми), і нік гравця:
-// SlotOK власних карток не випускає, тож номер є не в усіх.
+// Переказ між гравцями SlotOK — лише за ніком.
 function formatCardInput(inp) {
   const raw = inp.value.trim();
   const info = document.getElementById('transferRecipientInfo');
   const clear = () => { if(info) { info.textContent = ''; } };
-  if(/^[0-9 ]*$/.test(raw)) {
-    const digits = raw.replace(/\D/g,'').substring(0,16);
-    inp.value = digits.replace(/(.{4})(?=.)/g,'$1 ');
-    if(digits.length !== 16) return clear();
-  } else if(raw.replace(/^@/,'').length < 3) {
-    return clear();
-  }
+  if(raw.replace(/^@/,'').length < 3) return clear();
   if(info) { info.textContent = 'Пошук…'; info.style.color = 'var(--info)'; }
-  resolveTransferRecipient(inp.value, name => {
-    if(!info) return;
-    info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
-    info.style.color = name ? 'var(--pos)' : 'var(--neg)';
-  });
+  // Дебаунс: кожен символ ніку раніше запускав повне завантаження вузла users
+  // (часткового ніку немає в базі → перебір усіх гравців), і відповіді могли
+  // прийти не по черзі. Тепер шукаємо через паузу в наборі й показуємо лише
+  // відповідь на останній запит.
+  clearTimeout(formatCardInput._t);
+  const seq = formatCardInput._seq = (formatCardInput._seq || 0) + 1;
+  formatCardInput._t = setTimeout(() => {
+    resolveTransferRecipient(inp.value, name => {
+      if(!info || seq !== formatCardInput._seq) return;
+      info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
+      info.style.color = name ? 'var(--pos)' : 'var(--neg)';
+    }, true);
+  }, 450);
 }
 
 // Один шлях розв'язання отримувача для підказки в полі та для самого переказу,
 // щоб вони не могли розійтись у логіці пошуку.
-function resolveTransferRecipient(raw, cb) {
+function resolveTransferRecipient(raw, cb, hint) {
   const str = String(raw || '').trim();
-  const digits = str.replace(/\D/g,'');
-  const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
+  const digits = '';
+  const byCard = false;
   const nick = str.replace(/^@/,'');
-  if(!byCard && nick.length < 3) return cb(null, null);
+  if(nick.length < 3) return cb(null, null);
   // Нік із точним регістром — один прямий запит замість усього вузла users.
   // Повний перебір лишається для пошуку за карткою й без урахування регістру.
   if(!byCard && !/[.#$\[\]\/]/.test(nick)) {
     db.ref('users/' + nick).once('value', s => {
       if(s.exists()) cb(nick, s.val());
-      else resolveTransferRecipientScan(byCard, digits, nick, cb);
-    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb));
+      else resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
+    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb, hint));
     return;
   }
-  resolveTransferRecipientScan(byCard, digits, nick, cb);
+  resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
 }
-function resolveTransferRecipientScan(byCard, digits, nick, cb) {
-  db.ref('users').once('value', snap => {
-    const users = snap.val() || {};
+// Повний перебір users — дорогий. Для підказки в полі (hint) тримаємо результат
+// 60 с; сам переказ завжди читає свіжі дані.
+let _transferScanCache = null;
+function resolveTransferRecipientScan(byCard, digits, nick, cb, hint) {
+  const finish = users => {
     let found = null;
     Object.keys(users).forEach(name => {
       if(found) return;
-      if(byCard) {
-        const vc = users[name] && users[name].virtualCard;
-        if(vc && vc.axiomLinked && String(vc.number || '').replace(/\D/g,'') === digits) found = name;
-      } else if(name.toLowerCase() === nick.toLowerCase()) {
+      if(name.toLowerCase() === nick.toLowerCase()) {
         found = name;
       }
     });
     cb(found, found ? users[found] : null);
-  });
+  };
+  if(hint && _transferScanCache && Date.now() - _transferScanCache.at < 60000) return finish(_transferScanCache.users);
+  db.ref('users').once('value', snap => {
+    const users = snap.val() || {};
+    const entry = _transferScanCache = { at: Date.now(), users };
+    setTimeout(() => { if(_transferScanCache === entry) _transferScanCache = null; }, 60000); // не тримаємо мегабайти в пам'яті
+    finish(users);
+  }, () => cb(null, null));
 }
-
 function sendMoney() {
   const btn = document.getElementById('sendMoneyBtn');
   if(btn && btn.disabled) return; // запобігаємо подвійному кліку
   const input = (document.getElementById('transferToCard') || {value:''}).value.trim();
-  const rawCard = input.replace(/\s/g,'');
-  const isCard = /^[0-9]{16}$/.test(rawCard);
+  const isCard = false;
   const a = parseInt(document.getElementById('transferAmount').value);
-  if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
+  if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
   if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
@@ -84,7 +89,7 @@ function sendMoney() {
     const recipient = recipientData || {};
     if(isCardFrozenOf(recipient, _activeCardIdOf(recipient))) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
-    const formattedCard = isCard ? rawCard.replace(/(.{4})(?=.)/g,'$1 ') : '@' + recipientName;
+    const formattedCard = '@' + recipientName;
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
     db.ref('users/'+recipientName+'/balance').set(firebase.database.ServerValue.increment(a));
     db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(a));
@@ -93,8 +98,7 @@ function sendMoney() {
     noteCardSpend(getActiveCardId(), a);
     // Transactions log both sides
     addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
-    const myCardNum = (userData.virtualCard && userData.virtualCard.number) || '';
-    pushCardTx(recipientName, { dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum }, _activeCardIdOf(recipient));
+    pushCardTx(recipientName, { dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: '@' + currentUser }, _activeCardIdOf(recipient));
 
     playSound('win');
     notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
@@ -127,22 +131,20 @@ function addContact() {
 function loadContacts() { 
     const l=document.getElementById('contactsList'); 
     if(!userData.contacts){ l.innerHTML="<div style='color:var(--fg-3)'>Список порожній</div>"; return; } 
-    l.innerHTML=""; 
+    let html = "";
     for(let n in userData.contacts){ 
-        l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
+        html+=`<div class="contact-row"><b>${escapeHtml(n)}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
     } 
+    l.innerHTML = html;
 }
 
 function quickSend(n) {
   openTabModal('transfer-modal');
   const inp = document.getElementById('transferToCard');
   if(inp) inp.value = '';
-  db.ref('users/'+n+'/virtualCard/number').once('value', s => {
-    if(inp && s.exists()) { inp.value = s.val().replace(/\s/g,''); inp.dispatchEvent(new Event('input')); }
-    else notify('У контакту ще немає картки SlotOK Bank', 'error');
-  });
+  if(inp) { inp.value = n; inp.dispatchEvent(new Event('input')); }
 }
-function deleteAccount() { if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")) db.ref('users/'+currentUser).remove().then(logout); }
+// deleteAccount() — див. 55-legal.js (видалення через сервер)
 function updateBio(v) { db.ref('users/'+currentUser).update({tag:v}); notify("Статус оновлено"); }
 function handleAvatarUpload(i) { 
     if(i.files[0]){ 

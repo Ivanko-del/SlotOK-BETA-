@@ -46,12 +46,27 @@ function load(def, raw) {
   return raw && raw.state ? { ...raw, state: def.fix(raw.state) } : raw;
 }
 
-// Виплата за раундом у статусі "cashing": спершу гроші, потім позначка "done".
-// Якщо між ними все впаде, наступний запит повторить виплату (рідкісний випадок
-// на користь гравця, а не втрачений виграш).
+// Виплата за раундом у статусі "cashing": спершу раунд переходить у "paying"
+// (транзакція — платить лише той запит, що виграв перехід, тож паралельні
+// кешаут і start не заплатять двічі), потім гроші, потім "done" (тільки якщо
+// сесію не замінили). Якщо між грошима й "done" все впаде, через PAY_STALE_MS
+// наступний запит повторить виплату (рідкісний випадок на користь гравця).
+const PAY_STALE_MS = 20000;
 async function payOut(nick, game, session) {
-  const { balance } = await moveBalance(nick, session.payout);
-  await dbUpdate(sessionPath(nick, game), { status: "done", doneAt: Date.now() });
+  const path = sessionPath(nick, game);
+  const claim = await dbTransaction(path, (raw) =>
+    raw && (raw.status === "cashing" || (raw.status === "paying" && Date.now() - (raw.payStart || 0) > PAY_STALE_MS))
+      ? { ...raw, status: "paying", payStart: Date.now() }
+      : undefined);
+  if (!claim.committed) {
+    // Виплату веде інший запит — віддаємо поточний баланс.
+    return num(await dbGet(`users/${nick}/balance`));
+  }
+  const paying = claim.value;
+  const { balance } = await moveBalance(nick, paying.payout);
+  // Місії: перемога (виплата вищa за ставку) — лише з виплати, що пройшла рівно раз.
+  if (paying.payout > paying.bet) await require("../lib/missions").safeRecord(nick, { game, win: true, mult: paying.payout / paying.bet });
+  await dbTransaction(path, (raw) => (raw && raw.status === "paying" && raw.payStart === paying.payStart ? { ...raw, status: "done", doneAt: Date.now() } : undefined));
   return balance;
 }
 
@@ -62,8 +77,8 @@ async function settlePrevious(nick, game) {
   const tx = await dbTransaction(sessionPath(nick, game), (raw) => {
     const cur = load(def, raw);
     action = null;
-    if (!cur || (cur.status !== "active" && cur.status !== "cashing")) return undefined;
-    if (cur.status === "cashing") { action = "pay"; return undefined; }
+    if (!cur || (cur.status !== "active" && cur.status !== "cashing" && cur.status !== "paying")) return undefined;
+    if (cur.status === "cashing" || cur.status === "paying") { action = "pay"; return undefined; }
     if (def.timed) {
       // Не забраний раунд Crash/Balloon: автокешаут, якщо досяг цілі; якщо ще
       // летить — забираємо поточний множник; якщо вже вибухнув — програш.
@@ -100,6 +115,15 @@ function publicView(def, session, reveal) {
   };
 }
 
+// Раунд не вдалося записати після списання ставки: якщо сесія ще "starting"
+// (стану гри в базі немає) — закриваємо її й повертаємо ставку (і страховку).
+async function voidStart(nick, path, startedAt, bet, insured) {
+  const tx = await dbTransaction(path, (cur) => (cur && cur.status === "starting" && cur.startedAt === startedAt ? { status: "void" } : undefined));
+  if (!tx.committed) return;
+  await moveBalance(nick, bet);
+  if (insured) await dbTransaction(`users/${nick}/crashInsurance`, (c) => num(c) + 1);
+}
+
 async function start(req, res, nick, game, def, body) {
   const bet = parseBet(body.bet);
   const params = def.parse(body.params);
@@ -112,7 +136,8 @@ async function start(req, res, nick, game, def, body) {
   const path = sessionPath(nick, game);
   // Займаємо слот раунду; паралельний start того самого гравця отримає 409.
   const claim = await dbTransaction(path, (cur) =>
-    cur && (cur.status === "active" || cur.status === "cashing" || cur.status === "starting") && Date.now() - (cur.startedAt || 0) < 30000
+    cur && ((cur.status === "active" || cur.status === "cashing" || cur.status === "starting") && Date.now() - (cur.startedAt || 0) < 30000
+        || cur.status === "paying" && Date.now() - (cur.payStart || 0) < PAY_STALE_MS)
       ? undefined
       : { status: "starting", startedAt: Date.now() });
   if (!claim.committed) return fail(res, 409, "in_progress", "Раунд уже починається");
@@ -132,21 +157,27 @@ async function start(req, res, nick, game, def, body) {
     if (insured) await dbTransaction(`users/${nick}/crashInsurance`, (c) => num(c) + 1);
     return fail(res, 402, "insufficient", "Недостатньо коштів", { balance: debit.balance });
   }
-  // Ставка списана — облік вейджеру/XP/кешбеку йде паралельно з роздачею.
-  const progressP = safeRecordWager(nick, bet);
-  const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
-  const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0, ...(insured ? { insured: true } : {}) };
-  if (def.finished(session.state)) {
-    // Раунд завершився одразу (blackjack з роздачі) — розраховуємось тут же.
-    const pay = payoutOf(def, session, session.state);
-    const done = pay > 0 ? { ...session, status: "cashing", payout: pay } : { ...session, status: "lost", doneAt: Date.now() };
-    await dbUpdate(path, done);
-    const balance = pay > 0 ? await payOut(nick, game, done) : debit.balance;
-    const progress = await progressP;
-    return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance, progress });
+  // Ставка списана. Якщо далі щось впаде до запису раунду — повертаємо ставку.
+  try {
+    // Ставка списана — облік вейджеру/XP/кешбеку йде паралельно з роздачею.
+    const progressP = safeRecordWager(nick, bet, { game });
+    const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
+    const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0, ...(insured ? { insured: true } : {}) };
+    if (def.finished(session.state)) {
+      // Раунд завершився одразу (blackjack з роздачі) — розраховуємось тут же.
+      const pay = payoutOf(def, session, session.state);
+      const done = pay > 0 ? { ...session, status: "cashing", payout: pay } : { ...session, status: "lost", doneAt: Date.now() };
+      await dbUpdate(path, done);
+      const balance = pay > 0 ? await payOut(nick, game, done) : debit.balance;
+      const progress = await progressP;
+      return res.status(200).json({ ...publicView(def, { ...done, status: pay > 0 ? "done" : "lost" }, true), payout: pay, balance, progress });
+    }
+    const [progress] = await Promise.all([progressP, dbUpdate(path, session)]);
+    res.status(200).json({ ...publicView(def, session, false), balance: debit.balance, progress, ...(insured ? { insured: true } : {}) });
+  } catch (e) {
+    await voidStart(nick, path, claim.value.startedAt, bet, insured).catch((e2) => console.error("round: voidStart failed", e2));
+    throw e;
   }
-  const [progress] = await Promise.all([progressP, dbUpdate(path, session)]);
-  res.status(200).json({ ...publicView(def, session, false), balance: debit.balance, progress, ...(insured ? { insured: true } : {}) });
 }
 
 async function move(req, res, nick, game, def, body) {
@@ -208,7 +239,7 @@ async function move(req, res, nick, game, def, body) {
   if (outcome === "invalid") return fail(res, 400, "bad_move", "Такий хід неможливий");
   const s = load(def, tx.value);
   // Доплата (double/split/страховка) — теж ставка.
-  const progress = cost > 0 ? await safeRecordWager(nick, cost) : undefined;
+  const progress = cost > 0 ? await safeRecordWager(nick, cost, { extra: true }) : undefined;
   if (outcome === "lost") return res.status(200).json({ ...publicView(def, s, true), payout: 0, ...(balanceAfterCost !== null ? { balance: balanceAfterCost } : {}), progress });
   if (outcome === "finished") {
     const balance = await payOut(nick, game, s);
@@ -300,8 +331,9 @@ module.exports = async (req, res) => {
   if (!nick) return;
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  const def = SESSION_GAMES[body.game];
-  const handler = ACTIONS[body.action];
+  const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
+  const def = own(SESSION_GAMES, body.game) ? SESSION_GAMES[body.game] : null;
+  const handler = own(ACTIONS, body.action) ? ACTIONS[body.action] : null;
   if (!def || !handler) return fail(res, 400, "bad_request", "Невідома гра або дія");
   if (tooFast(nick, 80)) return fail(res, 429, "rate_limited", "Занадто швидко — зачекай секунду");
   try {

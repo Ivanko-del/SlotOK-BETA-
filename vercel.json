@@ -16,7 +16,7 @@
         },
         {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseio.com https://aksioma-bay.vercel.app https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://site.api.espn.com https://api.coingecko.com https://api.exchangerate-api.com https://api.ipify.org https://aksioma-bay.vercel.app; frame-src 'self' https://www.youtube.com https://player.twitch.tv https://*.firebaseapp.com https://*.firebaseio.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseio.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://api.coingecko.com https://api.exchangerate-api.com https://api.ipify.org; frame-src 'self' https://www.youtube.com https://player.twitch.tv https://*.firebaseapp.com https://*.firebaseio.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org"
         }
       ]
     },
@@ -32,7 +32,7 @@
       "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     },
     {
-      "source": "/(index.html|app.js|style.css|password.js|emoji-icons.js|shared/rewards.js|shared/age.js|shared/shop.js)",
+      "source": "/(index.html|app.js|style.css|password.js|emoji-icons.js|shared/rewards.js|shared/age.js|shared/shop.js|shared/missions.js|shared/leagues.js)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {

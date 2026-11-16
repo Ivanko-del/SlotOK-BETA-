@@ -47,7 +47,6 @@
 .casino-game-card[data-cat="crash"] { --tone: var(--neg); --tone-rgb: var(--neg-rgb); }
 .casino-game-card[data-cat="pvp"] { --tone: var(--special); --tone-rgb: var(--special-rgb); }
 .casino-game-card[data-cat="mini"] { --tone: var(--primary); --tone-rgb: var(--primary-rgb); }
-.casino-game-card[data-cat="sport"] { --tone: var(--pos); --tone-rgb: var(--pos-rgb); }
 @media (hover: hover) {
   .casino-game-card:hover { border-color: var(--fg); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 0 rgb(var(--tone-rgb) / .8); }
 }

@@ -90,6 +90,22 @@ const cardValFor = (c) => (c.r === 12 ? 11 : c.r >= 8 ? 10 : c.r + 2);
   assert.ok(outs.find((o) => o.status === 200).data.view.mines.length === 3, "після кінця міни показуємо");
   assert.strictEqual((await call("ann", { action: "move", game: "mines", move: { cell: safeCells[2] } })).status, 409, "хід після кешауту");
 
+  // кешаут одночасно зі стартом нового раунду: виграш не платиться двічі,
+  // а новий раунд не затирається позначкою «done» старого
+  tree.users.dan = { balance: 1000 };
+  await call("dan", { action: "start", game: "mines", bet: 100, params: { mines: 3 } });
+  const dMines = secret("dan", "mines").state.mines;
+  const dSafe = Array.from({ length: 25 }, (_, i) => i).find((i) => !dMines.includes(i));
+  r = await call("dan", { action: "move", game: "mines", move: { cell: dSafe } });
+  const dPay = Math.floor(100 * r.data.mult);
+  delay = 15;
+  const racing = await Promise.all([call("dan", { action: "cashout", game: "mines" }), call("dan", { action: "start", game: "mines", bet: 100, params: { mines: 3 } })]);
+  delay = 0;
+  assert.ok(racing.every((o) => o.status === 200 || o.status === 409), "гонка cashout/start без 500: " + JSON.stringify(racing.map((o) => o.status)));
+  const newStarted = racing[1].status === 200;
+  assert.strictEqual(bal("dan"), 900 + dPay - (newStarted ? 100 : 0), "виграш старого раунду зараховано рівно раз");
+  if (newStarted) assert.strictEqual(secret("dan", "mines").status, "active", "новий раунд не затерто");
+
   // програш
   await call("ben", { action: "start", game: "mines", bet: 100, params: { mines: 24 } });
   const onlySafe = Array.from({ length: 25 }, (_, i) => i).find((i) => !secret("ben", "mines").state.mines.includes(i));

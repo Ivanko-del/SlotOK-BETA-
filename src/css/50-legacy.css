@@ -127,35 +127,6 @@
     .chart-period-btn:active { transform:scale(.94); }
     .chart-period-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -2px 4px rgb(var(--shade-rgb) / 0.2); }
 
-    /* ===== SPORT BETTING v2 — REAL ===== */
-    .match-card { background:var(--box);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px;margin-bottom:10px;transition:border-color 0.2s; }
-    .match-card:hover { border-color:rgb(var(--tint-rgb) / 0.1); }
-    .match-card.live { border-color:var(--neg);box-shadow: var(--bevel), var(--elev-1); }
-    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
-    .odds-btn { flex:1;background:var(--input);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.15s; }
-    .odds-btn:hover:not(.disabled) { border-color:rgb(var(--accent-rgb) / 0.5);background:rgb(var(--accent-rgb) / 0.08); }
-    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
-    .odds-btn.disabled { opacity:0.4;cursor:not-allowed;box-shadow: var(--bevel); }
-    .odds-label { font-size:10px;color:var(--sub);margin-bottom:4px; }
-    .odds-val { font-size:16px;font-weight:900;color:var(--accent); }
-
-        /* ===== SPORT BETTING ===== */
-    .sport-tab-btn { padding:7px 14px;background:var(--input);border:1px solid var(--border);color:var(--fg-3);border-radius:var(--r-xl);font-size:11px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s, color .15s;-webkit-tap-highlight-color:transparent;box-shadow: var(--bevel), 0 6px 14px -8px rgb(var(--shade-rgb) / 0.5); }
-    .sport-tab-btn:active { transform: translateY(1px) scale(.96); }
-    .sport-tab-btn.active { background:var(--accent);color:var(--on-accent);border-color:var(--accent);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.22); }
-    .sport-tab-btn:hover { border-color:var(--line-strong);color:var(--fg-2); }
-    #sportTabsRow::-webkit-scrollbar { display:none; }
-    #sportTabsRow { -ms-overflow-style:none; }
-    .match-card { background:linear-gradient(160deg, rgb(var(--tint-rgb) / 0.035), transparent 45%), var(--box);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:10px;cursor:pointer;box-shadow: var(--bevel), var(--elev-1);transition: border-color .2s, box-shadow .2s, transform .14s var(--ease-tactile); }
-    .match-card:hover { border-color:var(--line-strong); }
-    .match-odds-row { display:flex;gap:6px;margin-top:10px; }
-    .odds-btn { flex:1;padding:10px 4px;background:var(--input);border:1px solid var(--border);border-radius:var(--r-sm);text-align:center;cursor:pointer;transition: transform .14s var(--ease-tactile), box-shadow .14s, filter .15s, background .15s, border-color .15s;box-shadow: var(--bevel), var(--elev-1); }
-    .odds-btn:active:not(.disabled) { transform: translateY(1px) scale(.97); box-shadow: var(--bevel); }
-    .odds-btn:hover { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.1); }
-    .odds-btn.selected { border-color:var(--green);background:rgb(var(--pos-rgb) / 0.2);box-shadow: inset 0 -3px 6px rgb(var(--shade-rgb) / 0.2); }
-    .odds-val { font-size:16px;font-weight:900;color:var(--green); }
-    .odds-label { font-size:10px;color:var(--fg-4);margin-top:2px; }
-
     .bet-status-won { color:var(--green);font-weight:bold; }
     .bet-status-lost { color:var(--red);font-weight:bold; }
     .bet-status-pending { color:var(--accent);font-weight:bold; }
@@ -263,11 +234,6 @@
     @keyframes wfSlide { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
 
     /* GAME MODAL */
-
-    /* STREAM FALLBACK FIX */
-    .stream-fallback-ui { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px; background:var(--surface-1); width:100%; height:100%; }
-    .stream-fallback-ui .retry-btn { background:var(--accent); color:var(--on-accent); border:none; border-radius:var(--r-md); padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; }
-    .stream-fallback-ui .open-ext-btn { background:transparent; border:1px solid var(--line); border-radius:var(--r-md); padding:8px 20px; font-size:12px; color:var(--fg-2); cursor:pointer; }
 
     /* ТУРНІРИ */
     .tournament-card { background: linear-gradient(135deg, var(--surface-1), var(--bg)); border: 1px solid var(--accent); border-radius: var(--r-lg); padding: 15px; margin-bottom: 12px; }
@@ -617,9 +583,6 @@
     /* ===== СЛОТІКИ ===== */
     #tab-slotiky .section-header { color:var(--special); }
 
-    /* ===== СТРІМ VIEWER ===== */
-    #streamViewerModal { }
-
     /* ===== ТУРНІР V2 ===== */
     .tournament-card { background:linear-gradient(135deg,var(--surface-1),var(--bg));border:1px solid rgb(var(--accent-rgb) / .35);border-radius:var(--r-md);padding:14px;margin-bottom:10px; box-shadow: var(--bevel), var(--elev-1); }
     .t-prize { font-size:22px;font-weight:900;color:var(--accent);margin:6px 0; }
@@ -631,90 +594,7 @@
     #cashierCashbackPanel .btn-green { width:100%;padding:12px;font-size:14px;font-weight:bold;border:none;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--green),color-mix(in srgb, var(--pos) 25%, var(--surface-1)));color:var(--on-accent);cursor:pointer; }
     #cashierCashbackPanel .btn-green:disabled { background:var(--surface-2);color:var(--fg-4); }
 
-    /* ===== ESPORTS BADGE ===== */
-
-    /* ===== LIVE MATCH TRACKER ===== */
-    .tracker-container {
-      background: var(--surface-1);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    .tracker-header {
-      background: linear-gradient(90deg, var(--info), var(--primary));
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: bold;
-      color: var(--fg);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .tracker-header .live-dot {
-      width: 8px; height: 8px; background: var(--paper);
-      border-radius: 50%; animation: pulse2 1s infinite;
-    }
-    .pitch-area {
-      position: relative;
-      width: 100%;
-      height: 220px;
-      overflow: hidden;
-    }
-    .pitch-canvas { width: 100%; height: 100%; display: block; }
-    .event-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgb(var(--recess-rgb) / calc(0.75 * var(--recess-k)));
-      border-radius: var(--r-xl);
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--fg);
-      font-size: 13px;
-      font-weight: bold;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s;
-      min-width: 160px;
-    }
-    .event-overlay.show { opacity: 1; }
-    .event-overlay .ev-icon {
-      width: 28px; height: 28px;
-      background: linear-gradient(135deg, var(--info), var(--primary));
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
-    .tracker-events {
-      padding: 10px 14px;
-      max-height: 120px;
-      overflow-y: auto;
-      scrollbar-width: none;
-      border-top: 1px solid var(--line);
-    }
-    .tracker-event-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--line);
-      font-size: 12px;
-    }
-    .tracker-event-row:last-child { border-bottom: none; }
-    .ev-min { color: var(--accent); font-weight: bold; min-width: 34px; font-size: 11px; }
-    .ev-score { color: var(--accent); font-weight: 900; min-width: 34px; text-align: center; }
-    .ev-text { color: var(--fg-2); }
-    .ev-side-home { text-align: left; }
-    .ev-side-away { text-align: right; margin-left: auto; }
     @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    @keyframes ballMove {
-      0% { transform: translate(var(--bx0), var(--by0)); }
-      100% { transform: translate(var(--bx1), var(--by1)); }
-    }
 
     /* ============================================
        VIRTUAL BANK CARD
@@ -1701,53 +1581,7 @@
    рендериться окремо через applyCardSkin()/style.backgroundImage,
    бо це унікальні дані користувача, а не спільний CSS-клас.
 ═══════════════════════════════════════════════════════ */
-.vcard-skin-meme-drake .vcard-front            { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/30b1gx.jpg') center/cover; }
-.vcard-skin-meme-distracted .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1ur9b0.jpg') center/cover; }
-.vcard-skin-meme-womancat .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/345v97.jpg') center/cover; }
-.vcard-skin-meme-twobuttons .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1g8my4.jpg') center/cover; }
-.vcard-skin-meme-changemymind .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/24y43o.jpg') center/cover; }
-.vcard-skin-meme-successkid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bhk.jpg') center/cover; }
-.vcard-skin-meme-doge .vcard-front             { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4t0m5.jpg') center/cover; }
-.vcard-skin-meme-thisisfine .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/wxica.jpg') center/cover; }
-.vcard-skin-meme-stonks .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/3si4.jpg') center/cover; }
-.vcard-skin-meme-rollsafe .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1h7in3.jpg') center/cover; }
-.vcard-skin-meme-pikachu .vcard-front          { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2kbn1e.jpg') center/cover; }
-.vcard-skin-meme-disastergirl .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/23ls.jpg') center/cover; }
-.vcard-skin-meme-grumpycat .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/8p0a.jpg') center/cover; }
-.vcard-skin-meme-expandingbrain .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1jwhww.jpg') center/cover; }
-.vcard-skin-meme-onedoesnotsimply .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1bij.jpg') center/cover; }
-.vcard-skin-meme-ancientaliens .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/26am.jpg') center/cover; }
-.vcard-skin-meme-dicaprio .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/39t1o.jpg') center/cover; }
-.vcard-skin-meme-pigeon .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1o00in.jpg') center/cover; }
-.vcard-skin-meme-batman .vcard-front           { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/9ehk.jpg') center/cover; }
-.vcard-skin-meme-spongebob .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1otk96.jpg') center/cover; }
-.vcard-skin-meme-sadpablo .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/1c1uej.jpg') center/cover; }
-.vcard-skin-meme-hidethepain .vcard-front      { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/gk5el.jpg') center/cover; }
 /* Свіжі меми — "молодіжний" тренд-набір */
-.vcard-skin-meme-67kid .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/a9fxer.jpg') center/cover; }
-.vcard-skin-meme-skibidi .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover; }
-.vcard-skin-meme-tralalero .vcard-front   { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9p82jm.jpg') center/cover; }
-.vcard-skin-meme-bombardiro .vcard-front  { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover; }
-.vcard-skin-meme-tungtung .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover; }
-.vcard-skin-meme-chimpanzini .vcard-front { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover; }
-.vcard-skin-meme-gigachad .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover; }
-.vcard-skin-meme-sigma .vcard-front       { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/5imrkq.jpg') center/cover; }
-.vcard-skin-meme-chillguy .vcard-front    { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/9au02y.jpg') center/cover; }
-.vcard-skin-meme-ohio .vcard-front        { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/46e43q.jpg') center/cover; }
-.vcard-skin-meme-npc .vcard-front         { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/2k0qad.jpg') center/cover; }
-.vcard-skin-meme-rizzler .vcard-front     { background: linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)), url('https://i.imgflip.com/4/93etli.jpg') center/cover; }
-.vcard-skin-meme-drake .vcard-front, .vcard-skin-meme-distracted .vcard-front, .vcard-skin-meme-womancat .vcard-front,
-.vcard-skin-meme-twobuttons .vcard-front, .vcard-skin-meme-changemymind .vcard-front, .vcard-skin-meme-successkid .vcard-front,
-.vcard-skin-meme-doge .vcard-front, .vcard-skin-meme-thisisfine .vcard-front, .vcard-skin-meme-stonks .vcard-front,
-.vcard-skin-meme-rollsafe .vcard-front, .vcard-skin-meme-pikachu .vcard-front, .vcard-skin-meme-disastergirl .vcard-front,
-.vcard-skin-meme-grumpycat .vcard-front, .vcard-skin-meme-expandingbrain .vcard-front, .vcard-skin-meme-onedoesnotsimply .vcard-front,
-.vcard-skin-meme-ancientaliens .vcard-front, .vcard-skin-meme-dicaprio .vcard-front, .vcard-skin-meme-pigeon .vcard-front,
-.vcard-skin-meme-batman .vcard-front, .vcard-skin-meme-spongebob .vcard-front, .vcard-skin-meme-sadpablo .vcard-front,
-.vcard-skin-meme-hidethepain .vcard-front, .vcard-skin-meme-67kid .vcard-front, .vcard-skin-meme-skibidi .vcard-front,
-.vcard-skin-meme-tralalero .vcard-front, .vcard-skin-meme-bombardiro .vcard-front, .vcard-skin-meme-tungtung .vcard-front,
-.vcard-skin-meme-chimpanzini .vcard-front, .vcard-skin-meme-gigachad .vcard-front, .vcard-skin-meme-sigma .vcard-front,
-.vcard-skin-meme-chillguy .vcard-front, .vcard-skin-meme-ohio .vcard-front, .vcard-skin-meme-npc .vcard-front,
-.vcard-skin-meme-rizzler .vcard-front, .vcard-skin-custom-photo .vcard-front {
   border: 1px solid rgba(255,255,255,.25);
   box-shadow: 0 0 22px rgba(255,255,255,.1);
 }

@@ -168,7 +168,7 @@ async function claimWelcomeBackBonus(bonus) {
 const ONBOARDING_STEPS = [
   { selector: '.nav-item[onclick*="lobby"]', title: '🎰 Тут всі ігри', text: 'Понад 40 ігор — від слотів до шахів. Обирай будь-яку і починай грати!' },
   { selector: '.nav-item[onclick*="cashier"]', title: '<span class="ic i-wallet" aria-hidden="true"></span> Гаманець', text: 'Тут ігровий баланс, донат на підтримку проєкту, кешбек і твоя картка — її вигляд можна змінити, скінів понад сотню.' },
-  { selector: '#homeJackpot', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
+  { selector: '#homeStatVip', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
   { selector: '.nav-item[onclick*="profile"]', title: '👤 Твій профіль', text: 'Статистика в реальному часі, досягнення і налаштування — все тут.' },
 ];
 let _onboardStepIdx = 0;
@@ -305,7 +305,7 @@ function renderFriendsFeed() {
   const el = document.getElementById('friendsFeedWidget');
   if(!el || !currentUser) return;
   db.ref('users/'+currentUser+'/following').once('value').then(snap => {
-    const following = Object.keys(snap.val() || {});
+    const following = Array.from(new Set(Object.keys(snap.val() || {}).concat(window.FRIENDS_LIST || [])));
     if(!following.length) { el.classList.add('hidden'); return; }
     db.ref('win_feed').orderByChild('time').limitToLast(40).once('value').then(feedSnap => {
       const all = Object.values(feedSnap.val() || {});
@@ -316,7 +316,7 @@ function renderFriendsFeed() {
         <div style="font-size:11px;color:var(--info);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Твої друзі</div>
         ${relevant.map(w => `
           <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);">
-            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${w.user[0].toUpperCase()}</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(w.user[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0;font-size:12px;">
               <b>${escapeHtml(w.user)}</b> виграв <b style="color:var(--pos);">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
             </div>

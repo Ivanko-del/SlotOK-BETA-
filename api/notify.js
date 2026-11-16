@@ -15,6 +15,7 @@
 // ============================================================
 
 const { dbGet, dbUpdate } = require("../lib/firebase");
+const { getPrivate } = require("../lib/private-profile");
 const { sendMessage, esc } = require("../lib/telegram");
 const { sendPushToUser } = require("../lib/fcm");
 const { allow } = require("../lib/rate-limit");
@@ -37,16 +38,20 @@ async function checkPingSender(req, to, kind) {
   } catch (e) {
     return e.code === "bad_token" ? 401 : 503;
   }
-  const acl = PING_ACL[kind];
+  const acl = Object.prototype.hasOwnProperty.call(PING_ACL, kind) ? PING_ACL[kind] : null;
   if (!acl) return 400;
   if (acl === "self" && sender !== to) return 403;
   if (acl === "admin" && sender.toLowerCase() !== OWNER && (await dbGet(`users/${sender}/isAdmin`)) !== true) return 403;
   return null;
 }
 
+// Нік/id потрапляють у шлях бази (users/<to>/…, support_chats/<user>/<id>) —
+// без цього "../" у тілі запиту читав би довільні вузли з правами адміна.
+const SAFE_SEG = /^[^.#$[\]/\x00-\x1f\x7f]{1,120}$/;
+const badSeg = (v) => v !== undefined && v !== null && !(typeof v === "string" && SAFE_SEG.test(v));
+
 const PATHS = {
   deposit: "deposit_requests",
-  withdraw: "withdraw_requests",
   reset: "password_reset_requests",
 };
 
@@ -58,6 +63,7 @@ module.exports = async (req, res) => {
 
   try {
     const { type, id, user, to, kind, ref } = req.body || {};
+    if (badSeg(id) || badSeg(user) || badSeg(to) || badSeg(ref && ref.id)) { res.status(400).end(); return; }
 
     if (type === "player-ping") {
       if (!to || !kind) { res.status(400).end(); return; }
@@ -66,7 +72,7 @@ module.exports = async (req, res) => {
       // Гравцю — не більше 10 сповіщень на хвилину, скільки б разів
       // не повторювали POST ззовні.
       if (!(await allow(`ping:${to}`, 10, 60000))) { res.status(429).end(); return; }
-      const chatId = await dbGet(`users/${to}/telegramChatId`);
+      const chatId = await getPrivate(String(to), "telegramChatId");
       if (!chatId) { res.status(200).end(); return; }
 
       // pm/clan-chat carry no body text: this endpoint is unauthenticated, so
@@ -132,34 +138,9 @@ module.exports = async (req, res) => {
       return;
     }
 
-    if (type === "withdraw-2fa") {
-      // Реальне 2FA: код/кнопка йдуть у ВЛАСНИЙ Telegram гравця, а не в те саме
-      // вікно сайту, звідки подано заявку — це і є другий, окремий канал.
-      // Підтвердження обробляється тапом по кнопці в telegram-webhook.js
-      // (callback_data "wd2fa:..."), не тут — тут лише надсилаємо повідомлення.
-      if (!id) { res.status(400).end(); return; }
-      if (!(await allow(`wd2fa:${id}`, 3, 300000))) { res.status(429).end(); return; }
-      const r = await dbGet(`withdraw_requests/${id}`);
-      if (!r || r.status !== "pending_2fa") { res.status(200).end(); return; }
-      const chatId = await dbGet(`users/${r.user}/telegramChatId`);
-      if (!chatId) { res.status(200).end(); return; }
-      await sendMessage(
-        chatId,
-        `🔐 <b>Підтвердження виводу</b>\n💵 Сума: ${r.amount}₴ · ${esc(r.method || "—")}\n\nЦе точно ти щойно запросив вивід на сайті? Підтверди нижче — після цього заявку побачить адміністратор.`,
-        {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: "✅ Так, це я — підтвердити", callback_data: `wd2fa:confirm:${id}` },
-              { text: "❌ Це не я — скасувати", callback_data: `wd2fa:cancel:${id}` },
-            ]],
-          },
-        }
-      );
-      res.status(200).end();
-      return;
-    }
+    // Вивід прибрано (ігрова валюта віртуальна): типи withdraw/withdraw-2fa більше не обробляються.
 
-    const path = PATHS[type];
+    const path = Object.prototype.hasOwnProperty.call(PATHS, type) ? PATHS[type] : null;
     if (!path || !id) {
       res.status(400).end();
       return;
@@ -185,14 +166,8 @@ module.exports = async (req, res) => {
     if (type === "deposit") {
       await sendMessage(
         adminChatId,
-        `💰 <b>Нова заявка на поповнення</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}`,
+        `💰 <b>Нова заявка на донат</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount} грн · ${esc(req_.method || "—")}`,
         { reply_markup: buttons("dep", id) }
-      );
-    } else if (type === "withdraw") {
-      await sendMessage(
-        adminChatId,
-        `💸 <b>Нова заявка на вивід</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}\n💳 ${esc(req_.card || "—")}`,
-        { reply_markup: buttons("wd", id) }
       );
     } else if (type === "reset") {
       await sendMessage(

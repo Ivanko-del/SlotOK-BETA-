@@ -1,0 +1,17 @@
+/* Юридичні тексти: вкладки у вікні «Правила та політика», посилання на екрані входу.
+   Лише токени з 00-tokens.css. */
+.legal-box { max-width: 460px; }
+.legal-tabs { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.legal-tab {
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md);
+  background: var(--ks-surface-3); color: var(--ks-fg-2); border: var(--bw) solid var(--ks-line);
+  font-size: var(--fs-sm); cursor: pointer;
+}
+.legal-tab.is-on { background: var(--ks-acc); color: var(--on-accent); border-color: var(--ks-acc); }
+.legal-h { margin-top: var(--sp-4); }
+.legal-p { margin: 0 0 var(--sp-2); }
+.auth-legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin: var(--sp-3) 0 0; font-size: var(--fs-sm); }
+.auth-legal-links .link-btn { padding: 0; }
+.auth-consent { display: flex; align-items: flex-start; gap: var(--sp-2); margin: var(--sp-3) 0; font-size: var(--fs-sm); line-height: 1.4; text-align: left; cursor: pointer; }
+.auth-consent input { width: auto; flex: 0 0 auto; margin: 2px 0 0; min-height: 0; }
+.auth-consent .link-btn { padding: 0; font-size: inherit; display: inline; }

@@ -239,7 +239,7 @@ function bsOnlineUpdate(u) {
   if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); bsOnlineClose(); return; }
   document.getElementById('bsWait')?.classList.toggle('hidden', !wait);
   document.getElementById('bsPlay')?.classList.toggle('hidden', wait);
-  if (wait) { const w = document.getElementById('bsWaitText'); if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)}. Чекаємо суперника…`; return; }
+  if (wait) { const w = document.getElementById('bsWaitText'); if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)}. Чекаємо суперника…`; friendsAttachInvite('bsWait', 'battleship', BS.online.id); return; }
   if (!pub) return;
   const placing = pub.phase === 'place' && !pub.placed[seat];
   const myFleet = (priv && priv.fleet) || BS.myFleet;

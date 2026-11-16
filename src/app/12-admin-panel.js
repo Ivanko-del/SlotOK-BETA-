@@ -15,10 +15,10 @@ function loadUserList() {
     d.innerHTML = entries.map(([n,u]) =>
       `<div class="admin-user-card" onclick="openAdminManage(${jsArg(n)})">
         <div>
-          <b>${n}</b>
+          <b>${escapeHtml(n)}</b>
           ${u.isAdmin?'<span style="color:var(--accent);font-size:10px;"> 👑</span>':''}
           ${u.banned?'<span style="color:var(--neg);font-size:10px;"> 🚫</span>':''}
-          <div style="color:var(--fg-4);font-size:11px;">ID: ${u.id||'?'} ${u.tag?'• '+u.tag:''}</div>
+          <div style="color:var(--fg-4);font-size:11px;">ID: ${escapeHtml(u.id||'?')} ${u.tag?'• '+escapeHtml(u.tag):''}</div>
         </div>
         <span style="color:var(--green);font-weight:bold;">${formatNumber(u.balance||0)}₴</span>
       </div>`
@@ -27,20 +27,10 @@ function loadUserList() {
 }
 
 
+// Вивід коштів прибрано (ігрова валюта віртуальна). Старі заявки можна лише
+// повернути гравцю на баланс — «виплатити» їх неможливо.
 function approveWithdraw(id, user) {
-    if(!requireAdminPerm('requests')) return;
-    db.ref('withdraw_requests/'+id).once('value').then(snap => {
-        const req = snap.val() || {};
-        const amount = req.amount || 0;
-        db.ref('withdraw_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-        db.ref('users/'+user+'/withdraws/'+id).update({status:'done'});
-        db.ref('users/'+user).update({pendingWithdraw: false});
-        pushCardTx(user, {dir:'out', amount:amount, title:'Виведення коштів', subtitle: req.method||'', icon:'💸'}, req.cardId || null);
-        db.ref('users/'+user+'/history').push({text:`✅ Вивід підтверджено: -${amount}₴`, date:Date.now()});
-        db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'✅ Ваш вивід коштів схвалено! Кошти надійдуть на реквізити протягом 1-24 год.', ts:Date.now()});
-        db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-        notify('✅ Вивід схвалено — гравець отримав повідомлення', 'success');
-    });
+    db.ref('withdraw_requests/'+id+'/amount').once('value').then(s => rejectWithdraw(id, user, Number(s.val()) || 0));
 }
 
 function rejectWithdraw(id, user, amount) {
@@ -74,7 +64,7 @@ function admGiveMoney() {
     const a=parseInt(document.getElementById('admAmount').value);
     if(!a) return;
     db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a));
-    logAdminAction('give_money', `@${admSelectedUser}: ${a>0?'+':''}${a}₴`);
+    logAdminBalance('give_money', admSelectedUser, a, 'Панель керування гравцем');
     notify("Баланс змінено","success");
 }
 function admSetTag() {
@@ -106,6 +96,7 @@ function admDeleteUser() {
 function wipeEconomy() {
     if(!requireAdminPerm('users')) return;
     if(prompt("Введіть WIPE щоб обнулити ВСІХ гравців:") !== "WIPE") return;
+    logAdminBalance('wipe_economy', '*', 0, 'Обнулення балансів усіх гравців');
     db.ref('users').once('value', s => {
         const users = s.val() || {};
         const updates = {};

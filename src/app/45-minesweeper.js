@@ -265,6 +265,7 @@ function msDuelUpdate(u) {
   if (wait) {
     const w = document.getElementById('msDuelWaitText');
     if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)} · ${(MS_DUEL_LEVELS[u.opts.level] || {}).name || ''}. Чекаємо суперника…`;
+    friendsAttachInvite('msDuelWait', 'minesweeper', MS.duel.id);
     return;
   }
   if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); msDuelClose(); return; }

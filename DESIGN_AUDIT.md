@@ -74,7 +74,7 @@
 `auth-screen` (183 рядки, 39 інлайн; canvas-анімація, тікер виграшів), відновлення пароля (`src/app/11-…`, генерує JS), 2FA (`src/app/19-…`).
 
 ### Модалки
-HTML (`full-modal`): `admin-support-modal`, `admin-user-manage`, `axiomLinkModal`, `axiomTransferModal`, `cardTopupModal`, `daily-bonus-modal`, `dailySpinModal`, `eventCalendarModal`, `history-modal`, `promo-modal`, `pub-profile-modal`, `shareWinModal`, `support-modal`, `transfer-modal`, `view-user-modal`; інші: `casinoGameModal` (`game-open-modal`), `cardOnboardModal`.
+HTML (`full-modal`): `admin-support-modal`, `admin-user-manage`, `cardTopupModal`, `daily-bonus-modal`, `dailySpinModal`, `eventCalendarModal`, `history-modal`, `promo-modal`, `pub-profile-modal`, `shareWinModal`, `support-modal`, `transfer-modal`, `view-user-modal`; інші: `casinoGameModal` (`game-open-modal`), `cardOnboardModal`.
 JS: `openModal()` (`src/app/21-…:5`, 17 викликів; класи `slotok-modal-overlay`, `slotok-fullscreen-modal`), `ks-modal` (7, Каса), `onboard-overlay` (онбординг), святкування виграшу, «Ми скучили», mystery box (`src/app/40-…`).
 
 ### Адмінка

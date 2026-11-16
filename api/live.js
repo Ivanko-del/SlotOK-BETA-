@@ -43,8 +43,8 @@ module.exports = async (req, res) => {
     switch (body.action) {
       case "state": {
         const st = await live.state(now, body.which);
-        settled.push(...(await live.legacyRefund(nick, now).catch(() => [])));
-        const crash = await live.crashCurrent(now);
+        const [legacy, crash] = await Promise.all([live.legacyRefund(nick, now).catch(() => []), live.crashCurrent(now)]);
+        settled.push(...legacy);
         delete crash._point; delete crash._crashAt;
         return res.status(200).json({ ok: true, ...st, crash, settled });
       }
@@ -55,12 +55,12 @@ module.exports = async (req, res) => {
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await live.wheelBet(nick, String(body.game || ""), String(body.choice || ""), amount, now);
         if (out.error) return sendErr(res, out.error);
-        const progress = await safeRecordWager(nick, amount);
+        const progress = await safeRecordWager(nick, amount, { game: String(body.game || "") });
         return res.status(200).json({ ok: true, ...out, settled, progress });
       }
       case "wheelResult": {
         const n = Number(body.round);
-        if (!Number.isInteger(n) || !live.WHEELS[body.game]) return fail(res, 400, "bad_round", "Невірний раунд");
+        if (!Number.isInteger(n) || typeof body.game !== "string" || !Object.prototype.hasOwnProperty.call(live.WHEELS, body.game)) return fail(res, 400, "bad_round", "Невірний раунд");
         const r = await live.publishWheel(body.game, n, now);
         if (!r) return fail(res, 409, "not_yet", "Раунд ще не скінчився");
         return res.status(200).json({ ok: true, round: n, ...r, settled });
@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await live.crashBet(nick, amount, body.auto, now);
         if (out.error) return sendErr(res, out.error);
-        const progress = await safeRecordWager(nick, amount);
+        const progress = await safeRecordWager(nick, amount, { game: "livecrash" });
         return res.status(200).json({ ok: true, ...out, settled, progress });
       }
       case "crashCashout": {

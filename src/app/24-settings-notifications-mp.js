@@ -938,7 +938,7 @@ function handleMpFinished2(r) {
   db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser + '/bankrupt').onDisconnect().cancel();
   const isWin = r.winner === currentUser;
   mpAddLog2(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + r.prize + '₴' : '😔 Переміг ' + r.winner, isWin?'good':'bad');
-  if(isWin) { playSound('win'); notify('🎩 Монополія: +' + r.prize + '₴!', 'success'); }
+  if(isWin) { playSound('win'); notify('🎩 Магнат: +' + r.prize + '₴!', 'success'); }
   if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
   setTimeout(resetMpUI, 4000);
 }

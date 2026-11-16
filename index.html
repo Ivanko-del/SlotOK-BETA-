@@ -178,6 +178,11 @@
           <span class="ic i-chevron-right callout-go" aria-hidden="true"></span>
         </button>
 
+        <!-- Щоденні місії з серією (src/app/57-missions.js): три місії доби, нагороди рахує сервер -->
+        <section id="missionsCard" class="panel missions-card hidden anim-cascade" aria-label="Щоденні місії"></section>
+        <!-- Рейтингові ліги (src/app/58-leagues.js) -->
+        <section id="leagueCard" class="panel hidden anim-cascade" aria-label="Рейтингові ліги"></section>
+
         <!-- Mystery Box — тільки для нових гравців перші 24 год -->
         <div id="mysteryBoxWidget" class="hidden anim-cascade"></div>
 
@@ -201,7 +206,6 @@
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('coinflip')"><span class="icon">🪙</span><span class="label">Coinflip</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('rps')"><span class="icon">✊</span><span class="label">Камінь</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('predict')"><span class="icon">🔮</span><span class="label">Прогноз</span></button>
-          <button type="button" role="listitem" class="game-thumb" onclick="switchTab('sports')"><span class="icon">⚽</span><span class="label">Спорт</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('horseracing')"><span class="icon">🏇</span><span class="label">Скачки</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('balloon')"><span class="icon">🎈</span><span class="label">Balloon</span></button>
           <button type="button" role="listitem" class="game-thumb" onclick="switchTab('quiz')"><span class="icon">🧠</span><span class="label">Вікторина</span></button>
@@ -220,11 +224,11 @@
                 <div>
                   <div class="banner-kicker">Бонуси</div>
                   <div class="banner-title">VIP-бонус</div>
-                  <div class="banner-sub">До +250% на депозит</div>
+                  <div class="banner-sub">Щоденні подарунки в грі</div>
                   <div class="banner-desc">Щоденні бонуси · Лут-бокси · Подарунки</div>
-                  <div class="banner-pills"><span class="banner-pill">🎁 +100% перший деп</span><span class="banner-pill">✨ 10 фріспінів</span></div>
+                  
                 </div>
-                <div class="banner-stat-box"><div class="banner-stat-lbl">Джекпот</div><div class="banner-stat-val" id="homeJackpot">—</div><div class="banner-stat-sub">Сьогодні</div></div>
+                
               </div>
             </div>
             <div class="banner-slide tone-special" role="button" tabindex="0" onclick="switchTab('battlepass')">
@@ -318,9 +322,6 @@
         <!-- Швидкі дії -->
         <div class="section-header"><span>Швидкі дії</span></div>
         <div class="action-grid anim-cascade">
-          <button type="button" class="action-tile" style="--tone:var(--pos)" onclick="switchTab('sports')">
-            <span class="action-ic">⚽</span><span class="action-title">Спорт</span><span class="action-sub">Live-ставки</span>
-          </button>
           <button type="button" class="action-tile" style="--tone:var(--accent)" onclick="openDailyBonus()">
             <span class="action-ic">🎁</span><span class="action-title">Бонус дня</span><span class="action-sub">Щоденна нагорода</span>
           </button>
@@ -345,9 +346,6 @@
 
         <!-- Стрічка друзів -->
         <div id="friendsFeedWidget" class="hidden anim-cascade panel"></div>
-
-        <!-- Аксіома Банк -->
-        <div id="homeAxiomWidget" class="anim-cascade"></div>
 
         <!-- Казино зараз -->
         <div class="section-header"><span>Казино зараз</span></div>
@@ -482,7 +480,6 @@
           <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('crash',this)">Множник</button>
           <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('pvp',this)">PvP</button>
           <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('mini',this)">Міні</button>
-          <button type="button" class="chip casino-cat-btn" aria-pressed="false" onclick="filterCasinoGames('sport',this)">Спорт</button>
         </div>
       </div>
 
@@ -535,6 +532,10 @@
           <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-ship" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Морський бій</div><div class="casino-game-card-prov">Бот · онлайн 1×1</div></div>
         </div>
+        <div class="casino-game-card is-3d" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('fourrow')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-grid" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Чотири в ряд</div><div class="casino-game-card-prov">Онлайн 1×1 · ліга</div></div>
+        </div>
         <div class="casino-game-card is-3d" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('plinko3d')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-pegs" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Plinko 3D</div><div class="casino-game-card-prov">Міні-гра</div></div>
@@ -565,7 +566,7 @@
         </div>
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('crash')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🚀</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash Aviator</div><div class="casino-game-card-prov">Множник</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash</div><div class="casino-game-card-prov">Множник</div></div>
         </div>
         <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('mines')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">💣</div>
@@ -617,7 +618,7 @@
         </div>
         <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('monopoly')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🎩</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Монополія</div><div class="casino-game-card-prov">Міні-гра</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Магнат</div><div class="casino-game-card-prov">Міні-гра</div></div>
         </div>
         <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('cardgame')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🃏</div>
@@ -642,10 +643,6 @@
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('double')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🎰</div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Double</div><div class="casino-game-card-prov">Множник</div></div>
-        </div>
-        <div class="casino-game-card" data-cat="sport" role="listitem" tabindex="0" onclick="switchTab('sports')" onkeydown="if(event.key==='Enter')this.click()">
-          <span class="casino-badge-hot is-live">LIVE</span><div class="casino-game-card-img">⚽</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Sport Betting</div><div class="casino-game-card-prov">Спорт</div></div>
         </div>
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('dragon')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🐉</div>
@@ -703,19 +700,9 @@
         <span class="callout-ic">🔥</span><span class="callout-body"><span class="callout-title" id="streakText"></span></span>
       </div>
 
-      <!-- Джекпот -->
-      <div class="jackpot-strip panel is-featured">
-        <div>
-          <div class="hero-label">Поточний джекпот</div>
-          <div class="jackpot-num num">₴ <span id="lobbyJackpotNum">4 287 341</span></div>
-          <div class="field-hint">Оновлюється наживо</div>
-        </div>
-        <button type="button" class="btn btn-primary btn-inline jackpot-play-btn" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Множник до ×∞ · RTP 97%')">Грати</button>
-      </div>
-
       <!-- Останні виграші -->
-      <div class="section-header"><span>Останні виграші</span></div>
-      <div class="wins-feed list" id="lobbyWinsFeed"></div>
+      <div class="section-header" id="lobbyWinsHead" hidden><span>Останні виграші гравців</span></div>
+      <div class="wins-feed list" id="lobbyWinsFeed" hidden></div>
     </div>
 
 
@@ -914,6 +901,34 @@
               <button type="button" class="btn btn-ghost" id="bsLeave" onclick="bsOnlineLeave()">Здатися</button>
               <button type="button" class="btn btn-primary hidden" id="bsAgain" onclick="bsOnlineBack()">До лобі боїв</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-fourrow" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Чотири в ряд</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('fourrow')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="frLobby">
+        <p class="field-hint">Склади чотири фішки в ряд раніше за суперника. На хід 30 с; тричі пропустив — поразка. Переможець забирає банк (мінус 5%), партія рейтингова.</p>
+        <input id="frBet" type="number" value="200">
+        <button type="button" class="game-cta" onclick="frCreate()"><span class="ic i-grid" aria-hidden="true"></span>Створити гру</button>
+        <div class="field-label">Відкриті гри</div>
+        <div class="room-list" id="frRooms"></div>
+      </div>
+      <div id="frGame" class="hidden">
+        <div id="frWait" class="room-wait"><span class="ic i-clock" aria-hidden="true"></span><span id="frWaitText">Чекаємо суперника…</span>
+          <button type="button" class="btn btn-ghost" onclick="frLeave()">Скасувати кімнату</button></div>
+        <div id="frPlay" class="hidden">
+          <div class="fr-legend" id="frLegend"></div>
+          <div class="fr-stage"><div class="fr-board" id="frBoard" role="group" aria-label="Поле: 7 колонок, 6 рядків"></div></div>
+          <div class="game-result" id="frStatus" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="frLeave" onclick="frLeave()">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="frAgain" onclick="frBack()">До лобі</button>
           </div>
         </div>
       </div>
@@ -1484,8 +1499,7 @@
          SVG-іконки, табличні цифри. Ідентифікатори елементів збережені —
          уся наявна логіка в app.js продовжує працювати.
          Картка SlotOK більше НЕ видається автоматично: у Касі показується
-         лише та картка, яку гравець сам підключив (своя зовнішня або
-         Аксіома), — див. renderCardPanel()/renderLinkedCards() в app.js.
+         лише та картка, яку гравець сам підключив (своя зовнішня), — див. renderCardPanel()/renderLinkedCards() в app.js.
     ═══════════════════════════════════════════════════════════════ -->
     <div id="tab-cashier" class="screen hidden">
 
@@ -1628,17 +1642,8 @@
 
         <div class="ks-note">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
-          <div>SlotOK — некомерційна ігрова платформа. Донат — добровільна підтримка проєкту, а не купівля товару. Натомість на ігровий баланс нараховується бонус. Ігрові кошти не виводяться.</div>
+          <div>Донат — добровільний подарунок на розвиток SlotOK, а не купівля товару чи послуги. Він нічого не додає в гру: не змінює ігровий баланс, Слотіки, VIP чи ставки, і не повертається (крім випадків, передбачених законом). Натомість у профілі зʼявиться значок «Підтримав проєкт» — однаковий для будь-якої суми. Ігрова валюта віртуальна й не виводиться.</div>
         </div>
-
-        <section class="ks-panel">
-          <div class="ks-panel-head">
-            <div class="ks-panel-title">Донат-пакети</div>
-          </div>
-          <div class="ks-panel-body">
-            <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-          </div>
-        </section>
 
         <section class="ks-panel">
           <div class="ks-panel-head">
@@ -1647,7 +1652,7 @@
           </div>
           <div class="ks-panel-body">
             <div id="depSourceBar"></div>
-            <div class="ks-label">Сума</div>
+            <div class="ks-label">Сума, грн</div>
             <div class="amount-grid">
               <div class="amount-btn" onclick="selectDepAmount(100, this)">100</div>
               <div class="amount-btn" onclick="selectDepAmount(250, this)">250</div>
@@ -1659,7 +1664,7 @@
               <div class="amount-btn" id="customAmtBtn" onclick="selectCustomAmount()">Інша</div>
             </div>
             <div id="customAmountBox" class="hidden ks-field">
-              <input id="customDepAmount" type="number" inputmode="numeric" placeholder="Своя сума, ₴">
+              <input id="customDepAmount" type="number" inputmode="numeric" placeholder="Своя сума, грн">
             </div>
 
             <div class="ks-label">Спосіб оплати</div>
@@ -1678,8 +1683,8 @@
               </button>
             </div>
 
-            <button class="ks-btn is-primary is-block" id="depSubmitBtn" onclick="submitDepositRequest()">Задонатити</button>
-            <p class="ks-hint" style="margin:10px 0 0;text-align:center;">Спочатку зробіть переказ за реквізитами, потім натисніть кнопку. Адміністратор зарахує бонус на ваш ігровий баланс протягом 1–24 годин.</p>
+            <button class="ks-btn is-primary is-block" id="depSubmitBtn" onclick="submitDepositRequest()">Подати заявку на донат</button>
+            <p class="ks-hint" style="margin:10px 0 0;text-align:center;">Спочатку зробіть переказ за реквізитами, потім натисніть кнопку. Адміністратор підтвердить донат і додасть значок підтримки протягом 1–24 годин. Ігровий баланс не змінюється.</p>
           </div>
         </section>
 
@@ -1856,6 +1861,7 @@
       </div>
       <h2 style="color:var(--pos);margin-bottom:4px;">🎲 Dice Roll</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Вибери: випаде БІЛЬШЕ або МЕНШЕ вибраного числа. Чим рідший результат — тим більший виграш!</div>
+      <div id="dice3d" class="d3-stage" aria-hidden="true"><div class="d3-cube"><span class="d3-face d3-front">?</span><span class="d3-face d3-back">?</span><span class="d3-face d3-right">?</span><span class="d3-face d3-left">?</span><span class="d3-face d3-top">?</span><span class="d3-face d3-bottom">?</span></div></div>
       <div class="box">
         <div style="font-size:11px;color:var(--fg-4);margin-bottom:6px;">Ставка (₴)</div>
         <input id="diceBet" type="number" value="100" style="text-align:center;">
@@ -1902,107 +1908,10 @@
       <div id="doubleHistory" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
     </div>
 
-    <!-- SPORTS BETTING -->
-    <div id="tab-sports" class="screen hidden" style="padding:0;">
-      <div style="background:linear-gradient(180deg,var(--surface-1),var(--bg));padding:16px 15px 12px;border-bottom:1px solid var(--line);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div>
-            <div style="font-size:20px;font-weight:900;color:var(--accent);">⚽ Ставки на спорт</div>
-            <div style="font-size:10px;color:var(--fg-4);margin-top:2px;">Реальні матчі • ESPN • Авто-закриття ставок</div>
-          </div>
-          <button onclick="loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active'))" 
-            style="background:var(--surface-2);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-md);padding:8px 12px;font-size:11px;color:var(--green);cursor:pointer;font-weight:bold;">🔄 Оновити</button>
-        </div>
-        <!-- Sport type tabs — горизонтальний скролл -->
-        <div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;" id="sportTabsRow">
-          <button class="sport-tab-btn active" data-sport="soccer"      onclick="loadRealSportMatches('soccer',this)">⚽ Футбол</button>
-          <button class="sport-tab-btn"        data-sport="ucl"         onclick="loadRealSportMatches('ucl',this)">🏆 UCL</button>
-          <button class="sport-tab-btn"        data-sport="laliga"      onclick="loadRealSportMatches('laliga',this)">🇪🇸 La Liga</button>
-          <button class="sport-tab-btn"        data-sport="bundesliga"  onclick="loadRealSportMatches('bundesliga',this)">🇩🇪 Бундесліга</button>
-          <button class="sport-tab-btn"        data-sport="basketball"  onclick="loadRealSportMatches('basketball',this)">🏀 NBA</button>
-          <button class="sport-tab-btn"        data-sport="hockey"      onclick="loadRealSportMatches('hockey',this)">🏒 NHL</button>
-          <button class="sport-tab-btn"        data-sport="tennis"      onclick="loadRealSportMatches('tennis',this)">🎾 Теніс</button>
-          <button class="sport-tab-btn"        data-sport="mma"         onclick="loadRealSportMatches('mma',this)">🥊 UFC</button>
-          <button class="sport-tab-btn"        data-sport="football"    onclick="loadRealSportMatches('football',this)">🏈 NFL</button>
-          <button class="sport-tab-btn"        data-sport="baseball"    onclick="loadRealSportMatches('baseball',this)">⚾ MLB</button>
-          <button class="sport-tab-btn"        data-sport="csgo"        onclick="loadRealSportMatches('csgo',this)">🎮 CS2</button>
-          <button class="sport-tab-btn"        data-sport="dota2"       onclick="loadRealSportMatches('dota2',this)">⚔️ Dota 2</button>
-          <button class="sport-tab-btn"        data-sport="lol"         onclick="loadRealSportMatches('lol',this)">🏆 LoL</button>
-          <button class="sport-tab-btn"        data-sport="valorant"    onclick="loadRealSportMatches('valorant',this)">🔫 Valorant</button>
-          <button class="sport-tab-btn"        data-sport="efootball"   onclick="loadRealSportMatches('efootball',this)">⚡ eFootball</button>
-        </div>
-      </div>
-
-      <!-- Loader -->
-      <div id="sportsLoadingEl" class="hidden" style="text-align:center;padding:32px;color:var(--fg-4);font-size:13px;background:var(--bg);">
-        <div style="font-size:28px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block;">⚽</div><br>
-        Завантаження матчів...
-      </div>
-
-      <!-- LIVE + info bar -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 15px;background:var(--bg);border-bottom:1px solid var(--line);">
-        <div style="background:var(--neg);color:var(--on-neg);font-size:9px;font-weight:bold;padding:2px 8px;border-radius:var(--r-xl);animation:pulse2 1.5s infinite;flex-shrink:0;">🔴 LIVE</div>
-        <div style="font-size:10px;color:var(--fg-4);">Натисніть LIVE ПЕРЕГЛЯД на матчі щоб стежити за рахунком</div>
-      </div>
-
-      <!-- Matches list -->
-      <div id="sportMatchesList" style="padding:10px 15px;"></div>
-
-      <!-- My bets -->
-      <div style="margin:0 15px 20px;background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-size:13px;font-weight:bold;color:var(--accent);">📋 Мої ставки</div>
-          <button onclick="loadSportMyBets()" style="background:none;border:none;color:var(--fg-4);font-size:11px;cursor:pointer;padding:0;">🔄</button>
-        </div>
-        <div id="sportMyBets" style="color:var(--fg-4);font-size:12px;">Немає ставок</div>
-      </div>
-    </div>
 
     </div>
 
-    <!-- BET SLIP modal -->
-    <div id="betSlipModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:8000;display:flex;align-items:flex-end;">
-      <div style="width:100%;background:var(--box);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:0;box-shadow:0 -8px 40px rgb(var(--shade-rgb) / 0.8);max-height:85vh;overflow-y:auto;box-sizing:border-box;">
-        <!-- Header -->
-        <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
-          <div style="font-size:18px;font-weight:900;color:var(--accent);">🎯 Купон ставки</div>
-          <button onclick="closeBetSlip()" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-3);font-size:16px;cursor:pointer;">✕</button>
-        </div>
-        <div style="padding:16px 20px 24px;">
-          <!-- Match info -->
-          <div id="betSlipMatchInfo" style="font-size:13px;color:var(--fg-2);margin-bottom:14px;background:var(--input);border-radius:var(--r-lg);padding:12px;"></div>
-          <!-- Odds display -->
-          <div style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.3);border-radius:var(--r-lg);padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="color:var(--fg-2);font-size:13px;">Коефіцієнт</span>
-            <span style="font-size:24px;font-weight:900;color:var(--accent);" id="betSlipOdds">×2.00</span>
-          </div>
-          <!-- Amount -->
-          <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Сума ставки (₴)</div>
-          <input id="betSlipAmount" type="number" value="100" placeholder="Ставка (₴)" oninput="updateBetSlipPotential()" style="margin-bottom:4px;">
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=100;updateBetSlipPotential()">100₴</div>
-            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=500;updateBetSlipPotential()">500₴</div>
-            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=1000;updateBetSlipPotential()">1k₴</div>
-            <div class="amount-btn" style="flex:1;" onclick="document.getElementById('betSlipAmount').value=5000;updateBetSlipPotential()">5k₴</div>
-          </div>
-          <!-- Potential win -->
-          <div style="background:var(--surface-1);border:1px solid rgb(var(--pos-rgb) / .35);border-radius:var(--r-lg);padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="color:var(--fg-2);font-size:12px;">Потенційний виграш</span>
-            <span id="betSlipPotential" style="font-size:20px;font-weight:900;color:var(--green);">0 ₴</span>
-          </div>
-          <!-- AI tip in slip -->
-          <div style="background:var(--surface-1);border:1px solid rgb(var(--info-rgb) / .35);border-radius:var(--r-lg);padding:10px;margin-bottom:14px;font-size:11px;color:var(--fg-3);" id="betSlipAiTip">🤖 Завантаження аналізу...</div>
-          <!-- Buttons -->
-          <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
-            <button class="btn-outline" onclick="closeBetSlip()">Скасувати</button>
-            <button class="btn-gold" onclick="confirmRealSportBet()">✅ ПІДТВЕРДИТИ СТАВКУ</button>
-          </div>
-          <div style="font-size:10px;color:var(--fg-4);text-align:center;margin-top:8px;">Ставки закриваються автоматично ШІ по завершенню матчу</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- LIVE VIEW modal (built dynamically) -->
 
         <!-- ТОП -->
     <!-- ПРОФІЛЬ -->
@@ -2089,7 +1998,7 @@
           <div class="ks-stat"><div class="ks-stat-lbl">Серія днів</div><div class="ks-stat-val ks-num" id="profStatStreak">0🔥</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">VIP рівень</div><div class="ks-stat-val is-acc" id="profStatVip">—</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">Ігор у слотах</div><div class="ks-stat-val ks-num" id="profStatSlotsPlayed">0</div></div>
-          <div class="ks-stat"><div class="ks-stat-lbl">Всього депозитів</div><div class="ks-stat-val is-pos ks-num" id="profStatDeposits">₴0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Підтримка проєкту</div><div class="ks-stat-val is-pos" id="profStatSupporter">—</div></div>
         </div>
         <div class="ks-panel-body" style="border-top:1px solid var(--ks-line);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -2126,6 +2035,24 @@
         <div id="contactsList" style="margin-top:20px;"></div>
     </div>
 
+    <!-- ДРУЗІ (src/app/56-friends.js) -->
+    <div id="tab-friends" class="screen hidden">
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
+      <h1 class="screen-title">Друзі</h1>
+      <div class="input-group friends-add">
+        <input id="friendsAddInput" type="text" maxlength="64" placeholder="Нік гравця" autocomplete="off" aria-label="Нік гравця" onkeydown="if(event.key==='Enter')friendsAddFromInput()">
+        <button type="button" class="btn btn-primary" onclick="friendsAddFromInput()"><span class="ic i-plus" aria-hidden="true"></span> Додати</button>
+      </div>
+      <div id="friendsList"></div>
+    </div>
+
+    <!-- ЛІГИ (src/app/58-leagues.js) -->
+    <div id="tab-leagues" class="screen hidden">
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
+      <h1 class="screen-title">Ліги</h1>
+      <div id="leaguesBody"></div>
+    </div>
+
     <!-- ЩЕ -->
     <div id="tab-more" class="screen ledger hidden">
       <h1 class="screen-title">Ще</h1>
@@ -2146,7 +2073,7 @@
       <div class="section-header"><span>Спілкування</span></div>
       <nav class="list menu-group" aria-label="Спілкування">
           <button type="button" class="list-row menu-item" onclick="switchTab('pm')"><span class="menu-ic">✉️</span><span class="list-row-main"><span class="list-row-title">Приватні повідомлення</span></span> <span id="pmBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="switchTab('contacts')"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Знайомі</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('friends');friendsRender()"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Друзі</span><span class="list-row-sub">Запити, запрошення за стіл</span></span><span class="badge is-accent friends-badge hidden"></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('clans')"><span class="menu-ic">🛡️</span><span class="list-row-main"><span class="list-row-title">Клани</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Підтримка</span><span class="list-row-sub">Чат, скарги й пропозиції</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="showReferralQR()"><span class="menu-ic">📲</span><span class="list-row-main"><span class="list-row-title">QR-код запрошення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
@@ -2154,13 +2081,14 @@
       <div class="section-header"><span>Змагання</span></div>
       <nav class="list menu-group" aria-label="Змагання">
           <button type="button" class="list-row menu-item" onclick="switchTab('tournaments')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Турніри</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openLeagues()"><span class="menu-ic">🥇</span><span class="list-row-main"><span class="list-row-title">Ліги</span><span class="list-row-sub">Сезонний рейтинг у PvP-іграх</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('leaderboard')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Рейтинги</span><span class="list-row-sub">День, тиждень, місяць</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
       </nav>
       <div class="section-header"><span>Прогрес і нагороди</span></div>
       <nav class="list menu-group" aria-label="Прогрес і нагороди">
           <button type="button" class="list-row menu-item" onclick="switchTab('affiliate')"><span class="menu-ic">👥</span><span class="list-row-main"><span class="list-row-title">Реферали</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('achievements')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Досягнення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="switchTab('quests')"><span class="menu-ic">📋</span><span class="list-row-main"><span class="list-row-title">Завдання</span></span> <span id="questsBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openMissions()"><span class="menu-ic">📋</span><span class="list-row-main"><span class="list-row-title">Щоденні місії</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('vip')"><span class="menu-ic">👑</span><span class="list-row-main"><span class="list-row-title">VIP-клуб</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('battlepass')"><span class="menu-ic">🎫</span><span class="list-row-main"><span class="list-row-title">Battle Pass</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('stats')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Моя статистика</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
@@ -2295,17 +2223,17 @@
     <!-- ===== МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly" class="screen hidden">
       <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
-      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія</h2>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Магнат</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:10px;">Купуй нерухомість, збирай ренту, обанкруть суперника!</div>
 
       <div id="monoStartScreen">
         <div class="box" style="text-align:center;">
           <div style="font-size:60px;margin-bottom:10px;">🎩</div>
-          <h3 style="color:var(--accent);margin:0 0 8px;">Монополія</h3>
+          <h3 style="color:var(--accent);margin:0 0 8px;">Магнат</h3>
           <div style="color:var(--fg-3);font-size:13px;margin-bottom:15px;">Ти грієш проти AI-суперника.<br>Стартовий капітал: 3 000 ₴ кожному</div>
           <input id="monoEntryBet" type="number" value="500" placeholder="Початкова ставка (₴)">
           <div style="color:var(--fg-4);font-size:12px;margin-bottom:15px;">Переможець забирає всі гроші</div>
-          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 vs AI</button>
+          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 Проти комп’ютера</button>
           <button class="btn-outline" style="margin-top:0;" onclick="switchTab('monopoly-mp')">👥 МУЛЬТИПЛЕЄР</button>
         </div>
       </div>
@@ -2348,7 +2276,7 @@
     <!-- ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly-mp" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('monopoly')">⬅ Назад</button>
-      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія — Мультиплеєр</h2>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Магнат — Мультиплеєр</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Грай з реальними гравцями: 2, 3 або 4 учасники</div>
 
       <div id="mpLobbyScreen">
@@ -2671,9 +2599,14 @@
           <span class="settings-text"><span class="settings-label">Вийти з акаунту</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
+        <button type="button" class="settings-row is-link" onclick="exportMyData()">
+          <span class="settings-icon">📦</span>
+          <span class="settings-text"><span class="settings-label">Завантажити мої дані</span><span class="settings-sub">Файл JSON з даними профілю</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
         <button type="button" class="settings-row is-link is-danger" onclick="deleteAccount()">
           <span class="settings-icon">🗑️</span>
-          <span class="settings-text"><span class="settings-label">Видалити акаунт</span><span class="settings-sub">Безповоротно</span></span>
+          <span class="settings-text"><span class="settings-label">Видалити акаунт</span><span class="settings-sub">Безповоротно, з підтвердженням паролем</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
       </div>
@@ -2704,11 +2637,6 @@
           <span class="settings-text"><span class="settings-label">Порівняти гравців</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
-        <button type="button" class="settings-row is-link" onclick="showTopDonators()">
-          <span class="settings-icon">🏆</span>
-          <span class="settings-text"><span class="settings-label">Топ донатерів</span></span>
-          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
-        </button>
         <button type="button" class="settings-row is-link" onclick="showWishlist()">
           <span class="settings-icon">❤️</span>
           <span class="settings-text"><span class="settings-label">Список побажань</span></span>
@@ -2732,7 +2660,7 @@
           <div style="color:var(--fg-3);font-size:13px;margin-bottom:15px;">Класичний Дурень: скинь всі карти першим!</div>
           <input id="cgBet" type="number" value="200" placeholder="Ставка (₴)">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button class="btn-gold" onclick="startCardGame('ai')">🤖 vs AI</button>
+            <button class="btn-gold" onclick="startCardGame('ai')">🤖 Проти комп’ютера</button>
             <button class="btn-outline" onclick="openCardLobby()">👥 Онлайн</button>
           </div>
         </div>
@@ -3072,51 +3000,14 @@
         <div id="userList" style="margin-top:4px;">Натисніть "Оновити список"</div>
       </div><!-- /users panel -->
 
-      <!-- ══ TAB: БОТИ ══ -->
+      <!-- ══ TAB: БОТИ (вимкнено) ══ -->
       <div class="adm-panel" id="adm-panel-bots" style="display:none;padding:12px;">
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🤖 Новий бот</div>
-          <input id="botNick" placeholder="Нік бота (напр. Lucky_77)" style="margin-bottom:6px;">
-          <input id="botBalance" type="number" placeholder="Початковий баланс (₴)" value="5000" style="margin-bottom:6px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <select id="botAvatar" style="background:var(--surface-2);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:8px;font-size:13px;">
-              <option value="👤">👤 Стандарт</option>
-              <option value="🤑">🤑 Грошовий</option>
-              <option value="😎">😎 Крутий</option>
-              <option value="🎰">🎰 Гравець</option>
-              <option value="👑">👑 Король</option>
-              <option value="🐉">🐉 Дракон</option>
-              <option value="💀">💀 Скелет</option>
-              <option value="🦊">🦊 Лисиця</option>
-              <option value="🐺">🐺 Вовк</option>
-              <option value="custom">📷 Свій URL...</option>
-            </select>
-            <select id="botActivity" style="background:var(--surface-2);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:8px;font-size:13px;">
-              <option value="active">🟢 Активний</option>
-              <option value="passive">⚫ Пасивний</option>
-            </select>
-          </div>
-          <!-- НОВИЙ: вибір особистості -->
-          <select id="botPersonality" style="width:100%;background:var(--surface-1);border:1px solid var(--special);color:var(--special);border-radius:var(--r-md);padding:8px;font-size:13px;margin-bottom:8px;">
-            <option value="balanced">⚖️ Збалансований (40-60с між іграми, ×0.8-1.5 ставки)</option>
-            <option value="aggressive">🔥 Агресивний (8-20с між іграми, ×1.5-3.0 ставки)</option>
-            <option value="conservative">🛡️ Консервативний (25-60с між іграми, ×0.3-0.8 ставки)</option>
-            <option value="whale">🐋 Кит (5-15с між іграми, ×3.0-8.0 ставки)</option>
-          </select>
-          <div id="botAvatarUrlBox" class="hidden" style="margin-bottom:6px;">
-            <input id="botAvatarUrl" placeholder="URL аватарки (https://...)">
-          </div>
-          <button class="btn-gold" onclick="createBot()">🤖 СТВОРИТИ БОТА</button>
-        </div>
-
-        <!-- Керування движком -->
         <div style="background:rgb(var(--info-rgb) / 0.06);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--info);font-weight:700;margin-bottom:8px;">⚙️ Бот-Движок</div>
-          <div id="botEngineStatus" style="font-size:12px;color:var(--fg-4);margin-bottom:8px;">Статус: очікування...</div>
+          <div style="font-size:11px;color:var(--info);font-weight:700;margin-bottom:8px;">Боти вимкнено</div>
+          <div id="botEngineStatus" style="font-size:12px;color:var(--fg-4);margin-bottom:8px;">Фальшиві гравці та виграші заборонені. Тут лишилась лише очистка старих записів ботів.</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--pos);color:var(--pos);" onclick="adminStartBotEngine()">▶ Запустити движок</button>
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--neg);color:var(--neg);" onclick="adminStopBotEngine()">⏹ Зупинити</button>
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;" onclick="loadBots()">🔄 Оновити список</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--neg);color:var(--neg);" onclick="adminPurgeBots()">Видалити всіх ботів</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;" onclick="loadBots()">Оновити список</button>
           </div>
         </div>
         <div id="botList"></div>
@@ -3691,7 +3582,7 @@
       </div>
     </div>
 
-    <!-- СЛОТІКИ — внутрішня валюта казино -->
+    <!-- СЛОТІКИ — внутрішня віртуальна валюта -->
     <div id="tab-slotiky" class="screen hidden">
       <div class="screen-head">
         <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
@@ -3780,7 +3671,6 @@
           <div style="font-size:12px;font-weight:bold;color:var(--special);margin-bottom:10px;">⚡ Як заробити XP</div>
           <div style="font-size:11px;color:var(--fg-3);line-height:2;">
             🎰 Будь-яка гра — 1 XP за 100₴ ставки<br>
-            ⚽ Спорт ставка — 2 XP за 100₴<br>
             🏆 Турнір участь — 50 XP<br>
             📅 Щоденний бонус — 20 XP<br>
             🎯 Квест виконано — 30 XP<br>
@@ -3818,101 +3708,7 @@
       </div>
     </div>
 
-    <!-- STREAM VIEWER MODAL -->
-    <div id="streamViewerModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:9800;display:flex;flex-direction:column;">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--line);flex-shrink:0;">
-        <button onclick="closeStreamViewer()" style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">✕ Закрити</button>
-        <div style="font-size:13px;font-weight:bold;color:var(--fg);" id="streamTitle">🎮 Live трансляція</div>
-        <div style="background:var(--neg);color:var(--on-neg);font-size:9px;font-weight:bold;padding:3px 8px;border-radius:var(--r-lg);animation:pulse2 1.5s infinite;">🔴 LIVE</div>
-      </div>
-      <!-- Stream area -->
-      <div style="flex:1;position:relative;background:var(--bg);overflow:hidden;">
-        <div id="streamEmbedArea" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-          <div style="font-size:48px;margin-bottom:16px;animation:pulse2 2s infinite;">📺</div>
-          <div style="font-size:14px;color:var(--fg-3);margin-bottom:8px;">Вибери трансляцію нижче</div>
-        </div>
-      </div>
-      <!-- Stream sources -->
-      <div style="padding:12px 16px;background:var(--bg);border-top:1px solid var(--line);flex-shrink:0;">
-        <div style="font-size:11px;color:var(--fg-4);margin-bottom:8px;">📡 Джерела трансляцій:</div>
-        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;" id="streamSourcesList"></div>
-      </div>
-    </div>
 
-    <!-- LIVE MATCH TRACKER MODAL -->
-    <div id="matchTrackerModal" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:9700;overflow-y:auto;padding-bottom:20px;">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface-1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;">
-        <button onclick="closeMatchTracker()" style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 12px;color:var(--fg-2);font-size:12px;cursor:pointer;">⬅ Назад</button>
-        <div id="trackerMatchTitle" style="font-size:13px;font-weight:bold;color:var(--fg);text-align:center;"></div>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <div style="width:8px;height:8px;background:var(--pos);border-radius:50%;animation:pulse2 1s infinite;"></div>
-          <span style="font-size:11px;color:var(--pos);font-weight:bold;">LIVE</span>
-        </div>
-      </div>
-
-      <!-- Score bar -->
-      <div style="padding:16px;background:var(--surface-1);border-bottom:1px solid var(--line);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div style="text-align:center;flex:1;">
-            <div id="trackerHomeEmoji" style="font-size:32px;margin-bottom:4px;">🏠</div>
-            <div id="trackerHomeName" style="font-size:13px;font-weight:bold;color:var(--fg);"></div>
-          </div>
-          <div style="text-align:center;min-width:100px;">
-            <div id="trackerScore" style="font-size:36px;font-weight:900;color:var(--fg);letter-spacing:4px;">0 – 0</div>
-            <div id="trackerMinute" style="font-size:12px;color:var(--accent);font-weight:bold;margin-top:2px;">0'</div>
-            <div style="font-size:10px;color:var(--fg-4);margin-top:1px;" id="trackerStatus">Очікування...</div>
-          </div>
-          <div style="text-align:center;flex:1;">
-            <div id="trackerAwayEmoji" style="font-size:32px;margin-bottom:4px;">✈️</div>
-            <div id="trackerAwayName" style="font-size:13px;font-weight:bold;color:var(--fg);"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pitch tracker -->
-      <div style="padding:12px 14px;">
-        <div class="tracker-container">
-          <div class="tracker-header">
-            <div class="live-dot"></div>
-            Live Action
-            <span style="margin-left:auto;font-size:10px;opacity:0.7;" id="trackerSport">Football</span>
-          </div>
-          <div class="pitch-area">
-            <canvas id="pitchCanvas" class="pitch-canvas" width="360" height="220"></canvas>
-            <div class="event-overlay" id="eventOverlay">
-              <div class="ev-icon" id="evIcon">⚽</div>
-              <div><div id="evTitle" style="font-size:13px;"></div><div id="evSub" style="font-size:10px;color:var(--fg-2);margin-top:1px;"></div></div>
-            </div>
-          </div>
-
-          <!-- Stats mini bar -->
-          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line);font-size:11px;" id="trackerStats">
-            <div style="text-align:right;color:var(--fg-2);" id="statHomeVal">0</div>
-            <div style="text-align:center;color:var(--fg-4);">Удари</div>
-            <div style="text-align:left;color:var(--fg-2);" id="statAwayVal">0</div>
-          </div>
-
-          <!-- Events list -->
-          <div class="tracker-events" id="trackerEventsList">
-            <div style="color:var(--fg-4);font-size:11px;text-align:center;padding:10px 0;">Подій ще немає</div>
-          </div>
-        </div>
-
-        <!-- Match stats -->
-        <div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-top:10px;">
-          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">📊 Статистика матчу</div>
-          <div id="matchStatsGrid"></div>
-        </div>
-
-        <!-- Bet quick panel -->
-        <div style="background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-top:10px;" id="trackerBetPanel">
-          <div style="font-size:12px;font-weight:bold;color:var(--accent);margin-bottom:10px;">⚡ Швидка ставка</div>
-          <div id="trackerBetButtons" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"></div>
-        </div>
-      </div>
-    </div>
 
   </div><!-- /container -->
 
@@ -4046,7 +3842,10 @@
               <button type="button" class="btn btn-ghost" onclick="regStep(1)"><span class="ic i-arrow-left" aria-hidden="true"></span> Назад</button>
               <button type="submit" class="btn btn-primary btn-lg" id="regBtn">Створити акаунт</button>
             </div>
-            <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі <span data-min-age>13</span>+, і приймаєш правила.</p>
+            <label class="auth-consent" for="regConsent">
+              <input type="checkbox" id="regConsent" required>
+              <span id="regConsentText">Мені виповнилось <span data-min-age>13</span> і я приймаю <button type="button" class="link-btn" onclick="openRulesModal('terms')">Умови</button> та <button type="button" class="link-btn" onclick="openRulesModal('privacy')">Політику</button></span>
+            </label>
           </div>
 
           <div class="auth-links"><span>Вже є акаунт? <button type="button" class="link-btn" onclick="switchAuthTab('login')">Увійти</button></span></div>
@@ -4056,7 +3855,13 @@
         <button type="button" class="btn btn-ghost auth-demo" onclick="startDemoMode()"><span class="ic i-play" aria-hidden="true"></span> Спробувати без реєстрації</button>
       </section>
 
-      <p class="auth-disclaimer">
+<nav class="auth-legal-links" aria-label="Юридична інформація">
+        <button type="button" class="link-btn" onclick="openRulesModal('terms')">Умови користування</button>
+        <button type="button" class="link-btn" onclick="openRulesModal('privacy')">Політика конфіденційності</button>
+        <button type="button" class="link-btn" onclick="openRulesModal('responsible')">Відповідальна гра</button>
+      </nav>
+
+            <p class="auth-disclaimer">
         <b><span data-min-age>13</span>+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
       </p>
 
@@ -4149,11 +3954,11 @@
     <button class="btn-outline" onclick="closeTabModal('transfer-modal')" style="width:50px;">⬅</button>
     <h2>↗️ Переказ гравцю</h2>
     <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:12px;font-size:11px;color:var(--fg-3);line-height:1.6;">
-      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> або за <b style="color:var(--fg);">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. Нік працює завжди.
+      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> SlotOK. Усі гроші в грі ігрові.
     </div>
     <div id="transferSourceBar"></div>
-    <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Нік або номер картки отримувача</div>
-    <input id="transferToCard" placeholder="@nickname або 0000 0000 0000 0000" maxlength="24" oninput="formatCardInput(this)" style="font-family:var(--font-mono);letter-spacing:1px;font-size:15px;text-align:center;">
+    <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Нік отримувача</div>
+    <input id="transferToCard" placeholder="@nickname" maxlength="24" oninput="formatCardInput(this)" style="font-family:var(--font-mono);letter-spacing:1px;font-size:15px;text-align:center;">
     <div id="transferRecipientInfo" style="font-size:11px;color:var(--fg-4);min-height:20px;margin-bottom:4px;text-align:center;"></div>
     <input id="transferAmount" type="number" placeholder="Сума переказу (мін. 10 ₴)">
     <button class="btn-gold" id="sendMoneyBtn" onclick="sendMoney()">Надіслати</button>
@@ -4193,7 +3998,7 @@
 
   <!-- DISCLAIMER BAR — завжди видима -->
   <div id="disclaimerBar" style="background:var(--bg);border-top:1px solid var(--line);padding:6px 16px;text-align:center;font-size:9px;color:var(--fg-4);line-height:1.5;">
-    ⚠️ <b style="color:var(--fg-4);">Розважальна платформа.</b> Ігрові монети віртуальні й не виводяться · Не азартна гра · Донат — добровільна підтримка проєкту
+    ⚠️ <b style="color:var(--fg-4);">Розважальна платформа.</b> Ігрові монети віртуальні й не виводяться · Не азартна гра · Донат — добровільна підтримка проєкту, не дає переваг у грі
     <span onclick="document.getElementById('disclaimerFull').style.display='flex'" style="color:var(--fg-4);cursor:pointer;text-decoration:underline;margin-left:4px;">Детальніше</span>
   </div>
 
@@ -4205,8 +4010,8 @@
       <div style="font-size:13px;color:var(--fg-3);line-height:1.8;margin-bottom:16px;">
         <b style="color:var(--fg-2);">SlotOK</b> — це виключно <b style="color:var(--fg-2);">розважальна ігрова платформа</b> для дозвілля серед своїх.<br><br>
         🪙 Всі монети, бали та "виграші" є <b style="color:var(--fg-2);">повністю віртуальними</b>, не мають реальної грошової цінності й не виводяться назад на картку.<br><br>
-        🤝 Гаманець приймає добровільний <b style="color:var(--fg-2);">донат на підтримку проєкту</b> (не купівлю товару) — натомість нараховується бонус на ігровий баланс.<br><br>
-        📱 Це соціальна гра для розваги між друзями. Ігрові операції є умовними і симуляційними.
+        🤝 Можна зробити добровільний <b style="color:var(--fg-2);">донат на розвиток проєкту</b> (не купівлю товару). Він нічого не додає в гру — лише значок «Підтримав проєкт» у профілі.<br><br>
+        📱 Це соціальна гра для розваги. Ігрова валюта не купується, не продається, не обмінюється й не виводиться. Прочитайте <a href="#" onclick="document.getElementById('disclaimerFull').style.display='none';openRulesModal();return false;" style="color:var(--accent);">Умови та Політику</a>.
       </div>
       <button onclick="document.getElementById('disclaimerFull').style.display='none'" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;font-size:14px;cursor:pointer;">✅ Зрозуміло</button>
     </div>
@@ -4489,36 +4294,9 @@
       </div>
     </div>
 
-  <!-- ═══ AXIOM BANK LINK MODAL (SlotOK side) ═══ -->
-  <div id="axiomLinkModal" class="full-modal hidden">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-      <button class="btn-outline" onclick="closeTabModal('axiomLinkModal')" style="width:44px;padding:10px;">⬅</button>
-      <div style="font-size:16px;font-weight:bold;">🏦 Аксіома Банк</div>
-    </div>
-
-    <!-- Axiom branding -->
-    <div style="background:linear-gradient(135deg,var(--surface-1),var(--surface-1),var(--surface-3));border:1px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-xl);padding:20px;text-align:center;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
-        <div style="width:52px;height:52px;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px;font-weight:900;color:var(--fg);">А</div>
-        <div>
-          <div style="font-size:17px;font-weight:900;color:var(--fg);">Аксіома</div>
-          <div style="font-size:10px;color:rgb(var(--info-rgb) / 0.8);">Банк нового покоління</div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:var(--fg-3);line-height:1.6;">
-        Увійди у свій акаунт Аксіоми — і поповнюй гру з картки Аксіоми та виводь виграш назад на картку.
-      </div>
-    </div>
-
-    <!-- Input for code from Axiom -->
-    <div id="axiomLinkContent">
-      <!-- Rendered by renderAxiomLinkContent() -->
-    </div>
-  </div>
-
   <!-- ═══ ПІДКЛЮЧЕННЯ КАРТКИ ═══ -->
   <!-- Показується новим гравцям замість автоматичної видачі картки SlotOK:
-       обидва шляхи рівноцінні — своя картка або картка Аксіома Банку. -->
+       завести ігрову картку SlotOK. -->
   <div id="cardOnboardModal" class="card-onboard-modal hidden">
     <div class="card-onboard-box">
       <div class="ks-modal-head">
@@ -4530,7 +4308,6 @@
 
       <p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 18px;text-align:left;">
         Випустіть <b style="color:var(--fg);">ігрову картку SlotOK</b> — окремий гаманець у грі без справжніх банків і номерів.
-        Або привʼяжіть <b style="color:var(--fg);">картку Аксіома Банку</b>.
       </p>
 
       <button class="ks-btn is-primary is-block" style="margin-bottom:10px;" onclick="dismissCardOnboard();switchTab('cashier');setTimeout(openAddCardModal,300)">
@@ -4538,20 +4315,6 @@
         Випустити картку SlotOK
       </button>
 
-      <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
-        <div style="flex:1;height:1px;background:rgb(var(--tint-rgb) / 0.09);"></div>
-        <span style="font-size:11px;color:var(--fg-3);">або картка партнера</span>
-        <div style="flex:1;height:1px;background:rgb(var(--tint-rgb) / 0.09);"></div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;text-align:left;">
-        <div style="width:38px;height:38px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--fg);flex-shrink:0;">А</div>
-        <div>
-          <div style="font-size:14px;font-weight:650;color:var(--fg);">Аксіома Банк</div>
-          <div style="font-size:12px;color:var(--fg-3);">Поповнюй гру з картки Аксіоми й виводь виграш назад</div>
-        </div>
-      </div>
-      <button class="ks-btn is-block" onclick="dismissCardOnboard();openAxiomLinkFlow()">Підключити Аксіома Банк</button>
       <button class="ks-btn is-quiet is-block" style="margin-top:12px;" onclick="dismissCardOnboard()">Пізніше</button>
     </div>
   </div>
@@ -4953,7 +4716,7 @@
       <input type="number" id="withdrawInvest" placeholder="Сума для виводу (₴)" style="margin-bottom:6px;">
       <button class="btn-outline" onclick="withdrawFromPool()" style="border-color:var(--neg);color:var(--neg);">💸 Вивести</button>
     </div>
-    <div style="font-size:11px;color:var(--fg-4);text-align:center;margin-top:14px;padding:0 16px;">Пул інвестує кошти в загальний оборот казино. Виплата = 8% від твоєї частки щотижня.</div>
+    <div style="font-size:11px;color:var(--fg-4);text-align:center;margin-top:14px;padding:0 16px;">Пул інвестує кошти в загальний ігровий оборот. Виплата = 8% від твоєї частки щотижня.</div>
     <div style="height:80px;"></div>
   </div>
 
@@ -5094,52 +4857,6 @@
     <div id="pdResultBox" class="hidden" style="text-align:center;padding:20px;background:var(--box);border-radius:var(--r-xl);border:1px solid var(--border);margin-top:10px;"></div>
   </div>
 
-  <!-- ══════════════ AXIOM BANK TRANSFER MODAL ══════════════ -->
-  <div id="axiomTransferModal" class="full-modal hidden" style="padding:20px;background:var(--surface-1);">
-    <button class="btn-outline" onclick="closeTabModal('axiomTransferModal')" style="width:44px;padding:10px;margin-bottom:16px;">⬅</button>
-    <div style="text-align:center;margin-bottom:22px;">
-      <div style="width:60px;height:60px;border-radius:var(--r-xl);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-size:26px;font-family:var(--font-mono);font-weight:900;color:var(--fg);margin:0 auto 12px;">А</div>
-      <div style="font-size:20px;font-weight:900;color:var(--info);font-family:var(--font-body);">Аксіома Банк</div>
-      <div style="font-size:11px;color:var(--fg-4);margin-top:4px;">Переказ між SlotOK та Аксіомою</div>
-    </div>
-
-    <!-- Balances -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-      <div style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;text-align:center;">
-        <div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">🎰 SlotOK</div>
-        <div style="font-size:20px;font-weight:900;color:var(--accent);font-family:var(--font-body);" id="axiomTxSlotBal">₴ 0</div>
-      </div>
-      <div style="background:rgb(var(--info-rgb) / 0.08);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;text-align:center;">
-        <div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">🏦 Аксіома</div>
-        <div style="font-size:20px;font-weight:900;color:var(--info);font-family:var(--font-body);" id="axiomTxAxBal">—</div>
-      </div>
-    </div>
-
-    <!-- Direction -->
-    <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:4px;display:flex;gap:4px;margin-bottom:16px;" id="axiomTxDirRow">
-      <div id="axiomTxDirA" onclick="setAxiomTxDir('toAxiom')" style="flex:1;text-align:center;padding:11px 8px;border-radius:var(--r-lg);background:rgb(var(--info-rgb) / 0.15);border:1px solid rgb(var(--info-rgb) / 0.35);font-size:12px;font-weight:700;color:var(--info);cursor:pointer;">
-        🎰 → 🏦<br><span style="font-size:10px;font-weight:600;">Вивести на картку</span>
-      </div>
-      <div id="axiomTxDirB" onclick="setAxiomTxDir('toCasino')" style="flex:1;text-align:center;padding:11px 8px;border-radius:var(--r-lg);font-size:12px;font-weight:700;color:var(--fg-4);cursor:pointer;">
-        🏦 → 🎰<br><span style="font-size:10px;font-weight:600;">Поповнити гру</span>
-      </div>
-    </div>
-
-    <input type="number" id="axiomTxAmt" placeholder="Сума (₴)" style="font-size:22px;font-weight:800;text-align:center;letter-spacing:1px;">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
-      <div onclick="setAxiomTxAmt(100)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴100</div>
-      <div onclick="setAxiomTxAmt(250)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴250</div>
-      <div onclick="setAxiomTxAmt(500)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴500</div>
-      <div onclick="setAxiomTxAmt(1000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1k</div>
-    </div>
-
-    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">Поповнити баланс з картки</button>
-    <div style="font-size:11px;color:var(--fg-4);text-align:center;margin-top:8px;line-height:1.7;">
-      Переказ миттєвий · Без комісії<br>
-      Кошти спільні між SlotOK та Аксіомою
-    </div>
-  </div>
-
   <!-- ══ DAILY SPIN MODAL ══ -->
   <div id="dailySpinModal" class="full-modal hidden">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
@@ -5217,9 +4934,10 @@
   <script defer src="shared/age.js"></script>
   <!-- Каталог магазину Слотіків — той самий файл читає сервер (lib/shop.js) -->
   <script defer src="shared/shop.js"></script>
+  <!-- Щоденні місії з серією (пул і нагороди) — той самий файл читає сервер (lib/missions.js) -->
+  <script defer src="shared/missions.js"></script>
+  <!-- Рейтингові ліги (ігри, ліги, сезон) — той самий файл читає сервер (lib/leagues.js) -->
+  <script defer src="shared/leagues.js"></script>
   <!-- Main app -->
-  <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
-       боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->
-  <script defer src="https://aksioma-bay.vercel.app/sdk/axioma-sdk.js"></script>
   <script defer src="app.js"></script>
 </body>

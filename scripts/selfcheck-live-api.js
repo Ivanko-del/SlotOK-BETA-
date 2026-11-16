@@ -85,6 +85,10 @@ const bal = (u) => tree.users[u].balance;
   r = await live.wheelBet("ann", "w5", winK, 100, (n + 1) * P - 5000);
   assert.strictEqual(r.error.error, "locked", "за 15 с до спіну ставки закрито");
   assert.strictEqual((await live.wheelBet("ann", "w5", "zz", 100, t0)).error.error, "bad_choice");
+  for (const bad of ["constructor", "__proto__", "toString"]) {
+    assert.strictEqual((await live.wheelBet("ann", "w5", bad, 100, t0)).error.error, "bad_choice", "choice " + bad);
+    assert.strictEqual((await live.wheelBet("ann", bad, "a", 100, t0)).error.error, "bad_game", "game " + bad);
+  }
   assert.deepStrictEqual(await live.settleMine("ann", (n + 1) * P - 1), [], "до спіну розрахунку нема");
   const done = await live.settleMine("ann", (n + 1) * P + 10);
   assert.strictEqual(done.length, 1);
