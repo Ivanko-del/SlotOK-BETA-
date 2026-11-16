@@ -5358,10 +5358,25 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '123';
+const CURRENT_VERSION = '124';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '124',
+    title: 'Оновлення v124 — екран входу',
+    date: Date.UTC(2026, 10, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Виправлення',
+        items: [
+          'Екран входу більше не стає прозорим: крізь нього не просвічує сам застосунок',
+        ]
+      },
+    ]
+  },
   {
     version: '123',
     title: 'Оновлення v123 — друзі, ліги, місії, глядачі й нова гра',

@@ -7,14 +7,22 @@
 #auth-screen {
   position: fixed; inset: 0; z-index: var(--z-modal);
   overflow-y: auto; overscroll-behavior: contain;
-  background:
+  /* Суцільне тло — окремою властивістю: якщо декоративні градієнти не
+     застосуються (розширення «темний режим», стара тема), екран входу однаково
+     лишається непрозорим і застосунок під ним не просвічує. */
+  background-color: var(--bg);
+  background-image:
     radial-gradient(60% 50% at 85% 0%, rgb(var(--accent-rgb) / .16), transparent 70%),
     radial-gradient(50% 45% at 0% 100%, rgb(var(--primary-rgb) / .14), transparent 70%),
-    radial-gradient(circle, rgb(var(--primary-rgb) / .14) 1.2px, transparent 1.6px) 0 0 / 18px 18px,
-    var(--bg);
+    radial-gradient(circle, rgb(var(--primary-rgb) / .14) 1.2px, transparent 1.6px);
+  background-size: auto, auto, 18px 18px;
+  background-position: 0 0;
+  background-repeat: no-repeat, no-repeat, repeat;
   padding: calc(env(safe-area-inset-top, 0px) + var(--sp-5)) var(--gutter) calc(env(safe-area-inset-bottom, 0px) + var(--sp-8));
 }
 #auth-screen.hidden { display: none !important; }
+/* Поки відкрито екран входу, застосунок під ним не малюється взагалі. */
+body:has(> #auth-screen:not(.hidden)) > #main, body:has(> #auth-screen:not(.hidden)) > .bottom-nav { visibility: hidden; }
 #auth-screen > * { max-width: none; }
 
 .auth-wrapper {
