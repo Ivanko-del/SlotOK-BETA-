@@ -90,7 +90,7 @@ module.exports = async (req, res) => {
   }
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  const game = GAMES[body.game];
+  const game = typeof body.game === "string" && Object.prototype.hasOwnProperty.call(GAMES, body.game) ? GAMES[body.game] : null;
   const bet = parseBet(body.bet);
   const params = game && game.parse(body.params);
   if (!game || !params) return fail(res, 400, "bad_game", "Невідома гра або параметри");
@@ -109,10 +109,12 @@ module.exports = async (req, res) => {
     }
 
     // 2) Обмеження акаунта — ті самі, що перевіряє браузер, але тут їх не обійти.
-    const [banned, autoFrozen, selfUntil] = await Promise.all([
+    const luckGames = ["scratch", "double", "slots", "diamond"];
+    const [banned, autoFrozen, selfUntil, luckLeft] = await Promise.all([
       dbGet(`users/${nick}/banned`),
       dbGet(`users/${nick}/autoFrozen`),
       dbGet(`users/${nick}/selfExcludeUntil`),
+      luckGames.includes(body.game) ? dbGet(`users/${nick}/luckyGamesLeft`) : null,
     ]);
     const blocked = banned ? "Акаунт заблоковано"
       : autoFrozen ? "Акаунт тимчасово призупинено — звернись у підтримку"
@@ -149,8 +151,7 @@ module.exports = async (req, res) => {
     }
 
     // 4) Результат і атомарний запис балансу (списання + виграш разом).
-    const luckGames = ["scratch", "double", "slots", "diamond"];
-    const ctx = luckGames.includes(body.game) ? { luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : {};
+    const ctx = luckGames.includes(body.game) ? { luck: (luckLeft || 0) > 0 } : {};
     const outcome = game.play(stake, { ...params, bonusMult }, rng, ctx);
     let insufficient = false;
     const tx = await dbTransaction(`users/${nick}/balance`, (cur) => {
