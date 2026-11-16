@@ -3,10 +3,44 @@
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '122';
+const CURRENT_VERSION = '123';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '123',
+    title: 'Оновлення v123 — друзі, ліги, місії, глядачі й нова гра',
+    date: Date.UTC(2026, 10, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'new',
+        title: '🎮 Нове',
+        items: [
+          'Друзі: додавай гравців у друзі, бач, хто онлайн, і клич за стіл одним натиском або посиланням (Ще → Друзі)',
+          'Рейтингові ліги: у Дурні, Вісімці, Лудо, Морському бої, Сапер-дуелі, покері та «Чотири в ряд» тепер є сезонний рейтинг — від Бронзи до Легенди, з нагородою наприкінці місяця',
+          'Місії дня: три місії щодня на Головній і серія на 7 днів зі скринею на сьомий день. Замінили старі «Завдання»',
+          'Режим глядача: у лобі покеру, Дурня, Вісімки й Лудо є блок «Наживо» — дивись чужі столи, карти гравців приховані',
+          'Нова гра «Чотири в ряд»: дуель 1×1 на об\'ємній дошці, 30 секунд на хід',
+          'Об\'ємний кубик у Dice і монета в Coinflip',
+        ]
+      },
+      {
+        type: 'improve',
+        title: '🛡️ Чесно й прозоро',
+        items: [
+          'Підтримка проєкту (донат) більше нічого не дає в грі — лише значок «Підтримав проєкт». Ігровий баланс не купується і не виводиться',
+          'Прибрано ботів і вигадані виграші: у стрічках та рейтингах тільки справжні гравці',
+          'Ставки на спорт прибрано. Усі відкриті ставки повернуто на баланс',
+          '«Аксіома Банк» прибрано. Кошти з підключеної картки залишились в ігровому балансі',
+          'Нові «Умови користування» та «Політика конфіденційності» — при вході попросимо погодитись ще раз',
+          'У Налаштуваннях можна завантажити свої дані або видалити акаунт',
+          'Пошта, прив\'язка Telegram та інші приватні дані профілю більше не видно іншим гравцям',
+          'Гру «Монополія» перейменовано на «Магнат»; мем-скіни карток прибрано',
+        ]
+      },
+    ]
+  },
   {
     version: '122',
     title: 'Оновлення v122 — швидше й надійніше',
@@ -1798,29 +1832,6 @@ function renderHomeLastUpdate() {
     const dateStr = item.date ? new Date(item.date).toLocaleDateString('uk-UA',{day:'numeric',month:'short'}) : '';
     el.innerHTML = `<b style="color:var(--pos);">v${item.version}</b> <span style="color:var(--fg-4);">${dateStr}</span><br><span style="color:var(--fg-3);">${allItems[0]||''}</span>${allItems.length>1?`<span style="color:var(--fg-4);"> +ще ${allItems.length-1}</span>`:''}`;
   });
-}
-
-function renderHomeAxiomWidget() {
-  const el = document.getElementById('homeAxiomWidget');
-  if(!el || !userData) return;
-  if(_axAcc && axLinked()) {
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,var(--bg),var(--surface-1));border:1px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-lg);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openAxiomLinkFlow()">
-        <div style="width:46px;height:30px;border-radius:var(--r-sm);flex-shrink:0;background:${escapeHtml(axCardBg(_axAcc.card))};background-size:cover;box-shadow:none;"></div>
-        <div style="flex:1;">
-          <div style="font-size:12px;font-weight:bold;color:var(--info);">Аксіома Банк · ····${escapeHtml(_axAcc.card.last4)}</div>
-          <div style="font-size:10px;color:var(--fg-4);margin-top:1px;">На картці: <b style="color:var(--fg);">₴${formatNumber(_axAcc.card.balance)}</b> · поповнити гру чи вивести</div>
-        </div>
-        <div style="font-size:18px;color:var(--fg-4);">›</div>
-      </div>`;
-  } else {
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,var(--bg),var(--surface-1));border:1px dashed rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openAxiomLinkFlow()">
-        <div style="width:34px;height:34px;border-radius:var(--r-md);background:var(--surface-1);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--info);flex-shrink:0;border:1px solid rgb(var(--info-rgb) / 0.2);">А</div>
-        <div style="flex:1;font-size:11px;color:var(--fg-4);">Підключи <b style="color:var(--info);">Аксіома Банк</b>, щоб поповнювати гру з картки й виводити виграш</div>
-        <div style="font-size:11px;background:rgb(var(--info-rgb) / 0.15);color:var(--info);border-radius:var(--r-sm);padding:3px 8px;font-weight:bold;">+ Підключити</div>
-      </div>`;
-  }
 }
 
 function renderHomeProgressBars() {

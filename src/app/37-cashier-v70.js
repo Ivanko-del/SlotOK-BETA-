@@ -1377,42 +1377,7 @@ var CARD_SKINS = [
   {id:'spring',   name:'Весна',      accent:'#78dc96', prev:'linear-gradient(135deg,#001a08,#0d3d1a)'},
   {id:'diamondelite', name:'Діамант Еліт', accent:'#e8e8f5', prev:'linear-gradient(115deg,#0a0a0f,#e8e8f5)'},
   {id:'midnight', name:'Північ',     accent:'#5050c8', prev:'linear-gradient(160deg,#000005,#050518)'},
-  // Меми (тягнуться напряму з i.imgflip.com)
-  {id:'meme-drake',            name:'Drake',           accent:'#fff', prev:"url('https://i.imgflip.com/30b1gx.jpg') center/cover"},
-  {id:'meme-distracted',       name:'Хлопець і дівчина', accent:'#fff', prev:"url('https://i.imgflip.com/1ur9b0.jpg') center/cover"},
-  {id:'meme-womancat',         name:'Жінка й кіт',     accent:'#fff', prev:"url('https://i.imgflip.com/345v97.jpg') center/cover"},
-  {id:'meme-twobuttons',       name:'Дві кнопки',      accent:'#fff', prev:"url('https://i.imgflip.com/1g8my4.jpg') center/cover"},
-  {id:'meme-changemymind',     name:'Переконай мене',  accent:'#fff', prev:"url('https://i.imgflip.com/24y43o.jpg') center/cover"},
-  {id:'meme-successkid',       name:'Success Kid',     accent:'#fff', prev:"url('https://i.imgflip.com/1bhk.jpg') center/cover"},
-  {id:'meme-doge',             name:'Doge',            accent:'#fff', prev:"url('https://i.imgflip.com/4t0m5.jpg') center/cover"},
-  {id:'meme-thisisfine',       name:'This is Fine',    accent:'#fff', prev:"url('https://i.imgflip.com/wxica.jpg') center/cover"},
-  {id:'meme-stonks',           name:'Stonks',          accent:'#fff', prev:"url('https://i.imgflip.com/3si4.jpg') center/cover"},
-  {id:'meme-rollsafe',         name:'Roll Safe',       accent:'#fff', prev:"url('https://i.imgflip.com/1h7in3.jpg') center/cover"},
-  {id:'meme-pikachu',          name:'Здивований Пікачу', accent:'#fff', prev:"url('https://i.imgflip.com/2kbn1e.jpg') center/cover"},
-  {id:'meme-disastergirl',     name:'Disaster Girl',   accent:'#fff', prev:"url('https://i.imgflip.com/23ls.jpg') center/cover"},
-  {id:'meme-grumpycat',        name:'Grumpy Cat',      accent:'#fff', prev:"url('https://i.imgflip.com/8p0a.jpg') center/cover"},
-  {id:'meme-expandingbrain',   name:'Галактичний мозок', accent:'#fff', prev:"url('https://i.imgflip.com/1jwhww.jpg') center/cover"},
-  {id:'meme-onedoesnotsimply', name:'One Does Not Simply', accent:'#fff', prev:"url('https://i.imgflip.com/1bij.jpg') center/cover"},
-  {id:'meme-ancientaliens',    name:'Древні прибульці', accent:'#fff', prev:"url('https://i.imgflip.com/26am.jpg') center/cover"},
-  {id:'meme-dicaprio',         name:'ДіКапріо',        accent:'#fff', prev:"url('https://i.imgflip.com/39t1o.jpg') center/cover"},
-  {id:'meme-pigeon',           name:'Це голуб?',       accent:'#fff', prev:"url('https://i.imgflip.com/1o00in.jpg') center/cover"},
-  {id:'meme-batman',           name:'Бетмен ляпас',    accent:'#fff', prev:"url('https://i.imgflip.com/9ehk.jpg') center/cover"},
-  {id:'meme-spongebob',        name:'Губка Боб',       accent:'#fff', prev:"url('https://i.imgflip.com/1otk96.jpg') center/cover"},
-  {id:'meme-sadpablo',         name:'Сумний Пабло',    accent:'#fff', prev:"url('https://i.imgflip.com/1c1uej.jpg') center/cover"},
-  {id:'meme-hidethepain',      name:'Hide the Pain',   accent:'#fff', prev:"url('https://i.imgflip.com/gk5el.jpg') center/cover"},
   // Свіжі "молодіжні" тренд-меми
-  {id:'meme-67kid',       name:'6-7',               accent:'#fff', prev:"url('https://i.imgflip.com/4/a9fxer.jpg') center/cover"},
-  {id:'meme-skibidi',     name:'Skibidi Toilet',    accent:'#fff', prev:"url('https://i.imgflip.com/4/7mzkd0.jpg') center/cover"},
-  {id:'meme-tralalero',   name:'Tralalero Tralala', accent:'#fff', prev:"url('https://i.imgflip.com/4/9p82jm.jpg') center/cover"},
-  {id:'meme-bombardiro',  name:'Bombardiro Crocodilo', accent:'#fff', prev:"url('https://i.imgflip.com/4/9q3kcu.jpg') center/cover"},
-  {id:'meme-tungtung',    name:'Tung Tung Sahur',   accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9m7h.jpg') center/cover"},
-  {id:'meme-chimpanzini', name:'Chimpanzini Bananini', accent:'#fff', prev:"url('https://i.imgflip.com/4/9r9mu1.jpg') center/cover"},
-  {id:'meme-gigachad',    name:'Gigachad',          accent:'#fff', prev:"url('https://i.imgflip.com/2/6x0oo0.jpg') center/cover"},
-  {id:'meme-sigma',       name:'Sigma',             accent:'#fff', prev:"url('https://i.imgflip.com/4/5imrkq.jpg') center/cover"},
-  {id:'meme-chillguy',    name:'Chill Guy',         accent:'#fff', prev:"url('https://i.imgflip.com/4/9au02y.jpg') center/cover"},
-  {id:'meme-ohio',        name:'Ohio',              accent:'#fff', prev:"url('https://i.imgflip.com/4/46e43q.jpg') center/cover"},
-  {id:'meme-npc',         name:'NPC',               accent:'#fff', prev:"url('https://i.imgflip.com/4/2k0qad.jpg') center/cover"},
-  {id:'meme-rizzler',     name:'Rizzler',           accent:'#fff', prev:"url('https://i.imgflip.com/4/93etli.jpg') center/cover"},
 ];
 
 function openCardColorPicker() {
@@ -1424,8 +1389,6 @@ function openCardColorPicker() {
     { name:'Космос і футуризм', ids:['cyber','galaxy','holo','nebula','matrix','synthwave','aurora','plasma','quantum'] },
     { name:'Текстури', ids:['carbon','marble','denim','snake','leopard','wood','concrete','velvet','silk','brushedmetal','camo'] },
     { name:'Особливі', ids:['pastel','xmas','ukraine','halloween','valentine','easter','autumn','spring','diamondelite','midnight'] },
-    { name:'Меми', ids:['meme-drake','meme-distracted','meme-womancat','meme-twobuttons','meme-changemymind','meme-successkid','meme-doge','meme-thisisfine','meme-stonks','meme-rollsafe','meme-pikachu','meme-disastergirl','meme-grumpycat','meme-expandingbrain','meme-onedoesnotsimply','meme-ancientaliens','meme-dicaprio','meme-pigeon','meme-batman','meme-spongebob','meme-sadpablo','meme-hidethepain'] },
-    { name:'Тренди зумерів', ids:['meme-67kid','meme-skibidi','meme-tralalero','meme-bombardiro','meme-tungtung','meme-chimpanzini','meme-gigachad','meme-sigma','meme-chillguy','meme-ohio','meme-npc','meme-rizzler'] },
   ];
   var byId = {};
   SKINS.forEach(function(s) { byId[s.id] = s; });
