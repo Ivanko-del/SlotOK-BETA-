@@ -90,6 +90,7 @@ function decodeJwt(token) {
   assert.deepStrictEqual((await call("GET")).data, { serverAuth: true });
   assert.strictEqual((await call("PUT")).status, 405);
   assert.strictEqual((await call("POST", { action: "nope" })).status, 400);
+  for (const a of ["constructor", "__proto__", "toString"]) assert.strictEqual((await call("POST", { action: a })).status, 400, "action " + a);
   assert.strictEqual(
     (await call("POST", { action: "login", nick: "alice", password: "x" }, { origin: "https://evil.example" })).status, 403,
     "чужий Origin");

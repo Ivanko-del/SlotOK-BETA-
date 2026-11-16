@@ -22,7 +22,7 @@
 // set — the app then falls back to its old client-side login.
 // ============================================================
 
-const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
+const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction, dbDelete } = require("../lib/firebase");
 const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
 const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
@@ -77,11 +77,12 @@ async function login(req, res, body) {
   if (!(await throttle(req, "login", nick))) {
     return fail(res, 429, "rate_limited", "Забагато спроб входу. Зачекай 10 хвилин.");
   }
-  const [pass, banned, banReason, isAdmin] = await Promise.all([
+  const [pass, banned, banReason, isAdmin, maintenance] = await Promise.all([
     getSecret(nick, "pass"),
     dbGet(`users/${nick}/banned`),
     dbGet(`users/${nick}/banReason`),
     dbGet(`users/${nick}/isAdmin`),
+    dbGet("site_config/maintenance"),
   ]);
   if (!pass) return fail(res, 404, "not_found", `Гравця "${nick}" не знайдено`);
   if (banned) return fail(res, 403, "banned", "Акаунт заблоковано" + (banReason ? ": " + banReason : ""));
@@ -93,7 +94,7 @@ async function login(req, res, body) {
   await migrateSecrets(nick);
 
   const admin = nick.toLowerCase() === OWNER || isAdmin === true;
-  if (!admin && (await dbGet("site_config/maintenance"))) {
+  if (!admin && maintenance) {
     return fail(res, 403, "maintenance", "Сайт тимчасово на технічному обслуговуванні. Спробуй пізніше.");
   }
   res.status(200).json({ token: createCustomToken(nick), nick });
@@ -147,11 +148,17 @@ async function register(req, res, body) {
   // Create-if-absent: two simultaneous sign-ups for one nick can't both win.
   const { committed } = await dbTransaction(`users/${nick}`, (cur) => (cur ? undefined : newUser));
   if (!committed) return fail(res, 409, "nick_taken", `Нікнейм "${nick}" вже зайнятий`);
-  await setSecrets(nick, {
-    pass: await SlotOKPassword.hash(password),
-    securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
-    birthDate, // не в публічному users/: вузол читають усі
-  });
+  try {
+    await setSecrets(nick, {
+      pass: await SlotOKPassword.hash(password),
+      securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
+      birthDate, // не в публічному users/: вузол читають усі
+    });
+  } catch (e) {
+    // Без пароля акаунт недоступний, а нік зайнятий — прибираємо щойно створений вузол.
+    await dbDelete(`users/${nick}`).catch(() => {});
+    throw e;
+  }
 
   await Promise.allSettled([
     dbPush(`users/${nick}/history`, { text: "🎉 Реєстрація! Бонус: +" + bonus + "₴", date: now }),
@@ -236,7 +243,8 @@ module.exports = async (req, res) => {
   if (!configured) return fail(res, 503, "not_configured", "Серверний вхід ще не налаштований");
 
   const body = req.body && typeof req.body === "object" ? req.body : {};
-  const handler = ACTIONS[body.action];
+  // hasOwn: "constructor"/"__proto__" не мають давати «обробник» (запит завис би без відповіді)
+  const handler = typeof body.action === "string" && Object.prototype.hasOwnProperty.call(ACTIONS, body.action) ? ACTIONS[body.action] : null;
   if (!handler) return fail(res, 400, "bad_action", "Невідома дія");
   try {
     await handler(req, res, body);
