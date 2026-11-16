@@ -41,5 +41,10 @@ const ping = (who, body) => new Promise((resolve) => {
   assert.strictEqual(await ping("adm", { to: "bob", kind: "bonus", ref: { amount: 100 } }), 200, "бонус від адміна");
   assert.strictEqual(await ping("alice", { to: "bob", kind: "clan-chat" }), 200, "клан-чат");
   assert.strictEqual(sent.length, 3);
+  // шлях бази з тіла запиту: ../ і / не пропускаємо; невідомий kind — 400
+  assert.strictEqual(await ping("alice", { to: "bob/../bot_config/adminChatId", kind: "clan-chat" }), 400, "to зі слешем");
+  assert.strictEqual(await ping("alice", { to: "bob", kind: "pm", ref: { id: "../../users/x" } }), 400, "ref.id зі слешем");
+  assert.strictEqual(await ping("alice", { to: "bob", kind: "constructor" }), 400, "kind=constructor");
+  assert.strictEqual(sent.length, 3);
   console.log("OK — api/notify: player-ping лише від справжнього відправника (свій виграш, адмінські бонуси)");
 })().catch((e) => { console.error(e); process.exit(1); });

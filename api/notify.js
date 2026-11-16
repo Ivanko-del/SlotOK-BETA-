@@ -37,12 +37,17 @@ async function checkPingSender(req, to, kind) {
   } catch (e) {
     return e.code === "bad_token" ? 401 : 503;
   }
-  const acl = PING_ACL[kind];
+  const acl = Object.prototype.hasOwnProperty.call(PING_ACL, kind) ? PING_ACL[kind] : null;
   if (!acl) return 400;
   if (acl === "self" && sender !== to) return 403;
   if (acl === "admin" && sender.toLowerCase() !== OWNER && (await dbGet(`users/${sender}/isAdmin`)) !== true) return 403;
   return null;
 }
+
+// Нік/id потрапляють у шлях бази (users/<to>/…, support_chats/<user>/<id>) —
+// без цього "../" у тілі запиту читав би довільні вузли з правами адміна.
+const SAFE_SEG = /^[^.#$[\]/\x00-\x1f\x7f]{1,120}$/;
+const badSeg = (v) => v !== undefined && v !== null && !(typeof v === "string" && SAFE_SEG.test(v));
 
 const PATHS = {
   deposit: "deposit_requests",
@@ -58,6 +63,7 @@ module.exports = async (req, res) => {
 
   try {
     const { type, id, user, to, kind, ref } = req.body || {};
+    if (badSeg(id) || badSeg(user) || badSeg(to) || badSeg(ref && ref.id)) { res.status(400).end(); return; }
 
     if (type === "player-ping") {
       if (!to || !kind) { res.status(400).end(); return; }
@@ -159,7 +165,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const path = PATHS[type];
+    const path = Object.prototype.hasOwnProperty.call(PATHS, type) ? PATHS[type] : null;
     if (!path || !id) {
       res.status(400).end();
       return;
