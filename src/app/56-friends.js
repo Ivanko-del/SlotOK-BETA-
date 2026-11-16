@@ -9,8 +9,8 @@
 // ============================================================
 
 const FR_INVITE_TTL = 5 * 60000;
-const FR_ROOM_GAMES = ['holdem', 'durak', 'eights', 'ludo', 'battleship', 'minesweeper', 'coinflip', 'rps', 'predict'];
-const FR_GAME_NAMES = { holdem: 'Покер Hold’em', durak: 'Дурень', eights: 'Вісімки', ludo: 'Лудо', battleship: 'Морський бій', minesweeper: 'Сапер-дуель', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction' };
+const FR_ROOM_GAMES = ['holdem', 'durak', 'eights', 'ludo', 'battleship', 'fourrow', 'minesweeper', 'coinflip', 'rps', 'predict'];
+const FR_GAME_NAMES = { holdem: 'Покер Hold’em', durak: 'Дурень', eights: 'Вісімки', ludo: 'Лудо', battleship: 'Морський бій', fourrow: 'Чотири в ряд', minesweeper: 'Сапер-дуель', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction' };
 const FR_ROOM_ID_RE = /^[a-z0-9]{12,40}$/;
 const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [] };
 window.FRIENDS_LIST = [];

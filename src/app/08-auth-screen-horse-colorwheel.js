@@ -139,7 +139,7 @@ function showAuthScreen() {
 }
 // Пряме посилання на гру з окремих сторінок (/poker/ → /?play=holdem):
 // запам'ятовуємо гру до входу й відкриваємо, щойно гравець у системі.
-const PLAY_LINK_GAMES = ['holdem', 'durak', 'battleship', 'minesweeper', 'bingo', 'livecrash'];
+const PLAY_LINK_GAMES = ['holdem', 'durak', 'battleship', 'fourrow', 'minesweeper', 'bingo', 'livecrash'];
 (function capturePlayLink() {
   try {
     const g = new URLSearchParams(location.search).get('play');

@@ -6045,7 +6045,7 @@ body.pm-thread-open .bottom-nav { display: none; }
   --fr-gap: clamp(4px, 1.4vw, 8px);
   display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--fr-gap);
   width: min(100%, 460px); margin-inline: auto; padding: var(--fr-gap);
-  background: linear-gradient(180deg, rgb(var(--primary-rgb) / .35), rgb(var(--primary-rgb) / .15)), var(--surface-3);
+  background: color-mix(in srgb, var(--primary) 60%, var(--surface-3));
   border: var(--bw-strong) solid var(--line-strong); border-radius: var(--r-lg);
   box-shadow: 0 var(--sp-3) 0 0 var(--ink-shadow), var(--sh-float);
   transform: rotateX(16deg); transform-origin: 50% 100%; transform-style: preserve-3d;
@@ -6067,7 +6067,7 @@ body.pm-thread-open .bottom-nav { display: none; }
 .fr-disc.is-p0::after, .fr-disc.is-p1::after { content: ""; position: absolute; inset: 22%; border-radius: var(--r-pill); border: var(--bw) solid rgb(var(--shade-rgb) / .3); }
 .fr-disc.is-mine::before { content: ""; position: absolute; inset: 40%; border-radius: var(--r-pill); background: rgb(var(--shade-rgb) / .35); }
 .fr-disc.is-drop { animation: fr-drop var(--dur-4) cubic-bezier(.5, 0, .75, 1) both; }
-.fr-disc.is-win { animation: fr-win .7s var(--ease-out) 3; z-index: 1; }
+.fr-disc.is-win { box-shadow: 0 0 0 3px var(--warn), 0 0 14px 2px rgb(var(--warn-rgb) / .7); animation: fr-win .7s var(--ease-out) 3; z-index: 1; }
 @keyframes fr-drop {
   0% { transform: translateY(var(--fr-from, -300%)); }
   70% { transform: translateY(0); animation-timing-function: var(--ease-out); }
@@ -6082,7 +6082,7 @@ body.pm-thread-open .bottom-nav { display: none; }
 .fr-chip.is-p0 { background: var(--accent); }
 .fr-chip.is-p1 { background: var(--primary); }
 @media (prefers-reduced-motion: reduce) {
-  .fr-disc.is-drop, .fr-disc.is-win { animation: none; }
+  .fr-disc.is-drop, .fr-disc.is-win { box-shadow: 0 0 0 3px var(--warn), 0 0 14px 2px rgb(var(--warn-rgb) / .7); animation: none; }
   .fr-board { transform: none; }
 }
 body.turbo .fr-disc.is-drop { animation-duration: .2s; }
