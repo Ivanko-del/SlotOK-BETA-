@@ -92,8 +92,11 @@
 .auth-live-item[hidden] { display: none; }
 .auth-live-item b { color: var(--fg); }
 .auth-live-item .ic { width: 16px; height: 16px; color: var(--fg-3); }
-.auth-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 0 rgb(var(--pos-rgb) / .6); animation: authPulse 1.6s var(--ease-out) infinite; }
-@keyframes authPulse { to { box-shadow: 0 0 0 8px rgb(var(--pos-rgb) / 0); } }
+/* Пульс — кільце з transform/opacity (на compositor), а не анімований box-shadow:
+   той перемальовував сторінку входу кожен кадр, поки екран відкритий. */
+.auth-live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); }
+.auth-live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgb(var(--pos-rgb) / .6); animation: authPulse 1.6s var(--ease-out) infinite; }
+@keyframes authPulse { to { transform: scale(3); opacity: 0; } }
 
 .auth-win-ticker { overflow: hidden; border-block: 1px solid var(--line); padding: var(--sp-2) 0; margin-top: var(--sp-4); mask-image: linear-gradient(90deg, transparent, var(--black) 8%, var(--black) 92%, transparent); }
 .auth-win-ticker-inner { display: flex; gap: var(--sp-6); width: max-content; animation: ticker-x 40s linear infinite; }
@@ -170,7 +173,7 @@
   .auth-disclaimer { max-width: 640px; margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-win-ticker-inner, .auth-show-card, .auth-show-card::after, .auth-live-dot, .auth-reg-step:not(.hidden) { animation: none; }
+  .auth-win-ticker-inner, .auth-show-card, .auth-show-card::after, .auth-live-dot::after, .auth-reg-step:not(.hidden) { animation: none; }
 }
 /* Про SlotOK — текст для людей і пошуковиків, під формою */
 .auth-about { padding-top: var(--sp-5); border-top: 1px solid var(--line); color: var(--fg-2); font-size: var(--fs-sm); line-height: var(--lh-body); }
