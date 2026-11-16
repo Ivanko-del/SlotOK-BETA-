@@ -493,6 +493,7 @@ function openPublicProfile(name) {
         </div>
       </div>`;
     openTabModal('pub-profile-modal');
+    if(typeof leagueProfileBadge === 'function') leagueProfileBadge(name);
   });
 }
 

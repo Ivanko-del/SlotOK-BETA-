@@ -180,6 +180,8 @@
 
         <!-- Щоденні місії з серією (src/app/57-missions.js): три місії доби, нагороди рахує сервер -->
         <section id="missionsCard" class="panel missions-card hidden anim-cascade" aria-label="Щоденні місії"></section>
+        <!-- Рейтингові ліги (src/app/58-leagues.js) -->
+        <section id="leagueCard" class="panel hidden anim-cascade" aria-label="Рейтингові ліги"></section>
 
         <!-- Mystery Box — тільки для нових гравців перші 24 год -->
         <div id="mysteryBoxWidget" class="hidden anim-cascade"></div>
@@ -348,9 +350,6 @@
 
         <!-- Стрічка друзів -->
         <div id="friendsFeedWidget" class="hidden anim-cascade panel"></div>
-
-        <!-- Аксіома Банк -->
-        <div id="homeAxiomWidget" class="anim-cascade"></div>
 
         <!-- Казино зараз -->
         <div class="section-header"><span>Казино зараз</span></div>
@@ -537,6 +536,10 @@
         <div class="casino-game-card" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('battleship')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new is-pvp">NEW</span><div class="casino-game-card-img"><span class="ic i-ship" aria-hidden="true"></span></div>
           <div class="casino-game-card-info"><div class="casino-game-card-name">Морський бій</div><div class="casino-game-card-prov">Бот · онлайн 1×1</div></div>
+        </div>
+        <div class="casino-game-card is-3d" data-cat="pvp" role="listitem" tabindex="0" onclick="openGame('fourrow')" onkeydown="if(event.key==='Enter')this.click()">
+          <span class="casino-badge-new is-pvp">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-grid" aria-hidden="true"></span></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Чотири в ряд</div><div class="casino-game-card-prov">Онлайн 1×1 · ліга</div></div>
         </div>
         <div class="casino-game-card is-3d" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('plinko3d')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><span class="badge-3d">3D</span><div class="casino-game-card-img"><span class="ic i-pegs" aria-hidden="true"></span></div>
@@ -907,6 +910,34 @@
               <button type="button" class="btn btn-ghost" id="bsLeave" onclick="bsOnlineLeave()">Здатися</button>
               <button type="button" class="btn btn-primary hidden" id="bsAgain" onclick="bsOnlineBack()">До лобі боїв</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-fourrow" class="screen hidden game3d">
+      <div class="game-head">
+        <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
+        <h2 class="game-title">Чотири в ряд</h2>
+        <button type="button" class="game-help" onclick="showGameHelp('fourrow')"><span class="ic i-help" aria-hidden="true"></span><span>Правила</span></button>
+      </div>
+      <div id="frLobby">
+        <p class="field-hint">Склади чотири фішки в ряд раніше за суперника. На хід 30 с; тричі пропустив — поразка. Переможець забирає банк (мінус 5%), партія рейтингова.</p>
+        <input id="frBet" type="number" value="200">
+        <button type="button" class="game-cta" onclick="frCreate()"><span class="ic i-grid" aria-hidden="true"></span>Створити гру</button>
+        <div class="field-label">Відкриті гри</div>
+        <div class="room-list" id="frRooms"></div>
+      </div>
+      <div id="frGame" class="hidden">
+        <div id="frWait" class="room-wait"><span class="ic i-clock" aria-hidden="true"></span><span id="frWaitText">Чекаємо суперника…</span>
+          <button type="button" class="btn btn-ghost" onclick="frLeave()">Скасувати кімнату</button></div>
+        <div id="frPlay" class="hidden">
+          <div class="fr-legend" id="frLegend"></div>
+          <div class="fr-stage"><div class="fr-board" id="frBoard" role="group" aria-label="Поле: 7 колонок, 6 рядків"></div></div>
+          <div class="game-result" id="frStatus" role="status" aria-live="polite"></div>
+          <div class="room-actions">
+            <button type="button" class="btn btn-ghost" id="frLeave" onclick="frLeave()">Здатися</button>
+            <button type="button" class="btn btn-primary hidden" id="frAgain" onclick="frBack()">До лобі</button>
           </div>
         </div>
       </div>
@@ -1477,8 +1508,7 @@
          SVG-іконки, табличні цифри. Ідентифікатори елементів збережені —
          уся наявна логіка в app.js продовжує працювати.
          Картка SlotOK більше НЕ видається автоматично: у Касі показується
-         лише та картка, яку гравець сам підключив (своя зовнішня або
-         Аксіома), — див. renderCardPanel()/renderLinkedCards() в app.js.
+         лише та картка, яку гравець сам підключив (своя зовнішня), — див. renderCardPanel()/renderLinkedCards() в app.js.
     ═══════════════════════════════════════════════════════════════ -->
     <div id="tab-cashier" class="screen hidden">
 
@@ -2121,6 +2151,13 @@
       <div id="friendsList"></div>
     </div>
 
+    <!-- ЛІГИ (src/app/58-leagues.js) -->
+    <div id="tab-leagues" class="screen hidden">
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
+      <h1 class="screen-title">Ліги</h1>
+      <div id="leaguesBody"></div>
+    </div>
+
     <!-- ЩЕ -->
     <div id="tab-more" class="screen ledger hidden">
       <h1 class="screen-title">Ще</h1>
@@ -2149,6 +2186,7 @@
       <div class="section-header"><span>Змагання</span></div>
       <nav class="list menu-group" aria-label="Змагання">
           <button type="button" class="list-row menu-item" onclick="switchTab('tournaments')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Турніри</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openLeagues()"><span class="menu-ic">🥇</span><span class="list-row-main"><span class="list-row-title">Ліги</span><span class="list-row-sub">Сезонний рейтинг у PvP-іграх</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('leaderboard')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Рейтинги</span><span class="list-row-sub">День, тиждень, місяць</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
       </nav>
       <div class="section-header"><span>Прогрес і нагороди</span></div>
@@ -4116,11 +4154,11 @@
     <button class="btn-outline" onclick="closeTabModal('transfer-modal')" style="width:50px;">⬅</button>
     <h2>↗️ Переказ гравцю</h2>
     <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:12px;font-size:11px;color:var(--fg-3);line-height:1.6;">
-      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> або за <b style="color:var(--fg);">номером картки Аксіома Банку</b>, якщо гравець її прив'язав. Нік працює завжди.
+      Переказати можна за <b style="color:var(--fg);">ніком гравця</b> SlotOK. Усі гроші в грі ігрові.
     </div>
     <div id="transferSourceBar"></div>
-    <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Нік або номер картки отримувача</div>
-    <input id="transferToCard" placeholder="@nickname або 0000 0000 0000 0000" maxlength="24" oninput="formatCardInput(this)" style="font-family:var(--font-mono);letter-spacing:1px;font-size:15px;text-align:center;">
+    <div style="font-size:11px;color:var(--fg-4);margin-bottom:4px;">Нік отримувача</div>
+    <input id="transferToCard" placeholder="@nickname" maxlength="24" oninput="formatCardInput(this)" style="font-family:var(--font-mono);letter-spacing:1px;font-size:15px;text-align:center;">
     <div id="transferRecipientInfo" style="font-size:11px;color:var(--fg-4);min-height:20px;margin-bottom:4px;text-align:center;"></div>
     <input id="transferAmount" type="number" placeholder="Сума переказу (мін. 10 ₴)">
     <button class="btn-gold" id="sendMoneyBtn" onclick="sendMoney()">Надіслати</button>
@@ -4456,36 +4494,9 @@
       </div>
     </div>
 
-  <!-- ═══ AXIOM BANK LINK MODAL (SlotOK side) ═══ -->
-  <div id="axiomLinkModal" class="full-modal hidden">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-      <button class="btn-outline" onclick="closeTabModal('axiomLinkModal')" style="width:44px;padding:10px;">⬅</button>
-      <div style="font-size:16px;font-weight:bold;">🏦 Аксіома Банк</div>
-    </div>
-
-    <!-- Axiom branding -->
-    <div style="background:linear-gradient(135deg,var(--surface-1),var(--surface-1),var(--surface-3));border:1px solid rgb(var(--info-rgb) / 0.3);border-radius:var(--r-xl);padding:20px;text-align:center;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
-        <div style="width:52px;height:52px;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px;font-weight:900;color:var(--fg);">А</div>
-        <div>
-          <div style="font-size:17px;font-weight:900;color:var(--fg);">Аксіома</div>
-          <div style="font-size:10px;color:rgb(var(--info-rgb) / 0.8);">Банк нового покоління</div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:var(--fg-3);line-height:1.6;">
-        Увійди у свій акаунт Аксіоми — і поповнюй гру з картки Аксіоми та виводь виграш назад на картку.
-      </div>
-    </div>
-
-    <!-- Input for code from Axiom -->
-    <div id="axiomLinkContent">
-      <!-- Rendered by renderAxiomLinkContent() -->
-    </div>
-  </div>
-
   <!-- ═══ ПІДКЛЮЧЕННЯ КАРТКИ ═══ -->
   <!-- Показується новим гравцям замість автоматичної видачі картки SlotOK:
-       обидва шляхи рівноцінні — своя картка або картка Аксіома Банку. -->
+       завести ігрову картку SlotOK. -->
   <div id="cardOnboardModal" class="card-onboard-modal hidden">
     <div class="card-onboard-box">
       <div class="ks-modal-head">
@@ -4497,7 +4508,6 @@
 
       <p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 18px;text-align:left;">
         Випустіть <b style="color:var(--fg);">ігрову картку SlotOK</b> — окремий гаманець у грі без справжніх банків і номерів.
-        Або привʼяжіть <b style="color:var(--fg);">картку Аксіома Банку</b>.
       </p>
 
       <button class="ks-btn is-primary is-block" style="margin-bottom:10px;" onclick="dismissCardOnboard();switchTab('cashier');setTimeout(openAddCardModal,300)">
@@ -4505,20 +4515,6 @@
         Випустити картку SlotOK
       </button>
 
-      <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
-        <div style="flex:1;height:1px;background:rgb(var(--tint-rgb) / 0.09);"></div>
-        <span style="font-size:11px;color:var(--fg-3);">або картка партнера</span>
-        <div style="flex:1;height:1px;background:rgb(var(--tint-rgb) / 0.09);"></div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;text-align:left;">
-        <div style="width:38px;height:38px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--fg);flex-shrink:0;">А</div>
-        <div>
-          <div style="font-size:14px;font-weight:650;color:var(--fg);">Аксіома Банк</div>
-          <div style="font-size:12px;color:var(--fg-3);">Поповнюй гру з картки Аксіоми й виводь виграш назад</div>
-        </div>
-      </div>
-      <button class="ks-btn is-block" onclick="dismissCardOnboard();openAxiomLinkFlow()">Підключити Аксіома Банк</button>
       <button class="ks-btn is-quiet is-block" style="margin-top:12px;" onclick="dismissCardOnboard()">Пізніше</button>
     </div>
   </div>
@@ -5061,52 +5057,6 @@
     <div id="pdResultBox" class="hidden" style="text-align:center;padding:20px;background:var(--box);border-radius:var(--r-xl);border:1px solid var(--border);margin-top:10px;"></div>
   </div>
 
-  <!-- ══════════════ AXIOM BANK TRANSFER MODAL ══════════════ -->
-  <div id="axiomTransferModal" class="full-modal hidden" style="padding:20px;background:var(--surface-1);">
-    <button class="btn-outline" onclick="closeTabModal('axiomTransferModal')" style="width:44px;padding:10px;margin-bottom:16px;">⬅</button>
-    <div style="text-align:center;margin-bottom:22px;">
-      <div style="width:60px;height:60px;border-radius:var(--r-xl);background:linear-gradient(135deg,var(--info),var(--special));display:flex;align-items:center;justify-content:center;font-size:26px;font-family:var(--font-mono);font-weight:900;color:var(--fg);margin:0 auto 12px;">А</div>
-      <div style="font-size:20px;font-weight:900;color:var(--info);font-family:var(--font-body);">Аксіома Банк</div>
-      <div style="font-size:11px;color:var(--fg-4);margin-top:4px;">Переказ між SlotOK та Аксіомою</div>
-    </div>
-
-    <!-- Balances -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-      <div style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;text-align:center;">
-        <div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">🎰 SlotOK</div>
-        <div style="font-size:20px;font-weight:900;color:var(--accent);font-family:var(--font-body);" id="axiomTxSlotBal">₴ 0</div>
-      </div>
-      <div style="background:rgb(var(--info-rgb) / 0.08);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-lg);padding:14px;text-align:center;">
-        <div style="font-size:11px;color:var(--fg-3);margin-bottom:4px;">🏦 Аксіома</div>
-        <div style="font-size:20px;font-weight:900;color:var(--info);font-family:var(--font-body);" id="axiomTxAxBal">—</div>
-      </div>
-    </div>
-
-    <!-- Direction -->
-    <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:4px;display:flex;gap:4px;margin-bottom:16px;" id="axiomTxDirRow">
-      <div id="axiomTxDirA" onclick="setAxiomTxDir('toAxiom')" style="flex:1;text-align:center;padding:11px 8px;border-radius:var(--r-lg);background:rgb(var(--info-rgb) / 0.15);border:1px solid rgb(var(--info-rgb) / 0.35);font-size:12px;font-weight:700;color:var(--info);cursor:pointer;">
-        🎰 → 🏦<br><span style="font-size:10px;font-weight:600;">Вивести на картку</span>
-      </div>
-      <div id="axiomTxDirB" onclick="setAxiomTxDir('toCasino')" style="flex:1;text-align:center;padding:11px 8px;border-radius:var(--r-lg);font-size:12px;font-weight:700;color:var(--fg-4);cursor:pointer;">
-        🏦 → 🎰<br><span style="font-size:10px;font-weight:600;">Поповнити гру</span>
-      </div>
-    </div>
-
-    <input type="number" id="axiomTxAmt" placeholder="Сума (₴)" style="font-size:22px;font-weight:800;text-align:center;letter-spacing:1px;">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
-      <div onclick="setAxiomTxAmt(100)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴100</div>
-      <div onclick="setAxiomTxAmt(250)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴250</div>
-      <div onclick="setAxiomTxAmt(500)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴500</div>
-      <div onclick="setAxiomTxAmt(1000)" style="background:var(--input);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 4px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;">₴1k</div>
-    </div>
-
-    <button class="btn-gold" onclick="doAxiomTransfer()" id="axiomTxBtn">Поповнити баланс з картки</button>
-    <div style="font-size:11px;color:var(--fg-4);text-align:center;margin-top:8px;line-height:1.7;">
-      Переказ миттєвий · Без комісії<br>
-      Кошти спільні між SlotOK та Аксіомою
-    </div>
-  </div>
-
   <!-- ══ DAILY SPIN MODAL ══ -->
   <div id="dailySpinModal" class="full-modal hidden">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
@@ -5189,8 +5139,5 @@
   <!-- Рейтингові ліги (ігри, ліги, сезон) — той самий файл читає сервер (lib/leagues.js) -->
   <script defer src="shared/leagues.js"></script>
   <!-- Main app -->
-  <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
-       боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->
-  <script defer src="https://aksioma-bay.vercel.app/sdk/axioma-sdk.js"></script>
   <script defer src="app.js"></script>
 </body>
