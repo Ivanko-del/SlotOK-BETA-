@@ -35,7 +35,6 @@ try {
     if(firebase.auth) firebase.auth().useEmulator(emu.auth, { disableWarnings: true });
   }
   db = firebase.database();
-  setTimeout(initAxioma, 0); // після виконання всього app.js — тоді змінні інтеграції вже оголошені
 } catch(e) {
   console.error('Firebase init error:', e);
   // Show friendly error but DON'T block the app
@@ -279,7 +278,7 @@ function startDataSync() {
             }
             userData = data;
             migrateCardFreeze();
-            retireMigratedAxiomCard();
+            retireLegacyExternalCard();
             syncClanBankListener();
             if(userData.banned) { alert("ВАШ АКАУНТ ЗАБЛОКОВАНО!" + (userData.banReason ? "\nПричина: " + userData.banReason : "")); logout(); return; }
             // Само-виключення — раніше цей прапорець лише встановлювався і ніде
@@ -360,7 +359,6 @@ function startDataSync() {
               setTimeout(watchSupportUnread, 1500);
               setTimeout(initV62Features, 2200);
               setTimeout(renderActivityFeed, 2000);
-              if(userData.virtualCard?.axiomLinked) setTimeout(startAxiomFreezeSync, 1000);
             }
         }, (error) => {
             notify("Помилка зв'язку з базою.", "error");

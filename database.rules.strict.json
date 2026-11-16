@@ -934,24 +934,6 @@
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
         }
       }
-    },
-    "axiomPublic": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "axiomCardIndex": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "axiomLinkCodes": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
     }
   }
 }

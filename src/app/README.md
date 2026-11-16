@@ -48,8 +48,8 @@
 | 30-home-achievements-stream | статистика Головної, досягнення, стріми |
 | 31-slotiky-tournament-live | магазин Слотіків (екран; каталог — `shared/shop.js`, купівля — `api/reward` → `lib/shop.js`), предмети в іграх (`renderGameItems`), турніри, live-матч |
 | 32-music-battlepass-stats | музика, **Battle Pass** (екран; таблиці — `shared/rewards.js`), особиста статистика |
-| 33-bank-card | віртуальна картка, `pushCardTx`, перекази Аксіомою |
-| 34-axiom-pm | Аксіома, Baccarat, відеопокер, приватні повідомлення, теми |
+| 33-bank-card | ігрова картка, `pushCardTx` |
+| 34-axiom-pm | прибирання старої зовнішньої картки, Baccarat, відеопокер, приватні повідомлення, теми |
 | 35-minigames-dragon-sicbo-cardwar | Dragon Tower, Sic Bo, Card War |
 | 36-lottery-dailyspin-themes | лотерея, інвест-пул, щоденне колесо, календар, фон/акцент |
 | 37-cashier-v70 | Каса v70 (3D-картка, ліміти карток) |

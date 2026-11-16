@@ -5,19 +5,12 @@ function openGame(g) { trackRecentGame(g); switchTab(g); }
 function openTabModal(id) { document.getElementById(id).classList.remove('hidden'); if(id === 'transfer-modal' && typeof renderSourceBars === 'function') renderSourceBars(); }
 function closeTabModal(id) { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
 
-// Приймаємо і 16 цифр (номер прив'язаної картки Аксіоми), і нік гравця:
-// SlotOK власних карток не випускає, тож номер є не в усіх.
+// Переказ між гравцями SlotOK — лише за ніком.
 function formatCardInput(inp) {
   const raw = inp.value.trim();
   const info = document.getElementById('transferRecipientInfo');
   const clear = () => { if(info) { info.textContent = ''; } };
-  if(/^[0-9 ]*$/.test(raw)) {
-    const digits = raw.replace(/\D/g,'').substring(0,16);
-    inp.value = digits.replace(/(.{4})(?=.)/g,'$1 ');
-    if(digits.length !== 16) return clear();
-  } else if(raw.replace(/^@/,'').length < 3) {
-    return clear();
-  }
+  if(raw.replace(/^@/,'').length < 3) return clear();
   if(info) { info.textContent = 'Пошук…'; info.style.color = 'var(--info)'; }
   // Дебаунс: кожен символ ніку раніше запускав повне завантаження вузла users
   // (часткового ніку немає в базі → перебір усіх гравців), і відповіді могли
@@ -38,10 +31,10 @@ function formatCardInput(inp) {
 // щоб вони не могли розійтись у логіці пошуку.
 function resolveTransferRecipient(raw, cb, hint) {
   const str = String(raw || '').trim();
-  const digits = str.replace(/\D/g,'');
-  const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
+  const digits = '';
+  const byCard = false;
   const nick = str.replace(/^@/,'');
-  if(!byCard && nick.length < 3) return cb(null, null);
+  if(nick.length < 3) return cb(null, null);
   // Нік із точним регістром — один прямий запит замість усього вузла users.
   // Повний перебір лишається для пошуку за карткою й без урахування регістру.
   if(!byCard && !/[.#$\[\]\/]/.test(nick)) {
@@ -61,10 +54,7 @@ function resolveTransferRecipientScan(byCard, digits, nick, cb, hint) {
     let found = null;
     Object.keys(users).forEach(name => {
       if(found) return;
-      if(byCard) {
-        const vc = users[name] && users[name].virtualCard;
-        if(vc && vc.axiomLinked && String(vc.number || '').replace(/\D/g,'') === digits) found = name;
-      } else if(name.toLowerCase() === nick.toLowerCase()) {
+      if(name.toLowerCase() === nick.toLowerCase()) {
         found = name;
       }
     });
@@ -82,10 +72,9 @@ function sendMoney() {
   const btn = document.getElementById('sendMoneyBtn');
   if(btn && btn.disabled) return; // запобігаємо подвійному кліку
   const input = (document.getElementById('transferToCard') || {value:''}).value.trim();
-  const rawCard = input.replace(/\s/g,'');
-  const isCard = /^[0-9]{16}$/.test(rawCard);
+  const isCard = false;
   const a = parseInt(document.getElementById('transferAmount').value);
-  if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця або 16-значний номер картки', 'error');
+  if(!isCard && input.replace(/^@/,'').length < 3) return notify('Введіть нік гравця', 'error');
   if(!a || a < 10) return notify('Мінімум 10 ₴', 'error');
   if((userData.balance||0) < a) return notify('Недостатньо коштів', 'error');
   if(isActiveCardFrozen()) return notify('🔒 Активна картка заблокована — розблокуй її в Гаманці', 'error');
@@ -100,7 +89,7 @@ function sendMoney() {
     const recipient = recipientData || {};
     if(isCardFrozenOf(recipient, _activeCardIdOf(recipient))) { resetBtn(); return notify('❌ Картка отримувача заблокована', 'error'); }
 
-    const formattedCard = isCard ? rawCard.replace(/(.{4})(?=.)/g,'$1 ') : '@' + recipientName;
+    const formattedCard = '@' + recipientName;
     db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(-a));
     db.ref('users/'+recipientName+'/balance').set(firebase.database.ServerValue.increment(a));
     db.ref('users/'+currentUser+'/virtualCard/totalOut').set(firebase.database.ServerValue.increment(a));
@@ -109,8 +98,7 @@ function sendMoney() {
     noteCardSpend(getActiveCardId(), a);
     // Transactions log both sides
     addCardTransaction('out', a, 'Переказ → ' + recipientName, formattedCard);
-    const myCardNum = (userData.virtualCard && userData.virtualCard.number) || '';
-    pushCardTx(recipientName, { dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: myCardNum }, _activeCardIdOf(recipient));
+    pushCardTx(recipientName, { dir:'in', amount:a, title:'Переказ від ' + currentUser, subtitle: '@' + currentUser }, _activeCardIdOf(recipient));
 
     playSound('win');
     notify('✅ Переказано ' + formatNumber(a) + ' ₴ → ' + recipientName, 'success');
@@ -154,10 +142,7 @@ function quickSend(n) {
   openTabModal('transfer-modal');
   const inp = document.getElementById('transferToCard');
   if(inp) inp.value = '';
-  db.ref('users/'+n+'/virtualCard/number').once('value', s => {
-    if(inp && s.exists()) { inp.value = s.val().replace(/\s/g,''); inp.dispatchEvent(new Event('input')); }
-    else notify('У контакту ще немає картки SlotOK Bank', 'error');
-  });
+  if(inp) { inp.value = n; inp.dispatchEvent(new Event('input')); }
 }
 // deleteAccount() — див. 55-legal.js (видалення через сервер)
 function updateBio(v) { db.ref('users/'+currentUser).update({tag:v}); notify("Статус оновлено"); }

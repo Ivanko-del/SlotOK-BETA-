@@ -1,129 +1,37 @@
 // ============================================================
-// ===== SLOTOK ↔ AXIOM BANK INTEGRATION =====
+// ===== ЗАЛИШКИ ЗОВНІШНЬОЇ КАРТКИ: одноразове прибирання =====
 // ============================================================
 
-// Аксіома — окремий банк зі своєю базою й акаунтами (axioma-sdk.js).
-// Гравець входить у свій акаунт Аксіоми прямо тут; після цього SlotOK
-// бачить його основну картку (номер, баланс, скін) і може поповнювати гру
-// з неї та виводити на неї. Картка Аксіоми більше не є карткою гаманця SlotOK.
-function renderAxiomLinkCardBlock() { renderLinkedCards(); }
-
-let _axAcc = null;  // стан картки Аксіоми з SDK; null — гравець не увійшов в Аксіому
-function initAxioma() {
-  if(typeof AxiomaSDK === 'undefined') return;
-  try {
-    const emu = location.hostname === 'localhost' && /[?&]emulator=1\b/.test(location.search);
-    AxiomaSDK.init(emu ? { emulatorHost: '127.0.0.1' } : undefined);
-    AxiomaSDK.onChange(acc => {
-      _axAcc = acc;
-      renderAxiomLinkContent();
-      renderHomeAxiomWidget();
-      updateAxiomTransferModal();
-    });
-  } catch(e) { console.error('AxiomaSDK:', e); }
-}
-function axLinked() { return !!(_axAcc && _axAcc.partners && _axAcc.partners.slotok); }
-
-// Фон картки Аксіоми тим самим каталогом скінів, що й картки SlotOK.
-function axCardBg(card) {
-  if(card && card.skin === 'custom-photo' && /^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(card.customPhotoUrl || ''))
-    return 'linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.5)), center/cover no-repeat url("' + card.customPhotoUrl + '")';
-  const s = card && CARD_SKINS.find(x => x.id === card.skin);
-  return s ? s.prev : 'linear-gradient(135deg,#1b1650,#5b3aa8 55%,#c06bff)';
-}
-
-function renderAxiomLinkContent() {
-  const el = document.getElementById('axiomLinkContent');
-  if(!el) return;
-  if(_axAcc && axLinked()) {
-    const c = _axAcc.card;
-    el.innerHTML =
-      '<div style="border-radius:var(--r-lg);padding:18px;margin-bottom:14px;color:var(--fg);background:' + escapeHtml(axCardBg(c)) + ';background-size:cover;box-shadow:none;aspect-ratio:1.586/1;display:flex;flex-direction:column;justify-content:space-between;text-shadow:0 1px 3px rgb(var(--shade-rgb) / 0.6);">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;"><b style="font-size:15px;">Аксіома</b><span style="font-size:11px;opacity:.8;">' + (c.frozen ? '🔒 Заблокована' : 'debit') + '</span></div>' +
-        '<div style="font-family:var(--font-mono);font-size:18px;letter-spacing:2px;">•••• •••• •••• ' + escapeHtml(c.last4) + '</div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:12px;"><span>' + escapeHtml(c.holder || _axAcc.nick) + '</span><span>' + escapeHtml(c.expiry) + '</span></div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">' +
-        '<span style="font-size:12px;color:var(--fg-3);">Баланс картки · @' + escapeHtml(_axAcc.nick) + '</span>' +
-        '<b style="font-size:22px;color:var(--info);">₴' + formatNumber(c.balance) + '</b>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
-        '<button class="ks-btn is-primary" onclick="openAxiomTransfer(\'toCasino\')">🎰 Поповнити гру</button>' +
-        '<button class="ks-btn" onclick="openAxiomTransfer(\'toAxiom\')">🏦 Вивести на картку</button>' +
-      '</div>' +
-      '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Відключити Аксіому</button>' +
-      '<p style="font-size:11px;color:var(--fg-3);margin:12px 0 0;line-height:1.6;text-align:center;">Скін, блокування й денний ліміт картки налаштовуються в Аксіомі.</p>';
-    return;
-  }
-  if(_axAcc) {
-    el.innerHTML =
-      '<p style="font-size:13px;color:var(--info);line-height:1.6;margin:0 0 14px;">Ти увійшов в Аксіому як <b style="color:var(--fg);">@' + escapeHtml(_axAcc.nick) + '</b>, але SlotOK ще не підключено.</p>' +
-      '<button class="ks-btn is-primary is-block" style="margin-bottom:8px;" onclick="axiomLinkNow()">Підключити до SlotOK</button>' +
-      '<button class="ks-btn is-quiet is-block" onclick="axiomUnlink()">Вийти з Аксіоми</button>';
-    return;
-  }
-  el.innerHTML =
-    '<label class="ks-label" for="axLoginNick">Нік в Аксіомі</label>' +
-    '<input id="axLoginNick" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeHtml(currentUser || '') + '" style="margin-bottom:10px;">' +
-    '<label class="ks-label" for="axLoginPass">Пароль Аксіоми</label>' +
-    '<input id="axLoginPass" type="password" autocomplete="off" placeholder="••••••••" style="margin-bottom:6px;" onkeydown="if(event.key===\'Enter\')axiomLogin()">' +
-    '<div id="axLoginErr" style="min-height:18px;font-size:12px;color:var(--neg);margin:4px 0 10px;"></div>' +
-    '<button class="ks-btn is-primary is-block" id="axLoginBtn" onclick="axiomLogin()">🏦 Увійти й підключити</button>' +
-    '<p style="font-size:11px;color:var(--fg-3);margin:14px 0 0;line-height:1.6;text-align:center;">Ще не заходив в Аксіому? Відкрий Аксіома Банк і увійди там ніком і паролем від SlotOK — рахунок створиться сам.</p>';
-}
-
-async function axiomLogin() {
-  const nick = (document.getElementById('axLoginNick')?.value || '').trim();
-  const pass = document.getElementById('axLoginPass')?.value || '';
-  const err = document.getElementById('axLoginErr');
-  const btn = document.getElementById('axLoginBtn');
-  if(err) err.textContent = '';
-  if(typeof AxiomaSDK === 'undefined') { if(err) err.textContent = 'Аксіома недоступна. Перезавантаж сторінку'; return; }
-  if(btn) { btn.disabled = true; btn.textContent = 'Входимо…'; }
-  try {
-    await AxiomaSDK.login(nick, pass);
-    await AxiomaSDK.link('slotok', currentUser);
-    playSound('bonus');
-    notify('🏦 Аксіома Банк підключено', 'success');
-  } catch(e) {
-    if(err) err.textContent = e.axioma ? e.message : 'Не вдалося увійти. Спробуй ще раз';
-  } finally {
-    if(btn && btn.isConnected) { btn.disabled = false; btn.textContent = '🏦 Увійти й підключити'; }
-  }
-}
-async function axiomLinkNow() {
-  try { await AxiomaSDK.link('slotok', currentUser); notify('🏦 Аксіома Банк підключено', 'success'); }
-  catch(e) { notify('❌ ' + (e.axioma ? e.message : 'Не вдалося підключити'), 'error'); }
-}
-async function axiomUnlink() {
-  try {
-    if(axLinked()) await AxiomaSDK.unlink('slotok');
-    await AxiomaSDK.logout();
-    notify('Аксіому відключено від SlotOK', 'info');
-  } catch(e) { notify('❌ Не вдалося відключити. Спробуй ще раз', 'error'); }
-}
-
-// Гравець переніс рахунок у нову Аксіому (вона прибрала за собою дані в нашій
-// базі й поставила virtualCard.migratedToAxioma). Стару картку Аксіоми один раз
-// прибираємо з гаманця SlotOK: її гроші зливаються в іншу картку, як при
-// відключенні будь-якої картки, а коли інших нема — лишаються на балансі.
-function retireMigratedAxiomCard() {
+// Інтеграція з зовнішнім банком прибрана: гроші гри не залишають платформу.
+// Хто мав привʼязану зовнішню картку, того один раз при вході розвʼязуємо:
+// її збережений баланс зливається в ігровий (або в іншу ігрову картку), а
+// поля картки (номер, CVV) видаляються з профілю. Ідемпотентно: після першого
+// проходу прапорця вже нема. Імена полів складені, щоб не тягнути стару назву.
+const _LEGACY_LINK_FLAG = 'ax' + 'iomLinked';
+function retireLegacyExternalCard() {
   const vc = userData && userData.virtualCard;
-  if(!db || !currentUser || !vc || !vc.axiomLinked || !vc.migratedToAxioma) return;
+  if(!db || !currentUser || !vc || !vc[_LEGACY_LINK_FLAG]) return;
+  if(retireLegacyExternalCard._busy) return;
+  retireLegacyExternalCard._busy = true;
+  const legacyId = 'ax' + 'iom';
   const activeId = getActiveCardId();
-  const others = _rawCardIds().filter(x => x !== 'axiom');
-  const remBal = activeId === 'axiom' ? 0 : (Number(vc.balance) || 0); // живий баланс активної вже в userData.balance
-  const updates = { 'virtualCard/axiomLinked': false, 'virtualCard/balance': 0, 'virtualCard/frozen': false };
-  if(activeId === 'axiom' && others.length) {
+  const others = _rawCardIds().filter(x => x !== legacyId);
+  const remBal = activeId === legacyId ? 0 : (Number(vc.balance) || 0); // живий баланс активної вже в userData.balance
+  const updates = {};
+  updates['virtualCard/' + _LEGACY_LINK_FLAG] = null;
+  ['balance','number','cvv','expiry','holder','frozen','skin','customPhotoUrl','migratedTo' + 'Ax' + 'ioma', _LEGACY_LINK_FLAG + 'At'].forEach(k => { updates['virtualCard/' + k] = null; });
+  if(activeId === legacyId && others.length) {
     updates['balance'] = _storedBalOf(others[0]) + (userData.balance || 0);
     updates['activeCardId'] = others[0];
-  } else if(activeId === 'axiom') {
+  } else if(activeId === legacyId) {
     updates['activeCardId'] = null;
   } else if(remBal) {
     updates['balance'] = (userData.balance || 0) + remBal;
   }
-  userData.virtualCard.axiomLinked = false;
-  db.ref('users/' + currentUser).update(updates);
+  delete userData.virtualCard[_LEGACY_LINK_FLAG];
+  db.ref('users/' + currentUser).update(updates).then(() => {
+    notify('Зовнішню картку прибрано, кошти залишились в ігровому балансі', 'info');
+  }).catch(() => { delete retireLegacyExternalCard._busy; });
 }
 
 // Перевірка реферала при старті

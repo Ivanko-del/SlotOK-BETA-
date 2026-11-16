@@ -759,24 +759,6 @@
           ".write": "true"
         }
       }
-    },
-    "axiomPublic": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
-    },
-    "axiomCardIndex": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
-    },
-    "axiomLinkCodes": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
     }
   }
 }

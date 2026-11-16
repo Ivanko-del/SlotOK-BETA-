@@ -296,11 +296,6 @@ function build(strict) {
     admin_notes: { ".read": strict ? isAdmin : true, ".write": admin },
     admin_action_log: { ".read": strict ? isAdmin : true, $e: { ".write": strict ? `${isAdmin} && !data.exists()` : "!data.exists()" } },
     anti_cheat_flags: { ".read": strict ? isAdmin : true, ".write": admin, $u: { $f: { ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin})` : "true" } } },
-
-    // ── Інтеграція з Аксіомою (окремий проєкт; вузли лишаються як були) ──
-    axiomPublic: openNode(),
-    axiomCardIndex: openNode(),
-    axiomLinkCodes: openNode(),
   };
   return { rules };
 }
