@@ -326,11 +326,24 @@ function startDataSync() {
             checkTermsGate();
             loadContacts();
             checkAdmin();
-            try { applyPlayerStyles(document.body); } catch(e) {}
+            // Обхід усього документа — лише коли змінилась власна косметика (нові
+            // вузли оформлює MutationObserver у 54-cosmetics), а не на кожну ставку.
+            try {
+              const cosSig = JSON.stringify([userData.slotikyItems || null, userData.cosmetics || null]);
+              if(cosSig !== window._cosSig) { window._cosSig = cosSig; applyPlayerStyles(document.body); }
+            } catch(e) {}
             checkDailyBonus();
-            loadNotifsFromStorage();
-            updateNotifBadge();
-            loadSettings();
+            // Налаштування й сповіщення з localStorage читаємо один раз на сесію: це
+            // перезастосування теми/зуму/анімацій (перерахунок стилів усієї сторінки)
+            // на КОЖНУ зміну профілю, тобто на кожну ставку. Зміни налаштувань
+            // застосовуються самі (saveSetting/setTheme…), екран налаштувань
+            // викликає loadSettings() при відкритті.
+            if(!window._settingsApplied) {
+              window._settingsApplied = true;
+              loadNotifsFromStorage();
+              updateNotifBadge();
+              loadSettings();
+            }
             if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); watchAntiCheatConfig(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
@@ -2896,7 +2909,9 @@ function animRain(ctx, canvas) {
 
 function loadLiveWallpaper() {
   const saved = localStorage.getItem('liveWp');
-  if(saved && saved!=='none') toggleLiveWallpaper(saved);
+  // toggleLiveWallpaper ПЕРЕМИКАЄ: повторний виклик із тим самим типом вимикав шпалери й
+  // записував 'none' — тож вони зникали після першого ж оновлення профілю.
+  if(saved && saved!=='none' && liveWpActive!==saved) toggleLiveWallpaper(saved);
 }
 
 
@@ -5569,10 +5584,41 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '121';
+const CURRENT_VERSION = '122';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '122',
+    title: 'Оновлення v122 — швидше й надійніше',
+    date: Date.UTC(2026, 10, 16),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '⚡ Швидкість',
+        items: [
+          'Сайт менше «думає» після кожної ставки: налаштування, список VIP, заявки на поповнення й вивід більше не перезавантажуються на кожну зміну балансу',
+          'Екран входу більше не навантажує телефон у простої',
+          'Пошук отримувача в переказі не гальмує під час набору ніку',
+          'Ігри на сервері відповідають швидше — менше звернень до бази на вхід, ставку і хід у кімнатах',
+        ]
+      },
+      {
+        type: 'fix',
+        title: '🐛 Виправлення',
+        items: [
+          'Живі шпалери більше не вимикаються самі після входу',
+          'Пошук гравців знаходить усіх, а не лише перших сто',
+          'Якщо під час ставки, купівлі в магазині чи отримання нагороди стався збій — списане повертається',
+          'Виплата в іграх з кешаутом гарантовано одна, навіть при дуже швидких натисканнях',
+          'Промокод у Telegram-боті не можна активувати двічі одночасними командами',
+          'Кнопка «Взяти участь» у турнірах з лапками в назві знову працює',
+          'Ніки з особливими символами скрізь показуються як текст',
+        ]
+      },
+    ]
+  },
   {
     version: '121',
     title: 'Оновлення v121 — новий магазин Слотіків і ігрові картки',
@@ -8372,13 +8418,21 @@ function runGlobalSearch(q) {
     showSearchResults(results, res);
     return;
   }
-  db.ref('users').orderByKey().limitToFirst(100).once('value').then(function(snap) {
-    var users = snap.val() || {};
-    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !users[entry[0]].isBot && entry[0] !== currentUser; })
+  // Пошук за початком ніку (ключі в базі чутливі до регістру — пробуємо кілька
+  // варіантів). Раніше читали перші 100 користувачів цілком і шукали серед них:
+  // важко, а гравці далі за алфавітом не знаходились зовсім.
+  var cap = q.charAt(0).toUpperCase() + q.slice(1);
+  var variants = Array.from(new Set([q, ql, cap, q.toUpperCase()]));
+  Promise.all(variants.map(function(v) {
+    return db.ref('users').orderByKey().startAt(v).endAt(v + '\uf8ff').limitToFirst(15).once('value').then(function(s) { return s.val() || {}; }).catch(function() { return {}; });
+  })).then(function(parts) {
+    var users = Object.assign.apply(null, [{}].concat(parts));
+    Object.entries(users).filter(function(entry){ return entry[0].toLowerCase().indexOf(ql) >= 0 && !entry[1].isBot && entry[0] !== currentUser; })
+      .slice(0, 15)
       .forEach(function(entry) {
         var nick = entry[0], u = entry[1];
-        results.push({type:'Гравець', icon:u.avatar||'👤', name:nick, sub:u.tag||'',
-          action:"showPlayerCard('" + nick + "');document.getElementById('globalSearchModal').remove()"});
+        results.push({type:'Гравець', icon:(u.avatar && u.avatar.length <= 8) ? u.avatar : '👤', name:nick, sub:u.tag||'',
+          action:"showPlayerCard(" + jsArg(nick) + ");document.getElementById('globalSearchModal').remove()"});
       });
     showSearchResults(results, res);
   });
@@ -8387,8 +8441,8 @@ function showSearchResults(results, res) {
   if(!results.length) { res.innerHTML = '<div style="color:var(--fg-4);text-align:center;padding:20px;">😔 Нічого не знайдено</div>'; return; }
   res.innerHTML = results.slice(0,20).map(function(r) {
     return '<div onclick="' + r.action + '" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgb(var(--tint-rgb) / 0.04);border:1px solid rgb(var(--tint-rgb) / 0.07);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer;">'
-      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + r.icon + '</div>'
-      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + r.sub + '</div>' : '') + '</div>'
+      + '<div style="width:40px;height:40px;border-radius:var(--r-md);background:rgb(var(--accent-rgb) / 0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">' + escapeHtml(r.icon) + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + escapeHtml(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--fg-3);">' + escapeHtml(r.sub) + '</div>' : '') + '</div>'
       + '<div style="font-size:9px;color:var(--fg-4);background:rgb(var(--tint-rgb) / 0.04);border-radius:var(--r-sm);padding:3px 8px;">' + r.type + '</div>'
       + '</div>';
   }).join('');
@@ -9779,7 +9833,7 @@ function loadTournaments() {
       const isActive = msLeft > 0;
       list.innerHTML += `<div class="tournament-card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:16px;font-weight:bold;">${t.name}</div>
+          <div style="font-size:16px;font-weight:bold;">${escapeHtml(t.name)}</div>
           <span style="font-size:11px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);">${isActive?'🟢 Активний':'🔴 Завершено'}</span>
         </div>
         <div class="t-prize">🏆 ${formatNumber(t.prize)} ₴</div>
@@ -9787,7 +9841,7 @@ function loadTournaments() {
         <div class="t-leaderboard" id="t-lb-${id}">
           <div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Завантаження рейтингу...</div>
         </div>
-        ${isActive ? `<button class="btn-gold" style="margin-top:10px;padding:10px;" onclick="joinTournament('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+        ${isActive ? `<button class="btn-gold" style="margin-top:10px;padding:10px;" onclick="joinTournament(${jsArg(id)},${jsArg(t.name)},${Number(t.prize)||0})">🎯 Взяти участь</button>` : ''}
       </div>`;
       loadTournamentLeaderboard(id);
     });
@@ -11248,7 +11302,9 @@ function updateVipUI() {
   // захардкоджені картки (Bronze 0% / Silver 1% / Gold 2% / Platinum 5%),
   // яких движок ніколи не платив.
   const allEl = document.getElementById('vipAllLevels');
-  if(allEl) {
+  // Списки статичні для рівня — перебудовуємо лише коли рівень змінився (а не на кожну ставку)
+  if(allEl && allEl.dataset.vipIdx !== String(vip.index)) {
+    allEl.dataset.vipIdx = String(vip.index);
     allEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const titleColor = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `
@@ -11268,6 +11324,8 @@ function updateVipUI() {
   // підсвітка по індексу працювала лише для перших чотирьох із 14 рівнів.
   const hourlyEl = document.getElementById('hourlyVipTiers');
   if(hourlyEl) {
+    if(hourlyEl.dataset.vipIdx !== String(vip.index)) {
+    hourlyEl.dataset.vipIdx = String(vip.index);
     hourlyEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const c = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `<div class="hourly-vip-tier${i === vip.index ? ' active' : ''}">
@@ -11275,8 +11333,9 @@ function updateVipUI() {
         <div style="color:${c};">${lv.icon} ${lv.name}</div>
       </div>`;
     }).join('');
+    }
     const active = hourlyEl.querySelector('.hourly-vip-tier.active');
-    if(active) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+    if(active && hourlyEl.getClientRects().length) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
   }
 }
 
@@ -17385,7 +17444,7 @@ function loadTournamentsV2() {
       card.className = 'tournament-card';
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:bold;">${t.icon||'🏆'} ${t.name}</div>
+          <div style="font-size:16px;font-weight:bold;">${escapeHtml(t.icon||'🏆')} ${escapeHtml(t.name)}</div>
           <span style="font-size:10px;background:${isActive?'rgb(var(--pos-rgb) / 0.2)':'rgb(var(--neg-rgb) / 0.2)'};color:${isActive?'var(--green)':'var(--red)'};padding:3px 8px;border-radius:var(--r-md);font-weight:bold;">${isActive?'🟢 LIVE':'🔴 Завершено'}</span>
         </div>
         <div style="background:linear-gradient(135deg,var(--surface-1),var(--bg));border-radius:var(--r-md);padding:12px;margin-bottom:10px;">
@@ -17397,7 +17456,7 @@ function loadTournamentsV2() {
           👥 Ігри: ${(t.allowedGames||['crash','slots','mines']).join(', ')}
         </div>
         <div id="t-lb-${id}" style="margin-bottom:10px;"></div>
-        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2('${id}','${t.name}',${t.prize})">🎯 Взяти участь</button>` : ''}
+        ${isActive ? `<button class="btn-gold" style="padding:10px;" onclick="joinTournamentV2(${jsArg(id)},${jsArg(t.name)},${Number(t.prize)||0})">🎯 Взяти участь</button>` : ''}
       `;
       list.appendChild(card);
       loadTournamentLeaderboard(id);
