@@ -169,7 +169,7 @@ async function authRegister() {
     else if(promo === 'VIP') { bonus += 2000; bonusMsg = ' +2000₴ VIP!'; }
 
     const newUser = {
-      pass: passHash, email: email || '',
+      pass: passHash,
       securityQuestion: secQ, securityAnswerHash: secAnswerHash,
       balance: bonus, freeSlots: spins,
       id: Math.floor(Math.random() * 900000) + 100000,
@@ -194,6 +194,7 @@ async function authRegister() {
       }
 
       // Step 4: success!
+      if(email) db.ref('user_private/' + n + '/email').set(email); // приватне поле — не в публічному users/
       if(btn) btn.textContent = 'Входимо…';
       currentUser = n;
       localStorage.setItem(SESSION_KEY, n);

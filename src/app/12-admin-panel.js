@@ -64,7 +64,7 @@ function admGiveMoney() {
     const a=parseInt(document.getElementById('admAmount').value);
     if(!a) return;
     db.ref('users/'+admSelectedUser+'/balance').set(firebase.database.ServerValue.increment(a));
-    logAdminAction('give_money', `@${admSelectedUser}: ${a>0?'+':''}${a}₴`);
+    logAdminBalance('give_money', admSelectedUser, a, 'Панель керування гравцем');
     notify("Баланс змінено","success");
 }
 function admSetTag() {
@@ -96,6 +96,7 @@ function admDeleteUser() {
 function wipeEconomy() {
     if(!requireAdminPerm('users')) return;
     if(prompt("Введіть WIPE щоб обнулити ВСІХ гравців:") !== "WIPE") return;
+    logAdminBalance('wipe_economy', '*', 0, 'Обнулення балансів усіх гравців');
     db.ref('users').once('value', s => {
         const users = s.val() || {};
         const updates = {};

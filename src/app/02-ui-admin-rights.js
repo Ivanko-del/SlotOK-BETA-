@@ -7,7 +7,7 @@ function updateUI() {
     else document.querySelectorAll('.bal').forEach(e => e.textContent = formatNumber(userData.balance));
     document.getElementById('profileName').textContent = currentUser;
     document.getElementById('profileId').textContent = userData.id || '---';
-    document.getElementById('profileEmail').textContent = userData.email || "-";
+    document.getElementById('profileEmail').textContent = (typeof getPrivateProfile === 'function' && getPrivateProfile('email')) || "-";
     document.getElementById('profileTag').textContent = userData.tag || "Гравець";
     document.getElementById('cashierUserId').textContent = userData.id || '---';
     const avDiv = document.getElementById('currentAvatar');

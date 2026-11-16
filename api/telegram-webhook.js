@@ -23,6 +23,7 @@ const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking")
 const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 const SlotOKPassword = require("../password.js");
 const { setSecrets } = require("../lib/secrets");
+const { getPrivate } = require("../lib/private-profile");
 const { getServiceAccount } = require("../lib/google-auth");
 
 const QUICK_KEYBOARD = {
@@ -198,7 +199,7 @@ async function routeSupportReply(msg) {
 
   await dbPush(`support_chats/${nick}`, { text: replyText, sender: "admin", time: Date.now() });
   await dbIncrement(`users/${nick}/supportUnread`, 1);
-  const playerChatId = await dbGet(`users/${nick}/telegramChatId`);
+  const playerChatId = await getPrivate(nick, "telegramChatId");
   if (playerChatId) await sendMessage(playerChatId, `💬 Відповідь підтримки:\n${esc(replyText)}`);
   await sendMessage(msg.chat.id, `✅ Надіслано ${esc(nick)}`);
   return true;
@@ -362,14 +363,21 @@ async function cmdUnban(chatId, nick) {
 }
 
 async function cmdCredit(chatId, arg) {
-  const [nick, amountStr] = arg.split(" ");
+  const [nick, amountStr, ...reasonParts] = arg.split(" ");
   const amount = parseInt(amountStr, 10);
   if (!nick || !amountStr || Number.isNaN(amount)) {
-    return sendMessage(chatId, "Використання: /credit &lt;нік&gt; &lt;сума&gt; (від'ємне число — списати)");
+    return sendMessage(chatId, "Використання: /credit &lt;нік&gt; &lt;сума&gt; [причина] (від'ємне число — списати)");
   }
   const exists = await dbGet(`users/${nick}`);
   if (!exists) return sendMessage(chatId, `❌ Гравця «${esc(nick)}» не знайдено.`);
   const newBalance = await dbIncrement(`users/${nick}/balance`, amount);
+  // Журнал дій адмінів: хто (Telegram-чат адміна), кому, скільки, чому, серверний час.
+  const reason = reasonParts.join(" ").slice(0, 300) || "Telegram /credit";
+  await dbPush("admin_action_log", {
+    admin: `telegram:${chatId}`, action: "credit", target: nick, amount, reason,
+    details: `@${nick}: ${amount >= 0 ? "+" : ""}${amount}₴ · ${reason}`,
+    ts: { ".sv": "timestamp" },
+  }).catch((e) => console.warn("admin_action_log failed", e && e.message));
   await dbPush(`users/${nick}/history`, {
     text: `${amount >= 0 ? "✅ Нараховано адміном" : "➖ Списано адміном"}: ${amount >= 0 ? "+" : ""}${amount}₴`,
     date: Date.now(),
@@ -605,7 +613,7 @@ async function actOnPasswordReset(action, id) {
 async function notifyPlayer(user, text) {
   const key = await dbPush(`pm/${user}`, { from: "🏦 SlotOK", to: user, text, ts: Date.now() });
   await dbIncrement(`users/${user}/pmUnread`, 1);
-  const chatId = await dbGet(`users/${user}/telegramChatId`);
+  const chatId = await getPrivate(user, "telegramChatId");
   if (chatId) await sendMessage(chatId, text);
   return key;
 }

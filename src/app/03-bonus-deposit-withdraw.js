@@ -356,8 +356,9 @@ function linkTelegram() {
 }
 
 function unlinkTelegram() {
-  db.ref('users/' + currentUser + '/telegramChatId').once('value', snap => {
+  db.ref('user_private/' + currentUser + '/telegramChatId').once('value', snap => {
     const chatId = snap.val();
+    db.ref('user_private/' + currentUser + '/telegramChatId').remove();
     db.ref('users/' + currentUser + '/telegramChatId').remove();
     if (chatId) db.ref('telegram_links/' + chatId).remove();
     notify('Telegram відв\'язано', 'info');
@@ -369,7 +370,7 @@ function initTelegramLinkStatus() {
   // функція викликається в шляху успішного входу ДО startDataSync(), тож
   // виняток залишав користувача з «увійшов», але без жодної синхронізації даних.
   if (!currentUser || !db) return;
-  const tgStatusRef = db.ref('users/' + currentUser + '/telegramChatId');
+  const tgStatusRef = db.ref('user_private/' + currentUser + '/telegramChatId');
   tgStatusRef.off('value'); // avoid stacking duplicate listeners if called more than once per session
   tgStatusRef.on('value', snap => {
     const statusEl = document.getElementById('tgLinkStatus');

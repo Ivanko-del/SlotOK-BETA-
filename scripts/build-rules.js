@@ -75,9 +75,11 @@ function build(strict) {
     securityAnswerHash: v(str(300)),
     tag: v(safe(120)),
     bioInput: v(str(1000)),
-    email: v(safe(200)),
+    // email, lastIpHash, telegramChatId живуть у user_private/<нік> (читає лише власник/адмін);
+    // у публічний users/ їх більше не пишемо (видалення дозволене — міграція).
+    email: v("false"),
     lastIP: v("false"), // відкриті IP у публічному вузлі більше не пишемо
-    lastIpHash: v(safe(64)),
+    lastIpHash: v("false"),
     ...AVATAR_FIELDS,
   };
   if (strict) {
@@ -161,7 +163,7 @@ function build(strict) {
 
     users: {
       ".read": true,
-      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "lastIpHash", "stats/gamesPlayed", "stats/biggestWin", "isBot", "role"],
+      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "stats/gamesPlayed", "stats/biggestWin", "isBot", "role"],
       ...(strict ? { ".write": isAdmin } : {}),
       $u: userNode,
     },
@@ -171,6 +173,14 @@ function build(strict) {
     // Хеші паролів/відповідей (lib/secrets.js). Адмін у строгому режимі може
     // записати сюди тимчасовий пароль; прочитати — ніхто, крім сервера.
     user_secrets: { ".read": false, ".write": strict ? isAdmin : "false" },
+    // Приватні поля профілю (email, lastIpHash, telegramChatId): лише власник і адмін
+    // (lib/private-profile.js, src/app/63-private-profile.js). users/ читають усі.
+    user_private: { ".read": false, ".write": false, $u: { ".read": owner("$u"), ".write": owner("$u"), ".validate": "newData.hasChildren() || !newData.exists()", email: v(safe(200)), lastIpHash: v(safe(64)), telegramChatId: v("newData.isString() || newData.isNumber()") } },
+    // Індекс «хто з якого IP-хешу» для пошуку мультиакаунтів: бакет читає лише той,
+    // чий це поточний хеш (user_private/<ти>/lastIpHash), пише — кожен лише свій нік.
+    ip_index: strict
+      ? { ".read": false, ".write": false, $h: { ".read": `auth != null && (${isAdmin} || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)`, $n: { ".write": owner("$n"), ".validate": "newData.isNumber()" } } }
+      : { ".read": true, $h: { $n: { ".write": true } } },
     notify_rate: { ".read": false, ".write": false },
     // Журнал серверних раундів (api/play.js) — лише сервер.
     game_rounds: { ".read": false, ".write": false },

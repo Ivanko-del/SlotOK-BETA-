@@ -68,6 +68,9 @@ async function seed(ns) {
     },
     bot_config: { adminChatId: 1 },
     user_secrets: { alice: { pass: "pbkdf2$1$aa$bb" } },
+    user_private: { alice: { email: "a@x.ua", lastIpHash: "abc123", telegramChatId: 111 } },
+    ip_index: { abc123: { alice: 1 }, zzz999: { carol: 1 } },
+    sport_bets: { s1: { userId: "alice", amount: 40, status: "pending", odds: 2 }, s2: { userId: "bob", amount: 10, status: "pending", odds: 2 } },
     telegram_links: { 111: "alice" },
     deposit_requests: { d1: { user: "alice", amount: 100, status: "pending" }, d2: { user: "bob", amount: 5, status: "pending" } },
     support_chats: { alice: { m1: { sender: "user", text: "hi" } } },
@@ -138,6 +141,33 @@ async function strict() {
   assert.strictEqual(await alice.patch("users/alice", { lastSeen: 6, avatar: "😎" }), OK, "update() кількох полів");
   assert.strictEqual(await alice.put("users/mallory", { balance: 1e9 }), NO, "створення акаунта в обхід сервера");
   assert.strictEqual(await alice.put("users/alice/lastDailyBonus", 0), NO, "скинути таймер щоденного бонусу");
+
+  // ── Приватні поля профілю: user_private/<нік> ──
+  assert.strictEqual(await alice.get("user_private/alice"), OK, "власник читає свої приватні поля");
+  assert.strictEqual(await bob.get("user_private/alice"), NO, "чужий не читає email/IP/Telegram");
+  assert.strictEqual(await anon.get("user_private/alice"), NO, "анонім не читає приватні поля");
+  assert.strictEqual(await bob.get("user_private"), NO, "список усіх приватних вузлів");
+  assert.strictEqual(await bob.put("user_private/alice/email", "evil@x.ua"), NO, "чужий не пише в приватні поля");
+  assert.strictEqual(await alice.put("user_private/alice/email", "new@x.ua"), OK, "власник міняє свій email");
+  assert.strictEqual(await alice.put("user_private/alice/email", '<img src=x onerror=1>'), NO, "XSS в email");
+  assert.strictEqual(await owner.get("user_private/alice"), OK, "адмін читає (як інші адмінські вузли)");
+  assert.strictEqual(await alice.put("users/alice/email", "x@y.ua"), NO, "email більше не пишемо в публічний users/");
+  assert.strictEqual(await alice.put("users/alice/lastIpHash", "deadbeef"), NO, "хеш IP більше не пишемо в публічний users/");
+  assert.strictEqual(await alice.del("users/alice/email"), OK, "міграція: прибрати старе поле можна");
+  assert.strictEqual(await alice.del("users/alice/lastIpHash"), OK, "міграція: прибрати старе поле можна");
+  // Індекс IP-хешів: бакет читає лише той, чий це хеш.
+  assert.strictEqual(await alice.get("ip_index/abc123"), OK, "власник хешу читає свій бакет");
+  assert.strictEqual(await bob.get("ip_index/abc123"), NO, "чужий не читає бакет чужого IP-хешу");
+  assert.strictEqual(await alice.get("ip_index"), NO, "увесь індекс не читається");
+  assert.strictEqual(await bob.put("ip_index/abc123/bob", 5), OK, "кожен пише лише свій нік");
+  assert.strictEqual(await bob.put("ip_index/abc123/alice", 5), NO, "не можна дописати чужий нік");
+  // Спорт прибрано: нових ставок нема, власник може лише повернути СВОЮ відкриту.
+  assert.strictEqual(await bob.post("sport_bets", { userId: "bob", amount: 999, status: "pending" }), NO, "нові спорт-ставки не пишуться");
+  assert.strictEqual(await alice.put("sport_bets/s1/status", "won"), NO, "виграш не пишеться");
+  assert.strictEqual(await alice.put("sport_bets/s2/status", "refunded"), NO, "чужу ставку не повертаємо");
+  assert.strictEqual(await alice.put("sport_bets/s1/amount", 99999), NO, "сума ставки незмінна");
+  assert.strictEqual(await alice.put("sport_bets/s1/status", "refunded"), OK, "власник повертає свою відкриту ставку");
+  assert.strictEqual(await alice.put("sport_bets/s1/status", "pending"), NO, "повернену ставку не відкрити знову");
   assert.strictEqual(await alice.put("users/alice/welcomeBackAt", 0), NO, "повторний бонус повернення");
   assert.strictEqual(await alice.put("users/alice/bpClaimed/f50", null), OK, "обнулити нагороди нового сезону");
   assert.strictEqual(await alice.put("users/alice/bpClaimed", { f50: true }), NO, "відмітити нагороду без сервера");

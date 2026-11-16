@@ -355,6 +355,7 @@ function startDataSync() {
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
               setTimeout(refundOpenSportBets, 3000);
+              setTimeout(initPrivateProfile, 300);
               setTimeout(watchPmUnread, 1500);
               setTimeout(watchSupportUnread, 1500);
               setTimeout(initV62Features, 2200);

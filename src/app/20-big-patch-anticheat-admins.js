@@ -757,7 +757,14 @@ function saveUserIP() {
   fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(async function(data) {
     const ip = data.ip || 'unknown';
     const ipHash = ip === 'unknown' ? null : await hashIp(ip);
-    db.ref('users/' + currentUser).update({ lastIP: null, lastIpHash: ipHash });
+    // Хеш IP — приватне поле (user_private), а для пошуку мультиакаунтів — індекс
+    // ip_index/<хеш>/<нік>, який читає лише той, чий це хеш (правила бази).
+    const me = currentUser;
+    const oldHash = (typeof getPrivateProfile === 'function' && getPrivateProfile('lastIpHash')) || null;
+    const upd = { ['users/' + me + '/lastIP']: null, ['user_private/' + me + '/lastIpHash']: ipHash };
+    if(oldHash && oldHash !== ipHash) upd['ip_index/' + oldHash + '/' + me] = null;
+    if(ipHash) upd['ip_index/' + ipHash + '/' + me] = firebase.database.ServerValue.TIMESTAMP;
+    await db.ref().update(upd);
     logSecurityEvent('login', 'IP: ' + maskIp(ip));
     if(ipHash) antiCheatCheckMultiAccount(ipHash);
   }).catch(function() {
@@ -779,9 +786,9 @@ function maskIp(ip) {
 }
 function antiCheatCheckMultiAccount(ipHash) {
   if(!currentUser || !_acConfig.enabled || !_acConfig.multiAccount) return;
-  db.ref('users').orderByChild('lastIpHash').equalTo(ipHash).once('value').then(snap => {
+  db.ref('ip_index/' + ipHash).once('value').then(snap => {
     const users = snap.val() || {};
-    const others = Object.keys(users).filter(n => n !== currentUser && !users[n].isBot);
+    const others = Object.keys(users).filter(n => n !== currentUser);
     if(others.length >= _acConfig.multiAccountMin) {
       antiCheatFlag('multi_account', `Та сама IP що й у ${others.length} інших акаунтів: ${others.slice(0,5).join(', ')}`, 'medium');
     }

@@ -259,6 +259,7 @@ function adminManualDeposit() {
   var amt  = parseInt(document.getElementById('adminDepAmt').value||0);
   var note = (document.getElementById('adminDepNote').value||'Ручне нарахування').trim();
   if(!user||!amt) return notify('Введіть нік і суму','error');
+  logAdminBalance('manual_deposit', user, amt, note);
   db.ref('users/'+user+'/balance').set(firebase.database.ServerValue.increment(amt));
   db.ref('users/'+user+'/history').push({text:(amt>0?'✅ ':'❌ ')+note+': '+(amt>0?'+':'')+amt+'₴', date:Date.now()});
   db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 Admin',to:user,text:(amt>0?'✅ Нараховано +'+amt+'₴':'⚠️ Списано '+Math.abs(amt)+'₴')+'. '+note,ts:Date.now()});
@@ -282,6 +283,7 @@ function adminGiveAllBonus() {
   var amt = parseInt(prompt('Бонус для ВСІХ гравців (₴):')||0);
   if(!amt||amt<1) return;
   if(!confirm('Видати '+amt+'₴ кожному?')) return;
+  logAdminBalance('give_all_bonus', '*', amt, 'Бонус усім гравцям (по ' + amt + '₴ кожному)');
   db.ref('users').once('value', function(snap){
     var users = snap.val()||{};
     var batch = {};
@@ -305,6 +307,7 @@ function adminForceJackpot() {
     if(amt<1) return notify('Джекпот порожній','error');
     var winner = prompt('Нік переможця:');
     if(!winner) return;
+    logAdminBalance('force_jackpot', winner, amt, 'Джекпот призначено вручну');
     db.ref('users/'+winner+'/balance').set(firebase.database.ServerValue.increment(amt));
     db.ref('jackpot/amount').set(0);
     db.ref('pm/'+winner+'/'+db.ref().push().key).set({from:'🎰 Jackpot',to:winner,text:'🎰 ДЖЕКПОТ! Вам нараховано ₴'+formatNumber(amt)+'!',ts:Date.now()});

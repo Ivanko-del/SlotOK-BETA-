@@ -138,6 +138,19 @@ function logAdminAction(action, details) {
   });
 }
 
+// Ручна зміна балансу адміном: хто, кому, скільки, чому і коли (час — серверний).
+// Окремі поля (target/amount/reason), щоб журнал можна було фільтрувати й звіряти.
+function logAdminBalance(action, target, amount, reason) {
+  if(!currentUser) return;
+  const amt = Number(amount) || 0;
+  const why = String(reason || '').slice(0, 300);
+  db.ref('admin_action_log').push({
+    admin: currentUser, action: action, target: String(target || ''), amount: amt, reason: why,
+    details: '@' + target + ': ' + (amt > 0 ? '+' : '') + amt + '₴' + (why ? ' · ' + why : ''),
+    ts: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
 // ── БАН / МУТ (нарешті є сторона запису — раніше тільки перевірялось) ──
 // Єдина точка бана гравця — і вкладка "Модерація" (нік/причина з полів
 // форми), і швидкий бан з картки гравця (admBanUser нижче) йдуть сюди,

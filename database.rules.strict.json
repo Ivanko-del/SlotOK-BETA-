@@ -9,7 +9,6 @@
         "totalWins",
         "totalProfit",
         "lastSeen",
-        "lastIpHash",
         "stats/gamesPlayed",
         "stats/biggestWin",
         "isBot",
@@ -40,7 +39,7 @@
         },
         "email": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
-          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "lastIP": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
@@ -48,7 +47,7 @@
         },
         "lastIpHash": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
-          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          ".validate": "false"
         },
         "avatar": {
           ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
@@ -215,6 +214,35 @@
     "user_secrets": {
       ".read": false,
       ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
+    "user_private": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+        ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+        ".validate": "newData.hasChildren() || !newData.exists()",
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "lastIpHash": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "telegramChatId": {
+          ".validate": "newData.isString() || newData.isNumber()"
+        }
+      }
+    },
+    "ip_index": {
+      ".read": false,
+      ".write": false,
+      "$h": {
+        ".read": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)",
+        "$n": {
+          ".write": "auth != null && (auth.uid === $n || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isNumber()"
+        }
+      }
     },
     "notify_rate": {
       ".read": false,

@@ -62,7 +62,7 @@ var LEGAL_DOCS = {
       { title: 'Що ми збираємо і навіщо', items: [
         'Нік і пароль (зберігається лише його хеш, не сам пароль) — щоб ти мав акаунт і міг входити.',
         'Дата народження — лише щоб перевірити вік (13+) при реєстрації. Зберігається в закритому серверному сховищі, іншим гравцям не видна.',
-        'Контрольне питання й хеш відповіді, необов’язковий email — для відновлення доступу.',
+        'Контрольне питання й хеш відповіді, необов’язковий email — для відновлення доступу. Email, хеш IP і ідентифікатор Telegram-чату зберігаються в окремому закритому вузлі: їх бачиш лише ти та адміністрація, а не інші гравці.',
         'Ігрові дані: баланс, історія, статистика, досягнення, налаштування, покупки за Слотіки, прогрес — щоб гра працювала.',
         'Повідомлення в чатах, особисті повідомлення, звернення в підтримку — щоб працювало спілкування й модерація.',
         'IP-адреса: при вході браузер отримує її через сервіс ipify.org; ми зберігаємо лише її хеш (для виявлення кількох акаунтів з однієї мережі) і замасковану адресу в журналі безпеки. Це потрібно для захисту від шахрайства.',
@@ -163,8 +163,10 @@ async function exportMyData() {
   try {
     var snap = await db.ref('users/' + currentUser).once('value');
     var data = snap.val() || {};
+    var privSnap = await db.ref('user_private/' + currentUser).once('value').catch(function() { return null; });
+    var priv = (privSnap && privSnap.val()) || {};
     ['pass', 'securityAnswerHash', 'securityAnswer', 'birthDate'].forEach(function(k) { delete data[k]; });
-    var out = { nick: currentUser, exportedAt: new Date().toISOString(), note: 'Дані профілю SlotOK без секретів (пароль, відповідь на контрольне питання, дата народження зберігаються окремо на сервері).', profile: data };
+    var out = { nick: currentUser, exportedAt: new Date().toISOString(), note: 'Дані профілю SlotOK без секретів (пароль, відповідь на контрольне питання, дата народження зберігаються окремо на сервері).', profile: data, privateFields: priv };
     var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

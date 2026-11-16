@@ -15,6 +15,7 @@
 // ============================================================
 
 const { dbGet, dbUpdate } = require("../lib/firebase");
+const { getPrivate } = require("../lib/private-profile");
 const { sendMessage, esc } = require("../lib/telegram");
 const { sendPushToUser } = require("../lib/fcm");
 const { allow } = require("../lib/rate-limit");
@@ -71,7 +72,7 @@ module.exports = async (req, res) => {
       // Гравцю — не більше 10 сповіщень на хвилину, скільки б разів
       // не повторювали POST ззовні.
       if (!(await allow(`ping:${to}`, 10, 60000))) { res.status(429).end(); return; }
-      const chatId = await dbGet(`users/${to}/telegramChatId`);
+      const chatId = await getPrivate(String(to), "telegramChatId");
       if (!chatId) { res.status(200).end(); return; }
 
       // pm/clan-chat carry no body text: this endpoint is unauthenticated, so

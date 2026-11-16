@@ -26,6 +26,7 @@ const { dbGet, dbUpdate, dbPush, dbIncrement, dbTransaction, dbDelete } = requir
 const { createCustomToken, getServiceAccount } = require("../lib/google-auth");
 const { allow } = require("../lib/rate-limit");
 const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
+const { setPrivate } = require("../lib/private-profile");
 const SlotOKPassword = require("../password.js");
 const { MIN_AGE, ageFromBirthDate } = require("../shared/age.js");
 
@@ -133,7 +134,6 @@ async function register(req, res, body) {
 
   const now = Date.now();
   const newUser = {
-    email,
     securityQuestion: secQ,
     hasSecurityAnswer: true,
     balance: bonus, freeSlots: spins,
@@ -159,6 +159,8 @@ async function register(req, res, body) {
       securityAnswerHash: await SlotOKPassword.hash(secA.trim().toLowerCase()),
       birthDate, // не в публічному users/: вузол читають усі
     });
+    // email — приватне поле: user_private/<нік> (users/ читають усі).
+    if (email) await setPrivate(nick, { email });
   } catch (e) {
     // Без пароля акаунт недоступний, а нік зайнятий — прибираємо щойно створений вузол.
     await dbDelete(`users/${nick}`).catch(() => {});
