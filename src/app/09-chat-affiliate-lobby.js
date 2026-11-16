@@ -206,7 +206,7 @@ function copyAffLink() {
 
 function shareAffLink() {
   const link = referralLink();
-  if(navigator.share) navigator.share({title:'SlotOK — казино з друзями',text:'🎰 Граю в SlotOK — слоти, рулетка, краш і турніри на віртуальні гривні. Реєструйся за моїм посиланням і забирай стартовий бонус!',url:link});
+  if(navigator.share) navigator.share({title:'SlotOK — ігри з друзями',text:'🎰 Граю в SlotOK — слоти, рулетка, краш і турніри на віртуальні гривні. Реєструйся за моїм посиланням і забирай стартовий бонус!',url:link});
   else copyAffLink();
 }
 
