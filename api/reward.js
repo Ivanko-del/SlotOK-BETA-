@@ -17,6 +17,8 @@
 //   { action: "missions" }                — стан щоденних місій і серії (lib/missions.js)
 //   { action: "missionClaim", i }         — забрати нагороду за виконану місію (0…2)
 //   { action: "streakClaim" }             — забрати нагороду дня серії
+//   { action: "league" }                 — стан рейтингової ліги (lib/leagues.js)
+//   { action: "leagueClaim" }             — забрати нагороду за завершені сезони
 //   { action: "friendRequest"|"friendAccept"|"friendDecline"|"friendCancel"|"friendRemove", nick }
 //   { action: "friendInvite", nick, id }  — запросити друга в мою кімнату (lib/friends.js)
 //   { action: "friendInviteDismiss", id } — прибрати своє запрошення
@@ -35,6 +37,7 @@ const { rng, fail, authNick, tooFast, blockedReason } = require("../lib/player")
 const P = require("../lib/progress");
 const SHOP = require("../lib/shop");
 const MISSIONS = require("../lib/missions");
+const LEAGUES = require("../lib/leagues");
 const FR = require("../lib/friends");
 const ACCOUNT = require("../lib/account");
 
@@ -54,6 +57,8 @@ const ACTIONS = {
   missions: (nick) => MISSIONS.state(nick),
   missionClaim: (nick, body) => MISSIONS.claimMission(nick, Number.isInteger(body.i) ? body.i : -1),
   streakClaim: (nick) => MISSIONS.claimStreak(nick),
+  league: (nick) => LEAGUES.state(nick),
+  leagueClaim: (nick) => LEAGUES.claim(nick),
   friendRequest: (nick, body) => FR.request(nick, body.nick),
   friendAccept: (nick, body) => FR.accept(nick, body.nick),
   friendDecline: (nick, body) => FR.decline(nick, body.nick),

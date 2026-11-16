@@ -417,7 +417,7 @@ function updateUI() {
     pn('profStatWager', userData.totalWagered || userData.totalWager || 0, '₴');
     ps('profStatStreak', (userData.dailyStreak || 0) + '🔥');
     pn('profStatSlotsPlayed', userData.slotsPlayed || 0, '');
-    pn('profStatDeposits', userData.totalDeposits || 0, '₴');
+    ps('profStatSupporter', userData.supporter ? 'Підтримав проєкт' : '—');
     const wr = gamesPlayed > 0 ? Math.round((gamesWon/gamesPlayed)*100) : 0;
     pn('profWinRate', wr, '', '%');
     const bar = document.getElementById('profWinRateBar');
@@ -477,13 +477,13 @@ function refreshCasinoCounters() {
     const users = snap.val()||{};
     _casinoCountersCache = {
       total: Object.keys(users).filter(k=>!users[k].isBot).length,
-      online: Object.values(users).filter(u=>u.lastSeen && Date.now()-u.lastSeen < 300000).length,
-      wins: Object.values(users).reduce((s,u)=>s+(u.totalWins||0),0),
+      online: Object.values(users).filter(u=>!u.isBot && u.lastSeen && Date.now()-u.lastSeen < 300000).length,
+      wins: Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWins||0)),0),
     };
     paint(_casinoCountersCache);
     // Екран входу показує суму ставок з цього агрегату, а не качає users сам.
     if(isAdminUser()) {
-      const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
+      const paid = Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWagered||0)), 0);
       db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
     }
   }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
@@ -493,8 +493,6 @@ function checkAdmin() {
     if (currentUser.toLowerCase() === ADMIN_OWNER || userData.isAdmin === true) {
         document.getElementById('adminPanelBtnBox').classList.remove('hidden');
         document.getElementById('adminBadge').classList.remove('hidden');
-        // Автозапуск бот-движка для адміна
-        if(!_botEngine) setTimeout(startBotEngine, 3000);
     } else {
         // Support (role у профілі) бачить панель лише з вкладкою «Звернення»
         document.getElementById('adminPanelBtnBox').classList.toggle('hidden', !isSupportUser());
@@ -810,10 +808,7 @@ const DEPOSIT_REQUISITES = {
   mono:       '4874 0700 7092 4301 — Іван Колодєєв',
   telegram:   'Напиши боту @SlotOK_DepositBot свій ID та суму'
 };
-const DEPOSIT_METHOD_NAMES = {
-  // usdt — лише щоб старі заявки в історії мали назву; як спосіб донату прибраний
-  mono: 'Monobank', usdt: 'USDT (TRC20)', telegram: 'Telegram'
-};
+const DEPOSIT_METHOD_NAMES = { mono: 'Monobank', telegram: 'Telegram', privat: 'Банківська картка', usdt: 'Інше' };
 let selectedDepMethod = 'mono';
 
 const BANK_LOADING_STEPS = [
@@ -860,12 +855,12 @@ function showBankReceipt({ sign, amount, accent, title, subtitle, rows }) {
       <div style="width:64px;height:64px;border-radius:50%;background:${accent}1f;border:2px solid ${accent};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;color:${accent};">✓</div>
       <div style="font-size:16px;font-weight:800;color:var(--fg);margin-bottom:4px;">${title}</div>
       <div style="font-size:12px;color:var(--fg-3);margin-bottom:18px;">${subtitle}</div>
-      <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount}₴</div>
+      <div style="font-family:var(--font-display);font-size:30px;font-weight:900;color:${accent};margin-bottom:18px;">${sign}${amount} грн</div>
       <div style="background:var(--bg);border-radius:var(--r-lg);padding:12px 14px;text-align:left;font-size:12px;color:var(--fg-3);display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
         ${rowsHtml}
       </div>
       <button onclick="document.getElementById('depReceiptModal').remove()" style="width:100%;background:${accent}1f;border:1px solid ${accent}4d;border-radius:var(--r-lg);padding:12px;color:${accent};cursor:pointer;font-size:13px;font-weight:700;margin-bottom:16px;">Готово</button>
-      <div style="font-size:10px;color:var(--fg-4);line-height:1.5;">🔒 Захищено SSL-шифруванням<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
+      <div style="font-size:10px;color:var(--fg-4);line-height:1.5;">🔒 Підключення захищене<br>© ${new Date().getFullYear()} SlotOK. Усі права захищено.</div>
     </div>`;
   document.body.appendChild(modal);
 }
@@ -878,8 +873,8 @@ function showDepositReceipt(amount, method, reqId) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
   showBankReceipt({
-    sign: '+', amount, accent: '#3dd68c',
-    title: 'Заявку прийнято', subtitle: 'Очікуйте підтвердження адміністратора',
+    sign: '', amount, accent: '#3dd68c',
+    title: 'Заявку на донат прийнято', subtitle: 'Дякуємо за підтримку! Після підтвердження в профілі зʼявиться значок «Підтримав проєкт». Ігровий баланс не змінюється.',
     rows: [
       ['Спосіб', DEPOSIT_METHOD_NAMES[method] || method],
       ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
@@ -971,7 +966,7 @@ function submitDepositRequest() {
   let amount = selectedDepAmount;
   if(amount === 0 && customInput && customInput.value) amount = parseInt(customInput.value);
   if(!amount || amount < 50) {
-    notify('Оберіть суму поповнення (мін. 50₴)', 'error');
+    notify('Оберіть суму донату (мін. 50 грн)', 'error');
     return;
   }
   const userId = userData.id || currentUser;
@@ -995,7 +990,7 @@ function submitDepositRequest() {
     // Notify admin via PM
     db.ref('pm/theivankoo/' + db.ref().push().key).set({
       from: '📥 Система', to: 'theivankoo',
-      text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴ (${selectedDepMethod || 'mono'})`,
+      text: `💰 Нова заявка на донат від @${userName}: ${amount} грн (${selectedDepMethod || 'mono'})`,
       ts: Date.now()
     });
     db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -1006,14 +1001,14 @@ function submitDepositRequest() {
         if(admNick === 'theivankoo') return;
         db.ref('pm/' + admNick + '/' + db.ref().push().key).set({
           from: '📥 Система', to: admNick,
-          text: `💰 Нова заявка на депозит від @${userName}: ${amount}₴`,
+          text: `💰 Нова заявка на донат від @${userName}: ${amount} грн`,
           ts: Date.now()
         });
         db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
       });
     });
     showDepositLoading(amount, selectedDepMethod || 'mono', reqId);
-    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку на донат'; }
     selectedDepAmount = 0;
     ksClearDepositAmountUI();
     if(customInput) customInput.value = '';
@@ -1021,7 +1016,7 @@ function submitDepositRequest() {
     loadMyDeposits();
   }).catch(err => {
     notify('Помилка подачі заявки. Спробуй ще.', 'error');
-    if(btn) { btn.disabled = false; btn.textContent = 'Задонатити'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Подати заявку на донат'; }
   });
 }
 
@@ -1030,7 +1025,7 @@ function openTelegramBot() {
   let amount = selectedDepAmount;
   if(amount === 0 && customInput && customInput.value) amount = parseInt(customInput.value);
   if(!amount || amount < 50) {
-    notify('Оберіть суму поповнення (мін. 50₴)', 'error');
+    notify('Оберіть суму донату (мін. 50 грн)', 'error');
     return;
   }
   const userId = userData.id || currentUser;
@@ -1093,12 +1088,12 @@ function loadMyDeposits() {
       const date = new Date(d.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
       const done = d.status === 'done', bad = d.status === 'rejected';
       const cls  = done ? 'pw-done' : bad ? 'pw-rejected' : 'pw-pending';
-      const text = done ? 'Зараховано' : bad ? 'Відхилено' : 'Очікує';
+      const text = done ? 'Підтверджено' : bad ? 'Відхилено' : 'Очікує';
       const icon = done ? 'check' : bad ? 'x' : 'clock';
       return `<div class="pending-withdraw">
         <div class="ks-icn ${done ? 'is-pos' : bad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
         <div class="ks-row-main">
-          <div class="ks-row-title ks-num">+${formatNumber(d.amount)} ₴</div>
+          <div class="ks-row-title ks-num">${formatNumber(d.amount)} грн</div>
           <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[d.method] || d.method || '—'} · ${date}</div>
         </div>
         <span class="pw-status ${cls}">${text}</span>
@@ -1130,141 +1125,12 @@ function selectCustomAmount() {
 }
 
 // ============================================
-// ВИВІД КОШТІВ
+// ВИВІД КОШТІВ — НЕ ІСНУЄ
 // ============================================
-function submitWithdraw() {
-    const card = document.getElementById('withdrawCard').value.trim();
-    const amount = parseInt(document.getElementById('withdrawAmount').value);
-
-    if(!card) return notify("Введіть реквізити для виводу", "error");
-    if(!amount || amount < 200) return notify("Мінімальна сума виводу: 200₴", "error");
-    if(userData.balance < amount) return notify("Недостатньо коштів", "error");
-    if(userData.autoFrozen) return notify("🚩 Акаунт тимчасово призупинено (підозріла активність) — звернись у підтримку", "error");
-    if(isActiveCardFrozen()) return notify("🔒 Активна картка заблокована — розблокуй її в Гаманці", "error");
-    if(!checkCardLimit(getActiveCardId(), amount)) return;
-
-    // Перевірка на pending заявки
-    if(userData.pendingWithdraw) {
-        return notify("У вас вже є активна заявка на вивід. Дочекайтесь її обробки.", "error");
-    }
-
-    // Великі суми — реальне 2FA: підтвердження тапом у Telegram гравця
-    // (webhook перевіряє, що це саме його chatId), а не код, видимий у
-    // тому ж вікні браузера, звідки подано заявку.
-    const needs2FA = amount >= WITHDRAW_2FA_THRESHOLD;
-    if(needs2FA && !userData.telegramChatId) {
-        notify('🔐 Для виводу від '+formatNumber(WITHDRAW_2FA_THRESHOLD)+'₴ потрібно прив’язати Telegram (Профіль → Сповіщення) — звідти прийде підтвердження.', 'error');
-        return;
-    }
-
-    const requestId = `${currentUser}_${Date.now()}`;
-    const status = needs2FA ? 'pending_2fa' : 'pending';
-
-    // Заморозити гроші
-    db.ref('users/' + currentUser).update({
-        balance: firebase.database.ServerValue.increment(-amount),
-        pendingWithdraw: true
-    });
-
-    // Зберегти заявку
-    db.ref('withdraw_requests/' + requestId).set({
-        user: currentUser,
-        userId: userData.id,
-        amount: amount,
-        method: selectedWithdrawMethod,
-        card: card,
-        // Картка, з якої кошти заморозили: на неї ж повернемо при відмові й
-        // її ж історію позначимо при схваленні, навіть якщо гравець тим часом
-        // перемкнув активну.
-        cardId: getActiveCardId() || null,
-        status: status,
-        time: Date.now()
-    }).then(() => notifyBot(needs2FA ? 'withdraw-2fa' : 'withdraw', requestId));
-
-    db.ref('users/' + currentUser + '/withdraws/' + requestId).set({
-        amount: amount,
-        method: selectedWithdrawMethod,
-        status: status,
-        time: Date.now()
-    });
-
-    noteCardSpend(getActiveCardId(), amount);
-    addToHistory(needs2FA ? `Заявка на вивід: -${amount} ₴ (очікує підтвердження в Telegram)` : `Заявка на вивід: -${amount} ₴ (обробляється)`);
-    // Адміна повідомляємо одразу лише для заявок БЕЗ 2FA — підтверджені 2FA-заявки
-    // сам webhook сповістить адміна, щойно гравець тапне "Підтвердити" в Telegram.
-    if(!needs2FA) {
-        db.ref('pm/theivankoo/'+db.ref().push().key).set({from:'📤 Система', to:'theivankoo', text:`💸 Нова заявка на вивід від @${currentUser}: ${amount}₴ (${selectedWithdrawMethod})`, ts:Date.now()});
-        db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    }
-
-    if(needs2FA) {
-        showWithdraw2FAWait(amount, requestId);
-    } else {
-        showWithdrawLoading(amount, selectedWithdrawMethod, card, requestId);
-    }
-
-    document.getElementById('withdrawCard').value = '';
-    document.getElementById('withdrawAmount').value = '';
-    loadMyWithdraws();
-}
-
-const WITHDRAW_METHOD_NAMES = { privat: 'PrivatBank', mono: 'Monobank', card: 'Visa/Mastercard', usdt: 'USDT (TRC20)' };
-
-function maskDest(dest) {
-  if(dest.length <= 8) return dest;
-  return dest.slice(0, 4) + '••••' + dest.slice(-4);
-}
-
-function showWithdrawLoading(amount, method, dest, reqId) {
-  showBankProcessing('#e74c3c', () => showWithdrawReceipt(amount, method, dest, reqId));
-}
-
-function showWithdrawReceipt(amount, method, dest, reqId) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
-  showBankReceipt({
-    sign: '-', amount, accent: '#e74c3c',
-    title: 'Заявку на вивід прийнято', subtitle: 'Кошти надійдуть протягом 1-24 год',
-    rows: [
-      ['Спосіб', WITHDRAW_METHOD_NAMES[method] || method],
-      ['Отримувач', `<span style="font-family:var(--font-mono);">${maskDest(dest)}</span>`],
-      ['ID транзакції', `<span style="font-family:var(--font-mono);">${reqId.slice(-10)}</span>`],
-      ['Дата', dateStr],
-      ['Статус', '<span style="color:var(--accent);">Обробка</span>']
-    ]
-  });
-}
-
-function loadMyWithdraws() {
-    const list = document.getElementById('myWithdrawsList');
-    if(!list) return;
-    
-    db.ref('users/' + currentUser + '/withdraws').limitToLast(5).once('value', snap => {
-        const data = snap.val();
-        if(!data) { list.innerHTML = '<div class="ks-muted">Заявок немає</div>'; return; }
-
-        list.innerHTML = Object.entries(data).reverse().map(([id, w]) => {
-            const date = new Date(w.time).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-            const done = w.status === 'done';
-            const isBad = w.status === 'rejected' || w.status === 'cancelled';
-            const cls = done ? 'pw-done' : isBad ? 'pw-rejected' : 'pw-pending';
-            const text = done ? 'Виконано' : w.status === 'rejected' ? 'Відхилено'
-              : w.status === 'cancelled' ? 'Скасовано' : w.status === 'pending_2fa' ? 'Підтвердіть у Telegram' : 'Обробляється';
-            const icon = done ? 'check' : isBad ? 'x' : w.status === 'pending_2fa' ? 'shield' : 'clock';
-            return `
-                <div class="pending-withdraw">
-                    <div class="ks-icn ${done ? 'is-pos' : isBad ? 'is-neg' : ''}">${ksIcon(icon)}</div>
-                    <div class="ks-row-main">
-                        <div class="ks-row-title ks-num">−${formatNumber(w.amount)} ₴</div>
-                        <div class="ks-row-sub">${DEPOSIT_METHOD_NAMES[w.method] || w.method || '—'} · ${date}</div>
-                    </div>
-                    <span class="pw-status ${cls}">${text}</span>
-                </div>
-            `;
-        }).join('');
-    });
-}
-
+// Ігрова валюта віртуальна й не виводиться (див. Умови користування). Колишній
+// код заявок на вивід прибрано; заглушки лишені, щоб старі виклики не падали.
+function submitWithdraw() { notify('Вивід неможливий: ігрова валюта віртуальна й не виводиться.', 'error'); }
+function loadMyWithdraws() {}
 // ─── src/app/04-slots.js ───
 // ============================================
 // ІГРИ
@@ -2655,49 +2521,18 @@ function updateSessionBar() {
 // ═══════════════════════════════════════════
 // 📦 DEPOSIT PACKAGES
 // ═══════════════════════════════════════════
-function initDepositPackages() {
-  const pkg = document.getElementById('depositPackages');
-  if(!pkg) return;
-  // Суми й бонуси — ті самі, що нараховує адмін (selectDepPackage). Тут лише
-  // вигляд: повні суми замість «1.0k», нейтральні назви, без емодзі.
-  const packages = [
-    {amount:200, bonus:0, label:'Старт'},
-    {amount:500, bonus:50, label:'Базовий'},
-    {amount:1000, bonus:200, label:'Стандарт', popular:true},
-    {amount:2500, bonus:625, label:'Більший'},
-    {amount:5000, bonus:1500, label:'Розширений'},
-    {amount:10000, bonus:4000, label:'Максимум'},
-  ];
-  const full = n => Number(n).toLocaleString('uk-UA');
-  pkg.innerHTML = packages.map(p=>`
-    <div class="dep-package${p.popular?' popular':''}" data-amount="${p.amount}" onclick="selectDepPackage(${p.amount},${p.bonus})">
-      <div class="dep-package-head">
-        <span class="dep-package-label">${p.label}</span>
-        ${p.popular?'<span class="dep-package-tag">Популярний</span>':''}
-      </div>
-      <div class="dep-package-amount">${full(p.amount)} ₴</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">Бонус <b>+'+full(p.bonus)+' ₴</b></div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
-      <div class="dep-package-total">На баланс: ${full(p.amount+p.bonus)} ₴</div>
-    </div>
-  `).join('');
-}
+// Бонусні донат-пакети прибрано: донат нічого не додає до гри. Заглушка — для старих викликів.
+function initDepositPackages() {}
 
 // Раніше пакет писав суму в #depositAmount/#betDepAmt — таких полів у Касі
 // немає, тож вибір пакета нічого не робив. Тепер він задає ту саму змінну
 // selectedDepAmount, яку читає submitDepositRequest().
-function selectDepPackage(amount, bonus) {
+function selectDepPackage(amount) {
   selectedDepAmount = amount;
   ksClearDepositAmountUI();
-  const card = document.querySelector('#depositPackages .dep-package[data-amount="' + amount + '"]');
-  if(card) card.classList.add('is-selected');
   const custom = document.getElementById('customDepAmount');
   if(custom) custom.value = '';
   document.getElementById('customAmountBox')?.classList.add('hidden');
-  notify(bonus > 0
-    ? 'Пакет ' + formatNumber(amount) + ' ₴ · бонус +' + formatNumber(bonus) + ' ₴'
-    : 'Сума ' + formatNumber(amount) + ' ₴', 'info');
-  if(bonus > 0) localStorage.setItem('pendingDepBonus', JSON.stringify({amount, bonus, ts: Date.now()}));
-  else localStorage.removeItem('pendingDepBonus');
 }
 
 // ═══════════════════════════════════════════
@@ -3014,9 +2849,9 @@ function initAuthWinTicker() {
   if(_authWinTickerListener) db.ref('win_feed').off('value', _authWinTickerListener);
   _authWinTickerListener = snap => {
     const data = snap.val() || {};
-    const items = Object.values(data).sort((a,b) => b.time - a.time).slice(0, 10);
+    const items = Object.values(data).filter(it => it && !it.isBot).sort((a,b) => b.time - a.time).slice(0, 10);
     if(!items.length) {
-      inner.innerHTML = '<span class="auth-win-ticker-item">🎰 Приєднуйся першим — і саме твій виграш зʼявиться тут!</span>'.repeat(2);
+      inner.innerHTML = ''; // немає реальних даних — стрічка порожня
       return;
     }
     const renderItem = it => {
@@ -3267,7 +3102,7 @@ function initChat() {
   if(globalChatListener) { db.ref('global_chat').off('value', globalChatListener); }
   globalChatListener = db.ref('global_chat').limitToLast(60).on('value', snap => {
     const msgs = snap.val()||{};
-    const sorted = Object.values(msgs).sort((a,b)=>a.ts-b.ts);
+    const sorted = Object.values(msgs).filter(m=>m&&!m.isBot).sort((a,b)=>a.ts-b.ts);
     let prevUser = null;
     msgsEl.innerHTML = sorted.map(m => {
       const isMe = m.user === currentUser;
@@ -3469,7 +3304,7 @@ function copyAffLink() {
 
 function shareAffLink() {
   const link = referralLink();
-  if(navigator.share) navigator.share({title:'SlotOK — казино з друзями',text:'🎰 Граю в SlotOK — слоти, рулетка, краш і турніри на віртуальні гривні. Реєструйся за моїм посиланням і забирай стартовий бонус!',url:link});
+  if(navigator.share) navigator.share({title:'SlotOK — ігри з друзями',text:'🎰 Граю в SlotOK — слоти, рулетка, краш і турніри на віртуальні гривні. Реєструйся за моїм посиланням і забирай стартовий бонус!',url:link});
   else copyAffLink();
 }
 
@@ -3693,48 +3528,9 @@ function toggleCompactMode() {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// 📱 QUICK DEPOSIT FROM HEADER
-// ═══════════════════════════════════════════════════════
-let quickDepModal = null;
-function openQuickDeposit() {
-  const existing = document.getElementById('quickDepOverlay');
-  if(existing) existing.remove();
-  const amounts = [100,250,500,1000,2500,5000];
-  const modal = document.createElement('div');
-  modal.id = 'quickDepOverlay';
-  modal.style.cssText='position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9000;display:flex;align-items:flex-end;';
-  modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
-  modal.innerHTML=`
-    <div style="background:var(--surface-1);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px;width:100%;border-top:1px solid rgb(var(--accent-rgb) / 0.3);">
-      <div style="text-align:center;font-weight:900;font-size:16px;color:var(--accent);margin-bottom:14px;">⚡ Швидкий депозит</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
-      </div>
-      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:var(--surface-2);border:none;border-radius:var(--r-md);padding:12px;color:var(--fg-3);cursor:pointer;">Скасувати</button>
-    </div>`;
-  document.body.appendChild(modal);
-}
-function quickDepAction(amount) {
-  document.querySelector('div[style*="inset:0"]')?.remove();
-  switchTab('cashier');
-  setTimeout(()=>{ const inp=document.getElementById('depositAmount'); if(inp) inp.value=amount; }, 300);
-}
-
-// ═══════════════════════════════════════════════════════
-// 💬 DOUBLE-CLICK BALANCE = QUICK DEPOSIT
-// ═══════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  const balEl = document.querySelector('.header-bal');
-  if(balEl) {
-    let dblTap = 0;
-    balEl.addEventListener('click', () => {
-      const now = Date.now();
-      if(now-dblTap<400) openQuickDeposit();
-      dblTap = now;
-    });
-  }
-});
+// Швидкий «депозит» по подвійному кліку на баланс прибрано (донат не поповнює баланс).
+function openQuickDeposit() {}
+function quickDepAction() { switchTab('cashier'); }
 
 // ─── src/app/10-auth.js ───
 // ============================================
@@ -3851,6 +3647,9 @@ async function authRegister() {
   if(secQ.length < 3) return showAuthError('Напиши своє контрольне питання (мінімум 3 символи) або обери зі списку');
   if(secA.length < 3) return showAuthError('Відповідь на контрольне питання — мінімум 3 символи (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
+  // Згода з Умовами та Політикою (+ дозвіл батьків до 18 років) — обовʼязкова.
+  if(!document.getElementById('regConsent')?.checked) return showAuthError('Постав позначку, що приймаєш Умови та Політику');
+  const minor = (ageFromBirthDate(birthDate) ?? 99) < 18;
 
   const btn = document.getElementById('regBtn');
   if(btn) { btn.textContent = 'Створюємо акаунт…'; btn.disabled = true; }
@@ -3860,6 +3659,7 @@ async function authRegister() {
   const refByLs = localStorage.getItem('ref_by');
   const srv = await serverAuthCall('register', {
     nick: n, password: p, birthDate, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
+    termsAccepted: true, termsVersion: TERMS_VERSION, parentConsent: minor ? true : undefined,
   });
   if(srv.status === 200 && srv.data.token) {
     try { await serverSignIn(srv.data.token); }
@@ -3912,7 +3712,9 @@ async function authRegister() {
       dailyStreak: 0, luckyGamesLeft: 3, luckyGamesUsed: 0,
       registeredAt: Date.now(), lastSeen: Date.now(),
       totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
+      termsAcceptedAt: Date.now(), termsVersion: TERMS_VERSION,
     };
+    if(minor) newUser.parentConsent = true;
     if(promo) newUser.usedPromo = promo;
     const refBy = localStorage.getItem('ref_by');
     if(refBy && refBy !== n) newUser.referredBy = refBy;
@@ -4199,6 +4001,7 @@ function regStep(n) {
   const form = document.getElementById('regForm');
   if(!form) return;
   form.dataset.step = String(n);
+  if(n === 2 && typeof updateRegConsentText === 'function') updateRegConsentText();
   document.getElementById('regStep1')?.classList.toggle('hidden', n !== 1);
   document.getElementById('regStep2')?.classList.toggle('hidden', n !== 2);
   form.querySelectorAll('.auth-step').forEach((el, i) => el.classList.toggle('is-on', i < n));
@@ -4287,20 +4090,10 @@ function loadUserList() {
 }
 
 
+// Вивід коштів прибрано (ігрова валюта віртуальна). Старі заявки можна лише
+// повернути гравцю на баланс — «виплатити» їх неможливо.
 function approveWithdraw(id, user) {
-    if(!requireAdminPerm('requests')) return;
-    db.ref('withdraw_requests/'+id).once('value').then(snap => {
-        const req = snap.val() || {};
-        const amount = req.amount || 0;
-        db.ref('withdraw_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-        db.ref('users/'+user+'/withdraws/'+id).update({status:'done'});
-        db.ref('users/'+user).update({pendingWithdraw: false});
-        pushCardTx(user, {dir:'out', amount:amount, title:'Виведення коштів', subtitle: req.method||'', icon:'💸'}, req.cardId || null);
-        db.ref('users/'+user+'/history').push({text:`✅ Вивід підтверджено: -${amount}₴`, date:Date.now()});
-        db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'✅ Ваш вивід коштів схвалено! Кошти надійдуть на реквізити протягом 1-24 год.', ts:Date.now()});
-        db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-        notify('✅ Вивід схвалено — гравець отримав повідомлення', 'success');
-    });
+    db.ref('withdraw_requests/'+id+'/amount').once('value').then(s => rejectWithdraw(id, user, Number(s.val()) || 0));
 }
 
 function rejectWithdraw(id, user, amount) {
@@ -4608,7 +4401,7 @@ function quickSend(n) {
     else notify('У контакту ще немає картки SlotOK Bank', 'error');
   });
 }
-function deleteAccount() { if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")) db.ref('users/'+currentUser).remove().then(logout); }
+// deleteAccount() — див. 55-legal.js (видалення через сервер)
 function updateBio(v) { db.ref('users/'+currentUser).update({tag:v}); notify("Статус оновлено"); }
 function handleAvatarUpload(i) { 
     if(i.files[0]){ 
@@ -5455,7 +5248,6 @@ function appendChatEmoji(emoji) {
 
 // ===== WIN TICKER =====
 const TICKER_GAMES = ['Slots','Blackjack','Crash','Roulette','Mines','Poker','Plinko','Keno','Fortune'];
-const TICKER_NAMES = ['Lucky_77','ProGamer','MaxWin','CashKing','SlotMaster','VegasPro','UkrChamp','BonusHunter'];
 let tickerIdx = 0;
 let tickerItems = [];
 
@@ -5464,15 +5256,10 @@ function startWinTicker() {
   if(!el) return;
   // Завантажимо реальні виграші + додамо фейкові між ними
   db.ref('win_feed').limitToLast(20).once('value', snap => {
-    const real = snap.val() ? Object.values(snap.val()) : [];
-    const fake = Array.from({length:10}, () => ({
-      user: TICKER_NAMES[Math.floor(Math.random()*TICKER_NAMES.length)],
-      game: TICKER_GAMES[Math.floor(Math.random()*TICKER_GAMES.length)],
-      amount: (Math.floor(Math.random()*200)+2)*50,
-      mult: (Math.random()*15+1.5).toFixed(1)
-    }));
-    tickerItems = [...real.map(r => ({ user:r.user, game:r.game, amount:r.amount, mult:r.mult })), ...fake];
-    tickerItems.sort(() => Math.random()-0.5);
+    // Лише реальні виграші з бази; немає даних — стрічка прихована.
+    const real = (snap.val() ? Object.values(snap.val()) : []).filter(r => r && !r.isBot && r.user && r.amount);
+    tickerItems = real.map(r => ({ user:r.user, game:r.game, amount:r.amount, mult:r.mult }));
+    if(!tickerItems.length) { el.textContent = ''; return; }
     animateTicker();
   });
 }
@@ -5500,7 +5287,7 @@ function initLobbyChat() {
   box.innerHTML = '';
   chatListener = db.ref('lobby_chat').limitToLast(60).on('child_added', snap => {
     const m = snap.val();
-    if(!m) return;
+    if(!m || m.isBot) return;
     const time = new Date(m.time).toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
     const el = document.createElement('div');
     const isMe = m.sender === currentUser;
@@ -7641,209 +7428,35 @@ function deleteNews(id) {
 }
 
 // ============================================
-// ===== БОТИ =====
+// ===== БОТИ — ВИМКНЕНО НАЗАВЖДИ =====
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('botAvatar');
-  if(sel) sel.addEventListener('change', function() {
-    const urlBox = document.getElementById('botAvatarUrlBox');
-    if(urlBox) urlBox.classList.toggle('hidden', this.value !== 'custom');
-  });
-});
+// Фальшиві гравці, фейкові виграші та «живі» повідомлення заборонені
+// (правове рішення власника). Движок більше нічого не пише в БД; лишилися
+// порожні заглушки, щоб старі виклики не ламались, і адмінська очистка
+// старих записів isBot.
+var _botEngine = null;
+var _activeBotData = {};
+function createBot() { notify('Боти вимкнено назавжди: фальшиві гравці заборонені.', 'error'); }
+function startBotEngine() {}
+function botEngineTick() {}
+function botPlayGame() {}
+function addBotToEngine() {}
+function stopBotEngine() {}
 
-function createBot() {
-  const nick     = (document.getElementById('botNick')?.value || '').trim();
-  const balance  = parseInt(document.getElementById('botBalance')?.value) || 5000;
-  const avSel    = document.getElementById('botAvatar')?.value || '🤖';
-  const avUrl    = document.getElementById('botAvatarUrl')?.value?.trim() || '';
-  const activity = document.getElementById('botActivity')?.value || 'active';
-  const pers     = document.getElementById('botPersonality')?.value || 'balanced';
-
-  if(!nick || nick.length < 2) return notify('Введіть нік бота (мін. 2 символи)', 'error');
-  if(!/^[a-zA-Zа-яА-ЯіІїЇєЄ0-9_]+$/.test(nick)) return notify('Нік: лише букви, цифри та _', 'error');
-
-  const avatarEmoji = avSel === 'custom' ? '🤖' : avSel;
-  const avatarUrl   = avSel === 'custom' ? avUrl : null;
-
-  db.ref('users/' + nick).once('value', snap => {
-    if(snap.exists() && !snap.val().isBot) return notify('Нік вже зайнятий реальним гравцем!', 'error');
-
-    const botData = {
-      balance, tag: '', isBot: true, isActive: activity === 'active',
-      personality: pers,
-      createdBy: currentUser, createdAt: Date.now(),
-      registeredAt: Date.now(), lastSeen: Date.now(),
-      dailyStreak: 0, id: 'BOT_' + Date.now(),
-      avatar: avatarUrl || avatarEmoji,
-      totalGames: Math.floor(Math.random()*500)+50,
-      totalWins:  Math.floor(Math.random()*200)+20,
-      totalWagered: Math.floor(Math.random()*50000)+1000,
-      stats: { gamesPlayed: Math.floor(Math.random()*500)+50, biggestWin: Math.floor(Math.random()*5000)+500 },
-    };
-
-    db.ref('users/' + nick).set(botData).then(() => {
-      if(activity === 'active') {
-        addBotToEngine(nick, botData);
-      }
-      notify('🤖 Бот ' + nick + ' створено! (' + pers + ')', 'success');
-      document.getElementById('botNick').value = '';
-      loadBots();
-    });
-  });
-}
-
-// ╔══════════════════════════════════════════════════════╗
-// ║            БОТ-ДВИЖОК v2 — постійна гра             ║
-// ╚══════════════════════════════════════════════════════╝
-
-var BOT_GAMES = [
-  { game:'🎰 Слоти',    minBet:50,  maxBet:2000, rtp:.95 },
-  { game:'🚀 Краш',    minBet:100, maxBet:5000, rtp:.97 },
-  { game:'💣 Майнер',  minBet:100, maxBet:3000, rtp:.96 },
-  { game:'🎲 Dice',    minBet:50,  maxBet:1000, rtp:.99 },
-  { game:'🌀 Limbo',   minBet:100, maxBet:2000, rtp:.96 },
-  { game:'🃏 Блекджек',minBet:200, maxBet:3000, rtp:.995 },
-  { game:'🔻 Plinko',  minBet:100, maxBet:2000, rtp:.98 },
-  { game:'🎡 Рулетка', minBet:100, maxBet:3000, rtp:.973 },
-  { game:'🪙 Coinflip', minBet:200, maxBet:5000, rtp:.98 },
-  { game:'⚽ Спорт',   minBet:100, maxBet:2000, rtp:.94 },
-  { game:'🃏 Бакара',  minBet:300, maxBet:5000, rtp:.989 },
-  { game:'🔫 Рулетка Ризику', minBet:500, maxBet:5000, rtp:.85 },
-  { game:'🏇 Скачки',  minBet:200, maxBet:2000, rtp:.80 },
-];
-
-var BOT_MESSAGES = [
-  'Тільки що зробив x{{mult}} на {{game}}! 🔥', 'Хто грає зараз?',
-  'Виграв {{amount}}₴ за одну ставку 😤', '{{game}} — топ гра!',
-  'Хто ставить на краш разом? 🚀', 'Серія перемог — 4 поспіль 🏆',
-  'Ніхто не зупинить мій стрік 💪', 'Ставлю ва-банк 😅',
-  'Кому пощастить сьогодні — мені чи казино?', 'Ого! Що за ніч 🤑',
-  'Блекджек дав 21 з першої 🃏', 'Майнер — клас коли знаєш де міни',
-  'Вперше граю в {{game}} — сподобалось!', 'Знову програв... але не здамся',
-  'Фортуна любить сміливих!', 'Рекорд побитий: {{amount}}₴!',
-];
-
-var BOT_PERSONALITIES = {
-  aggressive: { betMult:[1.5,3.0], winRate:.42, msgFreq:.45, playInterval:[8,20]  },
-  balanced:   { betMult:[0.8,1.5], winRate:.47, msgFreq:.25, playInterval:[15,40] },
-  conservative:{ betMult:[0.3,0.8],winRate:.52, msgFreq:.15, playInterval:[25,60] },
-  whale:      { betMult:[3.0,8.0], winRate:.40, msgFreq:.5,  playInterval:[5,15]  },
-};
-
-let _botEngine = null;
-let _activeBotData = {}; // nick → {balance, personality, nextPlay}
-
-function startBotEngine() {
-  if(_botEngine) return; // already running
-  // Load all active bots from Firebase
+// Адмін: видалити всі записи ботів, що лишились у базі (users/<nick> з isBot).
+async function adminPurgeBots() {
+  if(!isAdminUser()) return;
+  const ok = await confirmAction({ title: 'Видалити всіх ботів?', text: 'Усі акаунти з позначкою «бот» буде видалено з бази без відновлення.', confirm: 'Видалити', danger: true });
+  if(!ok) return;
   db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
     const bots = snap.val() || {};
-    Object.entries(bots).forEach(([nick, data]) => {
-      if(data.banned) return;
-      const personalities = Object.keys(BOT_PERSONALITIES);
-      const pers = data.personality || personalities[Math.floor(Math.random()*personalities.length)];
-      const nextDelay = Math.random() * 30000 + 5000;
-      _activeBotData[nick] = {
-        balance: data.balance || 5000,
-        personality: pers,
-        nextPlay: Date.now() + nextDelay,
-        avatarEmoji: data.avatar || '🤖',
-      };
-    });
-    if(Object.keys(_activeBotData).length === 0) return;
-    // Start engine tick every 5 seconds
-    _botEngine = setInterval(botEngineTick, 5000);
-    console.log('🤖 Бот-движок запущено для', Object.keys(_activeBotData).length, 'ботів');
+    const upd = {};
+    Object.keys(bots).forEach(n => { upd['users/' + n] = null; });
+    const n = Object.keys(upd).length;
+    if(!n) { notify('Ботів у базі немає', 'info'); return; }
+    db.ref().update(upd).then(() => { notify('Видалено ботів: ' + n, 'success'); loadBots(); }).catch(e => notify('Помилка: ' + e.message, 'error'));
   });
 }
-
-function botEngineTick() {
-  const now = Date.now();
-  Object.entries(_activeBotData).forEach(([nick, bot]) => {
-    if(now < bot.nextPlay) return;
-    botPlayGame(nick, bot);
-  });
-}
-
-function botPlayGame(nick, bot) {
-  const pers = BOT_PERSONALITIES[bot.personality] || BOT_PERSONALITIES.balanced;
-  const g = BOT_GAMES[Math.floor(Math.random() * BOT_GAMES.length)];
-
-  const betMultiplier = pers.betMult[0] + Math.random() * (pers.betMult[1] - pers.betMult[0]);
-  const baseBet = Math.min(g.maxBet, Math.max(g.minBet, Math.floor(bot.balance * 0.02 * betMultiplier)));
-  const bet = Math.round(baseBet / 50) * 50; // round to 50s
-
-  const isWin = Math.random() < pers.winRate;
-  const mult = isWin ? parseFloat((Math.random() * (
-    bot.personality === 'whale' ? 8 :
-    bot.personality === 'aggressive' ? 6 : 4
-  ) + 1.1).toFixed(2)) : 0;
-  const pnl = isWin ? Math.floor(bet * mult - bet) : -bet;
-
-  bot.balance = Math.max(200, bot.balance + pnl);
-
-  const interval = pers.playInterval;
-  bot.nextPlay = Date.now() + (interval[0] + Math.random() * (interval[1] - interval[0])) * 1000;
-
-  db.ref('users/' + nick + '/balance').set(bot.balance);
-  db.ref('users/' + nick + '/lastSeen').set(Date.now());
-  db.ref('users/' + nick + '/totalGames').set(firebase.database.ServerValue.increment(1));
-  if(isWin) db.ref('users/' + nick + '/totalWins').set(firebase.database.ServerValue.increment(1));
-  db.ref('users/' + nick + '/totalWagered').set(firebase.database.ServerValue.increment(bet));
-
-  db.ref('live_bets').push({
-    user: nick, game: g.game, bet, mult: isWin ? mult : 0,
-    pnl, isWin, ts: Date.now(), isBot: true,
-  });
-
-  db.ref('casino_stats/jackpot').set(firebase.database.ServerValue.increment(Math.floor(bet * 0.005)));
-
-  if(!isWin) db.ref('casino_stats/todayWins').set(firebase.database.ServerValue.increment(1));
-
-  // Chat message (random chance)
-  if(Math.random() < pers.msgFreq) {
-    const tpl = BOT_MESSAGES[Math.floor(Math.random() * BOT_MESSAGES.length)];
-    const msg = tpl
-      .replace('{{mult}}', mult)
-      .replace('{{game}}', g.game)
-      .replace('{{amount}}', formatNumber(Math.abs(pnl)));
-    // Post in both global chat and lobby chat
-    const chatMsg = { user: nick, text: msg, ts: Date.now(), avatar: bot.avatarEmoji, isBot: true };
-    if(Math.random() < 0.5) db.ref('global_chat').push(chatMsg);
-    db.ref('lobby_chat').push({ sender: nick, text: msg, time: Date.now(), isBot: true });
-  }
-
-  if(isWin && pnl > 5000) {
-    db.ref('global_chat').push({
-      user: '🏆 SlotOK',
-      text: `🎉 ${nick} щойно виграв ${formatNumber(pnl)}₴ в ${g.game}! Мультиплікатор ×${mult}`,
-      ts: Date.now(), avatar: '🏆', isBot: true,
-    });
-  }
-
-  // Auto refill if balance too low
-  if(bot.balance < 500) {
-    bot.balance = Math.floor(Math.random() * 8000) + 3000;
-    db.ref('users/' + nick + '/balance').set(bot.balance);
-  }
-}
-
-function addBotToEngine(nick, data) {
-  const personalities = Object.keys(BOT_PERSONALITIES);
-  const pers = data.personality || personalities[Math.floor(Math.random() * personalities.length)];
-  _activeBotData[nick] = {
-    balance: data.balance || 5000,
-    personality: pers,
-    nextPlay: Date.now() + Math.random() * 15000 + 3000,
-    avatarEmoji: data.avatar || '🤖',
-  };
-  if(!_botEngine) _botEngine = setInterval(botEngineTick, 5000);
-}
-
-function stopBotEngine() {
-  if(_botEngine) { clearInterval(_botEngine); _botEngine = null; }
-}
-
 // ─── src/app/19-features-fair-push-2fa.js ───
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
@@ -9340,30 +8953,6 @@ function comparePlayersModal() {
   openModal('compare', html);
 }
 
-function showTopDonators() {
-  openModal('topdonators',
-    modalCloseBtn('topdonators') +
-    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏆 Топ Донатерів</div>' +
-    '<div id="topDonatorsList" style="color:var(--fg-4);text-align:center;padding:20px;">Завантаження...</div>'
-  );
-  db.ref('users').orderByChild('totalDeposits').limitToLast(20).once('value').then(function(snap) {
-    var el = document.getElementById('topDonatorsList'); if(!el) return;
-    var sorted = Object.entries(snap.val()||{}).filter(function(e){return !e[1].isBot&&(e[1].totalDeposits||0)>0;})
-      .sort(function(a,b){return (b[1].totalDeposits||0)-(a[1].totalDeposits||0);}).slice(0,10);
-    if(!sorted.length){el.innerHTML='<div style="color:var(--fg-4);">Даних немає</div>';return;}
-    var medals=['🥇','🥈','🥉'];
-    el.innerHTML=sorted.map(function(e,i){
-      var u=e[1];
-      return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
-        +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
-        +'<div style="font-size:18px;">'+(u.avatar && u.avatar.length<=8 ? escapeHtml(u.avatar) : '👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+escapeHtml(e[0])+'</div><div style="font-size:10px;color:var(--fg-4);">'+escapeHtml(u.tag||'')+'</div></div>'
-        +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
-        +'</div>';
-    }).join('');
-  });
-}
-
 function showSecurityLog() {
   openModal('seclog',
     modalCloseBtn('seclog') +
@@ -9438,75 +9027,16 @@ function initAllNewFeatures() {
 
 
 
-function adminStartBotEngine() {
-  startBotEngine();
-  setTimeout(() => {
-    const count = Object.keys(_activeBotData).length;
-    const el = document.getElementById('botEngineStatus');
-    if(el) el.innerHTML = `<span style="color:var(--pos);">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
-    notify('▶ Бот-движок запущено для ' + count + ' ботів', 'success');
-  }, 1500);
-}
-
-function adminStopBotEngine() {
-  stopBotEngine();
-  _activeBotData = {};
-  const el = document.getElementById('botEngineStatus');
-  if(el) el.innerHTML = '<span style="color:var(--neg);">⏹ Зупинено</span>';
-  notify('⏹ Бот-движок зупинено', 'info');
-}
-
 function loadBots() {
   const listEl = document.getElementById('botList');
   if(!listEl) return;
   listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Завантаження...</div>';
   db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
-    const bots = snap.val() || {};
-    const entries = Object.entries(bots);
-    if(!entries.length) { listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>'; return; }
-    const persIcons = { aggressive:'🔥', balanced:'⚖️', conservative:'🛡️', whale:'🐋' };
-    listEl.innerHTML = entries.map(([nick, b]) => {
-      const isActive = !!_activeBotData[nick];
-      const persIcon = persIcons[b.personality] || '⚖️';
-      return `<div class="bot-card">
-        <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${safeUrl(b.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : escapeHtml(b.avatar||'🤖')}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;">${escapeHtml(nick)} ${persIcon}</div>
-          <div style="font-size:10px;color:var(--fg-3);">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:var(--pos);">● Активний</span>':'<span style="color:var(--fg-4);">⚫ Стоп</span>'}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgb(var(--neg-rgb) / 0.15)':'rgb(var(--pos-rgb) / 0.15)'};border:1px solid ${isActive?'var(--neg)':'var(--pos)'};border-radius:var(--r-sm);color:${isActive?'var(--neg)':'var(--pos)'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
-          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
-        </div>
-      </div>`;
-    }).join('');
-    const el = document.getElementById('botEngineStatus');
-    const activeCount = Object.keys(_activeBotData).length;
-    if(el) el.innerHTML = _botEngine
-      ? `<span style="color:var(--pos);">● Запущено</span> — ${activeCount} ботів активні`
-      : `<span style="color:var(--fg-4);">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
+    const entries = Object.keys(snap.val() || {});
+    listEl.innerHTML = entries.length
+      ? '<div style="color:var(--fg-3);font-size:12px;padding:8px;">Записів ботів у базі: ' + entries.length + ' (' + entries.slice(0, 30).map(escapeHtml).join(', ') + ')</div>'
+      : '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>';
   });
-}
-
-function toggleBot(nick) {
-  if(_activeBotData[nick]) {
-    delete _activeBotData[nick];
-    notify('⏹ Бот ' + nick + ' зупинено', 'info');
-  } else {
-    db.ref('users/' + nick).once('value', snap => {
-      if(snap.exists()) addBotToEngine(nick, snap.val());
-      notify('▶ Бот ' + nick + ' запущено', 'success');
-    });
-  }
-  setTimeout(loadBots, 300);
-}
-
-function deleteBot(nick) {
-  if(!confirm('Видалити бота ' + nick + '?')) return;
-  delete _activeBotData[nick];
-  db.ref('users/' + nick).remove();
-  notify('🗑 Бот ' + nick + ' видалено', 'info');
-  setTimeout(loadBots, 500);
 }
 
 function switchAdminTab(tab, el) {
@@ -9784,6 +9314,7 @@ function openPublicProfile(name) {
         <div style="display:flex;gap:8px;margin-top:15px;">
           <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
           <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value=${jsArg(name)};openTabModal('transfer-modal');">💸 Надіслати</button>
+          ${typeof friendsProfileButton === 'function' ? friendsProfileButton(name) : ''}
           <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;
@@ -9806,6 +9337,7 @@ function computeBadges(d) {
   if(d.dailyStreak >= 7) badges += `<span class="badge gold">🔥 Серія 7+</span>`;
   if(d.stats?.gamesPlayed >= 100) badges += `<span class="badge">🎮 Ветеран</span>`;
   if(d.isAdmin) badges += `<span class="badge gold">⚙️ Адмін</span>`;
+  if(d.supporter) badges += `<span class="badge gold">💜 Підтримав проєкт</span>`;
   if(d.stats?.biggestWin >= 10000) badges += `<span class="badge gold">🏆 Великий виграш</span>`;
   if(d.referrals >= 5) badges += `<span class="badge">👥 Рекрутер</span>`;
   return badges || `<span class="badge">🆕 Новачок</span>`;
@@ -10052,10 +9584,10 @@ function renderDepositCard(id, req) {
         <div class="req-card-meta">ID: ${escapeHtml(req.userId||'—')} • ${methodIcon} ${escapeHtml(methodName)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--pos);">+${escapeHtml(req.amount)}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">${escapeHtml(req.amount)} грн</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0},${jsArg(req.cardId||'')})">✅ Зарахувати</button>
+      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)})">✅ Підтвердити донат (значок)</button>
       <button class="req-reject"  onclick="rejectDeposit(${jsArg(id)},${jsArg(req.user)})">❌ Відхилити</button>
     </div>
   </div>`;
@@ -10075,8 +9607,7 @@ function renderWithdrawCard(id, req) {
       <div class="req-card-amount" style="color:var(--accent);">−${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveWithdraw(${jsArg(id)},${jsArg(req.user)})">✅ Виплачено</button>
-      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">❌ Повернути</button>
+      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">↩ Повернути на баланс (вивід скасовано)</button>
     </div>
   </div>`;
 }
@@ -10141,7 +9672,7 @@ function startAdminRequestListeners() {
         .sort(function(a,b){ return (b[1].time||0)-(a[1].time||0); });
       depEl.innerHTML = pending.length
         ? pending.map(function(e){ return renderDepositCard(e[0], e[1]); }).join('')
-        : '<div class="req-empty">✅ Заявок на поповнення немає</div>';
+        : '<div class="req-empty">✅ Заявок на донат немає</div>';
       updateRequestBadge();
     });
   }
@@ -10215,34 +9746,21 @@ function cardBalancePath(u, cardId) {
   return _cardBalPath(cardId);
 }
 
-function approveDeposit(id, user, amount, cardId) {
-  db.ref('users/'+user).once('value', function(snap) {
-    var u = snap.val() || {};
-    var path = cardBalancePath(u, cardId);
-    db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
-    // Якщо потрібну картку встигли відключити, кошти йдуть на активну —
-    // і в історію теж саме її, а не зниклої.
-    pushCardTx(user, {dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳'},
-               path === 'balance' ? _activeCardIdOf(u) : cardId);
-    if(path !== 'balance') {
-      var obj = (u.linkedCards && u.linkedCards[cardId]) || (cardId === 'axiom' ? u.virtualCard : null);
-      var last4 = obj ? (obj.last4 || String(obj.number||'').replace(/\D/g,'').slice(-4)) : '';
-      notify('Зараховано на картку ····' + last4 + ' (не активну)', 'info');
-    }
-  });
+// Донат — добровільна підтримка проєкту й НЕ нараховує нічого ігрового:
+// ні баланс, ні Слотіки, ні VIP/виграні ставки. Гравець отримує лише
+// косметичний значок «Підтримав проєкт» (однаковий для будь-якої суми).
+function approveDeposit(id, user) {
+  if(!requireAdminPerm('requests')) return;
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-  db.ref('users/'+user+'/history').push({text:`✅ Депозит підтверджено: +${amount}₴`, date:Date.now()});
-  db.ref('users/'+user+'/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:`✅ Ваш депозит ${amount}₴ зараховано! Гарної гри! 🎰`, ts:Date.now()});
+  db.ref('users/'+user).update({supporter:true, supporterAt:Date.now()});
+  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'Дякуємо за підтримку SlotOK! У вашому профілі з\'явився значок «Підтримав проєкт». Донат не змінює ігровий баланс.', ts:Date.now()});
   db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  // Update casino stats
-  db.ref('casino_stats/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  notify(`✅ Депозит ${amount}₴ зараховано гравцю ${user}`, 'success');
+  notify('Донат підтверджено, гравцю '+user+' видано значок підтримки', 'success');
 }
 
 function rejectDeposit(id, user) {
   db.ref('deposit_requests/'+id).update({status:'rejected', rejectedAt:Date.now()});
-  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Ваш запит на поповнення відхилено. Зверніться до підтримки.', ts:Date.now()});
+  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Вашу заявку про донат не підтверджено. Зверніться до підтримки.', ts:Date.now()});
   if(user) db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   notify('Депозит відхилено', 'info');
 }
@@ -11059,13 +10577,13 @@ function monoGameOver(winner) {
   if(isWin) {
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(prize));
     monoLog('🏆 ВИ ПЕРЕМОГЛИ! +' + prize + '₴', 'good');
-    addToHistory('Монополія: +' + prize + '₴');
+    addToHistory('Магнат: +' + prize + '₴');
     playSound('win');
-    notify('🎩 Перемога в Монополії! +' + prize + '₴', 'success');
+    notify('🎩 Перемога в «Магнаті»! +' + prize + '₴', 'success');
   } else {
     monoLog('💀 AI переміг. Гру завершено.', 'bad');
-    addToHistory('Монополія: -' + monoState.bet + '₴');
-    notify('😔 AI переміг у Монополії', 'error');
+    addToHistory('Магнат: -' + monoState.bet + '₴');
+    notify('😔 Комп’ютер переміг у «Магнаті»', 'error');
   }
   setTimeout(() => {
     const ss = document.getElementById('monoStartScreen');
@@ -13010,7 +12528,7 @@ function handleMpFinished2(r) {
   db.ref('mp_rooms/' + mpRoomId + '/players/' + currentUser + '/bankrupt').onDisconnect().cancel();
   const isWin = r.winner === currentUser;
   mpAddLog2(isWin ? '🏆 ВИ ПЕРЕМОГЛИ! +' + r.prize + '₴' : '😔 Переміг ' + r.winner, isWin?'good':'bad');
-  if(isWin) { playSound('win'); notify('🎩 Монополія: +' + r.prize + '₴!', 'success'); }
+  if(isWin) { playSound('win'); notify('🎩 Магнат: +' + r.prize + '₴!', 'success'); }
   if(mpListener) { db.ref('mp_rooms/' + mpRoomId).off('value', mpListener); mpListener = null; }
   setTimeout(resetMpUI, 4000);
 }
@@ -16290,8 +15808,8 @@ function sendSupportMsg() {
 const SUPPORT_FAQ = [
   { keys: ['поповн','депозит','закинут','внест','вклад','поповнити','донат'],
     reply: [
-      '💳 Донат: перейди в Гаманець → Донат, обери суму й спосіб (Monobank або Telegram). Це добровільна підтримка проєкту — натомість адмін зарахує бонус на твій ігровий баланс протягом 1-24 год. Мінімум 50₴.',
-      '💳 Щоб задонатити: Гаманець → Донат → вибери зручний спосіб оплати → введи суму (від 50₴) → подай заявку. Бонус на баланс зараховується протягом 1-24 годин після перевірки платежу.'
+      '💳 Донат — це добровільна підтримка проєкту: Гаманець → Донат → сума від 50 грн → заявка. Він нічого не додає в гру (ні баланс, ні Слотіки, ні VIP) — після підтвердження в профілі зʼявиться значок «Підтримав проєкт».',
+      '💳 Баланс у SlotOK не поповнюється за гроші: ігрова валюта віртуальна. Донат — це подарунок на розвиток сайту, у відповідь лише значок підтримки в профілі.'
     ] },
   { keys: ['вивід','вивести','зняти','виплат','кешаут','вивод'],
     reply: [
@@ -16379,10 +15897,10 @@ const SUPPORT_FAQ = [
       '⚽ Спортивні ставки: розділ Казино → Спортбетинг — реальні матчі (футбол, баскетбол та інші) з live-коефіцієнтами. Постав на переможця/нічию, стеж за рахунком прямо на екрані, виплата — автоматично після завершення матчу.',
       '⚽ Спортбетинг у Казино → Спортбетинг: реальні матчі з live-коефіцієнтами, ставиш на переможця чи нічию, а виплата приходить автоматично після фінального свистка.'
     ] },
-  { keys: ['монополі','monopoly'],
+  { keys: ['монополі','monopoly','магнат'],
     reply: [
-      '🎩 Монополія: постав ставку (від 100₴) і грай проти AI на класичному ігровому полі — купуй вулиці, будуй будинки, розоряй суперника. Виграш залежить від того, хто збанкрутує першим.',
-      '🎩 У Монополії граєш проти AI на класичному полі: купуй вулиці, будуй будинки й розоряй суперника — хто перший збанкрутує, той програв.'
+      '🎩 Магнат: постав ставку (від 100₴) і грай проти комп’ютера на класичному ігровому полі — купуй вулиці, будуй будинки, розоряй суперника. Виграш залежить від того, хто збанкрутує першим.',
+      '🎩 У «Магнаті» граєш проти комп’ютера на класичному полі: купуй вулиці, будуй будинки й розоряй суперника — хто перший збанкрутує, той програв.'
     ] },
   { keys: ['дурень','карти дурень','гра в дурня','war карти'],
     reply: [
@@ -16467,7 +15985,7 @@ const SUPPORT_FAQ = [
   { keys: ['мут','замучен','забанили в чаті','правила чату','спам чат'],
     reply: '💬 Правила чату: без спаму, реклами, образ і читерських порад. За порушення — тимчасовий мут. Якщо вважаєш мут помилковим, опиши ситуацію — передам адміну на перевірку.' },
   { keys: ['гроші списались а не зарахувал','платіж завис','оплата пройшла а грошей нема','гроші не прийшли'],
-    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на донат обробляються до 24 год — бонус зарахують після перевірки платежу. Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
+    reply: '💳 Гроші списались, а на балансі не з’явились: не хвилюйся, заявки на донат обробляються до 24 год — після перевірки зʼявиться значок «Підтримав проєкт» (ігровий баланс донат не змінює). Якщо минуло більше доби, опиши суму й час оплати, передам адміну для термінової перевірки.' },
   { keys: ['баланс не оновлюється','не бачу баланс','баланс завис','вилетіло з гри'],
     reply: '🔄 Якщо баланс не оновлюється або гру "вибило" — спробуй оновити сторінку (стан гри й баланс зберігаються на сервері, нічого не втрачається). Якщо після оновлення проблема лишається, опиши деталі — передам адміну.' },
   { keys: ['мінер','mines','сапер'],
@@ -16563,7 +16081,7 @@ const SUPPORT_FAQ = [
   { keys: ['сайт не відкрива','сайт не заванта','не завантажується','білий екран','зависло назавжди'],
     reply: '🌐 Якщо сайт не відкривається: спробуй оновити сторінку (або перезапустити застосунок), перевір інтернет-з’єднання й, за можливості, інший браузер. Якщо не допомогло — опиши, на якому пристрої й що саме бачиш.' },
   { keys: ['комісі','відсоток каз','edge'],
-    reply: '📊 Комісія казино закладена в коефіцієнти кожної гри (зазвичай 3-8%, вказано в правилах гри). PvP ігри (Coinflip, RPS, Predict) мають фіксовану комісію 5% з виграшу.' },
+    reply: '📊 Комісія платформи закладена в коефіцієнти кожної гри (зазвичай 3-8%, вказано в правилах гри). PvP ігри (Coinflip, RPS, Predict) мають фіксовану комісію 5% з виграшу.' },
   { keys: ['provably fair','чесність','чесна гра','рандом чесний','накрутка','обман','шахрайств'],
     reply: '🔒 Всі результати генеруються Provably Fair алгоритмом — випадковість перевіряється незалежно, накрутити чи вплинути на результат неможливо ні гравцям, ні адміністрації. У грі є кнопка перевірки чесності конкретного раунду.' },
   { keys: ['карт','skin','скін'],
@@ -16574,7 +16092,7 @@ const SUPPORT_FAQ = [
   { keys: ['скарг','пропозиц','ідея','ідею','звернен','поскарж'],
     reply: '📨 Скаргу чи пропозицію краще оформити як звернення — кнопка «Оформити звернення» вгорі цього чату. Підтримка відповість у ПМ, а статус буде видно в «Мої звернення».' },
   { keys: ['правил','13+','18+','вік','вікові обмеж'],
-    reply: '📜 Правила: SlotOK доступний з ' + MIN_AGE + ' років, вік перевіряється за датою народження при реєстрації. Загальні правила казино доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
+    reply: '📜 Правила: SlotOK доступний з ' + MIN_AGE + ' років, вік перевіряється за датою народження при реєстрації. Умови та правила доступні при реєстрації, окремі правила кожної гри — на її екрані.' },
   { keys: ['телеграм бот','telegram бот','прив\'язати телеграм','підключити телеграм','бот повідомлення'],
     reply: '📲 Telegram-бот: прив’яжи акаунт у Профіль → Сповіщення, щоб отримувати миттєві повідомлення про донат та відповіді підтримки прямо в Telegram.' },
   { keys: ['встановити застосунок','встановити додаток','pwa','install app','іконка на екран'],
@@ -16646,7 +16164,7 @@ const SUPPORT_FAQ = [
   { keys: ['rtp гри','повернення гравцю','яка віддача гри'],
     reply: '📊 RTP (повернення гравцю): орієнтовний відсоток повернення закладено в кожну гру (зазвичай 92-97%) — це середнє значення на дистанції, а не гарантія для кожної окремої ставки.' },
   { keys: ['чому я програю','чому завжди програш','гра нечесна програш'],
-    reply: '📉 Програші — нормальна частина будь-якої азартної гри: кожна гра має закладену комісію казино (RTP < 100%), тож на довгій дистанції баланс статистично тяжіє до зниження. Всі результати при цьому Provably Fair — перевірити чесність можна прямо в грі.' },
+    reply: '📉 Програші — нормальна частина будь-якої азартної гри: кожна гра має закладену комісію платформи (RTP < 100%), тож на довгій дистанції баланс статистично тяжіє до зниження. Всі результати при цьому Provably Fair — перевірити чесність можна прямо в грі.' },
   { keys: ['клан війн','війна кланів','клан рівень'],
     reply: '⚔️ Клани мають спільний рівень, що росте з активністю учасників — вищий рівень клану відкриває бонуси для всіх його членів. Окремих "воєн" між кланами наразі немає, є лише тижневі завдання клану.' },
   { keys: ['реферал не зарахувався','друг не зарахувався','запросив друга нема бонусу'],
@@ -16759,11 +16277,6 @@ function updateHomeStats() {
     // показував «Iron». Джерело те саме, що й на екрані VIP.
     statVip.textContent = getVipLevel(userData.totalWagered || 0).name;
   }
-  // Random jackpot
-  if(jackEl) {
-    const base = 50000 + Math.floor(Math.random()*200000);
-    jackEl.textContent = formatNumber(base) + '₴';
-  }
 }
 
 
@@ -16775,7 +16288,6 @@ const ACHIEVEMENTS = [
   // ── ПЕРШІ КРОКИ ──
   { id:'first_game',      icon:'🎮', name:'Перша гра',           desc:'Зіграй будь-яку гру',                  cat:'Початок',   xp:10,  cond: d => (d.totalGames||0) >= 1 },
   { id:'first_win',       icon:'🏆', name:'Перший виграш',       desc:'Виграй будь-яку ставку',               cat:'Початок',   xp:15,  cond: d => (d.totalWins||0) >= 1 },
-  { id:'first_deposit',   icon:'💳', name:'Перший депозит',      desc:'Поповни баланс',                       cat:'Початок',   xp:20,  cond: d => (d.totalDeposited||0) >= 1 },
   { id:'first_sport',     icon:'⚽', name:'Перша спорт ставка',  desc:'Постав на спорт',                      cat:'Початок',   xp:15,  cond: d => (d.sportBets||0) >= 1 },
   { id:'register_done',   icon:'👤', name:'Ласкаво просимо!',    desc:'Зареєструйся',                         cat:'Початок',   xp:5,   cond: d => true },
   // ── СЛОТИ ──
@@ -17585,51 +17097,31 @@ function loadTourneyStatsBar() {
 // ═══════════════════════════════════════
 // CASINO LOBBY v2 — Jackpot + Wins feed
 // ═══════════════════════════════════════
-let _lobbyJackpot = 4287341 + Math.floor(Math.random()*500000);
-let _lobbyJackpotTimer = null;
-let _lobbyWinsTimer    = null;
-
-const LOBBY_WIN_POOL = [
-  {user:'Дмитро Л.', game:'Plinko',       avatar:'🦅'},
-  {user:'Оля Т.',    game:'Mines',         avatar:'🦋'},
-  {user:'Саша П.',   game:'Crash Aviator', avatar:'🐬'},
-  {user:'Вова Д.',   game:'Classic 777',   avatar:'🦜'},
-  {user:'Юля К.',    game:'Blackjack',     avatar:'🐱'},
-  {user:'Петро М.',  game:'Limbo',         avatar:'🦊'},
-];
+// Стрічка «Останні виграші» — лише РЕАЛЬНІ записи win_feed (без вигаданих
+// гравців і сум). Немає даних — блок схований. Джекпот-лічильник прибрано.
+let _lobbyWinsRef = null, _lobbyWinsCb = null;
 
 function startLobbyTimers() {
   try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
-  // Повторний вхід у вкладку без виходу не має множити таймери
+  // Повторний вхід у вкладку без виходу не має множити слухачі
   stopLobbyTimers();
-  // Jackpot counter
-  _lobbyJackpotTimer = setInterval(() => {
-    _lobbyJackpot += Math.floor(Math.random()*180 + 40);
-    const el = document.getElementById('lobbyJackpotNum');
-    if(el) el.textContent = _lobbyJackpot.toLocaleString('uk');
-  }, 1200);
-
-  // Wins feed rotation
-  const pushWin = () => {
-    const feed = document.getElementById('lobbyWinsFeed');
-    if(!feed) return;
-    const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
-    const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
-    const row = document.createElement('div');
-    row.className = 'win-feed-row list-row';
-    row.innerHTML = `<div class="win-feed-avatar">${p.avatar}</div><div class="list-row-main"><div class="win-feed-user list-row-title">${p.user}</div><div class="win-feed-game list-row-sub">${p.game}</div></div><div class="win-feed-amount num">+₴ ${amt}</div>`;
-    feed.insertBefore(row, feed.firstChild);
-    const rows = feed.querySelectorAll('.win-feed-row');
-    if(rows.length > 5) rows[rows.length-1].remove();
+  const feed = document.getElementById('lobbyWinsFeed');
+  const head = document.getElementById('lobbyWinsHead');
+  if(!feed || !db) return;
+  _lobbyWinsRef = db.ref('win_feed').orderByChild('time').limitToLast(5);
+  _lobbyWinsCb = snap => {
+    const items = Object.values(snap.val() || {}).filter(it => it && !it.isBot && it.user && it.amount).sort((a, b) => b.time - a.time);
+    feed.innerHTML = items.map(it =>
+      `<div class="win-feed-row list-row"><div class="list-row-main"><div class="win-feed-user list-row-title">${escapeHtml(it.user)}</div><div class="win-feed-game list-row-sub">${escapeHtml(it.game || '')}</div></div><div class="win-feed-amount num">+₴ ${formatNumber(it.amount)}</div></div>`).join('');
+    feed.hidden = !items.length;
+    if(head) head.hidden = !items.length;
   };
-  const feedEl = document.getElementById('lobbyWinsFeed');
-  if(feedEl && !feedEl.children.length) { for(let i = 0; i < 4; i++) pushWin(); }
-  _lobbyWinsTimer = setInterval(pushWin, 3000);
+  _lobbyWinsRef.on('value', _lobbyWinsCb);
 }
 
 function stopLobbyTimers() {
-  clearInterval(_lobbyJackpotTimer);
-  clearInterval(_lobbyWinsTimer);
+  if(_lobbyWinsRef && _lobbyWinsCb) { try { _lobbyWinsRef.off('value', _lobbyWinsCb); } catch(e) {} }
+  _lobbyWinsRef = _lobbyWinsCb = null;
 }
 
 // ── Фільтри лоббі ────────────────────────────────────────────────
@@ -19583,7 +19075,7 @@ function renderActivityFeed() {
   if(!el) return;
   db.ref('win_feed').orderByChild('time').limitToLast(8).on('value', snap => {
     const data = snap.val() || {};
-    const items = Object.values(data).sort((a,b)=>b.time-a.time);
+    const items = Object.values(data).filter(it=>it&&!it.isBot).sort((a,b)=>b.time-a.time);
     el.innerHTML = items.map(item => `
       <div class="feed-item">
         <div style="font-size:20px;">🎰</div>
@@ -21532,14 +21024,15 @@ function _applyLocalCardDelta(id, delta) {
 // Піднімаємо TERMS_VERSION, коли текст правил змінюється по суті: тоді
 // згоду запитають наново.
 // ═══════════════════════════════════════════════════════════════════
-var TERMS_VERSION = '2';
+var TERMS_VERSION = '3';
 
 var TERMS_SECTIONS = [
   {
     title: 'Вік',
     items: [
       'Користуватись SlotOK можна з ' + MIN_AGE + ' років. Підтверджуючи згоду, ти заявляєш, що тобі вже виповнилось ' + MIN_AGE + '.',
-      'Якщо тобі менше — закрий сайт. Акаунти, власники яких не досягли цього віку, блокуються без повернення балансу.',
+      'Якщо тобі від 13 до 17 років — користуйся сайтом лише з дозволу батьків або опікунів.',
+      'Якщо тобі менше 13 — закрий сайт. Акаунти, власники яких не досягли цього віку, видаляються.',
     ]
   },
   {
@@ -21577,10 +21070,9 @@ var TERMS_SECTIONS = [
   {
     title: 'Гаманець',
     items: [
-      'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
-      'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
-      'Заявка на донат прив’язується до картки, активної на момент подачі: бонус зарахується саме на неї.',
-      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку немає.',
+      'Донат — добровільний подарунок на розвиток проєкту, не купівля товару. Він нічого не додає в гру: ні баланс, ні Слотіки, ні VIP.',
+      'Донати обробляє адміністратор вручну; після підтвердження в профілі зʼявляється значок «Підтримав проєкт».',
+      'Баланс ігровий і віртуальний: його не можна купити, продати, обміняти чи вивести.',
     ]
   },
   {
@@ -21596,7 +21088,7 @@ var TERMS_SECTIONS = [
     items: [
       'Зберігаються: нік, хеш пароля, баланс і його історія, операції по картках, налаштування, прив’язаний Telegram (якщо прив’язав) і токен пристрою для сповіщень (якщо дозволив).',
       'Іншим гравцям видно твій нік, аватар, рівень, досягнення й публічну статистику. Баланс картки, операції та Telegram — не видно.',
-      'Видалення акаунта — через підтримку.',
+      'Завантажити свої дані й видалити акаунт можна в Налаштуваннях. Докладно — вкладка «Конфіденційність».',
     ]
   },
   {
@@ -21623,27 +21115,16 @@ function termsSectionsHtml() {
   }).join('');
 }
 
-// Правила можна відкрити будь-коли — з вкладки «Ще» або з самого гейта.
-function openRulesModal() {
-  var old = document.getElementById('ksRulesModal'); if(old) old.remove();
-  var m = document.createElement('div');
-  m.className = 'ks-modal'; m.id = 'ksRulesModal';
-  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
-  m.innerHTML = '<div class="ks-modal-box">' +
-    '<div class="ks-modal-head"><div class="ks-modal-title">Правила SlotOK</div>' +
-      '<button class="ks-modal-x" onclick="document.getElementById(\'ksRulesModal\').remove()">' + ksIcon('x') + '</button></div>' +
-    '<p class="ks-hint" style="margin:0;">Правила користування сайтом. Версія ' + ksEsc(TERMS_VERSION) + '.</p>' +
-    termsSectionsHtml() +
-    '<button class="ks-btn is-quiet is-block" style="margin-top:18px;" onclick="document.getElementById(\'ksRulesModal\').remove()">Закрити</button>' +
-    '</div>';
-  document.body.appendChild(m);
-}
+// Правила можна відкрити будь-коли — з вкладки «Ще», з екрана входу або з гейта.
+// openRulesModal(tab) живе в 55-legal.js (вкладки Умови / Конфіденційність /
+// Відповідальна гра / Правила).
 
 // ── Гейт згоди ───────────────────────────────────────────────────
 var TERMS_CHECKS = [
   { k: 'age',    text: 'Мені виповнилось ' + MIN_AGE + ' років' },
   { k: 'noHack', text: 'Я не лізтиму в консоль, не змінюватиму код сайту й не намагатимусь його зламати' },
-  { k: 'read',   text: 'Я прочитав правила й погоджуюсь із ними' },
+  { k: 'read',   text: 'Я прочитав Умови та Політику конфіденційності й погоджуюсь із ними' },
+  { k: 'parent', text: 'Якщо мені менше 18 років — я користуюсь сайтом із дозволу батьків або опікунів' },
 ];
 var _termsChecked = {};
 
@@ -21664,7 +21145,7 @@ function checkTermsGate() {
     '<div class="ks-modal-head"><div class="ks-modal-title">Перш ніж грати</div></div>' +
     '<p class="ks-hint" style="margin:0 0 14px;">Коротко про головне. Повний текст — за кнопкою нижче.</p>' +
     '<div id="ksTermsChecks"></div>' +
-    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати повні правила</button>' +
+    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати Умови та Політику</button>' +
     '<button class="ks-btn is-primary is-block" id="ksTermsAccept" disabled onclick="acceptTerms()">Підтверджую</button>' +
     '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="logout()">Вийти</button>' +
     '</div>';
@@ -22463,11 +21944,11 @@ function savePlayerNotes() {
 // Повний список усіх ігор сайту (синхронізовано з картками "Всі ігри" в лобі) —
 // раніше тут було лише 9 ігор і решту адмін не міг вимкнути з панелі модерації.
 const ADMIN_TOGGLEABLE_GAMES = [
-  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash Aviator'}, {id:'mines', name:'💣 Mines'},
+  {id:'slots', name:'🎰 Classic 777'}, {id:'crash', name:'🚀 Crash'}, {id:'mines', name:'💣 Mines'},
   {id:'blackjack', name:'🃏 Blackjack'}, {id:'plinko', name:'🔻 Plinko'}, {id:'dice', name:'🎲 Dice Roll'},
   {id:'fortune', name:'🎡 Колесо Фортуни'}, {id:'poker', name:'♠️ Video Poker'}, {id:'hilo', name:'🃏 Hi-Lo Cards'},
   {id:'scratch', name:'🎟️ Скретч'}, {id:'limbo', name:'🎯 Limbo'}, {id:'tower', name:'🗼 Tower Climb'},
-  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Монополія'},
+  {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Магнат'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
   {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'},
@@ -23564,7 +23045,7 @@ async function claimWelcomeBackBonus(bonus) {
 const ONBOARDING_STEPS = [
   { selector: '.nav-item[onclick*="lobby"]', title: '🎰 Тут всі ігри', text: 'Понад 40 ігор — від слотів до шахів. Обирай будь-яку і починай грати!' },
   { selector: '.nav-item[onclick*="cashier"]', title: '<span class="ic i-wallet" aria-hidden="true"></span> Гаманець', text: 'Тут ігровий баланс, донат на підтримку проєкту, кешбек і твоя картка — її вигляд можна змінити, скінів понад сотню.' },
-  { selector: '#homeJackpot', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
+  { selector: '#homeStatVip', title: '💎 VIP та бонуси', text: 'Щоденний бонус росте з кожним днем поспіль. Не пропускай візити!' },
   { selector: '.nav-item[onclick*="profile"]', title: '👤 Твій профіль', text: 'Статистика в реальному часі, досягнення і налаштування — все тут.' },
 ];
 let _onboardStepIdx = 0;
@@ -23701,7 +23182,7 @@ function renderFriendsFeed() {
   const el = document.getElementById('friendsFeedWidget');
   if(!el || !currentUser) return;
   db.ref('users/'+currentUser+'/following').once('value').then(snap => {
-    const following = Object.keys(snap.val() || {});
+    const following = Array.from(new Set(Object.keys(snap.val() || {}).concat(window.FRIENDS_LIST || [])));
     if(!following.length) { el.classList.add('hidden'); return; }
     db.ref('win_feed').orderByChild('time').limitToLast(40).once('value').then(feedSnap => {
       const all = Object.values(feedSnap.val() || {});
@@ -24702,7 +24183,7 @@ function roomLobby(game, el, opts) {
           <div class="room-row-meta"><span class="num">₴${formatNumber(r.bet)}</span> · ${players.length}/${r.size} гравців${extra ? ' · ' + escapeHtml(extra) : ''}</div>
         </div>
         ${mine
-          ? `<button type="button" class="btn btn-ghost room-row-btn" onclick="roomLeaveConfirm(${jsArg(game)},${jsArg(id)})">Скасувати</button>`
+          ? `${typeof friendsInviteOpen === 'function' ? `<button type="button" class="btn btn-secondary room-row-btn" onclick="friendsInviteOpen(${jsArg(game)},${jsArg(id)})">Запросити друга</button>` : ''}<button type="button" class="btn btn-ghost room-row-btn" onclick="roomLeaveConfirm(${jsArg(game)},${jsArg(id)})">Скасувати</button>`
           : `<button type="button" class="btn btn-primary room-row-btn" onclick="roomJoin(${jsArg(game)},${jsArg(id)})">Грати · ₴${formatNumber(r.bet)}</button>`}
       </div>`;
     }).join('');
@@ -25080,6 +24561,7 @@ function msDuelUpdate(u) {
   if (wait) {
     const w = document.getElementById('msDuelWaitText');
     if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)} · ${(MS_DUEL_LEVELS[u.opts.level] || {}).name || ''}. Чекаємо суперника…`;
+    friendsAttachInvite('msDuelWait', 'minesweeper', MS.duel.id);
     return;
   }
   if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); msDuelClose(); return; }
@@ -25384,7 +24866,7 @@ function bsOnlineUpdate(u) {
   if (meta.status === 'cancelled') { notify('Кімнату скасовано, ставку повернено', 'info'); bsOnlineClose(); return; }
   document.getElementById('bsWait')?.classList.toggle('hidden', !wait);
   document.getElementById('bsPlay')?.classList.toggle('hidden', wait);
-  if (wait) { const w = document.getElementById('bsWaitText'); if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)}. Чекаємо суперника…`; return; }
+  if (wait) { const w = document.getElementById('bsWaitText'); if (w) w.textContent = `Ставка ₴${formatNumber(meta.bet)}. Чекаємо суперника…`; friendsAttachInvite('bsWait', 'battleship', BS.online.id); return; }
   if (!pub) return;
   const placing = pub.phase === 'place' && !pub.placed[seat];
   const myFleet = (priv && priv.fleet) || BS.myFleet;
@@ -26330,6 +25812,7 @@ function tableUpdate(game, u) {
     if (el) el.innerHTML = `Ставка <b class="num">₴${formatNumber(meta.bet)}</b> · гравців <b class="num">${u.players.length}</b> з ${meta.size}`;
     const ch = document.getElementById(game + 'WaitPlayers');
     if (ch) ch.innerHTML = u.players.map((p) => `<span class="mass-chip${p === currentUser ? ' is-me' : ''}">${escapeHtml(p)}</span>`).join('');
+    friendsAttachInvite(game + 'Wait', game, t.id);
     document.getElementById(game + 'StartNow')?.classList.toggle('hidden', !(meta.host === currentUser && u.players.length >= 2));
     return;
   }
@@ -27522,3 +27005,685 @@ function applyPlayerStyles(root) {
     if(queued.length && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
   }).observe(document.body, { childList: true, subtree: true });
 })();
+// ─── src/app/55-legal.js ───
+// ============================================================
+// Юридичні тексти (Умови, Політика конфіденційності, Відповідальна гра),
+// вікно «Правила та політика», експорт і видалення власних даних.
+//
+// Тексти — ЧЕРНЕТКИ простою мовою, їх має переглянути юрист. Місця, де
+// потрібні дані власника, позначені «[вкажіть контакт власника]» — не
+// вигадуйте їх, заповніть справжніми.
+// Піднімаючи LEGAL_VERSION, піднімайте й TERMS_VERSION у 37-cashier-v70.js:
+// тоді гравці підтвердять згоду наново.
+// ============================================================
+var LEGAL_VERSION = '3';
+var LEGAL_UPDATED = '16.11.2026';
+var LEGAL_CONTACT = '[вкажіть контакт власника]';
+
+var LEGAL_DOCS = {
+  terms: {
+    tab: 'Умови',
+    title: 'Умови користування',
+    sections: [
+      { title: '1. Що таке SlotOK', items: [
+        'SlotOK — безкоштовна розважальна ігрова платформа. Це не казино, не букмекер і не сервіс азартних ігор: тут не можна виграти гроші чи речі, що мають грошову вартість.',
+        'Користуючись сайтом, ти погоджуєшся з цими Умовами та з Політикою конфіденційності. Якщо не погоджуєшся — не користуйся сайтом.',
+      ]},
+      { title: '2. Віртуальна валюта', items: [
+        'Усе, що ти бачиш у грі, — ігрові гривні (₴), Слотіки, фріспіни, бали, рівні, значки та «виграші» — віртуальне. Воно не є грошима, електронними грошима, цифровим активом чи платіжним засобом і не має грошової вартості.',
+        'Віртуальну валюту не можна купити, продати, обміняти на гроші чи інші цінності, передати третім особам за плату або вивести. Ми не пропонуємо призів, що мають грошову вартість.',
+        'Ми можемо змінювати баланси, ціни, множники, правила ігор і нагороди, а також скидати прогрес сезону, якщо це потрібно для чесної гри, виправлення помилок чи розвитку проєкту.',
+      ]},
+      { title: '3. Донат', items: [
+        'Ти можеш добровільно підтримати проєкт грошима. Це подарунок на розвиток сайту, а не оплата товару чи послуги.',
+        'Донат нічого не додає в гру: не змінює ігровий баланс, Слотіки, VIP-рівень, ліміти, шанси чи будь-що, що можна використати в іграх. Єдина подяка — значок «Підтримав проєкт» у профілі, однаковий для будь-якої суми.',
+        'Донат не повертається, окрім випадків, коли повернення прямо вимагає закон. Для питань щодо платежу звернись у розділ «Підтримка» в застосунку.',
+        'Не донать, якщо тобі менше 18 років і немає дозволу батьків або опікунів.',
+      ]},
+      { title: '4. Акаунт і правила поведінки', items: [
+        'Мінімальний вік — 13 років. Якщо тобі від 13 до 17 років, користуйся сайтом лише за згодою батьків або опікунів.',
+        'Один гравець — один акаунт. Бережи пароль і відповідь на контрольне питання: за дії з твого акаунта відповідаєш ти.',
+        'Заборонено: ламати сайт, використовувати помилки, скрипти й боти для гри, домовлятися з іншими гравцями проти решти, ображати, погрожувати, публікувати незаконний, сексуальний чи шкідливий вміст, видавати себе за іншу людину.',
+        'Модератори можуть видаляти повідомлення, обмежувати чи блокувати акаунт за порушення. Докладніше — вкладка «Правила».',
+      ]},
+      { title: '5. Комп’ютерні суперники', items: [
+        'У деяких іграх (шахи, дурень тощо) ти граєш проти комп’ютера — такий суперник завжди підписаний. В інших іграх суперники — реальні гравці.',
+      ]},
+      { title: '6. Відповідальність', items: [
+        'Сайт працює «як є». Ми намагаємось, щоб він працював без збоїв, але не гарантуємо безперервності й відсутності помилок і не відповідаємо за втрату віртуального прогресу чи баланса.',
+        'У межах, дозволених законом, ми не відповідаємо за непрямі збитки та за дії інших гравців. Це не обмежує відповідальності, яку закон не дозволяє обмежувати.',
+        'Контент інших гравців (повідомлення, аватарки) належить їм; ми не перевіряємо його заздалегідь, але видаляємо після скарги, якщо він порушує правила.',
+      ]},
+      { title: '7. Зміни та зв’язок', items: [
+        'Ми можемо змінювати ці Умови. Про суттєві зміни попросимо підтвердити згоду наново при вході.',
+        'Зв’язок із нами — розділ «Підтримка» в застосунку (Ще → Підтримка). Власник / особа, що відповідає за сайт: ' + LEGAL_CONTACT + '.',
+      ]},
+    ],
+  },
+  privacy: {
+    tab: 'Конфіденційність',
+    title: 'Політика конфіденційності',
+    sections: [
+      { title: 'Хто відповідає за дані', items: [
+        'Володілець персональних даних: ' + LEGAL_CONTACT + '. Контакт для запитів щодо даних — розділ «Підтримка» в застосунку.',
+      ]},
+      { title: 'Що ми збираємо і навіщо', items: [
+        'Нік і пароль (зберігається лише його хеш, не сам пароль) — щоб ти мав акаунт і міг входити.',
+        'Дата народження — лише щоб перевірити вік (13+) при реєстрації. Зберігається в закритому серверному сховищі, іншим гравцям не видна.',
+        'Контрольне питання й хеш відповіді, необов’язковий email — для відновлення доступу.',
+        'Ігрові дані: баланс, історія, статистика, досягнення, налаштування, покупки за Слотіки, прогрес — щоб гра працювала.',
+        'Повідомлення в чатах, особисті повідомлення, звернення в підтримку — щоб працювало спілкування й модерація.',
+        'IP-адреса: при вході браузер отримує її через сервіс ipify.org; ми зберігаємо лише її хеш (для виявлення кількох акаунтів з однієї мережі) і замасковану адресу в журналі безпеки. Це потрібно для захисту від шахрайства.',
+        'Дані пристрою: у пам’яті браузера (localStorage) зберігаються сесія й налаштування. Якщо ти дозволиш сповіщення — токен пристрою для push (Firebase Cloud Messaging). Якщо прив’яжеш Telegram — ідентифікатор твого чату з ботом.',
+        'Заявка на донат: нік, сума, спосіб, час. Реквізити твоєї картки ми не отримуємо й не зберігаємо.',
+      ]},
+      { title: 'Де і ким обробляються дані', items: [
+        'База даних, вхід і push — Google Firebase (Google LLC). Хостинг і серверні функції — Vercel. Шрифти завантажуються з Google Fonts, анімації/зображення — з Giphy. IP визначає ipify. Ці сервіси можуть обробляти дані за межами України та ЄС.',
+        'Ми не продаємо персональні дані й не використовуємо їх для реклами. Ми передаємо їх третім особам лише технічним постачальникам вище, а також якщо цього вимагає закон.',
+        'Публічні дані: нік, аватар, рівень, значки, публічна статистика та повідомлення в загальних чатах бачать інші гравці.',
+      ]},
+      { title: 'Скільки зберігаємо', items: [
+        'Дані акаунта — доки він існує. Після видалення акаунта ми стираємо дані профілю, секрети входу, особисті повідомлення, друзів і прив’язку Telegram.',
+        'Повідомлення в загальних чатах автоматично очищаються з часом; на прохання їх можна прибрати раніше через підтримку.',
+        'Записи про заявки на донат можуть зберігатись довше, якщо цього потребує облік чи закон.',
+      ]},
+      { title: 'Твої права', items: [
+        'Доступ: Налаштування → «Завантажити мої дані» — отримаєш файл JSON з даними свого профілю (без секретів).',
+        'Виправлення: змінюй профіль у налаштуваннях або напиши в підтримку.',
+        'Видалення: Налаштування → «Видалити акаунт» — акаунт і пов’язані дані видаляються безповоротно.',
+        'Інші права (обмеження обробки, заперечення, скарга до наглядового органу) — через підтримку. Закон України «Про захист персональних даних» дає право звернутись до Уповноваженого Верховної Ради з прав людини.',
+      ]},
+      { title: 'Неповнолітні (13–17 років)', items: [
+        'Платформа доступна з 13 років. Гравцям до 18 років потрібен дозвіл батьків або опікунів на користування й на обробку даних; при реєстрації ми просимо це підтвердити.',
+        'Батьки чи опікуни можуть звернутись у підтримку, щоб отримати дані дитини або видалити її акаунт.',
+        'Якщо ми дізнаємось, що акаунт створила людина молодша за 13 років, його буде видалено.',
+      ]},
+      { title: 'Безпека та зміни', items: [
+        'Ми використовуємо захищене з’єднання, зберігаємо паролі лише у вигляді хешів і закриваємо секретні дані від браузерів. Абсолютної безпеки в інтернеті не існує.',
+        'Політика може змінюватись; про суттєві зміни попросимо підтвердити згоду наново.',
+      ]},
+    ],
+  },
+  responsible: {
+    tab: 'Відповідальна гра',
+    title: 'Відповідальна гра',
+    sections: [
+      { title: 'Це гра, а не заробіток', items: [
+        'SlotOK — розвага. Ти не можеш виграти гроші, а віртуальна валюта не має вартості. Не сприймай гру як спосіб заробити.',
+        'Не витрачай на донати гроші, які потрібні на життя. Донат не дає переваг у грі.',
+      ]},
+      { title: 'Дбай про себе', items: [
+        'Став собі ліміт часу, роби перерви, не грай замість сну, навчання чи роботи.',
+        'У Налаштуваннях є особисті ліміти та самовиключення на певний час. Скористайся ними, якщо відчуваєш, що граєш забагато.',
+        'Якщо гра викликає стрес, тривогу чи заважає життю — зроби паузу й поговори з близькими або фахівцем. Напиши в підтримку, якщо потрібна допомога з обмеженням акаунта.',
+      ]},
+      { title: 'Для батьків', items: [
+        'Платформа не має реальних ставок і виплат, але містить механіки, схожі на ігрові автомати. Дітям до 18 років — лише за згодою й під наглядом батьків. Зверніться в підтримку, щоб обмежити або видалити акаунт дитини.',
+      ]},
+    ],
+  },
+};
+
+function legalDocHtml(key) {
+  var d = LEGAL_DOCS[key];
+  if(key === 'rules') return termsSectionsHtml();
+  if(!d) return '';
+  return d.sections.map(function(sec) {
+    return '<div class="ks-label legal-h">' + ksEsc(sec.title) + '</div>' +
+      sec.items.map(function(it) { return '<p class="ks-hint legal-p">' + ksEsc(it) + '</p>'; }).join('');
+  }).join('');
+}
+
+// Вікно «Правила та політика»: вкладки Умови / Конфіденційність /
+// Відповідальна гра / Правила. Відкривається і з екрана входу, і з «Ще».
+function openRulesModal(tab) {
+  var keys = ['terms', 'privacy', 'responsible', 'rules'];
+  if(keys.indexOf(tab) < 0) tab = 'terms';
+  var old = document.getElementById('ksRulesModal'); if(old) old.remove();
+  var m = document.createElement('div');
+  m.className = 'ks-modal'; m.id = 'ksRulesModal';
+  m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
+  var tabs = keys.map(function(k) {
+    var name = k === 'rules' ? 'Правила' : LEGAL_DOCS[k].tab;
+    return '<button type="button" class="legal-tab' + (k === tab ? ' is-on' : '') + '" onclick="openRulesModal(\'' + k + '\')">' + ksEsc(name) + '</button>';
+  }).join('');
+  var title = tab === 'rules' ? 'Правила спільноти' : LEGAL_DOCS[tab].title;
+  m.innerHTML = '<div class="ks-modal-box legal-box">' +
+    '<div class="ks-modal-head"><div class="ks-modal-title">' + ksEsc(title) + '</div>' +
+      '<button class="ks-modal-x" aria-label="Закрити" onclick="document.getElementById(\'ksRulesModal\').remove()">' + ksIcon('x') + '</button></div>' +
+    '<div class="legal-tabs">' + tabs + '</div>' +
+    '<p class="ks-hint legal-p">Редакція ' + ksEsc(LEGAL_VERSION) + ' від ' + ksEsc(LEGAL_UPDATED) + '.</p>' +
+    legalDocHtml(tab) +
+    '<button class="ks-btn is-quiet is-block" style="margin-top:18px;" onclick="document.getElementById(\'ksRulesModal\').remove()">Закрити</button>' +
+    '</div>';
+  document.body.appendChild(m);
+  var box = m.querySelector('.ks-modal-box'); if(box) box.scrollTop = 0;
+}
+
+// ── Право на доступ: «Завантажити мої дані» ───────────────────────
+// Власний вузол users/<нік> без секретів. Хеші пароля/відповіді сервер
+// зберігає окремо (user_secrets) і сюди вони не потрапляють.
+async function exportMyData() {
+  if(!currentUser || !db) return notify('Спершу увійди в акаунт', 'error');
+  var ok = await confirmAction({ title: 'Завантажити мої дані?', text: 'Буде створено файл JSON з даними твого профілю (без пароля й відповіді на контрольне питання).', confirm: 'Завантажити' });
+  if(!ok) return;
+  try {
+    var snap = await db.ref('users/' + currentUser).once('value');
+    var data = snap.val() || {};
+    ['pass', 'securityAnswerHash', 'securityAnswer', 'birthDate'].forEach(function(k) { delete data[k]; });
+    var out = { nick: currentUser, exportedAt: new Date().toISOString(), note: 'Дані профілю SlotOK без секретів (пароль, відповідь на контрольне питання, дата народження зберігаються окремо на сервері).', profile: data };
+    var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'slotok-my-data-' + currentUser + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 2000);
+    notify('Файл із твоїми даними завантажено', 'success');
+  } catch(e) {
+    console.warn(e);
+    notify('Не вдалося отримати дані. Спробуй ще раз.', 'error');
+  }
+}
+
+// Запит пароля в стилі застосунку (замість системного prompt).
+function legalAskPassword() {
+  return new Promise(function(resolve) {
+    var m = document.createElement('div');
+    m.className = 'ks-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="ks-modal-box">' +
+      '<div class="ks-modal-head"><div class="ks-modal-title">Підтвердь паролем</div></div>' +
+      '<p class="ks-hint legal-p">Введи свій пароль, щоб видалити акаунт.</p>' +
+      '<input type="password" id="legalDelPass" autocomplete="current-password" placeholder="Пароль">' +
+      '<button class="ks-btn is-danger is-block" style="margin-top:12px;" data-act="ok">Видалити акаунт</button>' +
+      '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" data-act="no">Скасувати</button></div>';
+    var done = function(v) { m.remove(); resolve(v); };
+    m.addEventListener('click', function(e) {
+      if(e.target === m) return done('');
+      var a = e.target.closest('[data-act]');
+      if(a) done(a.getAttribute('data-act') === 'ok' ? document.getElementById('legalDelPass').value : '');
+    });
+    document.body.appendChild(m);
+    document.getElementById('legalDelPass').focus();
+  });
+}
+
+// ── Право на видалення: «Видалити акаунт» ─────────────────────────
+// Видаляє сервер (api/reward.js → lib/account.js): профіль, секрети входу,
+// ПП, друзів, прив’язку Telegram, запис Firebase Auth. Для підтвердження
+// потрібен пароль. Якщо серверний режим вимкнений — створюється заявка
+// в підтримку, і гравцю прямо сказано, що акаунт ще НЕ видалено.
+async function deleteAccount() {
+  if(!currentUser) return;
+  var ok = await confirmAction({
+    title: 'Видалити акаунт назавжди?',
+    text: 'Буде безповоротно видалено профіль, баланс, історію, друзів і особисті повідомлення. Повідомлення в публічних чатах очищаються з часом. Відновити акаунт неможливо.',
+    confirm: 'Далі', danger: true,
+  });
+  if(!ok) return;
+  var pass = await legalAskPassword();
+  if(!pass) return;
+  var res = await serverApi('/api/reward', { action: 'deleteAccount', password: pass });
+  if(res.mode === 'server') {
+    notify('Акаунт видалено. Дякуємо, що грав(ла) у SlotOK.', 'success');
+    setTimeout(function() {
+      try { localStorage.clear(); } catch(e) {}
+      try { firebase.auth().signOut(); } catch(e) {}
+      location.reload();
+    }, 800);
+    return;
+  }
+  if(res.mode === 'legacy') {
+    // Серверний режим вимкнений: нічого не видаляємо самі, а просимо підтримку.
+    try {
+      await pushFeedback({ type: 'question', subject: 'Видалення акаунта', message: 'Прошу видалити мій акаунт ' + currentUser + ' і всі мої дані.' });
+      notify('Акаунт ще НЕ видалено: заявку на видалення надіслано підтримці, вона розгляне її вручну.', 'info');
+    } catch(e) {
+      notify('Автоматичне видалення зараз недоступне. Напиши в «Підтримка» — акаунт ще не видалено.', 'error');
+    }
+  }
+  // mode === 'error': причину (напр. «Пароль невірний») уже показано.
+}
+
+// Текст прапорця на реєстрації залежить від віку: до 18 — ще й дозвіл батьків.
+function updateRegConsentText() {
+  var el = document.getElementById('regConsentText');
+  if(!el) return;
+  var age = typeof ageFromBirthDate === 'function' ? ageFromBirthDate(document.getElementById('regBirth')?.value || '') : null;
+  var minor = age !== null && age < 18;
+  el.innerHTML = 'Мені виповнилось ' + MIN_AGE + (minor ? ' і маю дозвіл батьків' : '') + ' і я приймаю ' +
+    '<button type="button" class="link-btn" onclick="openRulesModal(\'terms\')">Умови</button> та ' +
+    '<button type="button" class="link-btn" onclick="openRulesModal(\'privacy\')">Політику</button>';
+}
+// ─── src/app/56-friends.js ───
+// ============================================================
+// ДРУЗІ Й ЗАПРОШЕННЯ ЗА СТІЛ (v120). Усі зміни — на сервері (lib/friends.js
+// через /api/reward); тут лише читання власних списків і інтерфейс.
+//   friends/<я>            — друзі { since }
+//   friend_requests/<я>    — вхідні запити { at }
+//   room_invites/<я>       — запрошення за стіл { from, game, roomId, bet, at }
+// Онлайн друга — з вузла online (window._onlineUsers); невідомо → нічого не показуємо.
+// Посилання на стіл: /?room=<гра>:<id> → після входу питаємо підтвердження.
+// ============================================================
+
+const FR_INVITE_TTL = 5 * 60000;
+const FR_ROOM_GAMES = ['holdem', 'durak', 'eights', 'ludo', 'battleship', 'minesweeper', 'coinflip', 'rps', 'predict'];
+const FR_GAME_NAMES = { holdem: 'Покер Hold’em', durak: 'Дурень', eights: 'Вісімки', ludo: 'Лудо', battleship: 'Морський бій', minesweeper: 'Сапер-дуель', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction' };
+const FR_ROOM_ID_RE = /^[a-z0-9]{12,40}$/;
+const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [] };
+window.FRIENDS_LIST = [];
+
+const frGameName = (g) => FR_GAME_NAMES[g] || (typeof ROOM_GAME_NAMES !== 'undefined' && ROOM_GAME_NAMES[g]) || g;
+const frFreshInvites = () => Object.entries(FR.invites).filter(([, v]) => v && typeof v.at === 'number' && Date.now() - v.at < FR_INVITE_TTL && FR_ROOM_GAMES.includes(v.game))
+  .sort((a, b) => b[1].at - a[1].at);
+
+// Запам'ятати посилання /?room=… до входу (як ?play=… у 08-…)
+(function captureRoomLink() {
+  try {
+    const raw = new URLSearchParams(location.search).get('room');
+    if (!raw) return;
+    const [g, id] = raw.split(':');
+    if (FR_ROOM_GAMES.includes(g) && FR_ROOM_ID_RE.test(id || '')) sessionStorage.setItem('slotok_room', g + ':' + id);
+    const url = new URL(location.href);
+    url.searchParams.delete('room');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (e) { /* без посилання */ }
+})();
+
+async function friendsApi(action, nick, extra) {
+  const r = await serverApi('/api/reward', Object.assign({ action, nick }, extra || {}));
+  if (r.mode === 'legacy') notify('Друзі з’являться, щойно сервер буде налаштований', 'error');
+  return r.mode === 'server' ? r.r : null;
+}
+
+function friendsStart() {
+  if (FR.started || !db || !currentUser) return;
+  FR.started = true;
+  const watch = (path, key, after) => {
+    const ref = db.ref(path + '/' + currentUser);
+    ref.on('value', (s) => { FR[key] = s.val() || {}; after(); }, () => { /* правила ще не опубліковані */ });
+    FR.refs.push(ref);
+  };
+  watch('friends', 'friends', () => { window.FRIENDS_LIST = Object.keys(FR.friends); friendsRender(); });
+  watch('friend_requests', 'requests', friendsRender);
+  watch('room_invites', 'invites', () => { friendsRender(); friendsInvitePopups(); });
+  setInterval(() => { friendsRender(); friendsInvitePopups(); }, 15000);
+  setTimeout(friendsOpenRoomLink, 1200);
+}
+// Старт, щойно гравець увійшов (без правок у 01-core.js)
+setInterval(() => { if (!FR.started && typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) friendsStart(); }, 1000);
+
+// ── Екран «Друзі» ──
+function friendsIsOnline(n) { return Array.isArray(window._onlineUsers) && window._onlineUsers.includes(n); }
+
+function friendsRender() {
+  const pending = Object.keys(FR.requests).length + frFreshInvites().length;
+  document.querySelectorAll('.friends-badge').forEach((b) => { b.textContent = pending; b.classList.toggle('hidden', !pending); });
+  const root = document.getElementById('friendsList');
+  const screen = document.getElementById('tab-friends');
+  if (!root || !screen || screen.classList.contains('hidden')) return;
+  const reqs = Object.entries(FR.requests).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  const inv = frFreshInvites();
+  const fr = Object.keys(FR.friends).sort((a, b) => (friendsIsOnline(b) - friendsIsOnline(a)) || a.localeCompare(b));
+  let h = '';
+  if (reqs.length) {
+    h += `<div class="section-header"><span>Запити в друзі</span></div><div class="list">` + reqs.map(([n]) => `
+      <div class="list-row">
+        <span class="list-row-main"><span class="list-row-title">${escapeHtml(n)}</span><span class="list-row-sub">хоче додати тебе в друзі</span></span>
+        <button type="button" class="btn btn-primary btn-sm" onclick="friendsAccept(${jsArg(n)})">Прийняти</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="friendsDecline(${jsArg(n)})">Відхилити</button>
+      </div>`).join('') + `</div>`;
+  }
+  if (inv.length) {
+    h += `<div class="section-header"><span>Запрошення за стіл</span></div><div class="list">` + inv.map(([id, v]) => `
+      <div class="list-row">
+        <span class="list-row-main"><span class="list-row-title">${escapeHtml(v.from)} · ${escapeHtml(frGameName(v.game))}</span><span class="list-row-sub">ставка ₴${formatNumber(v.bet)}</span></span>
+        <button type="button" class="btn btn-primary btn-sm" onclick="friendsJoinInvite(${jsArg(id)})">Приєднатись</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="friendsDismissInvite(${jsArg(id)})">Відхилити</button>
+      </div>`).join('') + `</div>`;
+  }
+  h += `<div class="section-header"><span>Друзі <span class="num">${fr.length}</span></span></div>`;
+  h += fr.length ? `<div class="list">` + fr.map((n) => `
+      <div class="list-row">
+        <span class="list-row-main"><span class="list-row-title"><span data-pn="${escapeHtml(n)}">${escapeHtml(n)}</span>${friendsIsOnline(n) ? ' <span class="badge is-pos">онлайн</span>' : ''}</span></span>
+        <button type="button" class="btn btn-ghost btn-icon" onclick="openPublicProfile(${jsArg(n)})" aria-label="Профіль" title="Профіль"><span class="ic i-person" aria-hidden="true"></span></button>
+        <button type="button" class="btn btn-ghost btn-icon" onclick="messageUser(${jsArg(n)})" aria-label="Написати" title="Написати"><span class="ic i-mail" aria-hidden="true"></span></button>
+        <button type="button" class="btn btn-ghost btn-icon" onclick="friendsRemove(${jsArg(n)})" aria-label="Видалити з друзів" title="Видалити з друзів"><span class="ic i-trash" aria-hidden="true"></span></button>
+      </div>`).join('') + `</div>`
+    : `<div class="room-empty">Друзів поки немає — додай першого за ніком.</div>`;
+  root.innerHTML = h;
+  if (typeof applyPlayerStyles === 'function') try { applyPlayerStyles(root); } catch (e) { /* косметика не критична */ }
+}
+
+async function friendsAddFromInput() {
+  const inp = document.getElementById('friendsAddInput');
+  const n = (inp && inp.value || '').trim();
+  if (!n) return notify('Вкажи нік гравця', 'error');
+  if (await friendsRequest(n) && inp) inp.value = '';
+}
+async function friendsRequest(nick) {
+  const r = await friendsApi('friendRequest', nick);
+  if (!r) return false;
+  notify(r.state === 'friends' ? 'Тепер ви друзі' : r.state === 'pending' ? 'Запит уже надіслано' : 'Запит надіслано', 'success');
+  return true;
+}
+async function friendsAccept(n) { const r = await friendsApi('friendAccept', n); if (r) notify('Тепер ви друзі', 'success'); }
+async function friendsDecline(n) { await friendsApi('friendDecline', n); }
+async function friendsRemove(n) {
+  if (!(await confirmAction({ title: 'Видалити з друзів?', text: n + ' зникне зі списку друзів.', confirm: 'Видалити', danger: true }))) return;
+  await friendsApi('friendRemove', n);
+}
+// Кнопка в публічному профілі
+function friendsProfileButton(name) {
+  if (name === currentUser) return '';
+  if (FR.friends[name]) return `<button type="button" class="btn-outline" style="flex:1;" disabled><span class="ic i-check" aria-hidden="true"></span> Друзі</button>`;
+  return `<button type="button" class="btn-outline" style="flex:1;" onclick="friendsRequest(${jsArg(name)})"><span class="ic i-users" aria-hidden="true"></span> В друзі</button>`;
+}
+
+// ── Запрошення за стіл: вікно вибору друга ──
+function friendsRoomLink(game, id) { return location.origin + '/?room=' + game + ':' + id; }
+async function friendsCopyLink(game, id) {
+  const link = friendsRoomLink(game, id);
+  try { await navigator.clipboard.writeText(link); notify('Посилання скопійовано', 'success'); }
+  catch (e) { window.prompt('Скопіюй посилання:', link); }
+}
+function friendsInviteOpen(game, id) {
+  if (!FR_ROOM_ID_RE.test(id || '')) return;
+  document.getElementById('friendsInviteModal')?.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'friendsInviteModal';
+  wrap.className = 'modal-backdrop is-sheet';
+  const fr = Object.keys(FR.friends).sort((a, b) => (friendsIsOnline(b) - friendsIsOnline(a)) || a.localeCompare(b));
+  wrap.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="frInvT">
+    <h2 class="dialog-title" id="frInvT">Запросити за стіл</h2>
+    <p class="dialog-text">${escapeHtml(frGameName(game))}. Друг сам вирішить, чи заходити: ставку списують лише після його згоди.</p>
+    <div class="list fr-invite-list">${fr.length ? fr.map((n) => `
+      <div class="list-row">
+        <span class="list-row-main"><span class="list-row-title">${escapeHtml(n)}${friendsIsOnline(n) ? ' <span class="badge is-pos">онлайн</span>' : ''}</span></span>
+        <button type="button" class="btn btn-primary btn-sm" data-nick="${escapeHtml(n)}" onclick="friendsSendInvite(this,${jsArg(game)},${jsArg(id)})">Запросити</button>
+      </div>`).join('') : `<div class="room-empty">Друзів ще немає — додай їх у розділі «Друзі».</div>`}</div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" onclick="friendsCopyLink(${jsArg(game)},${jsArg(id)})"><span class="ic i-link" aria-hidden="true"></span> Скопіювати посилання</button>
+      <button type="button" class="btn btn-ghost" onclick="document.getElementById('friendsInviteModal').remove()">Закрити</button>
+    </div></div>`;
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) wrap.remove(); });
+  document.body.appendChild(wrap);
+}
+async function friendsSendInvite(btn, game, id) {
+  btn.disabled = true;
+  const r = await friendsApi('friendInvite', btn.dataset.nick, { id });
+  if (r) { btn.textContent = 'Надіслано'; notify('Запрошення надіслано', 'success'); } else btn.disabled = false;
+}
+// Кнопка «Запросити друга» в очікуванні столу (викликається з екранів ігор)
+function friendsAttachInvite(waitElId, game, id) {
+  const el = document.getElementById(waitElId);
+  if (!el || !id) return;
+  let bar = el.querySelector('.fr-invite-bar');
+  if (bar && bar.dataset.id === id) return;
+  if (!bar) { bar = document.createElement('div'); bar.className = 'fr-invite-bar'; el.appendChild(bar); }
+  bar.dataset.id = id;
+  bar.innerHTML = `<button type="button" class="btn btn-secondary btn-sm" onclick="friendsInviteOpen(${jsArg(game)},${jsArg(id)})"><span class="ic i-users" aria-hidden="true"></span> Запросити друга</button>`;
+}
+
+// ── Вхідні запрошення: спливаюча картка ──
+function friendsInvitePopups() {
+  let box = document.getElementById('friendsPopups');
+  if (!box) { box = document.createElement('div'); box.id = 'friendsPopups'; box.className = 'fr-popups'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+  const live = new Map(frFreshInvites());
+  box.querySelectorAll('.fr-popup').forEach((el) => { if (!live.has(el.dataset.id)) { el._off && el._off(); el.remove(); } });
+  live.forEach(async (v, id) => {
+    const sk = id + ':' + v.at;
+    if (FR.shown[sk] || box.querySelector(`.fr-popup[data-id="${id}"]`)) return;
+    FR.shown[sk] = true;
+    // Не показуємо запрошення в кімнату, яка вже зайнята чи зникла
+    let room = null;
+    try { room = (await db.ref('rooms/' + v.game + '/' + id).once('value')).val(); } catch (e) { /* дочитаємо при вході */ }
+    if (!room || room.status !== 'waiting' || Object.keys(room.players || {}).length >= room.size || (room.players || {})[currentUser]) { friendsDismissInvite(id); return; }
+    const el = document.createElement('div');
+    el.className = 'fr-popup';
+    el.dataset.id = id;
+    el.setAttribute('role', 'alert');
+    el.innerHTML = `<div class="fr-popup-text"><b>${escapeHtml(v.from)}</b> запрошує за стіл<br><span class="fr-popup-sub">${escapeHtml(frGameName(v.game))} · ставка <span class="num">₴${formatNumber(v.bet)}</span></span></div>
+      <div class="fr-popup-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="friendsJoinInvite(${jsArg(id)})">Приєднатись</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="friendsDismissInvite(${jsArg(id)})">Відхилити</button>
+      </div>`;
+    box.appendChild(el);
+    // Стіл заповнили чи закрили — картка зникає сама
+    const ref = db.ref('rooms/' + v.game + '/' + id);
+    const cb = ref.on('value', (snap) => {
+      const r = snap.val();
+      if (!r || r.status !== 'waiting' || Object.keys(r.players || {}).length >= r.size) { el.remove(); friendsDismissInvite(id); }
+    });
+    el._off = () => ref.off('value', cb);
+    try { playSound && playSound('click'); } catch (e) { /* без звуку */ }
+    setTimeout(() => { el._off && el._off(); el.remove(); }, Math.max(1000, FR_INVITE_TTL - (Date.now() - v.at)));
+  });
+}
+function friendsRemovePopup(id) {
+  const el = document.querySelector(`.fr-popup[data-id="${id}"]`);
+  if (el) { el._off && el._off(); el.remove(); }
+}
+async function friendsDismissInvite(id) {
+  friendsRemovePopup(id);
+  delete FR.invites[id];
+  friendsRender();
+  if (FR_ROOM_ID_RE.test(id)) await friendsApi('friendInviteDismiss', '', { id });
+}
+async function friendsJoinInvite(id) {
+  const v = FR.invites[id];
+  if (!v) return;
+  friendsRemovePopup(id);
+  await friendsJoinRoom(v.game, id);
+  friendsApi('friendInviteDismiss', '', { id });
+}
+// Вхід у кімнату друга: відкриваємо екран гри й заходимо звичайним join (ставку списує арбітр)
+async function friendsJoinRoom(game, id) {
+  if (!FR_ROOM_GAMES.includes(game) || !FR_ROOM_ID_RE.test(id)) return;
+  try { openGame(game); } catch (e) { /* екран гри */ }
+  await roomJoin(game, id);
+}
+
+// ── Посилання /?room=<гра>:<id> ──
+async function friendsOpenRoomLink() {
+  let raw = null;
+  try { raw = sessionStorage.getItem('slotok_room'); sessionStorage.removeItem('slotok_room'); } catch (e) { /* без storage */ }
+  if (!raw) return;
+  const [game, id] = raw.split(':');
+  if (!FR_ROOM_GAMES.includes(game) || !FR_ROOM_ID_RE.test(id || '')) return;
+  let room = null;
+  try { room = (await db.ref('rooms/' + game + '/' + id).once('value')).val(); } catch (e) { /* нижче скажемо «недоступна» */ }
+  if (!room || room.status !== 'waiting') return notify('Ця кімната вже недоступна', 'error');
+  const players = Object.keys(room.players || {});
+  if (players.includes(currentUser)) { try { openGame(game); } catch (e) { /* ігровий екран */ } return; }
+  if (players.length >= room.size) return notify('За цим столом уже немає місць', 'error');
+  const ok = await confirmAction({
+    title: 'Приєднатись до столу?',
+    text: `${frGameName(game)} · господар ${room.host || '?'} · ставка ₴${formatNumber(room.bet)}. Ставку буде списано одразу після підтвердження.`,
+    confirm: 'Приєднатись · ₴' + formatNumber(room.bet),
+  });
+  if (ok) await friendsJoinRoom(game, id);
+}
+// ─── src/app/57-missions.js ───
+// ============================================================
+// Щоденні місії з серією — картка на Головній.
+//
+// Три місії доби, прогрес і нагороди рахує СЕРВЕР (lib/missions.js, дії
+// missions / missionClaim / streakClaim в api/reward.js). Тут лише екран:
+//  - стан читаємо слухачем власного вузла missions/<нік> (правила — лише читання);
+//  - слухач живе, поки картка видима, а вкладка відкрита; інакше знімається;
+//  - час до скидання — за годинником сервера (поправка serverNow − Date.now()).
+// Пул місій і межа доби — shared/missions.js (той самий файл читає сервер).
+//
+// Старі браузерні «Завдання» (trackQuest/claimQuest у 23-…) замінені цією
+// системою: нижче вони вимкнені й нічого не нараховують.
+// ============================================================
+
+let _ms = { node: null, ref: null, offset: 0, syncing: false, busy: {}, failedAt: 0, off: false };
+
+// Старі квести: код лишається, але нічого не пише й не платить.
+trackQuest = function() {};
+loadQuests = function() {};
+claimQuest = function() { if(typeof notify === 'function') notify('Завдання замінені щоденними місіями на Головній', 'info'); };
+
+function missionsNow() { return Date.now() + _ms.offset; }
+function missionsEl() { return document.getElementById('missionsCard'); }
+
+// Перехід із меню «Ще»: на Головну, до картки.
+function openMissions() {
+  try { switchTab('home'); if(typeof switchHomeTab === 'function') switchHomeTab('main', document.getElementById('htb-main')); } catch(e) {}
+  setTimeout(() => { const el = missionsEl(); if(el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+}
+
+// Видима Головна (сама картка може бути прихована, поки немає даних) + відкрита вкладка браузера + є вхід.
+function missionsVisible() {
+  const el = missionsEl();
+  return !!(currentUser && !_ms.off && el && document.visibilityState === 'visible' && el.parentElement && el.parentElement.offsetParent !== null);
+}
+
+function missionsDetach() {
+  if(_ms.ref) { try { _ms.ref.off('value', _ms.onValue); } catch(e) {} }
+  _ms.ref = null;
+}
+
+// Просить сервер створити/оновити вузол доби й повертає поправку годинника.
+async function missionsRefresh() {
+  if(_ms.syncing) return;
+  _ms.syncing = true;
+  try {
+    const res = await serverApi('/api/reward', { action: 'missions' });
+    if(res.mode === 'legacy') { _ms.off = true; missionsDetach(); const el = missionsEl(); if(el) el.classList.add('hidden'); return; }
+    if(res.mode === 'server' && res.r) {
+      _ms.offset = res.r.serverNow - Date.now();
+      if(!_ms.ref) _ms.node = _ms.node || null;
+      // Слухач ще не підключений (або мережі не було) — показуємо відповідь сервера.
+      if(!_ms.node || _ms.node.day !== res.r.day) _ms.node = missionsNodeFromView(res.r);
+      missionsRender();
+    } else _ms.failedAt = Date.now();
+  } finally { _ms.syncing = false; }
+}
+
+// Вузол із відповіді API (на випадок, коли слухач ще не встиг).
+function missionsNodeFromView(v) {
+  const node = { day: v.day, p: v.missions.map(m => m.id), c: {}, g: {}, cl: {}, s: { n: v.streak.n, last: v.streak.todayDone ? v.day : '', pend: v.streak.pend } };
+  v.missions.forEach((m, i) => {
+    if(m.kind === 'games') for(let k = 0; k < m.progress; k++) node.g['g' + k] = 1; else node.c[m.kind] = m.progress;
+    if(m.claimed) node.cl[i] = true;
+  });
+  return node;
+}
+
+function missionsAttach() {
+  if(_ms.ref || !currentUser || typeof db === 'undefined' || !db) return;
+  _ms.onValue = snap => { _ms.node = snap.val(); missionsRender(); };
+  _ms.ref = db.ref('missions/' + currentUser);
+  _ms.ref.on('value', _ms.onValue, () => { missionsDetach(); });
+}
+
+function missionProgress(node, t) {
+  if(t.kind === 'games') return Math.min(t.target, Object.keys(node.g || {}).length);
+  return Math.min(t.target, Number((node.c || {})[t.kind]) || 0);
+}
+
+function missionsCountdown() {
+  const left = Math.max(0, missionDayEnd(missionsNow()) - missionsNow());
+  const h = Math.floor(left / 3600000), m = Math.floor((left % 3600000) / 60000);
+  return h + ' год ' + String(m).padStart(2, '0') + ' хв';
+}
+
+function missionsRender() {
+  const el = missionsEl();
+  if(!el || _ms.off) return;
+  const day = missionDay(missionsNow());
+  const node = _ms.node;
+  // Вузол із вчорашньої доби (або ще порожній) — чекаємо оновлення від сервера.
+  if(!node || node.day !== day || !Array.isArray(node.p)) { el.classList.add('hidden'); return; }
+  const byId = {}; MISSION_POOL.forEach(t => { byId[t.id] = t; });
+  const picks = node.p.map(id => byId[id]).filter(Boolean);
+  if(picks.length !== node.p.length) { el.classList.add('hidden'); return; }
+
+  const s = node.s || {};
+  const prev = missionPrevDay(day);
+  const streakN = (s.last === day || s.last === prev) ? (Number(s.n) || 0) : 0;
+  const pend = Number(s.pend) || 0;
+  const doneCount = picks.filter(t => missionProgress(node, t) >= t.target).length;
+  const rewardTxt = r => '+' + formatNumber(r.coins) + ' ₴ · +' + r.xp + ' XP';
+
+  const rows = picks.map((t, i) => {
+    const prog = missionProgress(node, t);
+    const done = prog >= t.target;
+    const claimed = !!(node.cl && node.cl[i]);
+    const pct = Math.round(prog / t.target * 100);
+    const r = MISSION_REWARDS[t.tier];
+    const val = t.amount ? '₴' + formatNumber(prog) + ' / ₴' + formatNumber(t.target) : prog + ' / ' + t.target;
+    const act = claimed
+      ? '<span class="badge is-pos"><span class="ic i-check" aria-hidden="true"></span>Забрано</span>'
+      : done
+        ? '<button type="button" class="btn btn-primary btn-sm" data-mission="' + i + '" onclick="missionClaim(' + i + ')"' + (_ms.busy['m' + i] ? ' disabled aria-busy="true"' : '') + '>Забрати</button>'
+        : '<span class="mission-reward">' + rewardTxt(r) + '</span>';
+    return '<li class="mission-row' + (claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' +
+      '<span class="mission-ic"><span class="ic i-' + escapeHtml(t.icon) + '" aria-hidden="true"></span></span>' +
+      '<div class="mission-body"><div class="mission-title">' + escapeHtml(t.title) + '</div>' +
+      '<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="' + t.target + '" aria-valuenow="' + prog + '"><span style="width:' + pct + '%"></span></div>' +
+      '<div class="mission-meta"><span>' + val + '</span>' + (done && !claimed ? '<span class="mission-reward">' + rewardTxt(r) + '</span>' : '') + '</div></div>' +
+      '<div class="mission-act">' + act + '</div></li>';
+  }).join('');
+
+  const steps = MISSION_STREAK_LADDER.map((st, k) => {
+    const n = k + 1;
+    const cls = n < streakN || (n === streakN && !pend) ? ' is-done' : n === streakN ? ' is-now' : '';
+    return '<li class="streak-step' + cls + '" title="День ' + n + '"><span class="streak-n">' + n + '</span>' +
+      '<span class="streak-v">' + (st.box ? '<span class="ic i-package" aria-hidden="true"></span>' : formatNumber(st.coins)) + '</span></li>';
+  }).join('');
+  const streakBtn = pend
+    ? '<button type="button" class="btn btn-primary btn-sm" onclick="missionStreakClaim()"' + (_ms.busy.streak ? ' disabled aria-busy="true"' : '') + '>Забрати день ' + pend + '</button>'
+    : '';
+
+  el.classList.remove('hidden');
+  el.innerHTML =
+    '<div class="panel-head"><h2 class="panel-title"><span class="ic i-target" aria-hidden="true"></span> Місії дня</h2>' +
+    '<span class="badge"><span class="ic i-timer" aria-hidden="true"></span><span data-mission-timer>' + missionsCountdown() + '</span></span></div>' +
+    '<ul class="mission-list">' + rows + '</ul>' +
+    '<div class="streak-box"><div class="streak-head"><span class="streak-title"><span class="ic i-fire" aria-hidden="true"></span> Серія: ' + streakN + ' ' + (streakN === 1 ? 'день' : 'дн.') + '</span>' +
+    '<span class="streak-note">' + (doneCount === picks.length ? 'Сьогодні виконано' : 'Виконай усі три — серія зросте') + '</span></div>' +
+    '<ol class="streak-ladder">' + steps + '</ol>' + (streakBtn ? '<div class="streak-act">' + streakBtn + '</div>' : '') + '</div>';
+}
+
+async function missionClaim(i) {
+  if(_ms.busy['m' + i]) return;
+  _ms.busy['m' + i] = true; missionsRender();
+  try {
+    const res = await serverReward('missionClaim', { i });
+    if(res.mode === 'server' && res.r) {
+      try { playSound('win'); } catch(e) {}
+      notify('Місію виконано: +' + formatNumber(res.r.coins) + ' ₴ і ' + res.r.xp + ' XP Battle Pass', 'success');
+    }
+  } finally { delete _ms.busy['m' + i]; missionsRender(); }
+}
+
+async function missionStreakClaim() {
+  if(_ms.busy.streak) return;
+  _ms.busy.streak = true; missionsRender();
+  try {
+    const res = await serverReward('streakClaim');
+    if(res.mode === 'server' && res.r) {
+      try { playSound('win'); } catch(e) {}
+      notify('Серія, день ' + res.r.day + ': +' + formatNumber(res.r.coins) + ' ₴' + (res.r.box ? ' і скриня Battle Pass' : ''), 'success');
+    }
+  } finally { delete _ms.busy.streak; missionsRender(); }
+}
+
+// Раз на секунду: слухач — лише поки картка видима; таймер; нова доба → оновлення.
+let _msLastDay = '';
+setInterval(() => {
+  if(!missionsVisible()) { if(_ms.ref) missionsDetach(); return; }
+  if(!_ms.ref) { missionsAttach(); if(!_ms.node && Date.now() - _ms.failedAt > 15000) missionsRefresh(); }
+  const day = missionDay(missionsNow());
+  if(day !== _msLastDay || !_ms.node || _ms.node.day !== day) {
+    _msLastDay = day;
+    if(Date.now() - _ms.failedAt > 15000) missionsRefresh();
+  }
+  const t = document.querySelector('#missionsCard [data-mission-timer]');
+  if(t) t.textContent = missionsCountdown();
+}, 1000);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState !== 'visible') missionsDetach(); });

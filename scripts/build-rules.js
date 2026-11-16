@@ -243,7 +243,12 @@ function build(strict) {
     rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
     // Щоденні місії (lib/missions.js): гравець бачить лише свій вузол, пише сервер.
     missions: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
+    // Рейтингові ліги (lib/leagues.js): особистий вузол читає власник, таблиця сезону публічна (лише нік, рейтинг, ліга, ігри); пише сервер.
+    league: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
+    league_pub: { ".read": false, ".write": false, $season: { ".read": true, ".indexOn": ["rating"] } },
     room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
+    // Глядачі столу (src/app/59-spectate.js): кожен пише лише свій ключ (мітка часу, onDisconnect знімає), число бачать усі.
+    room_watchers: { ".read": true, ".write": false, $id: { $nick: { ".write": "auth != null && auth.uid === $nick", ".validate": "newData.isNumber()" } } },
     // Друзі й запрошення за стіл (lib/friends.js): пише лише сервер, кожен читає свої списки.
     friends: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
     friend_requests: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },

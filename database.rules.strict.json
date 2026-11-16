@@ -614,12 +614,39 @@
         ".read": "auth != null && auth.uid === $u"
       }
     },
+    "league": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "league_pub": {
+      ".read": false,
+      ".write": false,
+      "$season": {
+        ".read": true,
+        ".indexOn": [
+          "rating"
+        ]
+      }
+    },
     "room_private": {
       ".read": false,
       ".write": false,
       "$id": {
         "$nick": {
           ".read": "auth != null && auth.uid === $nick"
+        }
+      }
+    },
+    "room_watchers": {
+      ".read": true,
+      ".write": false,
+      "$id": {
+        "$nick": {
+          ".write": "auth != null && auth.uid === $nick",
+          ".validate": "newData.isNumber()"
         }
       }
     },
