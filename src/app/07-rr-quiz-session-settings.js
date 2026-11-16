@@ -501,7 +501,9 @@ function animRain(ctx, canvas) {
 
 function loadLiveWallpaper() {
   const saved = localStorage.getItem('liveWp');
-  if(saved && saved!=='none') toggleLiveWallpaper(saved);
+  // toggleLiveWallpaper ПЕРЕМИКАЄ: повторний виклик із тим самим типом вимикав шпалери й
+  // записував 'none' — тож вони зникали після першого ж оновлення профілю.
+  if(saved && saved!=='none' && liveWpActive!==saved) toggleLiveWallpaper(saved);
 }
 
 

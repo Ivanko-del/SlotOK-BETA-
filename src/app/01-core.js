@@ -321,11 +321,24 @@ function startDataSync() {
             checkTermsGate();
             loadContacts();
             checkAdmin();
-            try { applyPlayerStyles(document.body); } catch(e) {}
+            // Обхід усього документа — лише коли змінилась власна косметика (нові
+            // вузли оформлює MutationObserver у 54-cosmetics), а не на кожну ставку.
+            try {
+              const cosSig = JSON.stringify([userData.slotikyItems || null, userData.cosmetics || null]);
+              if(cosSig !== window._cosSig) { window._cosSig = cosSig; applyPlayerStyles(document.body); }
+            } catch(e) {}
             checkDailyBonus();
-            loadNotifsFromStorage();
-            updateNotifBadge();
-            loadSettings();
+            // Налаштування й сповіщення з localStorage читаємо один раз на сесію: це
+            // перезастосування теми/зуму/анімацій (перерахунок стилів усієї сторінки)
+            // на КОЖНУ зміну профілю, тобто на кожну ставку. Зміни налаштувань
+            // застосовуються самі (saveSetting/setTheme…), екран налаштувань
+            // викликає loadSettings() при відкритті.
+            if(!window._settingsApplied) {
+              window._settingsApplied = true;
+              loadNotifsFromStorage();
+              updateNotifBadge();
+              loadSettings();
+            }
             if(!window._bgTasksStarted) { window._bgTasksStarted = true; setTimeout(startAllBackgroundTasks, 2000); startDisabledGamesWatcher(); watchAntiCheatConfig(); if(localStorage.getItem('pushEnabled')) registerFcmToken(); }
             if(!window._newFeaturesInited) { window._newFeaturesInited = true; setTimeout(initAllNewFeatures, 3000); }
             if(!window._winBackChecked) { window._winBackChecked = true; checkWelcomeBack(); checkOnboarding(); }
