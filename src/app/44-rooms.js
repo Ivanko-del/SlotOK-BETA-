@@ -53,7 +53,7 @@ function roomLobby(game, el, opts) {
           <div class="room-row-meta"><span class="num">₴${formatNumber(r.bet)}</span> · ${players.length}/${r.size} гравців${extra ? ' · ' + escapeHtml(extra) : ''}</div>
         </div>
         ${mine
-          ? `<button type="button" class="btn btn-ghost room-row-btn" onclick="roomLeaveConfirm(${jsArg(game)},${jsArg(id)})">Скасувати</button>`
+          ? `${typeof friendsInviteOpen === 'function' ? `<button type="button" class="btn btn-secondary room-row-btn" onclick="friendsInviteOpen(${jsArg(game)},${jsArg(id)})">Запросити друга</button>` : ''}<button type="button" class="btn btn-ghost room-row-btn" onclick="roomLeaveConfirm(${jsArg(game)},${jsArg(id)})">Скасувати</button>`
           : `<button type="button" class="btn btn-primary room-row-btn" onclick="roomJoin(${jsArg(game)},${jsArg(id)})">Грати · ₴${formatNumber(r.bet)}</button>`}
       </div>`;
     }).join('');

@@ -220,11 +220,11 @@
                 <div>
                   <div class="banner-kicker">Бонуси</div>
                   <div class="banner-title">VIP-бонус</div>
-                  <div class="banner-sub">До +250% на депозит</div>
+                  <div class="banner-sub">Щоденні подарунки в грі</div>
                   <div class="banner-desc">Щоденні бонуси · Лут-бокси · Подарунки</div>
-                  <div class="banner-pills"><span class="banner-pill">🎁 +100% перший деп</span><span class="banner-pill">✨ 10 фріспінів</span></div>
+                  
                 </div>
-                <div class="banner-stat-box"><div class="banner-stat-lbl">Джекпот</div><div class="banner-stat-val" id="homeJackpot">—</div><div class="banner-stat-sub">Сьогодні</div></div>
+                
               </div>
             </div>
             <div class="banner-slide tone-special" role="button" tabindex="0" onclick="switchTab('battlepass')">
@@ -1628,17 +1628,8 @@
 
         <div class="ks-note">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
-          <div>SlotOK — некомерційна ігрова платформа. Донат — добровільна підтримка проєкту, а не купівля товару. Натомість на ігровий баланс нараховується бонус. Ігрові кошти не виводяться.</div>
+          <div>Донат — добровільний подарунок на розвиток SlotOK, а не купівля товару чи послуги. Він нічого не додає в гру: не змінює ігровий баланс, Слотіки, VIP чи ставки, і не повертається (крім випадків, передбачених законом). Натомість у профілі зʼявиться значок «Підтримав проєкт» — однаковий для будь-якої суми. Ігрова валюта віртуальна й не виводиться.</div>
         </div>
-
-        <section class="ks-panel">
-          <div class="ks-panel-head">
-            <div class="ks-panel-title">Донат-пакети</div>
-          </div>
-          <div class="ks-panel-body">
-            <div id="depositPackages" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-          </div>
-        </section>
 
         <section class="ks-panel">
           <div class="ks-panel-head">
@@ -1647,7 +1638,7 @@
           </div>
           <div class="ks-panel-body">
             <div id="depSourceBar"></div>
-            <div class="ks-label">Сума</div>
+            <div class="ks-label">Сума, грн</div>
             <div class="amount-grid">
               <div class="amount-btn" onclick="selectDepAmount(100, this)">100</div>
               <div class="amount-btn" onclick="selectDepAmount(250, this)">250</div>
@@ -1659,7 +1650,7 @@
               <div class="amount-btn" id="customAmtBtn" onclick="selectCustomAmount()">Інша</div>
             </div>
             <div id="customAmountBox" class="hidden ks-field">
-              <input id="customDepAmount" type="number" inputmode="numeric" placeholder="Своя сума, ₴">
+              <input id="customDepAmount" type="number" inputmode="numeric" placeholder="Своя сума, грн">
             </div>
 
             <div class="ks-label">Спосіб оплати</div>
@@ -1678,8 +1669,8 @@
               </button>
             </div>
 
-            <button class="ks-btn is-primary is-block" id="depSubmitBtn" onclick="submitDepositRequest()">Задонатити</button>
-            <p class="ks-hint" style="margin:10px 0 0;text-align:center;">Спочатку зробіть переказ за реквізитами, потім натисніть кнопку. Адміністратор зарахує бонус на ваш ігровий баланс протягом 1–24 годин.</p>
+            <button class="ks-btn is-primary is-block" id="depSubmitBtn" onclick="submitDepositRequest()">Подати заявку на донат</button>
+            <p class="ks-hint" style="margin:10px 0 0;text-align:center;">Спочатку зробіть переказ за реквізитами, потім натисніть кнопку. Адміністратор підтвердить донат і додасть значок підтримки протягом 1–24 годин. Ігровий баланс не змінюється.</p>
           </div>
         </section>
 
@@ -2089,7 +2080,6 @@
           <div class="ks-stat"><div class="ks-stat-lbl">Серія днів</div><div class="ks-stat-val ks-num" id="profStatStreak">0🔥</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">VIP рівень</div><div class="ks-stat-val is-acc" id="profStatVip">—</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">Ігор у слотах</div><div class="ks-stat-val ks-num" id="profStatSlotsPlayed">0</div></div>
-          <div class="ks-stat"><div class="ks-stat-lbl">Всього депозитів</div><div class="ks-stat-val is-pos ks-num" id="profStatDeposits">₴0</div></div>
         </div>
         <div class="ks-panel-body" style="border-top:1px solid var(--ks-line);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -2126,6 +2116,17 @@
         <div id="contactsList" style="margin-top:20px;"></div>
     </div>
 
+    <!-- ДРУЗІ (src/app/56-friends.js) -->
+    <div id="tab-friends" class="screen hidden">
+      <button type="button" class="back-btn" onclick="switchTab('more')" aria-label="Назад"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Назад</span></button>
+      <h1 class="screen-title">Друзі</h1>
+      <div class="input-group friends-add">
+        <input id="friendsAddInput" type="text" maxlength="64" placeholder="Нік гравця" autocomplete="off" aria-label="Нік гравця" onkeydown="if(event.key==='Enter')friendsAddFromInput()">
+        <button type="button" class="btn btn-primary" onclick="friendsAddFromInput()"><span class="ic i-plus" aria-hidden="true"></span> Додати</button>
+      </div>
+      <div id="friendsList"></div>
+    </div>
+
     <!-- ЩЕ -->
     <div id="tab-more" class="screen ledger hidden">
       <h1 class="screen-title">Ще</h1>
@@ -2146,7 +2147,7 @@
       <div class="section-header"><span>Спілкування</span></div>
       <nav class="list menu-group" aria-label="Спілкування">
           <button type="button" class="list-row menu-item" onclick="switchTab('pm')"><span class="menu-ic">✉️</span><span class="list-row-main"><span class="list-row-title">Приватні повідомлення</span></span> <span id="pmBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="switchTab('contacts')"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Знайомі</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="switchTab('friends');friendsRender()"><span class="menu-ic">🤝</span><span class="list-row-main"><span class="list-row-title">Друзі</span><span class="list-row-sub">Запити, запрошення за стіл</span></span><span class="badge is-accent friends-badge hidden"></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('clans')"><span class="menu-ic">🛡️</span><span class="list-row-main"><span class="list-row-title">Клани</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="openSupportModal()"><span class="menu-ic">💬</span><span class="list-row-main"><span class="list-row-title">Підтримка</span><span class="list-row-sub">Чат, скарги й пропозиції</span></span> <span class="htbadge hidden" id="supportUnreadBadge">0</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="showReferralQR()"><span class="menu-ic">📲</span><span class="list-row-main"><span class="list-row-title">QR-код запрошення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
@@ -2704,11 +2705,6 @@
           <span class="settings-text"><span class="settings-label">Порівняти гравців</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
-        <button type="button" class="settings-row is-link" onclick="showTopDonators()">
-          <span class="settings-icon">🏆</span>
-          <span class="settings-text"><span class="settings-label">Топ донатерів</span></span>
-          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
-        </button>
         <button type="button" class="settings-row is-link" onclick="showWishlist()">
           <span class="settings-icon">❤️</span>
           <span class="settings-text"><span class="settings-label">Список побажань</span></span>
@@ -3072,51 +3068,14 @@
         <div id="userList" style="margin-top:4px;">Натисніть "Оновити список"</div>
       </div><!-- /users panel -->
 
-      <!-- ══ TAB: БОТИ ══ -->
+      <!-- ══ TAB: БОТИ (вимкнено) ══ -->
       <div class="adm-panel" id="adm-panel-bots" style="display:none;padding:12px;">
-        <div style="background:var(--box);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">🤖 Новий бот</div>
-          <input id="botNick" placeholder="Нік бота (напр. Lucky_77)" style="margin-bottom:6px;">
-          <input id="botBalance" type="number" placeholder="Початковий баланс (₴)" value="5000" style="margin-bottom:6px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <select id="botAvatar" style="background:var(--surface-2);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:8px;font-size:13px;">
-              <option value="👤">👤 Стандарт</option>
-              <option value="🤑">🤑 Грошовий</option>
-              <option value="😎">😎 Крутий</option>
-              <option value="🎰">🎰 Гравець</option>
-              <option value="👑">👑 Король</option>
-              <option value="🐉">🐉 Дракон</option>
-              <option value="💀">💀 Скелет</option>
-              <option value="🦊">🦊 Лисиця</option>
-              <option value="🐺">🐺 Вовк</option>
-              <option value="custom">📷 Свій URL...</option>
-            </select>
-            <select id="botActivity" style="background:var(--surface-2);border:1px solid var(--line);color:var(--fg);border-radius:var(--r-md);padding:8px;font-size:13px;">
-              <option value="active">🟢 Активний</option>
-              <option value="passive">⚫ Пасивний</option>
-            </select>
-          </div>
-          <!-- НОВИЙ: вибір особистості -->
-          <select id="botPersonality" style="width:100%;background:var(--surface-1);border:1px solid var(--special);color:var(--special);border-radius:var(--r-md);padding:8px;font-size:13px;margin-bottom:8px;">
-            <option value="balanced">⚖️ Збалансований (40-60с між іграми, ×0.8-1.5 ставки)</option>
-            <option value="aggressive">🔥 Агресивний (8-20с між іграми, ×1.5-3.0 ставки)</option>
-            <option value="conservative">🛡️ Консервативний (25-60с між іграми, ×0.3-0.8 ставки)</option>
-            <option value="whale">🐋 Кит (5-15с між іграми, ×3.0-8.0 ставки)</option>
-          </select>
-          <div id="botAvatarUrlBox" class="hidden" style="margin-bottom:6px;">
-            <input id="botAvatarUrl" placeholder="URL аватарки (https://...)">
-          </div>
-          <button class="btn-gold" onclick="createBot()">🤖 СТВОРИТИ БОТА</button>
-        </div>
-
-        <!-- Керування движком -->
         <div style="background:rgb(var(--info-rgb) / 0.06);border:1px solid rgb(var(--info-rgb) / 0.2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--info);font-weight:700;margin-bottom:8px;">⚙️ Бот-Движок</div>
-          <div id="botEngineStatus" style="font-size:12px;color:var(--fg-4);margin-bottom:8px;">Статус: очікування...</div>
+          <div style="font-size:11px;color:var(--info);font-weight:700;margin-bottom:8px;">Боти вимкнено</div>
+          <div id="botEngineStatus" style="font-size:12px;color:var(--fg-4);margin-bottom:8px;">Фальшиві гравці та виграші заборонені. Тут лишилась лише очистка старих записів ботів.</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--pos);color:var(--pos);" onclick="adminStartBotEngine()">▶ Запустити движок</button>
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--neg);color:var(--neg);" onclick="adminStopBotEngine()">⏹ Зупинити</button>
-            <button class="btn-outline" style="font-size:12px;padding:6px 12px;" onclick="loadBots()">🔄 Оновити список</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;border-color:var(--neg);color:var(--neg);" onclick="adminPurgeBots()">Видалити всіх ботів</button>
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;" onclick="loadBots()">Оновити список</button>
           </div>
         </div>
         <div id="botList"></div>
@@ -4193,7 +4152,7 @@
 
   <!-- DISCLAIMER BAR — завжди видима -->
   <div id="disclaimerBar" style="background:var(--bg);border-top:1px solid var(--line);padding:6px 16px;text-align:center;font-size:9px;color:var(--fg-4);line-height:1.5;">
-    ⚠️ <b style="color:var(--fg-4);">Розважальна платформа.</b> Ігрові монети віртуальні й не виводяться · Не азартна гра · Донат — добровільна підтримка проєкту
+    ⚠️ <b style="color:var(--fg-4);">Розважальна платформа.</b> Ігрові монети віртуальні й не виводяться · Не азартна гра · Донат — добровільна підтримка проєкту, не дає переваг у грі
     <span onclick="document.getElementById('disclaimerFull').style.display='flex'" style="color:var(--fg-4);cursor:pointer;text-decoration:underline;margin-left:4px;">Детальніше</span>
   </div>
 
@@ -4205,8 +4164,8 @@
       <div style="font-size:13px;color:var(--fg-3);line-height:1.8;margin-bottom:16px;">
         <b style="color:var(--fg-2);">SlotOK</b> — це виключно <b style="color:var(--fg-2);">розважальна ігрова платформа</b> для дозвілля серед своїх.<br><br>
         🪙 Всі монети, бали та "виграші" є <b style="color:var(--fg-2);">повністю віртуальними</b>, не мають реальної грошової цінності й не виводяться назад на картку.<br><br>
-        🤝 Гаманець приймає добровільний <b style="color:var(--fg-2);">донат на підтримку проєкту</b> (не купівлю товару) — натомість нараховується бонус на ігровий баланс.<br><br>
-        📱 Це соціальна гра для розваги між друзями. Ігрові операції є умовними і симуляційними.
+        🤝 Можна зробити добровільний <b style="color:var(--fg-2);">донат на розвиток проєкту</b> (не купівлю товару). Він нічого не додає в гру — лише значок «Підтримав проєкт» у профілі.<br><br>
+        📱 Це соціальна гра для розваги. Ігрова валюта не купується, не продається, не обмінюється й не виводиться. Прочитайте <a href="#" onclick="document.getElementById('disclaimerFull').style.display='none';openRulesModal();return false;" style="color:var(--accent);">Умови та Політику</a>.
       </div>
       <button onclick="document.getElementById('disclaimerFull').style.display='none'" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-lg);padding:13px;color:var(--on-accent);font-weight:900;font-size:14px;cursor:pointer;">✅ Зрозуміло</button>
     </div>

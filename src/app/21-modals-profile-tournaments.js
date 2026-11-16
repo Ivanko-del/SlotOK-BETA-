@@ -225,75 +225,16 @@ function initAllNewFeatures() {
 
 
 
-function adminStartBotEngine() {
-  startBotEngine();
-  setTimeout(() => {
-    const count = Object.keys(_activeBotData).length;
-    const el = document.getElementById('botEngineStatus');
-    if(el) el.innerHTML = `<span style="color:var(--pos);">● Запущено</span> — ${count} ботів активні, тік кожні 5с`;
-    notify('▶ Бот-движок запущено для ' + count + ' ботів', 'success');
-  }, 1500);
-}
-
-function adminStopBotEngine() {
-  stopBotEngine();
-  _activeBotData = {};
-  const el = document.getElementById('botEngineStatus');
-  if(el) el.innerHTML = '<span style="color:var(--neg);">⏹ Зупинено</span>';
-  notify('⏹ Бот-движок зупинено', 'info');
-}
-
 function loadBots() {
   const listEl = document.getElementById('botList');
   if(!listEl) return;
   listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Завантаження...</div>';
   db.ref('users').orderByChild('isBot').equalTo(true).once('value', snap => {
-    const bots = snap.val() || {};
-    const entries = Object.entries(bots);
-    if(!entries.length) { listEl.innerHTML = '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>'; return; }
-    const persIcons = { aggressive:'🔥', balanced:'⚖️', conservative:'🛡️', whale:'🐋' };
-    listEl.innerHTML = entries.map(([nick, b]) => {
-      const isActive = !!_activeBotData[nick];
-      const persIcon = persIcons[b.personality] || '⚖️';
-      return `<div class="bot-card">
-        <div class="bot-avatar">${b.avatar && b.avatar.length > 2 ? `<img src="${safeUrl(b.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : escapeHtml(b.avatar||'🤖')}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;">${escapeHtml(nick)} ${persIcon}</div>
-          <div style="font-size:10px;color:var(--fg-3);">💰 ${formatNumber(b.balance||0)}₴ · 🎮 ${b.totalGames||0} ігор · ${isActive?'<span style="color:var(--pos);">● Активний</span>':'<span style="color:var(--fg-4);">⚫ Стоп</span>'}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-          <button onclick="toggleBot(${jsArg(nick)})" style="background:${isActive?'rgb(var(--neg-rgb) / 0.15)':'rgb(var(--pos-rgb) / 0.15)'};border:1px solid ${isActive?'var(--neg)':'var(--pos)'};border-radius:var(--r-sm);color:${isActive?'var(--neg)':'var(--pos)'};font-size:10px;padding:3px 8px;cursor:pointer;">${isActive?'⏹ Стоп':'▶ Грати'}</button>
-          <button onclick="deleteBot(${jsArg(nick)})" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:3px 8px;cursor:pointer;">🗑 Видалити</button>
-        </div>
-      </div>`;
-    }).join('');
-    const el = document.getElementById('botEngineStatus');
-    const activeCount = Object.keys(_activeBotData).length;
-    if(el) el.innerHTML = _botEngine
-      ? `<span style="color:var(--pos);">● Запущено</span> — ${activeCount} ботів активні`
-      : `<span style="color:var(--fg-4);">⏹ Зупинено</span> — ${entries.length} ботів у базі`;
+    const entries = Object.keys(snap.val() || {});
+    listEl.innerHTML = entries.length
+      ? '<div style="color:var(--fg-3);font-size:12px;padding:8px;">Записів ботів у базі: ' + entries.length + ' (' + entries.slice(0, 30).map(escapeHtml).join(', ') + ')</div>'
+      : '<div style="color:var(--fg-4);font-size:12px;padding:8px;">Ботів немає</div>';
   });
-}
-
-function toggleBot(nick) {
-  if(_activeBotData[nick]) {
-    delete _activeBotData[nick];
-    notify('⏹ Бот ' + nick + ' зупинено', 'info');
-  } else {
-    db.ref('users/' + nick).once('value', snap => {
-      if(snap.exists()) addBotToEngine(nick, snap.val());
-      notify('▶ Бот ' + nick + ' запущено', 'success');
-    });
-  }
-  setTimeout(loadBots, 300);
-}
-
-function deleteBot(nick) {
-  if(!confirm('Видалити бота ' + nick + '?')) return;
-  delete _activeBotData[nick];
-  db.ref('users/' + nick).remove();
-  notify('🗑 Бот ' + nick + ' видалено', 'info');
-  setTimeout(loadBots, 500);
 }
 
 function switchAdminTab(tab, el) {
@@ -571,6 +512,7 @@ function openPublicProfile(name) {
         <div style="display:flex;gap:8px;margin-top:15px;">
           <button class="btn-outline" style="flex:1;" onclick="messageUser(${jsArg(name)})">✉️ Написати</button>
           <button class="btn-outline" style="flex:1;" onclick="document.getElementById('transferToCard').value=${jsArg(name)};openTabModal('transfer-modal');">💸 Надіслати</button>
+          ${typeof friendsProfileButton === 'function' ? friendsProfileButton(name) : ''}
           <button class="btn-outline" style="flex:1;" onclick="addContactByName(${jsArg(name)})">🤝 В знайомі</button>
         </div>
       </div>`;
@@ -1002,34 +944,21 @@ function cardBalancePath(u, cardId) {
   return _cardBalPath(cardId);
 }
 
-function approveDeposit(id, user, amount, cardId) {
-  db.ref('users/'+user).once('value', function(snap) {
-    var u = snap.val() || {};
-    var path = cardBalancePath(u, cardId);
-    db.ref('users/'+user+'/'+path).set(firebase.database.ServerValue.increment(amount));
-    // Якщо потрібну картку встигли відключити, кошти йдуть на активну —
-    // і в історію теж саме її, а не зниклої.
-    pushCardTx(user, {dir:'in', amount:amount, title:'Поповнення картки', subtitle:'Через касу', icon:'💳'},
-               path === 'balance' ? _activeCardIdOf(u) : cardId);
-    if(path !== 'balance') {
-      var obj = (u.linkedCards && u.linkedCards[cardId]) || (cardId === 'axiom' ? u.virtualCard : null);
-      var last4 = obj ? (obj.last4 || String(obj.number||'').replace(/\D/g,'').slice(-4)) : '';
-      notify('Зараховано на картку ····' + last4 + ' (не активну)', 'info');
-    }
-  });
+// Донат — добровільна підтримка проєкту й НЕ нараховує нічого ігрового:
+// ні баланс, ні Слотіки, ні VIP/виграні ставки. Гравець отримує лише
+// косметичний значок «Підтримав проєкт» (однаковий для будь-якої суми).
+function approveDeposit(id, user) {
+  if(!requireAdminPerm('finance')) return;
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-  db.ref('users/'+user+'/history').push({text:`✅ Депозит підтверджено: +${amount}₴`, date:Date.now()});
-  db.ref('users/'+user+'/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:`✅ Ваш депозит ${amount}₴ зараховано! Гарної гри! 🎰`, ts:Date.now()});
+  db.ref('users/'+user).update({supporter:true, supporterAt:Date.now()});
+  db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'Дякуємо за підтримку SlotOK! У вашому профілі з\'явився значок «Підтримав проєкт». Донат не змінює ігровий баланс.', ts:Date.now()});
   db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-  // Update casino stats
-  db.ref('casino_stats/totalDeposits').set(firebase.database.ServerValue.increment(amount));
-  notify(`✅ Депозит ${amount}₴ зараховано гравцю ${user}`, 'success');
+  notify('Донат підтверджено, гравцю '+user+' видано значок підтримки', 'success');
 }
 
 function rejectDeposit(id, user) {
   db.ref('deposit_requests/'+id).update({status:'rejected', rejectedAt:Date.now()});
-  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Ваш запит на поповнення відхилено. Зверніться до підтримки.', ts:Date.now()});
+  if(user) db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'❌ Вашу заявку про донат не підтверджено. Зверніться до підтримки.', ts:Date.now()});
   if(user) db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
   notify('Депозит відхилено', 'info');
 }

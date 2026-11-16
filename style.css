@@ -5909,3 +5909,30 @@ body.pm-thread-open .bottom-nav { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .pa-ember, .pn-iris { animation: none; }
 }
+/* ─── src/css/77-friends.css ─── */
+/* ═══════════════════════════════════════════════════════════════════
+   ДРУЗІ Й ЗАПРОШЕННЯ ЗА СТІЛ. Логіка — src/app/56-friends.js.
+   ═══════════════════════════════════════════════════════════════════ */
+.friends-add { margin-bottom: var(--sp-4); }
+#friendsList .list { margin-bottom: var(--sp-4); }
+#friendsList .list-row .btn-sm { flex: none; width: auto; margin: 0; }
+.friends-badge { margin-left: auto; margin-right: var(--sp-2); }
+.fr-invite-list { margin-bottom: var(--sp-4); max-height: 40vh; overflow-y: auto; }
+.fr-invite-list .btn-sm { flex: none; width: auto; margin: 0; }
+.fr-invite-bar { margin-top: var(--sp-3); display: flex; justify-content: center; }
+.fr-invite-bar .btn { width: auto; margin: 0; }
+
+/* Спливаюче запрошення за стіл */
+.fr-popups {
+  position: fixed; left: 50%; bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px) + 64px); transform: translateX(-50%);
+  z-index: var(--z-toast); display: grid; gap: var(--sp-2); width: min(420px, calc(100vw - 2 * var(--sp-4))); pointer-events: none;
+}
+.fr-popup {
+  pointer-events: auto; display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-1); color: var(--fg); border: var(--bw) solid var(--line-strong);
+  border-left: 4px solid var(--accent); border-radius: var(--r-lg); box-shadow: var(--sh-float);
+  animation: stamp-in var(--dur-3) var(--ease-out);
+}
+.fr-popup-sub { color: var(--fg-3); font-size: var(--fs-sm); }
+.fr-popup-actions { display: flex; gap: var(--sp-2); }
+.fr-popup-actions .btn { flex: 1; margin: 0; }

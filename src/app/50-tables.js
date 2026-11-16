@@ -76,6 +76,7 @@ function tableUpdate(game, u) {
     if (el) el.innerHTML = `Ставка <b class="num">₴${formatNumber(meta.bet)}</b> · гравців <b class="num">${u.players.length}</b> з ${meta.size}`;
     const ch = document.getElementById(game + 'WaitPlayers');
     if (ch) ch.innerHTML = u.players.map((p) => `<span class="mass-chip${p === currentUser ? ' is-me' : ''}">${escapeHtml(p)}</span>`).join('');
+    friendsAttachInvite(game + 'Wait', game, t.id);
     document.getElementById(game + 'StartNow')?.classList.toggle('hidden', !(meta.host === currentUser && u.players.length >= 2));
     return;
   }
