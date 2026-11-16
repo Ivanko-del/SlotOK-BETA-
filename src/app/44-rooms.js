@@ -11,7 +11,7 @@
 // ============================================================
 
 const ROOM_GAME_NAMES = {
-  minesweeper: 'Сапер', battleship: 'Морський бій', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction',
+  minesweeper: 'Сапер', battleship: 'Морський бій', fourrow: 'Чотири в ряд', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction',
 };
 
 // Чи можна грати кімнатами: сервер увімкнено І правила бази вже дозволяють
@@ -84,7 +84,8 @@ async function roomLeaveConfirm(game, id, playing) {
 }
 
 // Підписка на кімнату. cb({ meta, pub, priv, seat, players }) на кожну зміну.
-function roomWatch(game, id, cb) {
+function roomWatch(game, id, cb, wopts) {
+  const spec = !!(wopts && wopts.spectate); // глядач: лише публічний вигляд, без приватного й без таймерів
   let meta = null, priv = null, privVer = 0, stopped = false, tickAt = 0, fixTimer = null;
   const pubRef = db.ref('rooms/' + game + '/' + id);
   const privRef = db.ref('room_private/' + id + '/' + currentUser);
@@ -97,7 +98,7 @@ function roomWatch(game, id, cb) {
     const players = Object.entries(meta.players || {}).sort((a, b) => a[1] - b[1]).map(([n]) => n);
     cb({ meta, pub, priv, seat: players.indexOf(currentUser), players, result, opts: o });
     // Приватний вигляд відстав від публічного — дочитуємо через API
-    if (meta.v && meta.ver > privVer && players.includes(currentUser) && meta.status === 'playing') {
+    if (!spec && meta.v && meta.ver > privVer && players.includes(currentUser) && meta.status === 'playing') {
       clearTimeout(fixTimer);
       fixTimer = setTimeout(async () => {
         if (stopped || privVer >= meta.ver) return;
@@ -106,13 +107,13 @@ function roomWatch(game, id, cb) {
       }, 1500);
     }
     // Масові ігри: лобі збирається до startBy — потім сервер стартує гру
-    if (meta.status === 'waiting' && meta.startBy && tickAt !== meta.startBy) {
+    if (!spec && meta.status === 'waiting' && meta.startBy && tickAt !== meta.startBy) {
       const at = meta.startBy;
       setTimeout(() => { if (!stopped && tickAt !== at) { tickAt = at; roomApi('tick', { id }); } }, Math.max(0, at - Date.now() + 300 + Math.random() * 700));
     }
     // Дедлайн минув — просимо сервер розібратися (раз на дедлайн)
     // У великих кімнатах першими смикають троє, решта — лише якщо стан так і не зрушив.
-    if (pub && pub.until && !pub.over && meta.status === 'playing' && tickAt !== pub.until) {
+    if (!spec && pub && pub.until && !pub.over && meta.status === 'playing' && tickAt !== pub.until) {
       const seat = players.indexOf(currentUser);
       const wait = pub.until - Date.now() + 400 + Math.random() * 600 + (seat >= 0 && seat < 3 ? 0 : 2200);
       const at = pub.until;
@@ -132,8 +133,8 @@ function roomWatch(game, id, cb) {
     emit();
   };
   pubRef.on('value', onPub);
-  privRef.on('value', onPriv, () => {});
-  return () => { stopped = true; clearTimeout(fixTimer); pubRef.off('value', onPub); privRef.off('value', onPriv); };
+  if (!spec) privRef.on('value', onPriv, () => {});
+  return () => { stopped = true; clearTimeout(fixTimer); pubRef.off('value', onPub); if (!spec) privRef.off('value', onPriv); };
 }
 
 // Повернутися в мою відкриту кімнату цієї гри (після перезавантаження).

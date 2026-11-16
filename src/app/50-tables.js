@@ -92,6 +92,7 @@ function tableUpdate(game, u) {
   document.getElementById(game + 'Again')?.classList.toggle('hidden', meta.status !== 'finished');
   document.getElementById(game + 'Leave')?.classList.toggle('hidden', meta.status !== 'playing');
   if (meta.status === 'finished' && !t.announced) { t.announced = true; roomAnnounce(u.result, meta.bet, TBL_CFG[game].name); }
+  if (t.spectate && typeof spectateDecorate === 'function') spectateDecorate(game, u);
 }
 function tableTimer(game, u) {
   const el = document.getElementById(game + 'Timer');
@@ -109,6 +110,7 @@ async function tableAct(game, move) {
 }
 // Суперники по колу (від мене за годинниковою)
 function tableSeats(u, fn) {
+  if (u.spectate) return u.players.map((n, i) => fn(i, n)).join(''); // глядач: усі місця
   const n = u.players.length, me = Math.max(0, u.seat);
   const out = [];
   for (let k = 1; k < n; k++) { const i = (me + k) % n; out.push(fn(i, u.players[i])); }
