@@ -100,7 +100,7 @@ const mkRoom = (id, game, players, winners, extra = {}) => ({
   const fav = R.leagueDeltas([1400, 1000], [0], null).deltas;
   assert.ok(fav[0] < 12 && fav[0] > 0, "перемога над слабшим — менше");
   const t4 = R.leagueDeltas([1000, 1000, 1000, 1000], [2], null).deltas;
-  assert.deepStrictEqual(t4, [-8, -8, 24, -8], "стіл на 4: переможець бере K, кожен програвший −K/3");
+  assert.deepStrictEqual(t4, [-4, -4, 12, -4], "стіл на 4: як у дуелі, переможець +K/2, решта ділять мінус");
   const t4b = R.leagueDeltas([1000, 1000, 1000, 1000], [0, 1], null).deltas;
   assert.deepStrictEqual(t4b, [8, 8, -8, -8], "двоє переможців");
   assert.strictEqual(R.leagueDeltas([1000, 1000], [0], () => false).deltas.join(), "0,0", "пара не зарахована — нуль");
@@ -192,7 +192,7 @@ const mkRoom = (id, game, players, winners, extra = {}) => ({
   assert.strictEqual(bal("zed"), 2500);
   assert.ok(tree.users.zed.slotikyItems.badge_crown, "значок виданий");
   assert.strictEqual((await api("zed", "leagueClaim")).status, 409);
-  assert.strictEqual((await api("low", "leagueClaim")).status, 409 === 409 ? 409 : 0, "менше 5 партій — нагороди немає");
+  assert.strictEqual((await api("low", "leagueClaim")).status, 409, "менше 5 партій — нагороди немає");
   assert.strictEqual(bal("zed"), 2500);
   // Збій виплати повертає нагороду в очікування.
   tree.league.zed.pend = { "2026-09": { tier: "gold", r: 1250 } };
