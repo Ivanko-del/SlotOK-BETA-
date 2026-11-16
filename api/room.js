@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
         const blocked = await blockedReason(nick);
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await rooms.create(nick, String(body.game || ""), bet, Number(body.size) || 0, body.opts);
-        const progress = out.error ? undefined : await safeRecordWager(nick, bet);
+        const progress = out.error ? undefined : await safeRecordWager(nick, bet, { game: String(body.game || ""), room: true });
         return send(res, out, { progress });
       }
       case "quick": {
@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
         const blocked = await blockedReason(nick);
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await rooms.quick(nick, String(body.game || ""), bet);
-        const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, bet);
+        const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, bet, { game: String(body.game || ""), room: true });
         return send(res, out, { progress });
       }
       case "join": {
@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
         const blocked = await blockedReason(nick);
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await rooms.join(nick, id);
-        const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, out.room.bet);
+        const progress = out.error || out.balance === undefined ? undefined : await safeRecordWager(nick, out.room.bet, { game: String(out.room.game || ""), room: true });
         return send(res, out, { progress });
       }
       case "start": return id ? send(res, await rooms.startNow(nick, id)) : fail(res, 400, "bad_id", "Невірна кімната");

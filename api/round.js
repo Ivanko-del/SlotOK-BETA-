@@ -64,6 +64,8 @@ async function payOut(nick, game, session) {
   }
   const paying = claim.value;
   const { balance } = await moveBalance(nick, paying.payout);
+  // Місії: перемога (виплата вищa за ставку) — лише з виплати, що пройшла рівно раз.
+  if (paying.payout > paying.bet) await require("../lib/missions").safeRecord(nick, { game, win: true, mult: paying.payout / paying.bet });
   await dbTransaction(path, (raw) => (raw && raw.status === "paying" && raw.payStart === paying.payStart ? { ...raw, status: "done", doneAt: Date.now() } : undefined));
   return balance;
 }
@@ -158,7 +160,7 @@ async function start(req, res, nick, game, def, body) {
   // Ставка списана. Якщо далі щось впаде до запису раунду — повертаємо ставку.
   try {
     // Ставка списана — облік вейджеру/XP/кешбеку йде паралельно з роздачею.
-    const progressP = safeRecordWager(nick, bet);
+    const progressP = safeRecordWager(nick, bet, { game });
     const ctx = def.timed ? { bet, luck: ((await dbGet(`users/${nick}/luckyGamesLeft`)) || 0) > 0 } : { bet };
     const session = { status: "active", game, bet, params, state: def.init(params, rng, ctx), startedAt: Date.now(), v: 0, ...(insured ? { insured: true } : {}) };
     if (def.finished(session.state)) {
@@ -237,7 +239,7 @@ async function move(req, res, nick, game, def, body) {
   if (outcome === "invalid") return fail(res, 400, "bad_move", "Такий хід неможливий");
   const s = load(def, tx.value);
   // Доплата (double/split/страховка) — теж ставка.
-  const progress = cost > 0 ? await safeRecordWager(nick, cost) : undefined;
+  const progress = cost > 0 ? await safeRecordWager(nick, cost, { extra: true }) : undefined;
   if (outcome === "lost") return res.status(200).json({ ...publicView(def, s, true), payout: 0, ...(balanceAfterCost !== null ? { balance: balanceAfterCost } : {}), progress });
   if (outcome === "finished") {
     const balance = await payOut(nick, game, s);

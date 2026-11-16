@@ -167,7 +167,7 @@ module.exports = async (req, res) => {
 
     // Облік ставки (VIP, Battle Pass, кешбек) — паралельно з рештою запису.
     // Фріспін і бонус-раунд ставкою не рахуються, як і в браузері.
-    const progressP = debit > 0 ? safeRecordWager(nick, debit) : Promise.resolve(null);
+    const progressP = debit > 0 ? safeRecordWager(nick, debit, { game: body.game, win: outcome.payout > debit, mult: outcome.payout / debit }) : Promise.resolve(null);
 
     // Тригери слотів: бонус-раунд (стан на сервері) або +5 фріспінів.
     if (body.game === "slots" && outcome.trigger === "bonus") {

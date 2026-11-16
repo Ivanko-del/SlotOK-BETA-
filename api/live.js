@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await live.wheelBet(nick, String(body.game || ""), String(body.choice || ""), amount, now);
         if (out.error) return sendErr(res, out.error);
-        const progress = await safeRecordWager(nick, amount);
+        const progress = await safeRecordWager(nick, amount, { game: String(body.game || "") });
         return res.status(200).json({ ok: true, ...out, settled, progress });
       }
       case "wheelResult": {
@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
         if (blocked) return fail(res, 403, "blocked", blocked);
         const out = await live.crashBet(nick, amount, body.auto, now);
         if (out.error) return sendErr(res, out.error);
-        const progress = await safeRecordWager(nick, amount);
+        const progress = await safeRecordWager(nick, amount, { game: "livecrash" });
         return res.status(200).json({ ok: true, ...out, settled, progress });
       }
       case "crashCashout": {
