@@ -232,6 +232,21 @@ async function rooms(ns, alice, bob, anon) {
   assert.strictEqual(await anon.get("room_private/r1/alice"), NO);
   assert.strictEqual(await alice.put("room_private/r1/alice", { ver: 9 }), NO);
   assert.strictEqual(await alice.get("room_state/r1"), NO, "повний стан (міни, флоти) — лише сервер");
+  // Друзі: свої списки бачить лише власник, писати може лише сервер.
+  await admin.put("friends/alice/bob", { since: 1 });
+  await admin.put("friend_requests/alice/carol", { at: 1 });
+  await admin.put("room_invites/alice/r1", { from: "bob" });
+  for (const n of ["friends", "friend_requests"]) {
+    const k = n === "friends" ? "bob" : "carol";
+    assert.strictEqual(await alice.get(`${n}/alice`), OK, `${n}: свій список видно`);
+    assert.strictEqual(await bob.get(`${n}/alice`), NO, `${n}: чужий — ні`);
+    assert.strictEqual(await anon.get(`${n}/alice`), NO);
+    assert.strictEqual(await alice.put(`${n}/alice/${k}x`, { at: 1 }), NO, `${n}: писати лише серверу`);
+    assert.strictEqual(await bob.put(`${n}/bob/alice`, { at: 1 }), NO);
+  }
+  assert.strictEqual(await alice.get("room_invites/alice"), OK, "свої запрошення видно");
+  assert.strictEqual(await bob.get("room_invites/alice"), NO, "чужі запрошення — ні");
+  assert.strictEqual(await bob.put("room_invites/alice/r2", { from: "bob" }), NO, "запрошення пише лише сервер");
   assert.strictEqual(await alice.put("minesweeper_records/easy/alice", { t: 12.5, at: 1 }), OK, "свій рекорд");
   assert.strictEqual(await alice.put("minesweeper_records/easy/bob", { t: 1, at: 1 }), NO, "чужий рекорд");
   assert.strictEqual(await alice.put("minesweeper_records/easy/alice", { t: -1 }), NO, "дурний час");

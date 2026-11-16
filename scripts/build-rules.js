@@ -115,6 +115,9 @@ function build(strict) {
       banReason: adminOnly,
       autoFrozen: adminOnly,
       isBot: adminOnly,
+      // Значок «Підтримав проєкт» (донат) — ставить лише адмін/сервер, без ігрової цінності.
+      supporter: adminOnly,
+      supporterAt: adminOnly,
       tag: { ...adminOnly, ...userNode.tag },
       telegramChatId: { ".write": `auth != null && (auth.uid === $u || ${isAdmin}) && !newData.exists()` },
       // Інші легітимні записи в чужий акаунт (знайдено пошуком по app.js):
@@ -239,6 +242,10 @@ function build(strict) {
     // room_state/room_of/room_paid — правил не має, тобто закритий для браузера.
     rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
     room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
+    // Друзі й запрошення за стіл (lib/friends.js): пише лише сервер, кожен читає свої списки.
+    friends: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
+    friend_requests: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
+    room_invites: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
     // Спільні ігри за розкладом (api/live.js): пише лише сервер, бачать усі.
     // Ставки live_open/live_paid — без правил, тобто лише сервер.
     live_bets: { ".read": true, ".write": false },

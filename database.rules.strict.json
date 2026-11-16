@@ -610,6 +610,27 @@
         }
       }
     },
+    "friends": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "friend_requests": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
+    "room_invites": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
     "live_results": {
       ".read": true,
       ".write": false
