@@ -306,9 +306,13 @@ function startDataSync() {
               if(userData.balance < 0) antiCheatFlag('negative_balance', `Баланс пішов у мінус: ₴${formatNumber(userData.balance)}`, 'high');
             }
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
-            if(!isAdminAcc) {
-              db.ref('site_config/maintenance').once('value', mSnap => {
-                if(mSnap.val()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
+            // Одна підписка на сесію замість читання site_config/maintenance на КОЖНУ
+            // зміну профілю (а це кожна ставка). Логіка та сама: не-адмін при
+            // увімкненому техобслуговуванні виходить з акаунта.
+            if(!isAdminAcc && !window._maintWatch) {
+              window._maintWatch = true;
+              db.ref('site_config/maintenance').on('value', mSnap => {
+                if(mSnap.val() && !isAdminUser()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
               });
             }
             document.getElementById('auth-screen').classList.add('hidden');

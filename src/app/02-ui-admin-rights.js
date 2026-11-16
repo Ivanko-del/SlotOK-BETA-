@@ -56,8 +56,14 @@ function updateUI() {
       });
     }
     updateVipUI();
-    loadMyWithdraws();
-    loadMyDeposits();
+    // Списки заявок — 2 запити до БД; updateUI() біжить на кожну зміну балансу,
+    // тож оновлюємо їх не частіше раза на 30 с (після дій вони викликаються напряму).
+    if(window._reqListsUser !== currentUser || Date.now() - (window._reqListsAt || 0) > 30000) {
+      window._reqListsUser = currentUser;
+      window._reqListsAt = Date.now();
+      loadMyWithdraws();
+      loadMyDeposits();
+    }
     const hb = document.getElementById('homeStatBalance');
     const hv = document.getElementById('homeStatVip');
     const hs = document.getElementById('homeStatStreak');
@@ -87,7 +93,9 @@ function refreshCasinoCounters() {
   paint(_casinoCountersCache);
   if(_casinoCountersBusy || Date.now() - _casinoCountersAt < 300000) return;
   _casinoCountersBusy = true;
-  db.ref('users').once('value', snap => {
+  // Перший підрахунок (одразу після входу) читає весь вузол users — відкладаємо,
+  // щоб не заважати стартовим запитам.
+  setTimeout(() => db.ref('users').once('value', snap => {
     _casinoCountersBusy = false;
     _casinoCountersAt = Date.now();
     const users = snap.val()||{};
@@ -102,7 +110,7 @@ function refreshCasinoCounters() {
       const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
       db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
     }
-  }, () => { _casinoCountersBusy = false; });
+  }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
 }
 
 function checkAdmin() {

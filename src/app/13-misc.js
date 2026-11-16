@@ -127,10 +127,11 @@ function addContact() {
 function loadContacts() { 
     const l=document.getElementById('contactsList'); 
     if(!userData.contacts){ l.innerHTML="<div style='color:var(--fg-3)'>Список порожній</div>"; return; } 
-    l.innerHTML=""; 
+    let html = "";
     for(let n in userData.contacts){ 
-        l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
+        html+=`<div class="contact-row"><b>${escapeHtml(n)}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
     } 
+    l.innerHTML = html;
 }
 
 function quickSend(n) {
