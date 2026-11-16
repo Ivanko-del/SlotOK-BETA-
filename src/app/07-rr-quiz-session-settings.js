@@ -247,49 +247,18 @@ function updateSessionBar() {
 // ═══════════════════════════════════════════
 // 📦 DEPOSIT PACKAGES
 // ═══════════════════════════════════════════
-function initDepositPackages() {
-  const pkg = document.getElementById('depositPackages');
-  if(!pkg) return;
-  // Суми й бонуси — ті самі, що нараховує адмін (selectDepPackage). Тут лише
-  // вигляд: повні суми замість «1.0k», нейтральні назви, без емодзі.
-  const packages = [
-    {amount:200, bonus:0, label:'Старт'},
-    {amount:500, bonus:50, label:'Базовий'},
-    {amount:1000, bonus:200, label:'Стандарт', popular:true},
-    {amount:2500, bonus:625, label:'Більший'},
-    {amount:5000, bonus:1500, label:'Розширений'},
-    {amount:10000, bonus:4000, label:'Максимум'},
-  ];
-  const full = n => Number(n).toLocaleString('uk-UA');
-  pkg.innerHTML = packages.map(p=>`
-    <div class="dep-package${p.popular?' popular':''}" data-amount="${p.amount}" onclick="selectDepPackage(${p.amount},${p.bonus})">
-      <div class="dep-package-head">
-        <span class="dep-package-label">${p.label}</span>
-        ${p.popular?'<span class="dep-package-tag">Популярний</span>':''}
-      </div>
-      <div class="dep-package-amount">${full(p.amount)} ₴</div>
-      ${p.bonus>0?'<div class="dep-package-bonus">Бонус <b>+'+full(p.bonus)+' ₴</b></div>':'<div class="dep-package-bonus none">Без бонусу</div>'}
-      <div class="dep-package-total">На баланс: ${full(p.amount+p.bonus)} ₴</div>
-    </div>
-  `).join('');
-}
+// Бонусні донат-пакети прибрано: донат нічого не додає до гри. Заглушка — для старих викликів.
+function initDepositPackages() {}
 
 // Раніше пакет писав суму в #depositAmount/#betDepAmt — таких полів у Касі
 // немає, тож вибір пакета нічого не робив. Тепер він задає ту саму змінну
 // selectedDepAmount, яку читає submitDepositRequest().
-function selectDepPackage(amount, bonus) {
+function selectDepPackage(amount) {
   selectedDepAmount = amount;
   ksClearDepositAmountUI();
-  const card = document.querySelector('#depositPackages .dep-package[data-amount="' + amount + '"]');
-  if(card) card.classList.add('is-selected');
   const custom = document.getElementById('customDepAmount');
   if(custom) custom.value = '';
   document.getElementById('customAmountBox')?.classList.add('hidden');
-  notify(bonus > 0
-    ? 'Пакет ' + formatNumber(amount) + ' ₴ · бонус +' + formatNumber(bonus) + ' ₴'
-    : 'Сума ' + formatNumber(amount) + ' ₴', 'info');
-  if(bonus > 0) localStorage.setItem('pendingDepBonus', JSON.stringify({amount, bonus, ts: Date.now()}));
-  else localStorage.removeItem('pendingDepBonus');
 }
 
 // ═══════════════════════════════════════════

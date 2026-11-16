@@ -41,7 +41,7 @@ function updateUI() {
     pn('profStatWager', userData.totalWagered || userData.totalWager || 0, '₴');
     ps('profStatStreak', (userData.dailyStreak || 0) + '🔥');
     pn('profStatSlotsPlayed', userData.slotsPlayed || 0, '');
-    pn('profStatDeposits', userData.totalDeposits || 0, '₴');
+    ps('profStatSupporter', userData.supporter ? 'Підтримав проєкт' : '—');
     const wr = gamesPlayed > 0 ? Math.round((gamesWon/gamesPlayed)*100) : 0;
     pn('profWinRate', wr, '', '%');
     const bar = document.getElementById('profWinRateBar');
@@ -101,13 +101,13 @@ function refreshCasinoCounters() {
     const users = snap.val()||{};
     _casinoCountersCache = {
       total: Object.keys(users).filter(k=>!users[k].isBot).length,
-      online: Object.values(users).filter(u=>u.lastSeen && Date.now()-u.lastSeen < 300000).length,
-      wins: Object.values(users).reduce((s,u)=>s+(u.totalWins||0),0),
+      online: Object.values(users).filter(u=>!u.isBot && u.lastSeen && Date.now()-u.lastSeen < 300000).length,
+      wins: Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWins||0)),0),
     };
     paint(_casinoCountersCache);
     // Екран входу показує суму ставок з цього агрегату, а не качає users сам.
     if(isAdminUser()) {
-      const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
+      const paid = Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWagered||0)), 0);
       db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
     }
   }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
@@ -117,8 +117,6 @@ function checkAdmin() {
     if (currentUser.toLowerCase() === ADMIN_OWNER || userData.isAdmin === true) {
         document.getElementById('adminPanelBtnBox').classList.remove('hidden');
         document.getElementById('adminBadge').classList.remove('hidden');
-        // Автозапуск бот-движка для адміна
-        if(!_botEngine) setTimeout(startBotEngine, 3000);
     } else {
         // Support (role у профілі) бачить панель лише з вкладкою «Звернення»
         document.getElementById('adminPanelBtnBox').classList.toggle('hidden', !isSupportUser());

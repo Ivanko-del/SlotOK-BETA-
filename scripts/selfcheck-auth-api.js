@@ -139,11 +139,13 @@ function decodeJwt(token) {
   assert.strictEqual((await call("POST", { action: "login", nick: "victim", password: "hunter22" }, { "x-real-ip": "9.9.9.9" })).status, 429);
 
   // --- реєстрація ---
-  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "first_phone", secA: "answer", birthDate: "2000-01-01", ...body }, { "x-real-ip": ip });
+  const reg = (body, ip = "20.0.0.1") => call("POST", { action: "register", secQ: "first_phone", secA: "answer", birthDate: "2000-01-01", termsAccepted: true, termsVersion: "3", ...body }, { "x-real-ip": ip });
   assert.strictEqual((await reg({ nick: "<img>", password: "123456" })).status, 400, "нік з HTML");
   assert.strictEqual((await reg({ nick: "ok_nick", password: "123" })).status, 400, "короткий пароль");
   assert.strictEqual((await reg({ nick: "kid", password: "123456", birthDate: new Date(Date.now() - 10 * 365.25 * 864e5).toISOString().slice(0, 10) })).status, 403, "молодше MIN_AGE — акаунт не створюється");
   assert.strictEqual(tree.users.kid, undefined);
+  assert.strictEqual((await reg({ nick: "noterms", password: "123456", termsAccepted: false })).status, 400, "без згоди з Умовами реєстрації немає");
+  assert.strictEqual((await reg({ nick: "teen15", password: "123456", birthDate: new Date(Date.now() - 15 * 365.25 * 864e5).toISOString().slice(0, 10) })).status, 400, "до 18 без дозволу батьків реєстрації немає");
   assert.strictEqual((await reg({ nick: "nobirth", password: "123456", birthDate: "" })).status, 400, "без дати народження");
   assert.strictEqual((await reg({ nick: "badbirth", password: "123456", birthDate: "2001-02-30" })).status, 400, "неіснуюча дата");
   assert.strictEqual((await reg({ nick: "alice", password: "123456" })).status, 409, "зайнятий нік не перезаписується");

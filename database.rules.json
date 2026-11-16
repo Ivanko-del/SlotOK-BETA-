@@ -458,6 +458,13 @@
         ]
       }
     },
+    "missions": {
+      ".read": false,
+      ".write": false,
+      "$u": {
+        ".read": "auth != null && auth.uid === $u"
+      }
+    },
     "room_private": {
       ".read": false,
       ".write": false,

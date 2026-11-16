@@ -51,7 +51,6 @@ const badSeg = (v) => v !== undefined && v !== null && !(typeof v === "string" &
 
 const PATHS = {
   deposit: "deposit_requests",
-  withdraw: "withdraw_requests",
   reset: "password_reset_requests",
 };
 
@@ -138,32 +137,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    if (type === "withdraw-2fa") {
-      // Реальне 2FA: код/кнопка йдуть у ВЛАСНИЙ Telegram гравця, а не в те саме
-      // вікно сайту, звідки подано заявку — це і є другий, окремий канал.
-      // Підтвердження обробляється тапом по кнопці в telegram-webhook.js
-      // (callback_data "wd2fa:..."), не тут — тут лише надсилаємо повідомлення.
-      if (!id) { res.status(400).end(); return; }
-      if (!(await allow(`wd2fa:${id}`, 3, 300000))) { res.status(429).end(); return; }
-      const r = await dbGet(`withdraw_requests/${id}`);
-      if (!r || r.status !== "pending_2fa") { res.status(200).end(); return; }
-      const chatId = await dbGet(`users/${r.user}/telegramChatId`);
-      if (!chatId) { res.status(200).end(); return; }
-      await sendMessage(
-        chatId,
-        `🔐 <b>Підтвердження виводу</b>\n💵 Сума: ${r.amount}₴ · ${esc(r.method || "—")}\n\nЦе точно ти щойно запросив вивід на сайті? Підтверди нижче — після цього заявку побачить адміністратор.`,
-        {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: "✅ Так, це я — підтвердити", callback_data: `wd2fa:confirm:${id}` },
-              { text: "❌ Це не я — скасувати", callback_data: `wd2fa:cancel:${id}` },
-            ]],
-          },
-        }
-      );
-      res.status(200).end();
-      return;
-    }
+    // Вивід прибрано (ігрова валюта віртуальна): типи withdraw/withdraw-2fa більше не обробляються.
 
     const path = Object.prototype.hasOwnProperty.call(PATHS, type) ? PATHS[type] : null;
     if (!path || !id) {
@@ -191,14 +165,8 @@ module.exports = async (req, res) => {
     if (type === "deposit") {
       await sendMessage(
         adminChatId,
-        `💰 <b>Нова заявка на поповнення</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}`,
+        `💰 <b>Нова заявка на донат</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount} грн · ${esc(req_.method || "—")}`,
         { reply_markup: buttons("dep", id) }
-      );
-    } else if (type === "withdraw") {
-      await sendMessage(
-        adminChatId,
-        `💸 <b>Нова заявка на вивід</b>\n👤 ${esc(req_.user)}\n💵 ${req_.amount}₴ · ${esc(req_.method || "—")}\n💳 ${esc(req_.card || "—")}`,
-        { reply_markup: buttons("wd", id) }
       );
     } else if (type === "reset") {
       await sendMessage(

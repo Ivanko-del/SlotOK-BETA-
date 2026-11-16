@@ -809,13 +809,13 @@ function monoGameOver(winner) {
   if(isWin) {
     db.ref('users/' + currentUser + '/balance').set(firebase.database.ServerValue.increment(prize));
     monoLog('🏆 ВИ ПЕРЕМОГЛИ! +' + prize + '₴', 'good');
-    addToHistory('Монополія: +' + prize + '₴');
+    addToHistory('Магнат: +' + prize + '₴');
     playSound('win');
-    notify('🎩 Перемога в Монополії! +' + prize + '₴', 'success');
+    notify('🎩 Перемога в «Магнаті»! +' + prize + '₴', 'success');
   } else {
     monoLog('💀 AI переміг. Гру завершено.', 'bad');
-    addToHistory('Монополія: -' + monoState.bet + '₴');
-    notify('😔 AI переміг у Монополії', 'error');
+    addToHistory('Магнат: -' + monoState.bet + '₴');
+    notify('😔 Комп’ютер переміг у «Магнаті»', 'error');
   }
   setTimeout(() => {
     const ss = document.getElementById('monoStartScreen');

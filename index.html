@@ -178,6 +178,9 @@
           <span class="ic i-chevron-right callout-go" aria-hidden="true"></span>
         </button>
 
+        <!-- Щоденні місії з серією (src/app/57-missions.js): три місії доби, нагороди рахує сервер -->
+        <section id="missionsCard" class="panel missions-card hidden anim-cascade" aria-label="Щоденні місії"></section>
+
         <!-- Mystery Box — тільки для нових гравців перші 24 год -->
         <div id="mysteryBoxWidget" class="hidden anim-cascade"></div>
 
@@ -565,7 +568,7 @@
         </div>
         <div class="casino-game-card" data-cat="crash" role="listitem" tabindex="0" onclick="openGame('crash')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🚀</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash Aviator</div><div class="casino-game-card-prov">Множник</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Crash</div><div class="casino-game-card-prov">Множник</div></div>
         </div>
         <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('mines')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">💣</div>
@@ -617,7 +620,7 @@
         </div>
         <div class="casino-game-card" data-cat="mini" role="listitem" tabindex="0" onclick="openGame('monopoly')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-hot">HOT</span><div class="casino-game-card-img">🎩</div>
-          <div class="casino-game-card-info"><div class="casino-game-card-name">Монополія</div><div class="casino-game-card-prov">Міні-гра</div></div>
+          <div class="casino-game-card-info"><div class="casino-game-card-name">Магнат</div><div class="casino-game-card-prov">Міні-гра</div></div>
         </div>
         <div class="casino-game-card" data-cat="cards" role="listitem" tabindex="0" onclick="openGame('cardgame')" onkeydown="if(event.key==='Enter')this.click()">
           <span class="casino-badge-new">NEW</span><div class="casino-game-card-img">🃏</div>
@@ -703,19 +706,9 @@
         <span class="callout-ic">🔥</span><span class="callout-body"><span class="callout-title" id="streakText"></span></span>
       </div>
 
-      <!-- Джекпот -->
-      <div class="jackpot-strip panel is-featured">
-        <div>
-          <div class="hero-label">Поточний джекпот</div>
-          <div class="jackpot-num num">₴ <span id="lobbyJackpotNum">4 287 341</span></div>
-          <div class="field-hint">Оновлюється наживо</div>
-        </div>
-        <button type="button" class="btn btn-primary btn-inline jackpot-play-btn" onclick="openCasinoGameCard('crash','🚀','Crash Aviator','Множник до ×∞ · RTP 97%')">Грати</button>
-      </div>
-
       <!-- Останні виграші -->
-      <div class="section-header"><span>Останні виграші</span></div>
-      <div class="wins-feed list" id="lobbyWinsFeed"></div>
+      <div class="section-header" id="lobbyWinsHead" hidden><span>Останні виграші гравців</span></div>
+      <div class="wins-feed list" id="lobbyWinsFeed" hidden></div>
     </div>
 
 
@@ -2080,6 +2073,7 @@
           <div class="ks-stat"><div class="ks-stat-lbl">Серія днів</div><div class="ks-stat-val ks-num" id="profStatStreak">0🔥</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">VIP рівень</div><div class="ks-stat-val is-acc" id="profStatVip">—</div></div>
           <div class="ks-stat"><div class="ks-stat-lbl">Ігор у слотах</div><div class="ks-stat-val ks-num" id="profStatSlotsPlayed">0</div></div>
+          <div class="ks-stat"><div class="ks-stat-lbl">Підтримка проєкту</div><div class="ks-stat-val is-pos" id="profStatSupporter">—</div></div>
         </div>
         <div class="ks-panel-body" style="border-top:1px solid var(--ks-line);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -2161,7 +2155,7 @@
       <nav class="list menu-group" aria-label="Прогрес і нагороди">
           <button type="button" class="list-row menu-item" onclick="switchTab('affiliate')"><span class="menu-ic">👥</span><span class="list-row-main"><span class="list-row-title">Реферали</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('achievements')"><span class="menu-ic">🏆</span><span class="list-row-main"><span class="list-row-title">Досягнення</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
-          <button type="button" class="list-row menu-item" onclick="switchTab('quests')"><span class="menu-ic">📋</span><span class="list-row-main"><span class="list-row-title">Завдання</span></span> <span id="questsBadge" class="tab-badge hidden">!</span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
+          <button type="button" class="list-row menu-item" onclick="openMissions()"><span class="menu-ic">📋</span><span class="list-row-main"><span class="list-row-title">Щоденні місії</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('vip')"><span class="menu-ic">👑</span><span class="list-row-main"><span class="list-row-title">VIP-клуб</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('battlepass')"><span class="menu-ic">🎫</span><span class="list-row-main"><span class="list-row-title">Battle Pass</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
           <button type="button" class="list-row menu-item" onclick="switchTab('stats')"><span class="menu-ic">📊</span><span class="list-row-main"><span class="list-row-title">Моя статистика</span></span><span class="ic i-chevron-right list-row-end" aria-hidden="true"></span></button>
@@ -2296,17 +2290,17 @@
     <!-- ===== МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly" class="screen hidden">
       <button type="button" class="game-back" onclick="switchTab('lobby')" aria-label="До списку ігор"><span class="ic i-arrow-left" aria-hidden="true"></span><span class="game-back-lbl">Ігри</span></button>
-      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія</h2>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Магнат</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:10px;">Купуй нерухомість, збирай ренту, обанкруть суперника!</div>
 
       <div id="monoStartScreen">
         <div class="box" style="text-align:center;">
           <div style="font-size:60px;margin-bottom:10px;">🎩</div>
-          <h3 style="color:var(--accent);margin:0 0 8px;">Монополія</h3>
+          <h3 style="color:var(--accent);margin:0 0 8px;">Магнат</h3>
           <div style="color:var(--fg-3);font-size:13px;margin-bottom:15px;">Ти грієш проти AI-суперника.<br>Стартовий капітал: 3 000 ₴ кожному</div>
           <input id="monoEntryBet" type="number" value="500" placeholder="Початкова ставка (₴)">
           <div style="color:var(--fg-4);font-size:12px;margin-bottom:15px;">Переможець забирає всі гроші</div>
-          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 vs AI</button>
+          <button class="btn-gold" style="font-size:16px;" onclick="startMonopoly()">🎲 Проти комп’ютера</button>
           <button class="btn-outline" style="margin-top:0;" onclick="switchTab('monopoly-mp')">👥 МУЛЬТИПЛЕЄР</button>
         </div>
       </div>
@@ -2349,7 +2343,7 @@
     <!-- ===== МУЛЬТИПЛЕЄР МОНОПОЛІЯ ===== -->
     <div id="tab-monopoly-mp" class="screen hidden">
       <button class="btn-outline" onclick="switchTab('monopoly')">⬅ Назад</button>
-      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Монополія — Мультиплеєр</h2>
+      <h2 style="color:var(--accent);margin-bottom:4px;">🎩 Магнат — Мультиплеєр</h2>
       <div style="color:var(--fg-3);font-size:12px;margin-bottom:12px;">Грай з реальними гравцями: 2, 3 або 4 учасники</div>
 
       <div id="mpLobbyScreen">
@@ -2672,9 +2666,14 @@
           <span class="settings-text"><span class="settings-label">Вийти з акаунту</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
+        <button type="button" class="settings-row is-link" onclick="exportMyData()">
+          <span class="settings-icon">📦</span>
+          <span class="settings-text"><span class="settings-label">Завантажити мої дані</span><span class="settings-sub">Файл JSON з даними профілю</span></span>
+          <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
+        </button>
         <button type="button" class="settings-row is-link is-danger" onclick="deleteAccount()">
           <span class="settings-icon">🗑️</span>
-          <span class="settings-text"><span class="settings-label">Видалити акаунт</span><span class="settings-sub">Безповоротно</span></span>
+          <span class="settings-text"><span class="settings-label">Видалити акаунт</span><span class="settings-sub">Безповоротно, з підтвердженням паролем</span></span>
           <span class="ic i-chevron-right list-row-end" aria-hidden="true"></span>
         </button>
       </div>
@@ -2728,7 +2727,7 @@
           <div style="color:var(--fg-3);font-size:13px;margin-bottom:15px;">Класичний Дурень: скинь всі карти першим!</div>
           <input id="cgBet" type="number" value="200" placeholder="Ставка (₴)">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <button class="btn-gold" onclick="startCardGame('ai')">🤖 vs AI</button>
+            <button class="btn-gold" onclick="startCardGame('ai')">🤖 Проти комп’ютера</button>
             <button class="btn-outline" onclick="openCardLobby()">👥 Онлайн</button>
           </div>
         </div>
@@ -4005,7 +4004,10 @@
               <button type="button" class="btn btn-ghost" onclick="regStep(1)"><span class="ic i-arrow-left" aria-hidden="true"></span> Назад</button>
               <button type="submit" class="btn btn-primary btn-lg" id="regBtn">Створити акаунт</button>
             </div>
-            <p class="auth-legal">Реєструючись, ти підтверджуєш, що тобі <span data-min-age>13</span>+, і приймаєш правила.</p>
+            <label class="auth-consent" for="regConsent">
+              <input type="checkbox" id="regConsent" required>
+              <span id="regConsentText">Мені виповнилось <span data-min-age>13</span> і я приймаю <button type="button" class="link-btn" onclick="openRulesModal('terms')">Умови</button> та <button type="button" class="link-btn" onclick="openRulesModal('privacy')">Політику</button></span>
+            </label>
           </div>
 
           <div class="auth-links"><span>Вже є акаунт? <button type="button" class="link-btn" onclick="switchAuthTab('login')">Увійти</button></span></div>
@@ -4015,7 +4017,13 @@
         <button type="button" class="btn btn-ghost auth-demo" onclick="startDemoMode()"><span class="ic i-play" aria-hidden="true"></span> Спробувати без реєстрації</button>
       </section>
 
-      <p class="auth-disclaimer">
+<nav class="auth-legal-links" aria-label="Юридична інформація">
+        <button type="button" class="link-btn" onclick="openRulesModal('terms')">Умови користування</button>
+        <button type="button" class="link-btn" onclick="openRulesModal('privacy')">Політика конфіденційності</button>
+        <button type="button" class="link-btn" onclick="openRulesModal('responsible')">Відповідальна гра</button>
+      </nav>
+
+            <p class="auth-disclaimer">
         <b><span data-min-age>13</span>+ · Грай відповідально.</b> SlotOK — розважальна платформа: усі монети, баланси й виграші віртуальні та не мають грошової цінності. Реальних грошей тут немає.
       </p>
 
@@ -5176,6 +5184,8 @@
   <script defer src="shared/age.js"></script>
   <!-- Каталог магазину Слотіків — той самий файл читає сервер (lib/shop.js) -->
   <script defer src="shared/shop.js"></script>
+  <!-- Щоденні місії з серією (пул і нагороди) — той самий файл читає сервер (lib/missions.js) -->
+  <script defer src="shared/missions.js"></script>
   <!-- Main app -->
   <!-- Завжди свіжа версія з сайту Аксіоми (не копія) — щоб зміни на
        боці Аксіоми (напр. підтвердження операцій) діяли одразу. -->

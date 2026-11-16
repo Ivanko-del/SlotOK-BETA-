@@ -18,11 +18,6 @@ function updateHomeStats() {
     // показував «Iron». Джерело те саме, що й на екрані VIP.
     statVip.textContent = getVipLevel(userData.totalWagered || 0).name;
   }
-  // Random jackpot
-  if(jackEl) {
-    const base = 50000 + Math.floor(Math.random()*200000);
-    jackEl.textContent = formatNumber(base) + '₴';
-  }
 }
 
 
@@ -34,7 +29,6 @@ const ACHIEVEMENTS = [
   // ── ПЕРШІ КРОКИ ──
   { id:'first_game',      icon:'🎮', name:'Перша гра',           desc:'Зіграй будь-яку гру',                  cat:'Початок',   xp:10,  cond: d => (d.totalGames||0) >= 1 },
   { id:'first_win',       icon:'🏆', name:'Перший виграш',       desc:'Виграй будь-яку ставку',               cat:'Початок',   xp:15,  cond: d => (d.totalWins||0) >= 1 },
-  { id:'first_deposit',   icon:'💳', name:'Перший депозит',      desc:'Поповни баланс',                       cat:'Початок',   xp:20,  cond: d => (d.totalDeposited||0) >= 1 },
   { id:'first_sport',     icon:'⚽', name:'Перша спорт ставка',  desc:'Постав на спорт',                      cat:'Початок',   xp:15,  cond: d => (d.sportBets||0) >= 1 },
   { id:'register_done',   icon:'👤', name:'Ласкаво просимо!',    desc:'Зареєструйся',                         cat:'Початок',   xp:5,   cond: d => true },
   // ── СЛОТИ ──

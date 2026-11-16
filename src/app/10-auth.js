@@ -112,6 +112,9 @@ async function authRegister() {
   if(secQ.length < 3) return showAuthError('Напиши своє контрольне питання (мінімум 3 символи) або обери зі списку');
   if(secA.length < 3) return showAuthError('Відповідь на контрольне питання — мінімум 3 символи (потрібна для відновлення пароля)');
   if(!db)            return showAuthError('Немає зʼєднання з Firebase. Перевір інтернет.');
+  // Згода з Умовами та Політикою (+ дозвіл батьків до 18 років) — обовʼязкова.
+  if(!document.getElementById('regConsent')?.checked) return showAuthError('Постав позначку, що приймаєш Умови та Політику');
+  const minor = (ageFromBirthDate(birthDate) ?? 99) < 18;
 
   const btn = document.getElementById('regBtn');
   if(btn) { btn.textContent = 'Створюємо акаунт…'; btn.disabled = true; }
@@ -121,6 +124,7 @@ async function authRegister() {
   const refByLs = localStorage.getItem('ref_by');
   const srv = await serverAuthCall('register', {
     nick: n, password: p, birthDate, email, promo, secQ, secA, ref: refByLs && refByLs !== n ? refByLs : undefined,
+    termsAccepted: true, termsVersion: TERMS_VERSION, parentConsent: minor ? true : undefined,
   });
   if(srv.status === 200 && srv.data.token) {
     try { await serverSignIn(srv.data.token); }
@@ -173,7 +177,9 @@ async function authRegister() {
       dailyStreak: 0, luckyGamesLeft: 3, luckyGamesUsed: 0,
       registeredAt: Date.now(), lastSeen: Date.now(),
       totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
+      termsAcceptedAt: Date.now(), termsVersion: TERMS_VERSION,
     };
+    if(minor) newUser.parentConsent = true;
     if(promo) newUser.usedPromo = promo;
     const refBy = localStorage.getItem('ref_by');
     if(refBy && refBy !== n) newUser.referredBy = refBy;

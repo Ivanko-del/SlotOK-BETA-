@@ -127,30 +127,6 @@ function comparePlayersModal() {
   openModal('compare', html);
 }
 
-function showTopDonators() {
-  openModal('topdonators',
-    modalCloseBtn('topdonators') +
-    '<div style="font-size:15px;font-weight:900;color:var(--accent);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">🏆 Топ Донатерів</div>' +
-    '<div id="topDonatorsList" style="color:var(--fg-4);text-align:center;padding:20px;">Завантаження...</div>'
-  );
-  db.ref('users').orderByChild('totalDeposits').limitToLast(20).once('value').then(function(snap) {
-    var el = document.getElementById('topDonatorsList'); if(!el) return;
-    var sorted = Object.entries(snap.val()||{}).filter(function(e){return !e[1].isBot&&(e[1].totalDeposits||0)>0;})
-      .sort(function(a,b){return (b[1].totalDeposits||0)-(a[1].totalDeposits||0);}).slice(0,10);
-    if(!sorted.length){el.innerHTML='<div style="color:var(--fg-4);">Даних немає</div>';return;}
-    var medals=['🥇','🥈','🥉'];
-    el.innerHTML=sorted.map(function(e,i){
-      var u=e[1];
-      return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
-        +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
-        +'<div style="font-size:18px;">'+(u.avatar && u.avatar.length<=8 ? escapeHtml(u.avatar) : '👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+escapeHtml(e[0])+'</div><div style="font-size:10px;color:var(--fg-4);">'+escapeHtml(u.tag||'')+'</div></div>'
-        +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
-        +'</div>';
-    }).join('');
-  });
-}
-
 function showSecurityLog() {
   openModal('seclog',
     modalCloseBtn('seclog') +
@@ -535,6 +511,7 @@ function computeBadges(d) {
   if(d.dailyStreak >= 7) badges += `<span class="badge gold">🔥 Серія 7+</span>`;
   if(d.stats?.gamesPlayed >= 100) badges += `<span class="badge">🎮 Ветеран</span>`;
   if(d.isAdmin) badges += `<span class="badge gold">⚙️ Адмін</span>`;
+  if(d.supporter) badges += `<span class="badge gold">💜 Підтримав проєкт</span>`;
   if(d.stats?.biggestWin >= 10000) badges += `<span class="badge gold">🏆 Великий виграш</span>`;
   if(d.referrals >= 5) badges += `<span class="badge">👥 Рекрутер</span>`;
   return badges || `<span class="badge">🆕 Новачок</span>`;
@@ -781,10 +758,10 @@ function renderDepositCard(id, req) {
         <div class="req-card-meta">ID: ${escapeHtml(req.userId||'—')} • ${methodIcon} ${escapeHtml(methodName)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--pos);">+${escapeHtml(req.amount)}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">${escapeHtml(req.amount)} грн</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0},${jsArg(req.cardId||'')})">✅ Зарахувати</button>
+      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)})">✅ Підтвердити донат (значок)</button>
       <button class="req-reject"  onclick="rejectDeposit(${jsArg(id)},${jsArg(req.user)})">❌ Відхилити</button>
     </div>
   </div>`;
@@ -804,8 +781,7 @@ function renderWithdrawCard(id, req) {
       <div class="req-card-amount" style="color:var(--accent);">−${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveWithdraw(${jsArg(id)},${jsArg(req.user)})">✅ Виплачено</button>
-      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">❌ Повернути</button>
+      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">↩ Повернути на баланс (вивід скасовано)</button>
     </div>
   </div>`;
 }
@@ -870,7 +846,7 @@ function startAdminRequestListeners() {
         .sort(function(a,b){ return (b[1].time||0)-(a[1].time||0); });
       depEl.innerHTML = pending.length
         ? pending.map(function(e){ return renderDepositCard(e[0], e[1]); }).join('')
-        : '<div class="req-empty">✅ Заявок на поповнення немає</div>';
+        : '<div class="req-empty">✅ Заявок на донат немає</div>';
       updateRequestBadge();
     });
   }
@@ -948,7 +924,7 @@ function cardBalancePath(u, cardId) {
 // ні баланс, ні Слотіки, ні VIP/виграні ставки. Гравець отримує лише
 // косметичний значок «Підтримав проєкт» (однаковий для будь-якої суми).
 function approveDeposit(id, user) {
-  if(!requireAdminPerm('finance')) return;
+  if(!requireAdminPerm('requests')) return;
   db.ref('deposit_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
   db.ref('users/'+user).update({supporter:true, supporterAt:Date.now()});
   db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'Дякуємо за підтримку SlotOK! У вашому профілі з\'явився значок «Підтримав проєкт». Донат не змінює ігровий баланс.', ts:Date.now()});

@@ -241,6 +241,8 @@ function build(strict) {
     // Онлайн-кімнати (api/room.js): пише лише сервер. Повний стан —
     // room_state/room_of/room_paid — правил не має, тобто закритий для браузера.
     rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
+    // Щоденні місії (lib/missions.js): гравець бачить лише свій вузол, пише сервер.
+    missions: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
     room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
     // Друзі й запрошення за стіл (lib/friends.js): пише лише сервер, кожен читає свої списки.
     friends: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },

@@ -14,9 +14,13 @@
 //   { action: "shopBuy", item }           — купити товар магазину за Слотіки
 //   { action: "openBox", tier }           — відкрити скриню з інвентаря
 //   { action: "shopMigrate" }             — разове повернення за прибрані товари
+//   { action: "missions" }                — стан щоденних місій і серії (lib/missions.js)
+//   { action: "missionClaim", i }         — забрати нагороду за виконану місію (0…2)
+//   { action: "streakClaim" }             — забрати нагороду дня серії
 //   { action: "friendRequest"|"friendAccept"|"friendDecline"|"friendCancel"|"friendRemove", nick }
 //   { action: "friendInvite", nick, id }  — запросити друга в мою кімнату (lib/friends.js)
 //   { action: "friendInviteDismiss", id } — прибрати своє запрошення
+//   { action: "deleteAccount", password } — видалити свій акаунт і дані (lib/account.js)
 //
 // Сума, право на нагороду і час рахує сервер (lib/progress.js) — з тіла
 // запиту береться лише що саме забрати. Раніше браузер передавав суму сам
@@ -30,7 +34,9 @@ const { getServiceAccount } = require("../lib/google-auth");
 const { rng, fail, authNick, tooFast, blockedReason } = require("../lib/player");
 const P = require("../lib/progress");
 const SHOP = require("../lib/shop");
+const MISSIONS = require("../lib/missions");
 const FR = require("../lib/friends");
+const ACCOUNT = require("../lib/account");
 
 const ACTIONS = {
   daily: (nick) => P.claimDaily(nick),
@@ -45,6 +51,9 @@ const ACTIONS = {
   shopBuy: (nick, body) => SHOP.buyItem(nick, typeof body.item === "string" ? body.item : ""),
   openBox: (nick, body) => SHOP.openBox(nick, typeof body.tier === "string" ? body.tier : "", rng),
   shopMigrate: (nick) => SHOP.migrate(nick),
+  missions: (nick) => MISSIONS.state(nick),
+  missionClaim: (nick, body) => MISSIONS.claimMission(nick, Number.isInteger(body.i) ? body.i : -1),
+  streakClaim: (nick) => MISSIONS.claimStreak(nick),
   friendRequest: (nick, body) => FR.request(nick, body.nick),
   friendAccept: (nick, body) => FR.accept(nick, body.nick),
   friendDecline: (nick, body) => FR.decline(nick, body.nick),
@@ -52,6 +61,7 @@ const ACTIONS = {
   friendRemove: (nick, body) => FR.remove(nick, body.nick),
   friendInvite: (nick, body) => FR.invite(nick, body.nick, body.id),
   friendInviteDismiss: (nick, body) => FR.dismissInvite(nick, body.id),
+  deleteAccount: (nick, body) => ACCOUNT.deleteAccount(nick, typeof body.password === "string" ? body.password : ""),
 };
 
 module.exports = async (req, res) => {

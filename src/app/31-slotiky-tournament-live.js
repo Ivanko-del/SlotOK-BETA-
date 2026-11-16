@@ -459,51 +459,31 @@ function loadTourneyStatsBar() {
 // ═══════════════════════════════════════
 // CASINO LOBBY v2 — Jackpot + Wins feed
 // ═══════════════════════════════════════
-let _lobbyJackpot = 4287341 + Math.floor(Math.random()*500000);
-let _lobbyJackpotTimer = null;
-let _lobbyWinsTimer    = null;
-
-const LOBBY_WIN_POOL = [
-  {user:'Дмитро Л.', game:'Plinko',       avatar:'🦅'},
-  {user:'Оля Т.',    game:'Mines',         avatar:'🦋'},
-  {user:'Саша П.',   game:'Crash Aviator', avatar:'🐬'},
-  {user:'Вова Д.',   game:'Classic 777',   avatar:'🦜'},
-  {user:'Юля К.',    game:'Blackjack',     avatar:'🐱'},
-  {user:'Петро М.',  game:'Limbo',         avatar:'🦊'},
-];
+// Стрічка «Останні виграші» — лише РЕАЛЬНІ записи win_feed (без вигаданих
+// гравців і сум). Немає даних — блок схований. Джекпот-лічильник прибрано.
+let _lobbyWinsRef = null, _lobbyWinsCb = null;
 
 function startLobbyTimers() {
   try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
-  // Повторний вхід у вкладку без виходу не має множити таймери
+  // Повторний вхід у вкладку без виходу не має множити слухачі
   stopLobbyTimers();
-  // Jackpot counter
-  _lobbyJackpotTimer = setInterval(() => {
-    _lobbyJackpot += Math.floor(Math.random()*180 + 40);
-    const el = document.getElementById('lobbyJackpotNum');
-    if(el) el.textContent = _lobbyJackpot.toLocaleString('uk');
-  }, 1200);
-
-  // Wins feed rotation
-  const pushWin = () => {
-    const feed = document.getElementById('lobbyWinsFeed');
-    if(!feed) return;
-    const p = LOBBY_WIN_POOL[Math.floor(Math.random()*LOBBY_WIN_POOL.length)];
-    const amt = (Math.random()*18000+400).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
-    const row = document.createElement('div');
-    row.className = 'win-feed-row list-row';
-    row.innerHTML = `<div class="win-feed-avatar">${p.avatar}</div><div class="list-row-main"><div class="win-feed-user list-row-title">${p.user}</div><div class="win-feed-game list-row-sub">${p.game}</div></div><div class="win-feed-amount num">+₴ ${amt}</div>`;
-    feed.insertBefore(row, feed.firstChild);
-    const rows = feed.querySelectorAll('.win-feed-row');
-    if(rows.length > 5) rows[rows.length-1].remove();
+  const feed = document.getElementById('lobbyWinsFeed');
+  const head = document.getElementById('lobbyWinsHead');
+  if(!feed || !db) return;
+  _lobbyWinsRef = db.ref('win_feed').orderByChild('time').limitToLast(5);
+  _lobbyWinsCb = snap => {
+    const items = Object.values(snap.val() || {}).filter(it => it && !it.isBot && it.user && it.amount).sort((a, b) => b.time - a.time);
+    feed.innerHTML = items.map(it =>
+      `<div class="win-feed-row list-row"><div class="list-row-main"><div class="win-feed-user list-row-title">${escapeHtml(it.user)}</div><div class="win-feed-game list-row-sub">${escapeHtml(it.game || '')}</div></div><div class="win-feed-amount num">+₴ ${formatNumber(it.amount)}</div></div>`).join('');
+    feed.hidden = !items.length;
+    if(head) head.hidden = !items.length;
   };
-  const feedEl = document.getElementById('lobbyWinsFeed');
-  if(feedEl && !feedEl.children.length) { for(let i = 0; i < 4; i++) pushWin(); }
-  _lobbyWinsTimer = setInterval(pushWin, 3000);
+  _lobbyWinsRef.on('value', _lobbyWinsCb);
 }
 
 function stopLobbyTimers() {
-  clearInterval(_lobbyJackpotTimer);
-  clearInterval(_lobbyWinsTimer);
+  if(_lobbyWinsRef && _lobbyWinsCb) { try { _lobbyWinsRef.off('value', _lobbyWinsCb); } catch(e) {} }
+  _lobbyWinsRef = _lobbyWinsCb = null;
 }
 
 // ── Фільтри лоббі ────────────────────────────────────────────────

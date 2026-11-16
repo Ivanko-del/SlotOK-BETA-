@@ -27,20 +27,10 @@ function loadUserList() {
 }
 
 
+// Вивід коштів прибрано (ігрова валюта віртуальна). Старі заявки можна лише
+// повернути гравцю на баланс — «виплатити» їх неможливо.
 function approveWithdraw(id, user) {
-    if(!requireAdminPerm('requests')) return;
-    db.ref('withdraw_requests/'+id).once('value').then(snap => {
-        const req = snap.val() || {};
-        const amount = req.amount || 0;
-        db.ref('withdraw_requests/'+id).update({status:'done', approvedAt:Date.now(), approvedBy:currentUser});
-        db.ref('users/'+user+'/withdraws/'+id).update({status:'done'});
-        db.ref('users/'+user).update({pendingWithdraw: false});
-        pushCardTx(user, {dir:'out', amount:amount, title:'Виведення коштів', subtitle: req.method||'', icon:'💸'}, req.cardId || null);
-        db.ref('users/'+user+'/history').push({text:`✅ Вивід підтверджено: -${amount}₴`, date:Date.now()});
-        db.ref('pm/'+user+'/'+db.ref().push().key).set({from:'🏦 SlotOK', to:user, text:'✅ Ваш вивід коштів схвалено! Кошти надійдуть на реквізити протягом 1-24 год.', ts:Date.now()});
-        db.ref('users/'+user+'/pmUnread').set(firebase.database.ServerValue.increment(1));
-        notify('✅ Вивід схвалено — гравець отримав повідомлення', 'success');
-    });
+    db.ref('withdraw_requests/'+id+'/amount').once('value').then(s => rejectWithdraw(id, user, Number(s.val()) || 0));
 }
 
 function rejectWithdraw(id, user, amount) {

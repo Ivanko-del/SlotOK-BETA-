@@ -789,7 +789,7 @@ function renderActivityFeed() {
   if(!el) return;
   db.ref('win_feed').orderByChild('time').limitToLast(8).on('value', snap => {
     const data = snap.val() || {};
-    const items = Object.values(data).sort((a,b)=>b.time-a.time);
+    const items = Object.values(data).filter(it=>it&&!it.isBot).sort((a,b)=>b.time-a.time);
     el.innerHTML = items.map(item => `
       <div class="feed-item">
         <div style="font-size:20px;">🎰</div>

@@ -4,7 +4,7 @@ function initChat() {
   if(globalChatListener) { db.ref('global_chat').off('value', globalChatListener); }
   globalChatListener = db.ref('global_chat').limitToLast(60).on('value', snap => {
     const msgs = snap.val()||{};
-    const sorted = Object.values(msgs).sort((a,b)=>a.ts-b.ts);
+    const sorted = Object.values(msgs).filter(m=>m&&!m.isBot).sort((a,b)=>a.ts-b.ts);
     let prevUser = null;
     msgsEl.innerHTML = sorted.map(m => {
       const isMe = m.user === currentUser;
@@ -430,46 +430,7 @@ function toggleCompactMode() {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// 📱 QUICK DEPOSIT FROM HEADER
-// ═══════════════════════════════════════════════════════
-let quickDepModal = null;
-function openQuickDeposit() {
-  const existing = document.getElementById('quickDepOverlay');
-  if(existing) existing.remove();
-  const amounts = [100,250,500,1000,2500,5000];
-  const modal = document.createElement('div');
-  modal.id = 'quickDepOverlay';
-  modal.style.cssText='position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.85 * var(--recess-k)));z-index:9000;display:flex;align-items:flex-end;';
-  modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
-  modal.innerHTML=`
-    <div style="background:var(--surface-1);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px;width:100%;border-top:1px solid rgb(var(--accent-rgb) / 0.3);">
-      <div style="text-align:center;font-weight:900;font-size:16px;color:var(--accent);margin-bottom:14px;">⚡ Швидкий депозит</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        ${amounts.map(a=>`<button onclick="quickDepAction(${a})" style="background:rgb(var(--accent-rgb) / 0.08);border:1px solid rgb(var(--accent-rgb) / 0.2);border-radius:var(--r-md);padding:12px;color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;">₴${formatNumber(a)}</button>`).join('')}
-      </div>
-      <button onclick="document.getElementById('quickDepOverlay').remove()" style="width:100%;background:var(--surface-2);border:none;border-radius:var(--r-md);padding:12px;color:var(--fg-3);cursor:pointer;">Скасувати</button>
-    </div>`;
-  document.body.appendChild(modal);
-}
-function quickDepAction(amount) {
-  document.querySelector('div[style*="inset:0"]')?.remove();
-  switchTab('cashier');
-  setTimeout(()=>{ const inp=document.getElementById('depositAmount'); if(inp) inp.value=amount; }, 300);
-}
-
-// ═══════════════════════════════════════════════════════
-// 💬 DOUBLE-CLICK BALANCE = QUICK DEPOSIT
-// ═══════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  const balEl = document.querySelector('.header-bal');
-  if(balEl) {
-    let dblTap = 0;
-    balEl.addEventListener('click', () => {
-      const now = Date.now();
-      if(now-dblTap<400) openQuickDeposit();
-      dblTap = now;
-    });
-  }
-});
+// Швидкий «депозит» по подвійному кліку на баланс прибрано (донат не поповнює баланс).
+function openQuickDeposit() {}
+function quickDepAction() { switchTab('cashier'); }
 

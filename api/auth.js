@@ -11,7 +11,7 @@
 //
 // GET                         → { serverAuth: bool }
 // POST { action: "login",    nick, password }
-// POST { action: "register", nick, password, birthDate ("YYYY-MM-DD"), email?, promo?, secQ, secA, ref? }
+// POST { action: "register", nick, password, birthDate ("YYYY-MM-DD"), termsAccepted: true, termsVersion, parentConsent (якщо <18), email?, promo?, secQ, secA, ref? }
 // POST { action: "reset",    nick, answer, newPassword }      (security question)
 // POST { action: "change-password", nick, password, newPassword }
 // POST { action: "set-security", nick, password, question, answer }
@@ -118,6 +118,9 @@ async function register(req, res, body) {
   const age = ageFromBirthDate(birthDate);
   if (age === null) return fail(res, 400, "bad_birth_date", "Вкажи справжню дату народження");
   if (age < MIN_AGE) return fail(res, 403, "too_young", `SlotOK доступний з ${MIN_AGE} років. Повертайся, коли виповниться ${MIN_AGE}.`);
+  // Згода з Умовами й Політикою обов'язкова; до 18 років — ще й дозвіл батьків/опікунів.
+  if (body.termsAccepted !== true) return fail(res, 400, "terms_required", "Потрібно прийняти Умови користування та Політику конфіденційності");
+  if (age < 18 && body.parentConsent !== true) return fail(res, 400, "parent_consent_required", "До 18 років потрібен дозвіл батьків або опікунів");
   if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) return fail(res, 400, "bad_email", "Невірний email");
   if (!(await throttle(req, "register", null))) {
     return fail(res, 429, "rate_limited", "Забагато реєстрацій з цієї мережі. Спробуй пізніше.");
@@ -139,7 +142,9 @@ async function register(req, res, body) {
     dailyStreak: 0, luckyGamesLeft: 3, luckyGamesUsed: 0,
     registeredAt: now, lastSeen: now,
     totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
+    termsAcceptedAt: now, termsVersion: (str(body.termsVersion, 8) || "3"),
   };
+  if (age < 18) newUser.parentConsent = true;
   if (promo) newUser.usedPromo = promo;
   if (ref && ref !== nick && /^[^.#$[\]/]{1,40}$/.test(ref) && (await getSecret(ref, "pass"))) {
     newUser.referredBy = ref;

@@ -934,14 +934,15 @@ function _applyLocalCardDelta(id, delta) {
 // Піднімаємо TERMS_VERSION, коли текст правил змінюється по суті: тоді
 // згоду запитають наново.
 // ═══════════════════════════════════════════════════════════════════
-var TERMS_VERSION = '2';
+var TERMS_VERSION = '3';
 
 var TERMS_SECTIONS = [
   {
     title: 'Вік',
     items: [
       'Користуватись SlotOK можна з ' + MIN_AGE + ' років. Підтверджуючи згоду, ти заявляєш, що тобі вже виповнилось ' + MIN_AGE + '.',
-      'Якщо тобі менше — закрий сайт. Акаунти, власники яких не досягли цього віку, блокуються без повернення балансу.',
+      'Якщо тобі від 13 до 17 років — користуйся сайтом лише з дозволу батьків або опікунів.',
+      'Якщо тобі менше 13 — закрий сайт. Акаунти, власники яких не досягли цього віку, видаляються.',
     ]
   },
   {
@@ -979,10 +980,9 @@ var TERMS_SECTIONS = [
   {
     title: 'Гаманець',
     items: [
-      'Донат — добровільна підтримка проєкту, не купівля товару. Замість нього на баланс нараховується бонус.',
-      'Донати обробляє адміністратор вручну — миттєвого зарахування немає.',
-      'Заявка на донат прив’язується до картки, активної на момент подачі: бонус зарахується саме на неї.',
-      'Баланс ігровий і використовується тільки на самій платформі — виводу коштів на картку немає.',
+      'Донат — добровільний подарунок на розвиток проєкту, не купівля товару. Він нічого не додає в гру: ні баланс, ні Слотіки, ні VIP.',
+      'Донати обробляє адміністратор вручну; після підтвердження в профілі зʼявляється значок «Підтримав проєкт».',
+      'Баланс ігровий і віртуальний: його не можна купити, продати, обміняти чи вивести.',
     ]
   },
   {
@@ -998,7 +998,7 @@ var TERMS_SECTIONS = [
     items: [
       'Зберігаються: нік, хеш пароля, баланс і його історія, операції по картках, налаштування, прив’язаний Telegram (якщо прив’язав) і токен пристрою для сповіщень (якщо дозволив).',
       'Іншим гравцям видно твій нік, аватар, рівень, досягнення й публічну статистику. Баланс картки, операції та Telegram — не видно.',
-      'Видалення акаунта — через підтримку.',
+      'Завантажити свої дані й видалити акаунт можна в Налаштуваннях. Докладно — вкладка «Конфіденційність».',
     ]
   },
   {
@@ -1025,27 +1025,16 @@ function termsSectionsHtml() {
   }).join('');
 }
 
-// Правила можна відкрити будь-коли — з вкладки «Ще» або з самого гейта.
-function openRulesModal() {
-  var old = document.getElementById('ksRulesModal'); if(old) old.remove();
-  var m = document.createElement('div');
-  m.className = 'ks-modal'; m.id = 'ksRulesModal';
-  m.addEventListener('click', function(e){ if(e.target === m) m.remove(); });
-  m.innerHTML = '<div class="ks-modal-box">' +
-    '<div class="ks-modal-head"><div class="ks-modal-title">Правила SlotOK</div>' +
-      '<button class="ks-modal-x" onclick="document.getElementById(\'ksRulesModal\').remove()">' + ksIcon('x') + '</button></div>' +
-    '<p class="ks-hint" style="margin:0;">Правила користування сайтом. Версія ' + ksEsc(TERMS_VERSION) + '.</p>' +
-    termsSectionsHtml() +
-    '<button class="ks-btn is-quiet is-block" style="margin-top:18px;" onclick="document.getElementById(\'ksRulesModal\').remove()">Закрити</button>' +
-    '</div>';
-  document.body.appendChild(m);
-}
+// Правила можна відкрити будь-коли — з вкладки «Ще», з екрана входу або з гейта.
+// openRulesModal(tab) живе в 55-legal.js (вкладки Умови / Конфіденційність /
+// Відповідальна гра / Правила).
 
 // ── Гейт згоди ───────────────────────────────────────────────────
 var TERMS_CHECKS = [
   { k: 'age',    text: 'Мені виповнилось ' + MIN_AGE + ' років' },
   { k: 'noHack', text: 'Я не лізтиму в консоль, не змінюватиму код сайту й не намагатимусь його зламати' },
-  { k: 'read',   text: 'Я прочитав правила й погоджуюсь із ними' },
+  { k: 'read',   text: 'Я прочитав Умови та Політику конфіденційності й погоджуюсь із ними' },
+  { k: 'parent', text: 'Якщо мені менше 18 років — я користуюсь сайтом із дозволу батьків або опікунів' },
 ];
 var _termsChecked = {};
 
@@ -1066,7 +1055,7 @@ function checkTermsGate() {
     '<div class="ks-modal-head"><div class="ks-modal-title">Перш ніж грати</div></div>' +
     '<p class="ks-hint" style="margin:0 0 14px;">Коротко про головне. Повний текст — за кнопкою нижче.</p>' +
     '<div id="ksTermsChecks"></div>' +
-    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати повні правила</button>' +
+    '<button class="ks-btn is-quiet is-block" style="margin:12px 0;" onclick="openRulesModal()">' + ksIcon('eye') + ' Читати Умови та Політику</button>' +
     '<button class="ks-btn is-primary is-block" id="ksTermsAccept" disabled onclick="acceptTerms()">Підтверджую</button>' +
     '<button class="ks-btn is-quiet is-block" style="margin-top:8px;" onclick="logout()">Вийти</button>' +
     '</div>';

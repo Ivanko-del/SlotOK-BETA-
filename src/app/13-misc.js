@@ -159,7 +159,7 @@ function quickSend(n) {
     else notify('У контакту ще немає картки SlotOK Bank', 'error');
   });
 }
-function deleteAccount() { if(confirm("ВИДАЛИТИ АКАУНТ НАЗАВЖДИ?")) db.ref('users/'+currentUser).remove().then(logout); }
+// deleteAccount() — див. 55-legal.js (видалення через сервер)
 function updateBio(v) { db.ref('users/'+currentUser).update({tag:v}); notify("Статус оновлено"); }
 function handleAvatarUpload(i) { 
     if(i.files[0]){ 

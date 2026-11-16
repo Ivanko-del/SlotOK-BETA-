@@ -20,7 +20,7 @@
 const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
-const { startDeposit, startWithdraw, withdrawButtons, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
+const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
 const SlotOKPassword = require("../password.js");
 const { setSecrets } = require("../lib/secrets");
 const { getServiceAccount } = require("../lib/google-auth");
@@ -40,7 +40,6 @@ const BUTTON_COMMANDS = {
   "💰 Баланс": "/balance",
   "📊 Історія": "/history",
   "📥 Поповнити": "/deposit",
-  "📤 Вивести": "/withdraw",
   "🔗 Мій акаунт": "/me",
   "❓ Допомога": "/help",
 };
@@ -53,8 +52,7 @@ const PLAYER_COMMANDS = [
   { command: "ref", description: "Реферальне посилання" },
   { command: "top", description: "Топ гравців за ставками" },
   { command: "promo", description: "Активувати промокод" },
-  { command: "deposit", description: "Поповнити баланс" },
-  { command: "withdraw", description: "Вивести кошти" },
+  { command: "deposit", description: "Підтримати проєкт донатом" },
   { command: "link", description: "Прив'язати акаунт SlotOK" },
   { command: "unlink", description: "Відв'язати акаунт" },
   { command: "menu", description: "Показати меню швидких дій" },
@@ -332,16 +330,16 @@ async function cmdUser(chatId, nick) {
 
 async function cmdStats(chatId) {
   const users = (await dbGet("users")) || {};
-  const list = Object.values(users);
+  const list = Object.values(users).filter((u) => !u.isBot);
   const totalUsers = list.length;
   const totalBalance = list.reduce((s, u) => s + (u.balance || 0), 0);
-  const totalDeposits = list.reduce((s, u) => s + (u.totalDeposits || 0), 0);
+  const supporters = list.filter((u) => u.supporter).length;
   const banned = list.filter((u) => u.banned).length;
   const text =
     `📊 <b>Статистика SlotOK</b>\n` +
     `👥 Гравців: ${totalUsers} (заблоковано: ${banned})\n` +
     `💰 Сумарний баланс у системі: ${totalBalance.toLocaleString("uk-UA")}₴\n` +
-    `💳 Сумарні депозити: ${totalDeposits.toLocaleString("uk-UA")}₴`;
+    `💜 Підтримали проєкт: ${supporters}`;
   return sendMessage(chatId, text);
 }
 
@@ -453,6 +451,7 @@ async function cmdPlayerPromo(chatId, nick, code) {
 async function cmdPlayerTop(chatId) {
   const users = (await dbGet("users")) || {};
   const top = Object.entries(users)
+    .filter(([, u]) => !u.isBot)
     .map(([nick, u]) => ({ nick, wagered: u.totalWagered || 0 }))
     .filter((u) => u.wagered > 0)
     .sort((a, b) => b.wagered - a.wagered)
@@ -468,7 +467,7 @@ async function cmdPlayerTop(chatId) {
 function cmdPlayerHelp(chatId) {
   return sendMessage(
     chatId,
-    "🤖 <b>Команди:</b>\n💰 /balance — баланс\n📊 /history — останні операції\n🔗 /me — інфо про акаунт\n👑 /vip — мій VIP рівень\n🤝 /ref — реферальне посилання\n🏆 /top — топ гравців\n🎟️ /promo &lt;код&gt; — активувати промокод\n📥 /deposit — поповнити\n📤 /withdraw — вивести\n/cancel — скасувати поточну дію\n/unlink — відв'язати акаунт\n/menu — показати меню"
+    "🤖 <b>Команди:</b>\n💰 /balance — баланс\n📊 /history — останні операції\n🔗 /me — інфо про акаунт\n👑 /vip — мій VIP рівень\n🤝 /ref — реферальне посилання\n🏆 /top — топ гравців\n🎟️ /promo &lt;код&gt; — активувати промокод\n📥 /deposit — підтримати проєкт донатом\n/cancel — скасувати поточну дію\n/unlink — відв'язати акаунт\n/menu — показати меню"
   );
 }
 
@@ -536,95 +535,48 @@ async function handleCallback(cq) {
   await editMessageText(chatId, messageId, cq.message.text + `\n\n${resultText}`);
 }
 
-// Дзеркалить клієнтський _depositCreditPath: депозит на неактивну картку йде в
-// її linkedCards/<id>/balance, а не в спільний balance (в якому живе активна).
-function depositCreditPath(u, cardId) {
-  if (!u || !cardId) return "balance";
-  const ids = [];
-  if (u.virtualCard && u.virtualCard.axiomLinked) ids.push("axiom");
-  if (u.linkedCards) Object.keys(u.linkedCards).forEach((k) => ids.push(k));
-  if (ids.indexOf(cardId) < 0) return "balance";
-  const active = u.activeCardId && ids.indexOf(u.activeCardId) >= 0 ? u.activeCardId : ids[0];
-  if (cardId === active) return "balance";
-  return cardId === "axiom" ? "virtualCard/balance" : `linkedCards/${cardId}/balance`;
-}
-
+// Донат — добровільна підтримка: нічого ігрового не нараховується (ні баланс,
+// ні Слотіки, ні VIP). Видаємо лише косметичний значок «Підтримав проєкт».
 async function actOnDeposit(action, id) {
   const r = await dbGet(`deposit_requests/${id}`);
   if (!r || r.status !== "pending") return null;
 
   if (action === "approve") {
-    const u = await dbGet(`users/${r.user}`);
-    await dbIncrement(`users/${r.user}/${depositCreditPath(u, r.cardId)}`, r.amount);
     await dbUpdate(`deposit_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
-    await dbPush(`users/${r.user}/history`, { text: `✅ Депозит підтверджено: +${r.amount}₴`, date: Date.now() });
-    await dbPush(`users/${r.user}/cardTx`, { dir: "in", amount: r.amount, title: "Поповнення картки", subtitle: "Через касу", icon: "💳", ts: Date.now() });
-    await dbIncrement(`users/${r.user}/totalDeposits`, r.amount);
-    await notifyPlayer(r.user, `✅ Ваш депозит ${r.amount}₴ зараховано! Гарної гри! 🎰`);
-    return `✅ Підтверджено: +${r.amount}₴ гравцю ${esc(r.user)}`;
+    await dbUpdate(`users/${r.user}`, { supporter: true, supporterAt: Date.now() });
+    await notifyPlayer(r.user, "💜 Дякуємо за підтримку SlotOK! У профілі зʼявився значок «Підтримав проєкт». Донат не змінює ігровий баланс.");
+    return `✅ Донат підтверджено, значок видано (${esc(r.user)})`;
   } else {
     await dbUpdate(`deposit_requests/${id}`, { status: "rejected", rejectedAt: Date.now() });
-    await notifyPlayer(r.user, "❌ Ваш запит на поповнення відхилено. Зверніться до підтримки.");
+    await notifyPlayer(r.user, "❌ Вашу заявку про донат не підтверджено. Зверніться до підтримки.");
     return `❌ Відхилено (${esc(r.user)})`;
   }
+}
+
+// Вивід прибрано. Старі заявки, що лишились у базі, будь-якою кнопкою
+// закриваються поверненням суми на баланс — виплат більше немає.
+async function refundLegacyWithdraw(r, id, status) {
+  await dbIncrement(`users/${r.user}/balance`, r.amount);
+  await dbUpdate(`withdraw_requests/${id}`, { status });
+  await dbUpdate(`users/${r.user}/withdraws/${id}`, { status });
+  await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
 }
 
 async function actOnWithdraw(action, id) {
   const r = await dbGet(`withdraw_requests/${id}`);
   if (!r || r.status !== "pending") return null;
-
-  if (action === "approve") {
-    await dbUpdate(`withdraw_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
-    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "done" });
-    await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
-    await dbPush(`users/${r.user}/cardTx`, { dir: "out", amount: r.amount, title: "Виведення коштів", subtitle: r.method || "", icon: "💸", ts: Date.now() });
-    await dbPush(`users/${r.user}/history`, { text: `✅ Вивід підтверджено: -${r.amount}₴`, date: Date.now() });
-    await notifyPlayer(r.user, "✅ Ваш вивід коштів схвалено! Кошти надійдуть на реквізити протягом 1-24 год.");
-    return `✅ Виплачено: ${r.amount}₴ гравцю ${esc(r.user)}`;
-  } else {
-    await dbIncrement(`users/${r.user}/balance`, r.amount);
-    await dbUpdate(`withdraw_requests/${id}`, { status: "rejected" });
-    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "rejected" });
-    await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
-    await notifyPlayer(r.user, `❌ Ваш запит на вивід ${r.amount}₴ відхилено. Кошти повернуто на баланс.`);
-    return `❌ Відхилено, ${r.amount}₴ повернуто (${esc(r.user)})`;
-  }
+  await refundLegacyWithdraw(r, id, "rejected");
+  await notifyPlayer(r.user, `Вивід коштів недоступний: ігрова валюта віртуальна. ${r.amount}₴ повернуто на баланс.`);
+  return `↩ Вивід не підтримується, ${r.amount}₴ повернуто (${esc(r.user)})`;
 }
 
-// Реальне 2FA для великих виводів: сайт більше не показує/генерує код у
-// браузері (той "2FA" був суто косметичний — код лежав у тому ж вікні, звідки
-// й подавалась заявка). Тепер підтвердження — це тап по кнопці у ВЛАСНОМУ
-// Telegram гравця, і саме Telegram гарантує, з якого chatId прийшов тап —
-// підмінити його з сайту чи консолі браузера неможливо.
 async function actOnWithdraw2FA(chatId, action, id) {
   const r = await dbGet(`withdraw_requests/${id}`);
   if (!r || r.status !== "pending_2fa") return null;
-
-  // Власник заявки має збігатись із власником саме цього Telegram-чату —
-  // інакше будь-хто, хто здогадався callback_data чужої заявки, міг би її
-  // підтвердити чи скасувати від чужого імені.
   const owner = await resolveNick(chatId);
   if (!owner || owner !== r.user) return null;
-
-  if (action === "confirm") {
-    await dbUpdate(`withdraw_requests/${id}`, { status: "pending", confirmedAt: Date.now() });
-    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "pending" });
-    const adminChatId = await dbGet("bot_config/adminChatId");
-    if (adminChatId) {
-      await sendMessage(
-        adminChatId,
-        `💸 <b>Нова заявка на вивід (2FA підтверджено)</b>\n👤 ${esc(r.user)}\n💵 ${r.amount}₴ · ${esc(r.method || "—")}\n💳 ${esc(r.card || "—")}`,
-        { reply_markup: withdrawButtons(id) }
-      );
-    }
-    return `✅ Підтверджено! Заявку передано адміністратору на виплату.`;
-  } else {
-    await dbIncrement(`users/${r.user}/balance`, r.amount);
-    await dbUpdate(`withdraw_requests/${id}`, { status: "cancelled" });
-    await dbUpdate(`users/${r.user}/withdraws/${id}`, { status: "cancelled" });
-    await dbUpdate(`users/${r.user}`, { pendingWithdraw: false });
-    return `❌ Скасовано, ${r.amount}₴ повернуто на баланс.`;
-  }
+  await refundLegacyWithdraw(r, id, "cancelled");
+  return `Вивід недоступний: ${r.amount}₴ повернуто на баланс.`;
 }
 
 async function actOnPasswordReset(action, id) {

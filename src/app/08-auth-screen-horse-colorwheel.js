@@ -95,9 +95,9 @@ function initAuthWinTicker() {
   if(_authWinTickerListener) db.ref('win_feed').off('value', _authWinTickerListener);
   _authWinTickerListener = snap => {
     const data = snap.val() || {};
-    const items = Object.values(data).sort((a,b) => b.time - a.time).slice(0, 10);
+    const items = Object.values(data).filter(it => it && !it.isBot).sort((a,b) => b.time - a.time).slice(0, 10);
     if(!items.length) {
-      inner.innerHTML = '<span class="auth-win-ticker-item">🎰 Приєднуйся першим — і саме твій виграш зʼявиться тут!</span>'.repeat(2);
+      inner.innerHTML = ''; // немає реальних даних — стрічка порожня
       return;
     }
     const renderItem = it => {
