@@ -16,7 +16,7 @@ function leagueGameName(g) { return (typeof LEAGUE_GAMES !== 'undefined' && LEAG
 function leagueSeasonId() { return leagueSeason(Date.now() + _lg.offset).id; }
 function leagueBadge(tierId, rating) {
   const t = LEAGUE_TIERS.find(x => x.id === tierId) || LEAGUE_TIERS[0];
-  return `<span class="badge league-badge tier-${t.id}"><span class="ic i-${t.icon}" aria-hidden="true"></span>${escapeHtml(t.name)}${rating != null ? ` · <span class="num">${formatNumber(rating)}</span>` : ''}</span>`;
+  return `<span class="badge league-badge tier-${t.id}"><span class="ic i-${t.icon}" aria-hidden="true"></span>${escapeHtml(t.name)}${rating != null ? ` · <span class="num">${rating | 0}</span>` : ''}</span>`;
 }
 
 async function leagueLoad(force) {
@@ -57,9 +57,9 @@ function leaguesRender(st) {
   el.innerHTML = `
     <section class="panel is-featured league-hero tier-${t.id}">
       <div class="league-hero-top"><span class="ic i-${t.icon} league-hero-ic" aria-hidden="true"></span>
-        <div><div class="league-tier-name">${escapeHtml(t.name)}</div><div class="league-rating num">${formatNumber(st.rating)}</div></div></div>
+        <div><div class="league-tier-name">${escapeHtml(t.name)}</div><div class="league-rating num">${st.rating | 0}</div></div></div>
       <div class="league-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
-      <div class="league-sub">${nxt ? `До ліги «${escapeHtml(nxt.name)}» — ${formatNumber(nxt.from - st.rating)}` : 'Найвища ліга'} · Сезон ${escapeHtml(st.season.id)}, ще ${days} дн.</div>
+      <div class="league-sub">${nxt ? `До ліги «${escapeHtml(nxt.name)}» — ${nxt.from - st.rating}` : 'Найвища ліга'} · Сезон ${escapeHtml(st.season.id)}, ще ${days} дн.</div>
       <div class="league-sub">Партій: <span class="num">${st.games}</span> · перемог <span class="num">${st.wins}</span> · поразок <span class="num">${st.losses}</span></div>
     </section>
     ${pend.length ? `<section class="panel league-claim"><div class="panel-head"><h2 class="panel-title">Нагорода за сезон</h2></div>
@@ -82,7 +82,7 @@ function leaguesBoard() {
     rows.sort((a, b) => b.rating - a.rating || b.games - a.games);
     const me = rows.findIndex(r => r.nick === currentUser);
     if(!rows.length) { el.innerHTML = '<div class="room-empty">Таблиця сезону поки порожня.</div>'; return; }
-    el.innerHTML = (me < 0 && _lg.st ? `<div class="league-sub">Твоє місце: поза топ-${LEAGUE_TOP} · <span class="num">${formatNumber(_lg.st.rating)}</span></div>` : me >= 0 ? `<div class="league-sub">Твоє місце: <span class="num">${me + 1}</span></div>` : '')
+    el.innerHTML = (me < 0 && _lg.st ? `<div class="league-sub">Твоє місце: поза топ-${LEAGUE_TOP} · <span class="num">${_lg.st.rating | 0}</span></div>` : me >= 0 ? `<div class="league-sub">Твоє місце: <span class="num">${me + 1}</span></div>` : '')
       + rows.map((r, i) => `<button type="button" class="list-row${r.nick === currentUser ? ' is-mine' : ''}" onclick="openPublicProfile(${jsArg(r.nick)})"><span class="num league-pos">${i + 1}</span><span class="list-row-main"><span class="list-row-title" data-pn="${escapeHtml(r.nick)}">${escapeHtml(r.nick)}</span><span class="list-row-sub">Партій: ${r.games | 0}</span></span>${leagueBadge(r.tier, r.rating)}</button>`).join('');
     if(typeof applyPlayerStyles === 'function') try { applyPlayerStyles(); } catch(e) {}
   }, () => { el.innerHTML = '<div class="room-empty">Таблиця з’явиться після публікації правил бази.</div>'; });
