@@ -491,9 +491,9 @@ function pmSearchRecipient(query) {
         return;
       }
       box.innerHTML = results.slice(0, 8).map(nick => `
-        <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);font-size:13px;display:flex;align-items:center;gap:8px;">
-          <span style="width:26px;height:26px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--info);">${nick[0].toUpperCase()}</span>
-          ${nick}
+        <div onclick="document.getElementById('pmToInput').value=${jsArg(nick)};document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);font-size:13px;display:flex;align-items:center;gap:8px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--info);">${escapeHtml(nick[0].toUpperCase())}</span>
+          ${escapeHtml(nick)}
         </div>`).join('');
     };
     if(isNumeric) {

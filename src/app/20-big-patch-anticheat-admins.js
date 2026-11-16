@@ -500,10 +500,10 @@ function loadFlaggedPlayers() {
     el.innerHTML = entries.map(([nick, u]) => `
       <div style="background:var(--surface-1);border:1px solid rgb(var(--neg-rgb) / 0.25);border-radius:var(--r-md);padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
+          <span style="font-weight:700;font-size:12px;">🚩 ${escapeHtml(nick)} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
           <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-sm);color:var(--pos);font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
-        <div style="font-size:10px;color:var(--fg-3);">${u.flagReason || 'без деталей'}</div>
+        <div style="font-size:10px;color:var(--fg-3);">${escapeHtml(u.flagReason || 'без деталей')}</div>
         <div style="font-size:10px;color:var(--fg-4);margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
       </div>`).join('');
   });
@@ -868,7 +868,7 @@ function doComparePlayers(nick) {
       {label:'Серія', me: me.dailyStreak||0, them: them.dailyStreak||0},
     ];
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:11px;text-align:center;">'
-      + '<div style="color:var(--accent);font-weight:800;">@' + currentUser + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + nick + '</div></div>'
+      + '<div style="color:var(--accent);font-weight:800;">@' + escapeHtml(currentUser) + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + escapeHtml(nick) + '</div></div>'
       + stats.map(function(s) {
           var meWins = s.me >= s.them;
           return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">'

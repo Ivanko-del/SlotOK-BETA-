@@ -231,11 +231,11 @@ function loadOnlinePlayersAdmin() {
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
+          <div style="font-weight:700;font-size:12px;">${escapeHtml(nick)}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
           <div style="font-size:10px;color:var(--fg-4);">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
         </div>
-        <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
-        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value='${nick}':null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
+        <button onclick="document.getElementById('modUserNick').value=${jsArg(nick)};notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
+        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value=${jsArg(nick)}:null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
       </div>`;
     }).join('');
   });

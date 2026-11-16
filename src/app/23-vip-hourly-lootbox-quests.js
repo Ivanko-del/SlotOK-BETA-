@@ -269,6 +269,7 @@ function updateHourlyTimer() {
   const statusText = document.getElementById('hourlyStatusText');
   const claimBtn = document.getElementById('hourlyClaimBtn');
   if(!ring) return;
+  if(!ring.getClientRects().length) return; // екран бонусу сховано — не чіпаємо DOM щосекунди
 
   if(diff >= hourMs) {
     ring.classList.add('ready');

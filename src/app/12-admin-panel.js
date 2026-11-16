@@ -15,10 +15,10 @@ function loadUserList() {
     d.innerHTML = entries.map(([n,u]) =>
       `<div class="admin-user-card" onclick="openAdminManage(${jsArg(n)})">
         <div>
-          <b>${n}</b>
+          <b>${escapeHtml(n)}</b>
           ${u.isAdmin?'<span style="color:var(--accent);font-size:10px;"> 👑</span>':''}
           ${u.banned?'<span style="color:var(--neg);font-size:10px;"> 🚫</span>':''}
-          <div style="color:var(--fg-4);font-size:11px;">ID: ${u.id||'?'} ${u.tag?'• '+u.tag:''}</div>
+          <div style="color:var(--fg-4);font-size:11px;">ID: ${escapeHtml(u.id||'?')} ${u.tag?'• '+escapeHtml(u.tag):''}</div>
         </div>
         <span style="color:var(--green);font-weight:bold;">${formatNumber(u.balance||0)}₴</span>
       </div>`

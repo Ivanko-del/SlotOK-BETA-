@@ -143,8 +143,8 @@ function showTopDonators() {
       var u=e[1];
       return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
         +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
-        +'<div style="font-size:18px;">'+(u.avatar||'👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e[0]+'</div><div style="font-size:10px;color:var(--fg-4);">'+(u.tag||'')+'</div></div>'
+        +'<div style="font-size:18px;">'+(u.avatar && u.avatar.length<=8 ? escapeHtml(u.avatar) : '👤')+'</div>'
+        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+escapeHtml(e[0])+'</div><div style="font-size:10px;color:var(--fg-4);">'+escapeHtml(u.tag||'')+'</div></div>'
         +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
         +'</div>';
     }).join('');
@@ -643,7 +643,7 @@ function loadTournamentLeaderboard(tId) {
     if(!data) { el.innerHTML = '<div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Ще немає учасників</div>'; return; }
     const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]);
     el.innerHTML = sorted.map(([name, score], i) =>
-      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${name}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
+      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${escapeHtml(name)}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
     ).join('');
   });
 }
@@ -836,14 +836,14 @@ function renderDepositCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">ID: ${req.userId||'—'} • ${methodIcon} ${methodName}</div>
+        <div class="req-card-meta">ID: ${escapeHtml(req.userId||'—')} • ${methodIcon} ${escapeHtml(methodName)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--pos);">+${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">+${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount},'${req.cardId||''}')">✅ Зарахувати</button>
-      <button class="req-reject"  onclick="rejectDeposit('${id}','${req.user}')">❌ Відхилити</button>
+      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0},${jsArg(req.cardId||'')})">✅ Зарахувати</button>
+      <button class="req-reject"  onclick="rejectDeposit(${jsArg(id)},${jsArg(req.user)})">❌ Відхилити</button>
     </div>
   </div>`;
 }
@@ -856,14 +856,14 @@ function renderWithdrawCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:var(--font-mono);font-size:11px;">${req.card||'—'}</span></div>
+        <div class="req-card-meta">${methodIcon} ${escapeHtml(req.method?.toUpperCase()||'—')} • <span style="font-family:var(--font-mono);font-size:11px;">${escapeHtml(req.card||'—')}</span></div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--accent);">−${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--accent);">−${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveWithdraw('${id}','${req.user}')">✅ Виплачено</button>
-      <button class="req-reject"  onclick="rejectWithdraw('${id}','${req.user}',${req.amount})">❌ Повернути</button>
+      <button class="req-approve" onclick="approveWithdraw(${jsArg(id)},${jsArg(req.user)})">✅ Виплачено</button>
+      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">❌ Повернути</button>
     </div>
   </div>`;
 }
@@ -879,7 +879,7 @@ function renderPwrCard(id, req) {
       </div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approvePasswordReset('${id}','${req.user}')">🔑 Скинути пароль</button>
+      <button class="req-approve" onclick="approvePasswordReset(${jsArg(id)},${jsArg(req.user)})">🔑 Скинути пароль</button>
       <button class="req-reject"  onclick="rejectPasswordReset('${id}')">❌ Відхилити</button>
     </div>
   </div>`;

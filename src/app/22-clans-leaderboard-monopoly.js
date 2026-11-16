@@ -307,7 +307,7 @@ function loadMyClan(clanId) {
       const canPromoteDemote = iAmLeader && name !== currentUser && role !== 'leader';
       mList.innerHTML += '<div class="clan-member-row">' +
         '<div class="clan-member-avatar">' + (name===currentUser?'🙋':'👤') + '</div>' +
-        '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + name + '</div></div>' +
+        '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + escapeHtml(name) + '</div></div>' +
         '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
         (canPromoteDemote ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +

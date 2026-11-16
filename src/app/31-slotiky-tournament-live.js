@@ -474,6 +474,8 @@ const LOBBY_WIN_POOL = [
 
 function startLobbyTimers() {
   try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
+  // Повторний вхід у вкладку без виходу не має множити таймери
+  stopLobbyTimers();
   // Jackpot counter
   _lobbyJackpotTimer = setInterval(() => {
     _lobbyJackpot += Math.floor(Math.random()*180 + 40);

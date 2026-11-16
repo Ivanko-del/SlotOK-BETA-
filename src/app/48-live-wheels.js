@@ -141,7 +141,13 @@ async function lwSpinTo(game, seg) {
 function lwFmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
 async function lwTick() {
   if (!LW.st || !document.getElementById('lwWheel')) return;
-  if (document.getElementById('tab-roulette')?.classList.contains('hidden')) { clearInterval(LW.timer); LW.timer = null; return; }
+  if (document.getElementById('tab-roulette')?.classList.contains('hidden')) {
+    clearInterval(LW.timer); LW.timer = null;
+    // Екран закрито — не тягнемо ставки й історію у фоні (initLiveWheels підпишеться знову)
+    if (LW.betsRef) { LW.betsRef.off(); LW.betsRef = null; }
+    if (LW.histRef) { LW.histRef.off(); LW.histRef = null; }
+    return;
+  }
   const now = lwNow();
   LW_GAMES.forEach((g) => {
     const w = LW.st.wheels[g.id];
@@ -288,7 +294,14 @@ function lcSetRound(c) {
 }
 const lcMult = (ms) => Math.floor(Math.exp(LC.cfg.rate * Math.max(0, ms) / 1000) * 100) / 100;
 function lcFrame() {
-  if (document.getElementById('tab-livecrash')?.classList.contains('hidden')) { LC.raf = null; return; }
+  if (document.getElementById('tab-livecrash')?.classList.contains('hidden')) {
+    LC.raf = null;
+    // Екран закрито — відписуємось від поточного раунду й історії (initLiveCrash підпишеться знову)
+    if (LC.curRef) { LC.curRef.off(); LC.curRef = null; }
+    if (LC.histRef) { LC.histRef.off(); LC.histRef = null; }
+    if (LC.roundRef) { LC.roundRef.off(); LC.roundRef = null; }
+    return;
+  }
   LC.raf = requestAnimationFrame(lcFrame);
   if (!LC.cur || !LC.cfg) return;
   const now = lwNow();

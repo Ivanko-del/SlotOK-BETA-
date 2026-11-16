@@ -316,7 +316,7 @@ function renderFriendsFeed() {
         <div style="font-size:11px;color:var(--info);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Твої друзі</div>
         ${relevant.map(w => `
           <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);">
-            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${w.user[0].toUpperCase()}</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(w.user[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0;font-size:12px;">
               <b>${escapeHtml(w.user)}</b> виграв <b style="color:var(--pos);">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
             </div>
