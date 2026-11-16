@@ -17,7 +17,7 @@
 //   BOT_TOKEN, ADMIN_SETUP_CODE, WEBHOOK_SECRET
 // ============================================================
 
-const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement } = require("../lib/firebase");
+const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("../lib/firebase");
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 const { startDeposit, startWithdraw, withdrawButtons, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
@@ -430,14 +430,21 @@ async function cmdPlayerRef(chatId, nick) {
 async function cmdPlayerPromo(chatId, nick, code) {
   const upper = (code || "").trim().toUpperCase();
   if (!upper) return sendMessage(chatId, "Використання: /promo &lt;код&gt;");
+  if (!/^[A-Z0-9_-]{1,40}$/.test(upper)) return sendMessage(chatId, "❌ Невірний промокод.");
   const promo = await dbGet(`promos/${upper}`);
   if (!promo) return sendMessage(chatId, "❌ Невірний промокод.");
-  const already = await dbGet(`promo_redemptions/${upper}/${nick}`);
-  if (already) return sendMessage(chatId, "❌ Ти вже активував цей промокод.");
-  const redemptions = (await dbGet(`promo_redemptions/${upper}`)) || {};
-  if (Object.keys(redemptions).length >= (promo.uses || 1)) return sendMessage(chatId, "❌ Ліміт активацій цього промокоду вичерпано.");
-
-  await dbSet(`promo_redemptions/${upper}/${nick}`, { time: Date.now() });
+  // Перевірка «вже брав» і ліміту активацій — одна транзакція над списком
+  // активацій: паралельні /promo не пройдуть повз ліміт і не візьмуть код двічі.
+  let verdict = "ok";
+  await dbTransaction(`promo_redemptions/${upper}`, (cur) => {
+    const list = cur || {};
+    if (list[nick]) { verdict = "already"; return undefined; }
+    if (Object.keys(list).length >= (promo.uses || 1)) { verdict = "limit"; return undefined; }
+    verdict = "ok";
+    return { ...list, [nick]: { time: Date.now() } };
+  });
+  if (verdict === "already") return sendMessage(chatId, "❌ Ти вже активував цей промокод.");
+  if (verdict === "limit") return sendMessage(chatId, "❌ Ліміт активацій цього промокоду вичерпано.");
   const newBalance = await dbIncrement(`users/${nick}/balance`, promo.value);
   await dbPush(`users/${nick}/history`, { text: `🎟️ Промокод ${upper}: +${promo.value}₴`, date: Date.now() });
   return sendMessage(chatId, `🎟️ Промокод активовано! +${promo.value}₴. Баланс: ${newBalance}₴`);
