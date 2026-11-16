@@ -701,14 +701,16 @@
     },
     "sport_bets": {
       ".read": true,
-      "$k": {
-        ".write": "auth != null"
-      }
-    },
-    "sport_matches": {
-      ".read": true,
-      "$k": {
-        ".write": "auth != null"
+      ".indexOn": [
+        "userId"
+      ],
+      "$b": {
+        "status": {
+          ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid"
+        },
+        "refundedAt": {
+          ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid"
+        }
       }
     },
     "tournaments": {

@@ -42,7 +42,7 @@
 | 24-settings-notifications-mp | налаштування, сповіщення, мультиплеєр Монополія |
 | 25-durak-currency-cashier-tabs | Дурень, валюти, вкладки Каси |
 | 26-tower-hilo-dice-double | Tower, Hi-Lo, Dice, Double |
-| 27-sports | спорт (ESPN) |
+| 27-sports | лише одноразове повернення відкритих спортивних ставок |
 | 28-pvp-leaderboard-limbo | Coinflip/RPS/Prediction PvP, лідерборд дня/тижня, Limbo |
 | 29-support-chat | підтримка (AI + адмін) |
 | 30-home-achievements-stream | статистика Головної, досягнення, стріми |

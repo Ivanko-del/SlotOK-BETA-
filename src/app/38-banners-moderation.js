@@ -272,7 +272,7 @@ const ADMIN_TOGGLEABLE_GAMES = [
   {id:'roulette', name:'🎡 Roulette'}, {id:'keno', name:'🔢 Keno'}, {id:'monopoly', name:'🎩 Магнат'},
   {id:'cardgame', name:'🃏 Карти (Дурень)'}, {id:'chests', name:'📦 Magic Chests'}, {id:'coinflip', name:'🪙 Coinflip'},
   {id:'rps', name:'✊ Камінь-Ножиці'}, {id:'predict', name:'🔮 Prediction Duel'}, {id:'double', name:'🎰 Double'},
-  {id:'sports', name:'⚽ Sport Betting'}, {id:'dragon', name:'🐉 Dragon Tower'},
+  {id:'dragon', name:'🐉 Dragon Tower'},
   {id:'sicbo', name:'🎲 Sic Bo'},
   {id:'cardwar', name:'⚔️ Card War'}, {id:'chess', name:'♟️ Шахи'},
   {id:'balloon', name:'🎈 Balloon Pop'}, {id:'russianroulette', name:'🔫 Рулетка Ризику'}, {id:'quiz', name:'🧠 Quiz Battle'},

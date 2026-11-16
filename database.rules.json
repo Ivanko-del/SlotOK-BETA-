@@ -554,13 +554,10 @@
       ".read": true,
       "$k": {
         ".write": "true"
-      }
-    },
-    "sport_matches": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      },
+      ".indexOn": [
+        "userId"
+      ]
     },
     "tournaments": {
       ".read": true,

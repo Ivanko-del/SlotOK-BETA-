@@ -354,7 +354,7 @@ function startDataSync() {
               setTimeout(initChatAutoClear, 500);
               setTimeout(initAiSupport, 600);
               setTimeout(initCurrencySystem, 200);
-              setTimeout(checkPendingBetsOnStartup, 3000);
+              setTimeout(refundOpenSportBets, 3000);
               setTimeout(watchPmUnread, 1500);
               setTimeout(watchSupportUnread, 1500);
               setTimeout(initV62Features, 2200);

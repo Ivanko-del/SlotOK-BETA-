@@ -264,8 +264,19 @@ function build(strict) {
       $level: { ".indexOn": ["t"], $nick: { ".write": "auth != null && auth.uid === $nick", t: v("newData.isNumber() && newData.val() > 0 && newData.val() < 100000") } },
     },
     global_roulette: openNode(),
-    sport_bets: openNode(),
-    sport_matches: openNode(),
+    // Ставки на спорт прибрано. Вузол лишився лише для одноразового повернення
+    // відкритих ставок (src/app/27-sports.js): у строгому режимі нові ставки
+    // писати не можна, а власник може лише перевести СВОЮ pending-ставку в refunded.
+    sport_bets: strict
+      ? {
+          ".read": true,
+          ".indexOn": ["userId"],
+          $b: {
+            status: { ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid" },
+            refundedAt: { ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid" },
+          },
+        }
+      : openNode({ ".indexOn": ["userId"] }),
     tournaments: openNode(),
     tournament_scores: openNode(),
     leaderboards: openNode(),

@@ -727,7 +727,7 @@ const NAV_TAB_MAP = {
   home:0, lobby:1, cashier:2, notifications:3, profile:4, settings:5, more:5,
   slots:1, roulette:1, crash:1, mines:1, fortune:1, poker:1, blackjack:1,
   scratch:1, chests:1, plinko:1, keno:1, dice:1, hilo:1, tower:1,
-  cardgame:1, monopoly:1, 'monopoly-mp':1, sports:1, esports:1,
+  cardgame:1, monopoly:1, 'monopoly-mp':1,
   tournaments:5, referrals:5, vip:5, quests:5, lootboxes:5,
   hourly:5, clans:5, leaderboard:5, slotiky:5,
   achievements:5, battlepass:5, stats:5, bank:5, admin:4,
@@ -915,7 +915,6 @@ function switchTab(id, el) {
   if(id==='affiliate')    safe(() => initAffiliate());
   if(id==='battlepass')   safe(() => initBattlePass());
   if(id==='stats')        safe(() => initStatsTab());
-  if(id==='sports')       safe(() => { loadRealSportMatches(sportsCurrentSport||'soccer', document.querySelector('.sport-tab-btn.active')||document.querySelector('.sport-tab-btn')); loadSportMyBets(); checkPendingBetsOnStartup(); });
   if(id==='colorbet')     safe(() => renderColorHistory());
   if(id==='russianroulette') safe(() => updateRRDisplay());
   if(id==='cashier')      safe(() => { setTimeout(initDepositPackages, 100); switchCashierTab('card', document.getElementById('ctb-card')); setTimeout(() => { updateCashierCashbackUI(); renderCardPanel(); }, 300); });
