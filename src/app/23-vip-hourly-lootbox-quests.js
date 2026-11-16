@@ -212,7 +212,9 @@ function updateVipUI() {
   // захардкоджені картки (Bronze 0% / Silver 1% / Gold 2% / Platinum 5%),
   // яких движок ніколи не платив.
   const allEl = document.getElementById('vipAllLevels');
-  if(allEl) {
+  // Списки статичні для рівня — перебудовуємо лише коли рівень змінився (а не на кожну ставку)
+  if(allEl && allEl.dataset.vipIdx !== String(vip.index)) {
+    allEl.dataset.vipIdx = String(vip.index);
     allEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const titleColor = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `
@@ -232,6 +234,8 @@ function updateVipUI() {
   // підсвітка по індексу працювала лише для перших чотирьох із 14 рівнів.
   const hourlyEl = document.getElementById('hourlyVipTiers');
   if(hourlyEl) {
+    if(hourlyEl.dataset.vipIdx !== String(vip.index)) {
+    hourlyEl.dataset.vipIdx = String(vip.index);
     hourlyEl.innerHTML = VIP_LEVELS.map((lv, i) => {
       const c = lv.cssVar.indexOf('gradient') >= 0 ? 'var(--accent)' : lv.cssVar;
       return `<div class="hourly-vip-tier${i === vip.index ? ' active' : ''}">
@@ -239,8 +243,9 @@ function updateVipUI() {
         <div style="color:${c};">${lv.icon} ${lv.name}</div>
       </div>`;
     }).join('');
+    }
     const active = hourlyEl.querySelector('.hourly-vip-tier.active');
-    if(active) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+    if(active && hourlyEl.getClientRects().length) active.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
   }
 }
 
