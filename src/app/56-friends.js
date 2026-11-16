@@ -172,7 +172,7 @@ function friendsInvitePopups() {
   let box = document.getElementById('friendsPopups');
   if (!box) { box = document.createElement('div'); box.id = 'friendsPopups'; box.className = 'fr-popups'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
   const live = new Map(frFreshInvites());
-  box.querySelectorAll('.fr-popup').forEach((el) => { if (!live.has(el.dataset.id)) el.remove(); });
+  box.querySelectorAll('.fr-popup').forEach((el) => { if (!live.has(el.dataset.id)) { el._off && el._off(); el.remove(); } });
   live.forEach(async (v, id) => {
     const sk = id + ':' + v.at;
     if (FR.shown[sk] || box.querySelector(`.fr-popup[data-id="${id}"]`)) return;
@@ -191,12 +191,23 @@ function friendsInvitePopups() {
         <button type="button" class="btn btn-ghost btn-sm" onclick="friendsDismissInvite(${jsArg(id)})">Відхилити</button>
       </div>`;
     box.appendChild(el);
+    // Стіл заповнили чи закрили — картка зникає сама
+    const ref = db.ref('rooms/' + v.game + '/' + id);
+    const cb = ref.on('value', (snap) => {
+      const r = snap.val();
+      if (!r || r.status !== 'waiting' || Object.keys(r.players || {}).length >= r.size) { el.remove(); friendsDismissInvite(id); }
+    });
+    el._off = () => ref.off('value', cb);
     try { playSound && playSound('click'); } catch (e) { /* без звуку */ }
-    setTimeout(() => el.remove(), Math.max(1000, FR_INVITE_TTL - (Date.now() - v.at)));
+    setTimeout(() => { el._off && el._off(); el.remove(); }, Math.max(1000, FR_INVITE_TTL - (Date.now() - v.at)));
   });
 }
+function friendsRemovePopup(id) {
+  const el = document.querySelector(`.fr-popup[data-id="${id}"]`);
+  if (el) { el._off && el._off(); el.remove(); }
+}
 async function friendsDismissInvite(id) {
-  document.querySelector(`.fr-popup[data-id="${id}"]`)?.remove();
+  friendsRemovePopup(id);
   delete FR.invites[id];
   friendsRender();
   if (FR_ROOM_ID_RE.test(id)) await friendsApi('friendInviteDismiss', '', { id });
@@ -204,7 +215,7 @@ async function friendsDismissInvite(id) {
 async function friendsJoinInvite(id) {
   const v = FR.invites[id];
   if (!v) return;
-  document.querySelector(`.fr-popup[data-id="${id}"]`)?.remove();
+  friendsRemovePopup(id);
   await friendsJoinRoom(v.game, id);
   friendsApi('friendInviteDismiss', '', { id });
 }
