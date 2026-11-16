@@ -311,9 +311,13 @@ function startDataSync() {
               if(userData.balance < 0) antiCheatFlag('negative_balance', `Баланс пішов у мінус: ₴${formatNumber(userData.balance)}`, 'high');
             }
             const isAdminAcc = currentUser.toLowerCase() === 'theivankoo' || userData.isAdmin === true;
-            if(!isAdminAcc) {
-              db.ref('site_config/maintenance').once('value', mSnap => {
-                if(mSnap.val()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
+            // Одна підписка на сесію замість читання site_config/maintenance на КОЖНУ
+            // зміну профілю (а це кожна ставка). Логіка та сама: не-адмін при
+            // увімкненому техобслуговуванні виходить з акаунта.
+            if(!isAdminAcc && !window._maintWatch) {
+              window._maintWatch = true;
+              db.ref('site_config/maintenance').on('value', mSnap => {
+                if(mSnap.val() && !isAdminUser()) { alert("🚧 Сайт зараз на технічному обслуговуванні. Зайдіть пізніше."); logout(); }
               });
             }
             document.getElementById('auth-screen').classList.add('hidden');
@@ -415,8 +419,14 @@ function updateUI() {
       });
     }
     updateVipUI();
-    loadMyWithdraws();
-    loadMyDeposits();
+    // Списки заявок — 2 запити до БД; updateUI() біжить на кожну зміну балансу,
+    // тож оновлюємо їх не частіше раза на 30 с (після дій вони викликаються напряму).
+    if(window._reqListsUser !== currentUser || Date.now() - (window._reqListsAt || 0) > 30000) {
+      window._reqListsUser = currentUser;
+      window._reqListsAt = Date.now();
+      loadMyWithdraws();
+      loadMyDeposits();
+    }
     const hb = document.getElementById('homeStatBalance');
     const hv = document.getElementById('homeStatVip');
     const hs = document.getElementById('homeStatStreak');
@@ -446,7 +456,9 @@ function refreshCasinoCounters() {
   paint(_casinoCountersCache);
   if(_casinoCountersBusy || Date.now() - _casinoCountersAt < 300000) return;
   _casinoCountersBusy = true;
-  db.ref('users').once('value', snap => {
+  // Перший підрахунок (одразу після входу) читає весь вузол users — відкладаємо,
+  // щоб не заважати стартовим запитам.
+  setTimeout(() => db.ref('users').once('value', snap => {
     _casinoCountersBusy = false;
     _casinoCountersAt = Date.now();
     const users = snap.val()||{};
@@ -461,7 +473,7 @@ function refreshCasinoCounters() {
       const paid = Object.values(users).reduce((s,u)=>s+(u.totalWagered||0), 0);
       db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
     }
-  }, () => { _casinoCountersBusy = false; });
+  }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
 }
 
 function checkAdmin() {
@@ -4248,10 +4260,10 @@ function loadUserList() {
     d.innerHTML = entries.map(([n,u]) =>
       `<div class="admin-user-card" onclick="openAdminManage(${jsArg(n)})">
         <div>
-          <b>${n}</b>
+          <b>${escapeHtml(n)}</b>
           ${u.isAdmin?'<span style="color:var(--accent);font-size:10px;"> 👑</span>':''}
           ${u.banned?'<span style="color:var(--neg);font-size:10px;"> 🚫</span>':''}
-          <div style="color:var(--fg-4);font-size:11px;">ID: ${u.id||'?'} ${u.tag?'• '+u.tag:''}</div>
+          <div style="color:var(--fg-4);font-size:11px;">ID: ${escapeHtml(u.id||'?')} ${u.tag?'• '+escapeHtml(u.tag):''}</div>
         </div>
         <span style="color:var(--green);font-weight:bold;">${formatNumber(u.balance||0)}₴</span>
       </div>`
@@ -4441,16 +4453,24 @@ function formatCardInput(inp) {
     return clear();
   }
   if(info) { info.textContent = 'Пошук…'; info.style.color = 'var(--info)'; }
-  resolveTransferRecipient(inp.value, name => {
-    if(!info) return;
-    info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
-    info.style.color = name ? 'var(--pos)' : 'var(--neg)';
-  });
+  // Дебаунс: кожен символ ніку раніше запускав повне завантаження вузла users
+  // (часткового ніку немає в базі → перебір усіх гравців), і відповіді могли
+  // прийти не по черзі. Тепер шукаємо через паузу в наборі й показуємо лише
+  // відповідь на останній запит.
+  clearTimeout(formatCardInput._t);
+  const seq = formatCardInput._seq = (formatCardInput._seq || 0) + 1;
+  formatCardInput._t = setTimeout(() => {
+    resolveTransferRecipient(inp.value, name => {
+      if(!info || seq !== formatCardInput._seq) return;
+      info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
+      info.style.color = name ? 'var(--pos)' : 'var(--neg)';
+    }, true);
+  }, 450);
 }
 
 // Один шлях розв'язання отримувача для підказки в полі та для самого переказу,
 // щоб вони не могли розійтись у логіці пошуку.
-function resolveTransferRecipient(raw, cb) {
+function resolveTransferRecipient(raw, cb, hint) {
   const str = String(raw || '').trim();
   const digits = str.replace(/\D/g,'');
   const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
@@ -4461,15 +4481,17 @@ function resolveTransferRecipient(raw, cb) {
   if(!byCard && !/[.#$\[\]\/]/.test(nick)) {
     db.ref('users/' + nick).once('value', s => {
       if(s.exists()) cb(nick, s.val());
-      else resolveTransferRecipientScan(byCard, digits, nick, cb);
-    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb));
+      else resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
+    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb, hint));
     return;
   }
-  resolveTransferRecipientScan(byCard, digits, nick, cb);
+  resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
 }
-function resolveTransferRecipientScan(byCard, digits, nick, cb) {
-  db.ref('users').once('value', snap => {
-    const users = snap.val() || {};
+// Повний перебір users — дорогий. Для підказки в полі (hint) тримаємо результат
+// 60 с; сам переказ завжди читає свіжі дані.
+let _transferScanCache = null;
+function resolveTransferRecipientScan(byCard, digits, nick, cb, hint) {
+  const finish = users => {
     let found = null;
     Object.keys(users).forEach(name => {
       if(found) return;
@@ -4481,9 +4503,15 @@ function resolveTransferRecipientScan(byCard, digits, nick, cb) {
       }
     });
     cb(found, found ? users[found] : null);
-  });
+  };
+  if(hint && _transferScanCache && Date.now() - _transferScanCache.at < 60000) return finish(_transferScanCache.users);
+  db.ref('users').once('value', snap => {
+    const users = snap.val() || {};
+    const entry = _transferScanCache = { at: Date.now(), users };
+    setTimeout(() => { if(_transferScanCache === entry) _transferScanCache = null; }, 60000); // не тримаємо мегабайти в пам'яті
+    finish(users);
+  }, () => cb(null, null));
 }
-
 function sendMoney() {
   const btn = document.getElementById('sendMoneyBtn');
   if(btn && btn.disabled) return; // запобігаємо подвійному кліку
@@ -4549,10 +4577,11 @@ function addContact() {
 function loadContacts() { 
     const l=document.getElementById('contactsList'); 
     if(!userData.contacts){ l.innerHTML="<div style='color:var(--fg-3)'>Список порожній</div>"; return; } 
-    l.innerHTML=""; 
+    let html = "";
     for(let n in userData.contacts){ 
-        l.innerHTML+=`<div class="contact-row"><b>${n}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
+        html+=`<div class="contact-row"><b>${escapeHtml(n)}</b> <button class="btn-green" style="width:auto;padding:8px 15px;margin:0;" onclick="quickSend(${jsArg(n)})">💸</button></div>`; 
     } 
+    l.innerHTML = html;
 }
 
 function quickSend(n) {
@@ -8746,10 +8775,10 @@ function loadFlaggedPlayers() {
     el.innerHTML = entries.map(([nick, u]) => `
       <div style="background:var(--surface-1);border:1px solid rgb(var(--neg-rgb) / 0.25);border-radius:var(--r-md);padding:10px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:12px;">🚩 ${nick} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
+          <span style="font-weight:700;font-size:12px;">🚩 ${escapeHtml(nick)} ${u.autoFrozen ? '<span style="background:rgb(var(--neg-rgb) / 0.18);color:var(--neg);border-radius:var(--r-sm);padding:1px 6px;font-size:9px;margin-left:4px;">⛔ ПРИЗУПИНЕНО</span>' : ''}</span>
           <button onclick="clearPlayerFlag(${jsArg(nick)})" style="background:rgb(var(--pos-rgb) / 0.1);border:1px solid rgb(var(--pos-rgb) / 0.2);border-radius:var(--r-sm);color:var(--pos);font-size:10px;padding:3px 8px;cursor:pointer;">✅ Зняти позначку</button>
         </div>
-        <div style="font-size:10px;color:var(--fg-3);">${u.flagReason || 'без деталей'}</div>
+        <div style="font-size:10px;color:var(--fg-3);">${escapeHtml(u.flagReason || 'без деталей')}</div>
         <div style="font-size:10px;color:var(--fg-4);margin-top:2px;">₴${formatNumber(u.balance||0)} · ${u.totalGames||0} ігор · ставок на ₴${formatNumber(u.totalWagered||0)}</div>
       </div>`).join('');
   });
@@ -9114,7 +9143,7 @@ function doComparePlayers(nick) {
       {label:'Серія', me: me.dailyStreak||0, them: them.dailyStreak||0},
     ];
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;font-size:11px;text-align:center;">'
-      + '<div style="color:var(--accent);font-weight:800;">@' + currentUser + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + nick + '</div></div>'
+      + '<div style="color:var(--accent);font-weight:800;">@' + escapeHtml(currentUser) + '</div><div></div><div style="color:var(--info);font-weight:800;">@' + escapeHtml(nick) + '</div></div>'
       + stats.map(function(s) {
           var meWins = s.me >= s.them;
           return '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">'
@@ -9273,8 +9302,8 @@ function showTopDonators() {
       var u=e[1];
       return '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:8px;">'
         +'<div style="font-size:18px;">'+(medals[i]||'#'+(i+1))+'</div>'
-        +'<div style="font-size:18px;">'+(u.avatar||'👤')+'</div>'
-        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e[0]+'</div><div style="font-size:10px;color:var(--fg-4);">'+(u.tag||'')+'</div></div>'
+        +'<div style="font-size:18px;">'+(u.avatar && u.avatar.length<=8 ? escapeHtml(u.avatar) : '👤')+'</div>'
+        +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+escapeHtml(e[0])+'</div><div style="font-size:10px;color:var(--fg-4);">'+escapeHtml(u.tag||'')+'</div></div>'
         +'<div style="font-weight:900;color:var(--accent);font-size:13px;">₴'+formatNumber(u.totalDeposits||0)+'</div>'
         +'</div>';
     }).join('');
@@ -9773,7 +9802,7 @@ function loadTournamentLeaderboard(tId) {
     if(!data) { el.innerHTML = '<div style="color:var(--fg-4);font-size:12px;margin-top:8px;">Ще немає учасників</div>'; return; }
     const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]);
     el.innerHTML = sorted.map(([name, score], i) =>
-      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${name}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
+      `<div class="t-row"><span>${['🥇','🥈','🥉','4.','5.'][i]} ${escapeHtml(name)}</span><span style="color:var(--accent);">${formatNumber(score)} ₴</span></div>`
     ).join('');
   });
 }
@@ -9966,14 +9995,14 @@ function renderDepositCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">ID: ${req.userId||'—'} • ${methodIcon} ${methodName}</div>
+        <div class="req-card-meta">ID: ${escapeHtml(req.userId||'—')} • ${methodIcon} ${escapeHtml(methodName)}</div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--pos);">+${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--pos);">+${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveDeposit('${id}','${req.user}',${req.amount},'${req.cardId||''}')">✅ Зарахувати</button>
-      <button class="req-reject"  onclick="rejectDeposit('${id}','${req.user}')">❌ Відхилити</button>
+      <button class="req-approve" onclick="approveDeposit(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0},${jsArg(req.cardId||'')})">✅ Зарахувати</button>
+      <button class="req-reject"  onclick="rejectDeposit(${jsArg(id)},${jsArg(req.user)})">❌ Відхилити</button>
     </div>
   </div>`;
 }
@@ -9986,14 +10015,14 @@ function renderWithdrawCard(id, req) {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="req-card-user">👤 ${escapeHtml(req.user)}</div>
-        <div class="req-card-meta">${methodIcon} ${req.method?.toUpperCase()||'—'} • <span style="font-family:var(--font-mono);font-size:11px;">${req.card||'—'}</span></div>
+        <div class="req-card-meta">${methodIcon} ${escapeHtml(req.method?.toUpperCase()||'—')} • <span style="font-family:var(--font-mono);font-size:11px;">${escapeHtml(req.card||'—')}</span></div>
         <div class="req-card-time">${agoStr} • ${new Date(req.time).toLocaleString('uk-UA')}</div>
       </div>
-      <div class="req-card-amount" style="color:var(--accent);">−${req.amount}₴</div>
+      <div class="req-card-amount" style="color:var(--accent);">−${escapeHtml(req.amount)}₴</div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approveWithdraw('${id}','${req.user}')">✅ Виплачено</button>
-      <button class="req-reject"  onclick="rejectWithdraw('${id}','${req.user}',${req.amount})">❌ Повернути</button>
+      <button class="req-approve" onclick="approveWithdraw(${jsArg(id)},${jsArg(req.user)})">✅ Виплачено</button>
+      <button class="req-reject"  onclick="rejectWithdraw(${jsArg(id)},${jsArg(req.user)},${Number(req.amount)||0})">❌ Повернути</button>
     </div>
   </div>`;
 }
@@ -10009,7 +10038,7 @@ function renderPwrCard(id, req) {
       </div>
     </div>
     <div class="req-actions">
-      <button class="req-approve" onclick="approvePasswordReset('${id}','${req.user}')">🔑 Скинути пароль</button>
+      <button class="req-approve" onclick="approvePasswordReset(${jsArg(id)},${jsArg(req.user)})">🔑 Скинути пароль</button>
       <button class="req-reject"  onclick="rejectPasswordReset('${id}')">❌ Відхилити</button>
     </div>
   </div>`;
@@ -10474,7 +10503,7 @@ function loadMyClan(clanId) {
       const canPromoteDemote = iAmLeader && name !== currentUser && role !== 'leader';
       mList.innerHTML += '<div class="clan-member-row">' +
         '<div class="clan-member-avatar">' + (name===currentUser?'🙋':'👤') + '</div>' +
-        '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + name + '</div></div>' +
+        '<div style="flex:1;"><div style="font-weight:bold;font-size:14px;">' + escapeHtml(name) + '</div></div>' +
         '<span class="clan-role ' + role + '">' + (role==='leader'?'👑 Лідер':role==='officer'?'🎖️ Офіцер':'🛡️ Учасник') + '</span>' +
         (canPromoteDemote ?
           '<button class="btn-outline" style="width:auto;padding:2px 8px;font-size:10px;margin-left:6px;" onclick="' +
@@ -11276,6 +11305,7 @@ function updateHourlyTimer() {
   const statusText = document.getElementById('hourlyStatusText');
   const claimBtn = document.getElementById('hourlyClaimBtn');
   if(!ring) return;
+  if(!ring.getClientRects().length) return; // екран бонусу сховано — не чіпаємо DOM щосекунди
 
   if(diff >= hourMs) {
     ring.classList.add('ready');
@@ -17511,6 +17541,8 @@ const LOBBY_WIN_POOL = [
 
 function startLobbyTimers() {
   try { renderFavoriteHearts(); applyLobbyFilters(); renderRecentGames(); } catch(e) { console.warn(e); }
+  // Повторний вхід у вкладку без виходу не має множити таймери
+  stopLobbyTimers();
   // Jackpot counter
   _lobbyJackpotTimer = setInterval(() => {
     _lobbyJackpot += Math.floor(Math.random()*180 + 40);
@@ -19194,9 +19226,9 @@ function pmSearchRecipient(query) {
         return;
       }
       box.innerHTML = results.slice(0, 8).map(nick => `
-        <div onclick="document.getElementById('pmToInput').value='${nick}';document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);font-size:13px;display:flex;align-items:center;gap:8px;">
-          <span style="width:26px;height:26px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--info);">${nick[0].toUpperCase()}</span>
-          ${nick}
+        <div onclick="document.getElementById('pmToInput').value=${jsArg(nick)};document.getElementById('pmRecipientSuggestions').classList.add('hidden');document.getElementById('pmMsgInput').focus();" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);font-size:13px;display:flex;align-items:center;gap:8px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--info);">${escapeHtml(nick[0].toUpperCase())}</span>
+          ${escapeHtml(nick)}
         </div>`).join('');
     };
     if(isNumeric) {
@@ -22338,11 +22370,11 @@ function loadOnlinePlayersAdmin() {
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface-1);border-radius:var(--r-md);margin-bottom:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;">${nick}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
+          <div style="font-weight:700;font-size:12px;">${escapeHtml(nick)}${u.banned?' 🚫':''}${u.muted?' 🔇':''}${u.flagged?' 🚩':''}</div>
           <div style="font-size:10px;color:var(--fg-4);">₴${formatNumber(u.balance||0)} · ${minsAgo}хв тому</div>
         </div>
-        <button onclick="document.getElementById('modUserNick').value='${nick}';notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
-        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value='${nick}':null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
+        <button onclick="document.getElementById('modUserNick').value=${jsArg(nick)};notify('Нік підставлено в поле модерації','info')" style="background:rgb(var(--neg-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--fg-3);font-size:10px;padding:4px 8px;cursor:pointer;">⚙️</button>
+        <button onclick="document.getElementById('pmToInput')?document.getElementById('pmToInput').value=${jsArg(nick)}:null;switchTab('pm')" style="background:rgb(var(--info-rgb) / 0.08);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--info);font-size:10px;padding:4px 8px;cursor:pointer;">✉️</button>
       </div>`;
     }).join('');
   });
@@ -23621,7 +23653,7 @@ function renderFriendsFeed() {
         <div style="font-size:11px;color:var(--info);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">👥 Твої друзі</div>
         ${relevant.map(w => `
           <div class="friend-feed-item" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgb(var(--tint-rgb) / 0.05);">
-            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${w.user[0].toUpperCase()}</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:rgb(var(--info-rgb) / 0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--info);flex-shrink:0;">${escapeHtml(w.user[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0;font-size:12px;">
               <b>${escapeHtml(w.user)}</b> виграв <b style="color:var(--pos);">₴${formatNumber(w.amount)}</b> в ${escapeHtml(w.game||'')}
             </div>
@@ -25647,7 +25679,13 @@ async function lwSpinTo(game, seg) {
 function lwFmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
 async function lwTick() {
   if (!LW.st || !document.getElementById('lwWheel')) return;
-  if (document.getElementById('tab-roulette')?.classList.contains('hidden')) { clearInterval(LW.timer); LW.timer = null; return; }
+  if (document.getElementById('tab-roulette')?.classList.contains('hidden')) {
+    clearInterval(LW.timer); LW.timer = null;
+    // Екран закрито — не тягнемо ставки й історію у фоні (initLiveWheels підпишеться знову)
+    if (LW.betsRef) { LW.betsRef.off(); LW.betsRef = null; }
+    if (LW.histRef) { LW.histRef.off(); LW.histRef = null; }
+    return;
+  }
   const now = lwNow();
   LW_GAMES.forEach((g) => {
     const w = LW.st.wheels[g.id];
@@ -25794,7 +25832,14 @@ function lcSetRound(c) {
 }
 const lcMult = (ms) => Math.floor(Math.exp(LC.cfg.rate * Math.max(0, ms) / 1000) * 100) / 100;
 function lcFrame() {
-  if (document.getElementById('tab-livecrash')?.classList.contains('hidden')) { LC.raf = null; return; }
+  if (document.getElementById('tab-livecrash')?.classList.contains('hidden')) {
+    LC.raf = null;
+    // Екран закрито — відписуємось від поточного раунду й історії (initLiveCrash підпишеться знову)
+    if (LC.curRef) { LC.curRef.off(); LC.curRef = null; }
+    if (LC.histRef) { LC.histRef.off(); LC.histRef = null; }
+    if (LC.roundRef) { LC.roundRef.off(); LC.roundRef = null; }
+    return;
+  }
   LC.raf = requestAnimationFrame(lcFrame);
   if (!LC.cur || !LC.cfg) return;
   const now = lwNow();
