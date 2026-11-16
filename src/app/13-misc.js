@@ -19,16 +19,24 @@ function formatCardInput(inp) {
     return clear();
   }
   if(info) { info.textContent = 'Пошук…'; info.style.color = 'var(--info)'; }
-  resolveTransferRecipient(inp.value, name => {
-    if(!info) return;
-    info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
-    info.style.color = name ? 'var(--pos)' : 'var(--neg)';
-  });
+  // Дебаунс: кожен символ ніку раніше запускав повне завантаження вузла users
+  // (часткового ніку немає в базі → перебір усіх гравців), і відповіді могли
+  // прийти не по черзі. Тепер шукаємо через паузу в наборі й показуємо лише
+  // відповідь на останній запит.
+  clearTimeout(formatCardInput._t);
+  const seq = formatCardInput._seq = (formatCardInput._seq || 0) + 1;
+  formatCardInput._t = setTimeout(() => {
+    resolveTransferRecipient(inp.value, name => {
+      if(!info || seq !== formatCardInput._seq) return;
+      info.textContent = name ? ('Отримувач: ' + name) : 'Гравця не знайдено';
+      info.style.color = name ? 'var(--pos)' : 'var(--neg)';
+    }, true);
+  }, 450);
 }
 
 // Один шлях розв'язання отримувача для підказки в полі та для самого переказу,
 // щоб вони не могли розійтись у логіці пошуку.
-function resolveTransferRecipient(raw, cb) {
+function resolveTransferRecipient(raw, cb, hint) {
   const str = String(raw || '').trim();
   const digits = str.replace(/\D/g,'');
   const byCard = /^[0-9 ]+$/.test(str) && digits.length === 16;
@@ -39,15 +47,17 @@ function resolveTransferRecipient(raw, cb) {
   if(!byCard && !/[.#$\[\]\/]/.test(nick)) {
     db.ref('users/' + nick).once('value', s => {
       if(s.exists()) cb(nick, s.val());
-      else resolveTransferRecipientScan(byCard, digits, nick, cb);
-    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb));
+      else resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
+    }, () => resolveTransferRecipientScan(byCard, digits, nick, cb, hint));
     return;
   }
-  resolveTransferRecipientScan(byCard, digits, nick, cb);
+  resolveTransferRecipientScan(byCard, digits, nick, cb, hint);
 }
-function resolveTransferRecipientScan(byCard, digits, nick, cb) {
-  db.ref('users').once('value', snap => {
-    const users = snap.val() || {};
+// Повний перебір users — дорогий. Для підказки в полі (hint) тримаємо результат
+// 60 с; сам переказ завжди читає свіжі дані.
+let _transferScanCache = null;
+function resolveTransferRecipientScan(byCard, digits, nick, cb, hint) {
+  const finish = users => {
     let found = null;
     Object.keys(users).forEach(name => {
       if(found) return;
@@ -59,9 +69,15 @@ function resolveTransferRecipientScan(byCard, digits, nick, cb) {
       }
     });
     cb(found, found ? users[found] : null);
-  });
+  };
+  if(hint && _transferScanCache && Date.now() - _transferScanCache.at < 60000) return finish(_transferScanCache.users);
+  db.ref('users').once('value', snap => {
+    const users = snap.val() || {};
+    const entry = _transferScanCache = { at: Date.now(), users };
+    setTimeout(() => { if(_transferScanCache === entry) _transferScanCache = null; }, 60000); // не тримаємо мегабайти в пам'яті
+    finish(users);
+  }, () => cb(null, null));
 }
-
 function sendMoney() {
   const btn = document.getElementById('sendMoneyBtn');
   if(btn && btn.disabled) return; // запобігаємо подвійному кліку
