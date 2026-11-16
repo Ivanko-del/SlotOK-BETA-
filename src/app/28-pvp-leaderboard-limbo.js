@@ -113,11 +113,11 @@ function showCfResult(won, result, creatorSide, bet, payout, opponent) {
   const box = document.getElementById('cfResultBox');
   box.classList.remove('hidden');
   box.innerHTML = `
-    <div style="font-size:70px;margin-bottom:8px;animation:lbPop .5s ease;">${result==='heads'?'🌕':'🌑'}</div>
-    <div style="font-size:22px;font-weight:900;color:${won?'var(--green)':'var(--red)'};margin-bottom:6px;">${won?'🏆 ВИГРАШ!':'😞 ПРОГРАШ'}</div>
+    ${typeof cf3dCoin === 'function' ? cf3dCoin(result) : `<div style="font-size:70px;margin-bottom:8px;animation:lbPop .5s ease;">${result==='heads'?'🌕':'🌑'}</div>`}
+    <div class="cf3d-reveal"><div style="font-size:22px;font-weight:900;color:${won?'var(--green)':'var(--red)'};margin-bottom:6px;">${won?'🏆 ВИГРАШ!':'😞 ПРОГРАШ'}</div>
     <div style="font-size:16px;color:var(--accent);font-weight:800;">${won?'+₴'+formatNumber(payout):'-₴'+formatNumber(bet)}</div>
     <div style="font-size:11px;color:var(--sub);margin-top:8px;">Монета: ${result==='heads'?'🌕 Орел':'🌑 Решка'} · Суперник: ${opponent}</div>
-    <button class="btn-gold" onclick="document.getElementById('cfResultBox').classList.add('hidden');loadCfRooms();" style="margin-top:14px;">🔄 Грати ще</button>`;
+    <button class="btn-gold" onclick="document.getElementById('cfResultBox').classList.add('hidden');loadCfRooms();" style="margin-top:14px;">🔄 Грати ще</button></div>`;
   if(won) { playSound('bonus'); triggerWinReaction(payout, 'Coinflip'); }
   else playSound('loss');
 }

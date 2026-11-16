@@ -328,6 +328,7 @@ async function rollDiceFair(dir) {
   trackLbStat('wager', bet); trackLbStat('games', 1);
   publishLiveBet('Dice ⚖️', '🎲', bet, win ? mult : 0);
   playSound(win ? 'win' : 'loss');
+  typeof dice3dRoll === 'function' && dice3dRoll(result, win);
 
   const resEl = document.getElementById('diceResult');
   const histEl = document.getElementById('diceHistory');
