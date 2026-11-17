@@ -3093,8 +3093,10 @@ body > .screen, .container ~ .screen {
 }
 .chess-board-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
+  /* minmax(0,…): клітинка не розтягується під висоту символу фігури,
+     інакше ряди з фігурами вищі за порожні й дошка «пливе» по ходу гри */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
   width: 100%;
   height: 100%;
 }
@@ -3102,9 +3104,18 @@ body > .screen, .container ~ .screen {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   cursor: pointer;
   position: relative;
   transition: background .15s;
+}
+.chess-piece {
+  font-size: min(8.5vw, 32px);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
 }
 .chess-move-dot {
   position: absolute;

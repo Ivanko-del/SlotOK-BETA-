@@ -660,7 +660,7 @@ function renderChessBoard() {
       html += `<div class="chess-sq" onclick="chessSquareClick(${r},${c})" style="background:${bg};position:relative;">`;
       if(piece) {
         const isWhite = chessColorOf(piece) === 'w';
-        html += `<span style="font-size:min(8.5vw,32px);color:${isWhite?'var(--fg)':'var(--on-accent)'};text-shadow:${isWhite?'0 1px 2px rgb(var(--shade-rgb) / 0.6)':'0 1px 1px rgb(var(--tint-rgb) / 0.15)'};user-select:none;">${CHESS_PIECE_UNICODE[piece]}</span>`;
+        html += `<span class="chess-piece" style="color:${isWhite?'var(--fg)':'var(--on-accent)'};text-shadow:${isWhite?'0 1px 2px rgb(var(--shade-rgb) / 0.6)':'0 1px 1px rgb(var(--tint-rgb) / 0.15)'};">${CHESS_PIECE_UNICODE[piece]}</span>`;
       }
       if(isLegalTarget) {
         html += piece ? '<div class="chess-capture-ring"></div>' : '<div class="chess-move-dot"></div>';
