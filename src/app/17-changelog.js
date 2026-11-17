@@ -3,10 +3,25 @@
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '123';
+const CURRENT_VERSION = '124';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '124',
+    title: 'Оновлення v124 — рівна шахова дошка',
+    date: Date.UTC(2026, 10, 17),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Шахи: на телефоні дошка більше не перекошується під час гри — усі клітинки завжди однакові, хоч би де стояли фігури',
+        ],
+      },
+    ],
+  },
   {
     version: '123',
     title: 'Оновлення v123 — друзі, ліги, місії, глядачі й нова гра',
