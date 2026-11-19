@@ -160,9 +160,28 @@ function friendlySignInError(e) {
 //   { mode: 'server', r }  — зіграно на сервері, баланс уже змінено там;
 //   { mode: 'legacy' }     — серверні ігри не налаштовані, граємо як раніше;
 //   { mode: 'error' }      — помилку вже показано гравцю, ставку не прийнято.
+// Поточний користувач Firebase Auth, але лише після того, як Auth відновив
+// збережену сесію. Одразу після відкриття сайту currentUser ще null (сесія
+// підтягується з IndexedDB, а прострочений токен — ще й з мережі), і без
+// цього очікування перші запити до сервера хибно писали «Сесія застаріла».
+let _authSettledPromise = null;
+function authUser() {
+  if(typeof firebase === 'undefined' || !firebase.auth) return Promise.resolve(null);
+  if(!_authSettledPromise) {
+    _authSettledPromise = new Promise(resolve => {
+      let done = false;
+      const fin = () => { if(!done) { done = true; resolve(); } };
+      try { const unsub = firebase.auth().onAuthStateChanged(() => { unsub(); fin(); }); }
+      catch(e) { fin(); }
+      setTimeout(fin, 10000);
+    });
+  }
+  return _authSettledPromise.then(() => firebase.auth().currentUser);
+}
+
 async function serverPlay(game, bet, params) {
   if(!(await serverAuthEnabled())) return { mode: 'legacy' };
-  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  const user = await authUser();
   if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error' }; }
   const id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2))).replace(/[^A-Za-z0-9_-]/g, '');
   const send = async () => fetch('/api/play', {
@@ -202,7 +221,7 @@ async function serverReward(action, extra) {
 
 async function serverApi(url, body) {
   if(!(await serverAuthEnabled())) return { mode: 'legacy' };
-  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  const user = await authUser();
   if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error', status: 401 }; }
   let res;
   try {

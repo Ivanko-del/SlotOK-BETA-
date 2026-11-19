@@ -12,7 +12,7 @@ const FR_INVITE_TTL = 5 * 60000;
 const FR_ROOM_GAMES = ['holdem', 'durak', 'eights', 'ludo', 'battleship', 'fourrow', 'minesweeper', 'coinflip', 'rps', 'predict'];
 const FR_GAME_NAMES = { holdem: 'Покер Hold’em', durak: 'Дурень', eights: 'Вісімки', ludo: 'Лудо', battleship: 'Морський бій', fourrow: 'Чотири в ряд', minesweeper: 'Сапер-дуель', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction' };
 const FR_ROOM_ID_RE = /^[a-z0-9]{12,40}$/;
-const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [] };
+const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [], dead: false, retryT: null, reqLoaded: false, reqSeen: {} };
 window.FRIENDS_LIST = [];
 
 const frGameName = (g) => FR_GAME_NAMES[g] || (typeof ROOM_GAME_NAMES !== 'undefined' && ROOM_GAME_NAMES[g]) || g;
@@ -41,16 +41,47 @@ async function friendsApi(action, nick, extra) {
 function friendsStart() {
   if (FR.started || !db || !currentUser) return;
   FR.started = true;
-  const watch = (path, key, after) => {
-    const ref = db.ref(path + '/' + currentUser);
-    ref.on('value', (s) => { FR[key] = s.val() || {}; after(); }, () => { /* правила ще не опубліковані */ });
-    FR.refs.push(ref);
-  };
-  watch('friends', 'friends', () => { window.FRIENDS_LIST = Object.keys(FR.friends); friendsRender(); });
-  watch('friend_requests', 'requests', friendsRender);
-  watch('room_invites', 'invites', () => { friendsRender(); friendsInvitePopups(); });
+  friendsSubscribe();
+  // Підписку скасовано (токен прострочився, поки телефон спав, мережа зникла) —
+  // щойно Auth знову дійсний або вкладка повернулась на екран, підписуємось заново.
+  try { firebase.auth().onIdTokenChanged((u) => { if (FR.dead && u && u.uid === currentUser) friendsSubscribe(); }); } catch (e) { /* без Auth */ }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && FR.dead) friendsSubscribe(); });
   setInterval(() => { friendsRender(); friendsInvitePopups(); }, 15000);
   setTimeout(friendsOpenRoomLink, 1200);
+}
+
+function friendsSubscribe() {
+  FR.refs.forEach(({ ref, cb }) => { try { ref.off('value', cb); } catch (e) { /* уже знято */ } });
+  FR.refs = [];
+  FR.dead = false;
+  const watch = (path, key, after) => {
+    const ref = db.ref(path + '/' + currentUser);
+    const cb = ref.on('value', (s) => { FR[key] = s.val() || {}; after(); }, () => { FR.dead = true; friendsRetrySoon(); });
+    FR.refs.push({ ref, cb });
+  };
+  watch('friends', 'friends', () => { window.FRIENDS_LIST = Object.keys(FR.friends); friendsRender(); });
+  watch('friend_requests', 'requests', friendsOnRequests);
+  watch('room_invites', 'invites', () => { friendsRender(); friendsInvitePopups(); });
+}
+
+// Повтор, поки підписка мертва (кожні 5 с, лише з дійсною Auth-сесією).
+function friendsRetrySoon() {
+  if (FR.retryT) return;
+  FR.retryT = setTimeout(() => {
+    FR.retryT = null;
+    if (!FR.dead) return;
+    const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    if (u && u.uid === currentUser) friendsSubscribe(); else friendsRetrySoon();
+  }, 5000);
+}
+
+// Новий вхідний запит — короткий тост, а не лише лічильник у меню «Ще».
+function friendsOnRequests() {
+  const now = Object.keys(FR.requests);
+  if (FR.reqLoaded) now.filter((n) => !FR.reqSeen[n]).forEach((n) => notify(n + ' хоче додати тебе в друзі — Ще → Друзі', 'info'));
+  FR.reqSeen = Object.fromEntries(now.map((n) => [n, 1]));
+  FR.reqLoaded = true;
+  friendsRender();
 }
 // Старт, щойно гравець увійшов (без правок у 01-core.js)
 setInterval(() => { if (!FR.started && typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) friendsStart(); }, 1000);
