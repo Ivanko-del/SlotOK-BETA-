@@ -165,9 +165,28 @@ function friendlySignInError(e) {
 //   { mode: 'server', r }  — зіграно на сервері, баланс уже змінено там;
 //   { mode: 'legacy' }     — серверні ігри не налаштовані, граємо як раніше;
 //   { mode: 'error' }      — помилку вже показано гравцю, ставку не прийнято.
+// Поточний користувач Firebase Auth, але лише після того, як Auth відновив
+// збережену сесію. Одразу після відкриття сайту currentUser ще null (сесія
+// підтягується з IndexedDB, а прострочений токен — ще й з мережі), і без
+// цього очікування перші запити до сервера хибно писали «Сесія застаріла».
+let _authSettledPromise = null;
+function authUser() {
+  if(typeof firebase === 'undefined' || !firebase.auth) return Promise.resolve(null);
+  if(!_authSettledPromise) {
+    _authSettledPromise = new Promise(resolve => {
+      let done = false;
+      const fin = () => { if(!done) { done = true; resolve(); } };
+      try { const unsub = firebase.auth().onAuthStateChanged(() => { unsub(); fin(); }); }
+      catch(e) { fin(); }
+      setTimeout(fin, 10000);
+    });
+  }
+  return _authSettledPromise.then(() => firebase.auth().currentUser);
+}
+
 async function serverPlay(game, bet, params) {
   if(!(await serverAuthEnabled())) return { mode: 'legacy' };
-  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  const user = await authUser();
   if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error' }; }
   const id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2))).replace(/[^A-Za-z0-9_-]/g, '');
   const send = async () => fetch('/api/play', {
@@ -207,7 +226,7 @@ async function serverReward(action, extra) {
 
 async function serverApi(url, body) {
   if(!(await serverAuthEnabled())) return { mode: 'legacy' };
-  const user = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+  const user = await authUser();
   if(!user) { notify('🔐 Сесія застаріла — увійди ще раз', 'error'); return { mode: 'error', status: 401 }; }
   let res;
   try {
@@ -5358,10 +5377,27 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '124';
+const CURRENT_VERSION = '125';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '125',
+    title: 'Оновлення v125 — запити в друзі доходять одразу',
+    date: Date.UTC(2026, 10, 19),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Друзі: запит у друзі більше не губиться, якщо телефон довго спав або зникав інтернет — список сам оновлюється, щойно зʼєднання повертається',
+          'Друзі: про новий запит тепер зʼявляється сповіщення, а не лише лічильник у меню «Ще»',
+          'Більше не зʼявляється хибне «Сесія застаріла — увійди ще раз», коли знову відкриваєш сайт',
+        ],
+      },
+    ],
+  },
   {
     version: '124',
     title: 'Оновлення v124 — рівна шахова дошка',
@@ -25873,7 +25909,7 @@ const FR_INVITE_TTL = 5 * 60000;
 const FR_ROOM_GAMES = ['holdem', 'durak', 'eights', 'ludo', 'battleship', 'fourrow', 'minesweeper', 'coinflip', 'rps', 'predict'];
 const FR_GAME_NAMES = { holdem: 'Покер Hold’em', durak: 'Дурень', eights: 'Вісімки', ludo: 'Лудо', battleship: 'Морський бій', fourrow: 'Чотири в ряд', minesweeper: 'Сапер-дуель', coinflip: 'Coinflip', rps: 'Камінь-ножиці', predict: 'Prediction' };
 const FR_ROOM_ID_RE = /^[a-z0-9]{12,40}$/;
-const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [] };
+const FR = { friends: {}, requests: {}, invites: {}, started: false, shown: {}, refs: [], dead: false, retryT: null, reqLoaded: false, reqSeen: {} };
 window.FRIENDS_LIST = [];
 
 const frGameName = (g) => FR_GAME_NAMES[g] || (typeof ROOM_GAME_NAMES !== 'undefined' && ROOM_GAME_NAMES[g]) || g;
@@ -25902,16 +25938,47 @@ async function friendsApi(action, nick, extra) {
 function friendsStart() {
   if (FR.started || !db || !currentUser) return;
   FR.started = true;
-  const watch = (path, key, after) => {
-    const ref = db.ref(path + '/' + currentUser);
-    ref.on('value', (s) => { FR[key] = s.val() || {}; after(); }, () => { /* правила ще не опубліковані */ });
-    FR.refs.push(ref);
-  };
-  watch('friends', 'friends', () => { window.FRIENDS_LIST = Object.keys(FR.friends); friendsRender(); });
-  watch('friend_requests', 'requests', friendsRender);
-  watch('room_invites', 'invites', () => { friendsRender(); friendsInvitePopups(); });
+  friendsSubscribe();
+  // Підписку скасовано (токен прострочився, поки телефон спав, мережа зникла) —
+  // щойно Auth знову дійсний або вкладка повернулась на екран, підписуємось заново.
+  try { firebase.auth().onIdTokenChanged((u) => { if (FR.dead && u && u.uid === currentUser) friendsSubscribe(); }); } catch (e) { /* без Auth */ }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && FR.dead) friendsSubscribe(); });
   setInterval(() => { friendsRender(); friendsInvitePopups(); }, 15000);
   setTimeout(friendsOpenRoomLink, 1200);
+}
+
+function friendsSubscribe() {
+  FR.refs.forEach(({ ref, cb }) => { try { ref.off('value', cb); } catch (e) { /* уже знято */ } });
+  FR.refs = [];
+  FR.dead = false;
+  const watch = (path, key, after) => {
+    const ref = db.ref(path + '/' + currentUser);
+    const cb = ref.on('value', (s) => { FR[key] = s.val() || {}; after(); }, () => { FR.dead = true; friendsRetrySoon(); });
+    FR.refs.push({ ref, cb });
+  };
+  watch('friends', 'friends', () => { window.FRIENDS_LIST = Object.keys(FR.friends); friendsRender(); });
+  watch('friend_requests', 'requests', friendsOnRequests);
+  watch('room_invites', 'invites', () => { friendsRender(); friendsInvitePopups(); });
+}
+
+// Повтор, поки підписка мертва (кожні 5 с, лише з дійсною Auth-сесією).
+function friendsRetrySoon() {
+  if (FR.retryT) return;
+  FR.retryT = setTimeout(() => {
+    FR.retryT = null;
+    if (!FR.dead) return;
+    const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    if (u && u.uid === currentUser) friendsSubscribe(); else friendsRetrySoon();
+  }, 5000);
+}
+
+// Новий вхідний запит — короткий тост, а не лише лічильник у меню «Ще».
+function friendsOnRequests() {
+  const now = Object.keys(FR.requests);
+  if (FR.reqLoaded) now.filter((n) => !FR.reqSeen[n]).forEach((n) => notify(n + ' хоче додати тебе в друзі — Ще → Друзі', 'info'));
+  FR.reqSeen = Object.fromEntries(now.map((n) => [n, 1]));
+  FR.reqLoaded = true;
+  friendsRender();
 }
 // Старт, щойно гравець увійшов (без правок у 01-core.js)
 setInterval(() => { if (!FR.started && typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) friendsStart(); }, 1000);
