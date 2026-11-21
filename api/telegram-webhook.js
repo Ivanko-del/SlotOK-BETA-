@@ -21,10 +21,8 @@ const { dbGet, dbSet, dbUpdate, dbPush, dbIncrement, dbTransaction } = require("
 const { sendMessage, editMessageText, answerCallbackQuery, setMyCommands, esc } = require("../lib/telegram");
 const { completeLink, unlink, resolveNick } = require("../lib/telegram-linking");
 const { startDeposit, startWithdraw, handleMoneyFlowReply, getState, clearState } = require("../lib/telegram-money-flow");
-const SlotOKPassword = require("../password.js");
-const { setSecrets } = require("../lib/secrets");
+const { approveResetRequest, tempPasswordText } = require("../lib/password-reset");
 const { getPrivate } = require("../lib/private-profile");
-const { getServiceAccount } = require("../lib/google-auth");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -592,17 +590,10 @@ async function actOnPasswordReset(action, id) {
   if (!r || r.status !== "pending") return null;
 
   if (action === "approve") {
-    const tempPass = randomTempPassword();
-    const tempPassHash = await SlotOKPassword.hash(tempPass);
-    // З ключем сервісного акаунта хеш іде в закритий user_secrets (див. lib/secrets.js);
-    // без нього застосунок ще перевіряє пароль у браузері й читає users/<нік>/pass.
-    if (getServiceAccount()) await setSecrets(r.user, { pass: tempPassHash });
-    else await dbSet(`users/${r.user}/pass`, tempPassHash);
-    await dbUpdate(`password_reset_requests/${id}`, { status: "done", approvedAt: Date.now(), approvedBy: "telegram-bot" });
-    await notifyPlayer(
-      r.user,
-      `🔑 Ваш пароль скинуто адміністратором. Новий тимчасовий пароль: ${tempPass}\nБудь ласка, увійдіть і одразу змініть його в налаштуваннях.`
-    );
+    // Хеш тимчасового пароля — лише в закритий user_secrets (lib/password-reset.js).
+    const done = await approveResetRequest(id, "telegram-bot");
+    if (!done) return null;
+    await notifyPlayer(done.user, tempPasswordText(done.tempPass));
     return `✅ Пароль для ${esc(r.user)} скинуто й надіслано в ПП`;
   } else {
     await dbUpdate(`password_reset_requests/${id}`, { status: "rejected", rejectedAt: Date.now() });
@@ -618,11 +609,4 @@ async function notifyPlayer(user, text) {
   return key;
 }
 
-// Тимчасовий пароль — це повноцінний доступ до акаунту, тому джерело
-// випадковості має бути криптографічним, а не Math.random().
-function randomTempPassword() {
-  const alphabet = "abcdefghijkmnpqrstuvwxyz23456789"; // без схожих 0/o/1/l
-  const bytes = require("crypto").randomBytes(12);
-  return Array.from(bytes).map((b) => alphabet[b % alphabet.length]).join("");
-}
 

@@ -12,6 +12,10 @@
 // Старі акаунти зберігали або голий SHA-256, або взагалі відкритий пароль.
 // verify() приймає обидва і повідомляє needsUpgrade — виклик після вдалого
 // входу мовчки перезаписує запис у новий формат.
+//
+// Обгорнутий SHA-256 (scripts/migrate-secrets.js, без знання пароля):
+//   pbkdf2sha$<ітерацій>$<сіль-hex>$<PBKDF2(SHA-256-hex(пароль))>
+// Не гірший за звичайний pbkdf2 проти перебору; після входу теж оновлюється.
 // ============================================================
 
 (function (root, factory) {
@@ -74,6 +78,14 @@
     return `pbkdf2$${ITERATIONS}$${toHex(salt)}$${digest}`;
   }
 
+  // Підняти голий SHA-256 до PBKDF2, не знаючи пароля (див. шапку файлу).
+  async function wrapSha256(shaHex) {
+    if (!/^[0-9a-f]{64}$/i.test(String(shaHex))) throw new Error("not a SHA-256 hex digest");
+    const salt = globalThis.crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+    const digest = await derive(String(shaHex).toLowerCase(), salt, ITERATIONS);
+    return `pbkdf2sha$${ITERATIONS}$${toHex(salt)}$${digest}`;
+  }
+
   function isModern(stored) {
     return typeof stored === "string" && stored.startsWith("pbkdf2$");
   }
@@ -95,6 +107,16 @@
       return { ok, needsUpgrade: ok && iterations < ITERATIONS };
     }
 
+    if (s.startsWith("pbkdf2sha$")) {
+      const parts = s.split("$");
+      if (parts.length !== 4) return { ok: false, needsUpgrade: false };
+      const iterations = parseInt(parts[1], 10);
+      if (!Number.isFinite(iterations) || iterations <= 0) return { ok: false, needsUpgrade: false };
+      const digest = await derive((await sha256Hex(password)).toLowerCase(), fromHex(parts[2]), iterations);
+      const ok = timingSafeEqual(digest, parts[3]);
+      return { ok, needsUpgrade: ok };
+    }
+
     // Спадщина 1: голий SHA-256 (64 hex-символи).
     if (/^[0-9a-f]{64}$/i.test(s)) {
       const ok = timingSafeEqual((await sha256Hex(password)).toLowerCase(), s.toLowerCase());
@@ -106,5 +128,5 @@
     return { ok, needsUpgrade: ok };
   }
 
-  return { hash, verify, isModern, sha256Hex, ITERATIONS };
+  return { hash, verify, isModern, sha256Hex, wrapSha256, ITERATIONS };
 });

@@ -108,7 +108,8 @@ function refreshCasinoCounters() {
     // Екран входу показує суму ставок з цього агрегату, а не качає users сам.
     if(isAdminUser()) {
       const paid = Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWagered||0)), 0);
-      db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
+      // Екран входу (без авторизації) показує лише ці агрегати, а не список ніків.
+      db.ref('casino_stats').update({ totalWagered: paid, players: _casinoCountersCache.total }).catch(() => {});
     }
   }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
 }

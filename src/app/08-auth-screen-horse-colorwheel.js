@@ -16,16 +16,6 @@ function stopAuthStatsListeners() {
   stopAuthCoins();
   stopAuthWinTicker();
 }
-// REST-адреса з ?shallow=true (лише ключі). На локальному стенді — емулятор,
-// як і в db (01-core.js), інакше перевірки йшли б у бойову базу.
-function authShallowUrl(path) {
-  const emu = window.SLOTOK_EMULATOR;
-  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
-    const ns = new URL(firebaseConfig.databaseURL).hostname.split('.')[0];
-    return `http://${emu.db[0]}:${emu.db[1]}/${path}.json?ns=${ns}&shallow=true`;
-  }
-  return `${firebaseConfig.databaseURL}/${path}.json?shallow=true`;
-}
 function authWheelTick() {
   const el = document.getElementById('authNextWheel');
   const scr = document.getElementById('auth-screen');
@@ -34,11 +24,11 @@ function authWheelTick() {
   el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
 }
 function loadAuthStats() {
-  // ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
-  fetch(authShallowUrl('users'))
-    .then(r => r.ok ? r.json() : {})
-    .then(users => {
-      const count = Object.keys(users || {}).length;
+  // Без входу список гравців не читається (правила бази) — лише агрегат,
+  // який оновлює адмінка (02-ui-admin-rights.js).
+  if(db) db.ref('casino_stats/players').once('value')
+    .then(snap => {
+      const count = Number(snap.val()) || 0;
       const el = document.getElementById('authStatPlayers');
       const wrap = document.getElementById('authPlayersWrap');
       if(el && count > 0) { el.textContent = formatNumber(count); if(wrap) wrap.hidden = false; }

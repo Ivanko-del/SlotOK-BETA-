@@ -84,15 +84,21 @@ merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 ## Security model (since the October 2026 audit — see SECURITY.md)
 
 - **Login** goes through `api/auth.js` (server checks the password, returns a
-  Firebase custom token, uid = nick). Until `FIREBASE_SERVICE_ACCOUNT_KEY` is
-  set it answers 503 and `app.js` falls back to the old in-browser check —
-  keep both paths working when touching `authLogin`/`authRegister`.
-- **Password hashes** move to `user_secrets/<nick>` (server-only) via
-  `lib/secrets.js`; never read `pass`/`securityAnswerHash` from new client code.
+  Firebase custom token, uid = nick). There is no in-browser fallback any
+  more (it read password hashes from the DB): without
+  `FIREBASE_SERVICE_ACCOUNT_KEY` the API answers 503 and login is unavailable.
+- **Password hashes** live only in `user_secrets/<nick>` (server-only, no
+  browser access even for admins) via `lib/secrets.js`; the rules forbid
+  writing `pass`/`securityAnswerHash` into `users/`. Anything password-related
+  (login, register, reset, admin reset, nick check) goes through `api/auth.js`.
+  Legacy copies in `users/` are moved by `scripts/migrate-secrets.js`
+  (dry-run by default, `--apply` to write — only the owner runs it).
 - **Database rules** are generated: edit `scripts/build-rules.js`, run
-  `npm run build:rules`, and `npm test` (includes an emulator test of both
-  rule sets). A new top-level DB node must be added there, or it will be
-  denied once the rules are deployed.
+  `npm run build:rules`, and `npm test` (includes an emulator test). There is
+  ONE rules file, `database.rules.json`, closed by default: anonymous users
+  read only `win_feed`/`casino_stats`; never add `.read: true` or an
+  unauthenticated `.write`. A new top-level DB node must be added there, or it
+  will be denied. Private per-user data goes to `user_private/<nick>`, not `users/`.
 - **Rendering data from the DB:** use `escapeHtml()` for text, `safeUrl()` for
   `src`/`href`, and `jsArg()` for values inside `onclick="…"`.
 

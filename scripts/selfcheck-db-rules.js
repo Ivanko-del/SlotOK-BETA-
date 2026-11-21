@@ -1,8 +1,10 @@
 // Self-check правил бази: node scripts/selfcheck-db-rules.js
 //
 // Піднімає справжній емулятор Firebase Realtime Database (той самий рушій
-// правил, що й у проді), завантажує database.rules.json і
-// database.rules.strict.json і проганяє сценарії атак та звичайних дій гравця.
+// правил, що й у проді), завантажує database.rules.json (єдина версія правил)
+// і проганяє сценарії атак та звичайних дій гравця: без входу не читається й
+// не пишеться нічого приватного, гравець A не лізе в дані гравця B, а звичайні
+// дії (вхід, гра, чат, ПМ, кімнати, рейтинг) проходять.
 //
 // Потрібні Java і jar емулятора (ставиться командою
 // `npx firebase-tools setup:emulators:database`). Шлях до jar можна задати
@@ -74,54 +76,36 @@ async function seed(ns) {
     telegram_links: { 111: "alice" },
     deposit_requests: { d1: { user: "alice", amount: 100, status: "pending" }, d2: { user: "bob", amount: 5, status: "pending" } },
     support_chats: { alice: { m1: { sender: "user", text: "hi" } } },
+    pm: { alice: { p1: { from: "bob", to: "alice", text: "секрет", ts: 1 } } },
+    withdraw_requests: { w1: { user: "alice", amount: 10, status: "pending" } },
+    password_reset_requests: { r1: { user: "alice", status: "pending", time: 1 } },
+    feedback: { f0: { uid: "alice", role: "player", type: "question", message: "x", createdAt: 1, status: "new" } },
+    admin_notes: { alice: { text: "підозра", updatedBy: "theivankoo" } },
+    anti_cheat_flags: { alice: { x1: { type: "multi", ts: 1 } } },
+    admin_action_log: { e1: { by: "theivankoo", action: "ban" } },
+    promos: { SUMMER: { value: 100, uses: 5 } },
+    win_feed: { w1: { user: "alice", game: "slots", amount: 50, time: 1 } },
+    casino_stats: { totalWagered: 1000 },
+    jackpot: { amount: 500 },
+    leaderboards: { d1: { alice: { wins: 1 } } },
+    tournaments: { t1: { name: "Т", prize: 10 } },
+    tournament_scores: { t1: { alice: 3 } },
+    lottery: { w1: { pool: 100, tickets: { k1: { user: "alice", ts: 1 } } } },
+    online: { alice: true },
+    clans: { c1: { name: "Клан", members: { alice: true } } },
+    mp_rooms: { r1: { host: "alice" } },
+    site_config: { maintenance: false },
+    global_chat: { g1: { user: "alice", text: "hi", ts: 1 } },
   }), 200);
 }
 
 const OK = 200, NO = 401;
 
-async function phase1() {
-  const ns = "phase1";
-  await loadRules(ns, "database.rules.json");
-  await seed(ns);
-  const anon = client(ns, null);
-
-  assert.strictEqual(await anon.get(""), NO, "корінь бази не має читатись");
-  assert.strictEqual(await anon.get("users"), OK, "users читається (поки клієнт без Auth)");
-  assert.strictEqual(await anon.get("bot_config"), NO, "bot_config — лише сервер");
-  assert.strictEqual(await anon.get("user_secrets/alice"), NO, "хеші паролів");
-  assert.strictEqual(await anon.put("user_secrets/alice/pass", "x"), NO, "підміна хешу пароля");
-  assert.strictEqual(await anon.put("bot_config/adminChatId", 666), NO, "підміна адмін-чату бота");
-  assert.strictEqual(await anon.put("telegram_links/999", "alice"), NO, "прив'язка чужого Telegram");
-  assert.strictEqual(await anon.del("telegram_links/111"), OK, "відв'язати можна");
-  assert.strictEqual(await anon.put("notify_rate/x", { n: 0 }), NO, "скидання лімітів");
-  assert.strictEqual(await anon.put("users", {}), NO, "стерти всіх гравців одним записом");
-  assert.strictEqual(await anon.del("deposit_requests"), NO, "стерти колекцію заявок");
-
-  assert.strictEqual(await anon.put("users/alice/balance", 150), OK);
-  assert.strictEqual(await anon.put("users/alice/balance", -10), NO, "баланс у мінус");
-  assert.strictEqual(await anon.put("users/alice/balance", "1e9"), NO, "баланс рядком");
-  assert.strictEqual(await anon.put("users/alice/avatarUrl", 'x" onerror="alert(1)'), NO, "XSS в avatarUrl");
-  assert.strictEqual(await anon.put("users/alice/avatarUrl", "javascript:alert(1)"), NO, "javascript: URL");
-  assert.strictEqual(await anon.put("users/alice/avatarUrl", "https://i.imgur.com/a.png"), OK);
-  assert.strictEqual(await anon.put("users/alice/avatar", "data:image/png;base64,iVBORw0KGgo="), OK);
-  assert.strictEqual(await anon.put("users/alice/lastIP", "1.2.3.4"), NO, "відкрита IP");
-  assert.strictEqual(await anon.put("users/<img src=x>", { balance: 1 }), NO, "нік з HTML");
-  assert.strictEqual(await anon.put("users/newbie", { balance: 1000 }), OK, "звичайна реєстрація (фаза 1)");
-
-  assert.strictEqual(await anon.post("lobby_chat", { sender: "alice", text: "<3 привіт", time: 1 }), OK);
-  assert.strictEqual(await anon.post("lobby_chat", { sender: "alice", text: "x", avatarUrl: "x' onerror='a" }), NO, "XSS в чаті");
-  assert.strictEqual(await anon.post("lobby_chat", { sender: '"><svg onload=1>', text: "x" }), NO, "XSS у ніку чату");
-  assert.strictEqual(await anon.del("lobby_chat"), OK, "авто-очищення чату адміном (фаза 1 — ще без Auth)");
-
-  assert.strictEqual(await anon.put("telegram_link_tokens/t1", { nick: "alice", createdAt: 1 }), OK);
-  assert.strictEqual(await anon.put("telegram_link_tokens/t1", { nick: "bob", createdAt: 2 }), NO, "перезапис чужого токена");
-  await rooms(ns, client(ns, "alice"), client(ns, "bob"), anon);
-}
-
 async function strict() {
   const ns = "strict";
-  await loadRules(ns, "database.rules.strict.json");
+  await loadRules(ns, "database.rules.json");
   await seed(ns);
+  await closedByDefault(ns);
   const anon = client(ns, null);
   const alice = client(ns, "alice");
   const bob = client(ns, "bob");
@@ -248,6 +232,126 @@ async function feedbackAndPm(ns, owner, bob, carol) {
   assert.strictEqual(await bob.put("users/carol/cosmetics/frame", "avatar_gold"), NO, "чуже — ні");
 }
 
+// Без входу: майже нічого не читається і нічого не пишеться; гравець B не
+// читає й не пише приватне гравця A; звичайні ігрові дії проходять.
+async function closedByDefault(ns) {
+  const anon = client(ns, null);
+  const alice = client(ns, "alice");
+  const bob = client(ns, "bob");
+  const owner = client(ns, "theivankoo");
+
+  // ── Аноним: читання ──
+  const privateForAnon = [
+    "", "users", "users/alice", "users/alice/pass", "users/alice/balance", "user_secrets", "user_secrets/alice",
+    "user_private", "user_private/alice", "pm", "pm/alice", "support_chats", "support_chats/alice",
+    "ip_index", "ip_index/abc123", "deposit_requests", "withdraw_requests", "password_reset_requests",
+    "feedback", "feedback/f0", "admin_notes", "anti_cheat_flags", "admin_action_log", "promos", "promos/SUMMER",
+    "bot_config", "telegram_links", "lobby_chat", "global_chat", "clan_chats", "online", "clans", "mp_rooms",
+    "jackpot", "leaderboards", "tournaments", "tournament_scores", "lottery", "site_config", "settings",
+    "admin_settings", "announcement", "changelog", "casino_news", "rooms", "league_pub/s1", "sport_bets",
+  ];
+  for (const p of privateForAnon) assert.strictEqual(await anon.get(p), NO, `анонім не читає /${p}`);
+  // Публічне лише для екрана входу: стрічка виграшів і загальна сума ставок.
+  assert.strictEqual(await anon.get("win_feed"), OK, "стрічка виграшів на екрані входу");
+  assert.strictEqual(await anon.get("casino_stats"), OK, "сума ставок на екрані входу");
+
+  // ── Аноним: запис будь-куди ──
+  const anonWrites = {
+    "users/alice/balance": 1e9, "users/alice/avatar": "x", "users/eve": { balance: 1 }, "user_secrets/alice/pass": "x",
+    "user_private/alice/email": "a@b.c", "pm/alice/z": { from: "eve", to: "alice", text: "x", ts: 1 },
+    "support_chats/alice/z": { sender: "eve", text: "x" }, "ip_index/abc123/eve": 1,
+    "deposit_requests/z": { user: "alice", amount: 1, status: "pending" }, "withdraw_requests/z": { user: "alice", amount: 1 },
+    "password_reset_requests/z": { user: "alice", status: "pending", time: 1 },
+    "feedback/z": { uid: "alice", type: "question", message: "x", createdAt: 1, status: "new" },
+    "lobby_chat/z": { sender: "eve", text: "x" }, "global_chat/z": { user: "eve", text: "x" }, "clan_chats/c1/z": { user: "eve", text: "x" },
+    "casino_news/z": { text: "x" }, "site_config/maintenance": true, "settings/x": 1, "admin_settings/rtp": 1,
+    "announcement": "x", "changelog/z": { version: "1" }, "promos/FREE": { value: 1e6 }, "admin_notes/alice": { text: "x" },
+    "anti_cheat_flags/alice/z": { type: "x" }, "jackpot/amount": 1e9, "lottery/w1/pool": 1e9, "leaderboards/d1/eve": { wins: 1 },
+    "tournaments/z": { name: "x" }, "tournament_scores/t1/eve": 1, "mp_rooms/z": { host: "eve" }, "card_rooms/z": { a: 1 },
+    "pvp_rps/z": { a: 1 }, "pvp_chess/z": { a: 1 }, "pvp_coinflip/z": { a: 1 }, "pvp_predict/z": { a: 1 },
+    "clans/z": { name: "x" }, "online/alice": true, "investPool/total": 1, "p2p_loans/z": { a: 1 }, "global_roulette/z": { a: 1 },
+    "casino_stats/totalWagered": 0, "casino_events/x": { a: 1 }, "win_feed/z": { user: "eve", amount: 1 }, "chat_meta/lastClear": 1,
+    "chat_rate/eve": { ".sv": "timestamp" }, "leaderboard_weekly/eve": { rank: 1 }, "lottery_history/z": { winner: "eve" },
+    "telegram_link_tokens/z": { nick: "alice", createdAt: 1 }, "minesweeper_records/easy/alice": { t: 1 },
+  };
+  for (const [p, val] of Object.entries(anonWrites)) assert.strictEqual(await anon.put(p, val), NO, `анонім не пише в /${p}`);
+  assert.strictEqual(await anon.del("telegram_links/111"), NO, "анонім не відв'язує чужий Telegram");
+  assert.strictEqual(await anon.del("win_feed/w1"), NO, "анонім не стирає стрічку");
+
+  // ── Гравець B проти гравця A ──
+  assert.strictEqual(await bob.get("users/alice"), OK, "профіль іншого гравця видно залогіненим");
+  assert.strictEqual(await bob.get("pm/alice"), NO, "чужі ПМ не читаються");
+  assert.strictEqual(await bob.get("pm"), NO, "усі ПМ не читаються");
+  assert.strictEqual(await alice.get("pm/alice"), OK, "свої ПМ читаються");
+  assert.strictEqual(await bob.get("support_chats"), NO, "усі чати підтримки — лише адмін");
+  assert.strictEqual(await bob.get("withdraw_requests"), NO);
+  assert.strictEqual(await bob.get("password_reset_requests"), NO);
+  assert.strictEqual(await alice.get("password_reset_requests/r1"), OK, "свою заявку видно");
+  assert.strictEqual(await bob.get("password_reset_requests/r1"), NO, "чужу — ні");
+  assert.strictEqual(await alice.put("password_reset_requests/r2", { user: "alice", status: "pending", time: 2 }), NO, "заявку на скидання створює лише сервер");
+  assert.strictEqual(await bob.get("feedback/f0"), NO);
+  assert.strictEqual(await bob.get("admin_notes"), NO, "нотатки адміна");
+  assert.strictEqual(await bob.get("anti_cheat_flags"), NO, "прапорці античиту");
+  assert.strictEqual(await bob.get("admin_action_log"), NO, "журнал адміна");
+  assert.strictEqual(await bob.get("promos"), NO, "список промокодів");
+  assert.strictEqual(await bob.get("promos/SUMMER"), OK, "перевірка конкретного коду");
+  assert.strictEqual(await bob.get("user_secrets/bob"), NO, "навіть свій хеш браузер не читає");
+  assert.strictEqual(await owner.get("user_secrets/alice"), NO, "і адмін теж");
+  assert.strictEqual(await owner.put("user_secrets/alice/pass", "pbkdf2$1$aa$cc"), NO, "адмін не пише хеш у браузері");
+  assert.strictEqual(await owner.put("users/alice/pass", "pbkdf2$1$aa$cc"), NO, "пароль у публічному users/ не пише ніхто");
+  assert.strictEqual(await owner.put("users/alice/securityAnswerHash", "x"), NO);
+  assert.strictEqual(await alice.put("users/alice/birthDate", "2000-01-01"), NO, "дата народження — не в users/");
+  assert.strictEqual(await alice.put("users/alice/securityLog/x", { type: "login", ts: 1 }), NO, "журнал безпеки — не в users/");
+  assert.strictEqual(await alice.post("user_private/alice/securityLog", { type: "login", details: "IP: 1.2.x.x", ts: 1, ua: "UA" }), OK, "журнал безпеки — у приватному вузлі");
+  assert.strictEqual(await bob.get("user_private/alice/securityLog"), NO, "чужий журнал безпеки");
+  assert.strictEqual(await bob.put("users/alice/avatar", "😈"), NO, "чужа аватарка");
+  assert.strictEqual(await bob.put("online/alice", null), NO, "зняти чужий онлайн");
+  assert.strictEqual(await bob.put("leaderboards/d1/alice", { wins: 99 }), NO, "чужий рядок рейтингу");
+  assert.strictEqual(await bob.put("tournament_scores/t1/alice", 0), NO, "чужі бали турніру");
+  assert.strictEqual(await bob.put("lottery/w1/tickets/k9", { user: "alice", ts: 1 }), NO, "квиток на чуже ім'я");
+  assert.strictEqual(await bob.put("lottery/w1/pool", 0), NO, "обнулити пул лотереї");
+  assert.strictEqual(await bob.put("jackpot/amount", 0), NO, "обнулити джекпот");
+  assert.strictEqual(await bob.put("investPool/investors/alice", { amount: 0 }), NO, "чужий внесок в інвест-пул");
+  assert.strictEqual(await bob.post("win_feed", { user: "alice", game: "slots", amount: 1e9, time: 2 }), NO, "фальшивий виграш від чужого імені");
+  assert.strictEqual(await bob.del("win_feed/w1"), NO, "чужий запис стрічки");
+  assert.strictEqual(await bob.post("pm/alice", { from: "🏦 SlotOK", to: "alice", text: "фішинг", ts: 1 }), NO, "службове ПМ від імені SlotOK гравцю");
+  assert.strictEqual(await bob.del("pm/alice/p1"), NO, "стерти чуже ПМ");
+  assert.strictEqual(await bob.post("pm/theivankoo", { from: "📥 Система", to: "theivankoo", text: "Нова заявка", ts: 1 }), OK, "службове ПМ адміну (заявка на донат)");
+  assert.strictEqual(await bob.post("clan_chats/c1", { user: "alice", text: "x", ts: 1 }), NO, "клан-чат від чужого імені");
+  for (const p of ["site_config/maintenance", "settings/autoWipe", "admin_settings/rtp", "announcement", "changelog/z", "promos/FREE", "casino_events/double_winnings", "tournaments/t2", "casino_stats/totalWagered", "chat_meta/lastClear", "leaderboard_weekly/bob", "lottery_history/z", "p2p_loans/z", "global_roulette/z", "live_bets/z"]) {
+    assert.strictEqual(await bob.put(p, { x: 1 }), NO, `адмінський/серверний вузол /${p}`);
+  }
+  assert.strictEqual(await bob.put("casino_news/z", { text: "x" }), NO, "новину пише лише адмін");
+
+  // ── Звичайна гра ──
+  assert.strictEqual(await bob.get("users"), OK, "рейтинги з users (залогінений)");
+  assert.strictEqual(await bob.get("users", '&orderBy="totalWins"&limitToLast=10'), OK, "топ гравців");
+  assert.strictEqual(await bob.put("online/bob", true), OK, "свій онлайн");
+  assert.strictEqual(await bob.del("online/bob"), OK);
+  assert.strictEqual(await bob.get("online"), OK);
+  assert.strictEqual(await bob.put("leaderboards/d1/bob/wins", { ".sv": { increment: 1 } }), OK, "свій рядок рейтингу");
+  assert.strictEqual(await bob.get("leaderboards/d1"), OK);
+  assert.strictEqual(await bob.put("tournament_scores/t1/bob", 0), OK, "вступ у турнір");
+  assert.strictEqual(await bob.get("tournaments"), OK);
+  assert.strictEqual(await bob.put("lottery/w1/tickets/k2", { user: "bob", ts: 2 }), OK, "свій квиток");
+  assert.strictEqual(await bob.put("lottery/w1/pool", { ".sv": { increment: 80 } }), OK, "пул лотереї росте");
+  assert.strictEqual(await bob.put("jackpot/amount", { ".sv": { increment: 1 } }), OK, "внесок у джекпот");
+  assert.strictEqual(await owner.put("jackpot/amount", 0), OK, "виплата джекпоту адміном");
+  assert.strictEqual(await bob.patch("", { "investPool/total": { ".sv": { increment: 10 } }, "investPool/investors/bob/amount": { ".sv": { increment: 10 } } }), OK, "інвест-пул");
+  assert.strictEqual(await bob.post("win_feed", { user: "bob", game: "slots", amount: 10, time: 3 }), OK, "свій виграш у стрічку");
+  assert.strictEqual(await bob.post("clan_chats/c1", { user: "bob", text: "привіт", ts: 1 }), OK, "клан-чат");
+  assert.strictEqual(await bob.get("clan_chats/c1"), OK);
+  assert.strictEqual(await bob.put("clans/c1/members/bob", true), OK, "вступ у клан (поки на клієнті)");
+  assert.strictEqual(await bob.put("mp_rooms/r1/guest", "bob"), OK, "мультиплеєр-кімната (поки на клієнті)");
+  assert.strictEqual(await bob.get("site_config"), OK, "налаштування сайту — залогіненим");
+  assert.strictEqual(await bob.get("global_chat"), OK);
+  assert.strictEqual(await bob.put("casino_news/n1/reactions/like", { ".sv": { increment: 1 } }), OK, "реакція на новину");
+  assert.strictEqual(await bob.put("casino_news/n1/reactions/like", 0), NO, "обнулити реакції");
+  assert.strictEqual(await owner.put("site_config/maintenance", true), OK, "адмін вмикає техобслуговування");
+  assert.strictEqual(await owner.get("support_chats"), OK, "адмін бачить звернення в підтримку");
+  assert.strictEqual(await owner.get("pm/alice"), OK, "адмін бачить ПМ (модерація)");
+}
+
 // Онлайн-кімнати: пише лише сервер; приватне бачить лише власник; повний стан — ніхто.
 async function rooms(ns, alice, bob, anon) {
   const admin = client(ns, "admin");
@@ -296,9 +400,8 @@ async function rooms(ns, alice, bob, anon) {
         await new Promise((r) => setTimeout(r, 250));
       }
     }
-    await phase1();
     await strict();
-    console.log("OK — правила бази: фаза 1 і строгий режим відбивають атаки й пропускають звичайні дії");
+    console.log("OK — правила бази закриті за замовчуванням, відбивають атаки й пропускають звичайні дії");
   } finally {
     proc.kill();
   }

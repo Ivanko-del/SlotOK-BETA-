@@ -1,61 +1,8 @@
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
 // ╚══════════════════════════════════════════════════════════════╝
-var FIREBASE_SECURITY_RULES = `{
-  "rules": {
-"users": {
-  "$uid": {
-    ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    "balance":    { ".validate": "newData.isNumber() && newData.val() >= 0" },
-    "isAdmin":    { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
-    "isBot":      { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
-    "banned":     { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" }
-  }
-},
-"global_chat": {
-  ".read":  "auth != null",
-  ".write": "auth != null",
-  "$msg": {
-    ".validate": "newData.child('text').val().length <= 300 && newData.child('user').val().length <= 30"
-  }
-},
-"live_bets":        { ".read": "auth != null", ".write": "auth != null" },
-"deposit_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true || newData.child('user').val() === auth.uid", ".write": "auth != null" },
-"withdraw_requests":{ ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
-"password_reset_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
-"pm": {
-  "$user": {
-    ".read":  "$user === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    ".write": "auth != null"
-  }
-},
-"casino_stats":     { ".read": true, ".write": "auth != null" },
-"leaderboard":      { ".read": true, ".write": "auth != null" },
-"lobby_chat":       { ".read": "auth != null", ".write": "auth != null" },
-".read":  false,
-".write": false
-  }
-}`;
-
-function showFirebaseRules() {
-  const existing = document.getElementById('fbRulesModal');
-  if(existing) existing.remove();
-  const modal = document.createElement('div');
-  modal.id = 'fbRulesModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box;';
-  modal.innerHTML = `
-    <div style="max-width:600px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-family:var(--font-display);font-size:16px;color:var(--accent);">🛡️ Firebase Security Rules</div>
-        <button onclick="document.getElementById('fbRulesModal').remove()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);padding:6px 14px;cursor:pointer;">✕ Закрити</button>
-      </div>
-      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;font-family:var(--font-mono);font-size:11px;color:var(--fg-2);white-space:pre-wrap;overflow-x:auto;max-height:60vh;overflow-y:auto;">${FIREBASE_SECURITY_RULES}</div>
-      <button onclick="navigator.clipboard.writeText(FIREBASE_SECURITY_RULES);notify('✅ Rules скопійовано!','success')" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-md);padding:12px;color:var(--on-accent);font-weight:900;cursor:pointer;font-size:14px;">📋 Копіювати правила</button>
-      <div style="font-size:10px;color:var(--fg-4);margin-top:8px;text-align:center;">Вставте ці правила в Firebase Console → Realtime Database → Rules</div>
-    </div>`;
-  document.body.appendChild(modal);
-}
+// Правила бази живуть лише в database.rules.json (генерує scripts/build-rules.js,
+// деплой — firebase deploy --only database). Копії для вставки в адмінці більше немає.
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 2: Provably Fair — SHA-256 для Dice та Plinko        ║

@@ -7,7 +7,7 @@
 // the owner's. This endpoint moves the password check to the server and
 // hands back a Firebase Auth custom token (uid = nick). After
 // signInWithCustomToken() the database rules see auth.uid, which is what
-// database.rules.strict.json builds on.
+// database.rules.json builds on.
 //
 // GET                         → { serverAuth: bool }
 // POST { action: "login",    nick, password }
@@ -15,6 +15,11 @@
 // POST { action: "reset",    nick, answer, newPassword }      (security question)
 // POST { action: "change-password", nick, password, newPassword }
 // POST { action: "set-security", nick, password, question, answer }
+// POST { action: "nick-check",    nick }   → { free: bool }    (крок 1 реєстрації, до входу)
+// POST { action: "reset-info",    nick }   → { question | null }  (до входу: яке питання показати)
+// POST { action: "reset-request", nick }   → { ok, id }  (заявка адміну, якщо відповідь забуто)
+// POST { action: "admin-reset",   id }     + Authorization: Bearer <ID token адміна>
+//                                          → { ok, user }  (тимчасовий пароль іде гравцю в ПП)
 //
 // Success → 200 { token, nick }   (reset/change-password → 200 { ok: true })
 // Errors  → 4xx { error: <code>, message: <Ukrainian text for the player> }
@@ -29,6 +34,8 @@ const { getSecret, setSecrets, migrateSecrets } = require("../lib/secrets");
 const { setPrivate } = require("../lib/private-profile");
 const SlotOKPassword = require("../password.js");
 const { MIN_AGE, ageFromBirthDate } = require("../shared/age.js");
+const { verifyIdToken } = require("../lib/id-token");
+const { createResetRequest, approveResetRequest, tempPasswordText } = require("../lib/password-reset");
 
 const OWNER = "theivankoo";
 const NICK_RE = /^[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9_-]{3,20}$/;
@@ -230,7 +237,68 @@ async function setSecurity(req, res, body) {
   res.status(200).json({ ok: true });
 }
 
-const ACTIONS = { login, register, reset, "change-password": changePassword, "set-security": setSecurity };
+const NICK_KEY = /^[^.#$[\]/\x00-\x1f]{1,40}$/;
+
+// Чи вільний нік — до входу браузер users/ не читає (правила).
+async function nickCheck(req, res, body) {
+  const nick = str(body.nick, 40);
+  if (!nick || !NICK_KEY.test(nick)) return fail(res, 400, "bad_request", "Введіть нікнейм");
+  const okIp = await allow(`auth-ip:nick-check:${clientIp(req)}`, 60, 10 * 60000, { failClosed: true });
+  if (!okIp) return fail(res, 429, "rate_limited", "Забагато перевірок. Зачекай кілька хвилин.");
+  const [user, pass] = await Promise.all([dbGet(`users/${nick}/registeredAt`), getSecret(nick, "pass")]);
+  res.status(200).json({ free: user == null && !pass });
+}
+
+// До входу браузер не читає users/<нік> (правила пускають лише залогінених),
+// тож питання для відновлення віддає сервер. Хеш відповіді не віддається.
+async function resetInfo(req, res, body) {
+  const nick = str(body.nick, 40);
+  if (!nick || !NICK_KEY.test(nick)) return fail(res, 400, "bad_request", "Введіть нікнейм");
+  if (!(await throttle(req, "reset-info", nick))) return fail(res, 429, "rate_limited", "Забагато спроб. Зачекай 10 хвилин.");
+  const [pass, answer, question] = await Promise.all([
+    getSecret(nick, "pass"), getSecret(nick, "securityAnswerHash"), dbGet(`users/${nick}/securityQuestion`),
+  ]);
+  if (!pass) return fail(res, 404, "not_found", "Гравця не знайдено");
+  res.status(200).json({ question: answer && typeof question === "string" ? question : null });
+}
+
+// Заявка «не пам'ятаю відповідь»: раніше її писав у базу анонімний браузер.
+async function resetRequest(req, res, body) {
+  const nick = str(body.nick, 40);
+  if (!nick || !NICK_KEY.test(nick)) return fail(res, 400, "bad_request", "Введіть нікнейм");
+  const ip = clientIp(req);
+  const okIp = await allow(`auth-ip:reset-request:${ip}`, 5, 10 * 60000, { failClosed: true });
+  const okNick = okIp && (await allow(`auth-nick:reset-request:${nick.toLowerCase()}`, 2, 60 * 60000, { failClosed: true }));
+  if (!okNick) return fail(res, 429, "rate_limited", "Заявку вже подано. Спробуй пізніше.");
+  if (!(await getSecret(nick, "pass"))) return fail(res, 404, "not_found", "Гравця не знайдено");
+  const id = await createResetRequest(nick);
+  res.status(200).json({ ok: true, id });
+}
+
+// Скидання пароля з адмінки: хто адмін — з ID token, а не з тіла запиту.
+async function adminReset(req, res, body) {
+  let sender;
+  try {
+    sender = await verifyIdToken(String((req.headers || {}).authorization || "").replace(/^Bearer\s+/i, ""));
+  } catch (e) {
+    if (e.code === "bad_token") return fail(res, 401, "unauthorized", "Сесія застаріла — увійди ще раз");
+    throw e;
+  }
+  const isAdmin = sender.toLowerCase() === OWNER || (await dbGet(`users/${sender}/isAdmin`)) === true;
+  if (!isAdmin) return fail(res, 403, "forbidden", "Лише для адміністратора");
+  const id = str(body.id, 120);
+  if (!id || !NICK_KEY.test(id.slice(0, 40)) || /[.#$[\]/]/.test(id)) return fail(res, 400, "bad_request", "Невідома заявка");
+  const done = await approveResetRequest(id, sender);
+  if (!done) return fail(res, 409, "not_pending", "Заявку вже оброблено");
+  await dbPush(`pm/${done.user}`, { from: "🔑 SlotOK", to: done.user, text: tempPasswordText(done.tempPass), ts: Date.now() });
+  await dbIncrement(`users/${done.user}/pmUnread`, 1).catch(() => {});
+  res.status(200).json({ ok: true, user: done.user });
+}
+
+const ACTIONS = {
+  login, register, reset, "change-password": changePassword, "set-security": setSecurity,
+  "nick-check": nickCheck, "reset-info": resetInfo, "reset-request": resetRequest, "admin-reset": adminReset,
+};
 
 module.exports = async (req, res) => {
   const configured = !!getServiceAccount();

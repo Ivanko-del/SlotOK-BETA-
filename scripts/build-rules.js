@@ -1,18 +1,21 @@
-// Генерує правила Firebase Realtime Database:
-//   database.rules.json         — фаза 1: розгортається, щойно на Vercel задано
-//                                 FIREBASE_SERVICE_ACCOUNT_KEY (сервер тоді ходить
-//                                 у базу з адмін-токеном і правила його не стосуються).
-//                                 Клієнт ще без Firebase Auth, тож правила не знають,
-//                                 хто пише, — але закривають серверні вузли, корінь,
-//                                 видалення цілих колекцій і перевіряють типи/формат.
-//   database.rules.strict.json  — фаза 2: після того як гравці входять через
-//                                 api/auth.js (auth.uid = нік). Писати у свій акаунт
-//                                 може лише власник; поля адмінки — лише адмін.
+// Генерує правила Firebase Realtime Database → database.rules.json
+// (той файл, на який вказує firebase.json). Одна версія правил — колишню
+// «фазу 1» (відкрите читання й запис без входу) і database.rules.strict.json
+// прибрано в листопаді 2026 після блокування бази Google за витік даних.
 //
-// Запуск: node scripts/build-rules.js        (перезаписує обидва файли)
-//         node scripts/build-rules.js --check (лише перевіряє, що файли актуальні)
+// Принцип — закрито за замовчуванням:
+//   • без входу (auth == null) не читається майже нічого: лише стрічка виграшів
+//     і загальна сума ставок на екрані входу (win_feed, casino_stats);
+//   • будь-який запис — лише з Firebase Auth (api/auth.js видає custom token,
+//     auth.uid = нік) і лише у своє, адміну — адмінське, решту пише сервер
+//     (api/*, сервісний акаунт оминає правила);
+//   • хеші паролів/відповідей — лише user_secrets, куди браузер не має доступу
+//     ні на читання, ні на запис (навіть адмін). У users/ їх писати заборонено.
 //
-// Правила лежать у JSON без коментарів, тому пояснення — тут і в DEPLOY.md.
+// Запуск: node scripts/build-rules.js        (перезаписує database.rules.json)
+//         node scripts/build-rules.js --check (лише перевіряє, що файл актуальний)
+//
+// Правила лежать у JSON без коментарів, тому пояснення — тут, у SECURITY.md і DEPLOY.md.
 
 const fs = require("fs");
 const path = require("path");
@@ -43,144 +46,161 @@ function chatMessage(nickFields) {
   return { ...NICK_FIELDS(nickFields), ...AVATAR_FIELDS, ...MEDIA_FIELDS, ...TEXT(4000) };
 }
 
-function build(strict) {
-  const authed = strict ? "auth != null" : "true";
+function build() {
+  const authed = "auth != null";
   const isAdmin = `(auth != null && (auth.uid === '${OWNER}' || root.child('users').child(auth.uid).child('isAdmin').val() === true))`;
-  const admin = strict ? isAdmin : "true";
   // Роль support (users/<нік>/role, ставить лише адмін): читає всі звернення
   // і міняє в них статус/відповідь. Адмін має це завжди.
   const isSupport = `(auth != null && (${isAdmin} || root.child('users').child(auth.uid).child('role').val() === 'support'))`;
-  const owner = (v_) => (strict ? `auth != null && (auth.uid === ${v_} || ${isAdmin})` : "true");
-  // Запис лише на рівні елемента колекції: push()/update() працюють як і
-  // раніше, а стерти чи перезаписати всю колекцію одним запитом — ні.
-  const chatWrite = (senderField) => strict
-    ? `auth != null && (${isAdmin}` +
-      ` || (!data.exists() && newData.child('${senderField}').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now` +
-      ` && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000))` +
-      ` || (!newData.exists() && data.child('${senderField}').val() === auth.uid))`
-    : "true";
-  const openNode = (extra = {}) => ({ ".read": true, $k: { ".write": authed }, ...extra });
-  const adminNode = (extra = {}) => ({ ".read": true, ".write": admin, ...extra });
+  const owner = (v_) => `auth != null && (auth.uid === ${v_} || ${isAdmin})`;
+  const onlyMe = (v_) => `auth != null && auth.uid === ${v_}`;
+  // Чат: нове повідомлення лише від свого імені й разом з оновленням
+  // chat_rate/<нік> = now (антиспам ≥ 2 с, postChatMessage в app.js);
+  // видалити можна лише своє; адмін — будь-що.
+  const chatWrite = (senderField) =>
+    `auth != null && (${isAdmin}` +
+    ` || (!data.exists() && newData.child('${senderField}').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now` +
+    ` && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000))` +
+    ` || (!newData.exists() && data.child('${senderField}').val() === auth.uid))`;
+  // Новий запис від свого імені (поле field === auth.uid); видалити — своє або адмін.
+  const ownEntry = (field) =>
+    `auth != null && (${isAdmin} || (!data.exists() && newData.child('${field}').val() === auth.uid) || (!newData.exists() && data.child('${field}').val() === auth.uid))`;
+  // Спільний стан, який браузер поки пише сам (мультиплеєр, клани): лише
+  // залогінені, читати — лише залогінені. Справжній захист — перенос на
+  // сервер (api/room.js), див. ROADMAP.md.
+  const clientShared = (extra = {}) => ({ ".read": authed, $k: { ".write": authed }, ...extra });
+  const adminNode = (extra = {}) => ({ ".read": authed, ".write": isAdmin, ...extra });
+  const serverOnly = (read = authed) => ({ ".read": read, ".write": false });
+  const increaseOnlyNum = `auth != null && newData.isNumber() && (${isAdmin} || (data.exists() ? newData.val() >= data.val() : newData.val() >= 0))`;
 
-  // users/$u — у фазі 1 запис дозволено на рівні $u (як і зараз), але не на
-  // рівні всієї колекції: users.remove() / users.set({...}) більше не пройдуть.
-  // У строгому режимі $u як ціле не пишеться ніким, крім адміна (реєстрацію
-  // робить сервер), а кожне поле — власником; адмінські поля — лише адміном.
+  // users/$u — сам вузол ($u як ціле) пише лише адмін (реєстрацію робить
+  // сервер), кожне поле — власник; адмінські поля — лише адмін.
   const userFieldOwner = { ".write": owner("$u") };
-  const adminOnly = { ".write": admin };
+  const adminOnly = { ".write": isAdmin };
+  const increaseOnly = (f) => ({
+    ".write": `auth != null && (auth.uid === $u || ${isAdmin} || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))`,
+    ...(userNode[f] || {}),
+  });
   const userNode = {
     ".validate": `data.exists() || ($u.length >= 2 && $u.length <= 32 && !$u.matches(${BAD}) && !$u.matches(/[ \\\\&%]/))`,
     balance: v(`newData.isNumber() && newData.val() < 1000000000000000 && (newData.val() >= 0 || (data.exists() && newData.val() >= data.val()))`),
-    pass: v(str(300)),
-    securityAnswerHash: v(str(300)),
     tag: v(safe(120)),
     bioInput: v(str(1000)),
-    // email, lastIpHash, telegramChatId живуть у user_private/<нік> (читає лише власник/адмін);
-    // у публічний users/ їх більше не пишемо (видалення дозволене — міграція).
+    // Секрети й приватне — НЕ в users/ (вузол бачать усі залогінені):
+    // хеші → user_secrets (лише сервер), email/IP-хеш/Telegram/журнал безпеки →
+    // user_private (власник і адмін). Записати сюди не може ніхто, навіть адмін;
+    // видалити (міграція) — можна, бо .validate на видалення не діє.
+    pass: v("false"),
+    securityAnswerHash: v("false"),
+    securityAnswer: v("false"),
+    birthDate: v("false"),
     email: v("false"),
-    lastIP: v("false"), // відкриті IP у публічному вузлі більше не пишемо
+    lastIP: v("false"),
     lastIpHash: v("false"),
+    securityLog: v("false"),
     ...AVATAR_FIELDS,
   };
-  if (strict) {
+  Object.assign(userNode, {
+    "$field": userFieldOwner,
     // Вхідні лічильники/зарахування від інших гравців (ПМ, реферали, виграш у
     // PvP, переказ): чужий гравець може лише ЗБІЛЬШИТИ значення.
-    const increaseOnly = (f) => ({
-      ".write": `auth != null && (auth.uid === $u || ${isAdmin} || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))`,
-      ...(userNode[f] || {}),
-    });
-    Object.assign(userNode, {
-      "$field": userFieldOwner,
-      balance: increaseOnly("balance"),
-      pmUnread: increaseOnly("pmUnread"),
-      referrals: increaseOnly("referrals"),
-      // Хеші паролів та відповідей змінює лише сервер (api/auth.js).
-      pass: { ".write": "false", ...userNode.pass },
-      securityAnswerHash: { ".write": "false", ...userNode.securityAnswerHash },
-      isAdmin: adminOnly,
-      adminPerms: adminOnly,
-      role: { ...adminOnly, ...v("newData.isString() && newData.val().matches(/^(support|admin)$/)") },
-      // Магазин Слотіків (v121): Слотіки, куплене й лічильники предметів
-      // змінює лише сервер (lib/shop.js, api/play.js, api/round.js). Що надіто
-      // (cosmetics) — сам гравець; показується лише те, що він справді купив.
-      slotiky: adminOnly,
-      slotikyItems: adminOnly,
-      shopV2: adminOnly,
-      shopSpins: adminOnly,
-      shopFortune: adminOnly,
-      freeFortune: adminOnly,
-      minesHints: adminOnly,
-      crashInsurance: adminOnly,
-      lootboxInv: adminOnly,
-      cosmetics: { ...userFieldOwner, $slot: v("newData.val() === false || (newData.isString() && newData.val().matches(/^[a-z_]{1,32}$/))") },
-      banned: adminOnly,
-      banReason: adminOnly,
-      autoFrozen: adminOnly,
-      isBot: adminOnly,
-      // Значок «Підтримав проєкт» (донат) — ставить лише адмін/сервер, без ігрової цінності.
-      supporter: adminOnly,
-      supporterAt: adminOnly,
-      tag: { ...adminOnly, ...userNode.tag },
-      telegramChatId: { ".write": `auth != null && (auth.uid === $u || ${isAdmin}) && !newData.exists()` },
-      // Інші легітимні записи в чужий акаунт (знайдено пошуком по app.js):
-      // лічильники PvP/ботів, VIP-подарунок, вхідні перекази, записи історії.
-      totalWins: increaseOnly("totalWins"),
-      totalGames: increaseOnly("totalGames"),
-      totalWagered: increaseOnly("totalWagered"),
-      vipGiftUntil: increaseOnly("vipGiftUntil"),
-      supportUnread: increaseOnly("supportUnread"),
-      virtualCard: { ...userFieldOwner, totalIn: increaseOnly("totalIn") },
-      history: { ...userFieldOwner, $h: { ".write": "auth != null && !data.exists()" } },
-      cardTx: { ...userFieldOwner, $t: { ".write": "auth != null && !data.exists()" } },
-      // Вступ до клану підтверджує власник/офіцер клану, тобто чужий гравець.
-      clanId: { ".write": "auth != null" },
-      // Відмітки «нагороду вже забрано» ставить сервер (api/reward.js). Строгі
-      // правила вмикаються лише разом із серверним входом, тобто браузер у
-      // цьому режимі нагороди сам не видає — і не може скинути собі таймер.
-      lastDailyBonus: adminOnly,
-      dailyStreak: adminOnly,
-      lastHourlyBonus: adminOnly,
-      dailySpinDate: adminOnly,
-      lastPlayedAt: adminOnly,
-      welcomeBackAt: adminOnly,
-      cashbackTotalClaimed: adminOnly,
-      // Нагороди Battle Pass: власник може лише обнулити (новий сезон у addBpXP).
-      bpClaimed: { ".write": `auth != null && ((auth.uid === $u && !newData.exists()) || ${isAdmin})` },
-      bpBonusClaimed: { ".write": `auth != null && ((auth.uid === $u && newData.val() === 0) || ${isAdmin})` },
-    });
-    // Іменовані поля не підпадають під "$field", тож кожне поле без власного
-    // .write (аватарки, email, …) явно віддаємо власнику.
-    for (const [k, rule] of Object.entries(userNode)) {
-      if (!k.startsWith(".") && k !== "$field" && !(".write" in rule)) userNode[k] = { ...userFieldOwner, ...rule };
-    }
-  } else {
-    userNode[".write"] = true;
+    balance: increaseOnly("balance"),
+    pmUnread: increaseOnly("pmUnread"),
+    referrals: increaseOnly("referrals"),
+    isAdmin: adminOnly,
+    adminPerms: adminOnly,
+    role: { ...adminOnly, ...v("newData.isString() && newData.val().matches(/^(support|admin)$/)") },
+    // Магазин Слотіків (v121): Слотіки, куплене й лічильники предметів
+    // змінює лише сервер (lib/shop.js, api/play.js, api/round.js). Що надіто
+    // (cosmetics) — сам гравець; показується лише те, що він справді купив.
+    slotiky: adminOnly,
+    slotikyItems: adminOnly,
+    shopV2: adminOnly,
+    shopSpins: adminOnly,
+    shopFortune: adminOnly,
+    freeFortune: adminOnly,
+    minesHints: adminOnly,
+    crashInsurance: adminOnly,
+    lootboxInv: adminOnly,
+    cosmetics: { ...userFieldOwner, $slot: v("newData.val() === false || (newData.isString() && newData.val().matches(/^[a-z_]{1,32}$/))") },
+    banned: adminOnly,
+    banReason: adminOnly,
+    autoFrozen: adminOnly,
+    isBot: adminOnly,
+    // Значок «Підтримав проєкт» (донат) — ставить лише адмін/сервер, без ігрової цінності.
+    supporter: adminOnly,
+    supporterAt: adminOnly,
+    tag: { ...adminOnly, ...userNode.tag },
+    telegramChatId: { ".write": `auth != null && (auth.uid === $u || ${isAdmin}) && !newData.exists()` },
+    // Інші легітимні записи в чужий акаунт (знайдено пошуком по app.js):
+    // лічильники PvP/ботів, VIP-подарунок, вхідні перекази, записи історії.
+    totalWins: increaseOnly("totalWins"),
+    totalGames: increaseOnly("totalGames"),
+    totalWagered: increaseOnly("totalWagered"),
+    vipGiftUntil: increaseOnly("vipGiftUntil"),
+    supportUnread: increaseOnly("supportUnread"),
+    virtualCard: { ...userFieldOwner, totalIn: increaseOnly("totalIn") },
+    history: { ...userFieldOwner, $h: { ".write": "auth != null && !data.exists()" } },
+    cardTx: { ...userFieldOwner, $t: { ".write": "auth != null && !data.exists()" } },
+    // Вступ до клану підтверджує власник/офіцер клану, тобто чужий гравець.
+    clanId: { ".write": "auth != null" },
+    // Відмітки «нагороду вже забрано» ставить сервер (api/reward.js).
+    lastDailyBonus: adminOnly,
+    dailyStreak: adminOnly,
+    lastHourlyBonus: adminOnly,
+    dailySpinDate: adminOnly,
+    lastPlayedAt: adminOnly,
+    welcomeBackAt: adminOnly,
+    cashbackTotalClaimed: adminOnly,
+    // Нагороди Battle Pass: власник може лише обнулити (новий сезон у addBpXP).
+    bpClaimed: { ".write": `auth != null && ((auth.uid === $u && !newData.exists()) || ${isAdmin})` },
+    bpBonusClaimed: { ".write": `auth != null && ((auth.uid === $u && newData.val() === 0) || ${isAdmin})` },
+  });
+  // Іменовані поля не підпадають під "$field", тож кожне поле без власного
+  // .write (аватарки, email, …) явно віддаємо власнику.
+  for (const [k, rule] of Object.entries(userNode)) {
+    if (!k.startsWith(".") && k !== "$field" && !(".write" in rule)) userNode[k] = { ...userFieldOwner, ...rule };
   }
 
   const rules = {
     ".read": false,
     ".write": false,
 
+    // Профілі: бачать лише залогінені гравці (рейтинги, картка гравця, ПМ).
     users: {
-      ".read": true,
-      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "stats/gamesPlayed", "stats/biggestWin", "isBot", "role"],
-      ...(strict ? { ".write": isAdmin } : {}),
+      ".read": authed,
+      ".write": isAdmin,
+      ".indexOn": ["totalWagered", "totalWins", "totalProfit", "lastSeen", "stats/gamesPlayed", "stats/biggestWin", "isBot", "role", "flagged", "isAdmin"],
       $u: userNode,
     },
 
     // ── Лише сервер (api/*, бот). Адмін-токен сервера правила оминає. ──
     bot_config: { ".read": false, ".write": false },
-    // Хеші паролів/відповідей (lib/secrets.js). Адмін у строгому режимі може
-    // записати сюди тимчасовий пароль; прочитати — ніхто, крім сервера.
-    user_secrets: { ".read": false, ".write": strict ? isAdmin : "false" },
-    // Приватні поля профілю (email, lastIpHash, telegramChatId): лише власник і адмін
-    // (lib/private-profile.js, src/app/63-private-profile.js). users/ читають усі.
-    user_private: { ".read": false, ".write": false, $u: { ".read": owner("$u"), ".write": owner("$u"), ".validate": "newData.hasChildren() || !newData.exists()", email: v(safe(200)), lastIpHash: v(safe(64)), telegramChatId: v("newData.isString() || newData.isNumber()") } },
+    // Хеші паролів/відповідей і дата народження (lib/secrets.js): ні читання,
+    // ні запису з браузера — навіть адміну (скидання пароля — api/auth.js admin-reset).
+    user_secrets: { ".read": false, ".write": false },
+    // Приватні поля профілю: лише власник і адмін (lib/private-profile.js,
+    // src/app/63-private-profile.js). Журнал безпеки (маскована IP) — теж тут.
+    user_private: {
+      ".read": false,
+      ".write": false,
+      $u: {
+        ".read": owner("$u"),
+        ".write": owner("$u"),
+        ".validate": "newData.hasChildren() || !newData.exists()",
+        email: v(safe(200)),
+        lastIpHash: v(safe(64)),
+        telegramChatId: v("newData.isString() || newData.isNumber()"),
+        securityLog: { $e: {
+          ".validate": "newData.hasChildren(['type', 'ts'])",
+          type: v(safe(32)), details: v(str(200)), ts: v("newData.isNumber()"), ua: v(str(120)),
+          $other: v("false"),
+        } },
+      },
+    },
     // Індекс «хто з якого IP-хешу» для пошуку мультиакаунтів: бакет читає лише той,
-    // чий це поточний хеш (user_private/<ти>/lastIpHash), пише — кожен лише свій нік.
-    ip_index: strict
-      ? { ".read": false, ".write": false, $h: { ".read": `auth != null && (${isAdmin} || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)`, $n: { ".write": owner("$n"), ".validate": "newData.isNumber()" } } }
-      : { ".read": true, $h: { $n: { ".write": true } } },
+    // чий це поточний хеш (user_private/<ти>/lastIpHash), або адмін; пише — кожен лише свій нік.
+    ip_index: { ".read": false, ".write": false, $h: { ".read": `auth != null && (${isAdmin} || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)`, $n: { ".write": owner("$n"), ".validate": "newData.isNumber()" } } },
     notify_rate: { ".read": false, ".write": false },
     // Журнал серверних раундів (api/play.js) — лише сервер.
     game_rounds: { ".read": false, ".write": false },
@@ -188,135 +208,154 @@ function build(strict) {
     game_sessions: { ".read": false, ".write": false },
     telegram_state: { ".read": false, ".write": false },
     promo_redemptions: { ".read": false, ".write": false },
-    // Хто володіє Telegram-чатом, вирішує сервер; клієнт може лише відв'язати.
-    telegram_links: { ".read": false, $chat: { ".write": strict ? `auth != null && !newData.exists() && data.val() === auth.uid` : "!newData.exists()" } },
+    // Хто володіє Telegram-чатом, вирішує сервер; клієнт може лише відв'язати свій.
+    telegram_links: { ".read": false, $chat: { ".write": "auth != null && !newData.exists() && data.val() === auth.uid" } },
     telegram_link_tokens: {
       ".read": false,
       $t: {
-        ".write": "!data.exists() && newData.exists()",
-        ".validate": strict ? "newData.child('nick').val() === auth.uid" : "newData.hasChildren(['nick', 'createdAt'])",
+        ".write": "auth != null && !data.exists() && newData.exists()",
+        ".validate": "newData.child('nick').val() === auth.uid",
         nick: v(safe(64)),
         createdAt: v("newData.isNumber()"),
       },
     },
 
-    // ── Чати й соціальне ──
-    // Антиспам (строгий режим): нове повідомлення гравця проходить лише разом
-    // з оновленням chat_rate/<нік> = now (postChatMessage в app.js), і лише якщо
-    // попереднє було ≥ 2 с тому. Видалити можна лише своє; адмін — будь-що.
-    lobby_chat: { ".read": true, ".write": admin, ".indexOn": ["time"], $m: { ".write": chatWrite("sender"), ...chatMessage(["sender"]) } },
-    global_chat: { ".read": true, ".indexOn": ["ts"], $m: { ".write": chatWrite("user"), ...chatMessage(["user"]) } },
+    // ── Чати й соціальне (лише залогінені) ──
+    lobby_chat: { ".read": authed, ".write": isAdmin, ".indexOn": ["time"], $m: { ".write": chatWrite("sender"), ...chatMessage(["sender"]) } },
+    global_chat: { ".read": authed, ".indexOn": ["ts"], $m: { ".write": chatWrite("user"), ...chatMessage(["user"]) } },
     chat_rate: {
       ".read": false,
-      $u: { ".write": strict ? "auth != null && auth.uid === $u" : "true", ".validate": "newData.isNumber() && newData.val() === now" },
+      $u: { ".write": onlyMe("$u"), ".validate": "newData.isNumber() && newData.val() === now" },
     },
-    clan_chats: { ".read": true, $c: { $m: { ".write": authed, ...chatMessage(["user", "sender"]) } } },
-    // Строгий режим: у ПМ гравця не може писати той, кого він заблокував
-    // (users/<гравець>/blocked/<нік>); прибрати повідомлення з чужої скриньки
-    // так само не можна, свою копію — можна.
-    pm: { ".read": true, $u: { $m: {
-      ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin} || (newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists()))` : authed,
-      ...chatMessage(["from", "to"]),
-    } } },
+    clan_chats: { ".read": authed, $c: { $m: { ".write": ownEntry("user"), ...chatMessage(["user", "sender"]) } } },
+    // ПМ: скриньку pm/<нік> читає лише її власник (і адмін). Писати в чужу
+    // скриньку — лише нове повідомлення від свого імені (from === auth.uid) і
+    // лише якщо тебе не заблоковано. Службові повідомлення з довільним from
+    // («📥 Система», «💬 Підтримка») гравець може класти лише адміну; іншим
+    // гравцям їх пише адмін/support або сервер.
+    pm: { ".read": false, $u: {
+      ".read": owner("$u"),
+      $m: {
+        ".write": `auth != null && (auth.uid === $u || ${isSupport} || (!data.exists() && newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists()` +
+          ` && (newData.child('from').val() === auth.uid || $u === '${OWNER}' || root.child('users').child($u).child('isAdmin').val() === true)))`,
+        ...chatMessage(["from", "to"]),
+      },
+    } },
     support_chats: {
-      ".read": strict ? isAdmin : true,
-      $u: { ".read": strict ? `auth != null && auth.uid === $u` : true, $m: { ".write": owner("$u"), ...chatMessage(["sender"]) } },
+      ".read": isAdmin,
+      $u: { ".read": owner("$u"), $m: { ".write": owner("$u"), ...chatMessage(["sender"]) } },
     },
     casino_news: {
-      ".read": true,
-      ".write": admin,
+      ".read": authed,
+      ".write": isAdmin,
       $n: {
-        ".write": admin,
+        ".write": isAdmin,
         ...NICK_FIELDS(["author", "category", "emoji"]),
         ...AVATAR_FIELDS,
-        reactions: { ".write": authed },
+        // Лічильники реакцій і коментарів: +1 від будь-якого залогіненого, вниз — лише адмін.
+        reactions: { $r: { ".write": increaseOnlyNum } },
         myReaction: { ".write": authed },
-        commentCount: { ".write": authed },
-        comments: { $c: { ".write": authed, ...NICK_FIELDS(["author"]), ...AVATAR_FIELDS, ...TEXT(2000) } },
+        commentCount: { ".write": increaseOnlyNum },
+        comments: { $c: { ".write": ownEntry("author"), ...NICK_FIELDS(["author"]), ...AVATAR_FIELDS, ...TEXT(2000) } },
       },
     },
-    win_feed: openNode({ ".indexOn": ["ts"] }),
-    live_bets: openNode({ ".indexOn": ["ts"] }),
-    online: openNode(),
-    clans: openNode(),
-    chat_meta: openNode(),
+    // Стрічка виграшів — єдине, що видно на екрані входу (нік, гра, сума).
+    win_feed: { ".read": true, ".indexOn": ["ts", "time"], $k: { ".write": ownEntry("user") } },
+    // Хто зараз онлайн: кожен ставить/знімає лише свою позначку.
+    online: { ".read": authed, $u: { ".write": onlyMe("$u") } },
+    clans: clientShared(),
+    // Мітка авто-очищення лобі-чату — лише адмін (initChatAutoClear).
+    chat_meta: adminNode(),
 
     // ── Ігри, PvP, турніри ──
-    mp_rooms: openNode(),
-    card_rooms: openNode(),
-    pvp_rps: openNode(),
-    pvp_predict: openNode(),
-    pvp_chess: openNode(),
-    pvp_coinflip: openNode(),
+    mp_rooms: clientShared(),
+    card_rooms: clientShared(),
+    pvp_rps: clientShared(),
+    pvp_predict: clientShared(),
+    pvp_chess: clientShared(),
+    pvp_coinflip: clientShared(),
     // Онлайн-кімнати (api/room.js): пише лише сервер. Повний стан —
     // room_state/room_of/room_paid — правил не має, тобто закритий для браузера.
-    rooms: { ".read": true, ".write": false, $game: { ".indexOn": ["status"] } },
+    rooms: { ".read": authed, ".write": false, $game: { ".indexOn": ["status"] } },
     // Щоденні місії (lib/missions.js): гравець бачить лише свій вузол, пише сервер.
-    missions: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
-    // Рейтингові ліги (lib/leagues.js): особистий вузол читає власник, таблиця сезону публічна (лише нік, рейтинг, ліга, ігри); пише сервер.
-    league: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
-    league_pub: { ".read": false, ".write": false, $season: { ".read": true, ".indexOn": ["rating"] } },
-    room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": "auth != null && auth.uid === $nick" } } },
-    // Глядачі столу (src/app/59-spectate.js): кожен пише лише свій ключ (мітка часу, onDisconnect знімає), число бачать усі.
-    room_watchers: { ".read": true, ".write": false, $id: { $nick: { ".write": "auth != null && auth.uid === $nick", ".validate": "newData.isNumber()" } } },
+    missions: { ".read": false, ".write": false, $u: { ".read": onlyMe("$u") } },
+    // Рейтингові ліги (lib/leagues.js): особистий вузол читає власник, таблиця сезону — залогінені.
+    league: { ".read": false, ".write": false, $u: { ".read": onlyMe("$u") } },
+    league_pub: { ".read": false, ".write": false, $season: { ".read": authed, ".indexOn": ["rating"] } },
+    room_private: { ".read": false, ".write": false, $id: { $nick: { ".read": onlyMe("$nick") } } },
+    // Глядачі столу (src/app/59-spectate.js): кожен пише лише свій ключ, число бачать залогінені.
+    room_watchers: { ".read": authed, ".write": false, $id: { $nick: { ".write": onlyMe("$nick"), ".validate": "newData.isNumber()" } } },
     // Друзі й запрошення за стіл (lib/friends.js): пише лише сервер, кожен читає свої списки.
-    friends: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
-    friend_requests: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
-    room_invites: { ".read": false, ".write": false, $u: { ".read": "auth != null && auth.uid === $u" } },
-    // Спільні ігри за розкладом (api/live.js): пише лише сервер, бачать усі.
-    // Ставки live_open/live_paid — без правил, тобто лише сервер.
-    live_bets: { ".read": true, ".write": false },
-    live_results: { ".read": true, ".write": false },
-    live_crash: { ".read": true, ".write": false },
+    friends: { ".read": false, ".write": false, $u: { ".read": onlyMe("$u") } },
+    friend_requests: { ".read": false, ".write": false, $u: { ".read": onlyMe("$u") } },
+    room_invites: { ".read": false, ".write": false, $u: { ".read": onlyMe("$u") } },
+    // Спільні ігри за розкладом (api/live.js) і глобальна рулетка: пише лише сервер.
+    live_bets: serverOnly(),
+    live_results: serverOnly(),
+    live_crash: serverOnly(),
+    global_roulette: serverOnly(),
     // Рекорди соло-Сапера: кожен пише лише свій рядок, кращий час — число секунд
     minesweeper_records: {
-      ".read": true,
-      $level: { ".indexOn": ["t"], $nick: { ".write": "auth != null && auth.uid === $nick", t: v("newData.isNumber() && newData.val() > 0 && newData.val() < 100000") } },
+      ".read": authed,
+      $level: { ".indexOn": ["t"], $nick: { ".write": onlyMe("$nick"), t: v("newData.isNumber() && newData.val() > 0 && newData.val() < 100000") } },
     },
-    global_roulette: openNode(),
     // Ставки на спорт прибрано. Вузол лишився лише для одноразового повернення
-    // відкритих ставок (src/app/27-sports.js): у строгому режимі нові ставки
-    // писати не можна, а власник може лише перевести СВОЮ pending-ставку в refunded.
-    sport_bets: strict
-      ? {
-          ".read": true,
-          ".indexOn": ["userId"],
-          $b: {
-            status: { ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid" },
-            refundedAt: { ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid" },
-          },
-        }
-      : openNode({ ".indexOn": ["userId"] }),
-    tournaments: openNode(),
-    tournament_scores: openNode(),
-    leaderboards: openNode(),
-    leaderboard_weekly: openNode(),
-    lottery: openNode(),
-    lottery_history: openNode(),
-    jackpot: openNode(),
-    casino_stats: openNode(),
-    casino_events: openNode(),
-    investPool: openNode(),
-    p2p_loans: openNode(),
+    // відкритих ставок (src/app/27-sports.js): нових ставок писати не можна,
+    // власник може лише перевести СВОЮ pending-ставку в refunded.
+    sport_bets: {
+      ".read": authed,
+      ".indexOn": ["userId"],
+      $b: {
+        status: { ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid" },
+        refundedAt: { ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid" },
+      },
+    },
+    // Турніри створює адмін; бали — кожен лише свої.
+    tournaments: adminNode(),
+    tournament_scores: { ".read": authed, $t: { ".write": isAdmin, $u: { ".write": owner("$u"), ".validate": "newData.isNumber()" } } },
+    // Денні/тижневі рейтинги: кожен пише лише свій рядок.
+    leaderboards: { ".read": authed, $period: { ".write": isAdmin, $u: { ".write": owner("$u") } } },
+    leaderboard_weekly: adminNode(),
+    // Лотерея: квиток — лише на себе; пул — лише зростає; розіграш — адмін.
+    lottery: {
+      ".read": authed,
+      ".write": isAdmin,
+      $week: {
+        tickets: { $t: { ".write": `auth != null && !data.exists() && newData.child('user').val() === auth.uid` } },
+        pool: { ".write": increaseOnlyNum },
+      },
+    },
+    lottery_history: adminNode(),
+    // Джекпот: кожна ставка додає частку (лише зростання); виплату/обнулення робить адмін.
+    jackpot: { ".read": authed, ".write": isAdmin, amount: { ".write": increaseOnlyNum } },
+    // Загальна сума ставок — рахує адмін, показується на екрані входу.
+    casino_stats: { ".read": true, ".write": isAdmin },
+    casino_events: adminNode(),
+    // Інвест-пул: свій внесок — лише власник; загальна сума — будь-який залогінений
+    // (вивід зменшує її) — справжній захист лише на сервері, див. ROADMAP.md.
+    investPool: { ".read": authed, ".write": isAdmin, total: { ".write": authed, ".validate": "newData.isNumber()" }, investors: { $u: { ".write": owner("$u") } } },
+    p2p_loans: adminNode(),
 
     // ── Звернення: питання, скарги, пропозиції, скарги на гравців з ПМ ──
-    feedback: feedbackNode(strict, isAdmin, isSupport),
+    feedback: feedbackNode(isAdmin, isSupport),
 
-    // ── Заявки: створює гравець, статус міняє адмін або сервер ──
-    deposit_requests: requestNode(strict, isAdmin),
-    withdraw_requests: requestNode(strict, isAdmin),
-    password_reset_requests: requestNode(strict, isAdmin, true),
+    // ── Заявки: створює гравець (скидання пароля — сервер), статус міняє адмін або сервер ──
+    deposit_requests: requestNode(isAdmin),
+    withdraw_requests: requestNode(isAdmin),
+    password_reset_requests: requestNode(isAdmin, false),
 
-    // ── Адмінське ──
+    // ── Адмінське ── (налаштування читають лише залогінені гравці)
     site_config: adminNode(),
     settings: adminNode(),
     admin_settings: adminNode(),
     announcement: adminNode(),
-    changelog: adminNode(),
-    promos: adminNode(),
-    admin_notes: { ".read": strict ? isAdmin : true, ".write": admin },
-    admin_action_log: { ".read": strict ? isAdmin : true, $e: { ".write": strict ? `${isAdmin} && !data.exists()` : "!data.exists()" } },
-    anti_cheat_flags: { ".read": strict ? isAdmin : true, ".write": admin, $u: { $f: { ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin})` : "true" } } },
+    changelog: adminNode({ ".indexOn": ["date", "version"] }),
+    // Промокоди: список бачить лише адмін; конкретний код гравець перевіряє
+    // в activatePromo() (src/app/13-misc.js) — тож його читання лишається.
+    promos: { ".read": isAdmin, ".write": isAdmin, $code: { ".read": authed } },
+    admin_notes: { ".read": isAdmin, ".write": isAdmin },
+    admin_action_log: { ".read": isAdmin, $e: { ".write": `${isAdmin} && !data.exists()` } },
+    anti_cheat_flags: { ".read": isAdmin, ".write": isAdmin, $u: { $f: { ".write": owner("$u") } } },
   };
   return { rules };
 }
@@ -325,7 +364,7 @@ function build(strict) {
 // відповіді), читає — свої (запитом orderByChild('uid').equalTo(<нік>)) або
 // всі, якщо support/admin. Статус і відповідь міняє лише support/admin.
 // Фаза 1 не знає, хто пише, — там лише перевірка формату.
-function feedbackNode(strict, isAdmin, isSupport) {
+function feedbackNode(isAdmin, isSupport) {
   const fields = {
     uid: v(safe(64)),
     role: v("newData.isString() && newData.val().matches(/^(player|support|admin)$/)"),
@@ -345,7 +384,6 @@ function feedbackNode(strict, isAdmin, isSupport) {
     $other: v("false"),
   };
   const validate = "newData.hasChildren(['uid', 'type', 'message', 'createdAt', 'status'])";
-  if (!strict) return { ".read": true, ".indexOn": ["uid", "status", "createdAt"], $id: { ".write": true, ".validate": validate, ...fields } };
   const staff = { ".write": isSupport };
   return {
     ".read": `${isSupport} || (auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid)`,
@@ -363,9 +401,9 @@ function feedbackNode(strict, isAdmin, isSupport) {
   };
 }
 
-function requestNode(strict, isAdmin, anonymousCreate = false) {
-  if (!strict) return { ".read": true, ".indexOn": ["user", "status"], $id: { ".write": true } };
-  // Створити заявку може гравець від свого імені (скидання пароля — і без входу),
+function requestNode(isAdmin, playerCreate = true) {
+  // Створити заявку може гравець від свого імені (заявку на скидання пароля
+  // створює лише сервер — api/auth.js reset-request),
   // змінювати існуючу (підтвердити/відхилити) — лише адмін або сервер.
   return {
     // Гравець бачить лише власні заявки — і лише запитом orderByChild('user').equalTo(<свій нік>).
@@ -373,7 +411,7 @@ function requestNode(strict, isAdmin, anonymousCreate = false) {
     ".indexOn": ["user", "status"],
     $id: {
       ".read": `auth != null && data.child('user').val() === auth.uid`,
-      ".write": `${isAdmin} || (!data.exists() && ${anonymousCreate ? "true" : "auth != null && newData.child('user').val() === auth.uid"}) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')`,
+      ".write": `${isAdmin} || (${playerCreate ? "!data.exists() && auth != null && newData.child('user').val() === auth.uid" : "false"}) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')`,
       user: v(safe(64)),
       amount: v("newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"),
     },
@@ -382,9 +420,9 @@ function requestNode(strict, isAdmin, anonymousCreate = false) {
 
 const ROOT = path.join(__dirname, "..");
 const outputs = {
-  "database.rules.json": build(false),
-  "database.rules.strict.json": build(true),
+  "database.rules.json": build(),
 };
+const REMOVED = ["database.rules.strict.json"]; // друга версія правил — більше не існує
 
 if (require.main === module) {
   const check = process.argv.includes("--check");
@@ -401,6 +439,12 @@ if (require.main === module) {
       fs.writeFileSync(full, text);
       console.log("wrote", file);
     }
+  }
+  for (const file of REMOVED) {
+    const full = path.join(ROOT, file);
+    if (!fs.existsSync(full)) continue;
+    if (check) { console.error(`${file} не має існувати — запусти: node scripts/build-rules.js`); stale = true; }
+    else { fs.unlinkSync(full); console.log("removed", file); }
   }
   if (stale) process.exit(1);
 }

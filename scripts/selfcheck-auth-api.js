@@ -55,6 +55,17 @@ global.fetch = async (url, opts = {}) => {
   throw new Error("unexpected " + method);
 };
 
+// Підписувач ID token для admin-reset (як Google securetoken).
+const { privateKey: gKey, publicKey: gPub } = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+require("../lib/id-token")._setCertsForTests({ g1: gPub.export({ type: "spki", format: "pem" }) });
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+function idToken(uid) {
+  const now = Math.floor(Date.now() / 1000);
+  const h = b64({ alg: "RS256", kid: "g1", typ: "JWT" });
+  const p = b64({ sub: uid, aud: "nye-slotok", iss: "https://securetoken.google.com/nye-slotok", iat: now - 10, auth_time: now - 10, exp: now + 3600 });
+  return `${h}.${p}.${crypto.sign("RSA-SHA256", Buffer.from(`${h}.${p}`), gKey).toString("base64url")}`;
+}
+
 const handler = require("../api/auth.js");
 const { _resetForTests } = require("../lib/google-auth");
 const SlotOKPassword = require("../password.js");
@@ -189,6 +200,44 @@ function decodeJwt(token) {
   assert.strictEqual(tree.users.customq.securityQuestion, "first_phone");
   assert.strictEqual((await call("POST", { action: "reset", nick: "customq", answer: "nokia 3310", newPassword: "fresh99" }, { "x-real-ip": "40.0.0.10" })).status, 200, "нова відповідь працює");
   assert.strictEqual((await call("POST", { action: "reset", nick: "alice", answer: "x", newPassword: "fresh99" }, { "x-real-ip": "40.0.0.11" })).status, 404, "немає відповіді — 404 (клієнт піде в Telegram)");
+
+  // --- крок 1 реєстрації: чи вільний нік (без читання users/ з браузера) ---
+  assert.deepStrictEqual((await call("POST", { action: "nick-check", nick: "customq" }, { "x-real-ip": "50.0.0.9" })).data, { free: false });
+  assert.deepStrictEqual((await call("POST", { action: "nick-check", nick: "freshnick" }, { "x-real-ip": "50.0.0.9" })).data, { free: true });
+
+  // --- відновлення без входу: питання віддає сервер, хеш — ні ---
+  let ri = await call("POST", { action: "reset-info", nick: "customq" }, { "x-real-ip": "50.0.0.1" });
+  assert.strictEqual(ri.status, 200);
+  assert.deepStrictEqual(ri.data, { question: "first_phone" }, "лише текст питання, без хешів");
+  ri = await call("POST", { action: "reset-info", nick: "alice" }, { "x-real-ip": "50.0.0.1" });
+  assert.deepStrictEqual(ri.data, { question: null }, "немає відповіді — клієнт піде в Telegram");
+  assert.strictEqual((await call("POST", { action: "reset-info", nick: "ghost" }, { "x-real-ip": "50.0.0.1" })).status, 404);
+
+  // --- заявка «не пам'ятаю відповідь» створюється сервером, з лімітом ---
+  const rq = await call("POST", { action: "reset-request", nick: "alice" }, { "x-real-ip": "50.0.0.2" });
+  assert.strictEqual(rq.status, 200);
+  const reqId = rq.data.id;
+  assert.deepStrictEqual({ user: tree.password_reset_requests[reqId].user, status: tree.password_reset_requests[reqId].status }, { user: "alice", status: "pending" });
+  assert.ok(Object.values(tree.pm.theivankoo).some((m) => /alice/.test(m.text)), "адмін отримав ПМ про заявку");
+  await call("POST", { action: "reset-request", nick: "alice" }, { "x-real-ip": "50.0.0.3" });
+  assert.strictEqual((await call("POST", { action: "reset-request", nick: "alice" }, { "x-real-ip": "50.0.0.4" })).status, 429, "заявками не засипати");
+  assert.strictEqual((await call("POST", { action: "reset-request", nick: "ghost" }, { "x-real-ip": "50.0.0.5" })).status, 404);
+
+  // --- скидання з адмінки: лише адмін за ID token, хеш — лише в user_secrets ---
+  const adminReset = (who, id) => call("POST", { action: "admin-reset", id }, { "x-real-ip": "50.0.0.6", ...(who ? { authorization: "Bearer " + idToken(who) } : {}) });
+  assert.strictEqual((await adminReset(null, reqId)).status, 401, "без входу");
+  assert.strictEqual((await adminReset("bob", reqId)).status, 403, "гравець не скидає чужий пароль");
+  const passBefore = tree.user_secrets.alice.pass;
+  const ar = await adminReset("theivankoo", reqId);
+  assert.strictEqual(ar.status, 200);
+  assert.notStrictEqual(tree.user_secrets.alice.pass, passBefore);
+  assert.ok(tree.user_secrets.alice.pass.startsWith("pbkdf2$"));
+  assert.strictEqual(tree.users.alice.pass, undefined, "у публічному users/ — нічого");
+  assert.strictEqual(tree.password_reset_requests[reqId].status, "done");
+  const tempMsg = Object.values(tree.pm.alice).find((m) => /тимчасовий пароль/.test(m.text));
+  const temp = /пароль: (\S+)/.exec(tempMsg.text)[1];
+  assert.ok((await SlotOKPassword.verify(temp, tree.user_secrets.alice.pass)).ok, "тимчасовий пароль з ПМ підходить");
+  assert.strictEqual((await adminReset("theivankoo", reqId)).status, 409, "двічі не скинути");
 
   console.log("OK — api/auth: 503 без ключа, перевірка пароля на сервері, підписаний custom token, ліміти, безпечна реєстрація");
 })().catch((e) => {
