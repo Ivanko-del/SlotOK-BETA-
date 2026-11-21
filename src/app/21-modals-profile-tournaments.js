@@ -92,16 +92,7 @@ async function doSetSecurityQuestion() {
   const srv = await serverAuthCall('set-security', { nick: currentUser, password, question, answer });
   if(srv.status === 200) return done();
   if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
-  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
-  // Серверний вхід ще не ввімкнено — старий шлях у браузері.
-  try {
-    if(!(await SlotOKPassword.verify(password, userData.pass)).ok) return showErr('Поточний пароль невірний');
-    await db.ref('users/' + currentUser).update({
-      securityQuestion: question,
-      securityAnswerHash: await SlotOKPassword.hash(answer.toLowerCase()),
-    });
-    done();
-  } catch(e) { console.error(e); showErr('Не вдалося зберегти'); }
+  showErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function openGiftVIPModal() {
@@ -133,7 +124,7 @@ function showSecurityLog() {
     '<div style="font-size:15px;font-weight:900;color:var(--neg);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">📋 Журнал безпеки</div>' +
     '<div id="securityLogList" style="color:var(--fg-4);font-size:12px;">Завантаження...</div>'
   );
-  db.ref('users/'+currentUser+'/securityLog').limitToLast(20).once('value').then(function(snap) {
+  db.ref('user_private/'+currentUser+'/securityLog').limitToLast(20).once('value').then(function(snap) {
     var el = document.getElementById('securityLogList'); if(!el) return;
     var data = snap.val();
     if(!data){el.innerHTML='<div style="color:var(--fg-4);text-align:center;padding:20px;">Подій немає</div>';return;}
@@ -808,18 +799,19 @@ function renderPwrCard(id, req) {
 }
 
 async function approvePasswordReset(id, user) {
-  const tempPass = randomTempPassword();
-  const tempPassHash = await SlotOKPassword.hash(tempPass);
-  db.ref('users/' + user + '/pass').set(tempPassHash).then(() => {
-    db.ref('password_reset_requests/' + id).update({ status: 'done', approvedAt: Date.now(), approvedBy: currentUser });
-    db.ref('pm/' + user + '/' + db.ref().push().key).set({
-      from: '🔑 SlotOK', to: user,
-      text: `🔑 Ваш пароль скинуто адміністратором. Новий тимчасовий пароль: ${tempPass}\nБудь ласка, увійдіть і одразу змініть його в налаштуваннях.`,
-      ts: Date.now()
+  // Тимчасовий пароль генерує й зберігає сервер (у закритий user_secrets) і сам
+  // надсилає гравцю в ПП; браузер адміна хешу не бачить.
+  let r, data = {};
+  try {
+    r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, await authHeaders()),
+      body: JSON.stringify({ action: 'admin-reset', id }),
     });
-    db.ref('users/' + user + '/pmUnread').set(firebase.database.ServerValue.increment(1));
-    notify('✅ Пароль для ' + user + ' скинуто, надіслано в ПП', 'success');
-  }).catch(() => notify('Помилка скидання пароля', 'error'));
+    try { data = await r.json(); } catch(e) {}
+  } catch(e) { return notify('Немає зʼєднання з сервером', 'error'); }
+  if(r.status === 200) return notify('✅ Пароль для ' + user + ' скинуто, надіслано в ПП', 'success');
+  notify(data.message || 'Помилка скидання пароля', 'error');
 }
 
 function rejectPasswordReset(id) {

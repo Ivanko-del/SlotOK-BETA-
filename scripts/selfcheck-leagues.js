@@ -213,7 +213,7 @@ const mkRoom = (id, game, players, winners, extra = {}) => ({
   // ── форма публічного вузла й індекс правил ──
   const rules = require("../database.rules.json").rules;
   assert.ok(rules.league_pub.$season[".indexOn"].includes("rating"));
-  assert.strictEqual(rules.league_pub.$season[".read"], true);
+  assert.strictEqual(rules.league_pub.$season[".read"], "auth != null", "таблицю сезону бачать залогінені");
   assert.ok(rules.league.$u[".read"].includes("auth.uid"));
   assert.ok(!rules.league_done, "league_done закритий (без правил)");
 

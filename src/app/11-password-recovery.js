@@ -65,21 +65,14 @@ function pwrErr(msg) {
   if(el) { el.textContent = '⚠️ ' + msg; el.style.display = 'block'; }
 }
 
-function pwrLookup() {
+async function pwrLookup() {
   const nick = (document.getElementById('pwrNick')?.value || '').trim();
   if(!nick) return pwrErr('Введіть нікнейм');
-  db.ref('users/' + nick).once('value', snap => {
-    if(!snap.exists()) return pwrErr('Гравця не знайдено');
-    const data = snap.val();
-    // Хеш відповіді сервер переносить у закритий user_secrets, тож тут його
-    // вже може не бути — орієнтуємось на саме питання. Якщо відповіді насправді
-    // немає, сервер скаже not_found і ми перейдемо на Telegram.
-    if(data.securityQuestion && (data.securityAnswerHash || data.hasSecurityAnswer || !data.pass)) {
-      pwrShowQuestion(nick, data.securityQuestion);
-    } else {
-      pwrShowTelegramFallback(nick);
-    }
-  }, () => pwrErr('Помилка звʼязку з базою'));
+  // До входу браузер не читає users/<нік> — яке питання показати, каже сервер.
+  const srv = await serverAuthCall('reset-info', { nick });
+  if(srv.status === 200) return srv.data.question ? pwrShowQuestion(nick, srv.data.question) : pwrShowTelegramFallback(nick);
+  if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
+  pwrErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function pwrShowQuestion(nick, qKey) {
@@ -118,29 +111,7 @@ async function pwrVerifyAndReset(nick) {
   if(srv.status === 200) return pwrDone();
   if(srv.status === 404 && srv.data.error === 'not_found') return pwrShowTelegramFallback(nick);
   if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
-  if(await serverAuthEnabled()) return pwrErr('Сервер недоступний. Спробуй за хвилину.');
-
-  db.ref('users/' + nick + '/securityAnswerHash').once('value', async snap => {
-    let check, newPassHash;
-    try {
-      // verify() сама розбереться, у якому форматі лежить стара відповідь —
-      // у частини акаунтів це ще голий SHA-256 з попередньої схеми.
-      check = await SlotOKPassword.verify(answer.toLowerCase(), snap.val());
-      if(!check.ok) return pwrErr('Невірна відповідь');
-      newPassHash = await SlotOKPassword.hash(p1);
-    } catch(e) {
-      console.error('Password reset error:', e);
-      return pwrErr(e.message || 'Не вдалося перевірити відповідь');
-    }
-    const updates = { ['users/' + nick + '/pass']: newPassHash };
-    if(check.needsUpgrade) updates['users/' + nick + '/securityAnswerHash'] = await SlotOKPassword.hash(answer.toLowerCase());
-    db.ref().update(updates).then(() => {
-      document.getElementById('pwrModal')?.remove();
-      notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
-      const loginName = document.getElementById('loginName');
-      if(loginName) loginName.value = nick;
-    }).catch(() => pwrErr('Помилка запису. Спробуйте ще.'));
-  }, () => pwrErr('Помилка звʼязку з базою'));
+  pwrErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function pwrShowTelegramFallback(nick) {
@@ -155,41 +126,22 @@ function pwrShowTelegramFallback(nick) {
     <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram(${jsArg(nick)})">✈️ Подати заявку через Telegram</button>`;
 }
 
-function pwrRequestViaTelegram(nick) {
+async function pwrRequestViaTelegram(nick) {
   const btn = document.getElementById('pwrTgBtn');
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Надсилаємо...'; }
-  const reqId = nick + '_' + Date.now();
-  db.ref('password_reset_requests/' + reqId).set({
-    user: nick, status: 'pending', time: Date.now()
-  }).then(() => {
-    notifyBot('reset', reqId);
-    db.ref('pm/theivankoo/' + db.ref().push().key).set({
-      from: '📥 Система', to: 'theivankoo',
-      text: `🔑 Заявка на відновлення пароля від @${nick}. Перевірте особу через Telegram і скиньте пароль в адмін-панелі.`,
-      ts: Date.now()
-    });
-    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    db.ref('users').orderByChild('isAdmin').equalTo(true).limitToFirst(5).once('value', snap => {
-      const admins = snap.val() || {};
-      Object.keys(admins).forEach(admNick => {
-        if(admNick === 'theivankoo') return;
-        db.ref('pm/' + admNick + '/' + db.ref().push().key).set({
-          from: '📥 Система', to: admNick,
-          text: `🔑 Заявка на відновлення пароля від @${nick}`,
-          ts: Date.now()
-        });
-        db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
-      });
-    });
-    const tgUrl = `https://t.me/${TG_BOT_USERNAME}?start=reset_${nick}`;
-    window.open(tgUrl, '_blank');
-    const status = document.getElementById('pwrTgStatus');
-    if(status) { status.textContent = '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.'; status.style.display = 'block'; }
-    if(btn) { btn.textContent = '✅ Заявку подано'; }
-  }).catch(() => {
-    pwrErr('Не вдалось подати заявку. Спробуйте ще.');
+  // Заявку створює сервер (з лімітом); анонім у базу більше не пише.
+  const srv = await serverAuthCall('reset-request', { nick });
+  if(srv.status !== 200) {
+    pwrErr(serverAuthIsFinal(srv) ? srv.data.message : 'Не вдалось подати заявку. Спробуйте ще.');
     if(btn) { btn.disabled = false; btn.textContent = '✈️ Подати заявку через Telegram'; }
-  });
+    return;
+  }
+  notifyBot('reset', srv.data.id);
+  const tgUrl = `https://t.me/${TG_BOT_USERNAME}?start=reset_${nick}`;
+  window.open(tgUrl, '_blank');
+  const status = document.getElementById('pwrTgStatus');
+  if(status) { status.textContent = '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.'; status.style.display = 'block'; }
+  if(btn) { btn.textContent = '✅ Заявку подано'; }
 }
 
 
@@ -261,9 +213,9 @@ async function regSubmit() {
   const btn = document.getElementById('regNextBtn');
   if(btn) btn.disabled = true;
   try {
-    const r = await fetch(authShallowUrl('users/' + encodeURIComponent(n)));
-    if(r.ok && (await r.json()) !== null) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
-  } catch(e) {} finally { if(btn) btn.disabled = false; }
+    const r = await serverAuthCall('nick-check', { nick: n });
+    if(r.status === 200 && r.data.free === false) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
+  } finally { if(btn) btn.disabled = false; }
   const errEl = document.getElementById('authError');
   if(errEl) errEl.style.display = 'none';
   regStep(2);

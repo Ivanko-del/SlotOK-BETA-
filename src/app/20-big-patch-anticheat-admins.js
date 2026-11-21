@@ -20,19 +20,7 @@ async function doChangePassword() {
   const srv = await serverAuthCall('change-password', { nick: currentUser, password: old, newPassword: nw });
   if(srv.status === 200) return cpDone();
   if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
-  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
-  let nwHash;
-  try {
-    if(!(await SlotOKPassword.verify(old, userData.pass)).ok) return showErr('Поточний пароль невірний');
-    nwHash = await SlotOKPassword.hash(nw);
-  } catch(e) {
-    console.error('Change password error:', e);
-    return showErr(e.message || 'Не вдалося перевірити пароль');
-  }
-  db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
-    userData.pass = nwHash;
-    cpDone();
-  }).catch(() => showErr('Помилка збереження'));
+  showErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 // 2. ЕКСПОРТ CSV
@@ -202,7 +190,7 @@ function followPlayer(nick) {
     } else {
       db.ref('users/' + currentUser + '/following/' + nick).set(Date.now());
       db.ref('pm/' + nick + '/' + db.ref().push().key).set({
-        from: '👥 Підписки', to: nick,
+        from: currentUser, to: nick, // від свого імені: службовий from гравцям пишуть лише адмін і сервер
         text: '👥 @' + currentUser + ' підписався на вас!', ts: Date.now()
       });
       db.ref('users/' + nick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -386,7 +374,7 @@ function depositToClanBank(clanId, amount) {
 // ── ЖУРНАЛ БЕЗПЕКИ ─────────────────────────────────────────────
 function logSecurityEvent(type, details) {
   if (!db || !currentUser) return;
-  db.ref('users/' + currentUser + '/securityLog').push({
+  db.ref('user_private/' + currentUser + '/securityLog').push({
     type: type, details: details || '', ts: Date.now(),
     ua: navigator.userAgent.slice(0, 80)
   });
@@ -857,7 +845,7 @@ function giftVip(toNick, days) {
     var vipUntil = Date.now() + days * 86400000;
     db.ref('users/' + toNick + '/vipGiftUntil').set(vipUntil);
     db.ref('pm/' + toNick + '/' + db.ref().push().key).set({
-      from: '🎁 SlotOK', to: toNick,
+      from: currentUser, to: toNick,
       text: '🎁 @' + currentUser + ' подарував тобі VIP на ' + days + ' днів! Насолоджуйся!',
       ts: Date.now()
     });

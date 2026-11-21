@@ -502,7 +502,8 @@ function refreshCasinoCounters() {
     // Екран входу показує суму ставок з цього агрегату, а не качає users сам.
     if(isAdminUser()) {
       const paid = Object.values(users).reduce((s,u)=>s+(u.isBot?0:(u.totalWagered||0)), 0);
-      db.ref('casino_stats/totalWagered').set(paid).catch(() => {});
+      // Екран входу (без авторизації) показує лише ці агрегати, а не список ніків.
+      db.ref('casino_stats').update({ totalWagered: paid, players: _casinoCountersCache.total }).catch(() => {});
     }
   }, () => { _casinoCountersBusy = false; }), _casinoCountersAt ? 0 : 4000);
 }
@@ -2789,16 +2790,6 @@ function stopAuthStatsListeners() {
   stopAuthCoins();
   stopAuthWinTicker();
 }
-// REST-адреса з ?shallow=true (лише ключі). На локальному стенді — емулятор,
-// як і в db (01-core.js), інакше перевірки йшли б у бойову базу.
-function authShallowUrl(path) {
-  const emu = window.SLOTOK_EMULATOR;
-  if(emu && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
-    const ns = new URL(firebaseConfig.databaseURL).hostname.split('.')[0];
-    return `http://${emu.db[0]}:${emu.db[1]}/${path}.json?ns=${ns}&shallow=true`;
-  }
-  return `${firebaseConfig.databaseURL}/${path}.json?shallow=true`;
-}
 function authWheelTick() {
   const el = document.getElementById('authNextWheel');
   const scr = document.getElementById('auth-screen');
@@ -2807,11 +2798,11 @@ function authWheelTick() {
   el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
 }
 function loadAuthStats() {
-  // ?shallow=true повертає тільки ключі — кілобайти замість мегабайтів.
-  fetch(authShallowUrl('users'))
-    .then(r => r.ok ? r.json() : {})
-    .then(users => {
-      const count = Object.keys(users || {}).length;
+  // Без входу список гравців не читається (правила бази) — лише агрегат,
+  // який оновлює адмінка (02-ui-admin-rights.js).
+  if(db) db.ref('casino_stats/players').once('value')
+    .then(snap => {
+      const count = Number(snap.val()) || 0;
       const el = document.getElementById('authStatPlayers');
       const wrap = document.getElementById('authPlayersWrap');
       if(el && count > 0) { el.textContent = formatNumber(count); if(wrap) wrap.hidden = false; }
@@ -3604,51 +3595,10 @@ async function authLogin() {
     }
   }
   if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
-  if(await serverAuthEnabled()) {
-    // Серверний вхід увімкнено, але зараз він не відповідає — старий шлях у
-    // браузері тут не допоможе: правила бази однаково вимагають Auth-сесію.
-    reset();
-    return showAuthError('⚠️ Сервер входу недоступний. Спробуй за хвилину.');
-  }
-
-  const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 10000);
-
-  db.ref('users/' + n).once('value', async snap => {
-    clearTimeout(timeout);
-    if(!snap.exists()) { reset(); return showAuthError('❌ Гравця "' + n + '" не знайдено'); }
-    const data = snap.val();
-    if(data.banned) { reset(); return showAuthError('🚫 Акаунт заблоковано' + (data.banReason ? ': ' + data.banReason : '')); }
-
-    let check;
-    try {
-      check = await SlotOKPassword.verify(p, data.pass);
-    } catch(e) {
-      // Інакше кнопка назавжди лишиться в стані «Перевірка...»
-      reset();
-      console.error('Password verify error:', e);
-      return showAuthError('❌ ' + (e.message || 'Не вдалося перевірити пароль'));
-    }
-    if(!check.ok) { reset(); return showAuthError('❌ Невірний пароль'); }
-    if(check.needsUpgrade) {
-      // Пароль вірний, але лежить у застарілому вигляді (голий SHA-256 або
-      // взагалі відкритий текст) — мовчки переїжджаємо на PBKDF2 із сіллю.
-      // Це єдиний момент, коли ми взагалі бачимо пароль у відкритому вигляді.
-      try { await db.ref('users/' + n + '/pass').set(await SlotOKPassword.hash(p)); } catch(e) { console.warn(e); }
-    }
-    const isAdminAcc = n.toLowerCase() === 'theivankoo' || data.isAdmin === true;
-    db.ref('site_config/maintenance').once('value', mSnap => {
-      if(mSnap.val() && !isAdminAcc) {
-        reset();
-        return showAuthError('🚧 Сайт тимчасово на технічному обслуговуванні. Спробуй пізніше.');
-      }
-      finishLogin(data.lastSeen);
-    });
-  }, err => {
-    clearTimeout(timeout);
-    reset();
-    console.error('Login error:', err);
-    showAuthError('❌ Помилка Firebase: ' + (err.message || err.code || 'невідома'));
-  });
+  // Пароль перевіряє лише сервер (api/auth.js): хеш ніколи не їде в браузер,
+  // а правила бази без Firebase Auth-сесії однаково нічого не пустять.
+  reset();
+  return showAuthError('⚠️ Сервер входу недоступний. Спробуй за хвилину.');
 }
 
 async function authRegister() {
@@ -3694,87 +3644,9 @@ async function authRegister() {
     return;
   }
   if(serverAuthIsFinal(srv)) { reset(); return showAuthError('❌ ' + srv.data.message); }
-  if(await serverAuthEnabled()) { reset(); return showAuthError('⚠️ Сервер реєстрації недоступний. Спробуй за хвилину.'); }
-
-  const timeout = setTimeout(() => { reset(); showAuthError('⏱ Час вийшов. Перевір інтернет.'); }, 12000);
-
-  let secAnswerHash, passHash;
-  try {
-    secAnswerHash = await SlotOKPassword.hash(secA.toLowerCase());
-    passHash = await SlotOKPassword.hash(p);
-  } catch(e) {
-    clearTimeout(timeout);
-    reset();
-    console.error('Password hash error:', e);
-    return showAuthError('❌ ' + (e.message || 'Не вдалося захешувати пароль'));
-  }
-
-  // Step 1: check if nick is taken
-  db.ref('users/' + n).once('value', snap => {
-    if(snap.exists()) {
-      clearTimeout(timeout);
-      reset();
-      return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
-    }
-
-    // Step 2: build new user object
-    let bonus = 1000, spins = 10, bonusMsg = '';
-    if(promo === 'SLOTOK') { bonus += 500; spins += 5; bonusMsg = ' +500₴ промокод!'; }
-    else if(promo === 'VIP') { bonus += 2000; bonusMsg = ' +2000₴ VIP!'; }
-
-    const newUser = {
-      pass: passHash,
-      securityQuestion: secQ, securityAnswerHash: secAnswerHash,
-      balance: bonus, freeSlots: spins,
-      id: Math.floor(Math.random() * 900000) + 100000,
-      tag: 'Новачок 🌱', avatar: '👤',
-      dailyStreak: 0, luckyGamesLeft: 3, luckyGamesUsed: 0,
-      registeredAt: Date.now(), lastSeen: Date.now(),
-      totalGames: 0, totalWins: 0, totalWagered: 0, slotsPlayed: 0,
-      termsAcceptedAt: Date.now(), termsVersion: TERMS_VERSION,
-    };
-    if(minor) newUser.parentConsent = true;
-    if(promo) newUser.usedPromo = promo;
-    const refBy = localStorage.getItem('ref_by');
-    if(refBy && refBy !== n) newUser.referredBy = refBy;
-
-    // Step 3: save to Firebase
-    db.ref('users/' + n).set(newUser, err => {
-      clearTimeout(timeout);
-      if(err) {
-        reset();
-        console.error('Register write error:', err);
-        return showAuthError('❌ Помилка запису: ' + (err.message || err.code || 'перевір правила Firebase'));
-      }
-
-      // Step 4: success!
-      if(email) db.ref('user_private/' + n + '/email').set(email); // приватне поле — не в публічному users/
-      if(btn) btn.textContent = 'Входимо…';
-      currentUser = n;
-      localStorage.setItem(SESSION_KEY, n);
-      localStorage.removeItem('ref_by');
-      initTelegramLinkStatus();
-
-      // Add to history (non-blocking)
-      try { db.ref('users/' + n + '/history').push({ text: '🎉 Реєстрація! Бонус: +' + bonus + '₴', date: Date.now() }); } catch(e) { console.warn(e); }
-      if(newUser.referredBy) {
-        try { db.ref('users/' + newUser.referredBy + '/referrals').set(firebase.database.ServerValue.increment(1)); } catch(e) { console.warn(e); }
-      }
-
-      notify('🎉 Вітаємо! Бонус: ' + bonus + '₴ + ' + spins + ' фріспінів!' + bonusMsg, 'success');
-
-      // Start data sync after short delay
-      setTimeout(() => {
-        try { startDataSync(); } catch(e) { console.error('startDataSync err:', e); }
-      }, 200);
-    });
-
-  }, err => {
-    clearTimeout(timeout);
-    reset();
-    console.error('Register check error:', err);
-    showAuthError('❌ Firebase помилка: ' + (err.message || err.code || 'невідома'));
-  });
+  // Акаунт створює лише сервер (хеші пароля й відповіді — у закритий user_secrets).
+  reset();
+  return showAuthError('⚠️ Сервер реєстрації недоступний. Спробуй за хвилину.');
 }
 
 // ─── src/app/11-password-recovery.js ───
@@ -3845,21 +3717,14 @@ function pwrErr(msg) {
   if(el) { el.textContent = '⚠️ ' + msg; el.style.display = 'block'; }
 }
 
-function pwrLookup() {
+async function pwrLookup() {
   const nick = (document.getElementById('pwrNick')?.value || '').trim();
   if(!nick) return pwrErr('Введіть нікнейм');
-  db.ref('users/' + nick).once('value', snap => {
-    if(!snap.exists()) return pwrErr('Гравця не знайдено');
-    const data = snap.val();
-    // Хеш відповіді сервер переносить у закритий user_secrets, тож тут його
-    // вже може не бути — орієнтуємось на саме питання. Якщо відповіді насправді
-    // немає, сервер скаже not_found і ми перейдемо на Telegram.
-    if(data.securityQuestion && (data.securityAnswerHash || data.hasSecurityAnswer || !data.pass)) {
-      pwrShowQuestion(nick, data.securityQuestion);
-    } else {
-      pwrShowTelegramFallback(nick);
-    }
-  }, () => pwrErr('Помилка звʼязку з базою'));
+  // До входу браузер не читає users/<нік> — яке питання показати, каже сервер.
+  const srv = await serverAuthCall('reset-info', { nick });
+  if(srv.status === 200) return srv.data.question ? pwrShowQuestion(nick, srv.data.question) : pwrShowTelegramFallback(nick);
+  if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
+  pwrErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function pwrShowQuestion(nick, qKey) {
@@ -3898,29 +3763,7 @@ async function pwrVerifyAndReset(nick) {
   if(srv.status === 200) return pwrDone();
   if(srv.status === 404 && srv.data.error === 'not_found') return pwrShowTelegramFallback(nick);
   if(serverAuthIsFinal(srv)) return pwrErr(srv.data.message);
-  if(await serverAuthEnabled()) return pwrErr('Сервер недоступний. Спробуй за хвилину.');
-
-  db.ref('users/' + nick + '/securityAnswerHash').once('value', async snap => {
-    let check, newPassHash;
-    try {
-      // verify() сама розбереться, у якому форматі лежить стара відповідь —
-      // у частини акаунтів це ще голий SHA-256 з попередньої схеми.
-      check = await SlotOKPassword.verify(answer.toLowerCase(), snap.val());
-      if(!check.ok) return pwrErr('Невірна відповідь');
-      newPassHash = await SlotOKPassword.hash(p1);
-    } catch(e) {
-      console.error('Password reset error:', e);
-      return pwrErr(e.message || 'Не вдалося перевірити відповідь');
-    }
-    const updates = { ['users/' + nick + '/pass']: newPassHash };
-    if(check.needsUpgrade) updates['users/' + nick + '/securityAnswerHash'] = await SlotOKPassword.hash(answer.toLowerCase());
-    db.ref().update(updates).then(() => {
-      document.getElementById('pwrModal')?.remove();
-      notify('✅ Пароль змінено! Тепер увійдіть з новим паролем.', 'success');
-      const loginName = document.getElementById('loginName');
-      if(loginName) loginName.value = nick;
-    }).catch(() => pwrErr('Помилка запису. Спробуйте ще.'));
-  }, () => pwrErr('Помилка звʼязку з базою'));
+  pwrErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function pwrShowTelegramFallback(nick) {
@@ -3935,41 +3778,22 @@ function pwrShowTelegramFallback(nick) {
     <button class="auth-btn-main" id="pwrTgBtn" onclick="pwrRequestViaTelegram(${jsArg(nick)})">✈️ Подати заявку через Telegram</button>`;
 }
 
-function pwrRequestViaTelegram(nick) {
+async function pwrRequestViaTelegram(nick) {
   const btn = document.getElementById('pwrTgBtn');
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Надсилаємо...'; }
-  const reqId = nick + '_' + Date.now();
-  db.ref('password_reset_requests/' + reqId).set({
-    user: nick, status: 'pending', time: Date.now()
-  }).then(() => {
-    notifyBot('reset', reqId);
-    db.ref('pm/theivankoo/' + db.ref().push().key).set({
-      from: '📥 Система', to: 'theivankoo',
-      text: `🔑 Заявка на відновлення пароля від @${nick}. Перевірте особу через Telegram і скиньте пароль в адмін-панелі.`,
-      ts: Date.now()
-    });
-    db.ref('users/theivankoo/pmUnread').set(firebase.database.ServerValue.increment(1));
-    db.ref('users').orderByChild('isAdmin').equalTo(true).limitToFirst(5).once('value', snap => {
-      const admins = snap.val() || {};
-      Object.keys(admins).forEach(admNick => {
-        if(admNick === 'theivankoo') return;
-        db.ref('pm/' + admNick + '/' + db.ref().push().key).set({
-          from: '📥 Система', to: admNick,
-          text: `🔑 Заявка на відновлення пароля від @${nick}`,
-          ts: Date.now()
-        });
-        db.ref('users/' + admNick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
-      });
-    });
-    const tgUrl = `https://t.me/${TG_BOT_USERNAME}?start=reset_${nick}`;
-    window.open(tgUrl, '_blank');
-    const status = document.getElementById('pwrTgStatus');
-    if(status) { status.textContent = '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.'; status.style.display = 'block'; }
-    if(btn) { btn.textContent = '✅ Заявку подано'; }
-  }).catch(() => {
-    pwrErr('Не вдалось подати заявку. Спробуйте ще.');
+  // Заявку створює сервер (з лімітом); анонім у базу більше не пише.
+  const srv = await serverAuthCall('reset-request', { nick });
+  if(srv.status !== 200) {
+    pwrErr(serverAuthIsFinal(srv) ? srv.data.message : 'Не вдалось подати заявку. Спробуйте ще.');
     if(btn) { btn.disabled = false; btn.textContent = '✈️ Подати заявку через Telegram'; }
-  });
+    return;
+  }
+  notifyBot('reset', srv.data.id);
+  const tgUrl = `https://t.me/${TG_BOT_USERNAME}?start=reset_${nick}`;
+  window.open(tgUrl, '_blank');
+  const status = document.getElementById('pwrTgStatus');
+  if(status) { status.textContent = '✅ Заявку надіслано. Напишіть боту в Telegram для підтвердження — адмін скине пароль і надішле його вам у приватні повідомлення.'; status.style.display = 'block'; }
+  if(btn) { btn.textContent = '✅ Заявку подано'; }
 }
 
 
@@ -4041,9 +3865,9 @@ async function regSubmit() {
   const btn = document.getElementById('regNextBtn');
   if(btn) btn.disabled = true;
   try {
-    const r = await fetch(authShallowUrl('users/' + encodeURIComponent(n)));
-    if(r.ok && (await r.json()) !== null) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
-  } catch(e) {} finally { if(btn) btn.disabled = false; }
+    const r = await serverAuthCall('nick-check', { nick: n });
+    if(r.status === 200 && r.data.free === false) return showAuthError('❌ Нікнейм "' + n + '" вже зайнятий');
+  } finally { if(btn) btn.disabled = false; }
   const errEl = document.getElementById('authError');
   if(errEl) errEl.style.display = 'none';
   regStep(2);
@@ -5377,10 +5201,30 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '125';
+const CURRENT_VERSION = '126';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '126',
+    title: 'Оновлення v126 — твої дані під замком',
+    date: Date.UTC(2026, 10, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'improve',
+        title: '🔒 Безпека й приватність',
+        items: [
+          'Профілі, чати, рейтинги й налаштування тепер бачать лише гравці, що увійшли в акаунт — без входу видно тільки стрічку виграшів і кількість гравців',
+          'Приватні повідомлення, звернення в підтримку й заявки бачиш лише ти (і адміністрація)',
+          'Паролі й відповіді на контрольні питання зберігаються окремо від профілю — їх не бачить навіть адміністратор, а старі паролі переведено на надійне шифрування',
+          'Журнал безпеки (входи) перенесено в приватну частину акаунта — інші гравці його не бачать',
+          'Відновлення пароля й перевірка, чи вільний нікнейм, тепер працюють через сервер',
+          'Повідомлення від імені «SlotOK» чи «Системи» більше не може надіслати звичайний гравець — фішинг у ПМ закрито',
+        ],
+      },
+    ],
+  },
   {
     version: '125',
     title: 'Оновлення v125 — запити в друзі доходять одразу',
@@ -7510,61 +7354,8 @@ async function adminPurgeBots() {
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 1: Firebase Security Rules — показ в адмін-панелі    ║
 // ╚══════════════════════════════════════════════════════════════╝
-var FIREBASE_SECURITY_RULES = `{
-  "rules": {
-"users": {
-  "$uid": {
-    ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    "balance":    { ".validate": "newData.isNumber() && newData.val() >= 0" },
-    "isAdmin":    { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
-    "isBot":      { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" },
-    "banned":     { ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true" }
-  }
-},
-"global_chat": {
-  ".read":  "auth != null",
-  ".write": "auth != null",
-  "$msg": {
-    ".validate": "newData.child('text').val().length <= 300 && newData.child('user').val().length <= 30"
-  }
-},
-"live_bets":        { ".read": "auth != null", ".write": "auth != null" },
-"deposit_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true || newData.child('user').val() === auth.uid", ".write": "auth != null" },
-"withdraw_requests":{ ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
-"password_reset_requests": { ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true", ".write": "auth != null" },
-"pm": {
-  "$user": {
-    ".read":  "$user === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
-    ".write": "auth != null"
-  }
-},
-"casino_stats":     { ".read": true, ".write": "auth != null" },
-"leaderboard":      { ".read": true, ".write": "auth != null" },
-"lobby_chat":       { ".read": "auth != null", ".write": "auth != null" },
-".read":  false,
-".write": false
-  }
-}`;
-
-function showFirebaseRules() {
-  const existing = document.getElementById('fbRulesModal');
-  if(existing) existing.remove();
-  const modal = document.createElement('div');
-  modal.id = 'fbRulesModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgb(var(--recess-rgb) / calc(0.92 * var(--recess-k)));z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box;';
-  modal.innerHTML = `
-    <div style="max-width:600px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-family:var(--font-display);font-size:16px;color:var(--accent);">🛡️ Firebase Security Rules</div>
-        <button onclick="document.getElementById('fbRulesModal').remove()" style="background:none;border:1px solid var(--line);border-radius:var(--r-md);color:var(--fg-3);padding:6px 14px;cursor:pointer;">✕ Закрити</button>
-      </div>
-      <div style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:12px;font-family:var(--font-mono);font-size:11px;color:var(--fg-2);white-space:pre-wrap;overflow-x:auto;max-height:60vh;overflow-y:auto;">${FIREBASE_SECURITY_RULES}</div>
-      <button onclick="navigator.clipboard.writeText(FIREBASE_SECURITY_RULES);notify('✅ Rules скопійовано!','success')" style="width:100%;background:var(--accent);border:none;border-radius:var(--r-md);padding:12px;color:var(--on-accent);font-weight:900;cursor:pointer;font-size:14px;">📋 Копіювати правила</button>
-      <div style="font-size:10px;color:var(--fg-4);margin-top:8px;text-align:center;">Вставте ці правила в Firebase Console → Realtime Database → Rules</div>
-    </div>`;
-  document.body.appendChild(modal);
-}
+// Правила бази живуть лише в database.rules.json (генерує scripts/build-rules.js,
+// деплой — firebase deploy --only database). Копії для вставки в адмінці більше немає.
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  ФІЧА 2: Provably Fair — SHA-256 для Dice та Plinko        ║
@@ -8004,19 +7795,7 @@ async function doChangePassword() {
   const srv = await serverAuthCall('change-password', { nick: currentUser, password: old, newPassword: nw });
   if(srv.status === 200) return cpDone();
   if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
-  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
-  let nwHash;
-  try {
-    if(!(await SlotOKPassword.verify(old, userData.pass)).ok) return showErr('Поточний пароль невірний');
-    nwHash = await SlotOKPassword.hash(nw);
-  } catch(e) {
-    console.error('Change password error:', e);
-    return showErr(e.message || 'Не вдалося перевірити пароль');
-  }
-  db.ref('users/' + currentUser + '/pass').set(nwHash).then(() => {
-    userData.pass = nwHash;
-    cpDone();
-  }).catch(() => showErr('Помилка збереження'));
+  showErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 // 2. ЕКСПОРТ CSV
@@ -8186,7 +7965,7 @@ function followPlayer(nick) {
     } else {
       db.ref('users/' + currentUser + '/following/' + nick).set(Date.now());
       db.ref('pm/' + nick + '/' + db.ref().push().key).set({
-        from: '👥 Підписки', to: nick,
+        from: currentUser, to: nick, // від свого імені: службовий from гравцям пишуть лише адмін і сервер
         text: '👥 @' + currentUser + ' підписався на вас!', ts: Date.now()
       });
       db.ref('users/' + nick + '/pmUnread').set(firebase.database.ServerValue.increment(1));
@@ -8370,7 +8149,7 @@ function depositToClanBank(clanId, amount) {
 // ── ЖУРНАЛ БЕЗПЕКИ ─────────────────────────────────────────────
 function logSecurityEvent(type, details) {
   if (!db || !currentUser) return;
-  db.ref('users/' + currentUser + '/securityLog').push({
+  db.ref('user_private/' + currentUser + '/securityLog').push({
     type: type, details: details || '', ts: Date.now(),
     ua: navigator.userAgent.slice(0, 80)
   });
@@ -8841,7 +8620,7 @@ function giftVip(toNick, days) {
     var vipUntil = Date.now() + days * 86400000;
     db.ref('users/' + toNick + '/vipGiftUntil').set(vipUntil);
     db.ref('pm/' + toNick + '/' + db.ref().push().key).set({
-      from: '🎁 SlotOK', to: toNick,
+      from: currentUser, to: toNick,
       text: '🎁 @' + currentUser + ' подарував тобі VIP на ' + days + ' днів! Насолоджуйся!',
       ts: Date.now()
     });
@@ -8975,16 +8754,7 @@ async function doSetSecurityQuestion() {
   const srv = await serverAuthCall('set-security', { nick: currentUser, password, question, answer });
   if(srv.status === 200) return done();
   if(serverAuthIsFinal(srv)) return showErr(srv.data.message);
-  if(await serverAuthEnabled()) return showErr('Сервер недоступний. Спробуй за хвилину.');
-  // Серверний вхід ще не ввімкнено — старий шлях у браузері.
-  try {
-    if(!(await SlotOKPassword.verify(password, userData.pass)).ok) return showErr('Поточний пароль невірний');
-    await db.ref('users/' + currentUser).update({
-      securityQuestion: question,
-      securityAnswerHash: await SlotOKPassword.hash(answer.toLowerCase()),
-    });
-    done();
-  } catch(e) { console.error(e); showErr('Не вдалося зберегти'); }
+  showErr('Сервер недоступний. Спробуй за хвилину.');
 }
 
 function openGiftVIPModal() {
@@ -9016,7 +8786,7 @@ function showSecurityLog() {
     '<div style="font-size:15px;font-weight:900;color:var(--neg);margin-bottom:14px;font-family:var(--font-display);padding-right:36px;">📋 Журнал безпеки</div>' +
     '<div id="securityLogList" style="color:var(--fg-4);font-size:12px;">Завантаження...</div>'
   );
-  db.ref('users/'+currentUser+'/securityLog').limitToLast(20).once('value').then(function(snap) {
+  db.ref('user_private/'+currentUser+'/securityLog').limitToLast(20).once('value').then(function(snap) {
     var el = document.getElementById('securityLogList'); if(!el) return;
     var data = snap.val();
     if(!data){el.innerHTML='<div style="color:var(--fg-4);text-align:center;padding:20px;">Подій немає</div>';return;}
@@ -9691,18 +9461,19 @@ function renderPwrCard(id, req) {
 }
 
 async function approvePasswordReset(id, user) {
-  const tempPass = randomTempPassword();
-  const tempPassHash = await SlotOKPassword.hash(tempPass);
-  db.ref('users/' + user + '/pass').set(tempPassHash).then(() => {
-    db.ref('password_reset_requests/' + id).update({ status: 'done', approvedAt: Date.now(), approvedBy: currentUser });
-    db.ref('pm/' + user + '/' + db.ref().push().key).set({
-      from: '🔑 SlotOK', to: user,
-      text: `🔑 Ваш пароль скинуто адміністратором. Новий тимчасовий пароль: ${tempPass}\nБудь ласка, увійдіть і одразу змініть його в налаштуваннях.`,
-      ts: Date.now()
+  // Тимчасовий пароль генерує й зберігає сервер (у закритий user_secrets) і сам
+  // надсилає гравцю в ПП; браузер адміна хешу не бачить.
+  let r, data = {};
+  try {
+    r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, await authHeaders()),
+      body: JSON.stringify({ action: 'admin-reset', id }),
     });
-    db.ref('users/' + user + '/pmUnread').set(firebase.database.ServerValue.increment(1));
-    notify('✅ Пароль для ' + user + ' скинуто, надіслано в ПП', 'success');
-  }).catch(() => notify('Помилка скидання пароля', 'error'));
+    try { data = await r.json(); } catch(e) {}
+  } catch(e) { return notify('Немає зʼєднання з сервером', 'error'); }
+  if(r.status === 200) return notify('✅ Пароль для ' + user + ' скинуто, надіслано в ПП', 'success');
+  notify(data.message || 'Помилка скидання пароля', 'error');
 }
 
 function rejectPasswordReset(id) {

@@ -3,7 +3,8 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": true,
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       ".indexOn": [
         "totalWagered",
         "totalWins",
@@ -12,50 +13,212 @@
         "stats/gamesPlayed",
         "stats/biggestWin",
         "isBot",
-        "role"
+        "role",
+        "flagged",
+        "isAdmin"
       ],
       "$u": {
         ".validate": "data.exists() || ($u.length >= 2 && $u.length <= 32 && !$u.matches(/[<>\"'`]/) && !$u.matches(/[ \\\\&%]/))",
         "balance": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))",
           ".validate": "newData.isNumber() && newData.val() < 1000000000000000 && (newData.val() >= 0 || (data.exists() && newData.val() >= data.val()))"
         },
-        "pass": {
-          ".validate": "newData.isString() && newData.val().length <= 300"
-        },
-        "securityAnswerHash": {
-          ".validate": "newData.isString() && newData.val().length <= 300"
-        },
         "tag": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
           ".validate": "newData.isString() && newData.val().length <= 120 && !newData.val().matches(/[<>\"'`]/)"
         },
         "bioInput": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 1000"
         },
+        "pass": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
+        "securityAnswerHash": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
+        "securityAnswer": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
+        "birthDate": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
         "email": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "false"
         },
         "lastIP": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "false"
         },
         "lastIpHash": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "false"
+        },
+        "securityLog": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "false"
         },
         "avatar": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 10485760 && !newData.val().matches(/[<>\"'`]/)"
         },
         "avatarUrl": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
         },
         "avatarEmoji": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
         },
         "authorAvatarUrl": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 10485760 && newData.val().matches(/^(https?:|data:(image|video)\\/|blob:)/) && !newData.val().matches(/[<>\"'`]/)"
         },
         "authorEmoji": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
         },
-        ".write": true
+        "$field": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        },
+        "pmUnread": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "referrals": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "isAdmin": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "adminPerms": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "role": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+          ".validate": "newData.isString() && newData.val().matches(/^(support|admin)$/)"
+        },
+        "slotiky": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "slotikyItems": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopV2": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopSpins": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "shopFortune": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "freeFortune": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "minesHints": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "crashInsurance": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lootboxInv": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "cosmetics": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$slot": {
+            ".validate": "newData.val() === false || (newData.isString() && newData.val().matches(/^[a-z_]{1,32}$/))"
+          }
+        },
+        "banned": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "banReason": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "autoFrozen": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "isBot": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "supporter": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "supporterAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "telegramChatId": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))) && !newData.exists()"
+        },
+        "totalWins": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "totalGames": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "totalWagered": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "vipGiftUntil": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "supportUnread": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+        },
+        "virtualCard": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "totalIn": {
+            ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.isNumber() && newData.val() >= data.val() : newData.isNumber() && newData.val() >= 0))"
+          }
+        },
+        "history": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$h": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+        "cardTx": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          "$t": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+        "clanId": {
+          ".write": "auth != null"
+        },
+        "lastDailyBonus": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "dailyStreak": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lastHourlyBonus": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "dailySpinDate": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "lastPlayedAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "welcomeBackAt": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "cashbackTotalClaimed": {
+          ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+        },
+        "bpClaimed": {
+          ".write": "auth != null && ((auth.uid === $u && !newData.exists()) || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        },
+        "bpBonusClaimed": {
+          ".write": "auth != null && ((auth.uid === $u && newData.val() === 0) || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        }
       }
     },
     "bot_config": {
@@ -64,14 +227,14 @@
     },
     "user_secrets": {
       ".read": false,
-      ".write": "false"
+      ".write": false
     },
     "user_private": {
       ".read": false,
       ".write": false,
       "$u": {
-        ".read": "true",
-        ".write": "true",
+        ".read": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+        ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
         ".validate": "newData.hasChildren() || !newData.exists()",
         "email": {
           ".validate": "newData.isString() && newData.val().length <= 200 && !newData.val().matches(/[<>\"'`]/)"
@@ -81,14 +244,37 @@
         },
         "telegramChatId": {
           ".validate": "newData.isString() || newData.isNumber()"
+        },
+        "securityLog": {
+          "$e": {
+            ".validate": "newData.hasChildren(['type', 'ts'])",
+            "type": {
+              ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
+            },
+            "details": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "ts": {
+              ".validate": "newData.isNumber()"
+            },
+            "ua": {
+              ".validate": "newData.isString() && newData.val().length <= 120"
+            },
+            "$other": {
+              ".validate": "false"
+            }
+          }
         }
       }
     },
     "ip_index": {
-      ".read": true,
+      ".read": false,
+      ".write": false,
       "$h": {
+        ".read": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('user_private').child(auth.uid).child('lastIpHash').val() === $h)",
         "$n": {
-          ".write": true
+          ".write": "auth != null && (auth.uid === $n || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isNumber()"
         }
       }
     },
@@ -115,14 +301,14 @@
     "telegram_links": {
       ".read": false,
       "$chat": {
-        ".write": "!newData.exists()"
+        ".write": "auth != null && !newData.exists() && data.val() === auth.uid"
       }
     },
     "telegram_link_tokens": {
       ".read": false,
       "$t": {
-        ".write": "!data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['nick', 'createdAt'])",
+        ".write": "auth != null && !data.exists() && newData.exists()",
+        ".validate": "newData.child('nick').val() === auth.uid",
         "nick": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -132,13 +318,13 @@
       }
     },
     "lobby_chat": {
-      ".read": true,
-      ".write": "true",
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       ".indexOn": [
         "time"
       ],
       "$m": {
-        ".write": "true",
+        ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('sender').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000)) || (!newData.exists() && data.child('sender').val() === auth.uid))",
         "sender": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -172,12 +358,12 @@
       }
     },
     "global_chat": {
-      ".read": true,
+      ".read": "auth != null",
       ".indexOn": [
         "ts"
       ],
       "$m": {
-        ".write": "true",
+        ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('user').val() === auth.uid && newData.parent().parent().child('chat_rate').child(auth.uid).val() === now && (!root.child('chat_rate').child(auth.uid).exists() || root.child('chat_rate').child(auth.uid).val() < now - 2000)) || (!newData.exists() && data.child('user').val() === auth.uid))",
         "user": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -213,15 +399,15 @@
     "chat_rate": {
       ".read": false,
       "$u": {
-        ".write": "true",
+        ".write": "auth != null && auth.uid === $u",
         ".validate": "newData.isNumber() && newData.val() === now"
       }
     },
     "clan_chats": {
-      ".read": true,
+      ".read": "auth != null",
       "$c": {
         "$m": {
-          ".write": "true",
+          ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('user').val() === auth.uid) || (!newData.exists() && data.child('user').val() === auth.uid))",
           "user": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
@@ -259,10 +445,11 @@
       }
     },
     "pm": {
-      ".read": true,
+      ".read": false,
       "$u": {
+        ".read": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
         "$m": {
-          ".write": "true",
+          ".write": "auth != null && (auth.uid === $u || (auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support')) || (!data.exists() && newData.exists() && !root.child('users').child($u).child('blocked').child(auth.uid).exists() && (newData.child('from').val() === auth.uid || $u === 'theivankoo' || root.child('users').child($u).child('isAdmin').val() === true)))",
           "from": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
@@ -300,11 +487,11 @@
       }
     },
     "support_chats": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       "$u": {
-        ".read": true,
+        ".read": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
         "$m": {
-          ".write": "true",
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
           "sender": {
             ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
           },
@@ -339,10 +526,10 @@
       }
     },
     "casino_news": {
-      ".read": true,
-      ".write": "true",
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       "$n": {
-        ".write": "true",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
         "author": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
         },
@@ -368,17 +555,19 @@
           ".validate": "newData.isString() && newData.val().length <= 32 && !newData.val().matches(/[<>\"'`]/)"
         },
         "reactions": {
-          ".write": "true"
+          "$r": {
+            ".write": "auth != null && newData.isNumber() && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.val() >= data.val() : newData.val() >= 0))"
+          }
         },
         "myReaction": {
-          ".write": "true"
+          ".write": "auth != null"
         },
         "commentCount": {
-          ".write": "true"
+          ".write": "auth != null && newData.isNumber() && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.val() >= data.val() : newData.val() >= 0))"
         },
         "comments": {
           "$c": {
-            ".write": "true",
+            ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('author').val() === auth.uid) || (!newData.exists() && data.child('author').val() === auth.uid))",
             "author": {
               ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
             },
@@ -409,73 +598,68 @@
     },
     "win_feed": {
       ".read": true,
-      "$k": {
-        ".write": "true"
-      },
       ".indexOn": [
-        "ts"
-      ]
-    },
-    "live_bets": {
-      ".read": true,
-      ".write": false
+        "ts",
+        "time"
+      ],
+      "$k": {
+        ".write": "auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && newData.child('user').val() === auth.uid) || (!newData.exists() && data.child('user').val() === auth.uid))"
+      }
     },
     "online": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      "$u": {
+        ".write": "auth != null && auth.uid === $u"
       }
     },
     "clans": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "chat_meta": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "mp_rooms": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "card_rooms": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "pvp_rps": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "pvp_predict": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "pvp_chess": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "pvp_coinflip": {
-      ".read": true,
+      ".read": "auth != null",
       "$k": {
-        ".write": "true"
+        ".write": "auth != null"
       }
     },
     "rooms": {
-      ".read": true,
+      ".read": "auth != null",
       ".write": false,
       "$game": {
         ".indexOn": [
@@ -501,7 +685,7 @@
       ".read": false,
       ".write": false,
       "$season": {
-        ".read": true,
+        ".read": "auth != null",
         ".indexOn": [
           "rating"
         ]
@@ -517,7 +701,7 @@
       }
     },
     "room_watchers": {
-      ".read": true,
+      ".read": "auth != null",
       ".write": false,
       "$id": {
         "$nick": {
@@ -547,16 +731,24 @@
         ".read": "auth != null && auth.uid === $u"
       }
     },
+    "live_bets": {
+      ".read": "auth != null",
+      ".write": false
+    },
     "live_results": {
-      ".read": true,
+      ".read": "auth != null",
       ".write": false
     },
     "live_crash": {
-      ".read": true,
+      ".read": "auth != null",
+      ".write": false
+    },
+    "global_roulette": {
+      ".read": "auth != null",
       ".write": false
     },
     "minesweeper_records": {
-      ".read": true,
+      ".read": "auth != null",
       "$level": {
         ".indexOn": [
           "t"
@@ -569,96 +761,107 @@
         }
       }
     },
-    "global_roulette": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
-    },
     "sport_bets": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      },
+      ".read": "auth != null",
       ".indexOn": [
         "userId"
-      ]
-    },
-    "tournaments": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ],
+      "$b": {
+        "status": {
+          ".write": "auth != null && data.val() === 'pending' && newData.val() === 'refunded' && data.parent().child('userId').val() === auth.uid"
+        },
+        "refundedAt": {
+          ".write": "auth != null && !data.exists() && data.parent().child('userId').val() === auth.uid"
+        }
       }
     },
+    "tournaments": {
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
+    },
     "tournament_scores": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      "$t": {
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+        "$u": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))",
+          ".validate": "newData.isNumber()"
+        }
       }
     },
     "leaderboards": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      "$period": {
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+        "$u": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        }
       }
     },
     "leaderboard_weekly": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "lottery": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$week": {
+        "tickets": {
+          "$t": {
+            ".write": "auth != null && !data.exists() && newData.child('user').val() === auth.uid"
+          }
+        },
+        "pool": {
+          ".write": "auth != null && newData.isNumber() && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.val() >= data.val() : newData.val() >= 0))"
+        }
       }
     },
     "lottery_history": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "jackpot": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "amount": {
+        ".write": "auth != null && newData.isNumber() && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (data.exists() ? newData.val() >= data.val() : newData.val() >= 0))"
       }
     },
     "casino_stats": {
       ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "casino_events": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "investPool": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "total": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber()"
+      },
+      "investors": {
+        "$u": {
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
+        }
       }
     },
     "p2p_loans": {
-      ".read": true,
-      "$k": {
-        ".write": "true"
-      }
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "feedback": {
-      ".read": true,
+      ".read": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support')) || (auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid)",
       ".indexOn": [
         "uid",
         "status",
         "createdAt"
       ],
       "$id": {
-        ".write": true,
+        ".read": "auth != null && data.child('uid').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'new' && !newData.child('reply').exists())",
         ".validate": "newData.hasChildren(['uid', 'type', 'message', 'createdAt', 'status'])",
         "uid": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
@@ -682,16 +885,20 @@
           ".validate": "newData.isNumber()"
         },
         "status": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
           ".validate": "newData.isString() && newData.val().matches(/^(new|in_progress|closed)$/)"
         },
         "reply": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
           ".validate": "newData.isString() && newData.val().length <= 4000"
         },
         "reply_at": {
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
           ".validate": "newData.isNumber()"
         },
         "reply_by": {
-          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+          ".write": "(auth != null && ((auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || root.child('users').child(auth.uid).child('role').val() === 'support'))",
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/) && newData.val() === auth.uid"
         },
         "reportedUser": {
           ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
@@ -710,75 +917,103 @@
       }
     },
     "deposit_requests": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
       ".indexOn": [
         "user",
         "status"
       ],
       "$id": {
-        ".write": true
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('user').val() === auth.uid) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
       }
     },
     "withdraw_requests": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
       ".indexOn": [
         "user",
         "status"
       ],
       "$id": {
-        ".write": true
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (!data.exists() && auth != null && newData.child('user').val() === auth.uid) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
       }
     },
     "password_reset_requests": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild === 'user' && query.equalTo === auth.uid)",
       ".indexOn": [
         "user",
         "status"
       ],
       "$id": {
-        ".write": true
+        ".read": "auth != null && data.child('user').val() === auth.uid",
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (false) || (data.exists() && auth != null && data.child('user').val() === auth.uid && newData.child('status').val() === 'cancelled')",
+        "user": {
+          ".validate": "newData.isString() && newData.val().length <= 64 && !newData.val().matches(/[<>\"'`]/)"
+        },
+        "amount": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000000000000"
+        }
       }
     },
     "site_config": {
-      ".read": true,
-      ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "settings": {
-      ".read": true,
-      ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "admin_settings": {
-      ".read": true,
-      ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "announcement": {
-      ".read": true,
-      ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "changelog": {
-      ".read": true,
-      ".write": "true"
+      ".read": "auth != null",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".indexOn": [
+        "date",
+        "version"
+      ]
     },
     "promos": {
-      ".read": true,
-      ".write": "true"
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      "$code": {
+        ".read": "auth != null"
+      }
     },
     "admin_notes": {
-      ".read": true,
-      ".write": "true"
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "admin_action_log": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       "$e": {
-        ".write": "!data.exists()"
+        ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)) && !data.exists()"
       }
     },
     "anti_cheat_flags": {
-      ".read": true,
-      ".write": "true",
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
+      ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       "$u": {
         "$f": {
-          ".write": "true"
+          ".write": "auth != null && (auth.uid === $u || (auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true)))"
         }
       }
     }
