@@ -315,5 +315,34 @@ const season = R.getBpSeasonInfo().num;
   r = await call(play, "bob", { game: "fortune", bet: 10, params: {}, id: "paid-fortune-01" });
   assert.notStrictEqual(r.status, 400, "старий запит Колеса без mode — платний");
 
-  console.log("OK — api/reward: суми й час рахує сервер, нагороди не забрати двічі, ставки на сервері ведуть VIP/XP/кешбек");
+  // ── промокоди (lib/promo.js) ──
+  tree = { users: { alice: { balance: 0 }, bob: { balance: 0 }, carol: { balance: 0 } },
+    promos: { WELCOME: { value: 250, uses: 2 }, ONE: { value: 100, uses: 1 }, BAD: { value: -5, uses: 9 } } };
+  r = await claim("alice", "promo", { code: " welcome ", amount: 1e9 });
+  assert.strictEqual(r.status, 200, "промокод без урахування регістру й пробілів");
+  assert.strictEqual(r.data.amount, 250, "сума з бази, не з тіла запиту");
+  assert.strictEqual(user("alice").balance, 250);
+  assert.ok(tree.promo_redemptions.WELCOME.alice, "активацію записано");
+  r = await claim("alice", "promo", { code: "WELCOME" });
+  assert.strictEqual(r.status, 409, "той самий гравець удруге — ні");
+  assert.strictEqual(r.data.error, "already_used");
+  assert.strictEqual(user("alice").balance, 250);
+  assert.strictEqual((await claim("bob", "promo", { code: "WELCOME" })).status, 200);
+  r = await claim("carol", "promo", { code: "WELCOME" });
+  assert.strictEqual(r.status, 409, "ліміт uses вичерпано");
+  assert.strictEqual(r.data.error, "exhausted");
+  assert.strictEqual(user("carol").balance, 0);
+  assert.strictEqual((await claim("alice", "promo", { code: "NOPE" })).status, 404, "неіснуючий код");
+  assert.strictEqual((await claim("alice", "promo", { code: "../users" })).status, 404, "шлях замість коду");
+  assert.strictEqual((await claim("alice", "promo", { code: "BAD" })).status, 404, "від'ємна сума");
+  assert.strictEqual((await claim("alice", "promo", {})).status, 400, "без коду");
+  assert.strictEqual((await claim("alice", "promo", { code: { a: 1 } })).status, 400, "код не рядок");
+  assert.strictEqual(user("alice").balance, 250);
+  // Паралельно: код на 1 активацію бере рівно один гравець, і лише раз.
+  const race = await Promise.all(["alice", "alice", "bob", "carol"].map((n) => claim(n, "promo", { code: "ONE" })));
+  assert.strictEqual(race.filter((x) => x.status === 200).length, 1, "паралельні активації");
+  assert.strictEqual(user("alice").balance + user("bob").balance + user("carol").balance, 250 + 250 + 100);
+  assert.strictEqual(Object.keys(tree.promo_redemptions.ONE).length, 1);
+
+  console.log("OK — api/reward: суми й час рахує сервер, нагороди й промокоди не забрати двічі, ставки на сервері ведуть VIP/XP/кешбек");
 })().catch((e) => { console.error(e); process.exit(1); });

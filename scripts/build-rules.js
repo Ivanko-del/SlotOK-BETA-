@@ -313,7 +313,8 @@ function build(strict) {
     admin_settings: adminNode(),
     announcement: adminNode(),
     changelog: adminNode(),
-    promos: adminNode(),
+    // Коди бачить лише адмін; гравці активують їх через api/reward (lib/promo.js).
+    promos: { ".read": strict ? isAdmin : true, ".write": admin },
     admin_notes: { ".read": strict ? isAdmin : true, ".write": admin },
     admin_action_log: { ".read": strict ? isAdmin : true, $e: { ".write": strict ? `${isAdmin} && !data.exists()` : "!data.exists()" } },
     anti_cheat_flags: { ".read": strict ? isAdmin : true, ".write": admin, $u: { $f: { ".write": strict ? `auth != null && (auth.uid === $u || ${isAdmin})` : "true" } } },

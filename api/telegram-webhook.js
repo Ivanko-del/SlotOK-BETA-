@@ -25,6 +25,7 @@ const SlotOKPassword = require("../password.js");
 const { setSecrets } = require("../lib/secrets");
 const { getPrivate } = require("../lib/private-profile");
 const { getServiceAccount } = require("../lib/google-auth");
+const PROMO = require("../lib/promo");
 
 const QUICK_KEYBOARD = {
   reply_markup: {
@@ -434,26 +435,10 @@ async function cmdPlayerRef(chatId, nick) {
 }
 
 async function cmdPlayerPromo(chatId, nick, code) {
-  const upper = (code || "").trim().toUpperCase();
-  if (!upper) return sendMessage(chatId, "Використання: /promo &lt;код&gt;");
-  if (!/^[A-Z0-9_-]{1,40}$/.test(upper)) return sendMessage(chatId, "❌ Невірний промокод.");
-  const promo = await dbGet(`promos/${upper}`);
-  if (!promo) return sendMessage(chatId, "❌ Невірний промокод.");
-  // Перевірка «вже брав» і ліміту активацій — одна транзакція над списком
-  // активацій: паралельні /promo не пройдуть повз ліміт і не візьмуть код двічі.
-  let verdict = "ok";
-  await dbTransaction(`promo_redemptions/${upper}`, (cur) => {
-    const list = cur || {};
-    if (list[nick]) { verdict = "already"; return undefined; }
-    if (Object.keys(list).length >= (promo.uses || 1)) { verdict = "limit"; return undefined; }
-    verdict = "ok";
-    return { ...list, [nick]: { time: Date.now() } };
-  });
-  if (verdict === "already") return sendMessage(chatId, "❌ Ти вже активував цей промокод.");
-  if (verdict === "limit") return sendMessage(chatId, "❌ Ліміт активацій цього промокоду вичерпано.");
-  const newBalance = await dbIncrement(`users/${nick}/balance`, promo.value);
-  await dbPush(`users/${nick}/history`, { text: `🎟️ Промокод ${upper}: +${promo.value}₴`, date: Date.now() });
-  return sendMessage(chatId, `🎟️ Промокод активовано! +${promo.value}₴. Баланс: ${newBalance}₴`);
+  if (!PROMO.normalizeCode(code)) return sendMessage(chatId, "Використання: /promo &lt;код&gt;");
+  const r = await PROMO.redeem(nick, code);
+  if (!r.ok) return sendMessage(chatId, `❌ ${esc(r.message)}.`);
+  return sendMessage(chatId, `🎟️ Промокод активовано! +${r.amount}₴. Баланс: ${r.balance}₴`);
 }
 
 async function cmdPlayerTop(chatId) {

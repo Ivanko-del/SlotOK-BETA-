@@ -22,6 +22,7 @@
 //   { action: "friendRequest"|"friendAccept"|"friendDecline"|"friendCancel"|"friendRemove", nick }
 //   { action: "friendInvite", nick, id }  — запросити друга в мою кімнату (lib/friends.js)
 //   { action: "friendInviteDismiss", id } — прибрати своє запрошення
+//   { action: "promo", code }             — активувати промокод (lib/promo.js)
 //   { action: "deleteAccount", password } — видалити свій акаунт і дані (lib/account.js)
 //
 // Сума, право на нагороду і час рахує сервер (lib/progress.js) — з тіла
@@ -40,6 +41,7 @@ const MISSIONS = require("../lib/missions");
 const LEAGUES = require("../lib/leagues");
 const FR = require("../lib/friends");
 const ACCOUNT = require("../lib/account");
+const PROMO = require("../lib/promo");
 
 const ACTIONS = {
   daily: (nick) => P.claimDaily(nick),
@@ -66,6 +68,7 @@ const ACTIONS = {
   friendRemove: (nick, body) => FR.remove(nick, body.nick),
   friendInvite: (nick, body) => FR.invite(nick, body.nick, body.id),
   friendInviteDismiss: (nick, body) => FR.dismissInvite(nick, body.id),
+  promo: (nick, body) => PROMO.redeem(nick, body.code),
   deleteAccount: (nick, body) => ACCOUNT.deleteAccount(nick, typeof body.password === "string" ? body.password : ""),
 };
 

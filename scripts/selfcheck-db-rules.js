@@ -194,6 +194,12 @@ async function strict() {
   assert.strictEqual(await say(bob, "m2", "bob"), NO, "друге повідомлення одразу — антиспам");
   assert.strictEqual(await bob.post("lobby_chat", { sender: "bob", text: "hi" }), NO, "без мітки часу");
   const carol = client(ns, "carol"); // не адмін (alice вище стала адміном)
+  // Промокоди: гравці не бачать коди (активація — через api/reward), адмін бачить.
+  assert.strictEqual(await carol.get("promos"), NO, "список промокодів гравцю не видно");
+  assert.strictEqual(await carol.get("promos/WELCOME"), NO, "окремий промокод гравцю не видно");
+  assert.strictEqual(await anon.get("promos"), NO, "аноніму не видно промокодів");
+  assert.strictEqual(await owner.get("promos"), OK, "адмін бачить промокоди");
+  assert.strictEqual(await carol.put("promo_redemptions/WELCOME/carol", { time: 1 }), NO, "активацію пише лише сервер");
   assert.strictEqual(await say(carol, "m3", "bob"), NO, "від чужого імені");
   assert.strictEqual(await anon.post("lobby_chat", { sender: "bob", text: "hi" }), NO, "анонім у чаті");
   assert.strictEqual(await carol.del("lobby_chat/m1"), NO, "чуже повідомлення не видалити");

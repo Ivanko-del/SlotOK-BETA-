@@ -4373,14 +4373,26 @@ function sendMoney() {
   });
 }
 
-function activatePromo() { 
-    const c=document.getElementById('promoInput').value.trim(); 
-    db.ref('promos/'+c).once('value', s=>{ 
-        if(s.exists()){ 
-            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(s.val().value)); 
-            notify("Промокод активовано!","success"); closeTabModal('promo-modal'); 
-        } else { notify("Невірний код","error"); } 
-    }); 
+async function activatePromo() {
+    const input = document.getElementById('promoInput');
+    const code = input.value.trim().toUpperCase();
+    if(!code) return notify("Введи промокод","error");
+    const srv = await serverReward('promo', { code });
+    if(srv.mode === 'error') return;
+    if(srv.mode === 'server') {
+        playSound('win');
+        notify(`🎟️ Промокод активовано! +${srv.r.amount} ₴`,"success");
+        input.value = '';
+        closeTabModal('promo-modal');
+        return;
+    }
+    // Сервер ще не налаштований (503) — старий шлях у браузері.
+    db.ref('promos/'+code).once('value', s=>{
+        if(s.exists()){
+            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(s.val().value));
+            notify("Промокод активовано!","success"); closeTabModal('promo-modal');
+        } else { notify("Невірний код","error"); }
+    });
 }
 
 function addContact() { 
@@ -5377,10 +5389,27 @@ function sendLobbyMsg() {
 // ════════════════════════════════════════════════
 
 // Перше оновлення — записане в Firebase при першому запуску
-const CURRENT_VERSION = '125';
+const CURRENT_VERSION = '126';
 const CHANGELOG_KEY   = 'slotok_seen_version';
 
 const BUILTIN_CHANGELOG = [
+  {
+    version: '126',
+    title: 'Оновлення v126 — чесні промокоди',
+    date: Date.UTC(2026, 10, 21),
+    dev: 'SlotOK Dev',
+    sections: [
+      {
+        type: 'fix',
+        title: '🐛 Дрібні виправлення',
+        items: [
+          'Промокоди: кожен код можна активувати лише один раз, а коли закінчується ліміт активацій — код перестає працювати для всіх',
+          'Промокоди: код можна вводити малими літерами й з пробілами — спрацює так само',
+          'Промокоди: тепер видно, чому код не підійшов — невірний, уже використаний тобою чи вичерпаний',
+        ],
+      },
+    ],
+  },
   {
     version: '125',
     title: 'Оновлення v125 — запити в друзі доходять одразу',

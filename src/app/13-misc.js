@@ -110,14 +110,26 @@ function sendMoney() {
   });
 }
 
-function activatePromo() { 
-    const c=document.getElementById('promoInput').value.trim(); 
-    db.ref('promos/'+c).once('value', s=>{ 
-        if(s.exists()){ 
-            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(s.val().value)); 
-            notify("Промокод активовано!","success"); closeTabModal('promo-modal'); 
-        } else { notify("Невірний код","error"); } 
-    }); 
+async function activatePromo() {
+    const input = document.getElementById('promoInput');
+    const code = input.value.trim().toUpperCase();
+    if(!code) return notify("Введи промокод","error");
+    const srv = await serverReward('promo', { code });
+    if(srv.mode === 'error') return;
+    if(srv.mode === 'server') {
+        playSound('win');
+        notify(`🎟️ Промокод активовано! +${srv.r.amount} ₴`,"success");
+        input.value = '';
+        closeTabModal('promo-modal');
+        return;
+    }
+    // Сервер ще не налаштований (503) — старий шлях у браузері.
+    db.ref('promos/'+code).once('value', s=>{
+        if(s.exists()){
+            db.ref('users/'+currentUser+'/balance').set(firebase.database.ServerValue.increment(s.val().value));
+            notify("Промокод активовано!","success"); closeTabModal('promo-modal');
+        } else { notify("Невірний код","error"); }
+    });
 }
 
 function addContact() { 

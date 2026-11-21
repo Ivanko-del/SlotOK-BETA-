@@ -943,7 +943,7 @@
       ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "promos": {
-      ".read": true,
+      ".read": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))",
       ".write": "(auth != null && (auth.uid === 'theivankoo' || root.child('users').child(auth.uid).child('isAdmin').val() === true))"
     },
     "admin_notes": {
