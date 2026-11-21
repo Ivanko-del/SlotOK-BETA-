@@ -84,9 +84,9 @@ merged into `BUILTIN_CHANGELOG`. Don't recreate a second changelog surface —
 ## Security model (since the October 2026 audit — see SECURITY.md)
 
 - **Login** goes through `api/auth.js` (server checks the password, returns a
-  Firebase custom token, uid = nick). Until `FIREBASE_SERVICE_ACCOUNT_KEY` is
-  set it answers 503 and `app.js` falls back to the old in-browser check —
-  keep both paths working when touching `authLogin`/`authRegister`.
+  Firebase custom token, uid = nick). There is no in-browser fallback any
+  more (it read password hashes from the DB): without
+  `FIREBASE_SERVICE_ACCOUNT_KEY` the API answers 503 and login is unavailable.
 - **Password hashes** live only in `user_secrets/<nick>` (server-only, no
   browser access even for admins) via `lib/secrets.js`; the rules forbid
   writing `pass`/`securityAnswerHash` into `users/`. Anything password-related
